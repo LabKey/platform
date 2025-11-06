@@ -987,7 +987,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      *
      * @return the job responsible for doing the work
      */
-    PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description, PipeRoot root) throws IOException;
+    PipelineJob importXarAsync(ViewBackgroundInfo info, FileLike file, String description, PipeRoot root) throws IOException;
 
     /**
      * Loads the xar synchronously, in the context of the pipelineJob

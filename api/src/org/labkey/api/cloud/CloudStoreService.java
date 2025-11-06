@@ -23,6 +23,8 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -140,6 +142,17 @@ public interface CloudStoreService
      */
     @Nullable
     Path getPath(Container container, String storeName, org.labkey.api.util.Path path);
+
+    /**
+     * Return nio.Path to cloud file/directory
+     */
+    @Nullable
+    FileLike getFileLike(Container container, String storeName, org.labkey.api.util.Path path);
+
+    /**
+     * Return FileSystem for cloud root
+     */
+    public @Nullable FileSystemLike getFileSystemLike(Container container, String configName);
 
     /**
      * Return path relative to cloud store

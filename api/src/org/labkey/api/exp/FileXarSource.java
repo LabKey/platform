@@ -19,6 +19,7 @@ package org.labkey.api.exp;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.vfs.FileLike;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -30,25 +31,25 @@ import java.util.Map;
  */
 public class FileXarSource extends AbstractFileXarSource
 {
-    public FileXarSource(Path file, PipelineJob job)
+    public FileXarSource(FileLike file, PipelineJob job)
     {
         super(job);
-        _xmlFile = file.normalize();
+        _xmlFile = file;
     }
 
-    public FileXarSource(Path file, PipelineJob job, Container targetContainer, @Nullable Map<String, String> substitutions)
+    public FileXarSource(FileLike file, PipelineJob job, Container targetContainer, @Nullable Map<String, String> substitutions)
     {
         super(job.getDescription(), targetContainer, job.getUser(), job, substitutions);
         _xmlFile = file;
     }
 
-    public FileXarSource(Path file, PipelineJob job, Container targetContainer)
+    public FileXarSource(FileLike file, PipelineJob job, Container targetContainer)
     {
         this(file, job, targetContainer, null);
     }
 
     @Override
-    public Path getLogFilePath() throws IOException
+    public FileLike getLogFilePath() throws IOException
     {
         return getLogFileFor(_xmlFile);
     }

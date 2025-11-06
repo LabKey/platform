@@ -8164,9 +8164,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description, PipeRoot root) throws IOException
+    public PipelineJob importXarAsync(ViewBackgroundInfo info, FileLike file, String description, PipeRoot root) throws IOException
     {
-        ExperimentPipelineJob job = new ExperimentPipelineJob(info, file.toPath(), description, false, root);
+        ExperimentPipelineJob job = new ExperimentPipelineJob(info, file, description, false, root);
         try
         {
             PipelineService.get().queueJob(job);

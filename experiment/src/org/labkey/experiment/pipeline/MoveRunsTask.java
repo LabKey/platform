@@ -39,6 +39,8 @@ import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -252,9 +254,9 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         }
 
         @Override
-        public Path getLogFilePath()
+        public FileLike getLogFilePath()
         {
-            return _logFile.toPath();
+            return FileSystemLike.wrapFile(_logFile);
         }
 
         public String toString()

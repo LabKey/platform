@@ -27,6 +27,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.vfs.FileLike;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,9 +43,9 @@ import java.util.Map;
  */
 public abstract class AbstractFileXarSource extends XarSource
 {
-    protected Path _xmlFile;
+    protected FileLike _xmlFile;
 
-    protected Path getXmlFile()
+    protected FileLike getXmlFile()
     {
         return _xmlFile;
     }
@@ -77,7 +78,7 @@ public abstract class AbstractFileXarSource extends XarSource
         try
         {
             NetworkDrive.exists(getXmlFile());
-            fIn = Files.newInputStream(getXmlFile());
+            fIn = getXmlFile().openInputStream();
             return ExperimentArchiveDocument.Factory.parse(fIn, XmlBeansUtil.getDefaultParseOptions());
         }
         finally
@@ -88,9 +89,7 @@ public abstract class AbstractFileXarSource extends XarSource
                 {
                     fIn.close();
                 }
-                catch (IOException e)
-                {
-                }
+                catch (IOException ignored) {}
             }
         }
     }
@@ -99,7 +98,7 @@ public abstract class AbstractFileXarSource extends XarSource
     @Nullable
     public Path getRootPath()
     {
-        return null != getXmlFile()? getXmlFile().getParent(): null;
+        return null != getXmlFile()? getXmlFile().toNioPathForRead().getParent(): null;
     }
 
     @Override
@@ -137,15 +136,15 @@ public abstract class AbstractFileXarSource extends XarSource
         }
     }
 
-    public static Path getLogFileFor(Path f) throws IOException
+    public static FileLike getLogFileFor(FileLike f) throws IOException
     {
-        Path xarDirectory = f.getParent();
-        if (!Files.exists(xarDirectory))
+        FileLike xarDirectory = f.getParent();
+        if (!xarDirectory.exists())
         {
             throw new IOException("Xar file parent directory does not exist");
         }
 
-        String xarShortName = f.getFileName().toString();
+        String xarShortName = f.getName();
         int index = xarShortName.toLowerCase().lastIndexOf(".xml");
         if (index == -1)
         {
@@ -157,6 +156,6 @@ public abstract class AbstractFileXarSource extends XarSource
             xarShortName = xarShortName.substring(0, index);
         }
 
-        return xarDirectory.resolve(xarShortName + LOG_FILE_NAME_SUFFIX);
+        return xarDirectory.resolveChild(xarShortName + LOG_FILE_NAME_SUFFIX);
     }
 }

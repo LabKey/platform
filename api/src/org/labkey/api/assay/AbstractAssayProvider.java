@@ -116,7 +116,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -285,12 +284,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     dataMap.put(StudyPublishService.TARGET_STUDY_PROPERTY_NAME, targetStudyContainer);
 
                     // Remember which rows we're planning to link, partitioned by the target study
-                    Set<Long> rowIds = rowIdsByTargetContainer.get(targetStudyContainer);
-                    if (rowIds == null)
-                    {
-                        rowIds = new HashSet<>();
-                        rowIdsByTargetContainer.put(targetStudyContainer, rowIds);
-                    }
+                    Set<Long> rowIds = rowIdsByTargetContainer.computeIfAbsent(targetStudyContainer, k -> new HashSet<>());
                     rowIds.add(publishKey.getDataId());
 
                     dataMaps.add(dataMap);
@@ -732,7 +726,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public AssayRunCreator getRunCreator()
+    public AssayRunCreator<?> getRunCreator()
     {
         return new DefaultAssayRunCreator<>(this);
     }
@@ -1459,13 +1453,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public AssayRunUploadContext.Factory<? extends AbstractAssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, ViewContext context)
+    public AssayRunUploadContext.Factory<? extends AbstractAssayProvider, ? extends AssayRunUploadContext.Factory<?, ?>> createRunUploadFactory(ExpProtocol protocol, ViewContext context)
     {
         return new AssayRunUploadContextImpl.Factory<>(protocol, this, context);
     }
 
     @Override
-    public AssayRunUploadContext.Factory<? extends AbstractAssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, User user, Container c)
+    public AssayRunUploadContext.Factory<? extends AbstractAssayProvider, ? extends AssayRunUploadContext.Factory<?, ?>> createRunUploadFactory(ExpProtocol protocol, User user, Container c)
     {
         return new AssayRunUploadContextImpl.Factory<>(protocol, this, user, c);
     }
@@ -1518,15 +1512,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public AssayRunDatabaseContext createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request)
+    public AssayRunDatabaseContext<?> createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request)
     {
-        return new AssayRunDatabaseContext(run, user, request);
+        return new AssayRunDatabaseContext<>(run, user, request);
     }
 
     @Override
     public AssayRunAsyncContext<?> createRunAsyncContext(AssayRunUploadContext<?> context) throws IOException, ExperimentException
     {
-        return new AssayRunAsyncContext(context);
+        return new AssayRunAsyncContext<>(context);
     }
 
     @Override
@@ -1696,16 +1690,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
             return null;
 
         return Pair.of(protocol, rowId);
-    }
-
-    @Override
-    public @Nullable ActionURL getResultRowURL(Container container, Lsid lsid)
-    {
-        var pair = getAssayResultRowIdFromLsid(container, lsid);
-        if (pair == null)
-            return null;
-
-        return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultRowURL(this, container, pair.first, pair.second);
     }
 
     @Override
@@ -2141,10 +2125,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     AuditLogService.get().addEvent(user, event);
                 }
             }
-            catch (Exception e)
-            {
-
-            }
+            catch (Exception ignored) {}
         }
     }
 
@@ -2152,7 +2133,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         String tableName = AssayProtocolSchema.DATA_TABLE_NAME;
         AssaySchema schema = createProtocolSchema(user, targetContainer, protocol, null);
-        FilteredTable assayResultTable = (FilteredTable) schema.getTable(tableName);
+        FilteredTable<?> assayResultTable = (FilteredTable<?>) schema.getTable(tableName);
         if (assayResultTable == null)
             return;
 
@@ -2161,7 +2142,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     record AssayFileMoveReference(String sourceFilePath, File updatedFile, String runName, String fieldName) {}
 
-    private void updateResultFiles(FilteredTable assayResultTable, List<ExpRun> runs, ExpProtocol assayProtocol, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData) throws ExperimentException
+    private void updateResultFiles(FilteredTable<?> assayResultTable, List<ExpRun> runs, ExpProtocol assayProtocol, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData) throws ExperimentException
     {
         FileContentService fileContentService = FileContentService.get();
         if (fileContentService == null)

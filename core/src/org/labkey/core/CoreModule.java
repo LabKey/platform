@@ -60,6 +60,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.OutOfRangeDisplayColumn;
@@ -269,6 +270,7 @@ import org.labkey.core.qc.DataStateImporter;
 import org.labkey.core.qc.DataStateWriter;
 import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.CoreQuerySchema;
+import org.labkey.core.query.PostgresTableSizesTable;
 import org.labkey.core.query.PostgresUserSchema;
 import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
@@ -1231,6 +1233,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("workbookCount", ContainerManager.getWorkbookCount());
             results.put("archivedFolderCount", ContainerManager.getArchivedContainerCount());
             results.put("databaseSize", CoreSchema.getInstance().getSchema().getScope().getDatabaseSize());
+
+            if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
+            {
+                SQLFragment sql = new SQLFragment("SELECT table_schema, SUM(total_size) FROM ");
+                sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
+                sql.append(" GROUP BY table_schema");
+
+                var schemaSizes = new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap();
+                results.put("databaseSchemaSize", schemaSizes);
+            }
+
             results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
             results.put("customLabels", CustomLabelService.get().getCustomLabelMetrics());
             Map<String, Long> roleAssignments = new HashMap<>();
@@ -1454,6 +1467,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ApiJsonWriter.TestCase.class,
             ClassLoaderTestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
+            MultiChoice.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,
             PostgreSqlVersion.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,

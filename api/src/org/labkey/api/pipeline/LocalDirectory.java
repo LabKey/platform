@@ -48,24 +48,23 @@ public class LocalDirectory implements Serializable
     private final Path _remoteDir;
     private Path _logFile;
     private final String _baseLogFileName;
-    private final String _moduleName;
 
-    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String moduleName)
+    public static LocalDirectory create(@NotNull PipeRoot root)
     {
-        return create(root, moduleName, "dummyLogFile", root.isCloudRoot() ? "dummy" : root.getRootPath().getPath());
+        return create(root, "dummyLogFile", root.isCloudRoot() ? "dummy" : root.getRootPath().getPath());
     }
 
     @Deprecated //Prefer to use a Path for workingDir -- can be local or remote, but should match with root
-    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String moduleName, @NotNull String baseLogFileName, @NotNull String workingDir)
+    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String baseLogFileName, @NotNull String workingDir)
     {
-        return create(root, moduleName, baseLogFileName, Path.of(workingDir));
+        return create(root, baseLogFileName, Path.of(workingDir));
     }
 
-    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String moduleName, @NotNull String baseLogFileName, @NotNull Path workingDir)
+    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String baseLogFileName, @NotNull Path workingDir)
     {
         return !root.isCloudRoot() ?
-                new LocalDirectory(workingDir.toFile(), moduleName, baseLogFileName) :
-                new LocalDirectory(root.getContainer(), moduleName, root, baseLogFileName);
+                new LocalDirectory(workingDir.toFile(), baseLogFileName) :
+                new LocalDirectory(root.getContainer(), root, baseLogFileName);
     }
 
     @JsonCreator
@@ -74,7 +73,6 @@ public class LocalDirectory implements Serializable
             @JsonProperty("_isTemporary") boolean isTemporary,
             @JsonProperty("_pipeRoot") PipeRoot pipeRoot,
             @JsonProperty("_baseLogFileName") String baseLogFileName,
-            @JsonProperty("_moduleName") String moduleName,
             @JsonProperty("_remoteDir") Path remoteDir)
     {
         _localDirectoryFile = localDirectoryFile;
@@ -82,22 +80,20 @@ public class LocalDirectory implements Serializable
         _pipeRoot = pipeRoot;
         _remoteDir = remoteDir != null ? remoteDir : _pipeRoot == null ? null : _pipeRoot.getRootNioPath(); //Using _piperoot as default for backwards compatability
         _baseLogFileName = baseLogFileName;
-        _moduleName = moduleName;
     }
 
     // Constructor for runs and actions when pipeline root is cloud
-    public LocalDirectory(Container container, String moduleName, PipeRoot pipeRoot, String basename)
+    public LocalDirectory(Container container, PipeRoot pipeRoot, String basename)
     {
-        this(container, moduleName, pipeRoot, basename, null);
+        this(container, pipeRoot, basename, null);
     }
 
-    public LocalDirectory(Container container, String moduleName, PipeRoot pipeRoot, String basename, Path remoteDir)
+    public LocalDirectory(Container container, PipeRoot pipeRoot, String basename, Path remoteDir)
     {
         _isTemporary = true;
         _pipeRoot = pipeRoot;
         _remoteDir = remoteDir != null ? remoteDir : _pipeRoot == null ? null : _pipeRoot.getRootNioPath(); //Using _piperoot as default for backwards compatability
         _baseLogFileName = basename;
-        _moduleName = moduleName;
 
         try
         {
@@ -113,13 +109,12 @@ public class LocalDirectory implements Serializable
     }
 
     // Constructor when pipeline root not in cloud
-    public LocalDirectory(@NotNull File localDirectory, String moduleName, String basename)
+    public LocalDirectory(@NotNull File localDirectory, String basename)
     {
         _localDirectoryFile = localDirectory;
         _isTemporary = false;
         _pipeRoot = null;
         _baseLogFileName = basename;
-        _moduleName = moduleName;
         _remoteDir = null;
     }
 

@@ -22,7 +22,6 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
@@ -51,7 +50,6 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     {
         return switch (table.getName())
         {
-            case "Alias", "ObjectLegacyNames" -> DUMMY_FIELD_KEY; // Unused dummy value -- see override below
             case "DataTypeExclusion" -> FieldKey.fromParts("ExcludedContainer");
             case "PropertyDomain" -> FieldKey.fromParts("DomainId", "Container");
             case "ProtocolApplication" -> FieldKey.fromParts("RunId", "Container");
@@ -70,7 +68,7 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     @Override
-    public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+    public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
     {
         return switch (sourceTable.getName())
         {
@@ -118,12 +116,12 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                     .appendInClause(containers, sourceTable.getSqlDialect())
                     .append(")")
             );
-            default -> super.getContainerClause(sourceTable, containerFieldKey, containers);
+            default -> super.getContainerClause(sourceTable, containers);
         };
     }
 
     @Override
-    public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Map<String, Map<String, Sequence>> sequenceMap)
+    public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
     {
         new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL");
         new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object ADD CONSTRAINT FK_Object_Object FOREIGN KEY (OwnerObjectId) REFERENCES exp.Object (ObjectId)");

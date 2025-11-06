@@ -41,7 +41,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.core.CoreModule;
 import org.labkey.core.admin.AdminController.MigrateFilesOption;
 
 import java.io.FileNotFoundException;
@@ -84,7 +83,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
         String baseLogFileName = FileUtil.makeFileNameWithTimestamp(
                 FileUtil.getBaseName("copy_directory_fileroot_change", 1).replace(" ", "_"));
 
-        setupLocalDirectoryAndJobLog(pipeRoot, CoreModule.CORE_MODULE_NAME, baseLogFileName);
+        setupLocalDirectoryAndJobLog(pipeRoot, baseLogFileName);
     }
 
     @Override

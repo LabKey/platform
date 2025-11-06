@@ -227,7 +227,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         {
             if (null != viewForm && viewForm.contains(this, ctx))
             {
-                val = viewForm.get(getFormFieldName(ctx));
+                val = viewForm.getAsString(getFormFieldName(ctx));
             }
             else if (ctx.getRow() != null)
                 val = col.getValue(ctx);

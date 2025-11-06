@@ -100,7 +100,7 @@ public class RReportJob extends PipelineJob implements Serializable
         {
             _jobIdentifier.set(getJobGUID());
             FileLike logFile = report.getReportDirFileLike(executingContainerId).resolveChild(LOG_FILE_NAME);
-            setLogFile(logFile.toNioPathForWrite());
+            setLogFile(logFile);
         }
     }
 

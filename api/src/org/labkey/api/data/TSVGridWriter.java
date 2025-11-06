@@ -22,10 +22,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.HttpView;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -198,7 +197,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
      * @return List of the output Files.
      */
     @NotNull
-    public List<File> writeBatchFiles(@NotNull File outputDir, @NotNull String baseName, @Nullable String extension, int batchSize, @Nullable FieldKey batchColumn)
+    public List<FileLike> writeBatchFiles(@NotNull FileLike outputDir, @NotNull String baseName, @Nullable String extension, int batchSize, @Nullable FieldKey batchColumn)
     {
         extension = StringUtils.trimToEmpty(extension);
         String ext = "".equals(extension) || extension.startsWith(".") ? extension : "." + extension;
@@ -211,13 +210,13 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     }
 
     @NotNull
-    private List<File> writeResultSetBatches(Results results, File outputDir, String baseName, String extension, int batchSize, @Nullable FieldKey batchColumn) throws IOException
+    private List<FileLike> writeResultSetBatches(Results results, FileLike outputDir, String baseName, String extension, int batchSize, @Nullable FieldKey batchColumn) throws IOException
     {
         int currentBatchSize = 0;
         int totalBatches = 1;
         Object previousBatchColumnValue = null;
         Object newBatchColumnValue;
-        List<File> outputFiles = new ArrayList<>();
+        List<FileLike> outputFiles = new ArrayList<>();
         outputFiles.add(startBatchFile(outputDir, baseName, extension, batchSize, totalBatches));
         RenderContext ctx = getRenderContext();
         ctx.setResults(results);
@@ -264,11 +263,11 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     }
 
     @NotNull
-    private File startBatchFile(File outputDir, String baseName, String extension, int batchSize, int totalBatches) throws IOException
+    private FileLike startBatchFile(FileLike outputDir, String baseName, String extension, int batchSize, int totalBatches) throws IOException
     {
         String batchId = batchSize == 0 ? "" : "-" + totalBatches;
-        File file = FileUtil.appendName(outputDir, baseName + batchId + extension);
-        prepare(file);
+        FileLike file = outputDir.resolveChild(baseName + batchId + extension);
+        prepare(file.openOutputStream());
         writeFileHeader();
         if (isHeaderRowVisible())
             writeColumnHeaders();

@@ -8,6 +8,7 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.Daily;
+import org.labkey.test.components.assay.AssayConstants;
 import org.labkey.test.pages.assay.AssayImportPage;
 import org.labkey.test.pages.assay.AssayRunsPage;
 import org.labkey.test.params.FieldDefinition;
@@ -73,7 +74,7 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
         clickButton("Next");
         AssayImportPage importPage = new AssayImportPage(getDriver());
         importPage.setNamedInputText("Name", firstRun);
-        importPage.setNamedTextAreaValue("TextAreaDataCollector.textArea", firstRunData);
+        importPage.setNamedTextAreaValue(AssayConstants.TEXT_AREA_DATA_COLLECTOR_TEXT_AREA_NAME, firstRunData);
         importPage.clickSaveAndFinish();
         SearchAdminAPIHelper.waitForIndexer();
 
@@ -92,7 +93,7 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
         clickButton("Next");
         AssayImportPage importPage2 = new AssayImportPage(getDriver());
         importPage2.setNamedInputText("Name", secondRun);
-        importPage2.setNamedTextAreaValue("TextAreaDataCollector.textArea", secondRunData);
+        importPage2.setNamedTextAreaValue(AssayConstants.TEXT_AREA_DATA_COLLECTOR_TEXT_AREA_NAME, secondRunData);
         importPage2.clickSaveAndFinish();
         SearchAdminAPIHelper.waitForIndexer();
 

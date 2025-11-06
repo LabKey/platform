@@ -1936,7 +1936,8 @@ public class CoreController extends SpringActionController
 
         private boolean isCloudArchive(FolderImporterForm form)
         {
-            return FileUtil.hasCloudScheme(form.getArchiveFilePath());
+            String path = form.getArchiveFilePath();
+            return StringUtils.isNotBlank(path) && FileUtil.hasCloudScheme(form.getArchiveFilePath());
         }
 
         private List<Map<String, Object>> getSelectableImporters(FolderImporterForm form, List<FolderImporter> registeredImporters) throws Exception

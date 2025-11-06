@@ -2,10 +2,12 @@ package org.labkey.vfs;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.io.File;
@@ -28,6 +30,8 @@ public class FileSystemLocal extends AbstractFileSystemLike
     final java.nio.file.Path nioRoot;
     final _FileLike root;
     final boolean caching;
+
+    private static final Logger LOG = LogHelper.getLogger(FileSystemLocal.class, "Files backed by local storage");
 
     FileSystemLocal(URI uri, boolean canRead, boolean canWrite, boolean canDeleteRoot)
     {
@@ -71,6 +75,7 @@ public class FileSystemLocal extends AbstractFileSystemLike
     @Override
     public FileLike resolveFile(Path path)
     {
+        LOG.debug("Resolving {} against {}", path, nioRoot);
         path = path.absolute().normalize();
         if (null == path)
             throw new IllegalArgumentException("Path could not be resolved");
@@ -89,6 +94,11 @@ public class FileSystemLocal extends AbstractFileSystemLike
             return new _FileLike(path, file);
     }
 
+    @Override
+    public String toString()
+    {
+        return "FileSystemLocal " + nioRoot + " caching=" + caching;
+    }
 
     @JsonSerialize(using = FileLike.FileLikeSerializer.class)
     @JsonDeserialize(using = FileLike.FileLikeDeserializer.class)
