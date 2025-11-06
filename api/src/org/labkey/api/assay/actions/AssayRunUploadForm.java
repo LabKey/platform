@@ -121,53 +121,63 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public Map<DomainProperty, String> getRunProperties() throws ExperimentException
     {
         if (_runProperties == null)
-        {
-            Domain domain = getProvider().getRunDomain(getProtocol());
-            _runProperties = getPropertyMapFromRequest(domain.getProperties());
-        }
+            _runProperties = getPropertyMapFromRequest(getProvider().getRunDomain(getProtocol()));
+
         return Collections.unmodifiableMap(_runProperties);
     }
 
-    /** @return property descriptor to value */
     @Override
     public Map<DomainProperty, String> getBatchProperties() throws ExperimentException
     {
         if (_uploadSetProperties == null)
-        {
-            Domain domain = getProvider().getBatchDomain(getProtocol());
-            _uploadSetProperties = getPropertyMapFromRequest(domain.getProperties());
-        }
+            _uploadSetProperties = getPropertyMapFromRequest(getProvider().getBatchDomain(getProtocol()));
+
         return Collections.unmodifiableMap(_uploadSetProperties);
     }
 
-    protected Map<DomainProperty, String> getPropertyMapFromRequest(List<? extends DomainProperty> columns) throws ExperimentException
+    protected Map<DomainProperty, String> getPropertyMapFromRequest(Domain domain) throws ExperimentException
     {
+        List<? extends DomainProperty> columns = domain.getProperties();
         Map<DomainProperty, String> properties = new LinkedHashMap<>();
         Map<DomainProperty, FileLike> additionalFiles = getAdditionalPostedFiles(columns);
+        Map<DomainProperty, Object> defaults = getDefaultValues(domain, false);
+
         for (DomainProperty pd : columns)
         {
             String propName = UploadWizardAction.getInputName(pd);
-            String value = getRequest().getParameter(propName);
-            if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.BOOLEAN &&
-                    (value == null || value.isEmpty()))
+            String value = StringUtils.trimToNull(getRequest().getParameter(propName));
+            if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.BOOLEAN && (value == null || value.isEmpty()))
                 value = Boolean.FALSE.toString();
-            value = StringUtils.trimToNull(value);
 
-            if (pd.getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME) && value != null)
-            {
+            if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equalsIgnoreCase(pd.getName()) && value != null)
                 value = ParticipantVisitResolverType.Serializer.encode(value, getRequest());
-            }
 
             if (additionalFiles.containsKey(pd))
             {
-                if (additionalFiles.get(pd).equals(BLANK_FILE)) // file has been removed
+                if (BLANK_FILE.equals(additionalFiles.get(pd))) // file has been removed
                     properties.put(pd, null);
                 else
                     properties.put(pd, additionalFiles.get(pd).toNioPathForRead().toString());
             }
             else
                 properties.put(pd, value);
+
+            // Issue 54112: Retain previous file values when reimporting a run
+            if (PropertyType.FILE_LINK == pd.getPropertyDescriptor().getPropertyType())
+            {
+                boolean postedNewFile = additionalFiles.containsKey(pd);
+                String current = properties.get(pd);
+                boolean hasValue = current != null && !current.isEmpty();
+
+                if (!postedNewFile && !hasValue)
+                {
+                    Object prior = defaults.get(pd);
+                    if (prior != null)
+                        properties.put(pd, prior.toString());
+                }
+            }
         }
+
         return properties;
     }
 
@@ -309,11 +319,10 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
     public static File getAssayDirectory(Container c, File root)
     {
-        if(null != root)
+        if (null != root)
             return new File(root.getAbsolutePath(), AssayFileWriter.DIR_NAME);
         else
             return new File(PipelineService.get().findPipelineRoot(c).getRootPath().getAbsolutePath(), AssayFileWriter.DIR_NAME);
-
     }
 
     public Map<DomainProperty, FileLike> getAdditionalPostedFiles(List<? extends DomainProperty> pds) throws ExperimentException
@@ -353,10 +362,6 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             // Hidden values in form containing previously uploaded files if the previous upload resulted in error
             for (String fileParam : filePdNames)
             {
-                String previousFileName = request.getParameter(fileParam);
-                if (previousFileName == null)
-                    continue;
-
                 DomainProperty domainProperty = fileParameters.get(fileParam);
                 MultipartFile multiFile = request.getFileMap().get(fileParam);
 
@@ -366,6 +371,10 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                     _additionalFiles.put(domainProperty, BLANK_FILE);
                     continue;
                 }
+
+                String previousFileName = request.getParameter(fileParam);
+                if (previousFileName == null)
+                    continue;
 
                 // Only add a hidden file parameter if it is a valid file in the pipeline root directory and
                 // a new file hasn't been uploaded for that parameter
@@ -620,6 +629,11 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
     public Map<DomainProperty, Object> getDefaultValues(Domain domain) throws ExperimentException
     {
+        return getDefaultValues(domain, true);
+    }
+
+    private Map<DomainProperty, Object> getDefaultValues(Domain domain, boolean includeNameAndComment) throws ExperimentException
+    {
         ExpRun reRun = getReRun();
         if (reRun != null)
         {
@@ -651,15 +665,18 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 // repopulated just like the rest of the domain properties, but they aren't actually part of the
                 // domain- they're hard columns on the ExperimentRun table.  Since the DomainProperty objects are
                 // just used to calculate the input form element names, this hack works to pre-populate the values.
-                DomainProperty nameProperty = domain.addProperty();
-                nameProperty.setName("Name");
-                ret.put(nameProperty, reRun.getName());
-                nameProperty.delete();
+                if (includeNameAndComment)
+                {
+                    DomainProperty nameProperty = domain.addProperty();
+                    nameProperty.setName("Name");
+                    ret.put(nameProperty, reRun.getName());
+                    nameProperty.delete();
 
-                DomainProperty commentsProperty = domain.addProperty();
-                commentsProperty.setName("Comments");
-                ret.put(commentsProperty, reRun.getComments());
-                commentsProperty.delete();
+                    DomainProperty commentsProperty = domain.addProperty();
+                    commentsProperty.setName("Comments");
+                    ret.put(commentsProperty, reRun.getComments());
+                    commentsProperty.delete();
+                }
             }
             return ret;
         }
