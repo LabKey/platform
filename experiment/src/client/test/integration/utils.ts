@@ -463,7 +463,7 @@ async function verifyDomainCreateFailure(server: IntegrationTestServer, domainTy
     }, {...folderOptions, ...userOptions});
 
     expect(badDomainNameResp['body']['success']).toBeFalsy();
-    expect(badDomainNameResp['body']['exception']).toBe(error.replace('REPLACE', badDomainName));
+    expect(badDomainNameResp['body']['exception']).toBe(error.replace('REPLACE', () => badDomainName));
 }
 
 async function verifyDomainUpdateFailure(server: IntegrationTestServer, domainId: number, domainURI: string, dataTypeRowId/*needed for updating dataclass*/: number, badDomainName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions, domainFields?: any[]) {
@@ -488,7 +488,7 @@ async function verifyDomainUpdateFailure(server: IntegrationTestServer, domainId
     const badDomainNameResp = await server.post('property', 'saveDomain', updatedDomainPayload, {...folderOptions, ...userOptions});
 
     expect(badDomainNameResp['body']['success']).toBeFalsy();
-    expect(badDomainNameResp['body']['exception']).toBe(error.replace('REPLACE', badDomainName));
+    expect(badDomainNameResp['body']['exception']).toBe(error.replace('REPLACE', () => badDomainName));
 }
 
 async function verifyDomainCreateSuccess(server: IntegrationTestServer, domainType: string, domainName: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
@@ -519,7 +519,7 @@ export async function checkDomainName(server: IntegrationTestServer, domainType:
         'with\0nullCharacter': `Invalid ${domainType} name 'REPLACE'. ${domainType} name must contain only valid unicode characters.`,
         'with\tnewLines': `Invalid ${domainType} name 'REPLACE'. ${domainType} name may not contain 'tab', 'new line', or 'return' characters.`,
         '.startWithDot': `Invalid ${domainType} name 'REPLACE'. ${domainType} name must start with a letter or a number.`,
-        ['c' + selectRandomN(ILLEGAL_DOMAIN_CHARSET.split(''), 2).join('')]: `Invalid ${domainType} name 'REPLACE'. ${domainType} name may not contain any of these characters: ` + ILLEGAL_DOMAIN_CHARSET,
+        ['c' + selectRandomN(ILLEGAL_DOMAIN_CHARSET.split(''), 2).join('')]: `Invalid DataClass name 'REPLACE'. ${domainType} name may not contain any of these characters: ` + ILLEGAL_DOMAIN_CHARSET,
         'a -b': `Invalid ${domainType} name 'REPLACE'. ${domainType} name may not contain space followed by dash.`
     };
     if (supportNameExpression) {
