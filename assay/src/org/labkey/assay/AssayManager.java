@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayColumnInfoRenderer;
+import org.labkey.api.assay.AssayDomainService;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayFlagHandler;
 import org.labkey.api.assay.AssayHeaderLinkProvider;
@@ -681,11 +682,6 @@ public class AssayManager implements AssayService
         queue.addResource(r);
     }
 
-    private boolean shouldIndexBatch(ExpExperiment batch)
-    {
-        return batch != null && shouldIndexProtocolBatches(batch.getBatchProtocol());
-    }
-
     /**
      * Only index batches for assays that have batch properties on their domain
      */
@@ -1094,5 +1090,11 @@ public class AssayManager implements AssayService
         // The assay run and assay result may have properties that have the same name which will
         // result in lineage inputs which we are unable to disambiguate when processing based on "role".
         return dp.getName();
+    }
+
+    @Override
+    public AssayDomainService createAssayDomainService(User user, Container container)
+    {
+        return new AssayDomainServiceImpl(user, container);
     }
 }

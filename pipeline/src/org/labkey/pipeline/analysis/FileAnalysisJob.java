@@ -26,10 +26,10 @@ import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -54,19 +54,18 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
                            PipeRoot root,
                            TaskId taskPipelineId,
                            String protocolName,
-                           Path fileParameters,
-                           List<Path> filesInput,
+                           FileLike fileParameters,
+                           List<FileLike> filesInput,
                            @Nullable Map<String, String> variableMap,
-                           boolean splittable,
-                           boolean writeJobInfoFile) throws IOException
+                           boolean splittable) throws IOException
     {
-        super(protocol, providerName, info, root, protocolName, fileParameters, filesInput, splittable, writeJobInfoFile);
+        super(protocol, providerName, info, root, protocolName, fileParameters, filesInput, splittable);
 
         _taskPipelineId = taskPipelineId;
         _variableMap = variableMap;
     }
 
-    public FileAnalysisJob(FileAnalysisJob job, File fileInput)
+    public FileAnalysisJob(FileAnalysisJob job, FileLike fileInput)
     {
         super(job, fileInput);
 
@@ -101,7 +100,7 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
     }
 
     @Override
-    public AbstractFileAnalysisJob createSingleFileJob(File file)
+    public AbstractFileAnalysisJob createSingleFileJob(FileLike file)
     {
         return new FileAnalysisJob(this, file);
     }
@@ -109,7 +108,7 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
     @Override
     public FileAnalysisTaskPipeline getTaskPipeline()
     {
-        TaskPipeline tp = super.getTaskPipeline();
+        TaskPipeline<?> tp = super.getTaskPipeline();
         if (tp == null)
         {
             LOG.warn("Task pipeline " + _taskPipelineId + " not found.");

@@ -39,14 +39,13 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.experiment.DataURLRelativizer;
 import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
+import org.labkey.vfs.FileLike;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -105,10 +104,10 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             return Collections.emptyList();
         }
 
-        protected Path getXarFile(PipelineJob job)
+        protected FileLike getXarFile(PipelineJob job)
         {
             FileAnalysisJobSupport jobSupport = job.getJobSupport(FileAnalysisJobSupport.class);
-            return getOutputType().newFile(jobSupport.getAnalysisDirectoryPath(), jobSupport.getBaseName());
+            return getOutputType().newFile(jobSupport.getAnalysisDirectoryFileLike(), jobSupport.getBaseName());
         }
 
         @Override
@@ -159,7 +158,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             Set<ExpRun> importedRuns = new HashSet<>();
             if (_factory.isLoadFiles())
             {
-                Path permanentXAR = _factory.getXarFile(getJob());
+                FileLike permanentXAR = _factory.getXarFile(getJob());
                 if (NetworkDrive.exists(permanentXAR))
                 {
                     // Be sure that it's been imported (and not already deleted from the database)
@@ -176,7 +175,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                     // Load the data files for this run
                     importedRuns.addAll(ExperimentService.get().importXar(new FileXarSource(getLoadingXarFile(), getJob()), getJob(), false));
 
-                    Files.move(getLoadingXarFile(), permanentXAR);
+                    Files.move(getLoadingXarFile().toNioPathForWrite(), permanentXAR.toNioPathForWrite());
                 }
             }
             else
@@ -225,19 +224,19 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
     @Override
     public void writeToDisk(ExpRun run) throws PipelineJobException
     {
-        Path f = getLoadingXarFile();
-        Path tempFile = f.getParent().resolve(f.getFileName().toString() + ".temp");
+        FileLike f = getLoadingXarFile();
+        FileLike tempFile = f.getParent().resolveChild(f.getName() + ".temp");
 
         try
         {
             XarExporter exporter = new XarExporter(LSIDRelativizer.FOLDER_RELATIVE, DataURLRelativizer.RUN_RELATIVE_LOCATION.createURLRewriter(), getJob().getUser(), getJob().getContainer());
             exporter.addExperimentRun(run);
 
-            try (OutputStream fOut = new BufferedOutputStream(Files.newOutputStream(tempFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE)))
+            try (OutputStream fOut = new BufferedOutputStream(tempFile.openOutputStream()))
             {
                 exporter.dumpXML(fOut);
                 fOut.close();
-                Files.move(tempFile, f, StandardCopyOption.ATOMIC_MOVE);
+                Files.move(tempFile.toNioPathForWrite(), f.toNioPathForWrite(), StandardCopyOption.ATOMIC_MOVE);
             }
         }
         catch (ExperimentException | IOException e)
@@ -246,9 +245,9 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         }
     }
 
-    private Path getLoadingXarFile()
+    private FileLike getLoadingXarFile()
     {
-        Path xarPath = _factory.getXarFile(getJob());
-        return xarPath.resolve(xarPath + ".loading");
+        FileLike xarPath = _factory.getXarFile(getJob());
+        return xarPath.getParent().resolveChild(xarPath.getName() + ".loading");
     }
 }

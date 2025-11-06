@@ -24,6 +24,7 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,12 +37,12 @@ import java.io.Serializable;
  */
 public abstract class StudyBatch extends PipelineJob implements Serializable
 {
-    protected File _definitionFile;
+    protected FileLike _definitionFile;
 
     // For serialization
     protected StudyBatch() {}
 
-    public StudyBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root)
+    public StudyBatch(ViewBackgroundInfo info, FileLike definitionFile, PipeRoot root)
     {
         super("Study", info, root);
         _definitionFile = definitionFile;
@@ -73,10 +74,5 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
         {
             throw new IOException(e);
         }
-    }
-
-    public File getDefinitionFile()
-    {
-        return _definitionFile;
     }
 }

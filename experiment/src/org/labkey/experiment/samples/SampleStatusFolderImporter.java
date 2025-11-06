@@ -15,6 +15,8 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -52,8 +54,8 @@ public class SampleStatusFolderImporter extends SampleTypeFolderImporter
         if (xarDir != null)
         {
             // #44384 Generate a relative Path object for the folder's VirtualFile
-            Path xarDirPath = Path.of(xarDir.getLocation());
-            Path typesXarFile = null;
+            FileLike xarDirPath = FileSystemLike.wrapFile(Path.of(xarDir.getLocation()).toAbsolutePath());
+            FileLike typesXarFile = null;
             Map<String, String> sampleStatusDataFiles = new HashMap<>();
             Logger log = ctx.getLogger();
 
@@ -66,7 +68,7 @@ public class SampleStatusFolderImporter extends SampleTypeFolderImporter
                 if (file.equalsIgnoreCase(XAR_TYPES_NAME) || file.equalsIgnoreCase(XAR_TYPES_XML_NAME))
                 {
                     if (typesXarFile == null)
-                        typesXarFile = xarDirPath.resolve(file);
+                        typesXarFile = xarDirPath.resolveChild(file);
                     else
                         log.error("More than one types XAR file found in the sample type directory: ", file);
                 }

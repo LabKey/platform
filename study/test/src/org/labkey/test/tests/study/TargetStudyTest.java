@@ -180,7 +180,7 @@ public class TargetStudyTest extends AbstractAssayTest
 
         click(AssayConstants.TEXT_AREA_DATA_PROVIDER_LOCATOR);
         String data2 = data1.replace("StudyNotExist", "");
-        setFormElement(Locator.name("TextAreaDataCollector.textArea"), data2);
+        setFormElement(Locator.name(AssayConstants.TEXT_AREA_DATA_COLLECTOR_TEXT_AREA_NAME), data2);
         clickButton("Save and Finish");
         assertNoLabKeyErrors();
 

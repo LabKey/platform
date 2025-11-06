@@ -32,6 +32,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.PrintWriters;
+import org.labkey.vfs.FileLike;
 import org.xml.sax.InputSource;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -41,14 +42,11 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -141,32 +139,21 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         return getName();
     }
 
-    public String getBaseName(File file)
-    {
-        return getBaseName(file.toPath());
-    }
-
-    public String getBaseName(Path file)
+    public String getBaseName(FileLike file)
     {
         FileType ft = findInputType(file);
         if (ft == null)
-            return file.getFileName().toString();
+            return file.getName();
 
         return ft.getBaseName(file);
     }
 
-    public File getAnalysisDir(File dirData, PipeRoot root)
+    public FileLike getAnalysisDir(FileLike dirData, PipeRoot root)
     {
-        return getFactory().getAnalysisDir(dirData.toPath(), getName(), root).toFile();
+        return getFactory().getAnalysisDir(dirData, getName(), root);
     }
 
-    @Deprecated //Prefer Path version
-    public File getParametersFile(File dirData, PipeRoot root)
-    {
-        return getParametersFile(dirData.toPath(), root).toFile();
-    }
-
-    public Path getParametersFile(Path dirData, PipeRoot root)
+    public FileLike getParametersFile(FileLike dirData, PipeRoot root)
     {
         return getFactory().getParametersFile(dirData, getName(), root);
     }
@@ -177,20 +164,14 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         save(getFactory().getProtocolFile(root, getName(), false), null, null);
     }
 
-    @Deprecated //Prefer Path version
-    public void saveInstance(File file, Container c) throws IOException
-    {
-        saveInstance(file.toPath(), c);
-    }
-
-    public void saveInstance(Path file, Container c) throws IOException
+    public void saveInstance(FileLike file, Container c) throws IOException
     {
         Map<String, String> addParams = new HashMap<>();
         addParams.put(PipelineJob.PIPELINE_EMAIL_ADDRESS_PARAM, email);
         save(file, null, addParams);
     }
 
-    protected void save(Path file, Map<String, String> addParams, Map<String, String> instanceParams) throws IOException
+    protected void save(FileLike file, Map<String, String> addParams, Map<String, String> instanceParams) throws IOException
     {
         if (xml == null || xml.isEmpty())
         {
@@ -210,11 +191,12 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
                 throw new IllegalArgumentException("Line " + err.getLine() + ": " + err.getMessage());
         }
 
-        Path dir = file.getParent();
-        if (!Files.exists(dir))
+        FileLike dir = file.getParent();
+        if (!dir.exists())
         {
             try
             {
+                _log.debug("Creating directory " + dir);
                 FileUtil.createDirectories(dir);
             }
             catch (IOException e)
@@ -237,7 +219,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
                 parser.setInputParameter(entry.getKey(), entry.getValue());
         }
 
-        try (PrintWriter writer = PrintWriters.getPrintWriter(file))
+        try (PrintWriter writer = PrintWriters.getPrintWriter(file.openOutputStream()))
         {
             xml = parser.getXML();
             if (xml == null)
@@ -267,13 +249,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         return parser;
     }
 
-    @Deprecated  //Prefer the Path version
-    public FileType findInputType(File file)
-    {
-        return findInputType(file.toPath());
-    }
-
-    public FileType findInputType(Path file)
+    public FileType findInputType(FileLike file)
     {
         for (FileType type : getInputTypes())
         {
@@ -289,8 +265,8 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     public abstract AbstractFileAnalysisProtocolFactory<?> getFactory();
 
     public abstract JOB createPipelineJob(ViewBackgroundInfo info,
-                                          PipeRoot root, List<Path> filesInput,
-                                          Path fileParameters, @Nullable Map<String, String> variableMap) throws IOException;
+                                          PipeRoot root, List<FileLike> filesInput,
+                                          FileLike fileParameters, @Nullable Map<String, String> variableMap) throws IOException;
 
     public boolean timestampLog()
     {

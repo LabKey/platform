@@ -30,6 +30,7 @@ import org.labkey.api.util.DateUtil;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.sql.Array;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
@@ -299,6 +300,8 @@ public enum JdbcType
         }
     },
 
+    ARRAY(Types.ARRAY, Array.class),
+
     NULL(Types.NULL, Object.class),
 
     OTHER(Types.OTHER, Object.class);
@@ -398,7 +401,6 @@ public enum JdbcType
     public static JdbcType valueOf(int type)
     {
         JdbcType jt = sqlTypeMap.get(type);
-
         return null != jt ? jt : OTHER;
     }
 

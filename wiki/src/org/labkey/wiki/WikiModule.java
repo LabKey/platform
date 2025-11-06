@@ -142,7 +142,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
             }
 
             @Override
-            public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Map<String, Map<String, Sequence>> sequenceMap)
+            public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
             {
                 new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId)");
                 new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_Parent FOREIGN KEY (Parent) REFERENCES comm.Pages (RowId)");

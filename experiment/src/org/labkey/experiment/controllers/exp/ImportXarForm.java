@@ -23,6 +23,8 @@ import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -51,7 +53,7 @@ public class ImportXarForm extends PipelinePathForm
      * default pipeline xar processing.
      */
     @Override
-    public List<File> getValidatedFiles(Container c, boolean allowNonExistentFiles)
+    public List<FileLike> getValidatedFiles(Container c, boolean allowNonExistentFiles)
     {
         if (_module == null)
             return super.getValidatedFiles(c, allowNonExistentFiles);
@@ -70,7 +72,7 @@ public class ImportXarForm extends PipelinePathForm
             throw new NotFoundException("Could not find path " + getPath());
         }
 
-        List<File> files = new ArrayList<>();
+        List<FileLike> files = new ArrayList<>();
         for (String fileName : getFile())
         {
             Resource rf = m.getModuleResource(getPath() + "/" + fileName);
@@ -85,7 +87,7 @@ public class ImportXarForm extends PipelinePathForm
             {
                 throw new NotFoundException("Could not find file '" + f + "'");
             }
-            files.add(f);
+            files.add(FileSystemLike.wrapFile(f));
         }
 
         return files;

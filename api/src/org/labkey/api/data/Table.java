@@ -1015,7 +1015,7 @@ public class Table
             whereSQL.append(whereAND);
             whereSQL.appendIdentifier(col.getSelectIdentifier());
             whereSQL.append("=?");
-            whereSQL.add(keys.get(col.getName()));
+            whereSQL.add(keys.get(col.getName()), col.getJdbcType());
             whereAND = " AND ";
         }
 

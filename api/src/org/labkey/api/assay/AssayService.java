@@ -249,6 +249,8 @@ public interface AssayService
     /** Returns the lineage "role" for an assay run/result property. */
     @NotNull String getPropertyInputLineageRole(@NotNull DomainProperty dp);
 
+    AssayDomainService createAssayDomainService(User user, Container container);
+
     interface ResultsCheckHelper
     {
         @NotNull Logger getLogger();

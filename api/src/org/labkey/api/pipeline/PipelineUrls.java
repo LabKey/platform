@@ -22,6 +22,7 @@ import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.vfs.FileLike;
 
 import java.nio.file.Path;
 
@@ -41,7 +42,7 @@ public interface PipelineUrls extends UrlProvider
 
     ActionURL urlActions(Container container);
 
-    ActionURL urlStartFolderImport(Container container, @NotNull Path archiveFile, @Nullable ImportOptions options, boolean fromTemplateSourceFolder);
+    ActionURL urlStartFolderImport(Container container, @NotNull FileLike archiveFile, @Nullable ImportOptions options, boolean fromTemplateSourceFolder);
 
     ActionURL urlCreatePipelineTrigger(Container container, String pipelineId, @Nullable ActionURL returnUrl);
 

@@ -17,6 +17,7 @@ import java.util.Set;
 {
     public static final String POSTGRES_STAT_ACTIVITY_TABLE_NAME = "pg_stat_activity";
     public static final String POSTGRES_LOCKS_TABLE_NAME = "pg_locks";
+    public static final String POSTGRES_TABLE_SIZES_TABLE_NAME = "pg_tablesizes";
 
     public PostgresUserSchema(User user, Container container)
     {
@@ -36,6 +37,8 @@ import java.util.Set;
             return new PostgresStatActivityTable(this);
         if (POSTGRES_LOCKS_TABLE_NAME.equalsIgnoreCase(name))
             return new PostgresLocksTable(this);
+        if (POSTGRES_TABLE_SIZES_TABLE_NAME.equalsIgnoreCase(name))
+            return new PostgresTableSizesTable(this);
 
         return null;
     }
@@ -43,6 +46,9 @@ import java.util.Set;
     @Override
     public Set<String> getTableNames()
     {
-        return Set.of(POSTGRES_STAT_ACTIVITY_TABLE_NAME, POSTGRES_LOCKS_TABLE_NAME);
+        return Set.of(
+                POSTGRES_LOCKS_TABLE_NAME,
+                POSTGRES_STAT_ACTIVITY_TABLE_NAME,
+                POSTGRES_TABLE_SIZES_TABLE_NAME);
     }
 }

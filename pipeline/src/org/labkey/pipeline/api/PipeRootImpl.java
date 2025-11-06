@@ -55,6 +55,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class PipeRootImpl implements PipeRoot
 {
@@ -146,44 +147,33 @@ public class PipeRootImpl implements PipeRoot
 
     @Override
     @NotNull
-    public File ensureSystemDirectory()
+    public FileLike ensureSystemDirectory()
     {
-        Path path = ensureSystemDirectoryPath();
-        if (FileUtil.hasCloudScheme(path))
-            throw new RuntimeException("System Dir is not on file system.");
-        return path.toFile();
-    }
-
-    @Override
-    @NotNull
-    public Path ensureSystemDirectoryPath()
-    {
-        Path root = getRootNioPath();
-        Path systemDir = root.resolve(SYSTEM_DIRECTORY_NAME);
-        if (!Files.exists(systemDir))
+        FileLike root = getRootFileLike();
+        FileLike systemDir = root.resolveChild(SYSTEM_DIRECTORY_NAME);
+        if (!systemDir.exists())
         {
             try
             {
                 FileUtil.createDirectories(systemDir);
-
-                Path systemDirLegacy = root.resolve(SYSTEM_DIRECTORY_LEGACY);
-                if (Files.exists(systemDirLegacy))
+                FileLike systemDirLegacy = root.resolveChild(SYSTEM_DIRECTORY_LEGACY);
+                if (systemDirLegacy.exists() && !isCloudRoot())
                 {
                     // Legacy means it must be on file system
-                    File legacyDir = systemDirLegacy.toFile();
-                    for (File f : legacyDir.listFiles())
-                        f.renameTo(systemDir.toFile());
+                    File sysDir = systemDirLegacy.toNioPathForRead().toFile();
+                    File legacyDir = systemDirLegacy.toNioPathForWrite().toFile();
+                    for (File f : Objects.requireNonNullElse(legacyDir.listFiles(),new File[0]))
+                        f.renameTo(sysDir);
                 }
 
                 for (PipelineProvider provider : PipelineService.get().getPipelineProviders())
-                    provider.initSystemDirectory(root, systemDir);
+                    provider.initSystemDirectory(root.toNioPathForWrite(), systemDir.toNioPathForWrite());
             }
             catch (IOException e)
             {
                 throw new RuntimeException(e);
             }
         }
-
         return systemDir;
     }
 
@@ -227,7 +217,11 @@ public class PipeRootImpl implements PipeRoot
     @Override
     public @NotNull FileLike getRootFileLike()
     {
-        return new FileSystemLike.Builder(getRootPath()).readwrite().root();
+        var ret = resolvePathToFileLike("");
+        // this should not return null unless there a configuration problem.
+        if (null == ret)
+            throw new IllegalStateException("Could not resolve pipeline path.");
+        return ret;
     }
 
     @Override
@@ -384,6 +378,15 @@ public class PipeRootImpl implements PipeRoot
     {
         var parsedPath = org.labkey.api.util.Path.parse(relativePath);
 
+        if (ROOT_BASE.cloud.equals(_defaultRoot))
+        {
+            // Return the path to the default location
+            var combinedPath = StringUtils.isNotBlank(_uris.get(0).getPath()) ?
+                    org.labkey.api.util.Path.parse(_uris.get(0).getPath()).append(parsedPath) :
+                    parsedPath;
+            return CloudStoreService.get().getFileLike(getContainer(), _cloudStoreName, combinedPath);
+        }
+
         var pair = _resolveRoot(parsedPath);
         if (null == pair)
             return null;
@@ -479,28 +482,22 @@ public class PipeRootImpl implements PipeRoot
         return null;
     }
 
-    /**
-     * Get a local directory that can be used for importing (Read/Write)
-     *
-     * Cloud: Uses temp directory
-     * Default: Uses file root
-     */
     @Override
     @NotNull
-    public File getImportDirectory()
+    public FileLike getImportDirectory()
     {
         // If pipeline root is in File system, return that; otherwise return temp directory
-        File root = isCloudRoot() ?
-            FileUtil.getTempDirectory() :
-            getRootPath();
-        return FileUtil.appendName(root, PipelineService.UNZIP_DIR);
+        FileLike root = isCloudRoot() ?
+            FileUtil.getTempDirectoryFileLike() :
+            getRootFileLike();
+        return root.resolveChild(PipelineService.UNZIP_DIR);
     }
 
     @Override
-    public Path deleteImportDirectory(@Nullable Logger logger) throws DirectoryNotDeletedException
+    public FileLike deleteImportDirectory(@Nullable Logger logger) throws DirectoryNotDeletedException
     {
-        Path importDir = getImportDirectory().toPath();
-        if (Files.exists(importDir) && !FileUtil.deleteDir(importDir, logger))
+        FileLike importDir = getImportDirectory();
+        if (importDir.exists() && !FileUtil.deleteDir(importDir, logger))
         {
             throw new DirectoryNotDeletedException("Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
         }
@@ -534,6 +531,7 @@ public class PipeRootImpl implements PipeRoot
         if (!strPath.toLowerCase().startsWith(strRoot.toLowerCase()))
             return null;
         String ret = strPath.substring(strRoot.length());
+        ret = ret.replace('\\', '/');
         if (ret.startsWith(File.separator) || ret.startsWith("/"))
         {
             return ret.substring(1);

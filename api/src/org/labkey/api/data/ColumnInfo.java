@@ -31,7 +31,6 @@ import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.util.StringExpression;
 import org.labkey.data.xml.ColumnType;
 
-import java.beans.Introspector;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -55,6 +54,10 @@ public interface ColumnInfo extends ColumnRenderProperties
             else if (colInfo.getPropertyType() == PropertyType.ATTACHMENT)
             {
                 return new AttachmentDisplayColumn(colInfo);
+            }
+            if (JdbcType.ARRAY == colInfo.getJdbcType() && PropertyType.MULTI_CHOICE == colInfo.getPropertyType())
+            {
+                return new MultiChoice.DisplayColumn(colInfo);
             }
 
             DataColumn dataColumn = new DataColumn(colInfo);

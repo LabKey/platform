@@ -57,7 +57,6 @@ import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
@@ -71,7 +70,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.assay.actions.SetDefaultValuesAssayAction;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
@@ -86,13 +85,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDomainService
+public class AssayDomainServiceImpl implements AssayDomainService, ContainerUser
 {
     public static final Logger LOG = LogManager.getLogger(AssayDomainServiceImpl.class);
+    private final User _user;
+    private final Container _container;
 
-    public AssayDomainServiceImpl(ViewContext context)
+    public AssayDomainServiceImpl(User user, Container container)
     {
-        super(context);
+        _user = user;
+        _container = container;
+    }
+
+    @Override
+    public User getUser()
+    {
+        return _user;
+    }
+
+    @Override
+    public Container getContainer()
+    {
+        return _container;
     }
 
     @Override

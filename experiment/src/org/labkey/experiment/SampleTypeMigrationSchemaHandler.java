@@ -1,11 +1,9 @@
 package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.DatabaseMigrationService.DataFilter;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.SimpleFilter.OrClause;
@@ -13,18 +11,18 @@ import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Stream;
 
 class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 {
@@ -36,13 +34,7 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     @Override
-    public @Nullable FieldKey getContainerFieldKey(TableInfo table)
-    {
-        return DUMMY_FIELD_KEY; // Unused dummy value -- see override below
-    }
-
-    @Override
-    public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<GUID> containers)
+    public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
     {
         String joinColumnName = getJoinColumnName(sourceTable);
 
@@ -57,7 +49,7 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     @Override
-    public void addDomainDataFilter(OrClause orClause, DataFilter filter, TableInfo sourceTable, FieldKey fKey, Set<String> selectColumnNames)
+    public void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames)
     {
         // Sample-type-specific optimization - joining to exp.Material instead of exp.Object is much faster
         if (filter.column().equalsIgnoreCase("Flag"))
@@ -80,7 +72,7 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
         }
         else
         {
-            addDataFilter(orClause, filter, sourceTable, fKey, selectColumnNames);
+            addDataFilterClause(orClause, filter, sourceTable, selectColumnNames);
         }
     }
 
@@ -94,47 +86,84 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
     {
         SqlDialect dialect = sourceTable.getSqlDialect();
-        final Selector selector;
 
-        if (getJoinColumnName(sourceTable).equals("LSID"))
+        // Select all MaterialIds and ObjectIds associated with the not-copied rows from the source database. Our
+        // notCopiedFilter works on the sample type provisioned table, so we need to use a sub-select (as opposed
+        // to a join) to avoid ambiguous column references.
+        String joinColumnName = getJoinColumnName(sourceTable);
+
+        SQLFragment rowIdAndObjectIdSql = new SQLFragment("SELECT RowId, ObjectId FROM exp.Material WHERE ")
+            .appendIdentifier(joinColumnName)
+            .append(" IN (SELECT ")
+            .appendIdentifier(joinColumnName)
+            .append(" FROM ")
+            .appendIdentifier(sourceTable.getSelectName())
+            .append(" ")
+            .append(notCopiedFilter.getSQLFragment(dialect))
+            .append(")");
+
+        Collection<Integer> notCopiedMaterialIds = new ArrayList<>();
+        Collection<Long> notCopiedObjectIds = new ArrayList<>();
+
+        try (Stream<ResultSet> stream = new SqlSelector(sourceTable.getSchema(), rowIdAndObjectIdSql).uncachedResultSetStream())
         {
-            Collection<String> lsids = new TableSelector(sourceTable, Collections.singleton("LSID"), notCopiedFilter, null).getCollection(String.class);
-            selector = new SqlSelector(getSchema(), new SQLFragment("SELECT RowId FROM exp.Material m WHERE lsid").appendInClause(lsids, dialect));
+            stream.forEach(rs -> {
+                try
+                {
+                    notCopiedMaterialIds.add(rs.getInt(1));
+                    notCopiedObjectIds.add(rs.getLong(2));
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+
+        if (notCopiedMaterialIds.isEmpty())
+        {
+            LOG.info(rowsNotCopied(0));
         }
         else
         {
-            selector = new TableSelector(sourceTable, Collections.singleton("RowId"), notCopiedFilter, null);
-        }
-
-        Collection<Integer> notCopiedRows = selector.getCollection(Integer.class);
-
-        if (!notCopiedRows.isEmpty())
-        {
-            LOG.info("   {} rows not copied -- deleting associated rows from exp.Material, exp.Object, etc.", Formats.commaf0.format(notCopiedRows.size()));
+            LOG.info("{} -- deleting associated rows from exp.Material, exp.Object, etc.", rowsNotCopied(notCopiedMaterialIds.size()));
 
             SqlExecutor executor = new SqlExecutor(OntologyManager.getExpSchema());
 
-            // An IN clause of exp.Material.RowIds are also the associated ObjectIds
-            SQLFragment objectIdClause = new SQLFragment()
-                .appendInClause(notCopiedRows, dialect);
+            // Create an IN clause of exp.Material.RowIds
+            SQLFragment materialIdClause = new SQLFragment()
+                .appendInClause(notCopiedMaterialIds, dialect);
 
             // Delete from exp.Material (and associated tables)
             LOG.info("   exp.MaterialInput");
             executor.execute(
                 new SQLFragment("DELETE FROM exp.MaterialInput WHERE MaterialId")
-                    .append(objectIdClause)
+                    .append(materialIdClause)
             );
             LOG.info("   exp.MaterialAliasMap");
             executor.execute(
                 new SQLFragment("DELETE FROM exp.MaterialAliasMap WHERE LSID IN (SELECT LSID FROM exp.Material WHERE RowId")
-                    .append(objectIdClause)
+                    .append(materialIdClause)
                     .append(")")
+            );
+            LOG.info("   assay.Well");
+            executor.execute(
+                new SQLFragment("UPDATE assay.Well SET SampleId = null WHERE SampleId")
+                    .append(materialIdClause)
+            );
+            LOG.info("   inventory.Item");
+            executor.execute(
+                new SQLFragment("DELETE FROM inventory.Item WHERE MaterialId")
+                    .append(materialIdClause)
             );
             LOG.info("   exp.Material");
             executor.execute(
                 new SQLFragment("DELETE FROM exp.Material WHERE RowId")
-                    .append(objectIdClause)
+                    .append(materialIdClause)
             );
+
+            SQLFragment objectIdClause = new SQLFragment()
+                .appendInClause(notCopiedObjectIds, dialect);
 
             ExperimentMigrationSchemaHandler.deleteObjectIds(objectIdClause);
         }
