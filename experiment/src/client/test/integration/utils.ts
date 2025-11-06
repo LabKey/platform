@@ -519,7 +519,7 @@ export async function checkDomainName(server: IntegrationTestServer, domainType:
         'with\0nullCharacter': `Invalid ${domainType} name 'REPLACE'. ${domainType} name must contain only valid unicode characters.`,
         'with\tnewLines': `Invalid ${domainType} name 'REPLACE'. ${domainType} name may not contain 'tab', 'new line', or 'return' characters.`,
         '.startWithDot': `Invalid ${domainType} name 'REPLACE'. ${domainType} name must start with a letter or a number.`,
-        ['c' + selectRandomN(ILLEGAL_DOMAIN_CHARSET.split(''), 2).join('')]: `Invalid DataClass name 'REPLACE'. ${domainType} name may not contain any of these characters: ` + ILLEGAL_DOMAIN_CHARSET,
+        ['c' + selectRandomN(ILLEGAL_DOMAIN_CHARSET.split(''), 2).join('')]: `Invalid ${domainType} name 'REPLACE'. ${domainType} name may not contain any of these characters: ` + ILLEGAL_DOMAIN_CHARSET,
         'a -b': `Invalid ${domainType} name 'REPLACE'. ${domainType} name may not contain space followed by dash.`
     };
     if (supportNameExpression) {
