@@ -211,4 +211,10 @@ public class MultiValuedLookupColumn extends LookupColumn
         // Can't sort because we need to make sure that all the multi-value columns come back in the same order
         return getSqlDialect().getGroupConcat(sql, false, false, new SQLFragment().appendStringLiteral(MultiValuedRenderContext.VALUE_DELIMITER, getSqlDialect()), true);
     }
+
+    @Override
+    public boolean isMultiValued()
+    {
+        return true;
+    }
 }

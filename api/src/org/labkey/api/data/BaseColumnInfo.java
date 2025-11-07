@@ -97,6 +97,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     private String _jdbcDefaultValue = null;  // TODO: Merge with defaultValue, see #17646
     private boolean _isAutoIncrement = false;
     private boolean _hasDbSequence = false;
+    private boolean _isMultiValued = false;
     private boolean _isRootDbSequence = false;
     private boolean _isKeyField = false;
     private boolean _isReadOnly = false;
@@ -324,6 +325,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
         // and the remaining
         setUserEditable(col.isUserEditable());
+        setIsMultiValued(col.isMultiValued());
         setNullable(col.isNullable());
         setRequired(col.isRequiredSet());
         setAutoIncrement(col.isAutoIncrement());
@@ -445,6 +447,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
         setDerivationDataScope(col.getDerivationDataScope());
         setScannable(col.isScannable());
+        setIsMultiValued(col.isMultiValued());
     }
 
     /*
@@ -986,6 +989,17 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public void setIsRootDbSequence(boolean isRootDbSequence)
     {
         _isRootDbSequence = isRootDbSequence;
+    }
+
+    public boolean isMultiValued()
+    {
+        return _isMultiValued;
+    }
+
+    public void setIsMultiValued(boolean isMultiValued)
+    {
+        checkLocked();
+        _isMultiValued = isMultiValued;
     }
 
     @Override

@@ -482,15 +482,15 @@ private void verifyAliasesViaSelectRows(String schemaName, String queryName, lon
         //        "value": "JUNIT-5-50", "url": "..."
         //    },
         //    "Alias": [{
-        //        "displayValue": "a", "value": 4
+        //        "value": "a"
         //    },{
-        //        "displayValue": "c", "value": 6
+        //        "value": "b"
         //    },{
-        //        "displayValue": "b", "value": 989
+        //        "value": "c"
         //    }]
         //}
         List<Map<String, Object>> row0aliases = (List<Map<String, Object>>)row0data.get(ExpDataTable.Column.Alias.name());
-        Set<String> aliases = row0aliases.stream().map(m -> (String)m.get("displayValue")).collect(Collectors.toSet());
+        Set<String> aliases = row0aliases.stream().map(m -> (String)m.get("value")).collect(Collectors.toSet());
         assertEquals(aliases, expectedAliases);
     }
 }
@@ -1107,7 +1107,7 @@ public void testInsertOptionUpdate() throws Exception
 
     ts = new TableSelector(table, columnNames, null, new Sort("Name"));
     ts.setForDisplay(true);
-    String aliasAlias = "alias$alias$name";
+    String aliasAlias = "alias";
     String flagAlias = "flag$";
 
     List<Map<String,Object>> rows = Arrays.asList(ts.getMapArray());
