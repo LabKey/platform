@@ -450,7 +450,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         {
             checkAlive(_job);
             List<Map<String, Object>> parents = getRandomSamples(sampleType, Math.min(10, Math.max(quantity, quantity / 100)));
-            numGenerated = generateAliquotsForParents(parents, svc, quantity - totalAliquots, 0, 1, randomInt(1, _config.getMaxGenerations()), sampleStatuses);
+            numGenerated = generateAliquotsForParents(sampleType, parents, svc, quantity - totalAliquots, 0, 1, randomInt(1, _config.getMaxGenerations()), sampleStatuses);
             totalAliquots += numGenerated;
             _log.info("... " + totalAliquots);
             iterations++;
@@ -463,7 +463,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         return totalAliquots;
     }
 
-    private int generateAliquotsForParents(List<Map<String, Object>> parents, QueryUpdateService svc, int quantity, int numGenerated, int generation, int maxGenerations, List<Long> sampleStatuses) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
+    private int generateAliquotsForParents(ExpSampleType sampleType, List<Map<String, Object>> parents, QueryUpdateService svc, int quantity, int numGenerated, int generation, int maxGenerations, List<Long> sampleStatuses) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
     {
         int generatedCount = 0;
         List<Map<String, Object>> aliquots = new ArrayList<>();
@@ -492,6 +492,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
                 if (randomInt(0, 10) == 5) // set amount for 10%
                 {
                     row.put("StoredAmount", p + (i % 15) * (1.2));
+                    row.put("Units", getUnitsValue(sampleType));
                 }
                 rows.add(row);
             }
@@ -511,7 +512,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         {
             List<Map<String, Object>> nextParents = aliquots.isEmpty() ? parents : aliquots;
             if (!nextParents.isEmpty())
-                generatedCount += generateAliquotsForParents(nextParents.subList(randomInt(0, nextParents.size() / 2), randomInt(nextParents.size() / 2, nextParents.size())), svc, quantity - generatedCount, numGenerated + generatedCount, generation + 1, maxGenerations, sampleStatuses);
+                generatedCount += generateAliquotsForParents(sampleType, nextParents.subList(randomInt(0, nextParents.size() / 2), randomInt(nextParents.size() / 2, nextParents.size())), svc, quantity - generatedCount, numGenerated + generatedCount, generation + 1, maxGenerations, sampleStatuses);
         }
         return generatedCount;
     }
@@ -836,12 +837,10 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
 
     private static String getUnitsValue(ExpSampleType sampleType)
     {
+        Unit sampleTypeUnit = Unit.fromName(sampleType.getMetricUnit());
         String units;
-        if (!StringUtils.isEmpty(sampleType.getMetricUnit()))
-        {
-            Unit unit = Unit.fromName(sampleType.getMetricUnit());
-            units = randomIndex(unit.getKindOfQuantity().getCommonUnits()).name();
-        }
+        if (sampleTypeUnit != null)
+            units = randomIndex(sampleTypeUnit.getKindOfQuantity().getCommonUnits()).name();
         else
             units = randomIndex(UNITS);
 
@@ -854,10 +853,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         if (randomInt(0, 4) < 3) // set amount for 75% - TODO parameterize
         {
             row.put("StoredAmount", randomDouble(0, 100));
-            // add a unit for some percentage
-            String units = getUnitsValue(sampleType);
-            if (units != null)
-                row.put("Units", units);
+            row.put("Units", getUnitsValue(sampleType));
         }
         return row;
     }
@@ -897,11 +893,29 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
     protected List<Map<String, Object>> createSampleRows(int numRows, ExpSampleType sampleType)
     {
         List<Map<String, Object>> rows = new ArrayList<>();
+        int samplesWithAliases = Math.round(numRows * _config.getPctAlias());
         for (int i = 1; i <= numRows; i++)
         {
-            rows.add(createSampleRow(sampleType, i));
+            Map<String, Object> row = createSampleRow(sampleType, i);
+            if (i < samplesWithAliases)
+            {
+                row.put("Alias", randomAlias("alias_"));
+            }
+            rows.add(row);
         }
         return rows;
+    }
+
+    private String randomAlias(String prefix)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 1; i <= randomInt(1, _config._maxAliases); i++)
+        {
+            if (!sb.isEmpty())
+                sb.append(", ");
+            sb.append(prefix).append(i);
+        }
+        return sb.toString();
     }
 
     public static String randomDate()
@@ -962,6 +976,8 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         public static final String MIN_DATA_CLASS_PARENT_TYPES_PER_SAMPLE = "minDataClassParentTypesPerSample";
         public static final String MAX_DATA_CLASS_PARENT_TYPES_PER_SAMPLE = "maxDataClassParentTypesPerSample";
         public static final String AUDIT_BEHAVIOR_TYPE = "auditBehaviorType";
+        public static final String PCT_ALIAS = "percentWithAliases";
+        public static final String MAX_ALIAS = "maxAliases";
 
         int _numFolders;
         int _numSampleTypes;
@@ -977,6 +993,8 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         int _maxChildrenPerParent;
         int _minFields;
         int _maxFields;
+        float _pctAlias;
+        int _maxAliases;
         List<String> _sampleTypeNames;
         List<String> _dataClassParents;
         List<String> _sampleTypeParents;
@@ -1009,6 +1027,9 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
             _maxGenerations = Integer.parseInt(properties.getProperty(MAX_GENERATIONS, "1"));
             _maxAliquotsPerParent = Integer.parseInt(properties.getProperty(MAX_ALIQUOTS_PER_SAMPLE, "0"));
             _maxChildrenPerParent = Integer.parseInt(properties.getProperty(MAX_CHILDREN_PER_PARENT, "1"));
+
+            _pctAlias = Float.parseFloat(properties.getProperty(PCT_ALIAS, "0.0"));
+            _maxAliases = Integer.parseInt(properties.getProperty(MAX_ALIAS, "1"));
 
             _minFields = Integer.parseInt(properties.getProperty(MIN_NUM_FIELDS, "1"));
             _maxFields = Math.max(Integer.parseInt(properties.getProperty(MAX_NUM_FIELDS, "1")), _minFields);
@@ -1234,6 +1255,26 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         public void setAuditBehaviorType(AuditBehaviorType auditBehaviorType)
         {
             _auditBehaviorType = auditBehaviorType;
+        }
+
+        public float getPctAlias()
+        {
+            return _pctAlias;
+        }
+
+        public void setPctAlias(float pctAlias)
+        {
+            _pctAlias = pctAlias;
+        }
+
+        public int getMaxAliases()
+        {
+            return _maxAliases;
+        }
+
+        public void setMaxAliases(int maxAliases)
+        {
+            _maxAliases = maxAliases;
         }
     }
 

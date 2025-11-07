@@ -731,6 +731,39 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return null;
     }
 
+    protected Object coerceTypesValue(ColumnInfo col, Map<String, Object> providedValues, String key, Object value)
+    {
+        if (col != null && value != null &&
+            !col.getJavaObjectClass().isInstance(value) &&
+            !(value instanceof AttachmentFile) &&
+            !(value instanceof MultipartFile) &&
+            !(value instanceof String[]) &&
+            !(col.isMultiValued() || col.getFk() instanceof MultiValuedForeignKey))
+        {
+            try
+            {
+                if (PropertyType.FILE_LINK.equals(col.getPropertyType()))
+                    value = ExpDataFileConverter.convert(value);
+                else if (col.getKindOfQuantity() != null)
+                {
+                    providedValues.put(key, value);
+                    value = Quantity.convert(value, col.getKindOfQuantity().getStorageUnit());
+                }
+                else
+                    value = col.getConvertFn().apply(value);
+            }
+            catch (ConvertHelper.FileConversionException e)
+            {
+                throw e;
+            }
+            catch (ConversionException e)
+            {
+                // That's OK, the transformation script may be able to fix up the value before it gets inserted
+            }
+        }
+
+        return value;
+    }
 
     /** Attempt to make the passed in types match the expected types so the script doesn't have to do the conversion */
     @Deprecated
@@ -741,41 +774,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         for (Map.Entry<String, Object> entry : row.entrySet())
         {
             ColumnInfo col = columnMap.get(entry.getKey());
-
-            Object value = entry.getValue();
-            if (col != null && value != null &&
-                    !col.getJavaObjectClass().isInstance(value) &&
-                    !(value instanceof AttachmentFile) &&
-                    !(value instanceof MultipartFile) &&
-                    !(value instanceof String[]) &&
-                    !(col.getFk() instanceof MultiValuedForeignKey))
-            {
-                try
-                {
-                    if (PropertyType.FILE_LINK.equals(col.getPropertyType()))
-                        value = ExpDataFileConverter.convert(value);
-                    else if (col.getKindOfQuantity() != null)
-                    {
-                        providedValues.put(entry.getKey(), value);
-                        value = Quantity.convert(value, col.getKindOfQuantity().getStorageUnit());
-                    }
-                    else
-                        value = col.getConvertFn().apply(value);
-                }
-                catch (ConvertHelper.FileConversionException e)
-                {
-                    throw e;
-                }
-                catch (ConversionException e)
-                {
-                    // That's OK, the transformation script may be able to fix up the value before it gets inserted
-                }
-            }
+            Object value = coerceTypesValue(col, providedValues, entry.getKey(), entry.getValue());
             result.put(entry.getKey(), value);
         }
+        
         return result;
     }
-
 
     protected abstract Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;

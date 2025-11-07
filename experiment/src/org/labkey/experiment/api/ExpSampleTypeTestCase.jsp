@@ -25,7 +25,6 @@
 <%@ page import="org.labkey.api.data.CompareType" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page import="org.labkey.api.data.JdbcType" %>
 <%@ page import="org.labkey.api.data.SQLFragment" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
@@ -70,9 +69,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.TestContext" %>
 <%@ page import="org.labkey.experiment.api.ExpProvisionedTableTestHelper" %>
-<%@ page import="org.labkey.experiment.api.ExpSampleTypeImpl" %>
 <%@ page import="org.labkey.experiment.api.ExperimentServiceImpl" %>
-<%@ page import="org.labkey.experiment.api.SampleTypeServiceImpl" %>
 <%@ page import="java.io.StringBufferInputStream" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
@@ -91,6 +88,13 @@
 <%@ page import="org.labkey.api.dataiterator.MapDataIterator" %>
 <%@ page import="static org.labkey.api.exp.api.ExperimentService.asInteger" %>
 <%@ page import="static org.labkey.api.exp.api.ExperimentService.asLong" %>
+<%@ page import="static java.util.Collections.emptyList" %>
+<%@ page import="org.jetbrains.annotations.Nullable" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.query.QueryParam" %>
+<%@ page import="org.labkey.api.view.ViewServlet" %>
+<%@ page import="org.labkey.api.util.JsonUtil" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
@@ -128,16 +132,12 @@ private void assertExpectedName(ExpSampleType st, String expectedName)
 @Test
 public void nameNotNull() throws Exception
 {
-    final User user = TestContext.get().getUser();
-
     try
     {
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
 
-        final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
-                null, null, props, Collections.emptyList(),
-                -1, -1, -1, -1, null, null);
+        createSampleType(null, props, null);
     }
     catch (ApiUsageException ee)
     {
@@ -148,16 +148,12 @@ public void nameNotNull() throws Exception
 @Test // Issue 51321
 public void reservedNameFirst() throws Exception
 {
-    final User user = TestContext.get().getUser();
-
     try
     {
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
 
-        final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
-                "First", null, props, Collections.emptyList(),
-                -1, -1, -1, -1, null, null);
+        createSampleType("First", props, null);
     }
     catch (ApiUsageException ee)
     {
@@ -168,16 +164,12 @@ public void reservedNameFirst() throws Exception
 @Test // Issue 51321
 public void reservedNameAll() throws Exception
 {
-    final User user = TestContext.get().getUser();
-
     try
     {
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
 
-        final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
-                "All", null, props, Collections.emptyList(),
-                -1, -1, -1, -1, null, null);
+        createSampleType("All", props, null);
     }
     catch (ApiUsageException ee)
     {
@@ -189,18 +181,12 @@ public void reservedNameAll() throws Exception
 @Test
 public void nameScale() throws Exception
 {
-    final User user = TestContext.get().getUser();
-
     try
     {
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
 
-        String name = StringUtils.repeat("a", 1000);
-
-        final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
-                name, null, props, Collections.emptyList(),
-                -1, -1, -1, -1, null, null);
+        createSampleType(StringUtils.repeat("a", 1000), props, null);
     }
     catch (ApiUsageException ee)
     {
@@ -212,8 +198,6 @@ public void nameScale() throws Exception
 @Test
 public void nameExpressionScale() throws Exception
 {
-    final User user = TestContext.get().getUser();
-
     try
     {
         List<GWTPropertyDescriptor> props = new ArrayList<>();
@@ -221,11 +205,7 @@ public void nameExpressionScale() throws Exception
         props.add(new GWTPropertyDescriptor("prop", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
 
-        String nameExpression = StringUtils.repeat("a", 1000);
-
-        final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
-                "Samples", null, props, Collections.emptyList(),
-                -1, -1, -1, -1, nameExpression, null);
+        createSampleType("Samples", props, StringUtils.repeat("a", 1000));
     }
     catch (ApiUsageException ee)
     {
@@ -237,17 +217,13 @@ public void nameExpressionScale() throws Exception
 @Test
 public void idColsUnset_nameExpressionNull_noNameProperty() throws Exception
 {
-    final User user = TestContext.get().getUser();
-
     try
     {
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("notName", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
 
-        final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
-                "Samples", null, props, Collections.emptyList(),
-                -1, -1, -1, -1, null, null);
+        createSampleType("Samples", props, null);
         fail("Expected exception");
     }
     catch (ApiUsageException ee)
@@ -260,15 +236,11 @@ public void idColsUnset_nameExpressionNull_noNameProperty() throws Exception
 @Test
 public void idColsUnset_nameExpressionNull_hasNameProperty() throws Exception
 {
-    final User user = TestContext.get().getUser();
-
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("name", "string"));
     props.add(new GWTPropertyDescriptor("age", "int"));
 
-    final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
-            "Samples", null, props, Collections.emptyList(),
-            -1, -1, -1, -1, null, null);
+    final ExpSampleType st = createSampleType("Samples", props, null);
 
     ExpMaterial sample = st.getSample(c, "bob");
     assertNull(sample);
@@ -285,18 +257,12 @@ public void idColsUnset_nameExpressionNull_hasNameProperty() throws Exception
 @Test
 public void idColsUnset_nameExpression_hasNameProperty() throws Exception
 {
-    final User user = TestContext.get().getUser();
-
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("name", "string"));
     props.add(new GWTPropertyDescriptor("prop", "string"));
     props.add(new GWTPropertyDescriptor("age", "int"));
 
-    final String nameExpression = "S-${prop}.${age}";
-
-    final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
-            "Samples", null, props, Collections.emptyList(),
-            -1, -1, -1, -1, nameExpression, null);
+    createSampleType("Samples", props, "S-${prop}.${age}");
 }
 
 // idCols not null, nameExpression null, no 'name' property -- ok
@@ -364,9 +330,7 @@ public void idColsSet_nameExpressionNull_hasNameProperty() throws Exception
     props.add(new GWTPropertyDescriptor("prop", "string"));
     props.add(new GWTPropertyDescriptor("age", "int"));
 
-    final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
-            "Samples", null, props, Collections.emptyList(),
-            0, -1, -1, -1, null, null);
+    final ExpSampleType st = createSampleType("Samples", props, null);
 
     final String expectedName1 = "bob";
     ExpMaterial sample1 = st.getSample(c, expectedName1);
@@ -428,11 +392,7 @@ public void testNameExpression() throws Exception
     props.add(new GWTPropertyDescriptor("age", "int"));
 
     final String sampleTypeName = "Samples";
-    final String nameExpression = "S-${prop}.${age}.${genId:number('000')}";
-
-    final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
-            sampleTypeName, null, props, Collections.emptyList(),
-            -1, -1, -1, -1, nameExpression, null);
+    final ExpSampleType st = createSampleType(sampleTypeName, props, "S-${prop}.${age}.${genId:number('000')}");
 
     final String expectedName1 = "bob";
     final String expectedName2 = "S-red.11.002";
@@ -547,16 +507,12 @@ public void testNameExpression() throws Exception
 @Test
 public void testAliases() throws Exception
 {
-    final User user = TestContext.get().getUser();
-
     // setup
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("name", "string"));
     props.add(new GWTPropertyDescriptor("age", "int"));
 
-    final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
-            "Samples", null, props, Collections.emptyList(),
-            -1, -1, -1, -1, null, null);
+    final ExpSampleType st = createSampleType("Samples", props, null);
 
     List<Map<String, Object>> rows = new ArrayList<>();
     Map<String, Object> row = new CaseInsensitiveHashMap<>();
@@ -584,11 +540,7 @@ public void testBlankRows() throws Exception
     props.add(new GWTPropertyDescriptor("name", "string"));
     props.add(new GWTPropertyDescriptor("age", "int"));
 
-    final String nameExpression = "S-${now:date}-${dailySampleCount}";
-
-    final ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
-            "Samples", null, props, Collections.emptyList(),
-            -1, -1, -1, -1, nameExpression, null);
+    final ExpSampleType st = createSampleType("Samples", props, "S-${now:date}-${dailySampleCount}");
 
     List<? extends ExpMaterial> allSamples = st.getSamples(c);
     assertTrue("Expected no samples", allSamples.isEmpty());
@@ -685,18 +637,9 @@ public void testUpdateSomeParents() throws Exception
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("name", "string"));
     props.add(new GWTPropertyDescriptor("age", "int"));
-    final ExpSampleTypeImpl childType = SampleTypeServiceImpl.get().createSampleType(c, user,
-            "ChildSamples", null, props, Collections.emptyList(),
-            -1, -1, -1, -1, null, null);
-
-    final ExpSampleTypeImpl parent1Type = SampleTypeServiceImpl.get().createSampleType(c, user,
-            "Parent1Samples", null, props, Collections.emptyList(),
-            -1, -1, -1, -1, null, null);
-
-    final ExpSampleTypeImpl parent2Type = SampleTypeServiceImpl.get().createSampleType(c, user,
-            "Parent2Samples", null, props, Collections.emptyList(),
-            -1, -1, -1, -1, null, null);
-
+    final ExpSampleType childType = createSampleType("ChildSamples", props, null);
+    final ExpSampleType parent1Type = createSampleType("Parent1Samples", props, null);
+    final ExpSampleType parent2Type = createSampleType("Parent2Samples", props, null);
 
     UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
     List<Map<String, Object>> rows = new ArrayList<>();
@@ -827,13 +770,12 @@ public void testParentColAndDataInputDerivation() throws Exception
     props.add(new GWTPropertyDescriptor("data", "int"));
     props.add(new GWTPropertyDescriptor("parent", "string"));
 
-    final ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
-            "Samples", null, props, Collections.emptyList(),
-            0, -1, -1, 2, null, null);
+    String sampleTypeName = "Samples";
+    final ExpSampleType st = createSampleType(sampleTypeName, props, null);
 
     // insert and derive with both 'parent' column and 'DataInputs/Samples'
-    UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-    TableInfo table = schema.getTable("Samples");
+    UserSchema schema = QueryService.get().getUserSchema(user, c, SamplesSchema.SCHEMA_SAMPLES);
+    TableInfo table = schema.getTable(sampleTypeName);
     QueryUpdateService svc = table.getUpdateService();
 
     List<Map<String, Object>> rows = new ArrayList<>();
@@ -955,6 +897,48 @@ public void testParentColAndDataInputDerivation() throws Exception
     assertFalse(oldDerivationRun.getMaterialInputs().containsKey(E));
     assertFalse(oldDerivationRun.getMaterialOutputs().contains(D));
     assertTrue(oldDerivationRun.getMaterialOutputs().contains(E));
+
+    // Issue 43241: Display of dates from Input/Output columns for sample types does not use the project date format
+    {
+        var folderProps = LookAndFeelProperties.getWriteableInstance(c);
+        folderProps.setDefaultDateTimeFormat("'kevink' dd-MM-yyyy");
+        folderProps.save();
+
+        var multiValueColumn = "Outputs/Materials/" + sampleTypeName + "/Created";
+        var url = new ActionURL("query", "selectRows", c);
+        url.addParameter(QueryParam.schemaName, schema.getName());
+        url.addParameter("query." + QueryParam.queryName, sampleTypeName);
+        url.addParameter("query." + QueryParam.columns, "Name, " + multiValueColumn);
+        url.addFilter("query", FieldKey.fromParts("Name"), CompareType.EQUAL, "A");
+        url.addParameter("includeMetadata", false);
+        url.addParameter("apiVersion", "17.1");
+
+        var response = ViewServlet.GET(url, user, null);
+        assertEquals(200, response.getStatus());
+
+        var json = JsonUtil.DEFAULT_MAPPER.readTree(response.getContentAsString());
+        var resultRows = json.get("rows");
+        assertEquals(1, resultRows.size());
+
+        var createdValues = resultRows.get(0).get("data").get(multiValueColumn);
+        assertEquals(4, createdValues.size());
+
+        for (var data : createdValues)
+        {
+            var value = data.get("value").asText();
+            assertNotNull(value);
+
+            // Formatted with container date format
+            var formattedValue = data.get("formattedValue").asText();
+            assertTrue("Expected date format not applied", formattedValue.startsWith("kevink "));
+
+            // Do not care what the JSON format looks like, as long as it is different
+            assertNotEquals(value, formattedValue);
+        }
+
+        folderProps.clearDefaultDateTimeFormat();
+        folderProps.save();
+    }
 }
 
 @Test
@@ -971,12 +955,8 @@ public void testSampleTypeWithVocabularyProperties() throws Exception
     Domain mockDomain = helper.createVocabularyTestDomain(user, c);
     Map<String, String> vocabularyPropertyURIs = helper.getVocabularyPropertyURIS(mockDomain);
 
-    //create sample type
-    ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
-            sampleName, null, List.of(new GWTPropertyDescriptor("name", "string")), Collections.emptyList(),
-            -1, -1, -1, -1, null, null);
-
-    assertNotNull(st);
+    // create a sample type
+    createSampleType(sampleName, List.of(new GWTPropertyDescriptor("name", "string")), null);
 
     UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
 
@@ -1038,9 +1018,7 @@ public void testDetailedAuditLog() throws Exception
     props.add(new GWTPropertyDescriptor("Name", "string"));
     props.add(new GWTPropertyDescriptor("Measure", "string"));
     props.add(new GWTPropertyDescriptor("Value", "float"));
-    final ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
-            "SamplesDAL", null, props, Collections.emptyList(),
-            -1, -1, -1, -1, null, null);
+    final ExpSampleType st = createSampleType("SamplesDAL", props, null);
 
     QuerySchema samplesSchema = DefaultSchema.get(user, c, "samples");
     assertNotNull(samplesSchema);
@@ -1130,10 +1108,8 @@ public void testExpMaterialPermissions() throws Exception
     User user = TestContext.get().getUser();
     var schema = QueryService.get().getUserSchema(user, c, ExpSchema.SCHEMA_EXP);
 
-    // create sample type
-    ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
-            "MySamples", null, List.of(new GWTPropertyDescriptor("name", "string")), Collections.emptyList(),
-            -1, -1, -1, -1, null, null);
+    // create a sample type
+    ExpSampleType st = createSampleType("MySamples", List.of(new GWTPropertyDescriptor("name", "string")), null);
 
     // insert a sample
     var errors = new BatchValidationException();
@@ -1214,7 +1190,7 @@ public void testInsertOptionUpdate() throws Exception
     props.add(new GWTPropertyDescriptor(longFieldName, "string"));
 
     final String sampleTypeName = "TestSamplesWithRequired";
-    ExpSampleType sampleType = SampleTypeService.get().createSampleType(c, user, sampleTypeName, null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+    ExpSampleType sampleType = createSampleType(sampleTypeName, props, null);
 
     TableInfo table = getSampleTypeTable(sampleTypeName);
     QueryUpdateService qus = table.getUpdateService();
@@ -1351,6 +1327,11 @@ public void testInsertOptionUpdate() throws Exception
     assertNull(rows.get(0).get("AliquotedFromLSID"));
     assertEquals(aliquotedFromLSID, rows.get(1).get("AliquotedFromLSID"));
     assertNull(rows.get(2).get("AliquotedFromLSID"));
+}
+
+private ExpSampleType createSampleType(String sampleTypeName, List<GWTPropertyDescriptor> props, @Nullable String nameExpression) throws Exception
+{
+    return SampleTypeService.get().createSampleType(c, TestContext.get().getUser(), sampleTypeName, null, props, emptyList(), -1, -1, -1, -1, nameExpression, null);
 }
 
 private @NotNull TableInfo getSampleTypeTable(String sampleType)

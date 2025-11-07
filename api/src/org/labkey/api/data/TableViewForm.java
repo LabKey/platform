@@ -814,16 +814,16 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         }
     }
 
-    /** Handle @ prefix and [] suffix
-     * "@field" indicates that if "field" is missing, it should be treated as "field=0"
-     * "@field[] indicates that value should be treated as an array even if only one value is present
+    /** Handle @ prefix and [] prefix
+     * "@quf_field" indicates that if "field" is missing, it should be treated as "field=0"
+     * "[]quf_field indicates that value should be treated as an array even if only one value is present
      *  <br>
-     *  client _could_ post both "myfield=" and "myfield[]=", but that's a client bug
+     *  client _could_ post both "myfield=" and "[]myfield=", but that's a client bug
      */
     public static PropertyValues preprocessPropertyValues(PropertyValues params)
     {
         // we can usually just return params
-        if (params.stream().noneMatch(e -> e.getName().endsWith(ARRAY_MARKER) || e.getName().startsWith(FIELD_MARKER)))
+        if (params.stream().noneMatch(e -> e.getName().startsWith(ARRAY_MARKER) || e.getName().startsWith(FIELD_MARKER)))
             return params;
 
         Set<String> names = params.stream().map(PropertyValue::getName).collect(Collectors.toSet());
@@ -833,11 +833,11 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             var copy = orig;
             if (orig.getName().startsWith(FIELD_MARKER))
             {
-                if (names.contains(orig.getName().substring(1)))
+                if (names.contains(orig.getName().substring(FIELD_MARKER.length())))
                     continue;
                 copy = new PropertyValue(orig.getName().substring(1), "0");
             }
-            else if (orig.getName().endsWith(ARRAY_MARKER) && orig.getValue()!=null)
+            else if (orig.getName().startsWith(ARRAY_MARKER) && orig.getValue()!=null)
             {
                 var value = orig.getValue();
                 var convertedValue = value;
@@ -850,7 +850,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
                     convertedValue = Array.newInstance(value.getClass(), 1);
                     Array.set(convertedValue, 0, value);
                 }
-                copy = new PropertyValue(orig.getName().substring(0, orig.getName().length() - 2), convertedValue);
+                copy = new PropertyValue(orig.getName().substring(ARRAY_MARKER.length()), convertedValue);
             }
             ret.addPropertyValue(copy);
         }

@@ -4739,7 +4739,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Container container,
         Collection<Long> selectedMaterialIds,
         boolean deleteRunsUsingMaterials,
-        @Nullable ExpSampleTypeImpl stDeleteFrom,
+        @Nullable ExpSampleType stDeleteFrom,
         boolean ignoreStatus,
         boolean truncateContainer
     )
@@ -4763,7 +4763,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment materialFilterSQL,
         boolean deleteRunsUsingMaterials,
         boolean deleteFromAllSampleTypes,
-        @Nullable ExpSampleTypeImpl stDeleteFrom,
+        @Nullable ExpSampleType stDeleteFrom,
         boolean ignoreStatus,
         boolean truncateContainer
     )
@@ -4777,7 +4777,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             Map<ExpSampleType, Set<Long>> sampleTypeAliquotRoots = new HashMap<>();
 
-            Map<String, ExpSampleTypeImpl> sampleTypes = new HashMap<>();
+            Map<String, ExpSampleType> sampleTypes = new HashMap<>();
             if (null != stDeleteFrom)
                 sampleTypes.put(stDeleteFrom.getLSID(), stDeleteFrom);
 
@@ -4934,13 +4934,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             try (Timing ignored = MiniProfiler.step("expsampletype materialized tables"))
             {
-                for (ExpSampleTypeImpl st : sampleTypes.values())
+                for (ExpSampleType st : sampleTypes.values())
                 {
                     // Material may have been orphaned from its SampleType
                     if (st == null)
                         continue;
 
-                    TableInfo dbTinfo = st.getTinfo();
+                    TableInfo dbTinfo = ((ExpSampleTypeImpl) st).getTinfo();
                     // NOTE: study specimens don't have a domain for their samples, so no table
                     if (null != dbTinfo)
                     {

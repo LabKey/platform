@@ -1356,7 +1356,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             c = new RemappingConvertColumn(c, fromIndex, col, missing, true, lookupResolutionType);
         }
 
-        boolean multiValue = fk instanceof MultiValuedForeignKey;
+        boolean multiValue = col.isMultiValued() || fk instanceof MultiValuedForeignKey;
         if (multiValue)
         {
             // convert input into Collection of jdbcType values
