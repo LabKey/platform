@@ -59,7 +59,6 @@ public interface DatabaseMigrationService
 
     // By default, no-op implementations
     default void registerSchemaHandler(MigrationSchemaHandler schemaHandler) {}
-    default void registerTableHandler(MigrationTableHandler tableHandler) {}
     default void registerMigrationFilter(MigrationFilter filter) {}
 
     default @Nullable MigrationFilter getMigrationFilter(String propertyName)
@@ -309,7 +308,7 @@ public interface DatabaseMigrationService
         @Override
         public void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
         {
-            // Now that the table tables in this schema have been populated, copy all associated attachments. By
+            // Now that the target tables in this schema have been populated, copy all associated attachments. By
             // default, use this handler's attachment types to select from the target tables all EntityIds that might be
             // attachment parents (this avoids re-running potentially expensive queries on the source tables). Use the
             // set of EntityIds to copy those attachments from the core.Documents table in the source database. Override
@@ -326,10 +325,9 @@ public interface DatabaseMigrationService
 
                 // TODO: Mark this attachment type as having been seen
                 // TODO: afterMigration() and update core.Documents' sequence
+                // TODO: implement a bunch more AttachmentTypes
                 // TODO: throw if some registered AttachmentType is not seen
-                // TODO: get rid of TableHandler
-                // TODO: eventually, fail if type.getSelectParentEntityIdsSql() returns null
-                // TODO: implement a bunch more AttachmentTypes, override for Notebooks?
+                // TODO: fail if type.getSelectParentEntityIdsSql() returns null
             });
         }
 
@@ -357,18 +355,6 @@ public interface DatabaseMigrationService
         public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
         {
         }
-    }
-
-    /**
-     * Rarely needed, this interface allows a module to provide a clause that filters the rows of another module's
-     * table. The specific use case: Core manages core.Documents and LabBook implements its global attachment manager
-     * on top of core.Documents. When copying data from core.Documents, we want LabBook to filter out the rows that
-     * are not referenced by notebooks in the subset of containers being copied.
-     */
-    interface MigrationTableHandler
-    {
-        TableInfo getTableInfo();
-        FilterClause getAdditionalFilterClause(Set<GUID> containers);
     }
 
     /**

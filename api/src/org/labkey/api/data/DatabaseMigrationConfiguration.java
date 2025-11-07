@@ -3,7 +3,6 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DatabaseMigrationService.MigrationSchemaHandler;
-import org.labkey.api.data.DatabaseMigrationService.MigrationTableHandler;
 
 import java.util.Set;
 import java.util.function.Predicate;
@@ -16,7 +15,7 @@ public interface DatabaseMigrationConfiguration
     DbScope getTargetScope();
     @NotNull Set<String> getSkipSchemas();
     Predicate<String> getColumnNameFilter();
-    @Nullable TableSelector getTableSelector(DbSchemaType schemaType, TableInfo sourceTable, TableInfo targetTable, Set<String> selectColumnNames, MigrationSchemaHandler schemaHandler, @Nullable MigrationTableHandler tableHandler);
+    @Nullable TableSelector getTableSelector(DbSchemaType schemaType, TableInfo sourceTable, TableInfo targetTable, Set<String> selectColumnNames, MigrationSchemaHandler schemaHandler);
 
     class DefaultDatabaseMigrationConfiguration implements DatabaseMigrationConfiguration
     {
@@ -51,7 +50,7 @@ public interface DatabaseMigrationConfiguration
         }
 
         @Override
-        public TableSelector getTableSelector(DbSchemaType schemaType, TableInfo sourceTable, TableInfo targetTable, Set<String> selectColumnNames, MigrationSchemaHandler schemaHandler, @Nullable MigrationTableHandler tableHandler)
+        public TableSelector getTableSelector(DbSchemaType schemaType, TableInfo sourceTable, TableInfo targetTable, Set<String> selectColumnNames, MigrationSchemaHandler schemaHandler)
         {
             return null;
         }

@@ -199,7 +199,7 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
         SQLFragment sql = new SQLFragment();
         LookAndFeelResourceType.get().addWhereSql(sql, "Parent", "DocumentName");
 
-        copyAttachments(configuration, sourceSchema, new SQLClause(sql), "");
+        copyAttachments(configuration, sourceSchema, new SQLClause(sql), " associated with " + LookAndFeelResourceType.get().getClass().getSimpleName());
     }
 
     @Override
