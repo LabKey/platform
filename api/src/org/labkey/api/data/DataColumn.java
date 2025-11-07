@@ -712,10 +712,7 @@ public class DataColumn extends DisplayColumn
             {
                 IPropertyValidator textChoiceValidator = PropertyService.get().getValidatorForColumn(_boundColumn, PropertyValidatorType.TextChoice);
                 if (textChoiceValidator != null)
-                {
-                    List<String> strVals = StringUtils.isEmpty(strVal) ? List.of() : List.of(strVal);
-                    renderTextChoiceFormInput(out, formFieldName, value, strVals, disabledInput, textChoiceValidator);
-                }
+                    renderTextChoiceFormInput(out, formFieldName, value, toListForRender(strVal), disabledInput, textChoiceValidator);
                 else
                     renderTextFormInput(out, formFieldName, value, strVal, disabledInput);
             }
@@ -812,8 +809,19 @@ public class DataColumn extends DisplayColumn
         }
         else
         {
-            renderSelectFormInput(out, formFieldName, value, List.of(Objects.toString(value)), disabledInput, entryList);
+            renderSelectFormInput(out, formFieldName, value, toListForRender(value), disabledInput, entryList);
         }
+    }
+
+    List<String> toListForRender(Object value)
+    {
+        if (null == value || value instanceof String)
+            return StringUtils.isEmpty((String) value) ? List.of() : List.of((String)value);
+        if (value instanceof MultiChoice.Array arr)
+            return arr;
+        if (value instanceof List<?> l)
+            return l.stream().map(o -> Objects.toString(o, null)).toList();
+        return List.of(Objects.toString(value));
     }
 
     protected void renderFileFormInput(HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput)
