@@ -17,6 +17,7 @@ package org.labkey.api.action;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -24,6 +25,8 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.PrintWriters;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -53,7 +56,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
 {
     private ModelAndView _successView = null;
 
-    public static class FileUploadForm
+    public static class FileUploadForm implements HasBindParameters
     {
         private String[] _fileName = new String[0];
         private String[] _fileContent  = new String[0];
@@ -91,6 +94,22 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
         public void setForceMultipleResults(boolean forceMultipleResults)
         {
             _forceMultipleResults = forceMultipleResults;
+        }
+
+        @Override
+        public @NotNull BindException bindParameters(PropertyValues m)
+        {
+            // We are often posting CSV data here to a String[] array parameter.  We need to avoid conversion when
+            // only one value is posted.
+            var fileContentOrig = m.getPropertyValue("fileContent");
+            if (null != fileContentOrig && fileContentOrig.getValue() instanceof String strOrig)
+            {
+                MutablePropertyValues copy = new MutablePropertyValues(m);
+                copy.removePropertyValue("fileContent");
+                copy.addPropertyValue("fileContent", new String[] {strOrig});
+                m = copy;
+            }
+            return springBindParameters(this, "form", m);
         }
     }
 
