@@ -1363,7 +1363,13 @@ LABKEY.vis.GenericChartHelper = new function(){
                     y: _getRowValue(row, yName, 'value'),
                 };
             });
-            const xAcc = function(row) { return row.x };
+            const xAcc = function(row) {
+                // if log scale, filter out non-positive x values for min/max calculation used for generated points
+                if (trendlineConfig.logXScale && row.x <= 0) {
+                    return undefined;
+                }
+                return row.x
+            };
             const xMin = d3.min(points, xAcc);
             const xMax = d3.max(points, xAcc);
 
