@@ -89,7 +89,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
         // Select all ObjectIds associated with the not-copied rows from the source database. Our notCopiedFilter
         // works on the data class provisioned table, so we need to use a sub-select (as opposed to a join) to avoid
         // ambiguous column references.
-        SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM exp.Data WHERE LSID IN (SELECT LSID FROM ")
+        SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM exp.Object WHERE ObjectURI IN (SELECT LSID FROM ")
             .appendIdentifier(sourceTable.getSelectName())
             .append(" ")
             .append(notCopiedFilter.getSQLFragment(sourceTable.getSqlDialect()))
