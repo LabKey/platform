@@ -16,6 +16,7 @@
 package org.labkey.api.attachments;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SQLFragment;
 
 /**
@@ -43,10 +44,29 @@ public interface AttachmentType
     @NotNull String getUniqueName();
 
     /**
-     * Append to the where clause of a query that wants to select attachments of the implementing type
+     * Append to the where clause of a query that wants to select attachments of the implementing type from the
+     * core.Documents table
      * @param sql Implementers MUST append a valid where clause to this SQLFragment
      * @param parentColumn Column identifier for use in where clause. Usually represents 'core.Documents.Parent'
      * @param documentNameColumn Column identifier for use in where clause. Usually represents 'core.Documents.DocumentName'
      */
-    void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn);
+    default void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
+    {
+        SQLFragment selectSql = getSelectParentEntityIdsSql();
+        if (selectSql == null)
+            throw new IllegalStateException("Must override either addWhereSql() or getSelectParentEntityIdsSql()");
+        sql.append(parentColumn).append(" IN (").append(selectSql).append(")");
+    }
+
+    /**
+     * Return a SQLFragment that selects all the EntityIds that might be attachment parents from the table(s) that
+     * provide attachments of this type, without involving the core.Documents table. For example,
+     * {@code SELECT EntityId FROM comm.Announcements}. Return null if this is not-yet-implemented or inappropriate.
+     * For example, some attachments' parents are container IDs. If the method determines that no parents exist, then
+     * return a valid query that selects no rows, for example, {@code SELECT EntityID WHERE 1 = 0}.
+     */
+    default @Nullable SQLFragment getSelectParentEntityIdsSql()
+    {
+        return null;
+    }
 }

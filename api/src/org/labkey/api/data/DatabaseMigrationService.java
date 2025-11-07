@@ -3,6 +3,7 @@ package org.labkey.api.data;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.DatabaseMigrationConfiguration.DefaultDatabaseMigrationConfiguration;
 import org.labkey.api.data.SimpleFilter.AndClause;
 import org.labkey.api.data.SimpleFilter.FilterClause;
@@ -66,7 +67,8 @@ public interface DatabaseMigrationService
         return null;
     }
 
-    default void copySourceTableToTargetTable(DatabaseMigrationConfiguration configuration, TableInfo sourceTable, TableInfo targetTable, DbSchemaType schemaType, MigrationSchemaHandler schemaHandler) {};
+    default void copySourceTableToTargetTable(DatabaseMigrationConfiguration configuration, TableInfo sourceTable, TableInfo targetTable, DbSchemaType schemaType, boolean updateSequences, String additionalLogMessage, MigrationSchemaHandler schemaHandler) {}
+    default void updateSequences(TableInfo sourceTable, TableInfo targetTable) {}
 
     interface MigrationSchemaHandler
     {
@@ -103,6 +105,11 @@ public interface DatabaseMigrationService
         void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter);
 
         void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema);
+
+        // TODO: Return Collection<AttachmentType>, indicating which attachment types it handled?
+        void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema);
+
+        @NotNull Collection<AttachmentType> getAttachmentTypes();
     }
 
     class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
@@ -297,6 +304,53 @@ public interface DatabaseMigrationService
         @Override
         public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
         {
+        }
+
+        @Override
+        public void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
+        {
+            // Now that the table tables in this schema have been populated, copy all associated attachments. By
+            // default, use this handler's attachment types to select from the target tables all EntityIds that might be
+            // attachment parents (this avoids re-running potentially expensive queries on the source tables). Use the
+            // set of EntityIds to copy those attachments from the core.Documents table in the source database. Override
+            // if special behavior is required, for example, AttachmentTypes that use documentNameColumn since that
+            // requires querying and re-filtering the source tables instead.
+            getAttachmentTypes().forEach(type -> {
+                SQLFragment sql = type.getSelectParentEntityIdsSql();
+                if (sql != null)
+                {
+                    Collection<String> entityIds = new SqlSelector(targetSchema, sql).getCollection(String.class);
+                    FilterClause filterClause = new InClause(FieldKey.fromParts("Parent"), entityIds);
+                    copyAttachments(configuration, sourceSchema, filterClause, " associated with " + type.getClass().getSimpleName());
+                }
+
+                // TODO: Mark this attachment type as having been seen
+                // TODO: afterMigration() and update core.Documents' sequence
+                // TODO: throw if some registered AttachmentType is not seen
+                // TODO: get rid of TableHandler
+                // TODO: eventually, fail if type.getSelectParentEntityIdsSql() returns null
+                // TODO: implement a bunch more AttachmentTypes, override for Notebooks?
+            });
+        }
+
+        // Copy all core.Documents rows that match the provided filter clause
+        protected void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, FilterClause filterClause, String additionalLogMessage)
+        {
+            TableInfo sourceDocumentsTable = sourceSchema.getScope().getSchema("core", DbSchemaType.Migration).getTable("Documents");
+            TableInfo targetDocumentsTable = CoreSchema.getInstance().getTableInfoDocuments();
+            DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceDocumentsTable, targetDocumentsTable, DbSchemaType.Module, false, additionalLogMessage, new DefaultMigrationSchemaHandler(CoreSchema.getInstance().getSchema()){
+                @Override
+                public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
+                {
+                    return filterClause;
+                }
+            });
+        }
+
+        @Override
+        public @NotNull Collection<AttachmentType> getAttachmentTypes()
+        {
+            return List.of();
         }
 
         @Override

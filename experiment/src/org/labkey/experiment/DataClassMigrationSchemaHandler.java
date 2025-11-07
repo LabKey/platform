@@ -68,7 +68,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
     @Override
     public void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames)
     {
-        // Data classes have a built-in Flag field
+        // Data classes have an implicit Flag field
         if (filter.column().equalsIgnoreCase("Flag"))
         {
             addObjectPropertyClause(orClause, filter, sourceTable, getCommentPropertyId(sourceTable.getSchema().getScope()));
@@ -177,7 +177,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
             TableInfo sourceTable = biologicsSourceSchema.getTable("SequenceIdentity");
             TableInfo targetTable = biologicsTargetSchema.getTable("SequenceIdentity");
 
-            DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceTable, targetTable, DbSchemaType.Module, new DefaultMigrationSchemaHandler(biologicsTargetSchema)
+            DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceTable, targetTable, DbSchemaType.Module, true, null, new DefaultMigrationSchemaHandler(biologicsTargetSchema)
             {
                 @Override
                 public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)

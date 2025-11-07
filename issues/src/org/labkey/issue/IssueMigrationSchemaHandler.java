@@ -1,6 +1,8 @@
 package org.labkey.issue;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.DatabaseMigrationConfiguration;
 import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
@@ -18,8 +20,11 @@ import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.issue.model.IssueCommentType;
 
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
@@ -75,5 +80,11 @@ public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             Table.delete(IssuesSchema.getInstance().getTableInfoComments(), deleteFilter);
             Table.delete(IssuesSchema.getInstance().getTableInfoIssues(), deleteFilter);
         }
+    }
+
+    @Override
+    public @NotNull Collection<AttachmentType> getAttachmentTypes()
+    {
+        return List.of(IssueCommentType.get());
     }
 }

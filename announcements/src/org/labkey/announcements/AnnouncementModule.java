@@ -31,11 +31,17 @@ import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.MessageAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseMigrationConfiguration;
+import org.labkey.api.data.DatabaseMigrationService;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
@@ -165,6 +171,43 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         {
             fsr.addFactories(new NotificationSettingsWriterFactory(), new NotificationSettingsImporterFactory());
         }
+
+        // AnnouncementModule owns the schema, so it registers the schema handler... even though it's mostly about wiki
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(CommSchema.getInstance().getSchema())
+        {
+            @Override
+            public void beforeSchema()
+            {
+                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_PageVersions");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_Parent");
+            }
+
+            @Override
+            public List<TableInfo> getTablesToCopy()
+            {
+                List<TableInfo> tablesToCopy = super.getTablesToCopy();
+                tablesToCopy.add(CommSchema.getInstance().getTableInfoPages());
+                tablesToCopy.add(CommSchema.getInstance().getTableInfoPageVersions());
+
+                return tablesToCopy;
+            }
+
+            @Override
+            public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
+            {
+                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId)");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_Parent FOREIGN KEY (Parent) REFERENCES comm.Pages (RowId)");
+            }
+
+            @Override
+            public @NotNull Collection<AttachmentType> getAttachmentTypes()
+            {
+                // TODO: Need a way to get WikiType in here
+                return List.of(
+                    AnnouncementType.get()
+                );
+            }
+        });
     }
 
 

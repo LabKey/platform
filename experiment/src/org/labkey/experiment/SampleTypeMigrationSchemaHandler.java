@@ -56,7 +56,7 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
         {
             String joinColumnName = getJoinColumnName(sourceTable);
 
-            // Select all rows where the built-in flag column equals the filter value
+            // Select all rows where the implicit flag column equals the filter value
             orClause.addClause(
                 new SQLClause(new SQLFragment()
                     .appendIdentifier(joinColumnName)
