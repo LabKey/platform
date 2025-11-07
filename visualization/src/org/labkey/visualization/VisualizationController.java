@@ -1147,9 +1147,6 @@ public class VisualizationController extends SpringActionController
         @Override
         public ModelAndView getView(ChartWizardReportForm form, BindException errors) throws Exception
         {
-            form.setRenderType("time_chart");
-            setHelpTopic("timeChart");
-
             form.setAllowToggleMode(true);
 
             // issue 27439: allow chart wizard report lookup by name if reportId not provided
@@ -1157,14 +1154,14 @@ public class VisualizationController extends SpringActionController
             if (form.getReportId() == null && report != null && report.getDescriptor() != null)
                 form.setReportId(report.getDescriptor().getReportId());
 
-            JspView<?> timeChartWizard = new JspView<>("/org/labkey/visualization/views/chartWizard.jsp", form);
-            timeChartWizard.setTitle(_navTitle);
-            timeChartWizard.setFrame(WebPartView.FrameType.NONE);
+            JspView<?> chartWizard = new JspView<>("/org/labkey/visualization/views/chartWizard.jsp", form);
+            chartWizard.setTitle(_navTitle);
+            chartWizard.setFrame(WebPartView.FrameType.NONE);
 
             if (report != null)
                 _navTitle = report.getDescriptor().getReportName();
 
-            return timeChartWizard;
+            return chartWizard;
         }
 
         @Override
