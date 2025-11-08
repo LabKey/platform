@@ -224,11 +224,13 @@
     Path contextPath = Path.parse(ctx.getContextPath());
     SearchService ss = SearchService.get();
 
+    List<String> q = new ArrayList<>(Arrays.asList(form.getQ()));
+    String value = StringUtils.trim(StringUtils.join(q, " "));
     SearchResultTemplate template = form.getSearchResultTemplate();
     SearchScope scope = (null == template.getSearchScope() ? form.getSearchScope() : template.getSearchScope());
     String categories = (null == template.getCategories() ? form.getCategory() : template.getCategories());
     Set<String> selectedCategories = categories == null ? Collections.emptySet() : new CaseInsensitiveHashSet(categories.split("\\+"));
-    String queryString = form.getQ();
+    String queryString = form.getQueryString();
     String sortField = form.getSortField();
     boolean invertSort = form.isInvertSort();
 
@@ -291,7 +293,7 @@
 <div<%=unsafe(form.isWebPart() ? "" : " class=\"col-md-12\"")%>>
     <div style="position:relative;">
         <labkey:form id="<%=searchFormId%>" className="lk-search-form" action="<%=searchConfig.getPostURL(c)%>">
-            <labkey:input type="text" name="q" placeholder="<%=form.isWebPart() ? \"\" : SearchUtils.getPlaceholder(c)%>" formGroup="false" value="<%=queryString%>"/>
+            <labkey:input type="text" name="q" placeholder="<%=form.isWebPart() ? \"\" : SearchUtils.getPlaceholder(c)%>" formGroup="false" value="<%=value%>"/>
             <a class="search-overlay fa fa-search"></a>
             <% if (showAdvancedUI) { %>
             <small>
