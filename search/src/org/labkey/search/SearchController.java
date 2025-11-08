@@ -29,7 +29,6 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -53,6 +52,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -77,8 +77,6 @@ import org.labkey.search.model.CrawlerRunningState;
 import org.labkey.search.model.IndexInspector;
 import org.labkey.search.model.LuceneDirectoryType;
 import org.labkey.search.model.SearchPropertyManager;
-import org.springframework.beans.MutablePropertyValues;
-import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -92,8 +90,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-
-import static org.labkey.api.action.BaseViewAction.springBindParameters;
 
 public class SearchController extends SpringActionController
 {
@@ -388,7 +384,7 @@ public class SearchController extends SpringActionController
 
 
     @AdminConsoleAction
-    public static class IndexContentsAction extends SimpleViewAction<Object>
+    public class IndexContentsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -434,7 +430,7 @@ public class SearchController extends SpringActionController
 
     /** for selenium testing */
     @RequiresSiteAdmin
-    public static class WaitForIdleAction extends SimpleRedirectAction<Object>
+    public class WaitForIdleAction extends SimpleRedirectAction<Object>
     {
         @Override
         public URLHelper getRedirectURL(Object o) throws Exception
@@ -573,7 +569,7 @@ public class SearchController extends SpringActionController
 
             final Path contextPath = Path.parse(getViewContext().getContextPath());
 
-            final String query = form.getQ()
+            final String query = form.getQueryString()
                     .replaceAll("(?<!\\\\)[\\/]", "\\\\/"); //escape any '/' that aren't already escaped Issue 47325
             final JSONObject response = new JSONObject();
             Object[] arr = new Object[0];
@@ -869,10 +865,9 @@ public class SearchController extends SpringActionController
     }
 
 
-    @SuppressWarnings("unused")
-    public static class SearchForm implements HasBindParameters
+    public static class SearchForm
     {
-        private String _query = "";
+        private String[] _query;
         private String _sortField;
         private boolean _print = false;
         private int _offset = 0;
@@ -901,14 +896,22 @@ public class SearchController extends SpringActionController
             return _config;
         }
 
-        public String getQ()
+        public String[] getQ()
         {
-            return _query;
+            return null == _query ? new String[0] : _query;
         }
 
-        public void setQ(String query)
+        public String getQueryString()
         {
-            _query = StringUtils.trimToEmpty(query);
+            if (null == _query || _query.length == 0)
+                return "";
+
+            return StringUtils.join(_query, " ");
+        }
+
+        public void setQ(String[] query)
+        {
+            _query = query;
         }
 
         public String getSortField()
@@ -1088,19 +1091,6 @@ public class SearchController extends SpringActionController
         {
             _fields = fields;
         }
-
-        @Override
-        public @NotNull BindException bindParameters(PropertyValues m)
-        {
-            MutablePropertyValues mpvs = new MutablePropertyValues(m);
-            var q = mpvs.getPropertyValue("q");
-            if (null != q && q.getValue() instanceof String[] arr)
-            {
-                mpvs.removePropertyValue("q");
-                mpvs.addPropertyValue("q", StringUtils.join(arr," "));
-            }
-            return springBindParameters(this, "form", mpvs);
-        }
     }
 
     
@@ -1109,7 +1099,7 @@ public class SearchController extends SpringActionController
         ViewContext ctx = getViewContext();
         String comment = form.getComment();
 
-        audit(ctx.getUser(), ctx.getContainer(), form.getQ(), comment);
+        audit(ctx.getUser(), ctx.getContainer(), form.getQueryString(), comment);
     }
 
     
