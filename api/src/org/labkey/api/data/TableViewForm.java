@@ -31,6 +31,7 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -759,20 +760,64 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         return null==column ? propName : column.getLabel();
     }
 
+    // RFC 2616 / RFC 7230: Escape characters inside the field name
+    private static final char BACKSLASH = '\\';
+    private static final String SPECIAL_CHARS = BACKSLASH + "\";=,";
+
+    public static String getFormFieldNameForColumn(@NotNull String columnName)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (char c : columnName.toCharArray())
+        {
+            if (SPECIAL_CHARS.indexOf(c) >= 0)
+                sb.append(BACKSLASH);
+            sb.append(c);
+        }
+
+        return sb.toString();
+    }
+
     public String getFormFieldName(@NotNull ColumnInfo column)
     {
-        return column.getName();
+        return getFormFieldNameForColumn(column.getName());
+    }
+
+    public static String getMultiPartFormFieldNameForColumn(@NotNull String columnName)
+    {
+        return DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(getFormFieldNameForColumn(columnName));
     }
 
     public String getMultiPartFormFieldName(@NotNull ColumnInfo column)
     {
-        return getFormFieldName(column);
+        return getMultiPartFormFieldNameForColumn(column.getName());
     }
 
     @Nullable
-    public ColumnInfo getColumnByFormFieldName(@NotNull String name)
+    public ColumnInfo getColumnByFormFieldName(@NotNull String fieldName)
     {
-        return null == getTable() ? null : getTable().getColumn(name);
+        if (null == getTable())
+            return null;
+
+        StringBuilder sb = new StringBuilder(fieldName.length());
+        boolean escaping = false;
+        for (char c : fieldName.toCharArray())
+        {
+            if (escaping)
+            {
+                sb.append(c);
+                escaping = false;
+            }
+            else if (c == BACKSLASH)
+                escaping = true;
+            else
+                sb.append(c);
+        }
+
+        // Issue 54094: Ensure it works when backslash is the last character
+        if (escaping)
+            sb.append(BACKSLASH);
+
+        return getTable().getColumn(sb.toString());
     }
 
     @Override

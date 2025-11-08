@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
-import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
@@ -68,10 +67,6 @@ public class QueryUpdateForm extends TableViewForm
         }
     }
 
-    // RFC 2616 / RFC 7230: Escape characters inside the field name
-    private static final char BACKSLASH = '\\';
-    private static final String SPECIAL_CHARS = BACKSLASH + "\";=,";
-
     @Override
     @Nullable
     public ColumnInfo getColumnByFormFieldName(@NotNull String fieldName)
@@ -81,47 +76,13 @@ public class QueryUpdateForm extends TableViewForm
 
         var columnName = _ignorePrefix ? fieldName : fieldName.substring(PREFIX.length());
 
-        StringBuilder sb = new StringBuilder(columnName.length());
-        boolean escaping = false;
-        for (char c : columnName.toCharArray())
-        {
-            if (escaping)
-            {
-                sb.append(c);
-                escaping = false;
-            }
-            else if (c == BACKSLASH)
-                escaping = true;
-            else
-                sb.append(c);
-        }
-
-        // Issue 54094: Ensure it works when backslash is the last character
-        if (escaping)
-            sb.append(BACKSLASH);
-
-        return getTable().getColumn(sb.toString());
+        return super.getColumnByFormFieldName(columnName);
     }
 
     @Override
     public String getFormFieldName(@NotNull ColumnInfo column)
     {
-        String columnName = column.getName();
-        StringBuilder sb = new StringBuilder();
-        for (char c : columnName.toCharArray())
-        {
-            if (SPECIAL_CHARS.indexOf(c) >= 0)
-                sb.append(BACKSLASH);
-            sb.append(c);
-        }
-
-        String fieldName = sb.toString();
+        String fieldName = super.getFormFieldName(column);
         return _ignorePrefix ? fieldName : PREFIX + fieldName;
-    }
-
-    @Override
-    public String getMultiPartFormFieldName(@NotNull ColumnInfo column)
-    {
-        return DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(getFormFieldName(column));
     }
 }

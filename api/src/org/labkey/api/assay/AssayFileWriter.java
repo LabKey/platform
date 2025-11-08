@@ -24,6 +24,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableViewForm;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.pipeline.PipeRoot;
@@ -40,9 +41,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -229,72 +232,84 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
 
     public Map<String, FileLike> savePostedFiles(ContextType context, @NotNull Set<String> parameterNames, boolean allowMultiple, boolean ensureExpData) throws ExperimentException, IOException
     {
+        if (!(context.getRequest() instanceof MultipartHttpServletRequest multipartRequest))
+            return Collections.emptyMap();
+
         Map<String, FileLike> files = CollectionUtils.enforceValueClass(new TreeMap<>(), FileLike.class);
         Set<String> originalFileNames = new HashSet<>();
-        if (context.getRequest() instanceof MultipartHttpServletRequest multipartRequest)
+        Map<String, String> encodedParameterNames = new HashMap<>();
+        for (String parameterName : parameterNames)
+            encodedParameterNames.put(TableViewForm.getMultiPartFormFieldNameForColumn(parameterName), parameterName);
+
+        Deque<FileLike> overflowFiles = new ArrayDeque<>();  // using a deque for easy removal of single elements
+        Set<String> unusedParameterNames = new HashSet<>(parameterNames);
+        List<FileSystemAuditProvider.FileSystemAuditEvent> auditEvents = new ArrayList<>();
+
+        for (Map.Entry<String, List<MultipartFile>> entry : multipartRequest.getMultiFileMap().entrySet())
         {
-            Iterator<Map.Entry<String, List<MultipartFile>>> iter = multipartRequest.getMultiFileMap().entrySet().iterator();
-            Deque<FileLike> overflowFiles = new ArrayDeque<>();  // using a deque for easy removal of single elements
-            Set<String> unusedParameterNames = new HashSet<>(parameterNames);
-            while (iter.hasNext())
-            {
-                Map.Entry<String, List<MultipartFile>> entry = iter.next();
-                if (parameterNames.contains(entry.getKey()))
-                {
-                    List<MultipartFile> multipartFiles = entry.getValue();
-                    boolean isAfterFirstFile = false;
-                    for (MultipartFile multipartFile : multipartFiles)
-                    {
-                        String fileName = getFileName(multipartFile);
-                        if (!fileName.isEmpty() && !originalFileNames.add(fileName))
-                        {
-                            throw new ExperimentException("The file '" + fileName + " ' was uploaded twice - all files must be unique");
-                        }
-                        if (!multipartFile.isEmpty())
-                        {
-                            FileLike dir = getFileTargetDir(context);
-                            FileLike file = FileUtil.findUniqueFileName(fileName, dir);
-                            multipartFile.transferTo(toFileForWrite(file));
-                            if (!dir.toURI().getPath().contains(TEMP_DIR_NAME))
-                            {
-                                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(context.getContainer(), allowMultiple ? "File field provided for assay import" : "Primary file provided for assay import");
-                                event.setProvidedFileName(fileName);
-                                event.setFile(file.getName());
-                                event.setDirectory(dir.toURI().getPath());
-                                AuditLogService.get().addEvent(context.getUser(), event);
-                            }
-                            if (!isAfterFirstFile)  // first file gets stored with multipartFile's name
-                            {
-                                files.put(multipartFile.getName(), file);
-                                isAfterFirstFile = true;
-                                unusedParameterNames.remove(multipartFile.getName());
-                            }
-                            else  // other files get stored in leftover keys later to store only one file per key (bit of a hack)
-                            {
-                                overflowFiles.add(file);
-                            }
+            if (!(encodedParameterNames.containsKey(entry.getKey()) || parameterNames.contains(entry.getKey())))
+                continue;
 
-                            if (ensureExpData)
-                                AbstractQueryUpdateService.ensureExpData(context.getUser(), context.getContainer(), toFileForWrite(file));
-                        }
-                    }
-                }
-            }
-            // now process overflow files, if any
-            for (String unusedParameterName : unusedParameterNames)
+            boolean isAfterFirstFile = false;
+            for (MultipartFile multipartFile : entry.getValue())
             {
-                if (overflowFiles.isEmpty())
-                    break;  // we're done
-                else
-                {
-                    files.put(unusedParameterName, overflowFiles.remove());
-                }
-            }
+                String fileName = getFileName(multipartFile);
+                if (!fileName.isEmpty() && !originalFileNames.add(fileName))
+                    throw new ExperimentException("The file '" + fileName + " ' was uploaded twice - all files must be unique");
 
-            if (!overflowFiles.isEmpty() && !allowMultiple)  // too many files; shouldn't happen, but if it does, throw an error
-                throw new ExperimentException("Tried to save too many files: number of keys is " + parameterNames.size() +
-                        ", but " + overflowFiles.size() + " extra file(s) were found.");
+                if (multipartFile.isEmpty())
+                    continue;
+
+                FileLike dir = getFileTargetDir(context);
+                FileLike file = FileUtil.findUniqueFileName(fileName, dir);
+                multipartFile.transferTo(toFileForWrite(file));
+                if (!dir.toURI().getPath().contains(TEMP_DIR_NAME))
+                {
+                    FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(context.getContainer(), allowMultiple ? "File field provided for assay import" : "Primary file provided for assay import");
+                    event.setProvidedFileName(fileName);
+                    event.setFile(file.getName());
+                    event.setDirectory(dir.toURI().getPath());
+                    auditEvents.add(event);
+                }
+                if (!isAfterFirstFile)  // first file gets stored with multipartFile's name
+                {
+                    String name = multipartFile.getName();
+                    String param = encodedParameterNames.get(name);
+                    if (param == null && parameterNames.contains(name))
+                        param = name;
+                    if (param == null)
+                        throw new ExperimentException("No parameter name found for multipart file '" + name + "'");
+
+                    files.put(param, file);
+                    isAfterFirstFile = true;
+                    unusedParameterNames.remove(param);
+                }
+                else  // other files get stored in leftover keys later to store only one file per key (bit of a hack)
+                {
+                    overflowFiles.add(file);
+                }
+
+                if (ensureExpData)
+                    AbstractQueryUpdateService.ensureExpData(context.getUser(), context.getContainer(), toFileForWrite(file));
+            }
         }
+
+        if (!auditEvents.isEmpty())
+            AuditLogService.get().addEvents(context.getUser(), auditEvents);
+
+        // now process overflow files, if any
+        for (String unusedParameterName : unusedParameterNames)
+        {
+            if (overflowFiles.isEmpty())
+                break;  // we're done
+
+            files.put(unusedParameterName, overflowFiles.remove());
+        }
+
+        if (!overflowFiles.isEmpty() && !allowMultiple)  // too many files; shouldn't happen, but if it does, throw an error
+            throw new ExperimentException("Tried to save too many files: number of keys is " + parameterNames.size() +
+                    ", but " + overflowFiles.size() + " extra file(s) were found.");
+
         return files;
     }
 
