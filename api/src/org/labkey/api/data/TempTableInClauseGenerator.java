@@ -35,8 +35,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Created by davebradlee on 6/5/15.
- *
  * Generator for very long in-clauses
  */
 public class TempTableInClauseGenerator implements InClauseGenerator

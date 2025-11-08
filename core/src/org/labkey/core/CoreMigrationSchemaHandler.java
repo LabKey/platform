@@ -192,14 +192,13 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
     @Override
     public void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
     {
-        // Default handling for most of the attachment types
+        // Default handling for core's standard attachment types
         super.copyAttachments(configuration, sourceSchema, targetSchema);
 
         // Special handling for LookAndFeelResourceType, which must select from the source database
         SQLFragment sql = new SQLFragment();
         LookAndFeelResourceType.get().addWhereSql(sql, "Parent", "DocumentName");
-
-        copyAttachments(configuration, sourceSchema, new SQLClause(sql), " associated with " + LookAndFeelResourceType.get().getClass().getSimpleName());
+        copyAttachments(configuration, sourceSchema, new SQLClause(sql), LookAndFeelResourceType.get());
     }
 
     @Override

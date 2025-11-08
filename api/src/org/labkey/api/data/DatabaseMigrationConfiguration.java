@@ -16,6 +16,7 @@ public interface DatabaseMigrationConfiguration
     @NotNull Set<String> getSkipSchemas();
     Predicate<String> getColumnNameFilter();
     @Nullable TableSelector getTableSelector(DbSchemaType schemaType, TableInfo sourceTable, TableInfo targetTable, Set<String> selectColumnNames, MigrationSchemaHandler schemaHandler);
+    default void afterMigration(){};
 
     class DefaultDatabaseMigrationConfiguration implements DatabaseMigrationConfiguration
     {

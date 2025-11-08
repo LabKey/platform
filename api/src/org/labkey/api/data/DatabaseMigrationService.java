@@ -3,6 +3,7 @@ package org.labkey.api.data;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.DatabaseMigrationConfiguration.DefaultDatabaseMigrationConfiguration;
 import org.labkey.api.data.SimpleFilter.AndClause;
@@ -320,10 +321,9 @@ public interface DatabaseMigrationService
                 {
                     Collection<String> entityIds = new SqlSelector(targetSchema, sql).getCollection(String.class);
                     FilterClause filterClause = new InClause(FieldKey.fromParts("Parent"), entityIds);
-                    copyAttachments(configuration, sourceSchema, filterClause, " associated with " + type.getClass().getSimpleName());
+                    copyAttachments(configuration, sourceSchema, filterClause, type);
                 }
 
-                // TODO: Mark this attachment type as having been seen
                 // TODO: afterMigration() and update core.Documents' sequence
                 // TODO: implement a bunch more AttachmentTypes
                 // TODO: throw if some registered AttachmentType is not seen
@@ -331,18 +331,30 @@ public interface DatabaseMigrationService
             });
         }
 
+        private static final Set<AttachmentType> SEEN = new HashSet<>();
+
         // Copy all core.Documents rows that match the provided filter clause
-        protected void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, FilterClause filterClause, String additionalLogMessage)
+        protected void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, FilterClause filterClause, AttachmentType type)
         {
+            SEEN.add(type);
+            String additionalMessage = " associated with " + type.getClass().getSimpleName();
             TableInfo sourceDocumentsTable = sourceSchema.getScope().getSchema("core", DbSchemaType.Migration).getTable("Documents");
             TableInfo targetDocumentsTable = CoreSchema.getInstance().getTableInfoDocuments();
-            DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceDocumentsTable, targetDocumentsTable, DbSchemaType.Module, false, additionalLogMessage, new DefaultMigrationSchemaHandler(CoreSchema.getInstance().getSchema()){
+            DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceDocumentsTable, targetDocumentsTable, DbSchemaType.Module, false, additionalMessage, new DefaultMigrationSchemaHandler(CoreSchema.getInstance().getSchema()){
                 @Override
                 public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
                 {
                     return filterClause;
                 }
             });
+        }
+
+        public static void logUnseenAttachmentTypes()
+        {
+            Set<AttachmentType> unseen = new HashSet<>(AttachmentService.get().getAttachmentTypes());
+            unseen.removeAll(SEEN);
+
+            LOG.info("These AttachmentTypes have not been seen: {}", unseen.stream().map(type -> type.getClass().getSimpleName()).collect(Collectors.joining(", ")));
         }
 
         @Override
