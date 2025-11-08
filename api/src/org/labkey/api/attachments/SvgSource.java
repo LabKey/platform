@@ -44,7 +44,7 @@ public class SvgSource
         svg = svg.replaceAll("xlink:title", "title");
 
         // Reject hrefs. See #45819.
-        if (Strings.CS.contains(svg, "xlink:href"))
+        if (Strings.CI.contains(svg, "xlink:href"))
             throw new RuntimeException(new TranscoderException("The security settings do not allow any external resources to be referenced from the document"));
 
         _filteredSvg = svg;
