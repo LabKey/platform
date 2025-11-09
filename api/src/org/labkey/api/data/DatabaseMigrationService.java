@@ -320,15 +320,25 @@ public interface DatabaseMigrationService
                 if (sql != null)
                 {
                     Collection<String> entityIds = new SqlSelector(targetSchema, sql).getCollection(String.class);
-                    FilterClause filterClause = new InClause(FieldKey.fromParts("Parent"), entityIds);
-                    copyAttachments(configuration, sourceSchema, filterClause, type);
+                    SQLFragment selectParents = new SQLFragment("Parent");
+                    // This query against the source database is likely to contain a large IN clause, so use an alternative InClauseGenerator
+                    sourceSchema.getSqlDialect().appendInClauseSql(selectParents, entityIds, getTempTableInClauseGenerator(sourceSchema.getScope()));
+                    copyAttachments(configuration, sourceSchema, new SQLClause(selectParents), type);
                 }
 
+                // TODO: Fix & test issues attachment copy - need to invoke after provisioned table
                 // TODO: afterMigration() and update core.Documents' sequence
                 // TODO: implement a bunch more AttachmentTypes
                 // TODO: throw if some registered AttachmentType is not seen
                 // TODO: fail if type.getSelectParentEntityIdsSql() returns null
             });
+        }
+
+        // Creates an TempTableInClauseGenerator that targets the *source* temp schema instead of the default
+        // DbSchema.getTemp(). Required for large IN clauses against the source database.
+        protected InClauseGenerator getTempTableInClauseGenerator(DbScope sourceScope)
+        {
+            return new TempTableInClauseGenerator(() -> sourceScope.getSchema("temp", DbSchemaType.Bare));
         }
 
         private static final Set<AttachmentType> SEEN = new HashSet<>();
