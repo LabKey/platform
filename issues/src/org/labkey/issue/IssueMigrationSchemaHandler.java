@@ -31,7 +31,7 @@ public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 {
     private static final Logger LOG = LogHelper.getLogger(IssueMigrationSchemaHandler.class, "Issue migration status");
 
-    private final Set<Integer> ISSUE_IDS = new HashSet<>();
+    private final Set<Integer> COPIED_ISSUE_IDS = new HashSet<>();
 
     public IssueMigrationSchemaHandler()
     {
@@ -43,7 +43,7 @@ public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     {
         // Collect the issue IDs that were copied into the target table. We're assuming this set is much smaller than
         // the set of issues IDs that *weren't* copied.
-        int startSize = ISSUE_IDS.size();
+        int startSize = COPIED_ISSUE_IDS.size();
 
         // Join the provisioned table to the issues table to get the IssueIds associated with the rows that were copied
         SQLClause joinOnEntityId = new SQLClause(
@@ -53,33 +53,26 @@ public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
         );
 
         new TableSelector(IssuesSchema.getInstance().getTableInfoIssues(), new CsvSet("IssueId, EntityId"), new SimpleFilter(joinOnEntityId), null).stream(Integer.class)
-            .forEach(ISSUE_IDS::add);
-        LOG.info("   {} added to the IssueId set", StringUtilsLabKey.pluralize(ISSUE_IDS.size() - startSize, "IssueId was", "IssueIds were"));
+            .forEach(COPIED_ISSUE_IDS::add);
+        LOG.info("   {} added to the IssueId set", StringUtilsLabKey.pluralize(COPIED_ISSUE_IDS.size() - startSize, "IssueId was", "IssueIds were"));
     }
 
     @Override
     public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
     {
-        LOG.info("   Deleting related issues, comments, and issues rows associated with {}", StringUtilsLabKey.pluralize(ISSUE_IDS.size(), "issue"));
+        LOG.info("{} were copied. Now deleting related issues, comments, and issues rows associated with all issues that were not copied.", StringUtilsLabKey.pluralize(COPIED_ISSUE_IDS.size(), "issue"));
 
-        if (!ISSUE_IDS.isEmpty())
-        {
-            // Delete all issues, comments, and related issues that were NOT copied
-            SimpleFilter deleteRelatedFilter = new SimpleFilter(
-                new NotClause(
-                    new InClause(FieldKey.fromParts("RelatedIssueId"), ISSUE_IDS)
-                )
-            );
-            Table.delete(IssuesSchema.getInstance().getTableInfoRelatedIssues(), deleteRelatedFilter);
-            SimpleFilter deleteFilter = new SimpleFilter(
-                new NotClause(
-                    new InClause(FieldKey.fromParts("IssueId"), ISSUE_IDS)
-                )
-            );
-            Table.delete(IssuesSchema.getInstance().getTableInfoRelatedIssues(), deleteFilter);
-            Table.delete(IssuesSchema.getInstance().getTableInfoComments(), deleteFilter);
-            Table.delete(IssuesSchema.getInstance().getTableInfoIssues(), deleteFilter);
-        }
+        // Delete all issues, comments, and related issues that were NOT copied
+        SimpleFilter deleteRelatedFilter = new SimpleFilter(
+            new InClause(FieldKey.fromParts("RelatedIssueId"), COPIED_ISSUE_IDS, false, true) // Negated
+        );
+        Table.delete(IssuesSchema.getInstance().getTableInfoRelatedIssues(), deleteRelatedFilter);
+        SimpleFilter deleteFilter = new SimpleFilter(
+            new InClause(FieldKey.fromParts("IssueId"), COPIED_ISSUE_IDS, false, true) // Negated
+        );
+        Table.delete(IssuesSchema.getInstance().getTableInfoRelatedIssues(), deleteFilter);
+        Table.delete(IssuesSchema.getInstance().getTableInfoComments(), deleteFilter);
+        Table.delete(IssuesSchema.getInstance().getTableInfoIssues(), deleteFilter);
     }
 
     @Override

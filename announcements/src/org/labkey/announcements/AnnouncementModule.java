@@ -59,6 +59,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.wiki.WikiService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -202,10 +203,9 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
             @Override
             public @NotNull Collection<AttachmentType> getAttachmentTypes()
             {
-                // TODO: Need a way to get WikiType in here
-                return List.of(
-                    AnnouncementType.get()
-                );
+                // It's theoretically possible to deploy Announcement without Wiki, so conditionalize
+                WikiService ws = WikiService.get();
+                return ws != null ? List.of(AnnouncementType.get(), ws.getAttachmentType()) : List.of(AnnouncementType.get());
             }
         });
     }

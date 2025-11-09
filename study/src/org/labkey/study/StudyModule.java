@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -536,6 +537,12 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
             {
                 return "StudySnapshot".equals(sourceTable.getName()) ? FieldKey.fromParts("Source") : super.getContainerFieldKey(sourceTable);
+            }
+
+            @Override
+            public @NotNull Collection<AttachmentType> getAttachmentTypes()
+            {
+                return List.of(ProtocolDocumentType.get());
             }
         });
 

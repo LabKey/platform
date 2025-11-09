@@ -22,6 +22,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.vfs.FileLike;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -326,16 +327,16 @@ public interface DatabaseMigrationService
                     copyAttachments(configuration, sourceSchema, new SQLClause(selectParents), type);
                 }
 
-                // TODO: Fix & test issues attachment copy - need to invoke after provisioned table
+                // TODO: **Test issues attachment copy
+                // TODO: implement remaining AttachmentTypes
                 // TODO: afterMigration() and update core.Documents' sequence
-                // TODO: implement a bunch more AttachmentTypes
                 // TODO: throw if some registered AttachmentType is not seen
                 // TODO: fail if type.getSelectParentEntityIdsSql() returns null
             });
         }
 
-        // Creates an TempTableInClauseGenerator that targets the *source* temp schema instead of the default
-        // DbSchema.getTemp(). Required for large IN clauses against the source database.
+        // Creates a TempTableInClauseGenerator that targets the *source* temp schema instead of the default
+        // DbSchema.getTemp(). Required for large IN clauses used against the source database.
         protected InClauseGenerator getTempTableInClauseGenerator(DbScope sourceScope)
         {
             return new TempTableInClauseGenerator(() -> sourceScope.getSchema("temp", DbSchemaType.Bare));
@@ -344,10 +345,10 @@ public interface DatabaseMigrationService
         private static final Set<AttachmentType> SEEN = new HashSet<>();
 
         // Copy all core.Documents rows that match the provided filter clause
-        protected void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, FilterClause filterClause, AttachmentType type)
+        protected void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, FilterClause filterClause, AttachmentType... type)
         {
-            SEEN.add(type);
-            String additionalMessage = " associated with " + type.getClass().getSimpleName();
+            SEEN.addAll(Arrays.asList(type));
+            String additionalMessage = " associated with " + Arrays.stream(type).map(t -> t.getClass().getSimpleName()).collect(Collectors.joining(", "));
             TableInfo sourceDocumentsTable = sourceSchema.getScope().getSchema("core", DbSchemaType.Migration).getTable("Documents");
             TableInfo targetDocumentsTable = CoreSchema.getInstance().getTableInfoDocuments();
             DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceDocumentsTable, targetDocumentsTable, DbSchemaType.Module, false, additionalMessage, new DefaultMigrationSchemaHandler(CoreSchema.getInstance().getSchema()){
