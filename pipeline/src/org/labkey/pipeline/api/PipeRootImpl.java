@@ -382,6 +382,9 @@ public class PipeRootImpl implements PipeRoot
     @Override
     public @Nullable FileLike resolvePathToFileLike(String relativePath)
     {
+        if (null == relativePath)
+            throw new NotFoundException("Must specify a file path");
+
         var parsedPath = org.labkey.api.util.Path.parse(relativePath);
 
         var pair = _resolveRoot(parsedPath);

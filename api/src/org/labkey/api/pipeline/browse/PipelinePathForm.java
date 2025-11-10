@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline.browse;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
@@ -28,6 +29,7 @@ import org.labkey.api.view.ViewForm;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,7 +102,15 @@ public class PipelinePathForm extends ViewForm
     {
         PipeRoot pr = getPipeRoot(c);
 
-        File dir = pr.resolvePath(getPath());
+        @Nullable File dir;
+        try
+        {
+            dir = pr.resolvePath(getPath());
+        }
+        catch (InvalidPathException e)
+        {
+            throw new NotFoundException("Invalid path: " + e.getMessage(), e);
+        }
         if (dir == null || !dir.exists())
             throw new NotFoundException("Could not find path " + getPath());
 
@@ -112,7 +122,15 @@ public class PipelinePathForm extends ViewForm
         List<File> result = new ArrayList<>();
         for (String fileName : _file)
         {
-            File f = pr.resolvePath(getPath() + "/" + fileName);
+            File f;
+            try
+            {
+                f = pr.resolvePath(getPath() + "/" + fileName);
+            }
+            catch (InvalidPathException e)
+            {
+                throw new NotFoundException("Invalid file: " + e.getMessage(), e);
+            }
             if (!allowNonExistentFiles && !NetworkDrive.exists(f))
             {
                 throw new NotFoundException("Could not find file '" + fileName + "' in '" + getPath() + "'");
