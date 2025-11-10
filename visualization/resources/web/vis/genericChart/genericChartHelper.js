@@ -1268,7 +1268,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         '4 Parameter': { label: 'Nonlinear 4PL', value: '4 Parameter', schemaPrefix: 'assay', equation: 'y = max + (min - max) / [1 + (x/inflection)^slope]' },
         'Four Parameter': { label: 'Nonlinear 4PL (Alternate)', value: 'Four Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [1 + (inflection - x) * slope]' },
         'Five Parameter': { label: 'Nonlinear 5PL', value: 'Five Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [[1 + (inflection - x) * slope]^asymmetry]' },
-        '5 Parameter': { label: 'Nonlinear 5PL (Alternate)', value: '5 Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'TBD' },
+        '5 Parameter': { label: 'Nonlinear 5PL (Alternate)', value: '5 Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / (1 + (2^(1/asymmetry) - 1) * ((inflection / x)^hillSlope))^asymmetry' },
     }
 
     const generateTrendlinePathHover = function(trendline) {
@@ -1368,7 +1368,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 if (trendlineConfig.logXScale && row.x <= 0) {
                     return undefined;
                 }
-                return row.x
+                return row.x;
             };
             const xMin = d3.min(points, xAcc);
             const xMax = d3.max(points, xAcc);

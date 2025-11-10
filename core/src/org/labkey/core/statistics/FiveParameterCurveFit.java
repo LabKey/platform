@@ -6,7 +6,7 @@ import org.labkey.api.data.statistics.DoublePoint;
 import static org.labkey.api.data.statistics.StatsService.CurveFitType.FIVE_PARAMETER_ALT;
 
 /*
-* Equation: Asymmetrical Sigmoidal, 5PL (aka Richard's five-parameter dose-response curve)
+* Equation: Asymmetrical Sigmoidal, 5PL (aka Richards five-parameter dose-response curve)
 * Y = Bottom + (Numerator/Denominator)
 * Numerator = Top - Bottom
 * Denominator = (1+(2^(1/S)-1)*((EC50/X)^HillSlope))^S
