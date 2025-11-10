@@ -1,6 +1,8 @@
 package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DatabaseMigrationConfiguration;
 import org.labkey.api.data.DatabaseMigrationService;
@@ -27,10 +29,12 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.DataClassDomainKind;
+import org.labkey.experiment.api.ExpDataClassType;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler implements ExperimentDeleteService
@@ -187,5 +191,11 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
                 }
             });
         }
+    }
+
+    @Override
+    public @NotNull Collection<AttachmentType> getAttachmentTypes()
+    {
+        return List.of(ExpDataClassType.get());
     }
 }

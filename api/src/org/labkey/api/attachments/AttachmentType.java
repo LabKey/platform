@@ -21,10 +21,12 @@ import org.labkey.api.data.SQLFragment;
 
 /**
  * Tags {@link Attachment} objects based on their intended use and what they're attached to. Does not
- * necessarily indicate that they are a file of a particular type/format.
+ * indicate that they are a file of a particular type/format.
  */
 public interface AttachmentType
 {
+    SQLFragment NO_ENTITY_IDS = new SQLFragment("SELECT NULL AS EntityId WHERE 1 = 0");
+
     AttachmentType UNKNOWN = new AttachmentType()
     {
         @NotNull
@@ -63,7 +65,7 @@ public interface AttachmentType
      * provide attachments of this type, without involving the core.Documents table. For example,
      * {@code SELECT EntityId FROM comm.Announcements}. Return null if this is not-yet-implemented or inappropriate.
      * For example, some attachments' parents are container IDs. If the method determines that no parents exist, then
-     * return a valid query that selects no rows, for example, {@code SELECT EntityID WHERE 1 = 0}.
+     * return a valid query that selects no rows, for example, {@code NO_ENTITY_IDS}.
      */
     default @Nullable SQLFragment getSelectParentEntityIdsSql()
     {

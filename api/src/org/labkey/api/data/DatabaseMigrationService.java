@@ -111,6 +111,8 @@ public interface DatabaseMigrationService
         void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema);
 
         @NotNull Collection<AttachmentType> getAttachmentTypes();
+
+        void afterMigration(DatabaseMigrationConfiguration configuration);
     }
 
     class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
@@ -327,9 +329,7 @@ public interface DatabaseMigrationService
                     copyAttachments(configuration, sourceSchema, new SQLClause(selectParents), type);
                 }
 
-                // TODO: **Test issues attachment copy
                 // TODO: implement remaining AttachmentTypes
-                // TODO: afterMigration() and update core.Documents' sequence
                 // TODO: throw if some registered AttachmentType is not seen
                 // TODO: fail if type.getSelectParentEntityIdsSql() returns null
             });
@@ -376,6 +376,11 @@ public interface DatabaseMigrationService
 
         @Override
         public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
+        {
+        }
+
+        @Override
+        public void afterMigration(DatabaseMigrationConfiguration configuration)
         {
         }
     }

@@ -66,13 +66,8 @@ public class ListItemType implements AttachmentType
             });
         });
 
-        SQLFragment sql = new SQLFragment();
-
-        if (selectStatements.isEmpty())
-            sql.append("SELECT EntityId WHERE 1 = 0");  // No lists with attachment columns
-        else
-            sql.append(StringUtils.join(selectStatements, "\n    UNION"));
-
-        return sql;
+        return selectStatements.isEmpty() ?
+            NO_ENTITY_IDS : // No lists with attachment columns
+            new SQLFragment(StringUtils.join(selectStatements, "\n    UNION"));
     }
 }

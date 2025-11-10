@@ -211,6 +211,13 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
         );
     }
 
+    @Override
+    public void afterMigration(DatabaseMigrationConfiguration configuration)
+    {
+        // Now that all schemas have copied their attachments into core.Documents, update that table's sequence
+        DatabaseMigrationService.get().updateSequences(configuration.getSourceScope().getSchema("core", DbSchemaType.Migration).getTable("Documents"), CoreSchema.getInstance().getTableInfoDocuments());
+    }
+
     // MigrationFilter implementation below
 
     private SQLFragment _groupFilterCondition = null;
