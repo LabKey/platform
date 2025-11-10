@@ -132,7 +132,7 @@ public class TableViewFormTestCase extends Assert
         // this is explicitly an array of size 1, so no parsing
         form = new BeanViewForm<>(BindBean.class, null);
         mpv = new MutablePropertyValues();
-        mpv.add("strArray[]", "Option 1, Option 2");
+        mpv.add("[]strArray", "Option 1, Option 2");
         form.bindParameters(mpv);
         typed = form.getTypedValues();
         assertEquals(1, typed.size());

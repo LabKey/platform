@@ -487,36 +487,37 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     {
         // Sort function might not exist in external datasource; skip that syntax if not
         boolean useSortFunction = sorted && _arraySortFunctionExists.get();
+        SQLFragment result = new SQLFragment();
 
-        // TODO: Use "string_agg()" in place of array_to_string(array_agg())?
-        SQLFragment result = new SQLFragment("array_to_string(");
         if (useSortFunction)
         {
+            result.append("array_to_string(");
             result.append("core.sort(");   // TODO: Switch to use ORDER BY option inside array aggregate instead of our custom function
+            result.append("array_agg(");
         }
-        result.append("array_agg(");
+        else
+        {
+            result.append("string_agg(");
+        }
+
         if (distinct)
         {
             result.append("DISTINCT ");
-        }
-        if (includeNulls)
-        {
-            result.append("COALESCE(CAST(");
         }
         result.append(sql);
 
         if (includeNulls)
         {
-            result.append(" AS VARCHAR), '')");
+            result.append("::text");
         }
-        result.append(")");
         if (useSortFunction)
         {
-            result.append(")");
+            result.append(")"); // array_agg
+            result.append(")"); // core.sort
         }
         result.append(", ");
         result.append(delimiterSQL);
-        result.append(")");
+        result.append(")"); // array_to_string | string_agg
 
         return result;
     }
