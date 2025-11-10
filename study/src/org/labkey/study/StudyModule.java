@@ -542,7 +542,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             @Override
             public @NotNull Collection<AttachmentType> getAttachmentTypes()
             {
-                return List.of(ProtocolDocumentType.get());
+                SpecimenService ss = SpecimenService.get();
+
+                return ss != null ?
+                    List.of(
+                        ProtocolDocumentType.get(),
+                        ss.getSpecimenRequestEventType()
+                    ) :
+                    List.of(ProtocolDocumentType.get());
             }
         });
 

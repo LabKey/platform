@@ -19,8 +19,11 @@ package org.labkey.list;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DatabaseMigrationService;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SqlSelector;
@@ -160,6 +163,14 @@ public class ListModule extends SpringModule
                 return metric;
             });
         }
+
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(ListSchema.getInstance().getSchema()){
+            @Override
+            public @NotNull Collection<AttachmentType> getAttachmentTypes()
+            {
+                return Set.of(ListItemType.get());
+            }
+        });
     }
 
     @NotNull

@@ -11,7 +11,6 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.InClause;
-import org.labkey.api.data.SimpleFilter.NotClause;
 import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -66,13 +65,17 @@ public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
         SimpleFilter deleteRelatedFilter = new SimpleFilter(
             new InClause(FieldKey.fromParts("RelatedIssueId"), COPIED_ISSUE_IDS, false, true) // Negated
         );
-        Table.delete(IssuesSchema.getInstance().getTableInfoRelatedIssues(), deleteRelatedFilter);
+        int deletedRowCount = Table.delete(IssuesSchema.getInstance().getTableInfoRelatedIssues(), deleteRelatedFilter);
+        LOG.info("   Deleted {} from RelatedIssues (RelatedIssueId)", StringUtilsLabKey.pluralize(deletedRowCount, "row"));
         SimpleFilter deleteFilter = new SimpleFilter(
             new InClause(FieldKey.fromParts("IssueId"), COPIED_ISSUE_IDS, false, true) // Negated
         );
-        Table.delete(IssuesSchema.getInstance().getTableInfoRelatedIssues(), deleteFilter);
-        Table.delete(IssuesSchema.getInstance().getTableInfoComments(), deleteFilter);
-        Table.delete(IssuesSchema.getInstance().getTableInfoIssues(), deleteFilter);
+        deletedRowCount = Table.delete(IssuesSchema.getInstance().getTableInfoRelatedIssues(), deleteFilter);
+        LOG.info("   Deleted {} from RelatedIssues (IssueId)", StringUtilsLabKey.pluralize(deletedRowCount, "row"));
+        deletedRowCount = Table.delete(IssuesSchema.getInstance().getTableInfoComments(), deleteFilter);
+        LOG.info("   Deleted {} from Comments", StringUtilsLabKey.pluralize(deletedRowCount, "row"));
+        deletedRowCount = Table.delete(IssuesSchema.getInstance().getTableInfoIssues(), deleteFilter);
+        LOG.info("   Deleted {} from Issues", StringUtilsLabKey.pluralize(deletedRowCount, "row"));
     }
 
     @Override
