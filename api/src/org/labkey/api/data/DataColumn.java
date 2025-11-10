@@ -821,7 +821,7 @@ public class DataColumn extends DisplayColumn
         if (value instanceof MultiChoice.Array arr)
             return arr;
         if (value instanceof String[] strArray)
-            return Arrays.asList(strArray);
+            return List.of(strArray);
         if (value instanceof List<?> l)
             return l.stream().map(o -> Objects.toString(o, null)).toList();
         return List.of(Objects.toString(value));
