@@ -58,6 +58,7 @@ import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -819,6 +820,8 @@ public class DataColumn extends DisplayColumn
             return StringUtils.isEmpty((String) value) ? List.of() : List.of((String)value);
         if (value instanceof MultiChoice.Array arr)
             return arr;
+        if (value instanceof String[] strArray)
+            return Arrays.asList(strArray);
         if (value instanceof List<?> l)
             return l.stream().map(o -> Objects.toString(o, null)).toList();
         return List.of(Objects.toString(value));
