@@ -1,7 +1,9 @@
 package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.DatabaseMigrationConfiguration;
@@ -16,11 +18,14 @@ import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.api.ExpProtocolAttachmentType;
+import org.labkey.api.exp.api.ExpRunAttachmentType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -152,6 +157,15 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
         executor.execute(
             new SQLFragment("DELETE FROM exp.Object WHERE ObjectId")
                 .append(objectIdClause)
+        );
+    }
+
+    @Override
+    public @NotNull Collection<AttachmentType> getAttachmentTypes()
+    {
+        return List.of(
+            ExpProtocolAttachmentType.get(),
+            ExpRunAttachmentType.get()
         );
     }
 }

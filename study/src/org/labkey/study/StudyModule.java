@@ -76,6 +76,7 @@ import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
 import org.labkey.api.specimen.model.LocationDomainKind;
@@ -560,6 +561,16 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             {
                 // Datasets don't have a Container column, so treat as site-wide. TODO: Treat shared datasets differently?
                 return SITE_WIDE_TABLE;
+            }
+        });
+
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(SpecimenSchema.get().getSchema())
+        {
+            @Override
+            public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+            {
+                // The specimen tables lack both a container column and an FK to a table that does, but they're single-container tables
+                return sourceTable.getName().endsWith("_specimen") ? SITE_WIDE_TABLE : super.getContainerFieldKey(sourceTable);
             }
         });
     }
