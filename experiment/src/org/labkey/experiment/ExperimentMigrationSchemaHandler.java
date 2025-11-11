@@ -18,6 +18,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpProtocolAttachmentType;
 import org.labkey.api.exp.api.ExpRunAttachmentType;
+import org.labkey.api.migration.AssaySkipContainers;
 import org.labkey.api.migration.DatabaseMigrationConfiguration;
 import org.labkey.api.migration.DefaultMigrationSchemaHandler;
 import org.labkey.api.query.FieldKey;
@@ -26,6 +27,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -75,8 +77,17 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     @Override
     public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
     {
+//        Set<GUID> assayFilteredContainers = assayFilteredContainers(containers);
         return switch (sourceTable.getName())
         {
+//            case "ExperimentRun", "ProtocolApplication" -> super.getContainerClause(sourceTable, assayFilteredContainers);
+//            case "Data" -> new AndClause(
+//                new InClause(FieldKey.fromParts("Container"), containers),
+//                new OrClause(
+//                    new CompareClause(FieldKey.fromParts("RunId"), CompareType.ISBLANK, null),
+//                    new InClause(FieldKey.fromParts("RunId", "Container"), assayFilteredContainers)
+//                )
+//            );
             case "DataInput" -> new AndClause(
                 new InClause(FieldKey.fromParts("DataId", "Container"), containers),
                 new InClause(FieldKey.fromParts("TargetApplicationId", "RunId", "Container"), containers)
@@ -123,6 +134,13 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             );
             default -> super.getContainerClause(sourceTable, containers);
         };
+    }
+
+    private Set<GUID> assayFilteredContainers(Set<GUID> containers)
+    {
+        Set<GUID> filteredContainers = new HashSet<>(containers);
+        filteredContainers.removeAll(AssaySkipContainers.getContainers());
+        return filteredContainers;
     }
 
     @Override

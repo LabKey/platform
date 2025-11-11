@@ -7,7 +7,6 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.migration.DatabaseMigrationConfiguration.DefaultDatabaseMigrationConfiguration;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ConfigurationException;
@@ -61,7 +60,7 @@ public interface DatabaseMigrationService
 
     // Helper method that parses a data filter then adds it and its container to the provided collections, coalescing
     // cases where multiple containers specify the same filter
-    static void addDataFilter(String filterName, List<DataFilter> dataFilters, Set<GUID> filteredContainers, GUID guid, String filter)
+    static void addDataFilter(String filterName, List<DataFilter> dataFilters, Set<GUID> filteredContainers, @NotNull GUID guid, String filter)
     {
         String[] filterParts = filter.split("=");
         if (filterParts.length != 2)

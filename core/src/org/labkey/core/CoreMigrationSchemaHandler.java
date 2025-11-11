@@ -2,6 +2,7 @@ package org.labkey.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.data.CompareType;
@@ -192,14 +193,19 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
     }
 
     @Override
-    public void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
+    public void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Set<GUID> copyContainers)
     {
         // Default handling for core's standard attachment types
-        super.copyAttachments(configuration, sourceSchema, targetSchema);
+        super.copyAttachments(configuration, sourceSchema, targetSchema, copyContainers);
 
         // Special handling for LookAndFeelResourceType, which must select from the source database
-        SQLFragment sql = new SQLFragment();
-        LookAndFeelResourceType.get().addWhereSql(sql, "Parent", "DocumentName");
+        SQLFragment sql = new SQLFragment()
+            .append("Parent").appendInClause(copyContainers, sourceSchema.getSqlDialect())
+            .append("AND (DocumentName IN (?, ?) OR ")
+            .add(AttachmentCache.FAVICON_FILE_NAME)
+            .add(AttachmentCache.STYLESHEET_FILE_NAME)
+            .append("DocumentName LIKE '" + AttachmentCache.LOGO_FILE_NAME_PREFIX + "%' OR ")
+            .append("DocumentName LIKE '" + AttachmentCache.MOBILE_LOGO_FILE_NAME_PREFIX + "%')");
         copyAttachments(configuration, sourceSchema, new SQLClause(sql), LookAndFeelResourceType.get());
     }
 

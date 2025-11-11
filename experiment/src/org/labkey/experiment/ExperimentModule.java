@@ -72,7 +72,6 @@ import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
-import org.labkey.api.migration.AssaySkipFilter;
 import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.migration.ExperimentDeleteService;
 import org.labkey.api.module.ModuleContext;
@@ -880,7 +879,6 @@ public class ExperimentModule extends SpringModule
         DataClassMigrationSchemaHandler dcHandler = new DataClassMigrationSchemaHandler();
         DatabaseMigrationService.get().registerSchemaHandler(dcHandler);
         ExperimentDeleteService.setInstance(dcHandler);
-        DatabaseMigrationService.get().registerMigrationFilter(new AssaySkipFilter());
     }
 
     @Override

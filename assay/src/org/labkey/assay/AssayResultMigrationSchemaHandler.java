@@ -12,14 +12,19 @@ import org.labkey.api.data.SimpleFilter.OrClause;
 import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.migration.AssaySkipContainers;
 import org.labkey.api.migration.DatabaseMigrationService.DataFilter;
 import org.labkey.api.migration.DefaultMigrationSchemaHandler;
 import org.labkey.api.migration.ExperimentDeleteService;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.assay.plate.PlateReplicateStatsDomainKind;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 class AssayResultMigrationSchemaHandler extends DefaultMigrationSchemaHandler
@@ -40,18 +45,30 @@ class AssayResultMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     @Override
     public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
     {
-        return new SQLClause(skipTable(sourceTable) ?
-            new SQLFragment("1 = 0") :
-            new SQLFragment("DataId IN (SELECT RowId FROM exp.Data WHERE Container")
-                .appendInClause(containers, sourceTable.getSqlDialect())
-                .append(")")
-        );
+        final SQLFragment sql;
+
+        if (skipTable(sourceTable))
+        {
+            sql = new SQLFragment("1 = 0");
+        }
+        else
+        {
+            Set<GUID> containerIds = new HashSet<>(containers);
+            containerIds.removeAll(AssaySkipContainers.getContainers());
+            sql = new SQLFragment("DataId IN (SELECT RowId FROM exp.Data WHERE Container")
+                .appendInClause(containerIds, sourceTable.getSqlDialect())
+                .append(")");
+        }
+
+        return new SQLClause(sql);
     }
 
     @Override
     public void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames)
     {
-        // We want no rows from containers with a domain data filter, so don't add any clauses
+        // No filtering on assay results for now; just add the passed in containers. Note that these will be filtered
+        // if AssaySkipContainers is configured.
+        orClause.addClause(getContainerClause(sourceTable, filter.containers()));
     }
 
     @Override
@@ -78,6 +95,9 @@ class AssayResultMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                 // Delete exp.Data, exp.Object, etc. rows associated with the rows that weren't copied
                 ExperimentDeleteService.get().deleteDataRows(notCopiedObjectIds);
             }
+
+            // TODO: Temp!
+            LOG.info("   " + StringUtilsLabKey.pluralize(new TableSelector(sourceTable, Collections.singleton("DataId")).stream(Integer.class).distinct().count(), "distinct DataId"));
         }
     }
 }

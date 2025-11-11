@@ -5,7 +5,10 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SimpleFilter.FilterClause;
+import org.labkey.api.data.SimpleFilter.OrClause;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.migration.DatabaseMigrationService.DataFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
 
@@ -27,10 +30,10 @@ public interface MigrationSchemaHandler
     List<TableInfo> getTablesToCopy();
 
     // Create a filter clause that selects from all specified containers and (in some overrides) applies table-specific filters
-    SimpleFilter.FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers);
+    FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers);
 
     // Create a filter clause that selects from all specified containers
-    SimpleFilter.FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers);
+    FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers);
 
     // Return the FieldKey that can be used to filter this table by container. Special values SITE_WIDE_TABLE and
     // DUMMY_FIELD_KEY can be returned for special behaviors. DUMMY_FIELD_KEY ensures that the handler's custom
@@ -38,9 +41,9 @@ public interface MigrationSchemaHandler
     @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable);
 
     // Create a filter clause that selects all rows from unfiltered containers plus filtered rows from the filtered containers
-    SimpleFilter.FilterClause getDomainDataFilterClause(Set<GUID> copyContainers, Set<GUID> filteredContainers, List<DatabaseMigrationService.DataFilter> domainFilters, TableInfo sourceTable, Set<String> selectColumnNames);
+    FilterClause getDomainDataFilterClause(Set<GUID> copyContainers, Set<GUID> filteredContainers, List<DataFilter> domainFilters, TableInfo sourceTable, Set<String> selectColumnNames);
 
-    void addDomainDataFilterClause(SimpleFilter.OrClause orClause, DatabaseMigrationService.DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames);
+    void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames);
 
     // Do any necessary clean up after the target table has been populated. notCopiedFilter selects all rows in the
     // source table that were NOT copied to the target table. (For example, rows in a global table not copied due to
@@ -49,8 +52,7 @@ public interface MigrationSchemaHandler
 
     void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema);
 
-    // TODO: Return Collection<AttachmentType>, indicating which attachment types it handled?
-    void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema);
+    void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Set<GUID> copyContainers);
 
     @NotNull Collection<AttachmentType> getAttachmentTypes();
 

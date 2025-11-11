@@ -14,10 +14,16 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SimpleFilter.AndClause;
+import org.labkey.api.data.SimpleFilter.FilterClause;
+import org.labkey.api.data.SimpleFilter.InClause;
+import org.labkey.api.data.SimpleFilter.OrClause;
+import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TempTableInClauseGenerator;
+import org.labkey.api.migration.DatabaseMigrationService.DataFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.TableSorter;
@@ -65,8 +71,8 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         Set<TableInfo> sortedTables = new LinkedHashSet<>(TableSorter.sort(getSchema(), true));
 
         Set<TableInfo> allTables = getSchema().getTableNames().stream()
-                .map(getSchema()::getTable)
-                .collect(Collectors.toCollection(HashSet::new));
+            .map(getSchema()::getTable)
+            .collect(Collectors.toCollection(HashSet::new));
         allTables.removeAll(sortedTables);
 
         if (!allTables.isEmpty())
@@ -75,26 +81,26 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         }
 
         return sortedTables.stream()
-                // Skip all views and virtual tables (e.g., test.Containers2, which is a table on SS but a view on PG)
-                .filter(table -> table.getTableType() == DatabaseTableType.TABLE)
-                .collect(Collectors.toCollection(ArrayList::new)); // Ensure mutable
+            // Skip all views and virtual tables (e.g., test.Containers2, which is a table on SS but a view on PG)
+            .filter(table -> table.getTableType() == DatabaseTableType.TABLE)
+            .collect(Collectors.toCollection(ArrayList::new)); // Ensure mutable
     }
 
     @Override
-    public SimpleFilter.FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
+    public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
     {
         return getContainerClause(sourceTable, containers);
     }
 
     @Override
-    public SimpleFilter.FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
+    public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
     {
         FieldKey containerFieldKey = getContainerFieldKey(sourceTable);
 
         if (containerFieldKey == SITE_WIDE_TABLE)
-            return new SimpleFilter.SQLClause(new SQLFragment("TRUE"));
+            return new SQLClause(new SQLFragment("TRUE"));
 
-        return new SimpleFilter.InClause(containerFieldKey, containers);
+        return new InClause(containerFieldKey, containers);
     }
 
     @Override
@@ -113,8 +119,8 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
                 // Use the table's schema (or a migration schema retrieved from the table's scope), since we want a Migration schema with XML metadata applied
                 DbSchema tableSchema = table.getSchema();
                 DbSchema lookupSchema = fk.getLookupSchemaKey().equals(new SchemaKey(null, tableSchema.getName())) ?
-                        tableSchema :
-                        tableSchema.getScope().getSchema(fk.getLookupSchemaName(), DbSchemaType.Migration);
+                    tableSchema :
+                    tableSchema.getScope().getSchema(fk.getLookupSchemaName(), DbSchemaType.Migration);
                 TableInfo lookupTableInfo = lookupSchema.getTable(fk.getLookupTableName());
                 if (lookupTableInfo != null)
                 {
@@ -139,14 +145,14 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
     }
 
     @Override
-    public final SimpleFilter.FilterClause getDomainDataFilterClause(Set<GUID> copyContainers, Set<GUID> filteredContainers, List<DatabaseMigrationService.DataFilter> domainFilters, TableInfo sourceTable, Set<String> selectColumnNames)
+    public final FilterClause getDomainDataFilterClause(Set<GUID> copyContainers, Set<GUID> filteredContainers, List<DataFilter> domainFilters, TableInfo sourceTable, Set<String> selectColumnNames)
     {
         // Filtered case: remove the filtered containers from the unconditional container set
         Set<GUID> otherContainers = new HashSet<>(copyContainers);
         otherContainers.removeAll(filteredContainers);
-        SimpleFilter.FilterClause ret = getContainerClause(sourceTable, otherContainers);
+        FilterClause ret = getContainerClause(sourceTable, otherContainers);
 
-        SimpleFilter.OrClause orClause = new SimpleFilter.OrClause();
+        OrClause orClause = new OrClause();
 
         // Delegate to the MigrationSchemaHandler to add domain-filtered containers back with their special filter applied
         domainFilters.forEach(filter -> addDomainDataFilterClause(orClause, filter, sourceTable, selectColumnNames));
@@ -161,13 +167,13 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
     }
 
     @Override
-    public void addDomainDataFilterClause(SimpleFilter.OrClause orClause, DatabaseMigrationService.DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames)
+    public void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames)
     {
         addDataFilterClause(orClause, filter, sourceTable, selectColumnNames);
     }
 
     // Add a filter and return true if the column exists directly on the table
-    protected boolean addDataFilterClause(SimpleFilter.OrClause orClause, DatabaseMigrationService.DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames)
+    protected boolean addDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames)
     {
         boolean columnExists = selectColumnNames.contains(filter.column());
 
@@ -175,10 +181,10 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         {
             // Select all rows in this domain-filtered container that meet its criteria
             orClause.addClause(
-                    new SimpleFilter.AndClause(
-                            getContainerClause(sourceTable, filter.containers()),
-                            filter.condition()
-                    )
+                new AndClause(
+                    getContainerClause(sourceTable, filter.containers()),
+                    filter.condition()
+                )
             );
         }
 
@@ -187,15 +193,15 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
 
     // Add a clause that selects all rows where the object property with <propertyId> equals the filter value. This
     // is only for provisioned tables that lack an ObjectId, MaterialId, or DataId column.
-    protected void addObjectPropertyClause(SimpleFilter.OrClause orClause, DatabaseMigrationService.DataFilter filter, TableInfo sourceTable, int propertyId)
+    protected void addObjectPropertyClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, int propertyId)
     {
         SQLFragment flagWhere = new SQLFragment("lsid IN (SELECT ObjectURI FROM exp.Object o INNER JOIN exp.ObjectProperty op ON o.ObjectId = op.ObjectId WHERE StringValue = ? AND PropertyId = ?)", filter.condition().getParamVals()[0], propertyId);
 
         orClause.addClause(
-                new SimpleFilter.AndClause(
-                        getContainerClause(sourceTable, filter.containers()),
-                        new SimpleFilter.SQLClause(flagWhere)
-                )
+            new AndClause(
+                getContainerClause(sourceTable, filter.containers()),
+                new SQLClause(flagWhere)
+            )
         );
     }
 
@@ -229,7 +235,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
     }
 
     @Override
-    public void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
+    public void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Set<GUID> copyContainers)
     {
         // Now that the target tables in this schema have been populated, copy all associated attachments. By
         // default, use this handler's attachment types to select from the target tables all EntityIds that might be
@@ -245,12 +251,11 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
                 SQLFragment selectParents = new SQLFragment("Parent");
                 // This query against the source database is likely to contain a large IN clause, so use an alternative InClauseGenerator
                 sourceSchema.getSqlDialect().appendInClauseSql(selectParents, entityIds, getTempTableInClauseGenerator(sourceSchema.getScope()));
-                copyAttachments(configuration, sourceSchema, new SimpleFilter.SQLClause(selectParents), type);
+                copyAttachments(configuration, sourceSchema, new SQLClause(selectParents), type);
             }
 
-            // TODO: implement remaining AttachmentTypes
+            // TODO: fail if type.getSelectParentEntityIdsSql() returns null?
             // TODO: throw if some registered AttachmentType is not seen
-            // TODO: fail if type.getSelectParentEntityIdsSql() returns null
         });
     }
 
@@ -264,7 +269,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
     private static final Set<AttachmentType> SEEN = new HashSet<>();
 
     // Copy all core.Documents rows that match the provided filter clause
-    protected void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, SimpleFilter.FilterClause filterClause, AttachmentType... type)
+    protected void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, FilterClause filterClause, AttachmentType... type)
     {
         SEEN.addAll(Arrays.asList(type));
         String additionalMessage = " associated with " + Arrays.stream(type).map(t -> t.getClass().getSimpleName()).collect(Collectors.joining(", "));
@@ -273,7 +278,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceDocumentsTable, targetDocumentsTable, DbSchemaType.Module, false, additionalMessage, new DefaultMigrationSchemaHandler(CoreSchema.getInstance().getSchema())
         {
             @Override
-            public SimpleFilter.FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
+            public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
             {
                 return filterClause;
             }
@@ -285,7 +290,10 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         Set<AttachmentType> unseen = new HashSet<>(AttachmentService.get().getAttachmentTypes());
         unseen.removeAll(SEEN);
 
-        DatabaseMigrationService.LOG.info("These AttachmentTypes have not been seen: {}", unseen.stream().map(type -> type.getClass().getSimpleName()).collect(Collectors.joining(", ")));
+        if (SEEN.isEmpty())
+            DatabaseMigrationService.LOG.info("All AttachmentTypes have been seen");
+        else
+            DatabaseMigrationService.LOG.info("These AttachmentTypes have not been seen: {}", unseen.stream().map(type -> type.getClass().getSimpleName()).collect(Collectors.joining(", ")));
     }
 
     @Override
