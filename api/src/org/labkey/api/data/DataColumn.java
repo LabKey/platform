@@ -58,7 +58,6 @@ import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -153,7 +152,6 @@ public class DataColumn extends DisplayColumn
         _textAlign = _displayColumn.getTextAlign();
     }
 
-
     boolean analyticsProviderInitialized = false;
 
     @Override
@@ -177,7 +175,6 @@ public class DataColumn extends DisplayColumn
         return super.getAnalyticsProviders();
     }
 
-
     @Override
     public @NotNull Set<ClientDependency> getClientDependencies()
     {
@@ -186,7 +183,6 @@ public class DataColumn extends DisplayColumn
         return super.getClientDependencies();
     }
 
-
     protected ColumnInfo getDisplayField(@NotNull ColumnInfo col, boolean withLookups)
     {
         if (!withLookups)
@@ -194,7 +190,6 @@ public class DataColumn extends DisplayColumn
         ColumnInfo display = col.getDisplayField();
         return null==display ? col : display;
     }
-
 
     @Override
     public String toString()
@@ -737,7 +732,6 @@ public class DataColumn extends DisplayColumn
 
         return ctx.getForm() == null || col == null ? HtmlString.EMPTY_STRING : ctx.getErrors(col);
     }
-
 
     private void renderSelectFormInput(HtmlWriter out, String formFieldName, Object value, List<String> strValues, boolean disabledInput, NamedObjectList entryList)
     {
