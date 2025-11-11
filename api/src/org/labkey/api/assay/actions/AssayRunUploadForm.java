@@ -86,7 +86,7 @@ import static java.util.Collections.emptyMap;
 
 public class AssayRunUploadForm<ProviderType extends AssayProvider> extends ProtocolIdForm implements AssayRunUploadContext<ProviderType>
 {
-    protected Map<DomainProperty, String> _uploadSetProperties = null;
+    protected Map<DomainProperty, String> _batchProperties = null;
     protected Map<DomainProperty, String> _runProperties = null;
     private String _comments;
     private String _name;
@@ -129,10 +129,10 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     @Override
     public Map<DomainProperty, String> getBatchProperties() throws ExperimentException
     {
-        if (_uploadSetProperties == null)
-            _uploadSetProperties = getPropertyMapFromRequest(getProvider().getBatchDomain(getProtocol()));
+        if (_batchProperties == null)
+            _batchProperties = getPropertyMapFromRequest(getProvider().getBatchDomain(getProtocol()));
 
-        return Collections.unmodifiableMap(_uploadSetProperties);
+        return Collections.unmodifiableMap(_batchProperties);
     }
 
     protected Map<DomainProperty, String> getPropertyMapFromRequest(Domain domain) throws ExperimentException
