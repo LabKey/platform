@@ -18,7 +18,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpProtocolAttachmentType;
 import org.labkey.api.exp.api.ExpRunAttachmentType;
-import org.labkey.api.migration.AssaySkipContainers;
 import org.labkey.api.migration.DatabaseMigrationConfiguration;
 import org.labkey.api.migration.DefaultMigrationSchemaHandler;
 import org.labkey.api.query.FieldKey;
@@ -27,7 +26,6 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -134,13 +132,6 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             );
             default -> super.getContainerClause(sourceTable, containers);
         };
-    }
-
-    private Set<GUID> assayFilteredContainers(Set<GUID> containers)
-    {
-        Set<GUID> filteredContainers = new HashSet<>(containers);
-        filteredContainers.removeAll(AssaySkipContainers.getContainers());
-        return filteredContainers;
     }
 
     @Override

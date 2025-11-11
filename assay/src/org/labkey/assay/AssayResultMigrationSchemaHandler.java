@@ -24,7 +24,6 @@ import org.labkey.assay.plate.PlateReplicateStatsDomainKind;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 class AssayResultMigrationSchemaHandler extends DefaultMigrationSchemaHandler
@@ -53,10 +52,8 @@ class AssayResultMigrationSchemaHandler extends DefaultMigrationSchemaHandler
         }
         else
         {
-            Set<GUID> containerIds = new HashSet<>(containers);
-            containerIds.removeAll(AssaySkipContainers.getContainers());
             sql = new SQLFragment("DataId IN (SELECT RowId FROM exp.Data WHERE Container")
-                .appendInClause(containerIds, sourceTable.getSqlDialect())
+                .appendInClause(AssaySkipContainers.getFilteredContainers(containers), sourceTable.getSqlDialect())
                 .append(")");
         }
 

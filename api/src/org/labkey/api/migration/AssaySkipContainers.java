@@ -2,6 +2,7 @@ package org.labkey.api.migration;
 
 import org.labkey.api.util.GUID;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -22,5 +23,12 @@ public class AssaySkipContainers
     public static Set<GUID> getContainers()
     {
         return SKIP_CONTAINERS;
+    }
+
+    public static Set<GUID> getFilteredContainers(Set<GUID> containers)
+    {
+        Set<GUID> filteredContainers = new HashSet<>(containers);
+        filteredContainers.removeAll(AssaySkipContainers.getContainers());
+        return filteredContainers;
     }
 }
