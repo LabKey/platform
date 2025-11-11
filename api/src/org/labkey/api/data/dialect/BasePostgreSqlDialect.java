@@ -494,27 +494,46 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             result.append("array_to_string(");
             result.append("core.sort(");   // TODO: Switch to use ORDER BY option inside array aggregate instead of our custom function
             result.append("array_agg(");
+            if (distinct)
+            {
+                result.append("DISTINCT ");
+            }
+
+            if (includeNulls)
+            {
+                result.append("COALESCE(CAST(");
+                result.append(sql);
+                result.append(" AS VARCHAR), '')");
+            }
+            else
+            {
+                result.append(sql);
+            }
+
+            result.append(")"); // array_agg
+            result.append(")"); // core.sort
         }
         else
         {
             result.append("string_agg(");
+            if (distinct)
+            {
+                result.append("DISTINCT ");
+            }
+
+            if (includeNulls)
+            {
+                result.append("COALESCE(");
+                result.append(sql);
+                result.append("::text, '')");
+            }
+            else
+            {
+                result.append(sql);
+                result.append("::text");
+            }
         }
 
-        if (distinct)
-        {
-            result.append("DISTINCT ");
-        }
-        result.append(sql);
-
-        if (includeNulls)
-        {
-            result.append("::text");
-        }
-        if (useSortFunction)
-        {
-            result.append(")"); // array_agg
-            result.append(")"); // core.sort
-        }
         result.append(", ");
         result.append(delimiterSQL);
         result.append(")"); // array_to_string | string_agg
