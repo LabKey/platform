@@ -29,9 +29,8 @@ import java.util.List;
 public class AssayReimportIndexTest extends BaseWebDriverTest
 {
     private static final String ASSAY_NAME = DomainKind.Assay.randomName("test+assay");
-    // TODO: Replace each of the following with DomainKind.Assay.randomField(<fieldName>, ColumnType.File) once Issue 54218 is fixed.
-    private static final FieldInfo BATCH_FILE_FIELD = new FieldInfo("batchFile", ColumnType.File);
-    private static final FieldInfo RUN_FILE_FIELD = new FieldInfo("runFile", ColumnType.File);
+    private static final FieldInfo BATCH_FILE_FIELD = DomainKind.Assay.randomField("batchFile", ColumnType.File);
+    private static final FieldInfo RUN_FILE_FIELD = DomainKind.Assay.randomField("runFile", ColumnType.File);
 
     @BeforeClass
     public static void setupProject() throws Exception

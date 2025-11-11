@@ -220,14 +220,12 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
                 return new HtmlView(msg);
             } //pipe root does not exist
-            else if (isCloudAndUnsupported(pipeRoot, _protocol))
+            else if (isCloudAndUnsupported(pipeRoot))
             {
                 return HtmlView.err("The pipeline provider for this assay does not support using cloud-based storage. Please contact your administrator.");
             }
-            else
-            {
-                return getBatchPropertiesView(form, false, errors);
-            }
+
+            return getBatchPropertiesView(form, false, errors);
         }
         else
         {
@@ -291,7 +289,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         return handler.getSuccessUrl(form);
     }
 
-    private boolean isCloudAndUnsupported(@NotNull PipeRoot pipeRoot, ExpProtocol protocol)
+    private boolean isCloudAndUnsupported(@NotNull PipeRoot pipeRoot)
     {
         return (pipeRoot.isCloudRoot() &&
                 null != _provider &&
@@ -340,7 +338,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 parameterValueMap.put(dp.getName(), runProperties.get(dp));
             }
         }
-        catch(ExperimentException e)
+        catch (ExperimentException e)
         {
             errors.addError(new ObjectError("main", null, null, e.getMessage()));
         }
@@ -378,7 +376,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             view.setInitialValues(inputNameToValue);
         }
 
-        // issue 19090: add hidden form field for properties with default value that are hidden from insert view
+        // Issue 19090: add a hidden form field for properties with default value that are hidden from the insert view
         for (DomainProperty prop : properties)
         {
             String inputName = getInputName(prop);
@@ -507,11 +505,11 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     }
 
     /**
-     * Decide whether or not to show the batch properties step in the wizard.
+     * Decide whether to show the batch properties step in the wizard.
      * @param form the form with posted values
      * @param batchDomain domain for the batch fields
      */
-    protected boolean showBatchStep(FormType form, Domain batchDomain) throws ServletException
+    protected boolean showBatchStep(FormType form, Domain batchDomain)
     {
         return batchDomain != null && !batchDomain.getProperties().isEmpty();
     }
@@ -666,12 +664,12 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         VBox vbox = new VBox();
 
-        JspView<AssayRunUploadForm> warningsView = new JspView<>("/org/labkey/api/assay/actions/newUploadWarnings.jsp", newRunForm);
+        JspView<AssayRunUploadForm<?>> warningsView = new JspView<>("/org/labkey/api/assay/actions/newUploadWarnings.jsp", newRunForm);
         if (newRunForm.getTransformResult().getWarnings() != null)
             warningsView.setTitle("Transform Warnings");
         vbox.addView(warningsView);
 
-        JspView<AssayRunUploadForm> assayPropsView = new JspView<>("/org/labkey/assay/view/newUploadAssayProperties.jsp", newRunForm);
+        JspView<AssayRunUploadForm<?>> assayPropsView = new JspView<>("/org/labkey/assay/view/newUploadAssayProperties.jsp", newRunForm);
         assayPropsView.setTitle("Assay Properties");
         vbox.addView(assayPropsView);
 
@@ -687,7 +685,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             AssayWellExclusionService svc = AssayWellExclusionService.getProvider(_protocol);
             if (svc != null)
             {
-                HttpView exclusionWarning = svc.getAssayReImportWarningView(getContainer(), newRunForm.getReRun());
+                HttpView<?> exclusionWarning = svc.getAssayReImportWarningView(getContainer(), newRunForm.getReRun());
                 if (exclusionWarning != null)
                 {
                     vbox.addView(exclusionWarning);
@@ -695,7 +693,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             }
 
             AssayQCService qcService = AssayQCService.getProvider();
-            HttpView qcWarning = qcService.getAssayReImportWarningView(getContainer(), newRunForm.getReRun());
+            HttpView<?> qcWarning = qcService.getAssayReImportWarningView(getContainer(), newRunForm.getReRun());
             if (qcWarning != null)
             {
                 vbox.addView(qcWarning);
@@ -769,9 +767,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     public static String getInputName(DomainProperty property, String disambiguationId)
     {
         if (disambiguationId != null)
-            return disambiguationId + "_" + property.getName();
+            return TableViewForm.getMultiPartFormFieldNameForColumn(disambiguationId + "_" + property.getName());
         else
-            return property.getName();
+            return TableViewForm.getMultiPartFormFieldNameForColumn(property.getName());
     }
 
     public static String getInputName(DomainProperty property)
@@ -835,14 +833,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     }
 
     @Override
-    @Nullable
     public void addNavTrail(NavTree root)
     {
         if (null != _protocol)
         {
-            ActionURL helper = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol);
-            root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
-            root.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
+            AssayUrls urlProvider = PageFlowUtil.urlProvider(AssayUrls.class);
+            ActionURL helper = urlProvider.getAssayRunsURL(getContainer(), _protocol);
+            root.addChild("Assay List", urlProvider.getAssayListURL(getContainer()));
+            root.addChild(_protocol.getName(), urlProvider.getAssayRunsURL(getContainer(), _protocol));
             String finalChild = "Data Import";
             if (_stepDescription != null)
             {
@@ -951,14 +949,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         @Override
-        public boolean executeStep(FormType form, BindException errors) throws ServletException, SQLException, ExperimentException
+        public boolean executeStep(FormType form, BindException errors)
         {
             // nothing to handle but need to show the run step handler
             return false;
         }
 
         @Override
-        public ModelAndView getNextStep(FormType form, BindException errors) throws ServletException, SQLException, ExperimentException
+        public ModelAndView getNextStep(FormType form, BindException errors) throws ServletException, ExperimentException
         {
             if ((form.isResetDefaultValues() || errors.hasErrors()) && showBatchStep(form, form.getProvider().getBatchDomain(form.getProtocol())))
                 return getBatchPropertiesView(form, !form.isResetDefaultValues(), errors);
@@ -1068,8 +1066,8 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             {
                 for (ValidationError error : e.getErrors())
                 {
-                    if (error instanceof PropertyValidationError)
-                        errors.addError(new FieldError("AssayUploadForm", ((PropertyValidationError)error).getProperty(), null, false,
+                    if (error instanceof PropertyValidationError pve)
+                        errors.addError(new FieldError("AssayUploadForm", pve.getProperty(), null, false,
                                 new String[]{ERROR_MSG}, new Object[0], error.getMessage() == null ? error.toString() : error.getMessage()));
                     else
                         errors.reject(ERROR_MSG, error.getMessage() == null ? error.toString() : error.getMessage());
