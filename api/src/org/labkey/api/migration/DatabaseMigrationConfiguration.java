@@ -1,8 +1,11 @@
-package org.labkey.api.data;
+package org.labkey.api.migration;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.DatabaseMigrationService.MigrationSchemaHandler;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 
 import java.util.Set;
 import java.util.function.Predicate;

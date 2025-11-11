@@ -7,9 +7,6 @@ import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DatabaseMigrationConfiguration;
-import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -23,6 +20,11 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TestSchema;
+import org.labkey.api.files.FileSystemAttachmentType;
+import org.labkey.api.migration.DatabaseMigrationConfiguration;
+import org.labkey.api.migration.DatabaseMigrationService;
+import org.labkey.api.migration.DefaultMigrationSchemaHandler;
+import org.labkey.api.migration.MigrationFilter;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.report.ReportType;
@@ -35,7 +37,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implements DatabaseMigrationService.MigrationFilter
+class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implements MigrationFilter
 {
     static void register()
     {
@@ -207,6 +209,7 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
         return List.of(
             AuthenticationLogoType.get(),
             AvatarType.get(),
+            FileSystemAttachmentType.get(),
             ReportType.get()
         );
     }

@@ -1,8 +1,6 @@
 package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.data.DatabaseMigrationService.DataFilter;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
@@ -14,6 +12,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
+import org.labkey.api.migration.DatabaseMigrationService.DataFilter;
+import org.labkey.api.migration.DefaultMigrationSchemaHandler;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
 
