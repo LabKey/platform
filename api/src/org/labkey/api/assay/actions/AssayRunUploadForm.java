@@ -529,6 +529,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 }
             }
         }
+
         return value;
     }
 
@@ -578,7 +579,6 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     {
         _batchId = batchId;
     }
-
 
     public void clearDefaultValues(Domain domain)
     {
