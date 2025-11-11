@@ -42,7 +42,6 @@ import org.labkey.api.view.ActionURL;
 import jakarta.servlet.http.HttpServletRequest;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
@@ -78,7 +77,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private ReImportOption _reImportOption;
     private boolean _allowCrossRunFileInputs;
 
-    private File _originalFileLocation;
+    private FileLike _originalFileLocation;
 
     // Cached values that aren't serializable
     private transient User _user;
@@ -411,7 +410,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
 
     @Nullable
     @Override
-    public File getOriginalFileLocation()
+    public FileLike getOriginalFileLocation()
     {
         return _originalFileLocation;
     }

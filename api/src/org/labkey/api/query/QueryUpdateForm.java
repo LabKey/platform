@@ -51,8 +51,7 @@ public class QueryUpdateForm extends TableViewForm
 
     public QueryUpdateForm(@NotNull TableInfo table, @NotNull ViewContext ctx, @Nullable BindException errors)
     {
-        _tinfo = table;
-        _dynaClass = new QueryWrapperDynaClass(this);
+        super(table);
         setViewContext(ctx);
 
         // TODO: Fix this hack.
@@ -97,8 +96,9 @@ public class QueryUpdateForm extends TableViewForm
                 sb.append(c);
         }
 
+        // Issue 54094: Ensure it works when backslash is the last character
         if (escaping)
-            throw new IllegalArgumentException("Invalid escape at end of encoded name: " + columnName);
+            sb.append(BACKSLASH);
 
         return getTable().getColumn(sb.toString());
     }

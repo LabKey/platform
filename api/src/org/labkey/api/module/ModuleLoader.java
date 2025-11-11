@@ -1214,7 +1214,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     private Module loadModuleFromProperties(ApplicationContext parentContext, File moduleDir) throws ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException
     {
         //check for simple .properties file
-        File modulePropsFile = new File(moduleDir, "config/module.properties");
+        File modulePropsFile = FileUtil.appendPath(moduleDir, Path.parse("config/module.properties"));
         Map<String, String> props = Collections.emptyMap();
         if (modulePropsFile.exists())
         {

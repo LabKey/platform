@@ -1,10 +1,15 @@
 package org.labkey.vfs;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.io.IOException;
 
+@JsonSerialize(using = FileLike.FileLikeSerializer.class)
+@JsonDeserialize(using = FileLike.FileLikeDeserializer.class)
 abstract public class AbstractFileLike implements FileLike
 {
     final Path path;
@@ -114,5 +119,15 @@ abstract public class AbstractFileLike implements FileLike
     public String toString()
     {
         return toURI().toString();
+    }
+
+    protected void _serialize(JsonGenerator gen) throws IOException
+    {
+        FileSystemLike fs = getFileSystem();
+        gen.writeStringField("fs", fs.getClass().getSimpleName());
+        gen.writeStringField("rootUri", fs.getURI().toString());
+        gen.writeBooleanField("canReadFiles", fs.canReadFiles());
+        gen.writeBooleanField("canWriteFiles", fs.canWriteFiles());
+        gen.writeStringField("path", getPath().toString());
     }
 }

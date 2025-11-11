@@ -488,9 +488,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         {
             map.put(Props.assayId.name(), StringUtils.defaultString(context.getName()));
             map.put(Props.runComments.name(), StringUtils.defaultString(context.getComments()));
-            File originalFileLocation = context.getOriginalFileLocation();
+            FileLike originalFileLocation = context.getOriginalFileLocation();
             if (originalFileLocation != null)
-                map.put(Props.originalFileLocation.name(), originalFileLocation.getPath());
+                map.put(Props.originalFileLocation.name(), originalFileLocation.toNioPathForRead().toFile().getPath());
         }
 
         map.put(Props.baseUrl.name(), AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath());
@@ -1200,7 +1200,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     {
         private File _errorFile;
         private String _warningSevLevel;
-        private File _originalFileLocation;
+        private FileLike _originalFileLocation;
         private ExpProtocol _protocol;
 
         public void setProtocol(ExpProtocol protocol)
@@ -1222,12 +1222,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         // Original file location used to determine if file was already on the server or not. Used for cleanup when
         // there is an error.
-        public File getOriginalFileLocation()
+        public FileLike getOriginalFileLocation()
         {
             return _originalFileLocation;
         }
 
-        public void setOriginalFileLocation(File originalFileLocation)
+        public void setOriginalFileLocation(FileLike originalFileLocation)
         {
             _originalFileLocation = originalFileLocation;
         }
@@ -1396,13 +1396,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         @Override
         public Logger getLogger()
-        {
-            return null;
-        }
-
-        @Nullable
-        @Override
-        public File getOriginalFileLocation()
         {
             return null;
         }

@@ -39,6 +39,8 @@ import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -194,7 +196,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
                 throw new ExperimentException("Unable to create log file directory", e);
             }
             _logFileDir.deleteOnExit();
-            _logFile = new File(_logFileDir, "upload.xar.log");
+            _logFile = FileUtil.appendName(_logFileDir, "upload.xar.log");
             _logFile.deleteOnExit();
             _uploadTime = DateUtil.formatDateTime(job.getContainer());
         }
@@ -252,9 +254,9 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         }
 
         @Override
-        public Path getLogFilePath()
+        public FileLike getLogFilePath()
         {
-            return _logFile.toPath();
+            return FileSystemLike.wrapFile(_logFile);
         }
 
         public String toString()

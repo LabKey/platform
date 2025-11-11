@@ -127,27 +127,32 @@ public class ParamParserImpl implements ParamParser
     @Override
     public void parse(InputStream inputStream)
     {
-        try
+        if (inputStream != null)
         {
-            DocumentBuilder db = XmlBeansUtil.DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
+            try (inputStream)
+            {
+                try
+                {
+                    DocumentBuilder db = XmlBeansUtil.DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
 
-            InputSource source = new InputSource(new InputStreamReader(inputStream));
-            _doc = db.parse(source);
-            _doc.setXmlStandalone(true);  // Added to help with new Transformer-based getXML()
-            validateDocument();
-        }
-        catch (SAXParseException e)
-        {
-            // Subtract 1 from the line number, since we added the DOCTYPE line
-            addError(new ErrorImpl(e.getMessage(), e.getLineNumber(), e.getColumnNumber()));
-        }
-        catch (Exception e)
-        {
-            addError(new ErrorImpl(e.toString()));
-        }
-        finally
-        {
-            try { inputStream.close(); } catch (IOException ignored) {}
+                    InputSource source = new InputSource(new InputStreamReader(inputStream));
+                    _doc = db.parse(source);
+                    _doc.setXmlStandalone(true);  // Added to help with new Transformer-based getXML()
+                    validateDocument();
+                }
+                catch (SAXParseException e)
+                {
+                    // Subtract 1 from the line number, since we added the DOCTYPE line
+                    addError(new ErrorImpl(e.getMessage(), e.getLineNumber(), e.getColumnNumber()));
+                }
+                catch (Exception e)
+                {
+                    addError(new ErrorImpl(e.toString()));
+                }
+            }
+            catch (IOException ignored)
+            {
+            }
         }
     }
 
@@ -169,7 +174,7 @@ public class ParamParserImpl implements ParamParser
     {
         if (_errors == null || _errors.isEmpty())
             return null;
-        return _errors.toArray(new ErrorImpl[0]);
+        return _errors.toArray(new Error[0]);
     }
 
     @Override
@@ -231,7 +236,6 @@ public class ParamParserImpl implements ParamParser
             if (!VAL_INPUT.equals(type))
             {
                 addError(new ErrorImpl("Note type '" + type + "' not supported."));
-                continue;
             }
         }
 

@@ -84,6 +84,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -716,6 +717,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpData getExpDataByURL(File f, @Nullable Container c);
 
     /**
+     * Get the <b>most recently</b> created ExpData for the file, if it exists.
+     * @see #getAllExpDataByURL(Path, Container)
+     */
+    ExpData getExpDataByURL(FileLike f, @Nullable Container c);
+
+    /**
      * Get the <b>most recently</b> created ExpData for the path, if it exists.
      * @see #getAllExpDataByURL(Path, Container)
      */
@@ -980,7 +987,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      *
      * @return the job responsible for doing the work
      */
-    PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description, PipeRoot root) throws IOException;
+    PipelineJob importXarAsync(ViewBackgroundInfo info, FileLike file, String description, PipeRoot root) throws IOException;
 
     /**
      * Loads the xar synchronously, in the context of the pipelineJob
@@ -990,8 +997,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, boolean reloadExistingRuns) throws ExperimentException;
 
     List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, XarImportOptions options) throws ExperimentException;
-
-    File exportXarForRuns(User user, Set<Long> runIds, Long expRowId, XarExportOptions options) throws NotFoundException, IOException, ExperimentException;
 
     /**
      * Create an experiment run to represent the work that the task's job has done so far.

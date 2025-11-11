@@ -67,6 +67,8 @@ public class QueryImportPipelineJob extends PipelineJob
 
         String _jobNotificationProvider;
 
+        Map<TransactionAuditProvider.TransactionDetail, Object> _transactionDetails;
+
         public QueryImportAsyncContextBuilder()
         {
 
@@ -233,6 +235,17 @@ public class QueryImportPipelineJob extends PipelineJob
             return this;
         }
 
+        public QueryImportAsyncContextBuilder setTransactionDetails(Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails)
+        {
+            _transactionDetails = transactionDetails;
+            return this;
+        }
+
+        public Map<TransactionAuditProvider.TransactionDetail, Object> getTransactionDetails()
+        {
+            return _transactionDetails;
+        }
+
     }
 
     @Override
@@ -294,13 +307,13 @@ public class QueryImportPipelineJob extends PipelineJob
 
             loader = DataLoader.get().createLoader(_importContextBuilder.getPrimaryFile(), _importContextBuilder.getFileContentType(), _importContextBuilder.isHasColumnHeaders(), null, null);
 
-            AbstractQueryImportAction.configureLoader(loader, target, _importContextBuilder.getRenamedColumns(), _importContextBuilder.allowLineageColumns(), _importContextBuilder.getLineageImportAliases());
+            AbstractQueryImportAction.configureLoader(loader, target, _importContextBuilder.getRenamedColumns(), _importContextBuilder.allowLineageColumns(), _importContextBuilder.getLineageImportAliases(), _importContextBuilder.getOptionParamsMap());
 
             DataIteratorContext diContext = createDataIteratorContext(ve, getContainer());
 
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
             if (diContext.isCrossTypeImport() || (_importContextBuilder.getAuditBehaviorType() != null && _importContextBuilder.getAuditBehaviorType() != AuditBehaviorType.NONE))
-                auditEvent = createTransactionAuditEvent(getContainer(), diContext.getInsertOption().auditAction);
+                auditEvent = createTransactionAuditEvent(getContainer(), diContext.getInsertOption().auditAction, _importContextBuilder.getTransactionDetails());
 
             int importedCount = AbstractQueryImportAction.importData(loader, target, updateService, diContext, auditEvent, getInfo().getUser(), getInfo().getContainer());
 

@@ -19,12 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 
-/**
- * User: adam
- * Date: Nov 5, 2008
- * Time: 10:52:38 AM
- */
-public class WikiContainerListener extends ContainerManager.AbstractContainerListener
+public class WikiContainerListener implements ContainerManager.ContainerListener
 {
     // Note: Attachments are purged by AttachmentServiceImpl.containerDeleted()
     @Override

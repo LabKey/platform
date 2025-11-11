@@ -254,6 +254,7 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
+import org.labkey.vfs.FileLike;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
 
@@ -2107,78 +2108,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         url.addParameter("experimentRunFilter", type.getDescription());
         view.setTitleHref(url);
         return view;
-    }
-
-    /**
-     * export to temp directory
-     */
-    @Override
-    public File exportXarForRuns(
-            User user,
-            Set<Long> runIds,
-            Long expRowId,
-            XarExportOptions options
-    ) throws NotFoundException, IOException, ExperimentException
-    {
-        if (runIds.isEmpty())
-        {
-            throw new NotFoundException();
-        }
-
-        try
-        {
-            List<ExpRun> runs = new ArrayList<>();
-            for (var id : runIds)
-            {
-                ExpRun run = getExpRun(id);
-                if (run == null || !run.getContainer().hasPermission(user, ReadPermission.class))
-                {
-                    throw new NotFoundException("Could not find run " + id);
-                }
-                runs.add(run);
-            }
-
-            XarExportSelection selection = new XarExportSelection();
-            if (expRowId != null)
-            {
-                ExpExperiment experiment = getExpExperiment(expRowId);
-                if (experiment == null || !experiment.getContainer().hasPermission(user, ReadPermission.class))
-                {
-                    throw new NotFoundException("Run group " + expRowId);
-                }
-                selection.addExperimentIds(experiment.getRowId());
-            }
-            selection.addRuns(runs);
-            // NOTE: selection distinguishes between null and empty (careful)
-            // TODO have ArchiveURLRewriter() differentiate between input and output roles
-            // TODO using Set<roles> is adequate for now (as long as the caller knows all the roles of interest)
-            if (options.isFilterDataRoles())
-                selection.addRoles(options.getDataRoles());
-            XarExporter exporter = new XarExporter(
-                    LSIDRelativizer.valueOf(options.getLsidRelativizer()),
-                    selection,
-                    user,
-                    options.getXarXmlFileName(),
-                    options.getLog(),
-                    null
-            );
-            if (options.getExportFile().isDirectory())
-            {
-                exporter.writeAsDirectory(options.getExportFile());
-            }
-            else
-            {
-                try (FileOutputStream fOut = new FileOutputStream(options.getExportFile().getPath()))
-                {
-                    exporter.writeAsArchive(fOut);
-                }
-            }
-            return options.getExportFile();
-        }
-        catch (NumberFormatException e)
-        {
-            throw new NotFoundException(runIds.toString());
-        }
     }
 
     @Override
@@ -4172,6 +4101,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    public ExpDataImpl getExpDataByURL(FileLike file, @Nullable Container c)
+    {
+        return getExpDataByURL(file.toNioPathForRead(), c);
+    }
+
+    @Override
     public ExpDataImpl getExpDataByURL(File file, @Nullable Container c)
     {
         File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(file);
@@ -4804,7 +4739,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Container container,
         Collection<Long> selectedMaterialIds,
         boolean deleteRunsUsingMaterials,
-        @Nullable ExpSampleTypeImpl stDeleteFrom,
+        @Nullable ExpSampleType stDeleteFrom,
         boolean ignoreStatus,
         boolean truncateContainer
     )
@@ -4828,7 +4763,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment materialFilterSQL,
         boolean deleteRunsUsingMaterials,
         boolean deleteFromAllSampleTypes,
-        @Nullable ExpSampleTypeImpl stDeleteFrom,
+        @Nullable ExpSampleType stDeleteFrom,
         boolean ignoreStatus,
         boolean truncateContainer
     )
@@ -4842,7 +4777,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             Map<ExpSampleType, Set<Long>> sampleTypeAliquotRoots = new HashMap<>();
 
-            Map<String, ExpSampleTypeImpl> sampleTypes = new HashMap<>();
+            Map<String, ExpSampleType> sampleTypes = new HashMap<>();
             if (null != stDeleteFrom)
                 sampleTypes.put(stDeleteFrom.getLSID(), stDeleteFrom);
 
@@ -4999,13 +4934,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             try (Timing ignored = MiniProfiler.step("expsampletype materialized tables"))
             {
-                for (ExpSampleTypeImpl st : sampleTypes.values())
+                for (ExpSampleType st : sampleTypes.values())
                 {
                     // Material may have been orphaned from its SampleType
                     if (st == null)
                         continue;
 
-                    TableInfo dbTinfo = st.getTinfo();
+                    TableInfo dbTinfo = ((ExpSampleTypeImpl) st).getTinfo();
                     // NOTE: study specimens don't have a domain for their samples, so no table
                     if (null != dbTinfo)
                     {
@@ -6965,7 +6900,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             for (ExpData insertedData : insertedDatas)
             {
-                insertedData.findDataHandler().importFile(getExpData(insertedData.getRowId()), insertedData.getFile(), info, log, context);
+                insertedData.findDataHandler().importFile(getExpData(insertedData.getRowId()), insertedData.getFileLike(), info, log, context);
             }
         }
 
@@ -8229,9 +8164,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description, PipeRoot root) throws IOException
+    public PipelineJob importXarAsync(ViewBackgroundInfo info, FileLike file, String description, PipeRoot root) throws IOException
     {
-        ExperimentPipelineJob job = new ExperimentPipelineJob(info, file.toPath(), description, false, root);
+        ExperimentPipelineJob job = new ExperimentPipelineJob(info, file, description, false, root);
         try
         {
             PipelineService.get().queueJob(job);
@@ -9882,7 +9817,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 for (List<AbstractAssayProvider.AssayFileMoveData> runFileRenameData : assayMoveData.fileMovesByRunId().values())
                 {
                     for (AbstractAssayProvider.AssayFileMoveData renameData : runFileRenameData)
-                        moveFile(renameData, container, user, transaction.getAuditId());
+                        moveFile(renameData, container, user, transaction.getAuditEvent());
                 }
             }, POSTCOMMIT);
 
@@ -9892,7 +9827,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return assayMoveData.counts();
     }
 
-    private boolean moveFile(AbstractAssayProvider.AssayFileMoveData renameData, Container sourceContainer, User user, Long txAuditId)
+    private boolean moveFile(AbstractAssayProvider.AssayFileMoveData renameData, Container sourceContainer, User user, TransactionAuditProvider.TransactionAuditEvent txAuditEvent)
     {
         String fieldName = renameData.fieldName() == null ? "datafileurl" : renameData.fieldName();
         File targetFile = renameData.targetFile();
@@ -9915,7 +9850,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
 
         String changeDetail = String.format("assay '%s' run '%s'", assayName, runName);
-        return moveFileLinkFile(sourceFile, targetFile, sourceContainer, user, changeDetail, txAuditId, fieldName);
+        return moveFileLinkFile(sourceFile, targetFile, sourceContainer, user, changeDetail, txAuditEvent, fieldName);
     }
 
     @Override
@@ -10095,7 +10030,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      *
      * Move file (post-commit) after moving sample/assay data
      */
-    public boolean moveFileLinkFile(File sourceFile, File targetFile, Container sourceFileContainer, User user, String actionComment, Long txAuditId, String fieldName)
+    public boolean moveFileLinkFile(File sourceFile, File targetFile, Container sourceFileContainer, User user, String actionComment, TransactionAuditProvider.TransactionAuditEvent txAuditEvent, String fieldName)
     {
         if (!sourceFile.exists())
             return false;
@@ -10127,8 +10062,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 return false;
             }
         }
-        if (txAuditId != null && event.getTransactionId() == null)
-            event.setTransactionId(txAuditId);
+        if (txAuditEvent != null && event.getTransactionId() == null)
+            event.setTransactionEvent(txAuditEvent, FileSystemAuditProvider.EVENT_TYPE);
         event.setDirectory(sourceFile.getParentFile().getAbsolutePath());
         event.setFile(targetFile.getName());
         event.setProvidedFileName(sourceFile.getName());

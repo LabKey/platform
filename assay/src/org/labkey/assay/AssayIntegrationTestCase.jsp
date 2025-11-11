@@ -95,6 +95,9 @@
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="org.apache.commons.collections.MapUtils" %>
+<%@ page import="org.labkey.vfs.FileSystemLike" %>
+<%@ page import="static org.junit.Assert.assertEquals" %>
+<%@ page import="static org.junit.Assert.assertNotEquals" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 <%!
@@ -134,7 +137,7 @@
     private Pair<AssayProvider, ExpProtocol> createAssay(ViewContext context, boolean editableRunsAndResults, boolean includeSampleTypeLookups) throws Exception
     {
         // create assay design
-        AssayDomainService assayDomainService = new AssayDomainServiceImpl(context);
+        AssayDomainService assayDomainService = new AssayDomainServiceImpl(context.getUser(), context.getContainer());
         GWTProtocol assayTemplate = assayDomainService.getAssayTemplate("General");
         assayTemplate.setName(ASSAY_NAME);
         assayTemplate.setEditableRuns(true);
@@ -259,7 +262,7 @@
         HttpSession session = TestContext.get().getRequest().getSession();
 
         // Use the AssayFileUploadForm and the PipelineDataCollector to simulate the user selecting a file from the file browser.
-        PipelineDataCollector.setFileCollection(session, c, assayProtocol, List.of(Map.of(AssayDataCollector.PRIMARY_FILE, file)));
+        PipelineDataCollector.setFileCollection(session, c, assayProtocol, List.of(Map.of(AssayDataCollector.PRIMARY_FILE, FileSystemLike.wrapFile(file))));
 
         // Use a multipart request to trigger the AssayFileWriter.savePipelineFiles() code path that copies files into the assay upload directory
         var mockRequest = new MockMultipartHttpServletRequest();
@@ -558,18 +561,18 @@
         runsQUS.updateRows(user, c, Collections.singletonList(updated), null, errors, null, null);
         // verify runs modified is changed, but created is not
         Map<String, Object> modifiedRunResults = new TableSelector(runsTable, selectColumns, new SimpleFilter("rowId", runRowId), null).getMap();
-        assertTrue(modifiedRunResults.get("Created").equals(runOriginalCreated));
-        assertFalse(modifiedRunResults.get("Modified").equals(runOriginalModified));
+        assertEquals("modifiedRunResults should have the same Created", modifiedRunResults.get("Created"), runOriginalCreated);
+        assertNotEquals("modifiedRunResults should have a different Modified", modifiedRunResults.get("Modified"), runOriginalModified);
 
         // verify results created/modified matches run's created in query table
         Map<String, Object> queryResultAfterRunModify = new TableSelector(resultsTable, selectColumns, new SimpleFilter(runFieldKey, runRowId), null).getMap();
-        assertTrue(queryResultAfterRunModify.get("Created").equals(runOriginalCreated));
-        assertTrue(queryResultAfterRunModify.get("Modified").equals(runOriginalCreated));
-        assertFalse(queryResultAfterRunModify.get("Modified").equals(modifiedRunResults.get("Modified")));
+        assertEquals("queryResultAfterRunModify should have the same Created", queryResultAfterRunModify.get("Created"), runOriginalCreated);
+        assertEquals("queryResultAfterRunModify should have the same Modified", queryResultAfterRunModify.get("Modified"), runOriginalCreated);
+        assertNotEquals("queryResultAfterRunModify should have a different Modified", queryResultAfterRunModify.get("Modified"), modifiedRunResults.get("Modified"));
 
         // verify created/modified in provisioned result table is still not populated after run edit
         dbResult = getRealResult(resultsTable.getSchema(), realResultsTable.getName(), resultRowId);
-        assertTrue(dbResult.get("Created") == null && dbResult.get("Modified") == null);
+        assertTrue("Created and Modified in the provisioned result table weren't as expected", dbResult.get("Created") == null && dbResult.get("Modified") == null);
 
         // now edit the result
         QueryUpdateService resultsQUS = resultsTable.getUpdateService();
@@ -581,18 +584,18 @@
 
         // verify result created matches run's created in query table, but result modified now differs from run's created
         Map<String, Object> modifiedResults = new TableSelector(resultsTable, selectColumns, new SimpleFilter(runFieldKey, runRowId), null).getMap();
-        assertTrue(modifiedResults.get("Created").equals(runOriginalCreated));
-        assertFalse(modifiedResults.get("Created").equals(modifiedResults.get("Modified")));
-        assertFalse(modifiedResults.get("Modified").equals(runOriginalCreated));
-        assertFalse(modifiedResults.get("Modified").equals(runOriginalModified));
-        assertFalse(modifiedResults.get("Modified").equals(modifiedRunResults.get("Modified")));
+        assertEquals("modifiedResults Created didn't match runOriginalCreated", modifiedResults.get("Created"), runOriginalCreated);
+        assertNotEquals("modifiedResults Created shouldn't match modifiedResult Modified", modifiedResults.get("Created"), modifiedResults.get("Modified"));
+        assertNotEquals("modifiedResults Modified shouldn't match runOriginalCreated", modifiedResults.get("Modified"), runOriginalCreated);
+        assertNotEquals("modifiedResults Modified shouldn't match runOriginalModified", modifiedResults.get("Modified"), runOriginalModified);
+        assertNotEquals("modifiedResults Modified shouldn't match modifiedRunResults Modified", modifiedResults.get("Modified"), modifiedRunResults.get("Modified"));
 
         // verify modified in provisioned result table no longer null after result edit
         dbResult = getRealResult(resultsTable.getSchema(), realResultsTable.getName(), resultRowId);
-        assertTrue(dbResult.get("Created") == null && dbResult.get("CreatedBy") == null);
-        assertFalse(dbResult.get("Modified") == null || dbResult.get("ModifiedBy") == null);
-        assertTrue(dbResult.get("Modified").equals(modifiedResults.get("Modified")));
-        assertTrue(dbResult.get("ModifiedBy").equals(modifiedResults.get("ModifiedBy")));
+        assertTrue("dbResult shouldn't have Created or CreatedBy", dbResult.get("Created") == null && dbResult.get("CreatedBy") == null);
+        assertFalse("dbResult didn't have a Modified or ModifiedBy", dbResult.get("Modified") == null || dbResult.get("ModifiedBy") == null);
+        assertEquals("dbResults Modified didn't match", dbResult.get("Modified"), modifiedResults.get("Modified"));
+        assertEquals("dbResults ModifiedBy didn't match", dbResult.get("ModifiedBy"), modifiedResults.get("ModifiedBy"));
     }
 
     @Test
@@ -718,7 +721,7 @@
         var sampleTypeName = "Does Not Exist";
         var lookupName = "Field100 ABCDEFGHIJKLMNOPQRSTUVWXYZ%()=+-[]_|*`'\":;<>?!@#^AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTTU)";
         var assayPair = createAssay(context, true, true);
-        var domainService = new AssayDomainServiceImpl(context);
+        var domainService = new AssayDomainServiceImpl(context.getUser(), context.getContainer());
         var gwtProtocol = domainService.getAssayDefinition(assayPair.second.getRowId(), false);
 
         // Update the assay design to refer to a non-existent sample type

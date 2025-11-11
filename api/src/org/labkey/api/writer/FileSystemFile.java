@@ -23,6 +23,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.vfs.FileLike;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -59,6 +60,11 @@ public class FileSystemFile extends AbstractVirtualFile
         this(root.toPath());
     }
 
+    public FileSystemFile(FileLike root)
+    {
+        this(root.toNioPathForWrite());
+    }
+
     public FileSystemFile(Path root)
     {
         try
@@ -81,7 +87,7 @@ public class FileSystemFile extends AbstractVirtualFile
     @Override
     public PrintWriter getPrintWriter(String filename) throws IOException
     {
-        File file = new File(_root.toFile(), makeLegalName(filename));
+        File file = FileUtil.appendName(_root.toFile(), makeLegalName(filename));
 
         return PrintWriters.getPrintWriter(file);
     }

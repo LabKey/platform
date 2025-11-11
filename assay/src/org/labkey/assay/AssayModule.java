@@ -40,7 +40,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
+import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.generator.DataGeneratorRegistry;
@@ -289,7 +289,7 @@ public class AssayModule extends SpringModule
             svc.registerUsageMetrics(getName(), new PlateMetricsProvider());
         }
 
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(AssayDbSchema.getInstance().getSchema())
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(AssayDbSchema.getInstance().getSchema())
         {
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
@@ -297,6 +297,18 @@ public class AssayModule extends SpringModule
                 return PlateTypeTable.NAME.equals(sourceTable.getName()) ? SITE_WIDE_TABLE : super.getContainerFieldKey(sourceTable);
             }
         });
+
+        // Tables in the "assaywell" provisioned schema are all single-container, so no filtering is needed
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(PlateMetadataDomainKind.getSchema())
+        {
+            @Override
+            public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+            {
+                return SITE_WIDE_TABLE;
+            }
+        });
+
+        DatabaseMigrationService.get().registerSchemaHandler(new AssayResultMigrationSchemaHandler());
     }
 
     @Override
@@ -309,9 +321,8 @@ public class AssayModule extends SpringModule
     @NotNull
     public Set<String> getSchemaNames()
     {
-        HashSet<String> set = new HashSet<>();
+        HashSet<String> set = new HashSet<>(getProvisionedSchemaNames());
         set.add(AssayDbSchema.getInstance().getSchemaName());
-        set.addAll(getProvisionedSchemaNames());
 
         return set;
     }
@@ -321,8 +332,8 @@ public class AssayModule extends SpringModule
     public Set<String> getProvisionedSchemaNames()
     {
         return Set.of(
-                AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME,
-                PlateMetadataDomainKind.PROVISIONED_SCHEMA_NAME
+            AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME,
+            PlateMetadataDomainKind.PROVISIONED_SCHEMA_NAME
         );
     }
 
@@ -348,13 +359,13 @@ public class AssayModule extends SpringModule
     public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
-            TsvAssayProvider.TestCase.class,
-            AssaySchemaImpl.TestCase.class,
+            AssayPlateMetadataServiceImpl.TestCase.class,
             AssayProviderSchema.TestCase.class,
-            PositionImpl.TestCase.class,
+            AssaySchemaImpl.TestCase.class,
             PlateImpl.TestCase.class,
             PlateUtils.TestCase.class,
-            AssayPlateMetadataServiceImpl.TestCase.class
+            PositionImpl.TestCase.class,
+            TsvAssayProvider.TestCase.class
         );
     }
 

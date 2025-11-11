@@ -212,7 +212,7 @@ public class TempTableTracker extends WeakReference<Object>
             try
             {
                 if (null == tempTableLog)
-                    tempTableLog = new RandomAccessFile(new File(FileUtil.getTempDirectory(), LOGFILE), "rwd");
+                    tempTableLog = new RandomAccessFile(FileUtil.appendName(FileUtil.getTempDirectory(), LOGFILE), "rwd");
 
                 if (loadFile)
                 {
@@ -344,7 +344,7 @@ public class TempTableTracker extends WeakReference<Object>
             {
                 join(5000);
             }
-            catch (InterruptedException e) {}
+            catch (InterruptedException ignored) {}
             synchronizeLog(false);
         }
     }

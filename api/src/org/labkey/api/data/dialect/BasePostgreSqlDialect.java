@@ -487,36 +487,56 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     {
         // Sort function might not exist in external datasource; skip that syntax if not
         boolean useSortFunction = sorted && _arraySortFunctionExists.get();
+        SQLFragment result = new SQLFragment();
 
-        // TODO: Use "string_agg()" in place of array_to_string(array_agg())?
-        SQLFragment result = new SQLFragment("array_to_string(");
         if (useSortFunction)
         {
+            result.append("array_to_string(");
             result.append("core.sort(");   // TODO: Switch to use ORDER BY option inside array aggregate instead of our custom function
-        }
-        result.append("array_agg(");
-        if (distinct)
-        {
-            result.append("DISTINCT ");
-        }
-        if (includeNulls)
-        {
-            result.append("COALESCE(CAST(");
-        }
-        result.append(sql);
+            result.append("array_agg(");
+            if (distinct)
+            {
+                result.append("DISTINCT ");
+            }
 
-        if (includeNulls)
-        {
-            result.append(" AS VARCHAR), '')");
+            if (includeNulls)
+            {
+                result.append("COALESCE(CAST(");
+                result.append(sql);
+                result.append(" AS VARCHAR), '')");
+            }
+            else
+            {
+                result.append(sql);
+            }
+
+            result.append(")"); // array_agg
+            result.append(")"); // core.sort
         }
-        result.append(")");
-        if (useSortFunction)
+        else
         {
-            result.append(")");
+            result.append("string_agg(");
+            if (distinct)
+            {
+                result.append("DISTINCT ");
+            }
+
+            if (includeNulls)
+            {
+                result.append("COALESCE(");
+                result.append(sql);
+                result.append("::text, '')");
+            }
+            else
+            {
+                result.append(sql);
+                result.append("::text");
+            }
         }
+
         result.append(", ");
         result.append(delimiterSQL);
-        result.append(")");
+        result.append(")"); // array_to_string | string_agg
 
         return result;
     }
@@ -1810,7 +1830,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
     private Closer configureToDisableJdbcCaching(ConnectionWrapper connection, DbScope scope) throws SQLException
     {
-        assert connection.getAutoCommit(); // We just got a new connection... it better  be set to auto commit
+        assert connection.getAutoCommit(); // We just got a new connection... it better be set to auto commit
 
         try
         {

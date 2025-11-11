@@ -1071,7 +1071,7 @@ public class AnnouncementsController extends SpringActionController
 
             if (reshow)
             {
-                currentRendererType = EnumUtils.getEnum(WikiRendererType.class, form.get("rendererType"), DEFAULT_MESSAGE_RENDERER_TYPE);
+                currentRendererType = EnumUtils.getEnum(WikiRendererType.class, form.getAsString("rendererType"), DEFAULT_MESSAGE_RENDERER_TYPE);
 
                 AnnouncementModel ann = form.getBean();
                 assignedTo = ann.getAssignedTo();
@@ -1084,18 +1084,18 @@ public class AnnouncementsController extends SpringActionController
                 cal.add(Calendar.MONTH, 1);
 
                 String expires = DateUtil.formatDate(c, cal.getTime());
-                form.set("expires", expires);
+                form.setValueToBind("expires", expires);
                 currentRendererType = DEFAULT_MESSAGE_RENDERER_TYPE;
                 assignedTo = settings.getDefaultAssignedTo();
             }
             else
             {
                 // Response... set values to match most recent properties on this thread
-                assert null == form.get("title");
-                assert null == form.get("expires");
+                assert null == form.getAsString("title");
+                assert null == form.getAsString("expires");
 
-                form.set("title", latestPost.getTitle());
-                form.set("status", "Active");  // By default, every new response resets status to active, #35047
+                form.setValueToBind("title", latestPost.getTitle());
+                form.setValueToBind("status", "Active");  // By default, every new response resets status to active, #35047
                 form.setTypedValue("expires", DateUtil.formatDate(c, latestPost.getExpires()));
 
                 assignedTo = latestPost.getAssignedTo();
@@ -1103,12 +1103,12 @@ public class AnnouncementsController extends SpringActionController
             }
 
             bean.assignedToSelect = getAssignedToSelect(c, assignedTo, "assignedTo", getViewContext().getUser());
-            bean.statusSelect = getStatusSelect(form.get("status"));
+            bean.statusSelect = getStatusSelect(form.getAsString("status"));
             bean.renderAsSelect = getRenderAsSelect(currentRendererType);
 
             bean.settings = settings;
             User u = form.getUser() == null ? getViewContext().getUser() : form.getUser();
-            bean.memberList = getMemberList(u, c, latestPost, reshow ? form.get("memberList") : null);
+            bean.memberList = getMemberList(u, c, latestPost, reshow ? form.getAsString("memberList") : null);
             bean.form = form;
             bean.cancelURL = cancelURL;
 
@@ -1642,7 +1642,7 @@ public class AnnouncementsController extends SpringActionController
         // XXX: change return value to typed GuidString
         public String getParentId()
         {
-            return _stringValues.get("parentid");
+            return getAsString("parentid");
         }
 
         AnnouncementModel selectAnnouncement()
@@ -1671,7 +1671,7 @@ public class AnnouncementsController extends SpringActionController
             // Validate "expires" conversion from String to Date
             try
             {
-                String expires = StringUtils.trimToNull(get("expires"));
+                String expires = StringUtils.trimToNull(getAsString("expires"));
                 if (null != expires)
                     DateUtil.parseDateTime(expires);
             }
@@ -2270,7 +2270,7 @@ public class AnnouncementsController extends SpringActionController
         public ThreadView(AnnouncementForm form, Container c, ActionURL url, Permissions perm, boolean print)
         {
             this();
-            AnnouncementModel ann = findThread(c, form.get("rowId"), form.get("entityId"));
+            AnnouncementModel ann = findThread(c, form.getAsString("rowId"), form.getAsString("entityId"));
             init(c, ann, url, perm, false, print);
         }
 
@@ -2514,7 +2514,7 @@ public class AnnouncementsController extends SpringActionController
             private UpdateBean(AnnouncementForm form, AnnouncementModel ann)
             {
                 Container c = form.getContainer();
-                String reshowMemberList = form.get("memberList");
+                String reshowMemberList = form.getAsString("memberList");
 
                 annModel = ann;
                 settings = getSettings(c);

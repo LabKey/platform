@@ -18,8 +18,6 @@ package org.labkey.api.reports.report.r;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.exp.PropertyType;
@@ -61,7 +59,6 @@ import static org.labkey.api.util.StringUtilsLabKey.DEFAULT_CHARSET;
  */
 public class RReportJob extends PipelineJob implements Serializable
 {
-    private static final Logger _log = LogManager.getLogger(RReportJob.class);
     private static final ThreadLocal<String> _jobIdentifier = new ThreadLocal<>();
 
     public static final String PROCESSING_STATUS = "Processing";
@@ -103,7 +100,7 @@ public class RReportJob extends PipelineJob implements Serializable
         {
             _jobIdentifier.set(getJobGUID());
             FileLike logFile = report.getReportDirFileLike(executingContainerId).resolveChild(LOG_FILE_NAME);
-            setLogFile(logFile.toNioPathForWrite());
+            setLogFile(logFile);
         }
     }
 
@@ -300,7 +297,7 @@ public class RReportJob extends PipelineJob implements Serializable
                         List<File> newFiles = new ArrayList<>();
                         for (File file : replacement.getFiles())
                         {
-                            File newFile = new File(parentDir, file.getName());
+                            File newFile = FileUtil.appendName(parentDir, file.getName());
                             FileUtils.moveFile(file, newFile);
                             newFiles.add(newFile);
                         }
@@ -315,7 +312,7 @@ public class RReportJob extends PipelineJob implements Serializable
                     // move the remaining files and delete the pipeline specific directory
                     for (File file : reportDir.listFiles())
                     {
-                        File newFile = new File(parentDir, file.getName());
+                        File newFile = FileUtil.appendName(parentDir, file.getName());
                         // special handling for log file
                         if (LOG_FILE_NAME.equalsIgnoreCase(file.getName()))
                         {
@@ -341,10 +338,10 @@ public class RReportJob extends PipelineJob implements Serializable
                         }
                     }
                     FileUtils.deleteDirectory(reportDir);
-                    substitutionMap = new File(reportDir.getParent(), RReport.SUBSTITUTION_MAP);
+                    substitutionMap = FileUtil.appendName(reportDir.getParentFile(), RReport.SUBSTITUTION_MAP);
                 }
                 else
-                    substitutionMap = new File(reportDir, RReport.SUBSTITUTION_MAP);
+                    substitutionMap = FileUtil.appendName(reportDir, RReport.SUBSTITUTION_MAP);
                 ParamReplacementSvc.get().toFile(outputSubst, substitutionMap);
             }
         }

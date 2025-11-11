@@ -187,7 +187,7 @@ public interface AssayPlateMetadataService
     /**
      * Returns a Map of Well Location to Sample RowID for a given Plate ID.
      */
-    Map<String, Long> getWellLocationToSampleIdMap(Container container, User user, Long plateId);
+    Map<String, Long> getWellLocationToSampleIdMap(Long plateId);
 
     boolean isWellLookup(ColumnInfo col);
 

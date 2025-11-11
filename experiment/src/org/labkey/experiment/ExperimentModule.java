@@ -16,6 +16,7 @@
 package org.labkey.experiment;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
@@ -30,12 +31,10 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationHandler;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -82,7 +81,6 @@ import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -96,6 +94,7 @@ import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
@@ -179,12 +178,13 @@ import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
 
 public class ExperimentModule extends SpringModule
 {
-    public static final String AMOUNT_AND_UNIT_UPGRADE_PROP = "AmountAndUnitAudit";
-    public static final String TRANSACTION_ID_PROP = "AuditTransactionId";
-    public static final String AUDIT_COUNT_PROP = "AuditRecordCount";
+    private static final Logger LOG = LogHelper.getLogger(ExperimentModule.class, "Database migration status");
     private static final String SAMPLE_TYPE_WEB_PART_NAME = "Sample Types";
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
 
+    public static final String AMOUNT_AND_UNIT_UPGRADE_PROP = "AmountAndUnitAudit";
+    public static final String TRANSACTION_ID_PROP = "AuditTransactionId";
+    public static final String AUDIT_COUNT_PROP = "AuditRecordCount";
     public static final String EXPERIMENT_RUN_WEB_PART_NAME = "Experiment Runs";
 
     @Override
@@ -196,7 +196,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 25.011;
+        return 25.013;
     }
 
     @Nullable
@@ -531,27 +531,26 @@ public class ExperimentModule extends SpringModule
             fileContentService.addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.fileRootPath, "RowId"));
             fileContentService.addFileListener(new FileLinkFileListener());
         }
-        ContainerManager.addContainerListener(
-                new ContainerManager.AbstractContainerListener()
+        ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
+        {
+            @Override
+            public void containerDeleted(Container c, User user)
+            {
+                try
                 {
-                    @Override
-                    public void containerDeleted(Container c, User user)
-                    {
-                        try
-                        {
-                        ExperimentService.get().deleteAllExpObjInContainer(c, user);
-                        }
-                        catch (ExperimentException ee)
-                        {
-                        throw new RuntimeException(ee);
-                        }
-                    }
-                },
-                // This is in the Last group because when a container is deleted,
-                // the Experiment listener needs to be called after the Study listener,
-                // because Study needs the metadata held by Experiment to delete properly.
-                // but it should be before the CoreContainerListener
-                ContainerManager.ContainerListener.Order.Last);
+                    ExperimentService.get().deleteAllExpObjInContainer(c, user);
+                }
+                catch (ExperimentException ee)
+                {
+                    throw new RuntimeException(ee);
+                }
+            }
+        },
+        // This is in the Last group because when a container is deleted,
+        // the Experiment listener needs to be called after the Study listener,
+        // because Study needs the metadata held by Experiment to delete properly.
+        // but it should be before the CoreContainerListener
+        ContainerManager.ContainerListener.Order.Last);
 
         if (ModuleLoader.getInstance().shouldInsertData())
             SystemProperty.registerProperties();
@@ -874,36 +873,11 @@ public class ExperimentModule extends SpringModule
             });
         }
 
-        // Work around foreign key cycle between ExperimentRun <-> ProtocolApplication by temporarily dropping FK_Run_WorfklowTask
-        DatabaseMigrationService.get().registerHandler(new DefaultMigrationHandler(OntologyManager.getExpSchema())
-        {
-            @Override
-            public void beforeSchema()
-            {
-                // Yes, the FK name is misspelled
-                new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun DROP CONSTRAINT FK_Run_WorfklowTask");
-                new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object DROP CONSTRAINT FK_Object_Object");
-            }
-
-            @Override
-            public @Nullable FieldKey getContainerFieldKey(TableInfo table)
-            {
-                return switch (table.getName())
-                {
-                    case "DataTypeExclusion" -> FieldKey.fromParts("ExcludedContainer");
-                    case "PropertyDomain" -> FieldKey.fromParts("DomainId", "Container");
-                    case "ProtocolApplication" -> FieldKey.fromParts("RunId", "Container");
-                    default -> super.getContainerFieldKey(table);
-                };
-            }
-
-            @Override
-            public void afterSchema()
-            {
-                new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_Run_WorfklowTask FOREIGN KEY (WorkflowTask) REFERENCES exp.ProtocolApplication (RowId) MATCH SIMPLE ON DELETE SET NULL");
-                new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object ADD CONSTRAINT FK_Object_Object FOREIGN KEY (OwnerObjectId) REFERENCES exp.Object (ObjectId)");
-            }
-        });
+        DatabaseMigrationService.get().registerSchemaHandler(new ExperimentMigrationSchemaHandler());
+        DatabaseMigrationService.get().registerSchemaHandler(new SampleTypeMigrationSchemaHandler());
+        DataClassMigrationSchemaHandler dcHandler = new DataClassMigrationSchemaHandler();
+        DatabaseMigrationService.get().registerSchemaHandler(dcHandler);
+        DatabaseMigrationService.ExperimentDeleteService.setInstance(dcHandler);
     }
 
     @Override

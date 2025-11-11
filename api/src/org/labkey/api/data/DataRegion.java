@@ -2058,7 +2058,7 @@ public class DataRegion extends DisplayElement
         {
             TableViewForm form = ctx.getForm();
             if (null != form)
-                ctx.setRow((Map) form.getStrings());
+                ctx.setRow(form.getValuesToBind());
         }
         renderForm(ctx, out);
     }
@@ -2309,7 +2309,7 @@ public class DataRegion extends DisplayElement
                                         //UNDONE: Should we require a viewForm whenever someone
                                         //posts? I tend to think so.
                                         if (null != viewForm)
-                                            pkVal = viewForm.get(pkColName);
+                                            pkVal = viewForm.getAsString(pkColName);
 
                                         if (pkVal == null)
                                             pkVal = valueMap.get(pkColName);

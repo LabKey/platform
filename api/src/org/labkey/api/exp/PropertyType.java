@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.exp.OntologyManager.PropertyRow;
 import org.labkey.api.reader.ExcelFactory;
@@ -41,6 +42,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
@@ -155,6 +157,7 @@ public enum PropertyType
             return prefix + "Value";
         }
     },
+    // NOT an XMLSchema type uri???
     MULTI_LINE("http://www.w3.org/2001/XMLSchema#multiLine", "MultiLine", 's', JdbcType.VARCHAR, 4000, "textarea", CellType.STRING, String.class)
     {
         @Override
@@ -200,6 +203,50 @@ public enum PropertyType
         public Object getPreviewValue(@Nullable String prefix)
         {
             return prefix + "Value";
+        }
+    },
+    MULTI_CHOICE("http://cpas.fhcrc.org/exp/xml#multiChoice", "MultiChoice", '?' /* unsupported in exp.PropertyValues */, JdbcType.ARRAY, 0, "textarea", CellType.STRING, List.class)
+    {
+        @Override
+        protected Object convertExcelValue(Cell cell) throws ConversionException
+        {
+            return ConvertUtils.convert(cell.getStringCellValue(), MultiChoice.Array.class);
+        }
+
+        @Override
+        public Object convert(Object value) throws ConversionException
+        {
+            return MultiChoice.Converter.getInstance().convert(MultiChoice.Array.class, value);
+        }
+
+        @Override
+        public SimpleTypeNames.Enum getXmlBeanType()
+        {
+            return SimpleTypeNames.STRING;
+        }
+
+        @Override
+        protected void init(PropertyRow row, Object value)
+        {
+            throw new UnsupportedOperationException("TODO MultiChoice");
+        }
+
+        @Override
+        protected void setValue(ObjectProperty property, Object value)
+        {
+            throw new UnsupportedOperationException("TODO MultiChoice");
+        }
+
+        @Override
+        protected Object getValue(ObjectProperty property)
+        {
+            throw new UnsupportedOperationException("TODO MultiChoice");
+        }
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return "Option 1, Option 2";
         }
     },
     RESOURCE("http://www.w3.org/2000/01/rdf-schema#Resource", "PropertyURI", 's', JdbcType.VARCHAR, 4000, null, CellType.STRING, Identifiable.class)
@@ -372,6 +419,7 @@ public enum PropertyType
             return Integer.valueOf(3);
         }
     },
+    // NOT an XMLSchema type uri???
     BINARY("http://www.w3.org/2001/XMLSchema#binary", "Binary", 'f', JdbcType.BINARY, 10, null, CellType.NUMERIC, ByteBuffer.class)
     {
         @Override

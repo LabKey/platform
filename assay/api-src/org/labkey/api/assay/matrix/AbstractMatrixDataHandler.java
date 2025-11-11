@@ -51,13 +51,12 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -113,26 +112,13 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
     }
 
     @Override
-    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
+    public void importFile(@NotNull ExpData data, @NotNull org.labkey.vfs.FileLike dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
     {
     }
 
-    public static DataLoader createLoader(File file, String idColumnName) throws IOException, ExperimentException
+    public static TabLoader createTabLoader(FileLike file, String idColumnName, Set<String> aliases) throws IOException, ExperimentException
     {
-        return createLoader(file, idColumnName, Collections.emptySet());
-    }
-
-    public static DataLoader createLoader(File file, String idColumnName, Set<String> aliases) throws IOException, ExperimentException
-    {
-        DataLoaderFactory factory = DataLoader.get().findFactory(file, null);
-        DataLoader loader = factory.createLoader(file, true);
-        ensureColumns(idColumnName, aliases, loader.getColumns());
-        return loader;
-    }
-
-    public static TabLoader createTabLoader(File file, String idColumnName, Set<String> aliases) throws IOException, ExperimentException
-    {
-        TabLoader loader = new TabLoader(file, true);
+        TabLoader loader = new TabLoader(file.openInputStream(), true, null);
         ensureColumns(idColumnName, aliases, loader.getColumns());
         return loader;
     }

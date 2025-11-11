@@ -26,8 +26,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFileWriter;
-import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
@@ -41,10 +41,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConversionExceptionWithMessage;
-import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
-import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ImportAliasable;
@@ -117,7 +115,6 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -559,6 +556,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
             finalConfigParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
+            recordDataIteratorUsed(configParameters);
 
             try
             {
@@ -655,7 +653,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             providedValues.put(PROVIDED_DATA_PREFIX + StoredAmount.label(),  amountVal + unitsStr);
         }
 
-
         Unit baseUnit = _sampleType != null ? _sampleType.getBaseUnit() : null;
 
         for (Map.Entry<String, Object> entry : row.entrySet())
@@ -671,34 +668,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, baseUnit, _sampleType == null ? null : _sampleType.getName());
             }
-            else if (col != null && value != null &&
-                    !col.getJavaObjectClass().isInstance(value) &&
-                    !(value instanceof AttachmentFile) &&
-                    !(value instanceof MultipartFile) &&
-                    !(value instanceof String[]) &&
-                    !(col.getFk() instanceof MultiValuedForeignKey))
+            else
             {
-                try
-                {
-                    if (PropertyType.FILE_LINK.equals(col.getPropertyType()))
-                        value = ExpDataFileConverter.convert(value);
-                    else if (col.getKindOfQuantity() != null)
-                    {
-                        providedValues.put(entry.getKey(), value);
-                        value = Quantity.convert(value, col.getKindOfQuantity().getStorageUnit());
-                    }
-                    else
-                        value = col.getConvertFn().apply(value);
-                }
-                catch (ConvertHelper.FileConversionException e)
-                {
-                    throw e;
-                }
-                catch (ConversionException e)
-                {
-                    // That's OK, the transformation script may be able to fix up the value before it gets inserted
-                }
+                value = coerceTypesValue(col, providedValues, entry.getKey(), value);
             }
+
             result.put(entry.getKey(), value);
         }
         return result;
@@ -1966,7 +1940,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         else
                             addColumn(to, i);
                     }
-                    else if (to.getFk() instanceof MultiValuedForeignKey)
+                    else if (to.isMultiValued() || to.getFk() instanceof MultiValuedForeignKey)
                     {
                         // pass-through multi-value columns -- converting will stringify a collection
                         if (isScopedField)

@@ -39,7 +39,7 @@ public class CachedResultSets
 
     public static CachedResultSet create(ResultSet rsIn, boolean cacheMetaData, int maxRows, @Nullable StackTraceElement[] stackTrace, QueryLogging queryLogging) throws SQLException
     {
-        try (ResultSet rs = new LoggingResultSetWrapper(rsIn, queryLogging))         // TODO: avoid is we're passed a read-only and empty one??
+        try (ResultSet rs = new LoggingResultSetWrapper(rsIn, queryLogging))         // TODO: avoid if we're passed a read-only and empty one??
         {
             // Snowflake auto-closes metadata after reading the last row, so cache that metadata first
             ResultSetMetaData md = cacheMetaData ? new CachedResultSetMetaData(rs.getMetaData()) : rs.getMetaData();
@@ -56,17 +56,7 @@ public class CachedResultSets
                 list.add(factory.getRowMap(rs));
 
             // If we have another row, then we're not complete
-            boolean isComplete = true;
-
-            // TODO: Remove this try/catch once SQL Server driver fixes getIndexInfo()
-            try
-            {
-                isComplete = !rs.next();
-            }
-            catch (SQLException ignored)
-            {
-                // tolerate this for now
-            }
+            boolean isComplete = !rs.next();
 
             return new CachedResultSet(md, list, isComplete, stackTrace);
         }

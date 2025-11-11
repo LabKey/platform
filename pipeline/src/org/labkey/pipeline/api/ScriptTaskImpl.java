@@ -42,6 +42,8 @@ import org.labkey.api.util.LogPrintWriter;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -110,7 +112,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
 
         try
         {
-            @Nullable File scriptFile = null;
+            @Nullable FileLike scriptFile = null;
             String scriptSource;
             if (factory._scriptInline != null)
             {
@@ -123,9 +125,9 @@ public class ScriptTaskImpl extends CommandTaskImpl
                     throw new PipelineJobException("Script path not found: " + factory._scriptPath);
 
                 String path = paths[0];
-                scriptFile = new File(path);
+                scriptFile = FileSystemLike.wrapFile(new File(path));
 
-                scriptSource = PageFlowUtil.getFileContentsAsString(scriptFile);
+                scriptSource = PageFlowUtil.getStreamContentsAsString(scriptFile.openInputStream());
             }
             else
             {
@@ -264,7 +266,6 @@ public class ScriptTaskImpl extends CommandTaskImpl
         rows.add(factory.getRowMap("containerId", getJob().getContainer().getEntityId()));
         rows.add(factory.getRowMap("user", getJob().getUser().getEmail()));
 
-        PipeRoot pipeRoot = getJob().getPipeRoot();
         rows.add(factory.getRowMap("pipeRoot", getJob().getPipeRoot().getRootPath()));
 
         // FileAnalysisJobSupport properties

@@ -1936,7 +1936,8 @@ public class CoreController extends SpringActionController
 
         private boolean isCloudArchive(FolderImporterForm form)
         {
-            return FileUtil.hasCloudScheme(form.getArchiveFilePath());
+            String path = form.getArchiveFilePath();
+            return StringUtils.isNotBlank(path) && FileUtil.hasCloudScheme(form.getArchiveFilePath());
         }
 
         private List<Map<String, Object>> getSelectableImporters(FolderImporterForm form, List<FolderImporter> registeredImporters) throws Exception
@@ -2133,18 +2134,8 @@ public class CoreController extends SpringActionController
     // use of illegal filename chars is intentional
     private static final String TOKEN_PREFIX = "upload://";
 
-    static File getUploadDir(User user, String session) throws IOException
-    {
-        if (user.isGuest())
-            throw new UnauthorizedException();
-        File tmpDir = FileUtil.getTempDirectory();
-        File userDir = new File(tmpDir,"loadingDock/" + session);
-        FileUtil.mkdirs(userDir);
-        return userDir;
-    }
-
     @RequiresNoPermission
-    public static class StyleGuideAction extends SimpleViewAction
+    public static class StyleGuideAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -2160,7 +2151,7 @@ public class CoreController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public static class ConfigureReportsAndScriptsAction extends SimpleViewAction
+    public static class ConfigureReportsAndScriptsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -2177,7 +2168,7 @@ public class CoreController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public static class ScriptEnginesSummaryAction extends ReadOnlyApiAction
+    public static class ScriptEnginesSummaryAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)

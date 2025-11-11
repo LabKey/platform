@@ -25,6 +25,7 @@ import datadog.trace.api.CorrelationIdentifier;
 import datadog.trace.api.Trace;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,6 +63,8 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.remoteapi.query.Filter;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.quartz.CronExpression;
 
 import java.io.BufferedReader;
@@ -133,6 +136,11 @@ abstract public class PipelineJob extends Job implements Serializable, Container
     public void clearActionSet(ExpRun run)
     {
         _actionSet = new RecordedActionSet();
+    }
+
+    public FileLike getLogFileLike()
+    {
+        return FileSystemLike.wrapFile(getLogFilePath());
     }
 
     public enum TaskStatus
@@ -430,12 +438,18 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         return _pipeRoot;
     }
 
-    @Deprecated //Please switch to the Path version
+    @Deprecated //Please switch to the FileLike version
     public void setLogFile(File logFile)
     {
         setLogFile(logFile.toPath());
     }
 
+    public void setLogFile(FileLike logFile)
+    {
+        setLogFile(logFile.toNioPathForWrite());
+    }
+
+    @Deprecated //Please switch to the FileLike version
     public void setLogFile(Path logFile)
     {
         // Set Log file path and clear/reset logger
@@ -476,7 +490,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         String validBaseName = FileUtil.makeLegalName(baseName);
         // need to look in current and archived dirs for any unused log file names (issue 20987)
         File fileLog = FT_LOG.newFile(primaryFile.getParentFile(), validBaseName);
-        File archivedDir = new File(primaryFile.getParentFile(), AssayFileWriter.ARCHIVED_DIR_NAME);
+        File archivedDir = FileUtil.appendName(primaryFile.getParentFile(), AssayFileWriter.ARCHIVED_DIR_NAME);
         File fileLogArchived = FT_LOG.newFile(archivedDir, validBaseName);
 
         int index = 1;
@@ -1859,7 +1873,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
     public static String getClassNameFromJson(String serialized)
     {
         // Expect [ "org.labkey....", {....
-        if (StringUtils.startsWith(serialized, "["))
+        if (Strings.CS.startsWith(serialized, "["))
         {
             return StringUtils.substringBetween(serialized, "\"");
         }
@@ -2006,12 +2020,11 @@ abstract public class PipelineJob extends Job implements Serializable, Container
      * Note: Override getDefaultLocalDirectoryString if piperoot isn't the desired local directory
      *
      * @param pipeRoot Pipeline's root directory
-     * @param moduleName supplying the pipeline
      * @param baseLogFileName base name of the log file
      */
-    protected final void setupLocalDirectoryAndJobLog(PipeRoot pipeRoot, String moduleName, String baseLogFileName)
+    protected final void setupLocalDirectoryAndJobLog(PipeRoot pipeRoot, String baseLogFileName)
     {
-        LocalDirectory localDirectory = LocalDirectory.create(pipeRoot, moduleName, baseLogFileName, getWorkingDirectoryString());
+        LocalDirectory localDirectory = LocalDirectory.create(pipeRoot, baseLogFileName, getWorkingDirectoryString());
         setLocalDirectory(localDirectory);
         setLogFile(localDirectory.determineLogFile());
     }

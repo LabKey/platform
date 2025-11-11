@@ -1,5 +1,6 @@
 package org.labkey.vfs;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.lang3.StringUtils;
@@ -308,6 +309,13 @@ public class FileSystemVFS extends AbstractFileSystemLike
             if (!(obj instanceof _FileLike other))
                 return false;
             return vfs.getName().equals(other.vfs.getName());
+        }
+
+        @Override
+        public void _serialize(JsonGenerator gen) throws IOException
+        {
+            super._serialize(gen);
+            gen.writeBooleanField("vfs", true);
         }
     }
 }

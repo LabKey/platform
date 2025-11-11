@@ -21,14 +21,11 @@ import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.security.User;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.NetworkDrive;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -46,19 +43,13 @@ public abstract class AbstractExperimentDataHandler implements ExperimentDataHan
     }
 
     @Override
-    public void exportFile(ExpData data, File dataFile, User user, OutputStream out) throws ExperimentException
-    {
-        exportFile(data, dataFile.toPath(), null, user, out);
-    }
-
-    @Override
-    public void exportFile(ExpData data, Path dataFile, String rootFilePath, User user, OutputStream out) throws ExperimentException
+    public void exportFile(ExpData data, FileLike dataFile, User user, OutputStream out) throws ExperimentException
     {
         if (dataFile != null)
         {
-            try
+            try (InputStream is = dataFile.openInputStream())
             {
-                Files.copy(dataFile, out);
+                is.transferTo(out);
             }
             catch (IOException e)
             {
@@ -67,26 +58,16 @@ public abstract class AbstractExperimentDataHandler implements ExperimentDataHan
         }
     }
 
+
     @Override
     public void beforeDeleteData(List<ExpData> data, User user) throws ExperimentException
     {
     }
 
     @Override
-    public boolean hasContentToExport(ExpData data, File file)
+    public boolean hasContentToExport(ExpData data, FileLike file)
     {
-        return hasContentToExport(data, file.toPath());
-    }
-
-    @Override
-    public boolean hasContentToExport(ExpData data, Path path)
-    {
-        if (!FileUtil.hasCloudScheme(path))
-        {
-            File file = path.toFile();
-            return NetworkDrive.exists(file) && file.isFile();
-        }
-        return Files.exists(path) && !Files.isDirectory(path);
+        return file != null && file.exists() && file.isFile();
     }
 
     @Override

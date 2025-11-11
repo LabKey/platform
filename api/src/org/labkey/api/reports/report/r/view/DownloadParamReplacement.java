@@ -19,6 +19,7 @@ package org.labkey.api.reports.report.r.view;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Path;
 
 import java.io.File;
 
@@ -49,7 +50,7 @@ public abstract class DownloadParamReplacement extends AbstractParamReplacement
                 fileName = getName().concat(extension);
 
             if (directory != null)
-                file = new File(directory, fileName);
+                file = FileUtil.appendPath(directory, Path.parse(fileName));
         }
         if (file != null)
             addFile(file);

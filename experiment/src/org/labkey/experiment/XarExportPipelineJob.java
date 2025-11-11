@@ -28,6 +28,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.experiment.xar.XarExportSelection;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -67,12 +68,12 @@ public class XarExportPipelineJob extends PipelineJob
         _xarXmlFileName = xarXmlFileName;
         _selection = selection;
 
-        File exportedXarsDir = root.resolvePath("exportedXars");
+        FileLike exportedXarsDir = root.resolvePathToFileLike("exportedXars");
         FileUtil.mkdir(exportedXarsDir);
 
-        _exportFile = new File(exportedXarsDir, _fileName);
+        _exportFile = exportedXarsDir.resolveChild(_fileName).toNioPathForWrite().toFile();
 
-        setLogFile(new File(_exportFile.getPath() + ".log"));
+        setLogFile(exportedXarsDir.resolveChild(fileName + ".log"));
 
         header("Experiment export to " + _exportFile.getName());
     }

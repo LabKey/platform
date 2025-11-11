@@ -33,7 +33,7 @@ public class Pump implements Runnable
     final DataIteratorContext _context;
     final BatchValidationException _errors;
     int _errorLimit = Integer.MAX_VALUE;
-    int _rowCount = 0;
+    long _rowCount = 0;
     ListImportProgress _progress = null;
 
     public Pump(DataIterator it, DataIteratorContext context)
@@ -76,7 +76,7 @@ public class Pump implements Runnable
                 if (_errors.getRowErrors().size() > _errorLimit)
                     return;
                 if (null != _progress)
-                    _progress.setCurrentRow(_rowCount);
+                    _progress.setCurrentRow((int)_rowCount);
             }
         }
         catch (BatchValidationException x)
@@ -90,6 +90,11 @@ public class Pump implements Runnable
     }
 
     public int getRowCount()
+    {
+        return (int)_rowCount;
+    }
+
+    public long getLongRowCount()
     {
         return _rowCount;
     }

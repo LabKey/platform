@@ -1,40 +1,42 @@
 package org.labkey.test.tests.assay;
 
+import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.domain.PropertyDescriptor;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
+import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.assay.AssayImportPage;
 import org.labkey.test.pages.assay.AssayRunsPage;
-import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.FieldDefinition.ColumnType;
+import org.labkey.test.params.FieldInfo;
 import org.labkey.test.params.assay.GeneralAssayDesign;
+import org.labkey.test.util.DomainUtils.DomainKind;
+import org.labkey.test.util.TestDataGenerator;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
 
+import java.io.File;
 import java.time.Duration;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Category({Daily.class, Assays.class})
 public class AssayReimportIndexTest extends BaseWebDriverTest
 {
-    public static String ASSAY_NAME = "test_assay";
-    public static String STRING_FIELD_NAME = "string_field" + TRICKY_CHARACTERS_NO_QUOTES;
-
-    @Override
-    protected void doCleanup(boolean afterTest)
-    {
-        _containerHelper.deleteProject(getProjectName(), afterTest);
-    }
+    private static final String ASSAY_NAME = DomainKind.Assay.randomName("test+assay");
+    // TODO: Replace each of the following with DomainKind.Assay.randomField(<fieldName>, ColumnType.File) once Issue 54218 is fixed.
+    private static final FieldInfo BATCH_FILE_FIELD = new FieldInfo("batchFile", ColumnType.File);
+    private static final FieldInfo RUN_FILE_FIELD = new FieldInfo("runFile", ColumnType.File);
 
     @BeforeClass
     public static void setupProject() throws Exception
     {
         AssayReimportIndexTest init = getCurrentTest();
-
         init.doSetup();
     }
 
@@ -43,9 +45,19 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
         _containerHelper.createProject(getProjectName(), "Assay");
         goToProjectHome();
 
+        List<PropertyDescriptor> batchFields = List.of(
+            DomainKind.Assay.randomField("batchData", ColumnType.String).getFieldDefinition(),
+            BATCH_FILE_FIELD.getFieldDefinition()
+        );
+
+        List<PropertyDescriptor> runFields = List.of(
+            DomainKind.Assay.randomField("runString", ColumnType.String).getFieldDefinition(),
+            RUN_FILE_FIELD.getFieldDefinition()
+        );
+
         new GeneralAssayDesign(ASSAY_NAME)
-                .setBatchFields(List.of(new FieldDefinition("batchData", FieldDefinition.ColumnType.String)), true)
-                .setRunFields(List.of(new FieldDefinition(STRING_FIELD_NAME, FieldDefinition.ColumnType.String)), true)
+                .setBatchFields(batchFields, true)
+                .setRunFields(runFields, true)
                 .createAssay(getProjectName(), createDefaultConnection());
     }
 
@@ -66,15 +78,12 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
                 2	2	1	11/12/2024	whee
                 """;
 
-        // import the first run
-        goToProjectHome();
-        clickAndWait(Locator.linkWithText(ASSAY_NAME));
-        clickButton("Import Data");
-        clickButton("Next");
-        AssayImportPage importPage = new AssayImportPage(getDriver());
-        importPage.setNamedInputText("Name", firstRun);
-        importPage.setNamedTextAreaValue("TextAreaDataCollector.textArea", firstRunData);
-        importPage.clickSaveAndFinish();
+        // import a run
+        importNewRun()
+            .clickNext()
+            .setNamedInputText("Name", firstRun)
+            .setDataText(firstRunData)
+            .clickSaveAndFinish();
         SearchAdminAPIHelper.waitForIndexer();
 
         // verify it can be searched
@@ -84,16 +93,12 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
                         .as("expect to find assay run")
                         .isTrue());
 
-        // re-import with secondRunData, call the run version 2
-        goToProjectHome();
-        clickAndWait(Locator.linkWithText(ASSAY_NAME));
-        clickAndWait(Locator.linkWithText(firstRun));
-        clickButton("Re-import run");
-        clickButton("Next");
-        AssayImportPage importPage2 = new AssayImportPage(getDriver());
-        importPage2.setNamedInputText("Name", secondRun);
-        importPage2.setNamedTextAreaValue("TextAreaDataCollector.textArea", secondRunData);
-        importPage2.clickSaveAndFinish();
+        // re-import the run with a different name and data
+        reimportRun(firstRun)
+            .clickNext()
+            .setNamedInputText("Name", secondRun)
+            .setDataText(secondRunData)
+            .clickSaveAndFinish();
         SearchAdminAPIHelper.waitForIndexer();
 
         // verify it can be searched
@@ -102,7 +107,7 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
                 ()-> Assertions.assertThat(searchResultPage2.hasResultLocatedBy(Locator.linkWithText("Assay Run - " + secondRun)))
                         .as("expect to find second assay run after re-import")
                         .isTrue());
-        // verify first run cannot be searched
+        // verify the first run cannot be searched
         searchResultPage2.searchForm().searchFor(firstRun);
         checker().withScreenshot("first_run_unexpectedly_found_after_reimport").awaiting(Duration.ofSeconds(2),
                 ()-> Assertions.assertThat(searchResultPage2.hasResultLocatedBy(Locator.linkWithText("Assay Run - " + firstRun)))
@@ -117,16 +122,75 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
         runsPage.getTable().deleteSelectedRows();
         SearchAdminAPIHelper.waitForIndexer();
 
-        // verify second run cannot be searched
+        // verify the second run cannot be searched
         var searchResultPage3 = navBar().search(firstRun);
         checker().withScreenshot("first_run_not_found_after_de-indexing_second_run")
                 .verifyTrue("expect to find first assay run",
                         searchResultPage3.hasResultLocatedBy(Locator.linkWithText("Assay Run - " + firstRun)));
-        // verify first run cannot be searched post-delete
+        // verify the first run cannot be searched post-delete
         searchResultPage3.searchForm().searchFor(secondRun);
         checker().withScreenshot("second_run_found_after_delete")
                 .verifyFalse("expect not to find second assay run after deletion",
                         searchResultPage3.hasResultLocatedBy(Locator.linkWithText("Assay Run - " + secondRun)));
+    }
+
+    @Test // Issue 54112
+    public void testFileFieldValuesRetainedRunReimport()
+    {
+        String runName = TestDataGenerator.randomString(TestDataGenerator.randomInt(10, 50));
+        File batchFile = TestFileUtils.getSampleData("dataLoading/excel/fruits.tsv");
+        File runFile = TestFileUtils.getSampleData("dataLoading/excel/ClientAPITestList.xls");
+        File dataFile = TestFileUtils.getSampleData("assay/GPAT_Run1.tsv");
+
+        // import the initial run
+        importNewRun()
+            .setFileField(BATCH_FILE_FIELD.getName(), batchFile)
+            .clickNext()
+            .setNamedInputText("Name", runName)
+            .setFileField(RUN_FILE_FIELD.getName(), runFile)
+            .setDataFile(dataFile)
+            .clickSaveAndFinish();
+
+        // Reimport the run and verify expected file field values
+        var importPage = reimportRun(runName);
+        var reimportBatchFileValue = importPage.getFileFieldValue(BATCH_FILE_FIELD.getName());
+        checker().withScreenshot("reimport-run-batch-field-value")
+                .verifyEquals("Expected batch file name", batchFile.getName(), reimportBatchFileValue);
+        importPage = importPage.clickNext();
+        var reimportRunFileValue = importPage.getFileFieldValue(RUN_FILE_FIELD.getName());
+        checker().withScreenshot("reimport-run-run-field-value")
+                .verifyEquals("Expected run file name", runFile.getName(), reimportRunFileValue);
+        importPage.selectUploadFileRadioButton()
+            .clickSaveAndFinish();
+
+        // Verify that the reimport retained the file values
+        var row = new AssayRunsPage(getDriver())
+            .getTable()
+            .getRowDataAsMap("Name", runName);
+        reimportBatchFileValue = StringUtils.trimToNull(row.get("Batch/" + BATCH_FILE_FIELD.getName()));
+        reimportRunFileValue = StringUtils.trimToNull(row.get(RUN_FILE_FIELD.getName()));
+
+        checker().verifyEquals("Expected batch file to appear in data", batchFile.getName(), reimportBatchFileValue);
+        checker().verifyEquals("Expected run file to appear in data", runFile.getName(), reimportRunFileValue);
+    }
+
+    private AssayImportPage importNewRun()
+    {
+        goToProjectHome();
+        clickAndWait(Locator.linkWithText(ASSAY_NAME));
+        clickButton("Import Data");
+
+        return new AssayImportPage(getDriver());
+    }
+
+    private AssayImportPage reimportRun(String runName)
+    {
+        goToProjectHome();
+        clickAndWait(Locator.linkWithText(ASSAY_NAME));
+        clickAndWait(Locator.linkWithText(runName));
+        clickButton("Re-import run");
+
+        return new AssayImportPage(getDriver());
     }
 
     @Override
@@ -138,6 +202,6 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
     @Override
     public List<String> getAssociatedModules()
     {
-        return Arrays.asList();
+        return Collections.emptyList();
     }
 }

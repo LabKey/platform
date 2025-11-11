@@ -93,12 +93,13 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
 
     private static final Set<String> FORCE_ENABLED_SYSTEM_FIELDS;
 
-    static {
+    static
+    {
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-                new PropertyStorageSpec("genId", JdbcType.INTEGER),
-                new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false),
-                new PropertyStorageSpec("name", JdbcType.VARCHAR, 200),
-                new PropertyStorageSpec("classid", JdbcType.INTEGER)
+            new PropertyStorageSpec("genId", JdbcType.INTEGER),
+            new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false),
+            new PropertyStorageSpec("name", JdbcType.VARCHAR, 200),
+            new PropertyStorageSpec("classid", JdbcType.INTEGER)
         )));
 
         Set<String> names = new HashSet<>();
@@ -259,7 +260,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         return PROVISIONED_SCHEMA_NAME;
     }
 
-    public DbSchema getSchema()
+    public static DbSchema getSchema()
     {
         return DbSchema.get(PROVISIONED_SCHEMA_NAME, DbSchemaType.Provisioned);
     }

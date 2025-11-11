@@ -110,7 +110,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -119,6 +118,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -323,7 +323,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
-    public HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl)
+    public ErrorView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl)
     {
         boolean hasErrors = null != errors && errors.hasErrors();
         HtmlString errorHtml = getErrorHtml(files);      // TODO: Get rid of getErrorHtml() -- use errors collection
@@ -591,9 +591,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
         for (Attachment attachment : attachments)
         {
-            if (parent instanceof AttachmentDirectory)
+            if (parent instanceof AttachmentDirectory adParent)
             {
-                File f = new File(((AttachmentDirectory)parent).getFileSystemDirectory(), attachment.getName());
+                File f = new File((adParent).getFileSystemDirectory(), attachment.getName());
                 files.add(new FileAttachmentFile(f));
             }
             else
@@ -748,7 +748,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
-    public HttpView getAdminView(ActionURL currentUrl)
+    public HttpView<?> getAdminView(ActionURL currentUrl)
     {
         String requestedType = currentUrl.getParameter("type");
         AttachmentType attachmentType = null != requestedType ? ATTACHMENT_TYPE_MAP.get(requestedType) : null;
@@ -816,7 +816,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             unknownSql.append(")\n");
             unknownSql.append("ORDER BY Container, Parent, DocumentName");
 
-            WebPartView unknownView = getResultSetView(unknownSql, "Unknown Attachments", null);
+            WebPartView<?> unknownView = getResultSetView(unknownSql, "Unknown Attachments", null);
             NavTree navMenu = new NavTree();
 
             if (!findAttachmentParents)
@@ -871,7 +871,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
     @Override
     // Joins each row of core.Documents to the table(s) (if any) that contain an entityid matching the document's parent
-    public HttpView getFindAttachmentParentsView()
+    public WebPartView<?> getFindAttachmentParentsView()
     {
         SQLFragment sql = new SQLFragment("SELECT RowId, CreatedBy, Created, ModifiedBy, Modified, Container, DocumentName, TableName FROM core.Documents LEFT OUTER JOIN (\n");
         addSelectAllEntityIdsSql(sql, Sets.newCaseInsensitiveHashSet("Audit"));
@@ -933,7 +933,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         selectStatements.add("    SELECT " + expression + " AS EntityId, " + table.getSqlDialect().quoteStringLiteral(table.getSelectName()) + " AS TableName FROM " + table.getSelectName() + (null != where ? " WHERE " + where : "") + "\n");
     }
 
-    private WebPartView getResultSetView(SQLFragment sql, String title, @Nullable ActionURL linkUrl)
+    private WebPartView<?> getResultSetView(SQLFragment sql, String title, @Nullable ActionURL linkUrl)
     {
         SqlSelector selector = new SqlSelector(DbScope.getLabKeyScope(), sql);
         ResultSet rs = selector.getResultSet();
@@ -999,36 +999,12 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
     }
 
-
-    @Override
-    public void containerCreated(Container c, User user)
-    {
-    }
-
-
-    @Override
-    public void propertyChange(PropertyChangeEvent propertyChangeEvent)
-    {
-    }
-
     @Override
     public void containerDeleted(Container c, User user)
     {
         // TODO: do we need to get each document and remove its security policy?
         ContainerUtil.purgeTable(coreTables().getTableInfoDocuments(), c, null);
         AttachmentCache.removeAttachments(c);
-    }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {        
-    }
-
-    @NotNull
-    @Override
-    public Collection<String> canMove(Container c, Container newParent, User user)
-    {
-        return Collections.emptyList();
     }
 
     private void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, @Nullable String alias, boolean asAttachment) throws ServletException, IOException
@@ -1146,17 +1122,28 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
             rs = stmt.executeQuery();
 
-            if (parent instanceof AttachmentDirectory)
+            if (parent instanceof AttachmentDirectory adParent)
             {
-                File parentDir = ((AttachmentDirectory) parent).getFileSystemDirectory();
-                if (!parentDir.exists())
+                java.nio.file.Path parentDir = adParent.getFileSystemDirectoryPath();
+                if (!Files.exists(parentDir))
                     throw new FileNotFoundException("No parent directory for downloaded file " + name + ". Please contact an administrator.");
-                File file = new File(parentDir, name);
+                java.nio.file.Path file = FileUtil.appendName(parentDir, name);
                 stmt.close();
                 stmt = null;
                 rs.close();
                 rs = null;
-                return new FileInputStream(file);
+                try
+                {
+                    return Files.newInputStream(file);
+                }
+                catch (FileNotFoundException e)
+                {
+                    throw e;
+                }
+                catch (IOException e)
+                {
+                    throw new FileNotFoundException(e.getMessage());
+                }
             }
             else
             {
@@ -1788,9 +1775,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             svc.renameAttachment(attachParent, newName, oldName, user);
 
 
-            assertTrue(new File(attachDir, UPLOAD_LOG).exists());
+            assertTrue(FileUtil.appendName(attachDir, UPLOAD_LOG).exists());
 
-            File otherDir = new File(attachDir, "subdir");
+            File otherDir = FileUtil.appendName(attachDir, "subdir");
             otherDir.mkdir();
             AttachmentDirectory namedParent = fileService.registerDirectory(folder, "test", otherDir.getCanonicalPath(), false);
 
@@ -1802,14 +1789,14 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             att = svc.getAttachments(namedParent);
             assertEquals(1, att.size());
             assertTrue(att.get(0).getFile().exists());
-            assertSameFile(new File(otherDir, "file.txt"), att.get(0).getFile());
-            assertTrue(new File(otherDir, UPLOAD_LOG).exists());
+            assertSameFile(FileUtil.appendName(otherDir, "file.txt"), att.get(0).getFile());
+            assertTrue(FileUtil.appendName(otherDir, UPLOAD_LOG).exists());
 
             fileService.unregisterDirectory(folder, "test");
             namedParentTest = fileService.getRegisteredDirectory(folder, "test");
             assertNull(namedParentTest);
 
-            File relativeDir = new File(attachDir, "subdir2");
+            File relativeDir = FileUtil.appendName(attachDir, "subdir2");
             relativeDir.mkdirs();
             AttachmentDirectory relativeParent = fileService.registerDirectory(folder, "relative", FileUtil.getAbsoluteCaseSensitiveFile(relativeDir).getAbsolutePath(), false);
             
@@ -1822,10 +1809,10 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             assertEquals(1, att.size());
 
             File expectedFile1 = att.get(0).getFile();
-            File expectedFile2 = new File(relativeDir, UPLOAD_LOG);
+            File expectedFile2 = FileUtil.appendName(relativeDir, UPLOAD_LOG);
 
             assertTrue(expectedFile1.exists());
-            assertEquals(new File(relativeDir, "file.txt"), expectedFile1);
+            assertEquals(FileUtil.appendName(relativeDir, "file.txt"), expectedFile1);
             assertTrue(expectedFile2.exists());
 
 

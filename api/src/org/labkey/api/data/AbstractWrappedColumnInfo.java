@@ -842,4 +842,10 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     {
         return delegate.isScannable();
     }
+
+    @Override
+    public boolean isMultiValued()
+    {
+        return delegate.isMultiValued();
+    }
 }

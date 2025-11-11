@@ -2496,6 +2496,7 @@ public class LoginController extends SpringActionController
     @IgnoresTermsOfUse
     @IgnoresForbiddenProjectCheck
     @AllowedDuringUpgrade
+    @AllowedBeforeInitialUserIsSet
     public static class WhoAmIAction extends ReadOnlyApiAction<Object>
     {
         @Override

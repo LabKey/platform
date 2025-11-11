@@ -191,7 +191,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             else
             {
                 File tempDir = new File(System.getProperty("java.io.tmpdir"));
-                _workingDirectory = new File(tempDir, DEFAULT_WORKING_DIRECTORY);
+                _workingDirectory = FileUtil.appendName(tempDir, DEFAULT_WORKING_DIRECTORY);
             }
 
             if (!_workingDirectory.exists())
@@ -440,10 +440,10 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             if (isBinaryScript)
                 scriptFile = path;
             else
-                scriptFile = new File(getWorkingDir(context), path.getName());
+                scriptFile = FileUtil.appendName(getWorkingDir(context), path.getName());
         }
         else
-            scriptFile = new File(getWorkingDir(context), "script." + extensions.get(0));
+            scriptFile = FileUtil.appendName(getWorkingDir(context), "script." + extensions.get(0));
 
         bindings.put(REWRITTEN_SCRIPT_FILE, scriptFile);
 

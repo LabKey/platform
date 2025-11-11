@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.file.InvalidPathException;
 import java.util.List;
+import java.util.function.Predicate;
 
 @JsonSerialize(using = FileLike.FileLikeSerializer.class)
 @JsonDeserialize(using = FileLike.FileLikeDeserializer.class)
@@ -75,10 +77,10 @@ public interface FileLike extends Comparable<FileLike>
     default FileLike resolveChild(String name)
     {
         if (".".equals(name) || "..".equals(name))
-            throw new IllegalArgumentException("Cannot resolve child '" + name + "'");
+            throw new InvalidPathException(name, "Cannot resolve child");
         Path path = Path.parse(name);
         if (1 != path.size())
-            throw new IllegalArgumentException("Cannot resolve child '" + name + "'");
+            throw new InvalidPathException(name, "Cannot resolve child");
         return resolveFile(path);
     }
 
@@ -86,6 +88,12 @@ public interface FileLike extends Comparable<FileLike>
 
     @NotNull
     List<FileLike> getChildren();
+
+    @NotNull
+    default List<FileLike> getChildren(Predicate<FileLike> filter)
+    {
+        return getChildren().stream().filter(filter).toList();
+    }
 
     /**
      * Does not create parent directories
@@ -119,43 +127,31 @@ public interface FileLike extends Comparable<FileLike>
 
     InputStream openInputStream() throws IOException;
 
-
-    class FileLikeSerializer extends StdSerializer<FileLike>
+    class FileLikeSerializer extends StdSerializer<AbstractFileLike>
     {
         public FileLikeSerializer()
         {
             this(null);
         }
 
-        public FileLikeSerializer(Class<FileLike> t)
+        public FileLikeSerializer(Class<AbstractFileLike> t)
         {
             super(t);
         }
 
-        public void _serialize(FileLike value, JsonGenerator gen, SerializerProvider provider) throws IOException
-        {
-            FileSystemLike fs = value.getFileSystem();
-            gen.writeStringField("rootUri", fs.getURI().toString());
-            gen.writeBooleanField("canReadFiles", fs.canReadFiles());
-            gen.writeBooleanField("canWriteFiles", fs.canWriteFiles());
-            gen.writeStringField("path", value.getPath().toString());
-            if (fs instanceof FileSystemVFS)
-                gen.writeBooleanField("vfs", true);
-        }
-
         @Override
-        public void serialize(FileLike value, JsonGenerator gen, SerializerProvider provider) throws IOException
+        public void serialize(AbstractFileLike value, JsonGenerator gen, SerializerProvider provider) throws IOException
         {
             gen.writeStartObject();
-            _serialize(value, gen, provider);
+            value._serialize(gen);
             gen.writeEndObject();
         }
 
         @Override
-        public void serializeWithType(FileLike value, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer) throws IOException
+        public void serializeWithType(AbstractFileLike value, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer) throws IOException
         {
             WritableTypeId typeIdDef = typeSer.writeTypePrefix(gen, typeSer.typeId(value, JsonToken.START_OBJECT));
-            _serialize(value, gen, provider);
+            value._serialize(gen);
             typeSer.writeTypeSuffix(gen, typeIdDef);
         }
     }
@@ -190,7 +186,12 @@ public interface FileLike extends Comparable<FileLike>
                 b.readonly();
             if (vfs)
                 b.vfs();
-            return b.build().resolveFile(Path.parse(path));
+            // for cloud config
+            if (node.has("containerId"))
+                b.container(node.get("containerId").asText());
+            if (node.has("configName"))
+                b.config(node.get("configName").asText());
+            return b.build(ctx).resolveFile(Path.parse(path));
         }
     }
 }

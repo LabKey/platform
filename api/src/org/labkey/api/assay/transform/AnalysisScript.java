@@ -4,10 +4,12 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -17,22 +19,34 @@ import java.util.Set;
 
 public class AnalysisScript
 {
-    FileLike _script;
+    final FileLike _script;
     Set<DataTransformService.TransformOperation> _operations = new HashSet<>();
 
     public AnalysisScript(File script, Set<DataTransformService.TransformOperation> operations)
     {
-        _script = new FileSystemLike.Builder(script).build().getRoot();
+        this(script);
         _operations = operations;
     }
 
     private AnalysisScript(File script, List<String> operations)
     {
-        _script = new FileSystemLike.Builder(script).build().getRoot();
+        this(script);
         for (String op : operations)
         {
             if (op != null)
                 _operations.add(DataTransformService.TransformOperation.valueOf(op));
+        }
+    }
+
+    private AnalysisScript(File script)
+    {
+        if (!script.exists())
+        {
+            _script = new FileSystemLike.Builder(script).build().getRoot();
+        }
+        else
+        {
+            _script = FileSystemLike.wrapFile(script);
         }
     }
 

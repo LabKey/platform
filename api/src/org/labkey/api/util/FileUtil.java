@@ -33,9 +33,11 @@ import org.junit.Test;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.Crypt;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
@@ -212,15 +214,24 @@ public class FileUtil
         return deleteDir(dir, null);
     }
 
+    public static boolean deleteDir(@NotNull FileLike dir)
+    {
+        return deleteDir(dir.toNioPathForWrite(), null);
+    }
+
+    public static boolean deleteDir(@NotNull FileLike dir, @Nullable Logger log)
+    {
+        return deleteDir(dir.toNioPathForWrite(), log);
+    }
 
     @Deprecated
-    public static boolean deleteDir(@NotNull File dir, Logger log)
+    public static boolean deleteDir(@NotNull File dir, @Nullable Logger log)
     {
         return deleteDir(dir.toPath(), log);
     }
 
 
-    public static boolean deleteDir(Path dir, Logger log)
+    public static boolean deleteDir(@NotNull Path dir, @Nullable Logger log)
     {
         //TODO seems like this could be reworked to use Files.walkFileTree
         log = log == null ? LOG : log;
@@ -450,6 +461,12 @@ public class FileUtil
     }
 
 
+    public static FileLike createDirectory(FileLike path) throws IOException
+    {
+        createDirectory(path.toNioPathForWrite(), AppProps.getInstance().isInvalidFilenameBlocked());
+        return path;
+    }
+
     public static Path createDirectory(Path path) throws IOException
     {
         return createDirectory(path, AppProps.getInstance().isInvalidFilenameBlocked());
@@ -477,8 +494,7 @@ public class FileUtil
     {
         if (!file.getFileSystem().canWriteFiles())
             throw new UnauthorizedException();
-        File target = toFileForWrite(file);
-        createDirectories(target.toPath(), AppProps.getInstance().isInvalidFilenameBlocked());
+        createDirectories(file.toNioPathForWrite(), AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
 
@@ -606,6 +622,11 @@ public class FileUtil
         return getBaseName(file.getName(), dots);
     }
 
+    public static String getBaseName(FileLike file, int dots)
+    {
+        return getBaseName(file.toNioPathForRead().toFile(), dots);
+    }
+
 
     /**
      * Remove text right of and including the last period in a file's name.
@@ -613,6 +634,11 @@ public class FileUtil
      * @return base name
      */
     public static String getBaseName(File file)
+    {
+        return getBaseName(file, 1);
+    }
+
+    public static String getBaseName(FileLike file)
     {
         return getBaseName(file, 1);
     }
@@ -926,7 +952,17 @@ public class FileUtil
     public static Path stringToPath(Container container, String str, boolean isEncoded)
     {
         if (!FileUtil.hasCloudScheme(str))
-            return new File(createUri(str, isEncoded)).toPath();
+        {
+            URI uri = createUri(str, isEncoded);
+            if (!uri.isAbsolute())
+            {
+                return PipelineService.get().findPipelineRoot(container).resolveToNioPath(str);
+            }
+            else
+            {
+                return new File(uri).toPath();
+            }
+        }
         else
             return Objects.requireNonNull(CloudStoreService.get()).getPathFromUrl(container, PageFlowUtil.decode(str)/*decode everything not just the space*/);
     }
@@ -1084,6 +1120,16 @@ public class FileUtil
 
         return path.toString();
     }
+
+    public static void copyFile(FileLike src, FileLike dst) throws IOException
+    {
+        try (InputStream in = src.openInputStream();
+            OutputStream out = dst.openOutputStream())
+        {
+            copyData(in, out);
+        }
+    }
+
 
     public static void copyFile(File src, File dst) throws IOException
     {
@@ -1559,6 +1605,12 @@ quickScan:
      * Returns the absolute path to a file. On Windows and Mac, corrects casing in file paths to match the
      * canonical path.
      */
+    @NotNull
+    public static FileLike getAbsoluteCaseSensitiveFile(@NotNull FileLike file)
+    {
+        return FileSystemLike.wrapFile(getAbsoluteCaseSensitiveFile(file.toNioPathForRead().toFile()));
+    }
+
     @NotNull
     public static File getAbsoluteCaseSensitiveFile(@NotNull File file)
     {

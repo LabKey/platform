@@ -59,10 +59,8 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -116,17 +114,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     AssayRunCreator getRunCreator();
 
     /** @return all the legal data collectors that the user can choose from for the current import attempt */
-    // TODO File->FileLike
-    List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
-
-    default List<AssayDataCollector> getDataCollectorsFileObject(Map<String, FileLike> uploadedFileObjects, AssayRunUploadForm context)
-    {
-        Map<String,File> map = new HashMap<>();
-        if (uploadedFileObjects != null)
-            for (var entry : uploadedFileObjects.entrySet())
-                map.put(entry.getKey(), entry.getValue().toNioPathForRead().toFile());
-        return getDataCollectors(map, context);
-    }
+    List<AssayDataCollector> getDataCollectors(Map<String, FileLike> uploadedFileObjects, AssayRunUploadForm context);
 
     /**
      * @return the name of the assay provider.
@@ -309,7 +297,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     DataExchangeHandler createDataExchangeHandler();
     /** Make a context that knows how to update a run that's already been stored in the database */
-    AssayRunDatabaseContext createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request);
+    AssayRunDatabaseContext<?> createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request);
     /**
      * Make a context that knows how to do the import in the background, on a separate thread
      * (and therefore detached from the HTTP request that might have spawned it)
@@ -333,11 +321,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     @Nullable
     Pair<ExpProtocol, Integer> getAssayResultRowIdFromLsid(Container container, Lsid assayResultRowLsid);
-
-    /**
-     * Get the URL for an assay result row's LSID.
-     */
-    @Nullable ActionURL getResultRowURL(Container container, Lsid lsid);
 
     /**
      * Return a SQL pattern that can be used to match a protocol's LSID to this AssayProvider.

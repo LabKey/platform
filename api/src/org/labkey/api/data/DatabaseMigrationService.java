@@ -4,16 +4,24 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DatabaseMigrationConfiguration.DefaultDatabaseMigrationConfiguration;
+import org.labkey.api.data.SimpleFilter.AndClause;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.SimpleFilter.InClause;
+import org.labkey.api.data.SimpleFilter.OrClause;
+import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.TableSorter;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.vfs.FileLike;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -23,6 +31,8 @@ import java.util.stream.Collectors;
 public interface DatabaseMigrationService
 {
     Logger LOG = LogHelper.getLogger(DatabaseMigrationService.class, "Information about database migration");
+
+    record DataFilter(Set<GUID> containers, String column, FilterClause condition) {}
 
     static @NotNull DatabaseMigrationService get()
     {
@@ -46,10 +56,19 @@ public interface DatabaseMigrationService
         LOG.warn("Database migration service is not present; database migration is a premium feature.");
     }
 
-    // By default, no-op implementation
-    default void registerHandler(MigrationHandler handler) {}
+    // By default, no-op implementations
+    default void registerSchemaHandler(MigrationSchemaHandler schemaHandler) {}
+    default void registerTableHandler(MigrationTableHandler tableHandler) {}
+    default void registerMigrationFilter(MigrationFilter filter) {}
 
-    interface MigrationHandler
+    default @Nullable MigrationFilter getMigrationFilter(String propertyName)
+    {
+        return null;
+    }
+
+    default void copySourceTableToTargetTable(DatabaseMigrationConfiguration configuration, TableInfo sourceTable, TableInfo targetTable, DbSchemaType schemaType, MigrationSchemaHandler schemaHandler) {};
+
+    interface MigrationSchemaHandler
     {
         // Marker for tables to declare themselves as site-wide (no container filtering)
         FieldKey SITE_WIDE_TABLE = FieldKey.fromParts("site-wide");
@@ -62,18 +81,35 @@ public interface DatabaseMigrationService
 
         List<TableInfo> getTablesToCopy();
 
-        FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<String> containers);
+        // Create a filter clause that selects from all specified containers and (in some overrides) applies table-specific filters
+        FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers);
 
+        // Create a filter clause that selects from all specified containers
+        FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers);
+
+        // Return the FieldKey that can be used to filter this table by container. Special values SITE_WIDE_TABLE and
+        // DUMMY_FIELD_KEY can be returned for special behaviors. DUMMY_FIELD_KEY ensures that the handler's custom
+        // getContainerClause() is always called. SITE_WIDE_TABLE is used to select all rows.
         @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable);
 
-        void afterSchema();
+        // Create a filter clause that selects all rows from unfiltered containers plus filtered rows from the filtered containers
+        FilterClause getDomainDataFilterClause(Set<GUID> copyContainers, Set<GUID> filteredContainers, List<DataFilter> domainFilters, TableInfo sourceTable, Set<String> selectColumnNames);
+
+        void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames);
+
+        // Do any necessary clean up after the target table has been populated. notCopiedFilter selects all rows in the
+        // source table that were NOT copied to the target table. (For example, rows in a global table not copied due to
+        // container filtering or rows in a provisioned table not copied due to domain data filtering.)
+        void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter);
+
+        void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema);
     }
 
-    class DefaultMigrationHandler implements MigrationHandler
+    class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
     {
         private final DbSchema _schema;
 
-        public DefaultMigrationHandler(DbSchema schema)
+        public DefaultMigrationSchemaHandler(DbSchema schema)
         {
             _schema = schema;
         }
@@ -116,8 +152,19 @@ public interface DatabaseMigrationService
         }
 
         @Override
-        public FilterClause getContainerClause(TableInfo sourceTable, FieldKey containerFieldKey, Set<String> containers)
+        public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
         {
+            return getContainerClause(sourceTable, containers);
+        }
+
+        @Override
+        public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
+        {
+            FieldKey containerFieldKey = getContainerFieldKey(sourceTable);
+
+            if (containerFieldKey == SITE_WIDE_TABLE)
+                return new SQLClause(new SQLFragment("TRUE"));
+
             return new InClause(containerFieldKey, containers);
         }
 
@@ -163,8 +210,165 @@ public interface DatabaseMigrationService
         }
 
         @Override
-        public void afterSchema()
+        public final FilterClause getDomainDataFilterClause(Set<GUID> copyContainers, Set<GUID> filteredContainers, List<DataFilter> domainFilters, TableInfo sourceTable, Set<String> selectColumnNames)
+        {
+            // Filtered case: remove the filtered containers from the unconditional container set
+            Set<GUID> otherContainers = new HashSet<>(copyContainers);
+            otherContainers.removeAll(filteredContainers);
+            FilterClause ret = getContainerClause(sourceTable, otherContainers);
+
+            OrClause orClause = new OrClause();
+
+            // Delegate to the MigrationSchemaHandler to add domain-filtered containers back with their special filter applied
+            domainFilters.forEach(filter -> addDomainDataFilterClause(orClause, filter, sourceTable, selectColumnNames));
+
+            if (!orClause.getClauses().isEmpty())
+            {
+                orClause.addClause(ret);
+                ret = orClause;
+            }
+
+            return ret;
+        }
+
+        @Override
+        public void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames)
+        {
+            addDataFilterClause(orClause, filter, sourceTable, selectColumnNames);
+        }
+
+        // Add a filter and return true if the column exists directly on the table
+        protected boolean addDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames)
+        {
+            boolean columnExists = selectColumnNames.contains(filter.column());
+
+            if (columnExists)
+            {
+                // Select all rows in this domain-filtered container that meet its criteria
+                orClause.addClause(
+                    new AndClause(
+                        getContainerClause(sourceTable, filter.containers()),
+                        filter.condition()
+                    )
+                );
+            }
+
+            return columnExists;
+        }
+
+        // Add a clause that selects all rows where the object property with <propertyId> equals the filter value. This
+        // is only for provisioned tables that lack an ObjectId, MaterialId, or DataId column.
+        protected void addObjectPropertyClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, int propertyId)
+        {
+            SQLFragment flagWhere = new SQLFragment("lsid IN (SELECT ObjectURI FROM exp.Object o INNER JOIN exp.ObjectProperty op ON o.ObjectId = op.ObjectId WHERE StringValue = ? AND PropertyId = ?)", filter.condition().getParamVals()[0], propertyId);
+
+            orClause.addClause(
+                new AndClause(
+                    getContainerClause(sourceTable, filter.containers()),
+                    new SQLClause(flagWhere)
+                )
+            );
+        }
+
+        private Integer _commentPropertyId = null;
+
+        protected synchronized int getCommentPropertyId(DbScope scope)
+        {
+            if (_commentPropertyId == null)
+            {
+                // Get the exp.PropertyDescriptor table from the source scope
+                TableInfo propertyDescriptor = scope.getSchema("exp", DbSchemaType.Migration).getTable("PropertyDescriptor");
+                // Select the PropertyId associated with built-in Flag fields ("urn:exp.labkey.org/#Comment")
+                Integer propertyId = new TableSelector(propertyDescriptor, Collections.singleton("PropertyId"), new SimpleFilter(FieldKey.fromParts("PropertyURI"), "urn:exp.labkey.org/#Comment"), null).getObject(Integer.class);
+                if (propertyId == null)
+                    throw new RuntimeException("PropertyDescriptor for built-in Flag field not found");
+                else
+                    _commentPropertyId = propertyId;
+            }
+
+            return _commentPropertyId;
+        }
+
+        protected String rowsNotCopied(int count)
+        {
+            return "   " + StringUtilsLabKey.pluralize(count, "row") + " not copied";
+        }
+
+        @Override
+        public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
         {
         }
+
+        @Override
+        public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
+        {
+        }
+    }
+
+    /**
+     * Rarely needed, this interface allows a module to provide a clause that filters the rows of another module's
+     * table. The specific use case: Core manages core.Documents and LabBook implements its global attachment manager
+     * on top of core.Documents. When copying data from core.Documents, we want LabBook to filter out the rows that
+     * are not referenced by notebooks in the subset of containers being copied.
+     */
+    interface MigrationTableHandler
+    {
+        TableInfo getTableInfo();
+        FilterClause getAdditionalFilterClause(Set<GUID> containers);
+    }
+
+    /**
+     * A MigrationFilter adds support for the named filter property in the migration configuration file. If present,
+     * saveFilter() is called with the container guid and property value. Modules can register these to present
+     * module-specific filters.
+     */
+    interface MigrationFilter
+    {
+        String getName();
+        // Implementations should validate guid nullity
+        void saveFilter(@Nullable GUID guid, String value);
+    }
+
+    interface ExperimentDeleteService
+    {
+        static @NotNull ExperimentDeleteService get()
+        {
+            ExperimentDeleteService ret = ServiceRegistry.get().getService(ExperimentDeleteService.class);
+            if (ret == null)
+                throw new IllegalStateException("ExperimentDeleteService not found");
+            return ret;
+        }
+
+        static void setInstance(ExperimentDeleteService impl)
+        {
+            ServiceRegistry.get().registerService(ExperimentDeleteService.class, impl);
+        }
+
+        /**
+         * Deletes all rows from exp.Data, exp.Object, and related tables associated with the provided ObjectIds
+         */
+        void deleteDataRows(Collection<Long> objectIds);
+    }
+
+    // Helper method that parses a data filter then adds it and its container to the provided collections, coalescing
+    // cases where multiple containers specify the same filter
+    static void addDataFilter(String filterName, List<DataFilter> dataFilters, Set<GUID> filteredContainers, GUID guid, String filter)
+    {
+        String[] filterParts = filter.split("=");
+        if (filterParts.length != 2)
+            throw new ConfigurationException("Bad " + filterName + " value; expected <columnName>=<value>: " + filter);
+
+        if (!filteredContainers.add(guid))
+            throw new ConfigurationException("Duplicate " + filterName + " entry for container " + guid);
+
+        String column = filterParts[0];
+        String value = filterParts[1];
+        FilterClause clause = CompareType.EQUAL.createFilterClause(new FieldKey(null, column), value);
+        // If another container is already using this filter clause, then simply add this guid to that domain filter.
+        // Otherwise, add a new domain filter to the list.
+        dataFilters.stream()
+            .filter(df -> df.column().equals(column) && df.condition().equals(clause))
+            .findFirst()
+            .ifPresentOrElse(df -> df.containers().add(guid), () -> dataFilters.add(new DataFilter(new HashSet<>(Set.of(guid)), filterParts[0], clause)));
     }
 }

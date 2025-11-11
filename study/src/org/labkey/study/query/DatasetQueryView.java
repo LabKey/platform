@@ -581,7 +581,6 @@ public class DatasetQueryView extends StudyQueryView
             // Apply appropriate grid filter-url to each QC dropdown option href
             ActionURL urlHelper = getQCStateFilteredURL(getViewContext().cloneActionURL(), set.getLabel(), dataRegionName, getContainer());
             NavTree setItem = new NavTree(set.getLabel(), urlHelper);
-            setItem.setId("QCState:" + set.getLabel());
 
             // When QC State Column gets filtered, detect the change and update QC State dropdown selection accordingly
             String selectedQCLabel = selectedQCStateLabelFromUrl(getViewContext().getActionURL(), getDataRegionName(), set.getLabel(), publicQCUrlFilterValue, privateQCUrlFilterValue);
@@ -604,9 +603,8 @@ public class DatasetQueryView extends StudyQueryView
             }
             ActionURL updateAction = new ActionURL(StudyController.UpdateQCStateAction.class, getContainer());
             updateAction.addReturnUrl(getViewContext().getActionURL());
-            NavTree updateItem = button.addMenuItem("Update state of selected rows", "if (verifySelected(" + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form, \"" +
+            button.addMenuItem("Update state of selected rows", "if (verifySelected(" + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form, \"" +
                     updateAction.getLocalURIString() + "\", \"post\", \"rows\")) " + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form.submit()");
-            updateItem.setId("QCState:updateSelected");
         }
 
         if (getContainer().hasPermission(getUser(), AdminPermission.class))

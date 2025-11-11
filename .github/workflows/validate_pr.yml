@@ -11,7 +11,7 @@ on:
       - ready_for_review
 
 permissions:
-  pull-requests: read
+  pull-requests: write
 
 jobs:
   validate_pr:

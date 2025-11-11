@@ -51,13 +51,11 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -75,7 +73,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -83,6 +80,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
 import static org.labkey.api.query.AbstractQueryUpdateService.addTransactionAuditEvent;
@@ -312,6 +310,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         crossFolderImport,
         useTransactionAuditCache,
         lookupResolutionType,
+        auditDetails,
     }
 
     @Nullable
@@ -332,6 +331,23 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             _optionParamsMap.put(Params.useTransactionAuditCache, Boolean.valueOf(getParam(Params.useTransactionAuditCache)));
         }
         return _optionParamsMap;
+    }
+
+    protected Set<String> getTransactionImportParams(String insertOption, boolean useAsync)
+    {
+        Set<String> importParams = new TreeSet<>();
+        importParams.add(insertOption);
+        if (useAsync)
+            importParams.add("backgroundImport");
+        if (Boolean.valueOf(getParam(Params.crossTypeImport)))
+            importParams.add(Params.crossTypeImport.name());
+        if (Boolean.valueOf(getParam(Params.crossFolderImport)))
+            importParams.add(Params.crossFolderImport.name());
+        if (Boolean.valueOf(getParam(Params.useTransactionAuditCache)))
+            importParams.add(Params.useTransactionAuditCache.name());
+        if (Boolean.valueOf(getParam(Params.allowCreateStorage)))
+            importParams.add(Params.allowCreateStorage.name());
+        return importParams;
     }
 
     protected boolean getOptionParamValue(Params p)
@@ -427,6 +443,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         String text = getParam(Params.text);
         String path = getParam(Params.path);
+        String auditDetailsJson = getParam(Params.auditDetails);
 
         String moduleName = getParam(Params.module);
         String moduleResource = getParam(Params.moduleResource);
@@ -440,6 +457,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         // Check first if the audit behavior has been defined for the table either in code or through XML.
         // If not defined there, check for the audit behavior defined in the action form (getAuditBehaviorType()).
         AuditBehaviorType behaviorType = (_target != null) ? _target.getEffectiveAuditBehavior(getAuditBehaviorType()) : getAuditBehaviorType();
+
+        Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = getTransactionAuditDetails();
+        transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportOptions, getTransactionImportParams(_insertOption.name(), _useAsync));
+        if (!StringUtils.isEmpty(auditDetailsJson))
+            TransactionAuditProvider.TransactionDetail.addAuditDetails(transactionDetails, auditDetailsJson);
 
         try
         {
@@ -471,6 +493,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     loader = DataLoader.get().createLoader(resource, _hasColumnHeaders, null, null);
                     file = resource.getFileStream(user);
                     originalName = resource.getName();
+                    transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportFileName, originalName);
                 }
 
                 if (!hasPostData)
@@ -514,6 +537,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                         hasPostData = true;
                         loader = DataLoader.get().createLoader(r, _hasColumnHeaders, null, TabLoader.TSV_FILE_TYPE);
                         originalName = p.getName();
+                        transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportFileName, originalName);
                         // Set file to null so assay import doesn't copy the file
                         file = null;
                     }
@@ -525,6 +549,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 MultipartFile multipartfile = null==files ? null : files.get("file");
                 if (null != multipartfile && multipartfile.getSize() > 0)
                 {
+                    transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportFileName, multipartfile.getOriginalFilename());
                     hasPostData = true;
                     originalName = multipartfile.getOriginalFilename();
                     // can't read the multipart file twice so create temp file (12800)
@@ -582,6 +607,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                 .setJobDescription(getQueryImportDescription())
                                 .setJobNotificationProvider(getQueryImportJobNotificationProviderName());
 
+                            importContextBuilder.setTransactionDetails(transactionDetails);
                             QueryImportPipelineJob job = new QueryImportPipelineJob(getQueryImportProviderName(), info, root, importContextBuilder);
                             PipelineService.get().queueJob(job, getQueryImportJobNotificationProviderName());
 
@@ -609,11 +635,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             //di = wrap(di, ve);
             //importData(di, ve);
 
-            configureLoader(loader);
+            configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), getLineageImportAliases(), getOptionParamsMap());
 
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
             if (isCrossTypeImport || (behaviorType != null && behaviorType != AuditBehaviorType.NONE))
-                auditEvent = createTransactionAuditEvent(getContainer(), _insertOption.auditAction);
+                auditEvent = createTransactionAuditEvent(getContainer(), _insertOption.auditAction, transactionDetails);
 
             int rowCount = importData(loader, file, originalName, ve, behaviorType, auditEvent, _auditUserComment);
 
@@ -650,13 +676,12 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     }
 
-    protected void configureLoader(DataLoader loader) throws IOException
+    public static void configureLoader(DataLoader loader, @Nullable TableInfo target, @Nullable Map<String, String> renamedColumns, boolean allowLineageColumns, @Nullable Set<String> lineageAliasNames, @Nullable Map<Params, Boolean> optionParamsMap) throws IOException
     {
-        configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), null);
-    }
+        // Issue 53804: When updating or adding samples across different sample types, the strings 'Yes' and 'No' are converted to their boolean values
+        if (loader != null && optionParamsMap != null && optionParamsMap.getOrDefault(Params.crossTypeImport, false))
+            loader.setInferTypes(false);
 
-    public static void configureLoader(DataLoader loader, @Nullable TableInfo target, @Nullable Map<String, String> renamedColumns, boolean allowLineageColumns, @Nullable Set<String> lineageAliasNames) throws IOException
-    {
         //apply known columns so loader can do better type conversion
         if (loader != null && target != null)
             loader.setKnownColumns(target.getColumns());
@@ -863,7 +888,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 if (context.getErrors().hasErrors())
                     return 0;
                 if (auditEvent != null)
+                {
+                    auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true /* qus.loadRows always use DIB*/);
                     auditEvent.addComment(auditAction, count);
+                }
 
                 incrementRowCountMetric(count, context.getInsertOption(), getMetricPrefix(target));
                 transaction.commit();

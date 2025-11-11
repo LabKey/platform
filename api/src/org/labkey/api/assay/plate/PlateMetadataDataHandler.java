@@ -12,8 +12,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ViewBackgroundInfo;
-
-import java.io.File;
+import org.labkey.vfs.FileLike;
 
 public class PlateMetadataDataHandler extends AbstractAssayTsvDataHandler
 {
@@ -57,22 +56,10 @@ public class PlateMetadataDataHandler extends AbstractAssayTsvDataHandler
     }
 
     @Override
-    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
+    public void importFile(@NotNull ExpData data, @NotNull FileLike dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
     {
         // this is just a noop data handler, the actual parsing and importing of the plate metadata needs to happen in
         // AbstractAssayTsvDataHandler.addAssayPlateMetadata because we need to access the inserted result data to get at the
         // lsids.
-    }
-
-    @Override
-    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey) throws ExperimentException
-    {
-        // see description above
-    }
-
-    @Override
-    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey, boolean autoFillDefaultResultColumns) throws ExperimentException
-    {
-        // see description above
     }
 }

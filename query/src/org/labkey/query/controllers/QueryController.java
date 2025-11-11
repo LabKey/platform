@@ -4669,6 +4669,8 @@ public class QueryController extends SpringActionController
 
             Map<String, Object> extraContext = json.has("extraContext") ? json.getJSONObject("extraContext").toMap() : new CaseInsensitiveHashMap<>();
 
+            Map<String, Object> auditDetails = json.has("auditDetails") ? json.getJSONObject("auditDetails").toMap() : new CaseInsensitiveHashMap<>();
+
             Map<Enum, Object> configParameters = new HashMap<>();
 
             // Check first if the audit behavior has been defined for the table either in code or through XML.
@@ -4715,19 +4717,28 @@ public class QueryController extends SpringActionController
                         auditTransaction = NO_OP_TRANSACTION;
 
                     if (auditTransaction.getAuditEvent() != null)
+                    {
                         auditEvent = auditTransaction.getAuditEvent();
+                    }
                     else
                     {
-                        auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, commandType.getAuditAction());
+                        Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = getTransactionAuditDetails();
+                        TransactionAuditProvider.TransactionDetail.addAuditDetails(transactionDetails, auditDetails);
+                        auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, commandType.getAuditAction(), transactionDetails);
                         AbstractQueryUpdateService.addTransactionAuditEvent(auditTransaction,  getUser(), auditEvent);
                     }
+                    auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.QueryCommand, commandType.name());
                 }
 
                 QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, container);
                 List<Map<String, Object>> responseRows =
                         commandType.saveRows(qus, rowsToProcess, getUser(), container, configParameters, extraContext);
                 if (auditEvent != null)
+                {
                     auditEvent.addComment(commandType.getAuditAction(), responseRows.size());
+                    if (Boolean.TRUE.equals(configParameters.get(TransactionAuditProvider.TransactionDetail.DataIteratorUsed)))
+                        auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
+                }
 
                 if (commandType == CommandType.moveRows)
                 {
@@ -5152,6 +5163,7 @@ public class QueryController extends SpringActionController
 
             JSONArray resultArray = new JSONArray();
             JSONObject extraContext = json.optJSONObject("extraContext");
+            JSONObject auditDetails = json.optJSONObject("auditDetails");
 
             int startingErrorIndex = 0;
             int errorCount = 0;
@@ -5179,6 +5191,14 @@ public class QueryController extends SpringActionController
                         commandExtraContext.putAll(commandObject.getJSONObject("extraContext").toMap());
                     }
                     commandObject.put("extraContext", commandExtraContext);
+                    Map<String, Object> commandAuditDetails = new HashMap<>();
+                    if (auditDetails != null)
+                        commandAuditDetails.putAll(auditDetails.toMap());
+                    if (commandObject.has("auditDetails"))
+                    {
+                        commandAuditDetails.putAll(commandObject.getJSONObject("auditDetails").toMap());
+                    }
+                    commandObject.put("auditDetails", commandAuditDetails);
 
                     JSONObject commandResponse = executeJson(commandObject, command, !transacted, errors, transacted, i);
                     // Bail out immediately if we're going to return a failure-type response message

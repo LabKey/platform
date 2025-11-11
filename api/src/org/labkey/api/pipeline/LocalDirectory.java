@@ -48,24 +48,23 @@ public class LocalDirectory implements Serializable
     private final Path _remoteDir;
     private Path _logFile;
     private final String _baseLogFileName;
-    private final String _moduleName;
 
-    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String moduleName)
+    public static LocalDirectory create(@NotNull PipeRoot root)
     {
-        return create(root, moduleName, "dummyLogFile", root.isCloudRoot() ? "dummy" : root.getRootPath().getPath());
+        return create(root, "dummyLogFile", root.isCloudRoot() ? "dummy" : root.getRootPath().getPath());
     }
 
     @Deprecated //Prefer to use a Path for workingDir -- can be local or remote, but should match with root
-    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String moduleName, @NotNull String baseLogFileName, @NotNull String workingDir)
+    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String baseLogFileName, @NotNull String workingDir)
     {
-        return create(root, moduleName, baseLogFileName, Path.of(workingDir));
+        return create(root, baseLogFileName, Path.of(workingDir));
     }
 
-    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String moduleName, @NotNull String baseLogFileName, @NotNull Path workingDir)
+    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String baseLogFileName, @NotNull Path workingDir)
     {
         return !root.isCloudRoot() ?
-                new LocalDirectory(workingDir.toFile(), moduleName, baseLogFileName) :
-                new LocalDirectory(root.getContainer(), moduleName, root, baseLogFileName);
+                new LocalDirectory(workingDir.toFile(), baseLogFileName) :
+                new LocalDirectory(root.getContainer(), root, baseLogFileName);
     }
 
     @JsonCreator
@@ -74,7 +73,6 @@ public class LocalDirectory implements Serializable
             @JsonProperty("_isTemporary") boolean isTemporary,
             @JsonProperty("_pipeRoot") PipeRoot pipeRoot,
             @JsonProperty("_baseLogFileName") String baseLogFileName,
-            @JsonProperty("_moduleName") String moduleName,
             @JsonProperty("_remoteDir") Path remoteDir)
     {
         _localDirectoryFile = localDirectoryFile;
@@ -82,27 +80,25 @@ public class LocalDirectory implements Serializable
         _pipeRoot = pipeRoot;
         _remoteDir = remoteDir != null ? remoteDir : _pipeRoot == null ? null : _pipeRoot.getRootNioPath(); //Using _piperoot as default for backwards compatability
         _baseLogFileName = baseLogFileName;
-        _moduleName = moduleName;
     }
 
     // Constructor for runs and actions when pipeline root is cloud
-    public LocalDirectory(Container container, String moduleName, PipeRoot pipeRoot, String basename)
+    public LocalDirectory(Container container, PipeRoot pipeRoot, String basename)
     {
-        this(container, moduleName, pipeRoot, basename, null);
+        this(container, pipeRoot, basename, null);
     }
 
-    public LocalDirectory(Container container, String moduleName, PipeRoot pipeRoot, String basename, Path remoteDir)
+    public LocalDirectory(Container container, PipeRoot pipeRoot, String basename, Path remoteDir)
     {
         _isTemporary = true;
         _pipeRoot = pipeRoot;
         _remoteDir = remoteDir != null ? remoteDir : _pipeRoot == null ? null : _pipeRoot.getRootNioPath(); //Using _piperoot as default for backwards compatability
         _baseLogFileName = basename;
-        _moduleName = moduleName;
 
         try
         {
             File containerDir = ensureContainerDir(container);
-            _localDirectoryFile = new File(containerDir, FileUtil.makeFileNameWithTimestamp("_temp_"));
+            _localDirectoryFile = FileUtil.appendName(containerDir, FileUtil.makeFileNameWithTimestamp("_temp_"));
 
             ensureLocalDirectory();
         }
@@ -113,13 +109,12 @@ public class LocalDirectory implements Serializable
     }
 
     // Constructor when pipeline root not in cloud
-    public LocalDirectory(@NotNull File localDirectory, String moduleName, String basename)
+    public LocalDirectory(@NotNull File localDirectory, String basename)
     {
         _localDirectoryFile = localDirectory;
         _isTemporary = false;
         _pipeRoot = null;
         _baseLogFileName = basename;
-        _moduleName = moduleName;
         _remoteDir = null;
     }
 
@@ -179,7 +174,7 @@ public class LocalDirectory implements Serializable
                 String filename = FileUtil.getFileName(path);
                 try
                 {
-                    File tempFile = new File(_localDirectoryFile, filename);
+                    File tempFile = FileUtil.appendName(_localDirectoryFile, filename);
                     if (!Files.exists(tempFile.toPath()))
                     {
                         Files.copy(path, tempFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
@@ -214,7 +209,7 @@ public class LocalDirectory implements Serializable
         try
         {
             File containerDir = ensureContainerDir(container);
-            File tempFile = new File(containerDir, tempFileName);
+            File tempFile = FileUtil.appendName(containerDir, tempFileName);
             if (!Files.exists(tempFile.toPath()))
             {
                 log.debug("Copying file to container's temp directory: "+ FileUtil.pathToString(remotePath));
@@ -295,12 +290,12 @@ public class LocalDirectory implements Serializable
     private static File getModuleLocalTempDirectory()
     {
         File tempDir = FileUtil.getTempDirectory();   // tomcat/temp or similar
-        return new File(tempDir, FileUtil.makeLegalName(PipelineService.MODULE_NAME + "_temp"));
+        return FileUtil.appendName(tempDir, FileUtil.makeLegalName(PipelineService.MODULE_NAME + "_temp"));
     }
 
     public static File getContainerLocalTempDirectory(Container container)
     {
-        return new File(getModuleLocalTempDirectory(), FileUtil.makeLegalName(container.getName() + "_" + container.getId()));
+        return FileUtil.appendName(getModuleLocalTempDirectory(), FileUtil.makeLegalName(container.getName() + "_" + container.getId()));
     }
 
     public Path getRemoteLogFilePath()

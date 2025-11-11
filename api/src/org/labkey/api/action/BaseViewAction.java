@@ -28,13 +28,16 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.beans.AbstractPropertyAccessor;
@@ -71,6 +74,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -264,13 +268,13 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
         if (o instanceof String s)
         {
-            return null != StringUtils.trimToNull(s);
+            return !StringUtils.isBlank(s);
         }
         if (o instanceof String[] strings)
         {
             for (String s : strings)
             {
-                if (null != StringUtils.trimToNull(s))
+                if (!StringUtils.isBlank(s))
                 {
                     return true;
                 }
@@ -535,6 +539,31 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return getCommandClass().isAssignableFrom(clazz);
     }
 
+    public Map<TransactionAuditProvider.TransactionDetail, Object> getTransactionAuditDetails()
+    {
+        return getTransactionAuditDetails(getViewContext());
+    }
+
+    public static Map<TransactionAuditProvider.TransactionDetail, Object> getTransactionAuditDetails(ViewContext viewContext)
+    {
+        Map<TransactionAuditProvider.TransactionDetail, Object> map = new HashMap<>();
+        map.put(TransactionAuditProvider.TransactionDetail.Action, viewContext.getActionURL().getController() + "-" + viewContext.getActionURL().getAction());
+        String clientLibrary = HttpUtil.getClientLibrary(viewContext.getRequest());
+        if (null != clientLibrary)
+            map.put(TransactionAuditProvider.TransactionDetail.ClientLibrary, clientLibrary);
+        else
+        {
+            String productName = HttpUtil.getProductNameFromReferer(viewContext.getRequest()); // app
+            if (null != productName)
+                map.put(TransactionAuditProvider.TransactionDetail.Product, productName);
+            else // LKS
+            {
+                String refererRelativeURL = HttpUtil.getRefererRelativeURL(viewContext.getRequest());
+                map.put(TransactionAuditProvider.TransactionDetail.RequestSource, refererRelativeURL);
+            }
+        }
+        return map;
+    }
 
     /* for TableViewForm, uses BeanUtils to work with DynaBeans */
     static public class BeanUtilsPropertyBindingResult extends BeanPropertyBindingResult

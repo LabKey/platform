@@ -23,7 +23,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,7 +37,7 @@ import java.util.Set;
 public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
 {
     private final int _maxFileInputs;
-    private final Map<String, File> _reusableFiles;
+    private final Map<String, FileLike> _reusableFiles;
     // Name of the form <input> for the file.
     private final String _fileInputName;
 
@@ -52,12 +51,12 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
         this(maxFileInputs, Collections.emptyMap());
     }
 
-    public FileUploadDataCollector(int maxFileInputs, Map<String, File> reusableFiles)
+    public FileUploadDataCollector(int maxFileInputs, Map<String, FileLike> reusableFiles)
     {
         this(maxFileInputs, reusableFiles, PRIMARY_FILE);
     }
 
-    public FileUploadDataCollector(int maxFileInputs, Map<String, File> reusableFiles, String fileInputName)
+    public FileUploadDataCollector(int maxFileInputs, Map<String, FileLike> reusableFiles, String fileInputName)
     {
         _maxFileInputs = maxFileInputs;
         _reusableFiles = Collections.unmodifiableMap(reusableFiles);
@@ -69,12 +68,12 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
     }
 
     @Override
-    public HttpView getView(ContextType context)
+    public HttpView<?> getView(ContextType context)
     {
-        return new JspView<FileUploadDataCollector>("/org/labkey/api/assay/fileUpload.jsp", this);
+        return new JspView<>("/org/labkey/api/assay/fileUpload.jsp", this);
     }
 
-    public Map<String, File> getReusableFiles()
+    public Map<String, FileLike> getReusableFiles()
     {
         return _reusableFiles;
     }

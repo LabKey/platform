@@ -20,9 +20,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -43,6 +45,8 @@ import java.util.stream.StreamSupport;
 
 public class Path implements Serializable, Comparable<Path>, Iterable<String>
 {
+    private static final Logger LOG = LogHelper.getLogger(Path.class, "Internal path parsing");
+
     final private boolean _caseSensitive;
     final private int _hash;
     final private String[] _path;
@@ -90,6 +94,14 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         _isDirectory = dir;
         _hash = computeHash(_path, _length);
         _caseSensitive = caseSensitive;
+
+        for (String s : path)
+        {
+            if (s != null && s.contains("\\"))
+            {
+                LOG.debug("Path contains backslash: {}", s, new Exception("Path contains backslash"));
+            }
+        }
     }
 
     // Create an instance from a java.nio.file.Path

@@ -16,16 +16,15 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import au.com.bytecode.opencsv.CSVWriter;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -90,6 +89,7 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TSVJSONWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -226,6 +226,7 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.CsrfInput;
@@ -298,6 +299,7 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -2548,7 +2550,7 @@ public class ExperimentController extends SpringActionController
                 if ("jsonTSV".equalsIgnoreCase(form.getFormat()) || extended || ignoreTypes)
                 {
                     if (!FileUtil.hasCloudScheme(realContent))                      // TODO: handle streaming from S3 to JSON
-                        streamToJSON(realContent.toFile(), form.getFormat(), -1, null);
+                        streamToJSON(FileSystemLike.wrapFile(realContent), form.getFormat(), -1, null);
                     return null;
                 }
 
@@ -2617,11 +2619,11 @@ public class ExperimentController extends SpringActionController
                 return true;
             }
 
-            File tempFile = null;
+            FileLike tempFile = null;
             try
             {
-                tempFile = FileUtil.createTempFile("parse", formFile.getOriginalFilename());
-                FileUtil.copyData(formFile.getInputStream(), tempFile);
+                tempFile = FileUtil.createTempFileLike("parse", formFile.getOriginalFilename());
+                FileUtil.copyData(formFile.getInputStream(), tempFile.openOutputStream());
                 streamToJSON(tempFile, form.getFormat(), form.getMaxRows(), formFile.getOriginalFilename());
             }
             finally
@@ -2635,7 +2637,7 @@ public class ExperimentController extends SpringActionController
 
 
     // SampleTypeTest
-    private void streamToJSON(File realContent, String format, int maxRow, String originalFileName) throws IOException
+    private void streamToJSON(FileLike realContent, String format, int maxRow, String originalFileName) throws IOException
     {
         String lowerCaseFileName = realContent.getName().toLowerCase();
         boolean extended = "jsonTSVExtended".equalsIgnoreCase(format);
@@ -2644,13 +2646,9 @@ public class ExperimentController extends SpringActionController
         JSONArray sheetsArray;
         if (lowerCaseFileName.endsWith(".xls") || lowerCaseFileName.endsWith(".xlsx"))
         {
-            try
+            try (InputStream in = realContent.openInputStream())
             {
-                sheetsArray = ExcelFactory.convertExcelToJSON(realContent, extended, maxRow);
-            }
-            catch (InvalidFormatException e)
-            {
-                throw new NotFoundException("Could not open " + realContent.getName(), e);
+                sheetsArray = ExcelFactory.convertExcelToJSON(in, extended, maxRow);
             }
         }
         else
@@ -2661,7 +2659,8 @@ public class ExperimentController extends SpringActionController
                 throw new ApiUsageException("Unable to parse file " + realContent + ", it is likely of an unsupported file type");
             }
 
-            try (DataLoader tabLoader = dlf.createLoader(realContent, true))
+            try (InputStream in = realContent.openInputStream();
+                DataLoader tabLoader = dlf.createLoader(in, true))
             {
                 tabLoader.setScanAheadLineCount(5000);
                 ColumnDescriptor[] cols = tabLoader.getColumns();
@@ -2843,29 +2842,14 @@ public class ExperimentController extends SpringActionController
                 String filename = filenamePrefix + "." + delimType.extension;
                 String newlineChar = !rootObject.isNull("newlineChar") ? rootObject.getString("newlineChar") : "\n";
 
-                PageFlowUtil.prepareResponseForFile(response, Collections.emptyMap(), filename, true);
-                response.setContentType(delimType.contentType);
+                response.setCharacterEncoding(StringUtilsLabKey.DEFAULT_CHARSET.name());
 
-                //NOTE: we could also have used TSVWriter; however, this is in use elsewhere and we dont need a custom subclass
-                try (CSVWriter writer = new CSVWriter(response.getWriter(), delimType.delim, quoteType.quoteChar, newlineChar))
+                try(var tsvWriter = new TSVJSONWriter(filenamePrefix, rowsArray))
                 {
-                    for (int i = 0; i < rowsArray.length(); i++)
-                    {
-                        List<Object> objectList = rowsArray.getJSONArray(i).toList();
-                        Iterator<Object> it = objectList.iterator();
-                        List<String> list = new ArrayList<>();
-
-                        while (it.hasNext())
-                        {
-                            Object o = it.next();
-                            if (o != null)
-                                list.add(o.toString());
-                            else
-                                list.add("");
-                        }
-
-                        writer.writeNext(list.toArray(new String[0]));
-                    }
+                    tsvWriter.setRowSeparator(newlineChar);
+                    tsvWriter.setDelimiterCharacter(delimType);
+                    tsvWriter.setQuoteCharacter(quoteType);
+                    tsvWriter.write(response);
                 }
 
                 JSONObject qInfo = rootObject.optJSONObject("queryinfo");
@@ -4509,13 +4493,6 @@ public class ExperimentController extends SpringActionController
             return json;
         }
 
-        @Override
-        protected void configureLoader(DataLoader loader) throws IOException
-        {
-            if (getOptionParamValue(Params.crossTypeImport))
-                loader.setInferTypes(false);
-            configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), getLineageImportAliases());
-        }
     }
 
     public abstract static class AbstractExpDataImportAction extends AbstractQueryImportAction<QueryForm>
@@ -4671,12 +4648,6 @@ public class ExperimentController extends SpringActionController
             if (_form.getQueryName() != null && url != null)
                 root.addChild(_form.getQueryName(), url);
             root.addChild("Import Data");
-        }
-
-        @Override
-        protected void configureLoader(DataLoader loader) throws IOException
-        {
-            configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), getLineageImportAliases());
         }
 
     }
@@ -4984,7 +4955,7 @@ public class ExperimentController extends SpringActionController
 
         fileName = fixupExportName(fileName);
         String xarXmlFileName = null;
-        if (StringUtils.endsWithIgnoreCase(fileName, ".xar"))
+        if (Strings.CI.endsWith(fileName, ".xar"))
             xarXmlFileName = fileName + ".xml";
 
         switch (exportType)
@@ -6746,10 +6717,10 @@ public class ExperimentController extends SpringActionController
             }
 
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
-            Path systemDir = pipeRoot.ensureSystemDirectoryPath();
-            Path uploadDir = systemDir.resolve("UploadedXARs");
+            FileLike systemDir = pipeRoot.ensureSystemDirectory();
+            FileLike uploadDir = systemDir.resolveChild("UploadedXARs");
             FileUtil.createDirectories(uploadDir);
-            if (!Files.isDirectory(uploadDir))
+            if (!uploadDir.isDirectory())
             {
                 errors.reject(ERROR_MSG, "Unable to create a 'system/UploadedXARs' directory under the pipeline root");
                 return false;
@@ -6759,18 +6730,18 @@ public class ExperimentController extends SpringActionController
             {
                 userDirName = GUEST_DIRECTORY_NAME;
             }
-            Path userDir = FileUtil.appendName(uploadDir, userDirName);
+            FileLike userDir = uploadDir.resolveChild(userDirName);
             FileUtil.createDirectories(userDir);
-            if (!Files.isDirectory(userDir))
+            if (!userDir.isDirectory())
             {
                 errors.reject(ERROR_MSG, "Unable to create an 'UploadedXARs/" + userDirName + "' directory under the pipeline root");
                 return false;
             }
 
-            Path xarFile = FileUtil.appendName(userDir, formFile.getOriginalFilename());
+            FileLike xarFile = userDir.resolveChild(formFile.getOriginalFilename());
 
             // As this is multi-part will need to use finally to close, to prevent a stream closure exception
-            try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(xarFile)))
+            try (OutputStream out = new BufferedOutputStream(xarFile.openOutputStream()))
             {
                 out.write(bytes);
             }
@@ -6801,17 +6772,17 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(ImportXarForm form, BindException errors) throws Exception
         {
-            for (File f : form.getValidatedFiles(getContainer()))
+            for (FileLike f : form.getValidatedFiles(getContainer()))
             {
                 if (f.isFile())
                 {
-                    ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f.toPath(), "Experiment Import", false, form.getPipeRoot(getContainer()));
+                    ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f, "Experiment Import", false, form.getPipeRoot(getContainer()));
 
                     // TODO: Configure module resources with the appropriate log location per container
                     if (form.getModule() != null)
                     {
                         FileLike logFile = form.getPipeRoot(getContainer()).getLogDirectoryFileLike(true).resolveChild("module-resource-xar.log");
-                        job.setLogFile(logFile.toNioPathForWrite());
+                        job.setLogFile(logFile);
                     }
 
                     PipelineService.get().queueJob(job);
@@ -6842,16 +6813,16 @@ public class ExperimentController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             List<Map<String, String>> archives = new ArrayList<>();
-            for (File f : form.getValidatedFiles(getContainer()))
+            for (FileLike f : form.getValidatedFiles(getContainer()))
             {
                 Map<String, String> archive = new HashMap<>();
-                ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f.toPath(), "Experiment Import", false, form.getPipeRoot(getContainer()));
+                ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f, "Experiment Import", false, form.getPipeRoot(getContainer()));
 
                 // TODO: Configure module resources with the appropriate log location per container
                 if (form.getModule() != null)
                 {
                     FileLike logFile = form.getPipeRoot(getContainer()).getLogDirectoryFileLike(true).resolveChild("module-resource-xar.log");
-                    job.setLogFile(logFile.toNioPathForWrite());
+                    job.setLogFile(logFile);
                 }
 
                 PipelineService.get().queueJob(job);

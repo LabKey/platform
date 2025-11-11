@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.query.ValidationException;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -71,7 +72,7 @@ public class PlateUtils
      * Search for a grid of numbers that has the expected number of rows and columns.
      * TODO: Find multiple plates in "RC121306.xls" while ignoring duplicate plate found in "20131218_0004.txt"
      */
-    public static List<GridInfo> parseAllGrids(File dataFile, List<Map<String, Object>> rows, int expectedRows, int expectedCols, PlateReader reader)
+    public static List<GridInfo> parseAllGrids(FileLike dataFile, List<Map<String, Object>> rows, int expectedRows, int expectedCols, PlateReader reader)
     {
         return _parseGrids(dataFile, rows, expectedRows, expectedCols, true, reader);
     }
@@ -80,8 +81,8 @@ public class PlateUtils
      * Search for a grid of numbers that has the expected number of rows and columns.
      * TODO: Find multiple plates in "RC121306.xls" while ignoring duplicate plate found in "20131218_0004.txt"
      */
-    @Nullable
-    public static double[][] parseGrid(File dataFile, List<Map<String, Object>> rows, int expectedRows, int expectedCols, @Nullable PlateReader reader)
+
+    public static double @Nullable[][] parseGrid(FileLike dataFile, List<Map<String, Object>> rows, int expectedRows, int expectedCols, @Nullable PlateReader reader)
     {
         List<GridInfo> grids = _parseGrids(dataFile, rows, expectedRows, expectedCols, false, reader);
         if (!grids.isEmpty())
@@ -97,7 +98,7 @@ public class PlateUtils
      * TODO: Find multiple plates in "RC121306.xls" while ignoring duplicate plate found in "20131218_0004.txt"
      */
     private static List<GridInfo> _parseGrids(
-            File dataFile,
+            FileLike dataFile,
             List<Map<String, Object>> rows,
             int expectedRows,
             int expectedCols,

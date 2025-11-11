@@ -17,6 +17,7 @@ package org.labkey.api.pipeline;
 
 import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.util.FileType;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,15 +57,18 @@ public interface WorkDirectory
     /** Informs the WorkDirectory that a new file is being created. It is treated as a Function.output */
     File newFile(FileType type);
 
-    /** Informs the WorkDirectory that a new file is being created. */
-    File newFile(Function f, FileType type);
-
     /**
      * Indicates that a file is to be used as input. The implementation can choose whether it needs to be copied, unless
      * forceCopy is true (in which case it will always be copied to the work directory
      * @return the full path to the file where it is available for use
      */
     File inputFile(File fileInput, boolean forceCopy) throws IOException;
+
+    default File inputFile(FileLike fileInput, boolean forceCopy) throws IOException
+    {
+        return inputFile(fileInput.toNioPathForRead().toFile(), forceCopy);
+    }
+
 
     /**
      * Indicates that a file is to be used as input. The implementation can choose whether it needs to be copied, unless

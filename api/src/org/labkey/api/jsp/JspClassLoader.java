@@ -22,6 +22,8 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ConfigurationException;
 
 import jakarta.servlet.ServletContext;
+import org.labkey.api.util.FileUtil;
+
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -71,7 +73,7 @@ public class JspClassLoader
         {
             // use m.getExplodedPath() instead of getModuleResource() otherwise, we will look for the
             // jars in the source directory on dev machines
-            var libDir = new File(m.getExplodedPath(), "lib");
+            var libDir = FileUtil.appendName(m.getExplodedPath(), "lib");
             if (!libDir.exists())
                 continue;
             var listing = libDir.listFiles((dir, name) -> name.contains("_jsp") && name.endsWith(".jar"));

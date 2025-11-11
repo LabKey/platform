@@ -115,7 +115,7 @@ import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.vfs.FileSystemLike;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -284,12 +284,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     dataMap.put(StudyPublishService.TARGET_STUDY_PROPERTY_NAME, targetStudyContainer);
 
                     // Remember which rows we're planning to link, partitioned by the target study
-                    Set<Long> rowIds = rowIdsByTargetContainer.get(targetStudyContainer);
-                    if (rowIds == null)
-                    {
-                        rowIds = new HashSet<>();
-                        rowIdsByTargetContainer.put(targetStudyContainer, rowIds);
-                    }
+                    Set<Long> rowIds = rowIdsByTargetContainer.computeIfAbsent(targetStudyContainer, k -> new HashSet<>());
                     rowIds.add(publishKey.getDataId());
 
                     dataMaps.add(dataMap);
@@ -612,7 +607,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public List<AssayDataCollector> getDataCollectors(@Nullable Map<String, File> uploadedFiles, AssayRunUploadForm context)
+    public List<AssayDataCollector> getDataCollectors(@Nullable Map<String, org.labkey.vfs.FileLike> uploadedFiles, AssayRunUploadForm context)
     {
         return getDataCollectors(uploadedFiles, context, true);
     }
@@ -623,7 +618,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return getName();
     }
 
-    public List<AssayDataCollector> getDataCollectors(@Nullable Map<String, File> uploadedFiles, AssayRunUploadForm<?> context, boolean allowFileReuseOnReRun)
+    public List<AssayDataCollector> getDataCollectors(@Nullable Map<String, org.labkey.vfs.FileLike> uploadedFiles, AssayRunUploadForm<?> context, boolean allowFileReuseOnReRun)
     {
         List<AssayDataCollector> result = new ArrayList<>();
         if (!PipelineDataCollector.getFileQueue(context).isEmpty())
@@ -636,7 +631,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             {
                 // In the re-run scenario, figure out what files to offer up for reuse
 
-                Map<String, File> reusableFiles = new HashMap<>();
+                Map<String, org.labkey.vfs.FileLike> reusableFiles = new HashMap<>();
                 // Include any files that were uploaded as part of this request
                 if (uploadedFiles != null && !uploadedFiles.isEmpty())
                 {
@@ -674,14 +669,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 // Filter out any files that aren't under the current pipeline root, since we won't be able to resolve
                 // them successfully due to security restrictions for what's an allowable input to the new run. See issue 18387.
                 PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(context.getContainer());
-                for (Iterator<Map.Entry<String, File>> iter = reusableFiles.entrySet().iterator(); iter.hasNext(); )
+                for (Iterator<Map.Entry<String, FileLike>> iter = reusableFiles.entrySet().iterator(); iter.hasNext(); )
                 {
-                    Map.Entry<String, File> entry = iter.next();
+                    Map.Entry<String, FileLike> entry = iter.next();
                     // If it's not under the current pipeline root
-                    if (pipeRoot == null || !pipeRoot.isUnderRoot(entry.getValue()))
+                    if (pipeRoot == null || !pipeRoot.isUnderRoot(entry.getValue().toNioPathForRead()))
                     {
-                        // Remove it from the collection
+                        // Remove it from both collections
                         iter.remove();
+                        reusableFiles.remove(entry.getKey());
                     }
                 }
 
@@ -691,8 +687,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     // to reuse or re-upload
                     if (!reusableFiles.isEmpty())
                     {
-                        var reusableFileLike = FileSystemLike.wrapFiles(reusableFiles);
-                        result.add(new PreviouslyUploadedDataCollector<>(reusableFileLike));
+                        result.add(new PreviouslyUploadedDataCollector<>(reusableFiles));
                     }
                     result.add(new FileUploadDataCollector<>(getMaxFileInputs()));
                 }
@@ -708,8 +703,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 // Normal (non-rerun) scenario
                 if (uploadedFiles != null)
                 {
-                    var uploadedFileLikes = FileSystemLike.wrapFiles(uploadedFiles);
-                    result.add(new PreviouslyUploadedDataCollector<>(uploadedFileLikes));
+                    result.add(new PreviouslyUploadedDataCollector<>(uploadedFiles));
                 }
                 result.add(new FileUploadDataCollector<>(getMaxFileInputs()));
             }
@@ -717,23 +711,28 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return result;
     }
 
-    private void addReusableData(Map<String, File> reusableFiles, ExpData inputData)
+    private void addReusableData(Map<String, org.labkey.vfs.FileLike> reusableFiles, ExpData inputData)
     {
         // Not all datas are associated with a file
         if (inputData.getFile() != null)
         {
-            reusableFiles.put(AssayDataCollector.PRIMARY_FILE + (reusableFiles.isEmpty() ? "" : Integer.toString(reusableFiles.size())), inputData.getFile());
+            String key = AssayDataCollector.PRIMARY_FILE + (reusableFiles.isEmpty() ? "" : Integer.toString(reusableFiles.size()));
+            File f = inputData.getFile();
+            if (f != null)
+            {
+                reusableFiles.put(key, org.labkey.vfs.FileSystemLike.wrapFile(f));
+            }
         }
     }
 
     @Override
-    public AssayRunCreator getRunCreator()
+    public AssayRunCreator<?> getRunCreator()
     {
         return new DefaultAssayRunCreator<>(this);
     }
 
     @Override
-    public ExpProtocol createAssayDefinition(User user, Container container, String name, String description, ExpProtocol.Status status, XarContext context)
+    public ExpProtocol createAssayDefinition(User user, Container container, String name, String description, ExpProtocol.Status status, @NotNull XarContext context)
             throws ExperimentException
     {
         String protocolLsid = getAssayProtocolLsid(container, name, context);
@@ -1454,13 +1453,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public AssayRunUploadContext.Factory<? extends AbstractAssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, ViewContext context)
+    public AssayRunUploadContext.Factory<? extends AbstractAssayProvider, ? extends AssayRunUploadContext.Factory<?, ?>> createRunUploadFactory(ExpProtocol protocol, ViewContext context)
     {
         return new AssayRunUploadContextImpl.Factory<>(protocol, this, context);
     }
 
     @Override
-    public AssayRunUploadContext.Factory<? extends AbstractAssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, User user, Container c)
+    public AssayRunUploadContext.Factory<? extends AbstractAssayProvider, ? extends AssayRunUploadContext.Factory<?, ?>> createRunUploadFactory(ExpProtocol protocol, User user, Container c)
     {
         return new AssayRunUploadContextImpl.Factory<>(protocol, this, user, c);
     }
@@ -1513,15 +1512,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public AssayRunDatabaseContext createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request)
+    public AssayRunDatabaseContext<?> createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request)
     {
-        return new AssayRunDatabaseContext(run, user, request);
+        return new AssayRunDatabaseContext<>(run, user, request);
     }
 
     @Override
     public AssayRunAsyncContext<?> createRunAsyncContext(AssayRunUploadContext<?> context) throws IOException, ExperimentException
     {
-        return new AssayRunAsyncContext(context);
+        return new AssayRunAsyncContext<>(context);
     }
 
     @Override
@@ -1691,16 +1690,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
             return null;
 
         return Pair.of(protocol, rowId);
-    }
-
-    @Override
-    public @Nullable ActionURL getResultRowURL(Container container, Lsid lsid)
-    {
-        var pair = getAssayResultRowIdFromLsid(container, lsid);
-        if (pair == null)
-            return null;
-
-        return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultRowURL(this, container, pair.first, pair.second);
     }
 
     @Override
@@ -2136,10 +2125,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     AuditLogService.get().addEvent(user, event);
                 }
             }
-            catch (Exception e)
-            {
-
-            }
+            catch (Exception ignored) {}
         }
     }
 
@@ -2147,7 +2133,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         String tableName = AssayProtocolSchema.DATA_TABLE_NAME;
         AssaySchema schema = createProtocolSchema(user, targetContainer, protocol, null);
-        FilteredTable assayResultTable = (FilteredTable) schema.getTable(tableName);
+        FilteredTable<?> assayResultTable = (FilteredTable<?>) schema.getTable(tableName);
         if (assayResultTable == null)
             return;
 
@@ -2156,7 +2142,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     record AssayFileMoveReference(String sourceFilePath, File updatedFile, String runName, String fieldName) {}
 
-    private void updateResultFiles(FilteredTable assayResultTable, List<ExpRun> runs, ExpProtocol assayProtocol, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData) throws ExperimentException
+    private void updateResultFiles(FilteredTable<?> assayResultTable, List<ExpRun> runs, ExpProtocol assayProtocol, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData) throws ExperimentException
     {
         FileContentService fileContentService = FileContentService.get();
         if (fileContentService == null)

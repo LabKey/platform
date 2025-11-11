@@ -231,8 +231,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     public static TransactionAuditProvider.TransactionAuditEvent createTransactionAuditEvent(Container container, QueryService.AuditAction auditAction)
     {
+        return createTransactionAuditEvent(container, auditAction, null);
+    }
+
+    public static TransactionAuditProvider.TransactionAuditEvent createTransactionAuditEvent(Container container, QueryService.AuditAction auditAction, @Nullable Map<TransactionAuditProvider.TransactionDetail, Object> details)
+    {
         long auditId = DbSequenceManager.get(ContainerManager.getRoot(), DB_SEQUENCE_NAME).next();
-        return new TransactionAuditProvider.TransactionAuditEvent(container, auditAction, auditId);
+        TransactionAuditProvider.TransactionAuditEvent event = new TransactionAuditProvider.TransactionAuditEvent(container, auditAction, auditId);
+        if (details != null)
+            event.addDetails(details);
+        return event;
     }
 
     public static void addTransactionAuditEvent(DbScope.Transaction transaction, User user, TransactionAuditProvider.TransactionAuditEvent auditEvent)
@@ -261,6 +269,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         context.setInsertOption(forImport);
         context.setConfigParameters(configParameters);
         configureDataIteratorContext(context);
+        if (configParameters != null)
+        {
+            try
+            {
+                configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
+            } catch (UnsupportedOperationException ignore)
+            {
+                // configParameters is immutable, likely originated from a junit test
+            }
+        }
         return context;
     }
 
@@ -698,6 +716,39 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return null;
     }
 
+    protected Object coerceTypesValue(ColumnInfo col, Map<String, Object> providedValues, String key, Object value)
+    {
+        if (col != null && value != null &&
+            !col.getJavaObjectClass().isInstance(value) &&
+            !(value instanceof AttachmentFile) &&
+            !(value instanceof MultipartFile) &&
+            !(value instanceof String[]) &&
+            !(col.isMultiValued() || col.getFk() instanceof MultiValuedForeignKey))
+        {
+            try
+            {
+                if (PropertyType.FILE_LINK.equals(col.getPropertyType()))
+                    value = ExpDataFileConverter.convert(value);
+                else if (col.getKindOfQuantity() != null)
+                {
+                    providedValues.put(key, value);
+                    value = Quantity.convert(value, col.getKindOfQuantity().getStorageUnit());
+                }
+                else
+                    value = col.getConvertFn().apply(value);
+            }
+            catch (ConvertHelper.FileConversionException e)
+            {
+                throw e;
+            }
+            catch (ConversionException e)
+            {
+                // That's OK, the transformation script may be able to fix up the value before it gets inserted
+            }
+        }
+
+        return value;
+    }
 
     /** Attempt to make the passed in types match the expected types so the script doesn't have to do the conversion */
     @Deprecated
@@ -708,41 +759,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         for (Map.Entry<String, Object> entry : row.entrySet())
         {
             ColumnInfo col = columnMap.get(entry.getKey());
-
-            Object value = entry.getValue();
-            if (col != null && value != null &&
-                    !col.getJavaObjectClass().isInstance(value) &&
-                    !(value instanceof AttachmentFile) &&
-                    !(value instanceof MultipartFile) &&
-                    !(value instanceof String[]) &&
-                    !(col.getFk() instanceof MultiValuedForeignKey))
-            {
-                try
-                {
-                    if (PropertyType.FILE_LINK.equals(col.getPropertyType()))
-                        value = ExpDataFileConverter.convert(value);
-                    else if (col.getKindOfQuantity() != null)
-                    {
-                        providedValues.put(entry.getKey(), value);
-                        value = Quantity.convert(value, col.getKindOfQuantity().getStorageUnit());
-                    }
-                    else
-                        value = col.getConvertFn().apply(value);
-                }
-                catch (ConvertHelper.FileConversionException e)
-                {
-                    throw e;
-                }
-                catch (ConversionException e)
-                {
-                    // That's OK, the transformation script may be able to fix up the value before it gets inserted
-                }
-            }
+            Object value = coerceTypesValue(col, providedValues, entry.getKey(), entry.getValue());
             result.put(entry.getKey(), value);
         }
+        
         return result;
     }
-
 
     protected abstract Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;

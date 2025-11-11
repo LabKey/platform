@@ -26,7 +26,7 @@ public interface CloudArchiveImporterSupport
     default void downloadCloudArchive(@NotNull PipelineJob job, @NotNull Path studyXml, BindException errors) throws UnsupportedOperationException
     {
         //check if cloud based pipeline root, and study xml hasn't been downloaded already
-        if (!studyXml.startsWith(job.getPipeRoot().getImportDirectory().toPath().toAbsolutePath()))
+        if (!studyXml.startsWith(job.getPipeRoot().getImportDirectory().toNioPathForRead().toAbsolutePath()))
         {
             if (CloudStoreService.get() != null)   //proxy of is Cloud Module enabled for the current job/container
             {
