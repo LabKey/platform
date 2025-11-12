@@ -29,7 +29,9 @@ import java.util.List;
 public class AssayReimportIndexTest extends BaseWebDriverTest
 {
     private static final String ASSAY_NAME = DomainKind.Assay.randomName("test+assay");
+    private static final FieldInfo BATCH_FIELD = DomainKind.Assay.randomField("batchData", ColumnType.String);
     private static final FieldInfo BATCH_FILE_FIELD = DomainKind.Assay.randomField("batchFile", ColumnType.File);
+    private static final FieldInfo RUN_FIELD = DomainKind.Assay.randomField("runString", ColumnType.String);
     private static final FieldInfo RUN_FILE_FIELD = DomainKind.Assay.randomField("runFile", ColumnType.File);
 
     @BeforeClass
@@ -44,15 +46,8 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
         _containerHelper.createProject(getProjectName(), "Assay");
         goToProjectHome();
 
-        List<PropertyDescriptor> batchFields = List.of(
-            DomainKind.Assay.randomField("batchData", ColumnType.String).getFieldDefinition(),
-            BATCH_FILE_FIELD.getFieldDefinition()
-        );
-
-        List<PropertyDescriptor> runFields = List.of(
-            DomainKind.Assay.randomField("runString", ColumnType.String).getFieldDefinition(),
-            RUN_FILE_FIELD.getFieldDefinition()
-        );
+        List<PropertyDescriptor> batchFields = List.of(BATCH_FIELD.getFieldDefinition(), BATCH_FILE_FIELD.getFieldDefinition());
+        List<PropertyDescriptor> runFields = List.of(RUN_FIELD.getFieldDefinition(), RUN_FILE_FIELD.getFieldDefinition());
 
         new GeneralAssayDesign(ASSAY_NAME)
                 .setBatchFields(batchFields, true)
@@ -133,44 +128,105 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
                         searchResultPage3.hasResultLocatedBy(Locator.linkWithText("Assay Run - " + secondRun)));
     }
 
-    @Test // Issue 54112
+    @Test // Issue 54112, Issue 54218
     public void testFileFieldValuesRetainedRunReimport()
     {
         String runName = TestDataGenerator.randomString(TestDataGenerator.randomInt(10, 50));
+        String batchFieldValue = TestDataGenerator.randomString(TestDataGenerator.randomInt(10, 50));
+        String runFieldValue = TestDataGenerator.randomString(TestDataGenerator.randomInt(10, 50));
         File batchFile = TestFileUtils.getSampleData("dataLoading/excel/fruits.tsv");
         File runFile = TestFileUtils.getSampleData("dataLoading/excel/ClientAPITestList.xls");
         File dataFile = TestFileUtils.getSampleData("assay/GPAT_Run1.tsv");
 
         // import the initial run
         importNewRun()
+            .setNamedInputText(BATCH_FIELD.getName(), batchFieldValue)
             .setFileField(BATCH_FILE_FIELD.getName(), batchFile)
             .clickNext()
             .setNamedInputText("Name", runName)
+            .setNamedInputText(RUN_FIELD.getName(), runFieldValue)
             .setFileField(RUN_FILE_FIELD.getName(), runFile)
             .setDataFile(dataFile)
             .clickSaveAndFinish();
 
-        // Reimport the run and verify expected file field values
+        // Verify batch values during reimport
         var importPage = reimportRun(runName);
-        var reimportBatchFileValue = importPage.getFileFieldValue(BATCH_FILE_FIELD.getName());
-        checker().withScreenshot("reimport-run-batch-field-value")
-                .verifyEquals("Expected batch file name", batchFile.getName(), reimportBatchFileValue);
+        String actualBatchValue = importPage.getFieldValue(BATCH_FIELD.getName());
+        checker().withScreenshot("reimport-batch-field-value")
+                .verifyEquals("Unexpected batch field value", batchFieldValue, actualBatchValue);
+        actualBatchValue = importPage.getFileFieldValue(BATCH_FILE_FIELD.getName());
+        checker().withScreenshot("reimport-batch-file-field-value")
+                .verifyEquals("Unexpected batch file name", batchFile.getName(), actualBatchValue);
+
+        // Verify run values during reimport
         importPage = importPage.clickNext();
-        var reimportRunFileValue = importPage.getFileFieldValue(RUN_FILE_FIELD.getName());
-        checker().withScreenshot("reimport-run-run-field-value")
-                .verifyEquals("Expected run file name", runFile.getName(), reimportRunFileValue);
+        String actualRunValue = importPage.getFieldValue(RUN_FIELD.getName());
+        checker().withScreenshot("reimport-batch-field-value")
+                .verifyEquals("Unexpected run field value", runFieldValue, actualRunValue);
+        actualRunValue = importPage.getFileFieldValue(RUN_FILE_FIELD.getName());
+        checker().withScreenshot("reimport-run-file-field-value")
+                .verifyEquals("Unexpected run file name", runFile.getName(), actualRunValue);
         importPage.selectUploadFileRadioButton()
             .clickSaveAndFinish();
 
-        // Verify that the reimport retained the file values
+        // Verify that the reimport retained the values
         var row = new AssayRunsPage(getDriver())
             .getTable()
             .getRowDataAsMap("Name", runName);
-        reimportBatchFileValue = StringUtils.trimToNull(row.get("Batch/" + BATCH_FILE_FIELD.getFieldKey()));
-        reimportRunFileValue = StringUtils.trimToNull(row.get(RUN_FILE_FIELD.getFieldKey().toString()));
+        actualBatchValue = StringUtils.trimToNull(row.get("Batch/" + BATCH_FIELD.getFieldKey()));
+        actualRunValue = StringUtils.trimToNull(row.get(RUN_FIELD.getFieldKey().toString()));
+        checker().verifyEquals("Unexpected batch field value in grid", batchFieldValue, actualBatchValue);
+        checker().verifyEquals("Unexpected run field value in grid", runFieldValue, actualRunValue);
 
-        checker().verifyEquals("Expected batch file to appear in data", batchFile.getName(), reimportBatchFileValue);
-        checker().verifyEquals("Expected run file to appear in data", runFile.getName(), reimportRunFileValue);
+        actualBatchValue = StringUtils.trimToNull(row.get("Batch/" + BATCH_FILE_FIELD.getFieldKey()));
+        actualRunValue = StringUtils.trimToNull(row.get(RUN_FILE_FIELD.getFieldKey().toString()));
+        checker().verifyEquals("Unexpected batch file in grid", batchFile.getName(), actualBatchValue);
+        checker().verifyEquals("Unexpected run file in grid", runFile.getName(), actualRunValue);
+
+        // Verify deleting batch file value is respected
+        reimportRun(runName)
+            .removeFileValue(BATCH_FILE_FIELD.getName())
+            .clickNext()
+            .selectUploadFileRadioButton()
+            .clickSaveAndFinish();
+
+        row = new AssayRunsPage(getDriver())
+            .getTable()
+            .getRowDataAsMap("Name", runName);
+        actualBatchValue = StringUtils.trimToNull(row.get("Batch/" + BATCH_FILE_FIELD.getFieldKey()));
+        actualRunValue = StringUtils.trimToNull(row.get(RUN_FILE_FIELD.getFieldKey().toString()));
+        checker().verifyNull("Unexpected batch field value in grid", actualBatchValue);
+        checker().verifyEquals("Unexpected run field value in grid", runFile.getName(), actualRunValue);
+
+        // Verify other values remain unchanged
+        actualBatchValue = StringUtils.trimToNull(row.get("Batch/" + BATCH_FIELD.getFieldKey()));
+        actualRunValue = StringUtils.trimToNull(row.get(RUN_FIELD.getFieldKey().toString()));
+        checker().verifyEquals("Unexpected batch field value in grid", batchFieldValue, actualBatchValue);
+        checker().verifyEquals("Unexpected run field value in grid", runFieldValue, actualRunValue);
+
+        // Verify deleting run file value is respected
+        batchFile = TestFileUtils.getSampleData("dataLoading/excel/fruits.xls");
+        runFieldValue = TestDataGenerator.randomString(TestDataGenerator.randomInt(10, 50));
+        reimportRun(runName)
+            .setFileField(BATCH_FILE_FIELD.getName(), batchFile)
+            .clickNext()
+            .removeFileValue(RUN_FILE_FIELD.getName())
+            .setNamedInputText(RUN_FIELD.getName(), runFieldValue)
+            .selectUploadFileRadioButton()
+            .clickSaveAndFinish();
+
+        row = new AssayRunsPage(getDriver())
+            .getTable()
+            .getRowDataAsMap("Name", runName);
+        actualBatchValue = StringUtils.trimToNull(row.get("Batch/" + BATCH_FIELD.getFieldKey()));
+        actualRunValue = StringUtils.trimToNull(row.get(RUN_FIELD.getFieldKey().toString()));
+        checker().verifyEquals("Unexpected batch field value in grid", batchFieldValue, actualBatchValue);
+        checker().verifyEquals("Unexpected run field value in grid", runFieldValue, actualRunValue);
+
+        actualBatchValue = StringUtils.trimToNull(row.get("Batch/" + BATCH_FILE_FIELD.getFieldKey()));
+        actualRunValue = StringUtils.trimToNull(row.get(RUN_FILE_FIELD.getFieldKey().toString()));
+        checker().verifyEquals("Unexpected batch file in grid", batchFile.getName(), actualBatchValue);
+        checker().verifyNull("Unexpected run file in grid", actualRunValue);
     }
 
     private AssayImportPage importNewRun()

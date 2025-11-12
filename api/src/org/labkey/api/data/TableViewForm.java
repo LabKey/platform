@@ -756,7 +756,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         return null==column ? propName : column.getLabel();
     }
 
-    // RFC 2616 / RFC 7230: Escape characters inside the field name
+    // Issue 54218: RFC 2616 / RFC 7230: Escape characters inside the field name
     private static final char BACKSLASH = '\\';
     private static final String SPECIAL_CHARS = BACKSLASH + "\";=,";
 
