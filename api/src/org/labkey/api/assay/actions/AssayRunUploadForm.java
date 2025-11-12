@@ -404,12 +404,9 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 // Only add a hidden file parameter if it is a valid file in the pipeline root directory and
                 // a new file hasn't been uploaded for that parameter
                 Path path = FileUtil.stringToPath(getContainer(), previousFilePath, false);
-                if (FileUtil.isFileAndExists(path))
-                {
-                    File previousFile = path.toFile();
-                    if (previousFile.isFile() && FileUtils.directoryContains(assayDirectory, previousFile))
-                        additionalFiles.put(domainProperty, FileSystemLike.wrapFile(previousFile));
-                }
+                File previousFile = FileUtil.appendName(assayDirectory, path.getFileName().toString());
+                if (previousFile.isFile() && FileUtils.directoryContains(assayDirectory, previousFile))
+                    additionalFiles.put(domainProperty, FileSystemLike.wrapFile(previousFile));
             }
         }
         catch (IOException e)
