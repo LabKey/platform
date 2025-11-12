@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Category({Daily.class, Assays.class})
-public class AssayReimportIndexTest extends BaseWebDriverTest
+public class AssayReimportTest extends BaseWebDriverTest
 {
     private static final String ASSAY_NAME = DomainKind.Assay.randomName("test+assay");
     private static final FieldInfo BATCH_FIELD = DomainKind.Assay.randomField("batchData", ColumnType.String);
@@ -37,7 +37,7 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
     @BeforeClass
     public static void setupProject() throws Exception
     {
-        AssayReimportIndexTest init = getCurrentTest();
+        AssayReimportTest init = getCurrentTest();
         init.doSetup();
     }
 
