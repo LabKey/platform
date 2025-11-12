@@ -354,14 +354,14 @@ public class ListImporter
         if (listXml != null)
             createDefinedLists(listsDir, listXml, c, user, validatorImporters, errors, log);
 
-        Map<String, String> fileTypeMap = new HashMap<>();
+        Map<String, String> fileNameMap = new HashMap<>();
 
-        //get corresponding data file name and extension
+        //get corresponding list and data file names
         for (String f : listsDir.list())
         {
             if (f.endsWith(".tsv") || f.endsWith(".xlsx") || f.endsWith(".xls"))
             {
-                fileTypeMap.put(FileUtil.makeLegalName(FileUtil.getBaseName(f)), FileUtil.getExtension(f));
+                fileNameMap.put(FileUtil.getBaseName(FileUtil.makeLegalName(f)), f);
             }
         }
 
@@ -371,16 +371,14 @@ public class ListImporter
         for (String listName : lists.keySet())
         {
             ListDefinition def = lists.get(listName);
-            String legalName = FileUtil.makeLegalName(listName);
+            String fileName = fileNameMap.remove(FileUtil.getBaseName(FileUtil.makeLegalName(listName + ".tsv")));
 
             //Issue 37324: Skip processing if a data file is missing during list archive import
             //Case when a list exists in the db, but its corresponding data file is not present
-            if (!fileTypeMap.containsKey(legalName))
+            if (fileName == null)
             {
                 continue;
             }
-
-            String fileName = legalName + "." + fileTypeMap.remove(legalName);
 
             if (!processSingle(listsDir, def, fileName, listXml != null, c, user, errors, log))
             {
@@ -400,12 +398,12 @@ public class ListImporter
         {
             log.warn(StringUtilsLabKey.pluralize(failedLists, "list") + " failed to import");
         }
-        if (!fileTypeMap.isEmpty())
+        if (!fileNameMap.isEmpty())
         {
             log.info("The following files were not imported because the server could not find a list with matching name: ");
-            for (String s : fileTypeMap.keySet())
+            for (String s : fileNameMap.values())
             {
-                log.info("\tSkipped " + s + "." + fileTypeMap.get(s));
+                log.info("\tSkipped " + s);
             }
         }
     }

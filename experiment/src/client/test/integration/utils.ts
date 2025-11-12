@@ -463,7 +463,7 @@ async function verifyDomainCreateFailure(server: IntegrationTestServer, domainTy
     }, {...folderOptions, ...userOptions});
 
     expect(badDomainNameResp['body']['success']).toBeFalsy();
-    expect(badDomainNameResp['body']['exception']).toBe(error.replace('REPLACE', badDomainName));
+    expect(badDomainNameResp['body']['exception']).toBe(error.replace('REPLACE', () => badDomainName));
 }
 
 async function verifyDomainUpdateFailure(server: IntegrationTestServer, domainId: number, domainURI: string, dataTypeRowId/*needed for updating dataclass*/: number, badDomainName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions, domainFields?: any[]) {
@@ -488,7 +488,7 @@ async function verifyDomainUpdateFailure(server: IntegrationTestServer, domainId
     const badDomainNameResp = await server.post('property', 'saveDomain', updatedDomainPayload, {...folderOptions, ...userOptions});
 
     expect(badDomainNameResp['body']['success']).toBeFalsy();
-    expect(badDomainNameResp['body']['exception']).toBe(error.replace('REPLACE', badDomainName));
+    expect(badDomainNameResp['body']['exception']).toBe(error.replace('REPLACE', () => badDomainName));
 }
 
 async function verifyDomainCreateSuccess(server: IntegrationTestServer, domainType: string, domainName: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
@@ -502,6 +502,8 @@ async function verifyDomainCreateSuccess(server: IntegrationTestServer, domainTy
         }
     }, {...folderOptions, ...userOptions}).expect((result) => {
         const domain = JSON.parse(result.text);
+        expect(domain).toHaveProperty('domainId');
+        expect(domain).toHaveProperty('domainURI');
         domainId = domain.domainId;
         domainURI = domain.domainURI;
         return true;
@@ -546,7 +548,7 @@ export async function checkDomainName(server: IntegrationTestServer, domainType:
     // spaces should be trimmed before validation
     await verifyDomainCreateSuccess(server, domainType, ' startWithSpace', folderOptions, userOptions);
 
-    const domainName = selectRandomN(alphaNumeric, 2).join('') + selectRandomN(LEGAL_CHARSET, 5).join('');
+    const domainName = selectRandomN(alphaNumeric, 2).join('') + selectRandomN(LEGAL_CHARSET, 5).join('').replaceAll(' -', ' _-'); // name may not contain space followed by dash
     const { domainId, domainURI } = await verifyDomainCreateSuccess(server, domainType, domainName, folderOptions, userOptions);
 
     let dataTypeRowId = 0;
@@ -626,6 +628,8 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
         }
     }, {...topFolderOptions, ...designerReaderOptions}).expect((result) => {
         const domain = JSON.parse(result.text);
+        expect(domain).toHaveProperty('domainId');
+        expect(domain).toHaveProperty('domainURI');
         childDomainId = domain.domainId;
         childDomainURI = domain.domainURI;
         return true;
