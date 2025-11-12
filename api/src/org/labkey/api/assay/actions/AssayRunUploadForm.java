@@ -70,7 +70,6 @@ import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -85,14 +84,9 @@ import java.util.TreeMap;
 
 import static java.util.Collections.emptyMap;
 
-/**
- * User: brittp
-* Date: Jul 11, 2007
-* Time: 2:52:54 PM
-*/
 public class AssayRunUploadForm<ProviderType extends AssayProvider> extends ProtocolIdForm implements AssayRunUploadContext<ProviderType>
 {
-    protected Map<DomainProperty, String> _uploadSetProperties = null;
+    protected Map<DomainProperty, String> _batchProperties = null;
     protected Map<DomainProperty, String> _runProperties = null;
     private String _comments;
     private String _name;
@@ -127,54 +121,63 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public Map<DomainProperty, String> getRunProperties() throws ExperimentException
     {
         if (_runProperties == null)
-        {
-            Domain domain = getProvider().getRunDomain(getProtocol());
-            List<? extends DomainProperty> properties = domain.getProperties();
-            _runProperties = getPropertyMapFromRequest(properties);
-        }
+            _runProperties = getPropertyMapFromRequest(getProvider().getRunDomain(getProtocol()));
+
         return Collections.unmodifiableMap(_runProperties);
     }
 
-    /** @return property descriptor to value */
     @Override
     public Map<DomainProperty, String> getBatchProperties() throws ExperimentException
     {
-        if (_uploadSetProperties == null)
-        {
-            Domain domain = getProvider().getBatchDomain(getProtocol());
-            _uploadSetProperties = getPropertyMapFromRequest(domain.getProperties());
-        }
-        return Collections.unmodifiableMap(_uploadSetProperties);
+        if (_batchProperties == null)
+            _batchProperties = getPropertyMapFromRequest(getProvider().getBatchDomain(getProtocol()));
+
+        return Collections.unmodifiableMap(_batchProperties);
     }
 
-    protected Map<DomainProperty, String> getPropertyMapFromRequest(List<? extends DomainProperty> columns) throws ExperimentException
+    protected Map<DomainProperty, String> getPropertyMapFromRequest(Domain domain) throws ExperimentException
     {
+        List<? extends DomainProperty> columns = domain.getProperties();
         Map<DomainProperty, String> properties = new LinkedHashMap<>();
         Map<DomainProperty, FileLike> additionalFiles = getAdditionalPostedFiles(columns);
+        Map<DomainProperty, Object> defaults = getDefaultValues(domain, false);
+
         for (DomainProperty pd : columns)
         {
             String propName = UploadWizardAction.getInputName(pd);
-            String value = getRequest().getParameter(propName);
-            if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.BOOLEAN &&
-                    (value == null || value.isEmpty()))
+            String value = StringUtils.trimToNull(getRequest().getParameter(propName));
+            if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.BOOLEAN && (value == null || value.isEmpty()))
                 value = Boolean.FALSE.toString();
-            value = StringUtils.trimToNull(value);
 
-            if (pd.getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME) && value != null)
-            {
+            if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equalsIgnoreCase(pd.getName()) && value != null)
                 value = ParticipantVisitResolverType.Serializer.encode(value, getRequest());
-            }
 
             if (additionalFiles.containsKey(pd))
             {
-                if (additionalFiles.get(pd).equals(BLANK_FILE)) // file has been removed
+                if (BLANK_FILE.equals(additionalFiles.get(pd))) // file has been removed
                     properties.put(pd, null);
                 else
                     properties.put(pd, additionalFiles.get(pd).toNioPathForRead().toString());
             }
             else
                 properties.put(pd, value);
+
+            // Issue 54112: Retain previous file values when reimporting a run
+            if (PropertyType.FILE_LINK == pd.getPropertyDescriptor().getPropertyType())
+            {
+                boolean postedNewFile = additionalFiles.containsKey(pd);
+                String current = properties.get(pd);
+                boolean hasValue = current != null && !current.isEmpty();
+
+                if (!postedNewFile && !hasValue)
+                {
+                    Object prior = defaults.get(pd);
+                    if (prior != null)
+                        properties.put(pd, prior.toString());
+                }
+            }
         }
+
         return properties;
     }
 
@@ -316,79 +319,75 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
     public static File getAssayDirectory(Container c, File root)
     {
-        if(null != root)
+        if (null != root)
             return new File(root.getAbsolutePath(), AssayFileWriter.DIR_NAME);
         else
             return new File(PipelineService.get().findPipelineRoot(c).getRootPath().getAbsolutePath(), AssayFileWriter.DIR_NAME);
-
     }
 
     public Map<DomainProperty, FileLike> getAdditionalPostedFiles(List<? extends DomainProperty> pds) throws ExperimentException
     {
-        if (_additionalFiles == null)
+        if (_additionalFiles != null)
+            return _additionalFiles;
+
+        Map<String, DomainProperty> fileParameters = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        List<String> filePdNames = new ArrayList<>();
+
+        for (DomainProperty pd : pds)
         {
-            Map<String, DomainProperty> fileParameters = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-            List<String> filePdNames = new ArrayList<>();
-
-            for (DomainProperty pd : pds)
+            if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.FILE_LINK)
             {
-                if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.FILE_LINK)
-                {
-                    fileParameters.put(UploadWizardAction.getInputName(pd), pd);
-                    filePdNames.add(pd.getName());
-                }
+                fileParameters.put(UploadWizardAction.getInputName(pd), pd);
+                filePdNames.add(pd.getName());
             }
-
-            if (!fileParameters.isEmpty())
-            {
-                AssayFileWriter<AssayRunUploadForm<ProviderType>> writer = new AssayFileWriter<>();
-                try
-                {
-                    // Initialize member variable so we know that we've already tried to save the posted files in case of error
-                    _additionalFiles = new HashMap<>();
-                    Map<String, FileLike> postedFiles = writer.savePostedFiles(this, fileParameters.keySet(), false, false);
-                    for (Map.Entry<String, FileLike> entry : postedFiles.entrySet())
-                        _additionalFiles.put(fileParameters.get(entry.getKey()), entry.getValue());
-
-                    File previousFile;
-                    HttpServletRequest request = getViewContext().getRequest();
-
-                    // Hidden values in form containing previously uploaded files if previous upload resulted in error
-                    for (String fileParam : filePdNames)
-                    {
-                        if (request instanceof MultipartHttpServletRequest mhsr && null != request.getParameter(fileParam))
-                        {
-                            String previousFileName = request.getParameter(fileParam);
-                            if (null != previousFileName)
-                            {
-                                previousFile = FileUtil.appendName(getAssayDirectory(getContainer(), null), previousFileName);
-
-                                MultipartFile multiFile = mhsr.getFileMap().get(UploadWizardAction.getInputName(fileParameters.get(fileParam)));
-
-                                // If file is removed from form after error, override hidden file name with empty file
-                                if (null != multiFile && multiFile.getOriginalFilename().isEmpty())
-                                    _additionalFiles.put(fileParameters.get(fileParam), BLANK_FILE);
-
-                                // Only add hidden file parameter if it is a valid file in the pipeline root directory and
-                                // a new file hasn't been uploaded for that parameter
-                                if (previousFile.isFile()
-                                        && FileUtils.directoryContains(getAssayDirectory(getContainer(), null), previousFile)
-                                        && !_additionalFiles.containsKey(fileParameters.get(fileParam)))
-                                {
-                                    _additionalFiles.put(fileParameters.get(fileParam), FileSystemLike.wrapFile(previousFile));
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (IOException e)
-                {
-                    throw new RuntimeException(e);
-                }
-            }
-            else
-                _additionalFiles = emptyMap();
         }
+
+        if (fileParameters.isEmpty())
+            return _additionalFiles = emptyMap();
+
+        AssayFileWriter<AssayRunUploadForm<ProviderType>> writer = new AssayFileWriter<>();
+        try
+        {
+            // Initialize member variable so we know that we've already tried to save the posted files in case of error
+            _additionalFiles = new HashMap<>();
+            Map<String, FileLike> postedFiles = writer.savePostedFiles(this, fileParameters.keySet(), false, false);
+            for (Map.Entry<String, FileLike> entry : postedFiles.entrySet())
+                _additionalFiles.put(fileParameters.get(entry.getKey()), entry.getValue());
+
+            if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest request))
+                return _additionalFiles;
+
+            File assayDirectory = getAssayDirectory(getContainer(), null);
+
+            // Hidden values in form containing previously uploaded files if the previous upload resulted in error
+            for (String fileParam : filePdNames)
+            {
+                DomainProperty domainProperty = fileParameters.get(fileParam);
+                MultipartFile multiFile = request.getFileMap().get(fileParam);
+
+                // If the file is removed from form after error, override hidden file name with an empty file
+                if (null != multiFile && multiFile.getOriginalFilename().isEmpty())
+                {
+                    _additionalFiles.put(domainProperty, BLANK_FILE);
+                    continue;
+                }
+
+                String previousFileName = request.getParameter(fileParam);
+                if (previousFileName == null)
+                    continue;
+
+                // Only add a hidden file parameter if it is a valid file in the pipeline root directory and
+                // a new file hasn't been uploaded for that parameter
+                File previousFile = FileUtil.appendName(assayDirectory, previousFileName);
+                if (previousFile.isFile() && FileUtils.directoryContains(assayDirectory, previousFile) && !_additionalFiles.containsKey(domainProperty))
+                    _additionalFiles.put(domainProperty, FileSystemLike.wrapFile(previousFile));
+            }
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+
         return _additionalFiles;
     }
 
@@ -530,6 +529,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 }
             }
         }
+
         return value;
     }
 
@@ -580,7 +580,6 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         _batchId = batchId;
     }
 
-
     public void clearDefaultValues(Domain domain)
     {
         DefaultValueService.get().clearDefaultValues(getContainer(), domain, getUser());
@@ -630,6 +629,11 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
     public Map<DomainProperty, Object> getDefaultValues(Domain domain) throws ExperimentException
     {
+        return getDefaultValues(domain, true);
+    }
+
+    private Map<DomainProperty, Object> getDefaultValues(Domain domain, boolean includeNameAndComment) throws ExperimentException
+    {
         ExpRun reRun = getReRun();
         if (reRun != null)
         {
@@ -661,15 +665,18 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 // repopulated just like the rest of the domain properties, but they aren't actually part of the
                 // domain- they're hard columns on the ExperimentRun table.  Since the DomainProperty objects are
                 // just used to calculate the input form element names, this hack works to pre-populate the values.
-                DomainProperty nameProperty = domain.addProperty();
-                nameProperty.setName("Name");
-                ret.put(nameProperty, reRun.getName());
-                nameProperty.delete();
+                if (includeNameAndComment)
+                {
+                    DomainProperty nameProperty = domain.addProperty();
+                    nameProperty.setName("Name");
+                    ret.put(nameProperty, reRun.getName());
+                    nameProperty.delete();
 
-                DomainProperty commentsProperty = domain.addProperty();
-                commentsProperty.setName("Comments");
-                ret.put(commentsProperty, reRun.getComments());
-                commentsProperty.delete();
+                    DomainProperty commentsProperty = domain.addProperty();
+                    commentsProperty.setName("Comments");
+                    ret.put(commentsProperty, reRun.getComments());
+                    commentsProperty.delete();
+                }
             }
             return ret;
         }
