@@ -95,6 +95,7 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.HtmlWriter;
+import org.labkey.vfs.FileLike;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -127,9 +128,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     protected ExpProtocol _protocol;
     protected AssayProtocolSchema _protocolSchema;
     protected ExpRun _run;
-
     private final Map<String, StepHandler<FormType>> _stepHandlers = new HashMap<>();
-
     protected String _stepDescription;
 
     public UploadWizardAction()
@@ -404,13 +403,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         view.getDataRegion().addHiddenFormField("uploadAttemptID", form.getUploadAttemptID());
         if (form.isAllowCrossRunFileInputs())
             view.getDataRegion().addHiddenFormField("allowCrossRunFileInputs", "true");
-        if (errorReshow)
+        if (errorReshow && domain != null)
         {
             // Add unique name of uploaded files as hidden parameters
-            for (DomainProperty dp : form.getAdditionalFiles().keySet())
-            {
-                view.getDataRegion().addHiddenFormField(dp.getName(), form.getAdditionalFiles().get(dp).getName());
-            }
+            Map<DomainProperty, String> fileProps = new HashMap<>();
+            for (Map.Entry<DomainProperty, FileLike> entry : form.getAdditionalFiles(domain).entrySet())
+                fileProps.put(entry.getKey(), entry.getValue().getName());
+
+            addHiddenProperties(fileProps, view);
         }
         if (form.getReRunId() != null)
         {
@@ -457,7 +457,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             inputNameToValue.put(propName, propValue);
     }
 
-    private ModelAndView getBatchPropertiesView(FormType runForm, boolean errorReshow, BindException errors) throws ServletException, ExperimentException
+    private ModelAndView getBatchPropertiesView(FormType runForm, boolean errorReshow, BindException errors) throws ExperimentException
     {
         // Check if the user is trying to replace a run that's already been replaced
         if (runForm.getReRun() != null)
@@ -764,7 +764,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         addHiddenProperties(newRunForm.getRunProperties(), insertView);
     }
 
-    public static String getInputName(DomainProperty property, String disambiguationId)
+    public static String getInputName(DomainProperty property, @Nullable String disambiguationId)
     {
         if (disambiguationId != null)
             return TableViewForm.getMultiPartFormFieldNameForColumn(disambiguationId + "_" + property.getName());
@@ -779,21 +779,15 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     protected void addHiddenProperties(Map<DomainProperty, String> properties, InsertView insertView)
     {
-        for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
-        {
-            String name = entry.getKey().getName();
-            String value = entry.getValue();
-            insertView.getDataRegion().addHiddenFormField(name, value);
-        }
+        addHiddenProperties(properties, insertView, null);
     }
 
-    protected void addHiddenProperties(Map<DomainProperty, String> properties, InsertView insertView, String disambiguationId)
+    protected void addHiddenProperties(Map<DomainProperty, String> properties, InsertView insertView, @Nullable String disambiguationId)
     {
         for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
         {
             String name = getInputName(entry.getKey(), disambiguationId);
-            String value = entry.getValue();
-            insertView.getDataRegion().addHiddenFormField(name, value);
+            insertView.getDataRegion().addHiddenFormField(name, entry.getValue());
         }
     }
 
@@ -956,7 +950,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         @Override
-        public ModelAndView getNextStep(FormType form, BindException errors) throws ServletException, ExperimentException
+        public ModelAndView getNextStep(FormType form, BindException errors) throws ExperimentException
         {
             if ((form.isResetDefaultValues() || errors.hasErrors()) && showBatchStep(form, form.getProvider().getBatchDomain(form.getProtocol())))
                 return getBatchPropertiesView(form, !form.isResetDefaultValues(), errors);

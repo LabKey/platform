@@ -1351,13 +1351,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             return emptyMap();
         }
 
-        @NotNull
-        @Override
-        public Map<Object, String> getInputDatas()
-        {
-            return emptyMap();
-        }
-
         @Override
         public AssayProvider getProvider()
         {

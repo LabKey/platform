@@ -478,12 +478,6 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         }
 
         @Override
-        public @NotNull Map<?, String> getInputDatas()
-        {
-            return Collections.emptyMap();
-        }
-
-        @Override
         public AssayProvider getProvider()
         {
             return _provider;

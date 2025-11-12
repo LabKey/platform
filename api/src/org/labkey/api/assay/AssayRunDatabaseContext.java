@@ -48,8 +48,6 @@ import java.util.Map;
 
 /**
  * Information about an assay run that has already been imported into the database.
- * User: jeckels
- * Date: Oct 7, 2011
  */
 public class AssayRunDatabaseContext<ProviderType extends AssayProvider> implements AssayRunUploadContext<ProviderType>
 {
@@ -193,14 +191,6 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
             }
         }
         return null;
-    }
-
-    @NotNull
-    @Override
-    public Map<Object, String> getInputDatas()
-    {
-        // CONSIDER: get the run's input datas
-        return Collections.emptyMap();
     }
 
     @Override

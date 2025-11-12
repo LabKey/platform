@@ -343,13 +343,6 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         return _uploadedData;
     }
 
-    @NotNull
-    @Override
-    public Map<Object, String> getInputDatas()
-    {
-        return Collections.emptyMap();
-    }
-
     @Override
     public boolean isAllowCrossRunFileInputs()
     {

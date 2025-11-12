@@ -83,6 +83,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableMap;
 
 public class AssayRunUploadForm<ProviderType extends AssayProvider> extends ProtocolIdForm implements AssayRunUploadContext<ProviderType>
 {
@@ -99,7 +100,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private Map<String, FileLike> _uploadedData;
     private boolean _successfulUploadComplete;
     private String _uploadAttemptID = GUID.makeGUID();
-    private Map<DomainProperty, FileLike> _additionalFiles;
+    private Map<String, Map<DomainProperty, FileLike>> _additionalFiles;
     private Long _batchId;
     private Long _reRunId;
     private String _severityLevel;
@@ -121,25 +122,25 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public Map<DomainProperty, String> getRunProperties() throws ExperimentException
     {
         if (_runProperties == null)
-            _runProperties = getPropertyMapFromRequest(getProvider().getRunDomain(getProtocol()));
+            _runProperties = Collections.unmodifiableMap(getPropertyMapFromRequest(getProvider().getRunDomain(getProtocol())));
 
-        return Collections.unmodifiableMap(_runProperties);
+        return _runProperties;
     }
 
     @Override
     public Map<DomainProperty, String> getBatchProperties() throws ExperimentException
     {
         if (_batchProperties == null)
-            _batchProperties = getPropertyMapFromRequest(getProvider().getBatchDomain(getProtocol()));
+            _batchProperties = Collections.unmodifiableMap(getPropertyMapFromRequest(getProvider().getBatchDomain(getProtocol())));
 
-        return Collections.unmodifiableMap(_batchProperties);
+        return _batchProperties;
     }
 
     protected Map<DomainProperty, String> getPropertyMapFromRequest(Domain domain) throws ExperimentException
     {
         List<? extends DomainProperty> columns = domain.getProperties();
         Map<DomainProperty, String> properties = new LinkedHashMap<>();
-        Map<DomainProperty, FileLike> additionalFiles = getAdditionalPostedFiles(columns);
+        Map<DomainProperty, FileLike> additionalFiles = getAdditionalPostedFiles(domain, columns);
         Map<DomainProperty, Object> defaults = getDefaultValues(domain, false);
 
         for (DomainProperty pd : columns)
@@ -282,7 +283,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public void init() throws ExperimentException
     {
         AssayDataCollector collector = getSelectedDataCollector();
-        if(null != collector)
+        if (null != collector)
         {
             collector.initDir(this);
         }
@@ -312,9 +313,17 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return _uploadedData;
     }
 
-    public Map<DomainProperty, FileLike> getAdditionalFiles()
+    public Map<DomainProperty, FileLike> getAdditionalFiles(@NotNull Domain domain)
     {
-        return _additionalFiles;
+        return _additionalFiles.get(domain.getTypeURI());
+    }
+
+    private Map<DomainProperty, FileLike> setAdditionalFilesEntry(@NotNull Domain domain, Map<DomainProperty, FileLike> files)
+    {
+        var _files = unmodifiableMap(files);
+        _additionalFiles.put(domain.getTypeURI(), _files);
+
+        return _files;
     }
 
     public static File getAssayDirectory(Container c, File root)
@@ -325,10 +334,13 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             return new File(PipelineService.get().findPipelineRoot(c).getRootPath().getAbsolutePath(), AssayFileWriter.DIR_NAME);
     }
 
-    public Map<DomainProperty, FileLike> getAdditionalPostedFiles(List<? extends DomainProperty> pds) throws ExperimentException
+    private Map<DomainProperty, FileLike> getAdditionalPostedFiles(Domain domain, List<? extends DomainProperty> pds) throws ExperimentException
     {
-        if (_additionalFiles != null)
-            return _additionalFiles;
+        if (_additionalFiles == null)
+            _additionalFiles = new HashMap<>();
+
+        if (_additionalFiles.containsKey(domain.getTypeURI()))
+            return _additionalFiles.get(domain.getTypeURI());
 
         Map<String, DomainProperty> fileParameters = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         List<String> filePdNames = new ArrayList<>();
@@ -343,32 +355,34 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         }
 
         if (fileParameters.isEmpty())
-            return _additionalFiles = emptyMap();
+            return setAdditionalFilesEntry(domain, emptyMap());
 
         AssayFileWriter<AssayRunUploadForm<ProviderType>> writer = new AssayFileWriter<>();
+        Map<DomainProperty, FileLike> additionalFiles = new HashMap<>();
+
         try
         {
             // Initialize member variable so we know that we've already tried to save the posted files in case of error
-            _additionalFiles = new HashMap<>();
             Map<String, FileLike> postedFiles = writer.savePostedFiles(this, fileParameters.keySet(), false, false);
             for (Map.Entry<String, FileLike> entry : postedFiles.entrySet())
-                _additionalFiles.put(fileParameters.get(entry.getKey()), entry.getValue());
+                additionalFiles.put(fileParameters.get(entry.getKey()), entry.getValue());
 
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest request))
-                return _additionalFiles;
+                return setAdditionalFilesEntry(domain, additionalFiles);
 
             File assayDirectory = getAssayDirectory(getContainer(), null);
+            Map<String, MultipartFile> requestFiles = request.getFileMap();
 
             // Hidden values in form containing previously uploaded files if the previous upload resulted in error
             for (String fileParam : filePdNames)
             {
                 DomainProperty domainProperty = fileParameters.get(fileParam);
-                MultipartFile multiFile = request.getFileMap().get(fileParam);
+                MultipartFile multiFile = requestFiles.get(fileParam);
 
                 // If the file is removed from form after error, override hidden file name with an empty file
-                if (null != multiFile && multiFile.getOriginalFilename().isEmpty())
+                if (null != multiFile && StringUtils.trimToNull(multiFile.getOriginalFilename()) == null)
                 {
-                    _additionalFiles.put(domainProperty, BLANK_FILE);
+                    additionalFiles.put(domainProperty, BLANK_FILE);
                     continue;
                 }
 
@@ -379,8 +393,8 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 // Only add a hidden file parameter if it is a valid file in the pipeline root directory and
                 // a new file hasn't been uploaded for that parameter
                 File previousFile = FileUtil.appendName(assayDirectory, previousFileName);
-                if (previousFile.isFile() && FileUtils.directoryContains(assayDirectory, previousFile) && !_additionalFiles.containsKey(domainProperty))
-                    _additionalFiles.put(domainProperty, FileSystemLike.wrapFile(previousFile));
+                if (previousFile.isFile() && FileUtils.directoryContains(assayDirectory, previousFile) && !additionalFiles.containsKey(domainProperty))
+                    additionalFiles.put(domainProperty, FileSystemLike.wrapFile(previousFile));
             }
         }
         catch (IOException e)
@@ -388,14 +402,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             throw new RuntimeException(e);
         }
 
-        return _additionalFiles;
-    }
-
-    @NotNull
-    @Override
-    public Map<?, String> getInputDatas()
-    {
-        return emptyMap();
+        return setAdditionalFilesEntry(domain, additionalFiles);
     }
 
     @Override

@@ -36,7 +36,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.util.Map;
 import java.util.Set;
 
@@ -113,7 +112,10 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
      * NOTE: These files will not be parsed or imported by the assay's DataHandler -- use {@link #getUploadedData()} instead.
      */
     @NotNull
-    Map<?, String> getInputDatas();
+    default Map<?, String> getInputDatas()
+    {
+        return emptyMap();
+    }
 
     @NotNull
     default Map<?, String> getOutputDatas()
@@ -181,16 +183,19 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     void uploadComplete(ExpRun run) throws ExperimentException;
 
+    @Nullable
     default String getJobDescription()
     {
         return null;
     }
 
+    @Nullable
     default String getJobNotificationProvider()
     {
         return null;
     }
 
+    @Nullable
     default String getPipelineJobGUID()
     {
         return null;
