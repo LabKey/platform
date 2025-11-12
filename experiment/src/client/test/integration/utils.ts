@@ -548,7 +548,7 @@ export async function checkDomainName(server: IntegrationTestServer, domainType:
     // spaces should be trimmed before validation
     await verifyDomainCreateSuccess(server, domainType, ' startWithSpace', folderOptions, userOptions);
 
-    const domainName = selectRandomN(alphaNumeric, 2).join('') + selectRandomN(LEGAL_CHARSET, 5).join('');
+    const domainName = selectRandomN(alphaNumeric, 2).join('') + selectRandomN(LEGAL_CHARSET, 5).join('').replaceAll(' -', ' _-'); // name may not contain space followed by dash
     const { domainId, domainURI } = await verifyDomainCreateSuccess(server, domainType, domainName, folderOptions, userOptions);
 
     let dataTypeRowId = 0;

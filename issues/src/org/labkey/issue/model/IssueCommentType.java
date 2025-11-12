@@ -40,8 +40,8 @@ public class IssueCommentType implements AttachmentType
     }
 
     @Override
-    public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
+    public @NotNull SQLFragment getSelectParentEntityIdsSql()
     {
-        sql.append(parentColumn).append(" IN (SELECT EntityId FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "comments").append(")");
+        return new SQLFragment("SELECT EntityId FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "comments");
     }
 }
