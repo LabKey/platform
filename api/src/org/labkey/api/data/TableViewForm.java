@@ -785,7 +785,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
 
     public String getMultiPartFormFieldName(@NotNull ColumnInfo column)
     {
-        return getMultiPartFormFieldNameForColumn(column.getName());
+        return DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(getFormFieldName(column));
     }
 
     @Nullable
