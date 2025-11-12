@@ -4201,22 +4201,28 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void deleteExperimentRunsByRowIds(Container container, final User user, long... runRowIds)
     {
-        deleteExperimentRunsByRowIds(container, user, null, Arrays.stream(runRowIds).boxed().toList());
+        deleteExperimentRunsByRowIds(container, user, null, Arrays.stream(runRowIds).boxed().toList(), null);
     }
 
     @Override
-    public void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable final String userComment, @NotNull Collection<Long> runRowIds)
+    public void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable final String userComment, @NotNull Collection<Long> runRowIds, @Nullable Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails)
     {
-        deleteExperimentRuns(container, user, userComment, getExpRuns(runRowIds));
+        deleteExperimentRuns(container, user, userComment, getExpRuns(runRowIds), transactionDetails);
     }
 
-    public void deleteExperimentRuns(Container container, final User user, @Nullable final String userComment, @NotNull Collection<ExpRunImpl> runs)
+    public void deleteExperimentRuns(Container container, final User user, @Nullable final String userComment, @NotNull Collection<ExpRunImpl> runs, @Nullable Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails)
     {
         if (runs.isEmpty())
             return;
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            if (transaction.getAuditEvent() == null)
+            {
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, QueryService.AuditAction.DELETE, transactionDetails);
+                AbstractQueryUpdateService.addTransactionAuditEvent(transaction,  user, auditEvent);
+            }
+
             AssayService assayService = AssayService.get();
             // This can be slightly expensive to fetch, so don't do it multiple times if runs share protocols
             Map<ExpProtocol, ProtocolImplementation> protocolImpls = new HashMap<>();
@@ -5096,13 +5102,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (containers.size() == 1)
         {
             Container runContainer = containers.iterator().next();
-            deleteExperimentRuns(runContainer, user, null, runsToDelete);
+            deleteExperimentRuns(runContainer, user, null, runsToDelete, null);
         }
         else
         {
             // the slow way
             for (ExpRunImpl run : runsToDelete)
-                deleteExperimentRuns(run.getContainer(), user, null, Collections.singleton(run));
+                deleteExperimentRuns(run.getContainer(), user, null, Collections.singleton(run), null);
         }
     }
 
