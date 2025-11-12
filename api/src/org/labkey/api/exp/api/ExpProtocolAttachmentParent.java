@@ -43,6 +43,6 @@ public class ExpProtocolAttachmentParent implements AttachmentParent
     @Override
     public @NotNull AttachmentType getAttachmentType()
     {
-        return ExpRunAttachmentType.get();
+        return ExpProtocolAttachmentType.get();
     }
 }
