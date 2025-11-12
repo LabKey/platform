@@ -166,8 +166,8 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
         var row = new AssayRunsPage(getDriver())
             .getTable()
             .getRowDataAsMap("Name", runName);
-        reimportBatchFileValue = StringUtils.trimToNull(row.get("Batch/" + BATCH_FILE_FIELD.getName()));
-        reimportRunFileValue = StringUtils.trimToNull(row.get(RUN_FILE_FIELD.getName()));
+        reimportBatchFileValue = StringUtils.trimToNull(row.get("Batch/" + BATCH_FILE_FIELD.getFieldKey()));
+        reimportRunFileValue = StringUtils.trimToNull(row.get(RUN_FILE_FIELD.getFieldKey().toString()));
 
         checker().verifyEquals("Expected batch file to appear in data", batchFile.getName(), reimportBatchFileValue);
         checker().verifyEquals("Expected run file to appear in data", runFile.getName(), reimportRunFileValue);

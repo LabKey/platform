@@ -286,7 +286,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             if (null != filename)
             {
                 // Existing value, so tell the user the file name, allow the file to be removed, and a new file uploaded
-                renderThumbnailAndRemoveLink(out, ctx, formFieldName, filename, value, input);
+                renderThumbnailAndRemoveLink(out, ctx, getBoundColumn(), filename, value, input);
             }
             else
             {
@@ -307,14 +307,14 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         return "Previous file " + filename + " will be removed.";
     }
 
-    private void renderThumbnailAndRemoveLink(HtmlWriter out, RenderContext ctx, String fieldName, String filename, Object value, InputBuilder<?> filePicker)
+    private void renderThumbnailAndRemoveLink(HtmlWriter out, RenderContext ctx, ColumnInfo column, String filename, Object value, InputBuilder<?> filePicker)
     {
         String divId = GUID.makeGUID();
         String linkId = "remove" + divId;
 
         DIV(
             id(divId)
-                .data("fieldName", fieldName)
+                .data("fieldName", column.getName())
                 .cl("lk-remove-file"),
             (Renderable) ret -> {
                 renderIconAndFilename(ctx, out, value instanceof String s ? s : filename, false, false);
