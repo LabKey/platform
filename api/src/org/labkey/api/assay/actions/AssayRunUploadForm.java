@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.util.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
@@ -122,7 +123,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public Map<DomainProperty, String> getRunProperties() throws ExperimentException
     {
         if (_runProperties == null)
-            _runProperties = Collections.unmodifiableMap(getPropertyMapFromRequest(getProvider().getRunDomain(getProtocol())));
+            _runProperties = Collections.unmodifiableMap(getPropertyMapFromRequest(getProvider().getRunDomain(getProtocol()), true));
 
         return _runProperties;
     }
@@ -131,52 +132,61 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public Map<DomainProperty, String> getBatchProperties() throws ExperimentException
     {
         if (_batchProperties == null)
-            _batchProperties = Collections.unmodifiableMap(getPropertyMapFromRequest(getProvider().getBatchDomain(getProtocol())));
+            _batchProperties = Collections.unmodifiableMap(getPropertyMapFromRequest(getProvider().getBatchDomain(getProtocol()), false));
 
         return _batchProperties;
     }
 
-    protected Map<DomainProperty, String> getPropertyMapFromRequest(Domain domain) throws ExperimentException
+    protected Map<DomainProperty, String> getPropertyMapFromRequest(Domain domain, boolean isRunDomain) throws ExperimentException
     {
         List<? extends DomainProperty> columns = domain.getProperties();
         Map<DomainProperty, String> properties = new LinkedHashMap<>();
         Map<DomainProperty, FileLike> additionalFiles = getAdditionalPostedFiles(domain, columns);
         Map<DomainProperty, Object> defaults = getDefaultValues(domain, false);
+        boolean isMultiPartRequest = getRequest() instanceof MultipartHttpServletRequest;
 
         for (DomainProperty pd : columns)
         {
-            String propName = UploadWizardAction.getInputName(pd);
-            String value = StringUtils.trimToNull(getRequest().getParameter(propName));
-            if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.BOOLEAN && (value == null || value.isEmpty()))
+            String propName = isMultiPartRequest ? UploadWizardAction.getMultiPartInputName(pd) : UploadWizardAction.getInputName(pd);
+            String rawValue = getRequest().getParameter(propName);
+            String value = StringUtils.trimToNull(rawValue);
+
+            if (PropertyType.BOOLEAN == pd.getPropertyDescriptor().getPropertyType() && value == null)
                 value = Boolean.FALSE.toString();
 
             if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equalsIgnoreCase(pd.getName()) && value != null)
                 value = ParticipantVisitResolverType.Serializer.encode(value, getRequest());
 
-            if (additionalFiles.containsKey(pd))
-            {
-                if (BLANK_FILE.equals(additionalFiles.get(pd))) // file has been removed
-                    properties.put(pd, null);
-                else
-                    properties.put(pd, additionalFiles.get(pd).toNioPathForRead().toString());
-            }
-            else
-                properties.put(pd, value);
-
-            // Issue 54112: Retain previous file values when reimporting a run
             if (PropertyType.FILE_LINK == pd.getPropertyDescriptor().getPropertyType())
             {
-                boolean postedNewFile = additionalFiles.containsKey(pd);
-                String current = properties.get(pd);
-                boolean hasValue = current != null && !current.isEmpty();
-
-                if (!postedNewFile && !hasValue)
+                if (additionalFiles.containsKey(pd))
                 {
+                    // The file was explicitly removed
+                    if (BLANK_FILE.equals(additionalFiles.get(pd)))
+                    {
+                        // When this is a batch domain we set to Strings.EMPTY to
+                        // allow round-tripping removed values through the run step.
+                        properties.put(pd, isRunDomain ? null : Strings.EMPTY);
+                    }
+                    else
+                        properties.put(pd, additionalFiles.get(pd).toNioPathForRead().toString());
+                }
+                else if (Strings.EMPTY.equals(rawValue))
+                {
+                    // The file was previously removed
+                    properties.put(pd, null);
+                }
+                else if (StringUtils.trimToNull(properties.get(pd)) == null)
+                {
+                    // Issue 54112: Retain previous file values when reimporting a run
                     Object prior = defaults.get(pd);
                     if (prior != null)
                         properties.put(pd, prior.toString());
                 }
             }
+
+            if (!properties.containsKey(pd))
+                properties.put(pd, value);
         }
 
         return properties;
@@ -339,15 +349,20 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         if (_additionalFiles == null)
             _additionalFiles = new HashMap<>();
 
+        // Additional files have already been computed for this domain
         if (_additionalFiles.containsKey(domain.getTypeURI()))
             return _additionalFiles.get(domain.getTypeURI());
+
+        // This is not a multipart request, so no files have been posted
+        if (!(getRequest() instanceof MultipartHttpServletRequest request))
+            return setAdditionalFilesEntry(domain, emptyMap());
 
         Map<String, DomainProperty> fileParameters = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         for (DomainProperty pd : pds)
         {
             if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.FILE_LINK)
-                fileParameters.put(UploadWizardAction.getInputName(pd), pd);
+                fileParameters.put(pd.getName(), pd);
         }
 
         if (fileParameters.isEmpty())
@@ -358,13 +373,9 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
         try
         {
-            // Initialize member variable so we know that we've already tried to save the posted files in case of error
             Map<String, FileLike> postedFiles = writer.savePostedFiles(this, fileParameters.keySet(), false, false);
             for (Map.Entry<String, FileLike> entry : postedFiles.entrySet())
                 additionalFiles.put(fileParameters.get(entry.getKey()), entry.getValue());
-
-            if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest request))
-                return setAdditionalFilesEntry(domain, additionalFiles);
 
             File assayDirectory = getAssayDirectory(getContainer(), null);
             Map<String, MultipartFile> requestFiles = request.getFileMap();
@@ -372,7 +383,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             // Hidden values in form containing previously uploaded files if the previous upload resulted in error
             for (Map.Entry<String, DomainProperty> entry : fileParameters.entrySet())
             {
-                String fileParam = entry.getKey();
+                String fileParam = UploadWizardAction.getMultiPartInputName(entry.getValue());
                 DomainProperty domainProperty = entry.getValue();
                 MultipartFile multiFile = requestFiles.get(fileParam);
 

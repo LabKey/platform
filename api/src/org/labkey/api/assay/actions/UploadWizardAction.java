@@ -767,9 +767,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     public static String getInputName(DomainProperty property, @Nullable String disambiguationId)
     {
         if (disambiguationId != null)
-            return TableViewForm.getMultiPartFormFieldNameForColumn(disambiguationId + "_" + property.getName());
+            return TableViewForm.getFormFieldNameForColumn(disambiguationId + "_" + property.getName());
         else
-            return TableViewForm.getMultiPartFormFieldNameForColumn(property.getName());
+            return TableViewForm.getFormFieldNameForColumn(property.getName());
+    }
+
+    public static String getMultiPartInputName(DomainProperty property)
+    {
+        return TableViewForm.getMultiPartFormFieldNameForColumn(property.getName());
     }
 
     public static String getInputName(DomainProperty property)

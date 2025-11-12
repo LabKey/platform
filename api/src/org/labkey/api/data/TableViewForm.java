@@ -591,7 +591,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             }
             else if (getRequest() instanceof MultipartHttpServletRequest request)
             {
-                String fieldName = getFormFieldName(column);
+                String fieldName = getMultiPartFormFieldName(column);
                 Object typedValue = _getTypedValues().get(fieldName);
 
                 if (typedValue != null)
@@ -760,7 +760,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
     private static final char BACKSLASH = '\\';
     private static final String SPECIAL_CHARS = BACKSLASH + "\";=,";
 
-    private static String getFormFieldNameForColumn(@NotNull String columnName)
+    public static String getFormFieldNameForColumn(@NotNull String columnName)
     {
         StringBuilder sb = new StringBuilder();
         for (char c : columnName.toCharArray())
@@ -775,12 +775,17 @@ public class TableViewForm extends ViewForm implements HasBindParameters
 
     public String getFormFieldName(@NotNull ColumnInfo column)
     {
-        return DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(getFormFieldNameForColumn(column.getName()));
+        return getFormFieldNameForColumn(column.getName());
     }
 
     public static String getMultiPartFormFieldNameForColumn(@NotNull String columnName)
     {
         return DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(getFormFieldNameForColumn(columnName));
+    }
+
+    public String getMultiPartFormFieldName(@NotNull ColumnInfo column)
+    {
+        return getMultiPartFormFieldNameForColumn(column.getName());
     }
 
     @Nullable
