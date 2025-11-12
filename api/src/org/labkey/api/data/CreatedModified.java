@@ -23,6 +23,12 @@ public abstract class CreatedModified
         return _created;
     }
 
+    @JsonIgnore
+    public Date getCreatedDate()
+    {
+        return _created == null ? null : new Date(_created);
+    }
+
     public void setCreated(Long created)
     {
         _created = created;
@@ -63,6 +69,12 @@ public abstract class CreatedModified
     public Long getModified()
     {
         return _modified;
+    }
+
+    @JsonIgnore
+    public Date getModifiedDate()
+    {
+        return _modified == null ? null : new Date(_modified);
     }
 
     public void setModified(Long modified)
