@@ -236,7 +236,12 @@ public class ScriptTrigger implements Trigger
             catch (NoSuchMethodException | ScriptException e)
             {
                 String extraErrorMessage = errorDetail.get();
-                throw UnexpectedException.wrap(e, "Script execution failed for " + methodName + "()" + (extraErrorMessage == null ? "" : " " + extraErrorMessage));
+                String message = "Script execution failed for " + methodName + "()";
+                if (e.getMessage() != null)
+                    message += " " + e.getMessage();
+                if (extraErrorMessage != null)
+                    message += " " + extraErrorMessage;
+                throw UnexpectedException.wrap(e, message);
             }
             return null;
         });
