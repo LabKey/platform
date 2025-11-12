@@ -15,7 +15,6 @@
  */
 package org.labkey.api.pipeline.browse;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
@@ -29,7 +28,6 @@ import org.labkey.api.view.ViewForm;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
