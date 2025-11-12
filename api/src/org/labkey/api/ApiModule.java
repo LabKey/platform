@@ -31,7 +31,6 @@ import org.labkey.api.assay.sample.MaterialInputRoleComparator;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.ImageServlet;
 import org.labkey.api.attachments.LookAndFeelResourceType;
-import org.labkey.api.attachments.SecureDocumentType;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.collections.ArrayListMap;
@@ -222,7 +221,6 @@ public class ApiModule extends CodeOnlyModule
         AttachmentService.get().registerAttachmentType(LookAndFeelResourceType.get());
         AttachmentService.get().registerAttachmentType(AuthenticationLogoType.get());
         AttachmentService.get().registerAttachmentType(AvatarType.get());
-        AttachmentService.get().registerAttachmentType(SecureDocumentType.get());
 
         PropertyManager.registerEncryptionMigrationHandler();
         AuthenticationManager.registerEncryptionMigrationHandler();

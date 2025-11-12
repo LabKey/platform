@@ -133,6 +133,11 @@ public interface AttachmentService
 
     void registerAttachmentType(AttachmentType type);
 
+    /**
+     * Returns a collection of all registered AttachmentTypes
+     **/
+    Collection<AttachmentType> getAttachmentTypes();
+
     HttpView<?> getAdminView(ActionURL currentUrl);
 
     HttpView<?> getFindAttachmentParentsView();

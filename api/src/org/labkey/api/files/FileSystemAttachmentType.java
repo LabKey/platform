@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.exp.api;
+package org.labkey.api.files;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 
-public class ExpProtocolAttachmentType implements AttachmentType
+public class FileSystemAttachmentType implements AttachmentType
 {
-    private static final ExpProtocolAttachmentType INSTANCE = new ExpProtocolAttachmentType();
+    private static final FileSystemAttachmentType INSTANCE = new FileSystemAttachmentType();
 
-    public static ExpProtocolAttachmentType get()
+    public static FileSystemAttachmentType get()
     {
         return INSTANCE;
     }
 
-    private ExpProtocolAttachmentType()
+    private FileSystemAttachmentType()
     {
     }
 
@@ -42,6 +43,6 @@ public class ExpProtocolAttachmentType implements AttachmentType
     @Override
     public @Nullable SQLFragment getSelectParentEntityIdsSql()
     {
-        return new SQLFragment("SELECT EntityId FROM ").append(ExperimentService.get().getTinfoProtocol(), "ep");
+        return new SQLFragment("SELECT EntityId FROM ").append(CoreSchema.getInstance().getMappedDirectories(), "md");
     }
 }
