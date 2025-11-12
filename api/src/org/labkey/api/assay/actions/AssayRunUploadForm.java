@@ -72,7 +72,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -343,15 +343,11 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             return _additionalFiles.get(domain.getTypeURI());
 
         Map<String, DomainProperty> fileParameters = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        List<String> filePdNames = new ArrayList<>();
 
         for (DomainProperty pd : pds)
         {
             if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.FILE_LINK)
-            {
                 fileParameters.put(UploadWizardAction.getInputName(pd), pd);
-                filePdNames.add(pd.getName());
-            }
         }
 
         if (fileParameters.isEmpty())
@@ -374,9 +370,10 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             Map<String, MultipartFile> requestFiles = request.getFileMap();
 
             // Hidden values in form containing previously uploaded files if the previous upload resulted in error
-            for (String fileParam : filePdNames)
+            for (Map.Entry<String, DomainProperty> entry : fileParameters.entrySet())
             {
-                DomainProperty domainProperty = fileParameters.get(fileParam);
+                String fileParam = entry.getKey();
+                DomainProperty domainProperty = entry.getValue();
                 MultipartFile multiFile = requestFiles.get(fileParam);
 
                 // If the file is removed from form after error, override hidden file name with an empty file
@@ -386,15 +383,22 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                     continue;
                 }
 
-                String previousFileName = request.getParameter(fileParam);
-                if (previousFileName == null)
+                if (additionalFiles.containsKey(domainProperty))
+                    continue;
+
+                String previousFilePath = StringUtils.trimToNull(request.getParameter(fileParam));
+                if (previousFilePath == null)
                     continue;
 
                 // Only add a hidden file parameter if it is a valid file in the pipeline root directory and
                 // a new file hasn't been uploaded for that parameter
-                File previousFile = FileUtil.appendName(assayDirectory, previousFileName);
-                if (previousFile.isFile() && FileUtils.directoryContains(assayDirectory, previousFile) && !additionalFiles.containsKey(domainProperty))
-                    additionalFiles.put(domainProperty, FileSystemLike.wrapFile(previousFile));
+                Path path = FileUtil.stringToPath(getContainer(), previousFilePath, false);
+                if (FileUtil.isFileAndExists(path))
+                {
+                    File previousFile = path.toFile();
+                    if (previousFile.isFile() && FileUtils.directoryContains(assayDirectory, previousFile))
+                        additionalFiles.put(domainProperty, FileSystemLike.wrapFile(previousFile));
+                }
             }
         }
         catch (IOException e)

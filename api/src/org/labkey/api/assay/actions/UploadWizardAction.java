@@ -408,7 +408,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             // Add unique name of uploaded files as hidden parameters
             Map<DomainProperty, String> fileProps = new HashMap<>();
             for (Map.Entry<DomainProperty, FileLike> entry : form.getAdditionalFiles(domain).entrySet())
-                fileProps.put(entry.getKey(), entry.getValue().getName());
+                fileProps.put(entry.getKey(), entry.getValue().toString());
 
             addHiddenProperties(fileProps, view);
         }

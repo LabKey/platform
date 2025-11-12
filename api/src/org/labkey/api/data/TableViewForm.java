@@ -591,7 +591,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             }
             else if (getRequest() instanceof MultipartHttpServletRequest request)
             {
-                String fieldName = getMultiPartFormFieldName(column);
+                String fieldName = getFormFieldName(column);
                 Object typedValue = _getTypedValues().get(fieldName);
 
                 if (typedValue != null)
@@ -707,7 +707,6 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         _values = null;
     }
 
-
     public void validateBind(BindException errors)
     {
         populateValues(errors);
@@ -718,12 +717,10 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         return _oldValues;
     }
 
-
     public void setOldValues(Object oldValues)
     {
         _oldValues = oldValues;
     }
-
 
     public void forceReselect()
     {
@@ -733,7 +730,6 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         setPkVals(pk);
         setDataLoaded(false);
     }
-
 
     protected Class<?> getTruePropType(String propName)
     {
@@ -764,7 +760,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
     private static final char BACKSLASH = '\\';
     private static final String SPECIAL_CHARS = BACKSLASH + "\";=,";
 
-    public static String getFormFieldNameForColumn(@NotNull String columnName)
+    private static String getFormFieldNameForColumn(@NotNull String columnName)
     {
         StringBuilder sb = new StringBuilder();
         for (char c : columnName.toCharArray())
@@ -779,17 +775,12 @@ public class TableViewForm extends ViewForm implements HasBindParameters
 
     public String getFormFieldName(@NotNull ColumnInfo column)
     {
-        return getFormFieldNameForColumn(column.getName());
+        return DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(getFormFieldNameForColumn(column.getName()));
     }
 
     public static String getMultiPartFormFieldNameForColumn(@NotNull String columnName)
     {
         return DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(getFormFieldNameForColumn(columnName));
-    }
-
-    public String getMultiPartFormFieldName(@NotNull ColumnInfo column)
-    {
-        return getMultiPartFormFieldNameForColumn(column.getName());
     }
 
     @Nullable
