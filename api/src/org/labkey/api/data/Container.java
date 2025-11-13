@@ -1595,7 +1595,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         String noun = _containerType.getContainerNoun(this);
         if (titleCase)
         {
-            return StringUtilsLabKey.leftSurrogatePairFriendly(noun, 1).toUpperCase() + StringUtilsLabKey.rightSurrogatePairFriendly(noun,1);
+            return StringUtilsLabKey.leftSurrogatePairFriendly(noun, 1).toUpperCase() + StringUtilsLabKey.rightSurrogatePairFriendly(noun, noun.length() - 1);
         }
 
         return noun;
