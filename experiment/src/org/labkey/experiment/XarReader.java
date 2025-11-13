@@ -1114,14 +1114,14 @@ public class XarReader extends AbstractXarImporter
 
             vals.setFilePathRoot(FileUtil.getAbsolutePath(_xarSource.getJobRootPath()));
             vals.setContainer(getContainer());
-            // TODO need to update this for run workflowTaskId support in XAR
+            // TODO need to update this for run workflowTaskId support in XAR on workflow job folder export/import is supported
             //String workflowTaskLSID = a.getWorkflowTaskLSID();
             //if (workflowTaskLSID != null)
             //{
             //    if (!workflowTaskLSID.startsWith("${WorkflowTaskReference}:"))
             //        throw new XarFormatException("Invalid WorkflowTaskLSID encountered: " + workflowTaskLSID);
             //
-             //    workflowTaskLSID = workflowTaskLSID.split(":")[1];
+            //    workflowTaskLSID = workflowTaskLSID.split(":")[1];
             //}
             if (_job != null)
             {

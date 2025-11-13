@@ -330,7 +330,7 @@ public class XarExporter
             addProtocolApplication(application, run, xApplications);
         }
 
-        // TODO need to update this for run workflowTaskId support in XAR
+        // TODO need to update this for run workflowTaskId support in XAR on workflow job folder export/import is supported
         //ExpProtocolApplication workflowTask = run.getWorkflowTask();
         //if (workflowTask != null)
         //{
