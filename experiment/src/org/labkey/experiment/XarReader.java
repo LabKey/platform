@@ -1114,15 +1114,15 @@ public class XarReader extends AbstractXarImporter
 
             vals.setFilePathRoot(FileUtil.getAbsolutePath(_xarSource.getJobRootPath()));
             vals.setContainer(getContainer());
-            String workflowTaskLSID = a.getWorkflowTaskLSID();
-
-            if (workflowTaskLSID != null)
-            {
-                if (!workflowTaskLSID.startsWith("${WorkflowTaskReference}:"))
-                    throw new XarFormatException("Invalid WorkflowTaskLSID encountered: " + workflowTaskLSID);
-
-                workflowTaskLSID = workflowTaskLSID.split(":")[1];
-            }
+            // TODO need to update this for run workflowTaskId support in XAR
+            //String workflowTaskLSID = a.getWorkflowTaskLSID();
+            //if (workflowTaskLSID != null)
+            //{
+            //    if (!workflowTaskLSID.startsWith("${WorkflowTaskReference}:"))
+            //        throw new XarFormatException("Invalid WorkflowTaskLSID encountered: " + workflowTaskLSID);
+            //
+             //    workflowTaskLSID = workflowTaskLSID.split(":")[1];
+            //}
             if (_job != null)
             {
                 // remember which job created the run so we can show this run on the job details page
@@ -1135,8 +1135,8 @@ public class XarReader extends AbstractXarImporter
                 impl.save(getUser());
                 run = impl.getDataObject();
 
-                if (workflowTaskLSID != null)
-                    _runWorkflowTaskMap.put(run.getRowId(), workflowTaskLSID);
+                //if (workflowTaskLSID != null)
+                //    _runWorkflowTaskMap.put(run.getRowId(), workflowTaskLSID);
 
                 String replacedByLSID = a.getReplacedByRunLSID();
                 if (replacedByLSID != null)
@@ -1209,6 +1209,7 @@ public class XarReader extends AbstractXarImporter
     }
 
     /**
+     * // TODO need to update this for run workflowTaskId support in XAR
      * This method runs last, and is used to wire up the Workflow Task FK relationship between Exp Runs and
      * Exp ProtocolApplications. This needs to run last because we have no good way to guarantee import order and ensure
      * all the appropriate ProtocolApplications are imported before the Exp Runs.
