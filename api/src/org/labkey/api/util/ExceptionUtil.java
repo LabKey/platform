@@ -865,6 +865,21 @@ public class ExceptionUtil
             message = ex.getMessage();
             unhandledException = null;
         }
+        else if (ex instanceof FileUtil.InvalidPathReferenceException ipre)
+        {
+            responseStatus = HttpServletResponse.SC_NOT_FOUND;
+            errorType = ErrorRenderer.ErrorType.notFound;
+            if (ex.getMessage() != null)
+            {
+                message = ex.getMessage();
+                responseStatusMessage = message;
+            }
+            else
+                message = responseStatus + ": Page not Found";
+            unhandledException = null;
+            log.info("InvalidPathReferenceException: {}", ipre.getInput());
+            log.debug("InvalidPathReferenceException", ex);
+        }
         else if (ex instanceof NotFoundException)
         {
             responseStatus = HttpServletResponse.SC_NOT_FOUND;
