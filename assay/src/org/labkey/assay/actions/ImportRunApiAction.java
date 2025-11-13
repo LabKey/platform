@@ -113,7 +113,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
         Long batchId;
         String name;
-        Long workflowTask;
+        Long workflowTaskId;
         String comments;
         CaseInsensitiveHashMap<Object> runProperties = null;
         CaseInsensitiveHashMap<Object> batchProperties = null;
@@ -148,9 +148,9 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
             batchId = json.optLong(AssayJSONConverter.BATCH_ID);
             name = json.optString(ExperimentJSONConverter.NAME, null);
-            workflowTask = json.optLong(ExperimentJSONConverter.WORKFLOW_TASK);
-            if (workflowTask == 0)
-                workflowTask = null;
+            workflowTaskId = json.optLong(ExperimentJSONConverter.WORKFLOW_TASK);
+            if (workflowTaskId == 0)
+                workflowTaskId = null;
             comments = json.optString(ExperimentJSONConverter.COMMENT, null);
             forceAsync = json.optBoolean("forceAsync");
             jobDescription = json.optString("jobDescription", null);
@@ -187,7 +187,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
             batchId = form.getBatchId();
             name = form.getName();
-            workflowTask = form.getWorkflowTask();
+            workflowTaskId = form.getWorkflowTask();
             comments = form.getComment();
             runProperties = new CaseInsensitiveHashMap<>(form.getProperties());
             batchProperties = new CaseInsensitiveHashMap<>(form.getBatchProperties());
@@ -261,7 +261,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
         AssayRunUploadContext.Factory<?, ?> factory = provider.createRunUploadFactory(protocol, getViewContext())
                 .setName(name)
-                .setWorkflowTask(workflowTask)
+                .setWorkflowTaskId(workflowTaskId)
                 .setComments(comments)
                 .setTargetStudy(targetStudy)
                 .setReRunId(reRunId)

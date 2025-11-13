@@ -1047,30 +1047,8 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public ExpProtocolApplication getWorkflowTask()
+    public Long getWorkflowTaskId()
     {
-        Long id = _object.getWorkflowTask();
-
-        if (id == null) {
-            return null;
-        }
-
-        if (_workflowTask == null || _workflowTask.getRowId() != id.intValue())
-        {
-            _workflowTask = ExperimentServiceImpl.get().getExpProtocolApplication(id);
-        }
-
-        return _workflowTask;
-    }
-
-    @Override
-    public void setWorkflowTask(ExpProtocolApplication workflowTask)
-    {
-        ensureUnlocked();
-
-        if (workflowTask == null)
-            _object.setWorkflowTask(null);
-        else
-            _object.setWorkflowTask(workflowTask.getRowId());
+        return _object.getWorkflowTask();
     }
 }

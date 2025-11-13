@@ -1020,8 +1020,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     {
                         Long newWorkflowTaskId = value == null ? null : (Long)ConvertUtils.convert(value.toString(), Long.class);
                         Long oldWorkflowTaskID = null;
-                        if (run.getWorkflowTask() != null)
-                            oldWorkflowTaskID = run.getWorkflowTask().getRowId();
+                        if (run.getWorkflowTaskId() != null)
+                            oldWorkflowTaskID = run.getWorkflowTaskId();
 
                         appendPropertyIfChanged(auditComment, Column.WorkflowTask.toString(), oldWorkflowTaskID, newWorkflowTaskId);
                         run.setWorkflowTaskId(newWorkflowTaskId);

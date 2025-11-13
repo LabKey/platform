@@ -171,7 +171,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.ImportFileName, primaryFile.getName());
                 run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, null == primaryFile ? null : primaryFile.toNioPathForRead().toFile());
                 run.setComments(context.getComments());
-                run.setWorkflowTaskId(context.getWorkflowTask());
+                run.setWorkflowTaskId(context.getWorkflowTaskId());
 
                 exp = saveExperimentRun(context, exp, run, false, transactionDetails);
 
