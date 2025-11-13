@@ -516,7 +516,7 @@ public abstract class SqlDialect
      * @param sql And INSERT or UPDATE statement that needs re-selecting
      * @param column Column from which to reselect
      * @param proposedVariable Null to return a result set via code; Not null to select the value into a SQL variable
-     * @return If proposedVariable is not null then actual variable used in the SQL. Otherwise null. Callers using
+     * @return If proposedVariable is not null then actual variable used in the SQL. Otherwise, null. Callers using
      * proposedVariable must use the returned variable name in subsequent code, since it may differ from what was
      * proposed.
      */
@@ -527,7 +527,14 @@ public abstract class SqlDialect
 
     private static final InClauseGenerator DEFAULT_GENERATOR = new ParameterMarkerInClauseGenerator();
 
+    // Most callers should use this method
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
+    {
+        return appendInClauseSql(sql, params, null);
+    }
+
+    // Use in cases where the default temp schema won't do, e.g., you need to apply a large IN clause in an external data source
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params, InClauseGenerator tempTableGenerator)
     {
         return DEFAULT_GENERATOR.appendInClauseSql(sql, params);
     }
@@ -539,10 +546,10 @@ public abstract class SqlDialect
         String prefixLike = prefix + CompareType.escapeLikePattern(matchStr, escapeChar) + suffix;
         String escapeToken = " ESCAPE '" + escapeChar + "'";
         sql.append(" ")
-                .append(getCaseInsensitiveLikeOperator())
-                .append(" ")
-                .appendValue(prefixLike)
-                .append(escapeToken);
+            .append(getCaseInsensitiveLikeOperator())
+            .append(" ")
+            .appendValue(prefixLike)
+            .append(escapeToken);
         return sql;
     }
 

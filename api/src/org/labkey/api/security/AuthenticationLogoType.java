@@ -16,6 +16,7 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
@@ -40,8 +41,8 @@ public class AuthenticationLogoType implements AttachmentType
     }
 
     @Override
-    public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
+    public @Nullable SQLFragment getSelectParentEntityIdsSql()
     {
-        sql.append(parentColumn).append(" IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), "acs").append(")");
+        return new SQLFragment("SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), "acs");
     }
 }

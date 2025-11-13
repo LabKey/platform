@@ -748,6 +748,12 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
+    public Collection<AttachmentType> getAttachmentTypes()
+    {
+        return ATTACHMENT_TYPE_MAP.values();
+    }
+
+    @Override
     public HttpView<?> getAdminView(ActionURL currentUrl)
     {
         String requestedType = currentUrl.getParameter("type");
@@ -761,7 +767,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             // core.Documents for each type is needed to associate the Type values with the associated rows.
             List<SQLFragment> selectStatements = new LinkedList<>();
 
-            for (AttachmentType type : ATTACHMENT_TYPE_MAP.values())
+            for (AttachmentType type : getAttachmentTypes())
             {
                 SQLFragment selectStatement = new SQLFragment();
 
@@ -785,7 +791,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             SQLFragment whereSql = new SQLFragment();
             String sep = "";
 
-            for (AttachmentType type : ATTACHMENT_TYPE_MAP.values())
+            for (AttachmentType type : getAttachmentTypes())
             {
                 whereSql.append(sep);
                 sep = " OR";

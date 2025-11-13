@@ -292,9 +292,15 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
+        return appendInClauseSql(sql, params, _tempTableInClauseGenerator);
+    }
+
+    @Override
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params, InClauseGenerator tempTableGenerator)
+    {
         if (params.size() >= TEMPTABLE_GENERATOR_MINSIZE)
         {
-            SQLFragment ret = _tempTableInClauseGenerator.appendInClauseSql(sql, params);
+            SQLFragment ret = tempTableGenerator.appendInClauseSql(sql, params);
             if (null != ret)
                 return ret;
         }

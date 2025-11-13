@@ -221,9 +221,9 @@ describe('assay-importRun.api', () => {
             const run = await getRunQueryRow(server, ASSAY_A_NAME, runId, topFolderOptions);
             const expectedUrl = `/${encodeURIComponent(PROJECT_NAME)}/core-downloadFileLink.view?propertyId=`;
             const runBatchField = `Batch/${BATCH_FILE_FIELD_NAME}`;
-            expect(run[runBatchField].value).toEqual(`assaydata/${batchFileName}`);
+            expect(run[runBatchField].value.replaceAll('\\', '/')).toEqual(`assaydata/${batchFileName}`);
             expect(run[runBatchField].url).toContain(expectedUrl);
-            expect(run[RUN_FILE_FIELD_NAME].value).toEqual(`assaydata/${runFileName}`);
+            expect(run[RUN_FILE_FIELD_NAME].value.replaceAll('\\', '/')).toEqual(`assaydata/${runFileName}`);
             expect(run[RUN_FILE_FIELD_NAME].url).toContain(expectedUrl);
 
             // Verify audit log
@@ -504,9 +504,9 @@ describe('assay-importRun.api', () => {
             const run = await getRunQueryRow(server, ASSAY_A_NAME, runId, topFolderOptions);
             const expectedUrl = `/${encodeURIComponent(PROJECT_NAME)}/core-downloadFileLink.view?propertyId=`;
             const runBatchField = `Batch/${BATCH_FILE_FIELD_TWO_NAME}`;
-            expect(run[runBatchField].value).toEqual(`assaydata/${batchFileName}`);
+            expect(run[runBatchField].value.replaceAll('\\', '/')).toEqual(`assaydata/${batchFileName}`);
             expect(run[runBatchField].url).toContain(expectedUrl);
-            expect(run[RUN_FILE_FIELD_NAME].value).toEqual(`assaydata/${runFileName}`);
+            expect(run[RUN_FILE_FIELD_NAME].value.replaceAll('\\', '/')).toEqual(`assaydata/${runFileName}`);
             expect(run[RUN_FILE_FIELD_NAME].url).toContain(expectedUrl);
 
             // Verify audit log
