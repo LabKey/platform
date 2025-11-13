@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import java.util.Objects;
 
@@ -65,7 +66,7 @@ public abstract class AbstractRunInput extends IdentifiableBase
         // so truncate here if needed to prevent a SQLException later
         if (role.length() > 50)
         {
-            role = role.substring(0, 49);
+            role = StringUtilsLabKey.leftSurrogatePairFriendly(role, 49);
         }
         _role = role;
     }

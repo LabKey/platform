@@ -8,6 +8,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -188,7 +189,7 @@ public class ExcelCellUtils
                 // Check if the string is too long
                 if (s.length() > 32767)
                 {
-                    s = s.substring(0, 32762) + "...";
+                    s = StringUtilsLabKey.leftSurrogatePairFriendly(s, 32762) + "...";
                 }
                 // Ensure the row is tall enough to show the full values when there are newlines
                 int newlines = StringUtils.countMatches(s, '\n');

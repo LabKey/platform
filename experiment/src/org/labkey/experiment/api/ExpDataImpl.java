@@ -69,6 +69,7 @@ import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.ActionURL;
@@ -796,7 +797,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         if (toks.isEmpty())
             return;
 
-        sb.append(toks.stream().map(s -> s.length() > 30 ? s.substring(0, 30) + "\u2026" : s).collect(Collectors.joining(", "))).append("\n");
+        sb.append(toks.stream().map(s -> s.length() > 30 ? StringUtilsLabKey.leftSurrogatePairFriendly(s, 30) + "\u2026" : s).collect(Collectors.joining(", "))).append("\n");
     }
 
     private static class ExpDataResource extends SimpleDocumentResource

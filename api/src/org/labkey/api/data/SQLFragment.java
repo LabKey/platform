@@ -30,6 +30,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -754,7 +755,7 @@ public class SQLFragment implements Appendable, CharSequence
             sb.append("\n-- ");
             boolean truncated = comment.length() > 1000;
             if (truncated)
-                comment = comment.substring(0,1000);
+                comment = StringUtilsLabKey.leftSurrogatePairFriendly(comment, 1000);
             sb.append(comment);
             if (StringUtils.countMatches(comment, "'")%2==1)
                 sb.append("'");

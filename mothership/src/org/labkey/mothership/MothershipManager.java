@@ -41,6 +41,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.ReentrantLockWithName;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
@@ -109,11 +110,11 @@ public class MothershipManager
 
             String url = report.getUrl();
             if (null != url && url.length() > 512)
-                report.setURL(url.substring(0, 506) + "...");
+                report.setURL(StringUtilsLabKey.leftSurrogatePairFriendly(url, 506) + "...");
 
             String referrerURL = report.getReferrerURL();
             if (null != referrerURL && referrerURL.length() > 512)
-                report.setReferrerURL(referrerURL.substring(0, 506) + "...");
+                report.setReferrerURL(StringUtilsLabKey.leftSurrogatePairFriendly(referrerURL, 506) + "...");
 
             String browser = report.getBrowser();
             if (null != browser && browser.length() > 100)
@@ -121,7 +122,7 @@ public class MothershipManager
 
             String exceptionMessage = report.getExceptionMessage();
             if (null != exceptionMessage && exceptionMessage.length() > 1000)
-                report.setExceptionMessage(exceptionMessage.substring(0,990) + "...");
+                report.setExceptionMessage(StringUtilsLabKey.leftSurrogatePairFriendly(exceptionMessage, 990) + "...");
 
             String actionName = report.getPageflowAction();
             if (null != actionName && actionName.length() > 40)
