@@ -236,7 +236,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -244,7 +243,6 @@ import org.labkey.experiment.ExperimentAuditProvider;
 import org.labkey.experiment.FileLinkFileListener;
 import org.labkey.experiment.MissingFilesCheckInfo;
 import org.labkey.experiment.XarExportType;
-import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.api.property.DomainPropertyManager;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -253,13 +251,11 @@ import org.labkey.experiment.pipeline.ExpGeneratorHelper;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
-import org.labkey.experiment.xar.XarExportSelection;
 import org.labkey.vfs.FileLike;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
@@ -3615,9 +3611,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         boolean isSample = runItem instanceof ExpMaterial;
         if (isSample)
-            ClosureQueryHelper.clearAncestorsForMaterial(runItem.getRowId());
+            clearMaterialAncestors(List.of(runItem.getRowId()));
         else
-            ClosureQueryHelper.clearAncestorsForDataObject(runItem.getRowId());
+            clearDataAncestors(List.of(runItem.getRowId()));
+    }
+
+    public void clearDataAncestors(Collection<Long> dataRowIds)
+    {
+        ClosureQueryHelper.clearAncestorsForDataObjects(dataRowIds);
+    }
+
+    public void clearMaterialAncestors(Collection<Long> materialRowIds)
+    {
+        ClosureQueryHelper.clearAncestorsForMaterials(materialRowIds);
     }
 
     public List<ProtocolApplication> getProtocolApplicationsForRun(long runId)

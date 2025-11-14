@@ -1183,6 +1183,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     Map<String, Map<String, Object>> getDomainMetrics();
 
+    void clearAncestors(ExpRunItem runItem);
+    void clearDataAncestors(Collection<Long> dataRowIds);
+    void clearMaterialAncestors(Collection<Long> materialRowIds);
+
     class XarExportOptions
     {
         String _lsidRelativizer = LSID_OPTION_FOLDER_RELATIVE;
