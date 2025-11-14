@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.study.StudySchema;
@@ -40,8 +41,8 @@ public class ProtocolDocumentType implements AttachmentType
     }
 
     @Override
-    public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
+    public @Nullable SQLFragment getSelectParentEntityIdsSql()
     {
-        sql.append(parentColumn).append(" IN (SELECT ProtocolDocumentEntityId FROM ").append(StudySchema.getInstance().getTableInfoStudy(), "s").append(")");
+        return new SQLFragment("SELECT ProtocolDocumentEntityId FROM ").append(StudySchema.getInstance().getTableInfoStudy(), "s");
     }
 }

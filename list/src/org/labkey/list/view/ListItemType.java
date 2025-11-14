@@ -17,6 +17,7 @@ package org.labkey.list.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
@@ -49,7 +50,7 @@ public class ListItemType implements AttachmentType
     }
 
     @Override
-    public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
+    public @Nullable SQLFragment getSelectParentEntityIdsSql()
     {
         ListService svc = ListService.get();
         assert null != svc;
@@ -65,9 +66,8 @@ public class ListItemType implements AttachmentType
             });
         });
 
-        if (selectStatements.isEmpty())
-            sql.append("1 = 0");  // No lists with attachment columns
-        else
-            sql.append(parentColumn).append(" IN (").append(StringUtils.join(selectStatements, "\n    UNION")).append(")");
+        return selectStatements.isEmpty() ?
+            NO_ENTITY_IDS : // No lists with attachment columns
+            new SQLFragment(StringUtils.join(selectStatements, "\n    UNION"));
     }
 }

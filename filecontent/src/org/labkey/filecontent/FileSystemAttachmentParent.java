@@ -26,6 +26,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.FileSystemAttachmentType;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 
@@ -247,7 +248,6 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
                                     LOG.warn(e.getMessage());
                                 }
                             }
-
                         });
                     }
                 }

@@ -40,8 +40,8 @@ public class ReportType implements AttachmentType
     }
 
     @Override
-    public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
+    public @NotNull SQLFragment getSelectParentEntityIdsSql()
     {
-        sql.append(parentColumn).append(" IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoReport(), "reports").append(")");
+        return new SQLFragment("SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoReport(), "reports");
     }
 }
