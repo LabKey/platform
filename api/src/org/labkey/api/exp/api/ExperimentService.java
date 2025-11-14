@@ -1186,6 +1186,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void clearAncestors(ExpRunItem runItem);
     void clearDataAncestors(Collection<Long> dataRowIds);
     void clearMaterialAncestors(Collection<Long> materialRowIds);
+    void truncateAndRecreate(@Nullable Logger logger, boolean materialAncestors, boolean dataAncestors);
 
     class XarExportOptions
     {

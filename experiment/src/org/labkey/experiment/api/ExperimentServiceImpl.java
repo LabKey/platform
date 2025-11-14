@@ -3626,6 +3626,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         ClosureQueryHelper.clearAncestorsForMaterials(materialRowIds);
     }
 
+    public void truncateAndRecreate(@Nullable Logger logger, boolean materialAncestors, boolean dataAncestors)
+    {
+        ClosureQueryHelper.truncateAndRecreate(logger, materialAncestors, dataAncestors);
+    }
+
     public List<ProtocolApplication> getProtocolApplicationsForRun(long runId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RunId"), runId);

@@ -7388,7 +7388,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(Object form, BindException errors)
         {
-            ClosureQueryHelper.truncateAndRecreate();
+            ClosureQueryHelper.truncateAndRecreate(null);
             return success();
         }
     }
