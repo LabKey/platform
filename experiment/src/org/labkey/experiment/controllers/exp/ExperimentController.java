@@ -3465,7 +3465,7 @@ public class ExperimentController extends SpringActionController
         @Override
         protected void deleteObjects(DeleteForm deleteForm)
         {
-            ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), deleteForm.getUserComment(), deleteForm.getIds(false));
+            ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), deleteForm.getUserComment(), deleteForm.getIds(false), getTransactionAuditDetails());
         }
     }
 
@@ -3530,7 +3530,12 @@ public class ExperimentController extends SpringActionController
                     runIdsToDelete.addAll(runIdsCascadeDeleted);
             }
 
-            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), form.getUserComment(), runIdsToDelete);
+            Map<TransactionAuditProvider.TransactionDetail, Object> transactionAuditDetails = getTransactionAuditDetails();
+            if (form.getRequestSource() != null)
+                transactionAuditDetails.put(TransactionAuditProvider.TransactionDetail.RequestSource, form.getRequestSource());
+            if (form.getEditMethod() != null)
+                transactionAuditDetails.put(TransactionAuditProvider.TransactionDetail.EditMethod, form.getEditMethod());
+            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), form.getUserComment(), runIdsToDelete, transactionAuditDetails);
 
             ApiSimpleResponse response = new ApiSimpleResponse("success", true);
             response.put("runIdsDeleted", runIdsToDelete);

@@ -337,7 +337,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         {
             throw new UnauthorizedException();
         }
-        ExperimentServiceImpl.get().deleteExperimentRuns(getContainer(), user, auditUserComment, Arrays.asList(this));
+        ExperimentServiceImpl.get().deleteExperimentRuns(getContainer(), user, auditUserComment, Arrays.asList(this), null);
     }
 
     @Override

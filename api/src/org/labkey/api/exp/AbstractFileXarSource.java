@@ -110,6 +110,7 @@ public abstract class AbstractFileXarSource extends XarSource
     @Override
     public String canonicalizeDataFileURL(String dataFileURL)
     {
+        dataFileURL = dataFileURL.replace("\\", "/");
         Path xarDirectory = getRootPath();
         URI uri = FileUtil.createUri(dataFileURL);
         if (!uri.isAbsolute())
