@@ -29,6 +29,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.TableSorter;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.StringUtilsLabKey;
 
 import java.util.ArrayList;
@@ -277,14 +278,16 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         String additionalMessage = " associated with " + Arrays.stream(type).map(t -> t.getClass().getSimpleName()).collect(Collectors.joining(", "));
         TableInfo sourceDocumentsTable = sourceSchema.getScope().getSchema("core", DbSchemaType.Migration).getTable("Documents");
         TableInfo targetDocumentsTable = CoreSchema.getInstance().getTableInfoDocuments();
-        DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceDocumentsTable, targetDocumentsTable, DbSchemaType.Module, false, additionalMessage, new DefaultMigrationSchemaHandler(CoreSchema.getInstance().getSchema())
+
+        // Queue up the core.Documents transfers and let them run in the background
+        JobRunner.getDefault().execute(() -> DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceDocumentsTable, targetDocumentsTable, DbSchemaType.Module, false, additionalMessage, new DefaultMigrationSchemaHandler(CoreSchema.getInstance().getSchema())
         {
             @Override
             public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
             {
                 return filterClause;
             }
-        });
+        }));
     }
 
     public static void logUnseenAttachmentTypes()

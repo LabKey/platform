@@ -18,9 +18,11 @@ package org.labkey.api.util;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbScope;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
@@ -51,7 +53,7 @@ public class JobRunner implements Executor
     private static final JobRunner _defaultJobRunner = new JobRunner("Default", 1);
 
     private final ScheduledThreadPoolExecutor _executor;
-    private final HashMap<Future, Job> _jobs = new HashMap<>();
+    private final Map<Future<?>, Job> _jobs = new HashMap<>();
 
 
     public JobRunner(String name, int max)
@@ -76,11 +78,6 @@ public class JobRunner implements Executor
             public void shutdownPre()
             {
                 _executor.shutdown();
-            }
-
-            @Override
-            public void shutdownStarted()
-            {
             }
         });
     }
@@ -111,11 +108,16 @@ public class JobRunner implements Executor
         _executor.shutdown();
     }
 
+    public boolean awaitTermination(long timeout, @NotNull TimeUnit unit) throws InterruptedException
+    {
+        return _executor.awaitTermination(timeout, unit);
+    }
+
     /**
      * This will schedule the runnable to execute immediately, with no delay
      */
     @Override
-    public void execute(Runnable command)
+    public void execute(@NotNull Runnable command)
     {
         execute(command, 0);
     }
@@ -132,7 +134,7 @@ public class JobRunner implements Executor
     {
         synchronized (_jobs)
         {
-            Future task = _executor.schedule(command, delay, TimeUnit.MILLISECONDS);
+            Future<?> task = _executor.schedule(command, delay, TimeUnit.MILLISECONDS);
             if (command instanceof Job job)
             {
                 job._task = task;
@@ -141,7 +143,7 @@ public class JobRunner implements Executor
         }
     }
 
-    public Future submit(Runnable run)
+    public Future<?> submit(Runnable run)
     {
         if (run instanceof Job)
         {
@@ -221,13 +223,13 @@ public class JobRunner implements Executor
                 }
                 else
                 {
-                    if (r instanceof Future)
+                    if (r instanceof Future<?> f)
                     {
                         if (null == t)
                         {
                             try
                             {
-                                ((Future)r).get();
+                                f.get();
                             }
                             catch (ExecutionException x)
                             {
@@ -277,7 +279,7 @@ public class JobRunner implements Executor
         }
 
         @Override
-        public Thread newThread(Runnable r)
+        public Thread newThread(@NotNull Runnable r)
         {
             Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
             if (t.isDaemon())
