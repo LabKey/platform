@@ -27,6 +27,7 @@ import org.labkey.api.migration.DatabaseMigrationService.DataFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.TableSorter;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.StringUtilsLabKey;
 
@@ -253,9 +254,10 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
                 sourceSchema.getSqlDialect().appendInClauseSql(selectParents, entityIds, getTempTableInClauseGenerator(sourceSchema.getScope()));
                 copyAttachments(configuration, sourceSchema, new SQLClause(selectParents), type);
             }
-
-            // TODO: fail if type.getSelectParentEntityIdsSql() returns null?
-            // TODO: throw if some registered AttachmentType is not seen
+            else
+            {
+                throw new ConfigurationException("AttachmentType \"" + type.getUniqueName() + "\" is not configured to find parent EntityIds!");
+            }
         });
     }
 
@@ -293,7 +295,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         if (unseen.isEmpty())
             DatabaseMigrationService.LOG.info("All AttachmentTypes have been seen");
         else
-            DatabaseMigrationService.LOG.info("These AttachmentTypes have not been seen: {}", unseen.stream().map(type -> type.getClass().getSimpleName()).collect(Collectors.joining(", ")));
+            throw new ConfigurationException("These AttachmentTypes have not been seen: " + unseen.stream().map(type -> type.getClass().getSimpleName()).collect(Collectors.joining(", ")));
     }
 
     @Override
