@@ -251,7 +251,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
                 Collection<String> entityIds = new SqlSelector(targetSchema, sql).getCollection(String.class);
                 SQLFragment selectParents = new SQLFragment("Parent");
                 // This query against the source database is likely to contain a large IN clause, so use an alternative InClauseGenerator
-                sourceSchema.getSqlDialect().appendInClauseSql(selectParents, entityIds, getTempTableInClauseGenerator(sourceSchema.getScope()));
+                sourceSchema.getSqlDialect().appendInClauseSqlWithCustomInClauseGenerator(selectParents, entityIds, getTempTableInClauseGenerator(sourceSchema.getScope()));
                 copyAttachments(configuration, sourceSchema, new SQLClause(selectParents), type);
             }
             else
