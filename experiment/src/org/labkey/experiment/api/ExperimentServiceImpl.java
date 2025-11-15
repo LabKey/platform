@@ -3616,6 +3616,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             clearDataAncestors(List.of(runItem.getRowId()));
     }
 
+    public void repopulateAncestors()
+    {
+        ClosureQueryHelper.truncateAndRecreate();
+    }
+
     public void clearDataAncestors(Collection<Long> dataRowIds)
     {
         ClosureQueryHelper.clearAncestorsForDataObjects(dataRowIds);
@@ -3624,11 +3629,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public void clearMaterialAncestors(Collection<Long> materialRowIds)
     {
         ClosureQueryHelper.clearAncestorsForMaterials(materialRowIds);
-    }
-
-    public void truncateAndRecreate(@Nullable Logger logger, boolean materialAncestors, boolean dataAncestors)
-    {
-        ClosureQueryHelper.truncateAndRecreate(logger, materialAncestors, dataAncestors);
     }
 
     public List<ProtocolApplication> getProtocolApplicationsForRun(long runId)

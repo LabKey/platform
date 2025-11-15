@@ -17,6 +17,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.VirtualTable;
@@ -49,7 +50,7 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOu
 
 public class ClosureQueryHelper
 {
-    private final static Logger LOG = LogHelper.getLogger(ClosureQueryHelper.class, "Sample and data class object ancestor data computation.");
+    private final static Logger logger = LogHelper.getLogger(ClosureQueryHelper.class, "Sample and data class object ancestor data computation.");
     final static String CONCEPT_URI = "http://www.labkey.org/types#ancestorLookup";
 
     // N.B., This should be twice the number of generations we expect as a maximum number of ancestors due to the run nodes.
@@ -309,7 +310,7 @@ public class ClosureQueryHelper
             SQLFragment selectInto = selectIntoTempTableSql(getScope().getSqlDialect(), from, tableNameSql);
             selectInto.addTempToken(ref);
             int count = new SqlExecutor(getScope()).execute(selectInto);
-            LOG.debug("Selected {} rows into temp.{} for recompute of {} ancestors.", count, tempTableName, isSampleType ? "sample" : "data");
+            logger.debug("Selected {} rows into temp.{} for recompute of {} ancestors.", count, tempTableName, isSampleType ? "sample" : "data");
 
             SQLFragment upsert;
             TableInfo tInfo = isSampleType ? ExperimentServiceImpl.get().getTinfoMaterialAncestors() : ExperimentServiceImpl.get().getTinfoDataAncestors();
@@ -418,31 +419,20 @@ public class ClosureQueryHelper
         logger.info("Finished populating exp.dataAncestors");
     }
 
-    public static void truncateAndRecreate(@Nullable Logger logger)
+    public static void truncateAndRecreate()
     {
-        truncateAndRecreate(logger, true, true);
+        truncateAndRecreate(logger);
     }
 
-    public static void truncateAndRecreate(@Nullable Logger logger, boolean materialAncestors, boolean dataAncestors)
+    public static void truncateAndRecreate(Logger logger)
     {
-        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            if (logger == null)
-                logger = LOG;
+            Table.truncate(ExperimentServiceImpl.get().getTinfoMaterialAncestors());
+            ClosureQueryHelper.populateMaterialAncestors(logger);
 
-            if (materialAncestors)
-            {
-                TableInfo tInfo = ExperimentServiceImpl.get().getTinfoMaterialAncestors();
-                new SqlExecutor(tInfo.getSchema()).execute("TRUNCATE TABLE " + tInfo);
-                ClosureQueryHelper.populateMaterialAncestors(logger);
-            }
-
-            if (dataAncestors)
-            {
-                TableInfo tInfo = ExperimentServiceImpl.get().getTinfoDataAncestors();
-                new SqlExecutor(tInfo.getSchema()).execute("TRUNCATE TABLE " + tInfo);
-                ClosureQueryHelper.populateDataAncestors(logger);
-            }
+            Table.truncate(ExperimentServiceImpl.get().getTinfoDataAncestors());
+            ClosureQueryHelper.populateDataAncestors(logger);
 
             transaction.commit();
         }
@@ -465,7 +455,7 @@ public class ClosureQueryHelper
                 // complete hack to get SQLServer to not make RowId an identity column in the target table so the subsequent insert will work without complaint
                 selectIntoSql.append(" UNION ALL SELECT RowId, ObjectId, 'x' AS ObjectType FROM " ).append(isSampleType ? "exp.material" : "exp.data").append(" WHERE 1 <> 1");
             int numSeeds = new SqlExecutor(getScope()).execute(selectIntoSql);
-            LOG.debug("Added {} seed {} rows to temp.{}", numSeeds, isSampleType ? "sample" : "data", familyTableName);
+            logger.debug("Added {} seed {} rows to temp.{}", numSeeds, isSampleType ? "sample" : "data", familyTableName);
             // if we didn't actually insert any items into the table, there's nothing more to be done
             if (numSeeds == 0)
                 return;
@@ -481,7 +471,7 @@ public class ClosureQueryHelper
             descendants.append("INSERT INTO temp.").append(tableNameSql)
                     .append(" (RowId, ObjectId, ObjectType) ").append(descendantClosureSelectSql);
             int numRows = new SqlExecutor(getScope()).execute(descendants);
-            LOG.debug("Added {} {} descendant rows for {}", numRows, isSampleType ? "sample" : "data", familyTableName);
+            logger.debug("Added {} {} descendant rows for {}", numRows, isSampleType ? "sample" : "data", familyTableName);
 
             // recompute the ancestors for the seed ids and the descendants
             incrementalRecomputeFromTempTable(tableNameSql, isSampleType);
