@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data.validator;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorContext;
@@ -51,17 +52,22 @@ public class PropertyValidator implements ColumnValidator
     }
 
     @Override
-    public String validate(int rowNum, Object value, ValidatorContext validatorContext)
+    public String validate(int rowNum, Object value, ValidatorContext validatorContext, @Nullable Object providedValue)
     {
         // Don't validate null values, #15683, #19352
         if (null == value)
             return null;
-        if (kind.validate(propertyValidator, _columnRenderProperties , value, errors, validatorContext))
+        if (kind.validate(propertyValidator, _columnRenderProperties , value, errors, validatorContext, providedValue))
             return null;
         if (errors.isEmpty())
             return null;
         String msg = errors.get(0).getMessage();
         errors.clear();
         return msg;
+    }
+
+    public IPropertyValidator getPropertyValidator()
+    {
+        return propertyValidator;
     }
 }

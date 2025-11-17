@@ -40,6 +40,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
     private PropertyValidator _validator;
     private PropertyValidator _validatorOld;
     private boolean _deleted;
+    private String columnNameProvidedData;
 
     public PropertyValidatorImpl(PropertyValidator validator)
     {
@@ -173,6 +174,16 @@ public class PropertyValidatorImpl implements IPropertyValidator
         return PropertyService.get().getValidatorKind(getTypeURI());
     }
 
+    public String getColumnNameProvidedData()
+    {
+        return columnNameProvidedData;
+    }
+
+    public void setColumnNameProvidedData(String columnNameProvidedData)
+    {
+        this.columnNameProvidedData = columnNameProvidedData;
+    }
+
     @Override
     public IPropertyValidator save(User user, Container container) throws ValidationException
     {
@@ -220,7 +231,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
         ValidatorKind kind = getType();
 
         if (kind != null)
-            return kind.validate(this, prop, value, errors, validatorCache);
+            return kind.validate(this, prop, value, errors, validatorCache, null);
         else
             errors.add(new SimpleValidationError("Validator type : " + getTypeURI() + " does not exist."));
 

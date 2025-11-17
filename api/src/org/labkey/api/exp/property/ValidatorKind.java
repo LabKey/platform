@@ -16,6 +16,7 @@
 package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.query.ValidationError;
 import org.labkey.data.xml.ValidatorPropertyType;
@@ -40,7 +41,7 @@ public interface ValidatorKind
 
     IPropertyValidator createInstance();
     boolean isValid(IPropertyValidator validator, List<ValidationError> errors);
-    boolean validate(IPropertyValidator validator, ColumnRenderProperties field, @NotNull Object value, List<ValidationError> errors, ValidatorContext validatorCache);
+    boolean validate(IPropertyValidator validator, ColumnRenderProperties field, @NotNull Object value, List<ValidationError> errors, ValidatorContext validatorCache, @Nullable Object providedValue);
 
     // Standard save-validator-to-XML method. ValidatorKind implementations can customize this by overriding.
     default void convertToXml(IPropertyValidator v, ValidatorsType validatorsXml)

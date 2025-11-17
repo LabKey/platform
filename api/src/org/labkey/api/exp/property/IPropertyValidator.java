@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.property;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.ValidationError;
@@ -50,6 +51,8 @@ public interface IPropertyValidator
     void setExpressionValue(String expression);
     void setErrorMessage(String message);
     void setProperty(String key, String value);
+    void setColumnNameProvidedData(String columnNameProvidedData);
+    @Nullable String getColumnNameProvidedData();
 
     IPropertyValidator save(User user, Container container) throws ValidationException;
 

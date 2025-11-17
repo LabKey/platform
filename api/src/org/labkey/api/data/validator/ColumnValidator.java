@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data.validator;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.exp.property.ValidatorContext;
 
@@ -25,11 +26,6 @@ public interface ColumnValidator
 {
     String validate(int rowNum, Object value);
 
-    String validate(int rowNum, Object value, ValidatorContext validatorContext);
-
-    default String validate(int rowNum, Object value, DataIterator data)
-    {
-        return validate(rowNum, value);
-    }
+    String validate(int rowNum, Object value, ValidatorContext validatorContext, @Nullable Object providedValue);
 
 }

@@ -17,6 +17,7 @@ package org.labkey.experiment.api.property;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -73,7 +74,7 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
 
     @Override
     public boolean validate(IPropertyValidator validator, ColumnRenderProperties field, @NotNull Object value,
-                            List<ValidationError> errors, ValidatorContext validatorCache)
+                            List<ValidationError> errors, ValidatorContext validatorCache, @Nullable Object providedValue)
     {
         //noinspection ConstantConditions
         assert value != null : "Shouldn't be validating a null value";
@@ -82,7 +83,7 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
         {
             if (!isValid(value, constraint))
             {
-                createErrorMessage(validator, field, value, errors);
+                createErrorMessage(validator, field, providedValue == null ? value : providedValue, errors);
                 return false;
             }
         }
