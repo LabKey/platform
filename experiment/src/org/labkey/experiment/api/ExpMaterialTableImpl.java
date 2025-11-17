@@ -358,6 +358,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     columnInfo.setLabel(label);
                     columnInfo.setImportAliasesSet(importAliases);
                     columnInfo.setDescription("The amount of this sample currently on hand.");
+                    columnInfo.setConceptURI(NON_NEGATIVE_NUMBER_CONCEPT_URI);
+                    columnInfo.setValidators(AMOUNT_RANGE_VALIDATORS);
                     return columnInfo;
                 }
             }

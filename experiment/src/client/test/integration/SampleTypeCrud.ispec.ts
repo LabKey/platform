@@ -968,14 +968,17 @@ describe('Amount/Unit CRUD', () => {
 
         const dataName = "S-amountCrud";
 
-         let errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\nData1\t1\n\tisBlank", dataType, "INSERT", topFolderOptions, editorUserOptions);
+         let errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\nData1\t1", dataType, "INSERT", topFolderOptions, editorUserOptions);
         expect(errorMsg.text).toContain(NO_UNIT_ERROR);
-        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tUnits\nData1\tkg\n\tisBlank", dataType, "INSERT", topFolderOptions, editorUserOptions);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tUnits\nData1\tkg", dataType, "INSERT", topFolderOptions, editorUserOptions);
         expect(errorMsg.text).toContain(NO_AMOUNT_ERROR);
-        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\nData1\t1.1\tL\n\tisBlank", dataType, "INSERT", topFolderOptions, editorUserOptions);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\nData1\t1.1\tL", dataType, "INSERT", topFolderOptions, editorUserOptions);
         expect(errorMsg.text).toContain(INCOMPATIBLE_ERROR);
-        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\nData1\t-1.1\tkg\n\tisBlank", dataType, "INSERT", topFolderOptions, editorUserOptions);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\nData1\t-1.1\tkg", dataType, "INSERT", topFolderOptions, editorUserOptions);
         expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importCrossTypeData(server, "Name\tStoredAmount\tUnits\tSampleType\nData1\t-1.1\tkg\t" + dataType ,'IMPORT', topFolderOptions, adminOptions, true);
+        expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+
         await server.post('query', 'insertRows', {
             schemaName: 'samples',
             queryName: dataType,
@@ -1074,6 +1077,11 @@ describe('Amount/Unit CRUD', () => {
             // Note that the row by row update error is different from DIB. This is OK for now since we are planning to deprecate row by row updates.
             expect(errorResp['exception']).toContain("Value '-1000.0 (g)' for field 'Amount' is invalid. Amounts must be non-negative.");
         });
+
+        errorMsg = await ExperimentCRUDUtils.importCrossTypeData(server, "Name\tStoredAmount\tUnits\tSampleType\nData1\t-1.1\tkg\t" + dataType ,'UPDATE', topFolderOptions, adminOptions, true);
+        expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importCrossTypeData(server, "Name\tStoredAmount\tUnits\tSampleType\nData1\t-1.1\tkg\t" + dataType ,'MERGE', topFolderOptions, adminOptions, true);
+        expect(errorMsg.text).toContain(NEGATIVE_ERROR);
 
     });
 
