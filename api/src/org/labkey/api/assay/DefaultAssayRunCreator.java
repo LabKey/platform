@@ -229,7 +229,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 batch,
                 forceSaveBatchProps,
                 PipelineService.get().getPipelineRootSetting(context.getContainer()),
-                primaryFile.toNioPathForRead().toFile()
+                primaryFile
             );
 
             context.setPipelineJobGUID(pipelineJob.getJobGUID());

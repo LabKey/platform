@@ -9,6 +9,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
 import javax.script.ScriptException;
 import java.io.File;
@@ -38,7 +39,7 @@ abstract public class DockerScriptReport extends ScriptProcessReport
         return "I'm abstract";
     }
 
-    protected JSONObject createReportConfig(ViewContext context, File ipynb)
+    protected JSONObject createReportConfig(ViewContext context, FileLike ipynb)
     {
         ReportDescriptor descriptor = getDescriptor();
         JSONObject sourceQuery = null;

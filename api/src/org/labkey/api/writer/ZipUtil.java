@@ -56,7 +56,12 @@ public class ZipUtil
 
     public static List<FileLike> unzipToDirectory(FileLike zipFile, FileLike unzipDir) throws IOException
     {
-        List<Path> paths = unzipToDirectory(zipFile.toNioPathForRead(), unzipDir.toNioPathForWrite(), null);
+        return unzipToDirectory(zipFile, unzipDir, null);
+    }
+
+        public static List<FileLike> unzipToDirectory(FileLike zipFile, FileLike unzipDir, @Nullable Logger logger) throws IOException
+    {
+        List<Path> paths = unzipToDirectory(zipFile.toNioPathForRead(), unzipDir.toNioPathForWrite(), logger);
         File rootFile = unzipDir.toNioPathForRead().toFile();
         List<FileLike> result = new ArrayList<>();
         for (Path path : paths)

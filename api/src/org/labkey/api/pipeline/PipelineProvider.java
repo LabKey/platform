@@ -29,6 +29,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
@@ -67,6 +68,13 @@ abstract public class PipelineProvider
             if (_entry == null)
                 return f.exists();
             return _entry.fileExists(f);
+        }
+
+        public boolean fileExists(FileLike f)
+        {
+            if (_entry == null)
+                return f.exists();
+            return _entry.fileExists(f.toNioPathForRead());
         }
 
         public boolean fileExists(Path f)
@@ -208,7 +216,7 @@ abstract public class PipelineProvider
      * @param rootDir the pipeline root directory on disk
      * @param systemDir the system directory itself
      */
-    public void initSystemDirectory(Path rootDir, Path systemDir)
+    public void initSystemDirectory(FileLike rootDir, FileLike systemDir)
     {
     }
 

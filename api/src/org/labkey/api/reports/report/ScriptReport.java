@@ -171,7 +171,7 @@ public abstract class ScriptReport extends AbstractReport
     /*
      * Create the .tsv associated with the data grid for this report.
      */
-    public File _createInputDataFile(@NotNull ViewContext context, ResultsFactory factory, File resultFile) throws SQLException, IOException, ValidationException
+    public FileLike _createInputDataFile(@NotNull ViewContext context, ResultsFactory factory, FileLike  resultFile) throws SQLException, IOException, ValidationException
     {
         try (StashingResultsFactory srf = new StashingResultsFactory(factory))
         {
@@ -192,8 +192,7 @@ public abstract class ScriptReport extends AbstractReport
                 try (TSVGridWriter tsv = new TSVGridWriter(srf, dataColumns))
                 {
                     tsv.setColumnHeaderType(ColumnHeaderType.Name); // CONSIDER: Use FieldKey instead
-                    FileUtil.createTempFile(resultFile);
-                    tsv.write(resultFile);
+                    tsv.write(resultFile.openOutputStream());
                 }
             }
         }

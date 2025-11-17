@@ -51,6 +51,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -210,26 +211,26 @@ public class ScriptTaskImpl extends CommandTaskImpl
             {
                 TaskPath tpOut = _factory.getOutputPaths().get(WorkDirectory.Function.output.toString());
                 assert !tpOut.isSplitFiles() : "Invalid attempt to pipe output to split files.";
-                File fileOutput = _wd.newWorkFile(WorkDirectory.Function.output,
+                FileLike fileOutput = _wd.newWorkFile(WorkDirectory.Function.output,
                         tpOut, getJobSupport().getBaseName());
-                FileUtils.write(fileOutput, String.valueOf(o), StringUtilsLabKey.DEFAULT_CHARSET);
+                FileUtils.write(fileOutput.toNioPathForWrite().toFile(), String.valueOf(o), StringUtilsLabKey.DEFAULT_CHARSET);
             }
 
             // If we got this far, we were successful in running the script.
             // Delete the rewritten script and output files from the work directory
             // so they won't be attached as related outputs of the task.
-            if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof File rewrittenScriptFile)
+            if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof FileLike rewrittenScriptFile)
             {
                 _wd.discardFile(rewrittenScriptFile);
             }
 
             // Delete the console out file (e.g., "script.Rout") from the work directory
-            if (_engine.getFactory() instanceof ExternalScriptEngineFactory)
+            if (_engine.getFactory() instanceof ExternalScriptEngineFactory esee)
             {
-                ExternalScriptEngineDefinition externalEngineDef = ((ExternalScriptEngineFactory)_engine.getFactory()).getDefinition();
+                ExternalScriptEngineDefinition externalEngineDef = esee.getDefinition();
                 if (externalEngineDef.getOutputFileName() != null)
                 {
-                    File consoleOutputFile = ((ExternalScriptEngine) _engine).getConsoleOutputFile(_engine.getContext());
+                    FileLike consoleOutputFile = ((ExternalScriptEngine) _engine).getConsoleOutputFile(_engine.getContext());
                     if (consoleOutputFile != null)
                         _wd.discardFile(consoleOutputFile);
                 }
@@ -247,7 +248,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
         }
     }
 
-    protected void writeTaskInfo(File file, RecordedAction action) throws IOException
+    protected void writeTaskInfo(FileLike file, RecordedAction action) throws IOException
     {
         List<String> columns = Arrays.asList("Name", "Value");
         RowMapFactory<Object> factory = new RowMapFactory<>(columns);
@@ -290,7 +291,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             File f = new File(uri);
             if (f.exists())
             {
-                String inputPath = _wd.getRelativePath(f);
+                String inputPath = _wd.getRelativePath(FileSystemLike.wrapFile(f));
                 rows.add(factory.getRowMap(role, inputPath));
             }
         }
@@ -309,10 +310,11 @@ public class ScriptTaskImpl extends CommandTaskImpl
             }
         }
 
-        try (TSVMapWriter tsvWriter = new TSVMapWriter(columns, rows))
+        try (TSVMapWriter tsvWriter = new TSVMapWriter(columns, rows);
+            OutputStream out = file.openOutputStream())
         {
             tsvWriter.setHeaderRowVisible(false);
-            tsvWriter.write(file);
+            tsvWriter.write(out);
         }
     }
 
@@ -325,7 +327,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             File f = new File(path);
             if (!f.isAbsolute())
             {
-                f = new File(_wd.getDir(), path);
+                f = new File(_wd.getDir().toNioPathForRead().toFile(), path);
                 path = f.getAbsolutePath();
             }
 

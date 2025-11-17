@@ -30,13 +30,11 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -59,7 +57,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
     }
 
     @Override
-    public HttpView renderReport(ViewContext context) throws Exception
+    public HttpView<?> renderReport(ViewContext context) throws Exception
     {
         VBox view = new VBox();
         String script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
@@ -89,17 +87,17 @@ public class InternalScriptEngineReport extends ScriptEngineReport
             errors.add(error2);
 
             String err = "<font class=\"labkey-error\">" + error1 + "</font><pre>" + error2 + "</pre>";
-            HttpView errView = HtmlView.unsafe(err);
+            HttpView<?> errView = HtmlView.unsafe(err);
             view.addView(errView);
         }
 
-        renderViews(this, view, outputSubst, false);
+        renderViews(this, view, outputSubst);
 
         return view;
     }
 
     @Override
-    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
+    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, FileLike inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
         ScriptEngine engine = getScriptEngine(context.getContainer());
         if (engine != null)
@@ -140,7 +138,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
 
                     ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(ConsoleOutput.ID);
                     param.setName("console");
-                    param.addFile(FileSystemLike.toFile(console));
+                    param.addFile(console);
 
                     outputSubst.add(param);
                 }
@@ -149,7 +147,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
             catch(Exception e)
             {
                 if (!errors.getBuffer().isEmpty())
-                    throw new ScriptException(e.getMessage() + errors.getBuffer().toString());
+                    throw new ScriptException(e.getMessage() + errors.getBuffer());
                 else
                     throw new ScriptException(e);
             }
@@ -165,11 +163,5 @@ public class InternalScriptEngineReport extends ScriptEngineReport
     {
         deleteReportDir(context);
         super.beforeDelete(context);
-    }
-
-    @Override
-    public boolean isSandboxed()
-    {
-        return false;
     }
 }

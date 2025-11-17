@@ -673,7 +673,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 {
                     Map.Entry<String, FileLike> entry = iter.next();
                     // If it's not under the current pipeline root
-                    if (pipeRoot == null || !pipeRoot.isUnderRoot(entry.getValue().toNioPathForRead()))
+                    if (pipeRoot == null || !pipeRoot.isUnderRoot(entry.getValue()))
                     {
                         // Remove it from both collections
                         iter.remove();
@@ -1267,7 +1267,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         for (AnalysisScript script : scripts)
         {
-            File scriptFile = script.getScript().toNioPathForRead().toFile();
+            FileLike scriptFile = script.getScript();
             String ext = FileUtil.getExtension(scriptFile);
             if (scriptFile.isFile() && ext != null)
             {
@@ -1280,7 +1280,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         String scriptText;
                         try
                         {
-                            scriptText = Files.readString(scriptFile.toPath(), StringUtilsLabKey.DEFAULT_CHARSET);
+                            scriptText = Files.readString(scriptFile.toNioPathForRead(), StringUtilsLabKey.DEFAULT_CHARSET);
                         }
                         catch (IOException e)
                         {

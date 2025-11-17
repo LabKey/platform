@@ -90,8 +90,8 @@ import org.labkey.specimen.view.SpecimenWebPartFactory;
 import org.labkey.specimen.writer.SpecimenArchiveWriter;
 import org.labkey.specimen.writer.SpecimenSettingsWriter;
 import org.labkey.specimen.writer.SpecimenWriter;
+import org.labkey.vfs.FileLike;
 
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -171,7 +171,7 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public void importSpecimenArchive(@Nullable Path inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge, boolean syncParticipantVisit) throws PipelineJobException, ValidationException
+            public void importSpecimenArchive(@Nullable FileLike inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge, boolean syncParticipantVisit) throws PipelineJobException, ValidationException
             {
                 AbstractSpecimenTask.doImport(inputFile, job, ctx, merge, syncParticipantVisit);
             }

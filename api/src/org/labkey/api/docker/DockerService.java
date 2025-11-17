@@ -22,6 +22,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -484,7 +485,7 @@ public interface DockerService
 
     boolean isUseDockerVolumes();
 
-    default void executeR(DockerImage dockerImage, File scriptFile, String localWorkingDir, String remoteWorkingDir, FileFilter inputScripts) throws IOException
+    default void executeR(DockerImage dockerImage, FileLike scriptFile, String localWorkingDir, String remoteWorkingDir, FileFilter inputScripts) throws IOException
     {
         throw new UnsupportedOperationException(NO_DOCKER);
     }

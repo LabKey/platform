@@ -27,6 +27,7 @@ import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 import org.w3c.dom.Document;
 import org.xhtmlrenderer.resource.ImageResource;
 import org.xhtmlrenderer.swing.Java2DRenderer;
@@ -270,7 +271,7 @@ public class ImageUtil
      * Adds a file to the request session and returns the generated session attribute key.
      */
     @Nullable
-    public static String setFileInSession(HttpServletRequest request, File file)
+    public static String setFileInSession(HttpServletRequest request, FileLike file)
     {
         if (file != null && file.exists())
         {

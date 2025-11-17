@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.UnauthorizedException;
 
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.util.List;
 import java.util.function.Predicate;
@@ -45,6 +47,11 @@ public interface FileLike extends Comparable<FileLike>
     default URI toURI()
     {
         return getFileSystem().getURI(this);
+    }
+
+    default boolean renameTo(FileLike target)
+    {
+        return FileUtil.renameTo(this, target);
     }
 
     default boolean isDescendant(URI uri)
@@ -123,9 +130,22 @@ public interface FileLike extends Comparable<FileLike>
 
     long getLastModified();
 
-    OutputStream openOutputStream() throws IOException;
+    default OutputStream openOutputStream() throws IOException
+    {
+        return openOutputStream(false);
+    }
+
+    OutputStream openOutputStream(boolean append) throws IOException;
 
     InputStream openInputStream() throws IOException;
+
+    default void move(FileLike dest) throws IOException
+    {
+        if (!renameTo(dest))
+        {
+            Files.move(this.toNioPathForRead(), dest.toNioPathForWrite());
+        }
+    }
 
     class FileLikeSerializer extends StdSerializer<AbstractFileLike>
     {

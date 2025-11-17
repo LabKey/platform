@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -270,6 +271,20 @@ public interface FileSystemLike
         FileSystemLike fs = new Builder(root.toURI()).build();
         String rel = FileUtil.relativize(root, f, true);
         return fs.getRoot().resolveFile(Path.parse(rel));
+    }
+
+    /** Helper for partially converted code. root must exist. */
+    static FileLike wrapFile(java.nio.file.Path root, java.nio.file.Path f) throws IOException
+    {
+        if (!Files.isDirectory(root))
+            throw new FileNotFoundException(root.toString());
+        FileSystemLike fs = new Builder(root.toUri()).build();
+        URI relative = URIUtil.relativize(root.toUri(), f.toUri());
+        if (null == relative)
+        {
+            throw new IOException("File '" + f.toUri().getPath() + "' is outside the allowed root '" + root.toUri().getPath() + "'");
+        }
+        return fs.resolveFile(new Path(relative.getPath()));
     }
 
     /** Helper for partially converted code. May throw if the FileLike does not wrap a local file system. */

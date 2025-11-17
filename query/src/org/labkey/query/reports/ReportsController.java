@@ -1478,10 +1478,10 @@ public class ReportsController extends SpringActionController
             {
                 try
                 {
-                    File file = rReport.createInputDataFile(getViewContext());
+                    FileLike file = rReport.createInputDataFile(getViewContext());
                     if (file.exists())
                     {
-                        PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), true);
+                        PageFlowUtil.streamFile(getViewContext().getResponse(), file.toNioPathForRead(), true);
                     }
                 }
                 catch (SQLException e)

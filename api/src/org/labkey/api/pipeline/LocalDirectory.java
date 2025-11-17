@@ -22,13 +22,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.FileUtil;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 /**
@@ -42,43 +40,37 @@ import java.nio.file.StandardCopyOption;
 //@JsonIgnoreProperties(value={"_moduleName"})
 public class LocalDirectory implements Serializable
 {
-    @NotNull private final File _localDirectoryFile;
+    @NotNull private final FileLike _localDirectoryFile;
     private final boolean _isTemporary;
     private final PipeRoot _pipeRoot;
-    private final Path _remoteDir;
-    private Path _logFile;
+    private final FileLike _remoteDir;
+    private FileLike _logFile;
     private final String _baseLogFileName;
 
     public static LocalDirectory create(@NotNull PipeRoot root)
     {
-        return create(root, "dummyLogFile", root.isCloudRoot() ? "dummy" : root.getRootPath().getPath());
+        return create(root, "dummyLogFile", root.isCloudRoot() ? root.getRootFileLike().resolveChild("dummy") : root.getRootFileLike());
     }
 
-    @Deprecated //Prefer to use a Path for workingDir -- can be local or remote, but should match with root
-    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String baseLogFileName, @NotNull String workingDir)
-    {
-        return create(root, baseLogFileName, Path.of(workingDir));
-    }
-
-    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String baseLogFileName, @NotNull Path workingDir)
+    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String baseLogFileName, @NotNull FileLike workingDir)
     {
         return !root.isCloudRoot() ?
-                new LocalDirectory(workingDir.toFile(), baseLogFileName) :
+                new LocalDirectory(workingDir, baseLogFileName) :
                 new LocalDirectory(root.getContainer(), root, baseLogFileName);
     }
 
     @JsonCreator
     private LocalDirectory(
-            @JsonProperty("_localDirectoryFile") File localDirectoryFile,
+            @JsonProperty("_localDirectoryFile") FileLike localDirectoryFile,
             @JsonProperty("_isTemporary") boolean isTemporary,
             @JsonProperty("_pipeRoot") PipeRoot pipeRoot,
             @JsonProperty("_baseLogFileName") String baseLogFileName,
-            @JsonProperty("_remoteDir") Path remoteDir)
+            @JsonProperty("_remoteDir") FileLike remoteDir)
     {
         _localDirectoryFile = localDirectoryFile;
         _isTemporary = isTemporary;
         _pipeRoot = pipeRoot;
-        _remoteDir = remoteDir != null ? remoteDir : _pipeRoot == null ? null : _pipeRoot.getRootNioPath(); //Using _piperoot as default for backwards compatability
+        _remoteDir = remoteDir != null ? remoteDir : _pipeRoot == null ? null : _pipeRoot.getRootFileLike(); //Using _piperoot as default for backwards compatability
         _baseLogFileName = baseLogFileName;
     }
 
@@ -88,17 +80,17 @@ public class LocalDirectory implements Serializable
         this(container, pipeRoot, basename, null);
     }
 
-    public LocalDirectory(Container container, PipeRoot pipeRoot, String basename, Path remoteDir)
+    public LocalDirectory(Container container, PipeRoot pipeRoot, String basename, FileLike remoteDir)
     {
         _isTemporary = true;
         _pipeRoot = pipeRoot;
-        _remoteDir = remoteDir != null ? remoteDir : _pipeRoot == null ? null : _pipeRoot.getRootNioPath(); //Using _piperoot as default for backwards compatability
+        _remoteDir = remoteDir != null ? remoteDir : _pipeRoot == null ? null : _pipeRoot.getRootFileLike(); //Using _piperoot as default for backwards compatability
         _baseLogFileName = basename;
 
         try
         {
-            File containerDir = ensureContainerDir(container);
-            _localDirectoryFile = FileUtil.appendName(containerDir, FileUtil.makeFileNameWithTimestamp("_temp_"));
+            FileLike containerDir = ensureContainerDir(container);
+            _localDirectoryFile = containerDir.resolveChild(FileUtil.makeFileNameWithTimestamp("_temp_"));
 
             ensureLocalDirectory();
         }
@@ -109,7 +101,7 @@ public class LocalDirectory implements Serializable
     }
 
     // Constructor when pipeline root not in cloud
-    public LocalDirectory(@NotNull File localDirectory, String basename)
+    public LocalDirectory(@NotNull FileLike localDirectory, String basename)
     {
         _localDirectoryFile = localDirectory;
         _isTemporary = false;
@@ -119,27 +111,27 @@ public class LocalDirectory implements Serializable
     }
 
     @NotNull
-    public File getLocalDirectoryFile()
+    public FileLike getLocalDirectoryFile()
     {
         return _localDirectoryFile;
     }
 
-    public Path determineLogFile()
+    public FileLike determineLogFile()
     {
         // If _isTemporary, look for existing file in the parent
-        _logFile = PipelineJob.FT_LOG.newFile(_localDirectoryFile, _baseLogFileName).toPath();
+        _logFile = PipelineJob.FT_LOG.newFile(_localDirectoryFile, _baseLogFileName);
         if (_isTemporary && null != _remoteDir)
         {
             try
             {
-                Path remoteLogFilePath = FileUtil.appendName(_remoteDir, _logFile.getFileName().toString());
-                if (Files.exists(remoteLogFilePath))
+                FileLike remoteLogFilePath = _remoteDir.resolveChild(_logFile.getName());
+                if (remoteLogFilePath.exists())
                 {
-                    Files.copy(remoteLogFilePath, _logFile);
+                    FileUtil.copyFile(remoteLogFilePath, _logFile);
                 }
                 else
                 {
-                    FileUtil.createFile(_logFile);
+                    FileUtil.createNewFile(_logFile, true);
                 }
             }
             catch (IOException e)
@@ -150,7 +142,7 @@ public class LocalDirectory implements Serializable
         return _logFile;
     }
 
-    public Path restore()
+    public FileLike restore()
     {
         try
         {
@@ -163,29 +155,28 @@ public class LocalDirectory implements Serializable
         }
     }
 
-    public File copyToLocalDirectory(String url, Logger log)
+    public FileLike copyToLocalDirectory(String url, Logger log)
     {
         if (_isTemporary && null != _pipeRoot)
         {
-            // File elsewhere (on S3); make a copy a return File object for copy
-            Path path = _pipeRoot.resolveToNioPathFromUrl(url);
-            if (null != path)
+            try
             {
-                String filename = FileUtil.getFileName(path);
-                try
+            // File elsewhere (on S3); make a copy a return File object for copy
+                FileLike path = _pipeRoot.resolveToFileLikeFromUrl(url);
+                if (null != path)
                 {
-                    File tempFile = FileUtil.appendName(_localDirectoryFile, filename);
-                    if (!Files.exists(tempFile.toPath()))
+                    FileLike tempFile = _localDirectoryFile.resolveChild(path.getName());
+                    if (!tempFile.exists())
                     {
-                        Files.copy(path, tempFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
-                        log.info("Created temp file because input is from cloud: " + FileUtil.pathToString(path));
+                        FileUtil.copyFile(path, tempFile, StandardCopyOption.COPY_ATTRIBUTES);
+                        log.info("Created temp file because input is from cloud: " + path);
                     }
                     return tempFile;
                 }
-                catch (IOException e)
-                {
-                    log.error("IO Error: " + e.getMessage());
-                }
+            }
+            catch (IOException e)
+            {
+                log.error("IO Error: " + e.getMessage());
             }
         }
         return null;
@@ -193,35 +184,35 @@ public class LocalDirectory implements Serializable
 
     private void ensureLocalDirectory() throws IOException
     {
-        if (_isTemporary && !Files.exists(_localDirectoryFile.toPath()))
-            FileUtil.createDirectory(_localDirectoryFile.toPath());     // TODO Should we set file permissions?
+        if (_isTemporary && !_localDirectoryFile.exists())
+            FileUtil.createDirectory(_localDirectoryFile);     // TODO Should we set file permissions?
     }
 
     // If LocalDirectory isTemporary, copies the file to the temp directory for this container.
     // That temp directory will live as long as the the LabKey container lives, or until the system temp is cleared
     @Nullable
-    public static File copyToContainerDirectory(@NotNull Container container, @NotNull Path remotePath, @NotNull Logger log)
+    public static FileLike copyToContainerDirectory(@NotNull Container container, @NotNull FileLike remotePath, @NotNull Logger log)
     {
         // File elsewhere (on S3); make a copy a return File object for copy
 
-        String fileName = FileUtil.getFileName(remotePath);
+        String fileName = remotePath.getName();
         String tempFileName = FileUtil.makeFileNameWithTimestamp(FileUtil.getBaseName(fileName), FileUtil.getExtension(fileName));
         try
         {
-            File containerDir = ensureContainerDir(container);
-            File tempFile = FileUtil.appendName(containerDir, tempFileName);
-            if (!Files.exists(tempFile.toPath()))
+            FileLike containerDir = ensureContainerDir(container);
+            FileLike tempFile = containerDir.resolveChild(tempFileName);
+            if (!tempFile.exists())
             {
-                log.debug("Copying file to container's temp directory: "+ FileUtil.pathToString(remotePath));
-                Files.copy(remotePath, tempFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
-                log.debug("Copied " + Files.size(tempFile.toPath()) + " bytes.");
+                log.debug("Copying file to container's temp directory: " + remotePath);
+                FileUtil.copyFile(remotePath, tempFile, StandardCopyOption.COPY_ATTRIBUTES);
+                log.debug("Copied " + tempFile.getSize() + " bytes.");
             }
             return tempFile;
         }
         catch (NoSuchFileException e)
         {
             // Avoid a separate round-trip just to determine if file is available, as it adds ~1 overhead per call
-            log.debug("Could not find remote file: " + FileUtil.pathToString(remotePath) + ", unable to copy locally");
+            log.debug("Could not find remote file: " + remotePath + ", unable to copy locally");
             return null;
         }
         catch (IOException e)
@@ -231,37 +222,37 @@ public class LocalDirectory implements Serializable
         }
     }
 
-    private static File ensureContainerDir(Container container) throws IOException
+    private static FileLike ensureContainerDir(Container container) throws IOException
     {
-        File moduleDir = getModuleLocalTempDirectory();
-        if (!Files.exists(moduleDir.toPath()))
+        FileLike moduleDir = getModuleLocalTempDirectory();
+        if (!moduleDir.exists())
         {
-            FileUtil.createDirectory(moduleDir.toPath());
+            FileUtil.createDirectory(moduleDir);
         }
 
-        File containerDir = getContainerLocalTempDirectory(container);
-        if (!Files.exists(containerDir.toPath()))
+        FileLike containerDir = getContainerLocalTempDirectory(container);
+        if (!containerDir.exists())
         {
-            FileUtil.createDirectory(containerDir.toPath());
+            FileUtil.createDirectory(containerDir);
         }
         return containerDir;
     }
 
     @Nullable
-    public Path cleanUpLocalDirectory()
+    public FileLike cleanUpLocalDirectory()
     {
-        Path remoteLogFilePath = null;
-        if (_isTemporary && Files.exists(_localDirectoryFile.toPath()))
+        FileLike remoteLogFilePath = null;
+        if (_isTemporary && _localDirectoryFile.exists())
         {
-            if (null != _logFile && Files.exists(_logFile))
+            if (null != _logFile && _logFile.exists())
             {
                 // Copy file back to the cloud
-                remoteLogFilePath = getRemoteLogFilePath();
+                remoteLogFilePath = getRemoteLogFile();
                 if (null != remoteLogFilePath)
                 {
                     try
                     {
-                        Files.copy(_logFile, remoteLogFilePath, StandardCopyOption.REPLACE_EXISTING);
+                        FileUtil.copyFile(_logFile, remoteLogFilePath, StandardCopyOption.REPLACE_EXISTING);
                     }
                     catch (IOException e)
                     {
@@ -269,39 +260,27 @@ public class LocalDirectory implements Serializable
                     }
                 }
             }
-            deleteDirectory(_localDirectoryFile.toPath());
+            FileUtil.deleteDir(_localDirectoryFile);
         }
 
         return remoteLogFilePath;
     }
 
-    private void deleteDirectory(Path dir)
+    private static FileLike getModuleLocalTempDirectory()
     {
-        try
-        {
-            FileUtil.deleteDir(dir);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        FileLike tempDir = FileUtil.getTempDirectoryFileLike();   // tomcat/temp or similar
+        return tempDir.resolveChild(FileUtil.makeLegalName(PipelineService.MODULE_NAME + "_temp"));
     }
 
-    private static File getModuleLocalTempDirectory()
+    public static FileLike getContainerLocalTempDirectory(Container container)
     {
-        File tempDir = FileUtil.getTempDirectory();   // tomcat/temp or similar
-        return FileUtil.appendName(tempDir, FileUtil.makeLegalName(PipelineService.MODULE_NAME + "_temp"));
+        return getModuleLocalTempDirectory().resolveChild(FileUtil.makeLegalName(container.getName() + "_" + container.getId()));
     }
 
-    public static File getContainerLocalTempDirectory(Container container)
-    {
-        return FileUtil.appendName(getModuleLocalTempDirectory(), FileUtil.makeLegalName(container.getName() + "_" + container.getId()));
-    }
-
-    public Path getRemoteLogFilePath()
+    public FileLike getRemoteLogFile()
     {
         if (_remoteDir == null)
             return _logFile;
-        return FileUtil.appendName(_remoteDir, _logFile.getFileName().toString());
+        return _remoteDir.resolveChild(_logFile.getName());
     }
 }

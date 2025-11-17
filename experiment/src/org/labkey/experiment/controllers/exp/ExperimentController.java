@@ -330,7 +330,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -2491,7 +2490,7 @@ public class ExperimentController extends SpringActionController
             }
 
             PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-            if (root != null && !root.isUnderRoot(_data.getFilePath()))
+            if (root != null && !root.isUnderRoot(_data.getFileLike()))
             {
                 // Issue 35649: ImmPort module "publish" creates exp.data object in this container for paths that originate in a different container
                 FileContentService fileSvc = FileContentService.get();
@@ -6786,7 +6785,7 @@ public class ExperimentController extends SpringActionController
                     // TODO: Configure module resources with the appropriate log location per container
                     if (form.getModule() != null)
                     {
-                        FileLike logFile = form.getPipeRoot(getContainer()).getLogDirectoryFileLike(true).resolveChild("module-resource-xar.log");
+                        FileLike logFile = form.getPipeRoot(getContainer()).getLogDirectory(true).resolveChild("module-resource-xar.log");
                         job.setLogFile(logFile);
                     }
 
@@ -6826,7 +6825,7 @@ public class ExperimentController extends SpringActionController
                 // TODO: Configure module resources with the appropriate log location per container
                 if (form.getModule() != null)
                 {
-                    FileLike logFile = form.getPipeRoot(getContainer()).getLogDirectoryFileLike(true).resolveChild("module-resource-xar.log");
+                    FileLike logFile = form.getPipeRoot(getContainer()).getLogDirectory(true).resolveChild("module-resource-xar.log");
                     job.setLogFile(logFile);
                 }
 
