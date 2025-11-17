@@ -647,8 +647,16 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         {
             if (r.getTokenType() == SqlBaseParser.RANGE)
             {
-                if (r.getFirstChild().getTokenType() == SqlBaseParser.VALUES)
+                var table = r.getFirstChild();
+                var childType = table.getTokenType();
+                if (childType == SqlBaseParser.VALUES)
+                {
                     return parseValues(r);
+                }
+                if (childType == SqlBaseParser.METHOD_CALL)
+                {
+                    return parseLineage(r);
+                }
                 return parseRange(r);
             }
             else if (r.getTokenType() == SqlBaseParser.JOIN)
@@ -658,6 +666,27 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 parseError("Error in FROM clause", r);
                 return null;
             }
+        }
+
+        private QTable parseLineage(final QNode range)
+        {
+            QMethodCall methodCall = (QMethodCall)range.childList().get(0);
+            int methodType = methodCall.childList().get(0).getTokenType();
+            QQuery subQuery = (QQuery)methodCall.childList().get(1);
+            QIdentifier alias = (QIdentifier)range.childList().get(1);
+            QuerySelect sourceQuery = new QuerySelect(_query, subQuery, true);
+            QueryLineage lineageQuery = new QueryLineage(_query, sourceQuery, alias.getIdentifier(), methodType==SqlBaseParser.EXPANCESTORSOF);
+            QTable methodTable = new QTable(lineageQuery, lineageQuery.getAlias());
+            FieldKey aliasKey = methodTable.getAlias();
+            if (_tables.containsKey(aliasKey))
+            {
+                parseError(aliasKey + " was specified more than once", alias);
+            }
+            else
+            {
+                _tables.put(aliasKey, methodTable);
+            }
+            return methodTable;
         }
 
         private QTable parseValues(QNode node)
