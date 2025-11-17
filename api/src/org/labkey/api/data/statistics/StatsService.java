@@ -40,6 +40,8 @@ public interface StatsService
 
     enum CurveFitType
     {
+        // TODO see updated labels for these equations in genericChartHelper.js TRENDLINE_OPTIONS
+        // we should update the labels here as well at some point (but this would like need to include an upgrade script for saved chart configs)
         THREE_PARAMETER("Three Parameter", "3pl", Arrays.asList("min", "max", "inflection")),
         FOUR_PARAMETER("Four Parameter", "4pl", Arrays.asList("min", "max", "slope", "inflection")),
         FIVE_PARAMETER("Five Parameter", "5pl", Arrays.asList("min", "max", "slope", "inflection", "asymmetry")),

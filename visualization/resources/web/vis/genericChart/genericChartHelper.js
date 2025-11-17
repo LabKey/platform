@@ -1263,12 +1263,12 @@ LABKEY.vis.GenericChartHelper = new function(){
         '': { label: 'Point-to-Point', value: '' },
         'Linear': { label: 'Linear Regression', value: 'Linear', equation: 'y = x * slope + intercept' },
         'Polynomial': { label: 'Polynomial', value: 'Polynomial', equation: 'y = a0 + a1 * x + a2 * x^2' },
-        '3 Parameter': { label: 'Nonlinear 3PL', value: '3 Parameter', showMax: true, schemaPrefix: 'assay', equation: 'y = max * abs(x/inflection)^abs(slope) / [1 + abs(x/inflection)^abs(slope)]' },
+        '3 Parameter': { label: 'Nonlinear 3PL (Hill)', value: '3 Parameter', showMax: true, schemaPrefix: 'assay', equation: 'y = max * abs(x/inflection)^abs(slope) / [1 + abs(x/inflection)^abs(slope)]' },
         'Three Parameter': { label: 'Nonlinear 3PL (Alternate)', value: 'Three Parameter', showMax: true, schemaPrefix: 'assay', equation: 'y = max / [1 + (inflection - x) * slope]' },
-        '4 Parameter': { label: 'Nonlinear 4PL', value: '4 Parameter', schemaPrefix: 'assay', equation: 'y = max + (min - max) / [1 + (x/inflection)^slope]' },
+        '4 Parameter': { label: 'Nonlinear 4PL (Hill)', value: '4 Parameter', schemaPrefix: 'assay', equation: 'y = max + (min - max) / [1 + (x/inflection)^slope]' },
         'Four Parameter': { label: 'Nonlinear 4PL (Alternate)', value: 'Four Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [1 + (inflection - x) * slope]' },
-        'Five Parameter': { label: 'Nonlinear 5PL', value: 'Five Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [[1 + (inflection - x) * slope]^asymmetry]' },
-        '5 Parameter': { label: 'Nonlinear 5PL (Alternate)', value: '5 Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / (1 + (2^(1/asymmetry) - 1) * ((inflection / x)^hillSlope))^asymmetry' },
+        '5 Parameter': { label: 'Nonlinear 5PL (Hill/Richards)', value: '5 Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / (1 + (2^(1/asymmetry) - 1) * ((inflection / x)^hillSlope))^asymmetry' },
+        'Five Parameter': { label: 'Nonlinear 5PL (Alternate)', value: 'Five Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [[1 + (inflection - x) * slope]^asymmetry]' },
     }
 
     const generateTrendlinePathHover = function(trendline) {
