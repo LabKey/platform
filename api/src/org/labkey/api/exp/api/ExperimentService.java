@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -821,7 +822,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void deleteExperimentRunsByRowIds(Container container, final User user, long... runRowIds);
 
-    void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable String userComment, @NotNull Collection<Long> runRowIds);
+    void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable String userComment, @NotNull Collection<Long> runRowIds, @Nullable Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails);
 
     void deleteExpExperimentByRowId(Container container, User user, long experimentId);
 

@@ -244,7 +244,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                     s.relkind = 'S' -- Sequence
                     AND t.relkind IN ('r', 'P') -- Table (regular table or partitioned table)
                     AND d.deptype IN ('a', 'i') -- Automatic dependency for DEFAULT or index-related for PK
-            )
+            ) AS x
             WHERE SchemaName ILIKE ? AND TableName ILIKE ?
             """,
             table.getSchema().getName(),

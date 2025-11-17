@@ -1,0 +1,1 @@
+ALTER TABLE core.Report ALTER COLUMN DescriptorXML NVARCHAR(MAX);
