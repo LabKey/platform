@@ -40,7 +40,6 @@ import javax.script.SimpleBindings;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -106,11 +105,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     {
         String ext = FileUtil.getExtension(file);
 
-        if ("jar".equalsIgnoreCase(ext)) return true;
-        if ("class".equalsIgnoreCase(ext)) return true;
-        if ("exe".equalsIgnoreCase(ext)) return true;
-
-        return false;
+        return "jar".equalsIgnoreCase(ext) || "class".equalsIgnoreCase(ext) || "exe".equalsIgnoreCase(ext);
     }
 
     @Override
@@ -153,26 +148,26 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     @Override
     public Object eval(Reader reader, ScriptContext context) throws ScriptException
     {
-        BufferedReader br = new BufferedReader(reader);
 
-        try {
-            String l;
-            StringBuilder sb = new StringBuilder();
-            while ((l = br.readLine()) != null)
+        try (BufferedReader br = new BufferedReader(reader))
+        {
+            try
             {
-                sb.append(l);
-                sb.append('\n');
+                String l;
+                StringBuilder sb = new StringBuilder();
+                while ((l = br.readLine()) != null)
+                {
+                    sb.append(l);
+                    sb.append('\n');
+                }
+                return eval(sb.toString(), context);
             }
-            return eval(sb.toString(), context);
+            catch (IOException ioe)
+            {
+                ExceptionUtil.logExceptionToMothership(null, ioe);
+            }
         }
-        catch (IOException ioe)
-        {
-            ExceptionUtil.logExceptionToMothership(null, ioe);
-        }
-        finally
-        {
-            try {br.close();} catch(IOException ignored) {}
-        }
+        catch (IOException ignored) {}
         return null;
     }
 
@@ -532,7 +527,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         String fileName = _def.getOutputFileName();
         if (fileName != null)
         {
-            if (context.getAttribute(REWRITTEN_SCRIPT_FILE) instanceof File scriptFile)
+            if (context.getAttribute(REWRITTEN_SCRIPT_FILE) instanceof FileLike scriptFile)
             {
                 // Replace the ${scriptName} substitution with the actual name of the script file (minus extension)
                 // E.g., if "script.R" is the filename and "${scriptName}.Rout" is the replacement, try "script.Rout"
