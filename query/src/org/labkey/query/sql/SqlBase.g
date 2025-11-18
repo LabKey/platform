@@ -421,7 +421,7 @@ fromRange
 
 
 tableMethod
-    : (EXPANCESTORSOF | EXPDESCENANTSOF) op=OPEN^ {$op.setType(METHOD_CALL);} subQuery CLOSE!
+    : (EXPANCESTORSOF | EXPDESCENDANTSOF) op=OPEN^ {$op.setType(METHOD_CALL);} subQuery CLOSE!
     ;
 
 

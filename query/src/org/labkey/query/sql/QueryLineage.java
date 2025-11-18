@@ -11,6 +11,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.column.BuiltInColumnTypes;
@@ -197,6 +198,11 @@ public class QueryLineage extends AbstractQueryRelation
         void copyColumnAttributesTo(@NotNull BaseColumnInfo to)
         {
             to.setJdbcType(_jdbcType);
+            if (!"depth".equals(_alias))
+            {
+                to.setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
+                to.setDisplayColumnFactory(ExpTable.ExpObjectDataColumn::new);
+            }
         }
 
         @Override

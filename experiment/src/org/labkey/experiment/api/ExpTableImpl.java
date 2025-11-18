@@ -513,38 +513,11 @@ abstract public class ExpTableImpl<C extends Enum>
         @Override
         public MutableColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
         {
-            var objectColumn = getExpObjectColumn();
             if (null == _expObjectColumnName)
                 return new NullColumnInfo(parentTable, "_exptable_object_", JdbcType.INTEGER);
             var ret = super.createColumnInfo(parentTable, arguments, "_exptable_object_");
             ret.setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
-            ret.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
-            {
-                @Override
-                public Object getValue(RenderContext ctx)
-                {
-                    return 0;
-                }
-
-                @Override
-                public Object getDisplayValue(RenderContext ctx)
-                {
-                    var v = super.getValue(ctx);
-                    return null == v ? v : "lineage object";
-                }
-
-                @Override
-                public boolean isSortable()
-                {
-                    return false;
-                }
-
-                @Override
-                public boolean isFilterable()
-                {
-                    return false;
-                }
-            });
+            ret.setDisplayColumnFactory(ExpObjectDataColumn::new);
             return ret;
         }
     }
