@@ -37,8 +37,6 @@ import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
-import org.labkey.api.data.SimpleFilter.InClause;
-import org.labkey.api.data.SimpleFilter.NotClause;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -913,7 +911,7 @@ public class ExperimentModule extends SpringModule
             public void adjustFilter(SimpleFilter filter, Set<GUID> containers)
             {
                 // Exclude assay experiment runs that weren't copied
-                FilterClause excludedClause = handler.getExcludedRowIdClause(getTableInfo(), FieldKey.fromParts("ExclusionId", "RowId"));
+                FilterClause excludedClause = handler.getExcludedRowIdClause(getTableInfo(), FieldKey.fromParts("ExclusionId", "RunId"));
                 if (excludedClause != null)
                     filter.addClause(excludedClause);
             }

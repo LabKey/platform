@@ -86,18 +86,18 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
         FilterClause containerClause = getContainerClause(sourceTable, containers);
         return switch (sourceTable.getName())
         {
-            case "ExperimentRun" -> getExperimentRunExclusionFilter(sourceTable, containerClause, FieldKey.fromParts("RowId"), false);
-            case "ProtocolApplication" -> getExperimentRunExclusionFilter(sourceTable, containerClause, FieldKey.fromParts("RunId"), false);
-            case "Data", "Edge" -> getExperimentRunExclusionFilter(sourceTable, containerClause, FieldKey.fromParts("RunId"), true);
-            case "DataInput", "MaterialInput" -> getExperimentRunExclusionFilter(sourceTable, containerClause, FieldKey.fromParts("TargetApplicationId", "RunId"), false);
-            case "RunList" -> getExperimentRunExclusionFilter(sourceTable, containerClause, FieldKey.fromParts("ExperimentRunId"), false);
-            case "DataAncestors" -> getExperimentRunExclusionFilter(sourceTable, containerClause, FieldKey.fromParts("RowId", "RunId"), true);
+            case "ExperimentRun" -> getExcludedExperimentRunsFilter(sourceTable, containerClause, FieldKey.fromParts("RowId"), false);
+            case "ProtocolApplication" -> getExcludedExperimentRunsFilter(sourceTable, containerClause, FieldKey.fromParts("RunId"), false);
+            case "Data", "Edge" -> getExcludedExperimentRunsFilter(sourceTable, containerClause, FieldKey.fromParts("RunId"), true);
+            case "DataInput", "MaterialInput" -> getExcludedExperimentRunsFilter(sourceTable, containerClause, FieldKey.fromParts("TargetApplicationId", "RunId"), false);
+            case "RunList" -> getExcludedExperimentRunsFilter(sourceTable, containerClause, FieldKey.fromParts("ExperimentRunId"), false);
+            case "DataAncestors" -> getExcludedExperimentRunsFilter(sourceTable, containerClause, FieldKey.fromParts("RowId", "RunId"), true);
             default -> containerClause;
         };
     }
 
     // Combine the full container clause with the assay experiment run exclusion filter, if present
-    private FilterClause getExperimentRunExclusionFilter(TableInfo sourceTable, FilterClause containerClause, FieldKey runIdFieldKey, boolean nullable)
+    private FilterClause getExcludedExperimentRunsFilter(TableInfo sourceTable, FilterClause containerClause, FieldKey runIdFieldKey, boolean nullable)
     {
         FilterClause excludedRowIdClause = getExcludedRowIdClause(sourceTable, runIdFieldKey);
 
@@ -116,22 +116,22 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 
     @Nullable FilterClause getExcludedRowIdClause(TableInfo sourceTable, FieldKey runIdFieldKey)
     {
-        Collection<Integer> experimentRunsToExclude = getExperimentRunExcludedRowIds(sourceTable.getSchema());
+        Collection<Integer> experimentRunsToExclude = getExcludedExperimentRunRowIds(sourceTable.getSchema());
 
         return experimentRunsToExclude.isEmpty() ?
             null :
             new NotClause(new InClause(runIdFieldKey, experimentRunsToExclude, getTempTableInClauseGenerator(sourceTable.getSchema().getScope())));
     }
 
-    private Collection<Integer> _experimentRunExcludedRowIds = null;
+    private Collection<Integer> _excludedExperimentRunRowIds = null;
 
-    private @NotNull Collection<Integer> getExperimentRunExcludedRowIds(DbSchema schema)
+    private @NotNull Collection<Integer> getExcludedExperimentRunRowIds(DbSchema schema)
     {
-        if (null == _experimentRunExcludedRowIds)
+        if (null == _excludedExperimentRunRowIds)
         {
             if (AssaySkipContainers.getContainers().isEmpty())
             {
-                _experimentRunExcludedRowIds = Collections.emptyList();
+                _excludedExperimentRunRowIds = Collections.emptyList();
             }
             else
             {
@@ -178,12 +178,12 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 
                 // Select the excluded assay experiment run RowIds. All tables with FKs to ExperimentRun (or FKs to
                 // other tables with FKs to ExperimentRun) must exclude these run IDs.
-                _experimentRunExcludedRowIds = new TableSelector(expSchema.getTable("ExperimentRun"), new CsvSet("RowId, ProtocolLSID, ReplacedByRunId"), filter, null).getCollection(Integer.class);
-                LOG.info("   {} being excluded due to the configured AssaySkipContainers parameter", StringUtilsLabKey.pluralize(_experimentRunExcludedRowIds.size(), "assay experiment run is", "assay experiment runs are"));
+                _excludedExperimentRunRowIds = new TableSelector(expSchema.getTable("ExperimentRun"), new CsvSet("RowId, ProtocolLSID, ReplacedByRunId"), filter, null).getCollection(Integer.class);
+                LOG.info("   {} being excluded due to the configured AssaySkipContainers parameter", StringUtilsLabKey.pluralize(_excludedExperimentRunRowIds.size(), "assay experiment run is", "assay experiment runs are"));
             }
         }
 
-        return _experimentRunExcludedRowIds;
+        return _excludedExperimentRunRowIds;
     }
 
     @Override
