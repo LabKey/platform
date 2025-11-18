@@ -2011,7 +2011,9 @@ LABKEY.vis.GenericChartHelper = new function(){
     var _renderMessages = function(divId, messages) {
         if (messages && messages.length > 0) {
             var errorDiv = document.createElement('div');
-            errorDiv.innerHTML = '<div style="color:red; padding: 5px 0;">Error: ' + messages.join(' ') + '</div>';
+            for (var i = 0; i < messages.length; i++) {
+                errorDiv.innerHTML += '<div style="color:red;">Error: ' + messages[i] + '</div>';
+            }
             document.getElementById(divId).appendChild(errorDiv);
         }
     };
