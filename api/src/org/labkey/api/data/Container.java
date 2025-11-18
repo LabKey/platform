@@ -61,6 +61,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
@@ -1594,7 +1595,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         String noun = _containerType.getContainerNoun(this);
         if (titleCase)
         {
-            return noun.substring(0, 1).toUpperCase() + noun.substring(1);
+            return StringUtilsLabKey.leftSurrogatePairFriendly(noun, 1).toUpperCase() + StringUtilsLabKey.rightSurrogatePairFriendly(noun, noun.length() - 1);
         }
 
         return noun;
