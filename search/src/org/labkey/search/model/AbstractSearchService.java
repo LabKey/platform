@@ -222,6 +222,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 void complete(boolean success)
                 {
                     logQueueStatus("addNoop() complete");
+                    commit();
                     super.complete(success);
                 }
             };
