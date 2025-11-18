@@ -240,7 +240,8 @@ public class ProductRegistry
         List<String> orderedProducts = getProducts(true, false).stream().filter(Product::isEnabled).map(Product::getProductGroupId).toList();
         _logger.debug("Products are {}", _products.keySet());
         _logger.debug("Ordered products are {}", orderedProducts);
-        ProductMenuProvider highestProvider = providers.stream().filter(p -> orderedProducts.contains(p.getProductId())).min(Comparator.comparing(provider -> orderedProducts.indexOf(provider.getProductId()))).orElse(null);
+        ProductMenuProvider highestProvider = providers.stream()
+                .min(Comparator.comparing(provider -> orderedProducts.indexOf(provider.getProductId()))).orElse(null);
         _logger.debug("Highest product menu provider: {}", highestProvider.getProductId());
         // then see if there's a provider that matches the configured product
         Product product = new ProductConfiguration().getCurrentProduct();
