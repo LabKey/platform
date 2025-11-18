@@ -4,20 +4,25 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.AndClause;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.SimpleFilter.InClause;
+import org.labkey.api.data.SimpleFilter.NotClause;
 import org.labkey.api.data.SimpleFilter.OrClause;
 import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpProtocolAttachmentType;
 import org.labkey.api.exp.api.ExpRunAttachmentType;
+import org.labkey.api.migration.AssaySkipContainers;
 import org.labkey.api.migration.DatabaseMigrationConfiguration;
 import org.labkey.api.migration.DefaultMigrationSchemaHandler;
 import org.labkey.api.query.FieldKey;
@@ -26,6 +31,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -65,7 +71,7 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     @Override
     public List<TableInfo> getTablesToCopy()
     {
-        // No need to populate the MaterialIndexed or DataIndexed tables -- new server should be completely re-indexed after migration
+        // No need to populate the MaterialIndexed or DataIndexed tables -- new server will be completely re-indexed after migration
         List<TableInfo> tables = super.getTablesToCopy();
         tables.remove(ExperimentServiceImpl.get().getTinfoMaterialIndexed());
         tables.remove(ExperimentServiceImpl.get().getTinfoDataIndexed());
@@ -73,19 +79,79 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     @Override
-    public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
+    public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
     {
-//        Set<GUID> assayFilteredContainers = assayFilteredContainers(containers);
+        FilterClause containerClause = getContainerClause(sourceTable, containers);
         return switch (sourceTable.getName())
         {
-//            case "ExperimentRun", "ProtocolApplication" -> super.getContainerClause(sourceTable, assayFilteredContainers);
-//            case "Data" -> new AndClause(
-//                new InClause(FieldKey.fromParts("Container"), containers),
-//                new OrClause(
-//                    new CompareClause(FieldKey.fromParts("RunId"), CompareType.ISBLANK, null),
-//                    new InClause(FieldKey.fromParts("RunId", "Container"), assayFilteredContainers)
-//                )
-//            );
+            case "ExperimentRun" -> getExperimentRunExclusionFilter(sourceTable, containerClause, FieldKey.fromParts("RowId"), false);
+            case "ProtocolApplication" -> getExperimentRunExclusionFilter(sourceTable, containerClause, FieldKey.fromParts("RunId"), false);
+            case "Data", "Edge" -> getExperimentRunExclusionFilter(sourceTable, containerClause, FieldKey.fromParts("RunId"), true);
+            case "DataInput", "MaterialInput" -> getExperimentRunExclusionFilter(sourceTable, containerClause, FieldKey.fromParts("TargetApplicationId", "RunId"), false);
+            case "RunList" -> getExperimentRunExclusionFilter(sourceTable, containerClause, FieldKey.fromParts("ExperimentRunId"), false);
+            default -> containerClause;
+        };
+    }
+
+    // Combine the full container clause with the assay experiment run exclusion filter, if present
+    private FilterClause getExperimentRunExclusionFilter(TableInfo sourceTable, FilterClause containerClause, FieldKey runIdFieldKey, boolean nullable)
+    {
+        Collection<Integer> experimentRunsToExclude = getExperimentRunExcludeRowIds(sourceTable.getSchema());
+        if (experimentRunsToExclude.isEmpty())
+            return containerClause;
+
+        FilterClause excludedRowIdClause = new NotClause(new InClause(runIdFieldKey, experimentRunsToExclude, getTempTableInClauseGenerator(sourceTable.getSchema().getScope())));
+
+        return new AndClause(
+            containerClause,
+            nullable ?
+                new OrClause(
+                    new CompareClause(runIdFieldKey, CompareType.ISBLANK, null),
+                    excludedRowIdClause
+                ) :
+                excludedRowIdClause
+        );
+    }
+
+    private Collection<Integer> _experimentRunExcludeRowIds = null;
+
+    private @NotNull Collection<Integer> getExperimentRunExcludeRowIds(DbSchema expSchema)
+    {
+        if (null == _experimentRunExcludeRowIds)
+        {
+            if (AssaySkipContainers.getContainers().isEmpty())
+            {
+                _experimentRunExcludeRowIds = Collections.emptyList();
+            }
+            else
+            {
+                // Select all the assay runs (same filter used by assay.AssayRuns)
+                SQLClause assayRun = new SQLClause(new SQLFragment(
+                    "ProtocolLSID IN (SELECT LSID FROM exp.Protocol x WHERE (ApplicationType = 'ExperimentRun') AND " +
+                    "((SELECT MAX(pd.PropertyId) from exp.Object o, exp.ObjectProperty op, exp.PropertyDescriptor pd WHERE " +
+                    "pd.PropertyId = op.PropertyId and op.ObjectId = o.ObjectId and o.ObjectURI = LSID AND pd.PropertyURI LIKE '%AssayDomain-Run%') IS NOT NULL))"
+                ));
+
+                // Select all assay runs in the assay-skip containers
+                SimpleFilter filter = new SimpleFilter(
+                    new InClause(FieldKey.fromParts("Container"), AssaySkipContainers.getContainers()),
+                    assayRun
+                );
+
+                // Select the assay experiment run RowIds that we don't want to copy. All tables with FKs to ExperimentRun
+                // (or FKs to other tables with FKs to ExperimentRun) must exclude these run IDs.
+                _experimentRunExcludeRowIds = new TableSelector(expSchema.getTable("ExperimentRun"), new CsvSet("RowId, ProtocolLSID"), filter, null).getCollection(Integer.class);
+            }
+        }
+
+        return _experimentRunExcludeRowIds;
+    }
+
+    @Override
+    public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
+    {
+        return switch (sourceTable.getName())
+        {
             case "DataInput" -> new AndClause(
                 new InClause(FieldKey.fromParts("DataId", "Container"), containers),
                 new InClause(FieldKey.fromParts("TargetApplicationId", "RunId", "Container"), containers)
