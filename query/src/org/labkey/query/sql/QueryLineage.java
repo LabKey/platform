@@ -1,5 +1,6 @@
 package org.labkey.query.sql;
 
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
@@ -11,6 +12,8 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.data.xml.ColumnType;
 
 import java.util.Collection;
@@ -24,18 +27,27 @@ public class QueryLineage extends AbstractQueryRelation
     final QuerySelect sourceSelect;
     final boolean ancestors;
 
-    QueryLineage(Query query, QuerySelect source, String alias, boolean ancestors)
+    QueryLineage(Query query, QNode token, QuerySelect source, String alias, boolean ancestors)
     {
         super(query, query.getSchema(), Objects.toString(alias, "explineage_" + query.incrementAliasCounter()));
         this.sourceSelect = source;
         this.ancestors = ancestors;
-    }
 
-//    @Override
-//    public String getAlias()
-//    {
-//        return sourceSelect.getAlias();
-//    }
+        sourceSelect.setSkipSuggestedColumns(true);
+        var all = source.getAllColumns();
+        if (1 != all.size())
+        {
+            query.getParseErrors().add(new QueryParseException(token.getTokenText() + " subquery must have one column", null, token.getLine(), token.getColumn()));
+        }
+        else
+        {
+            var relationColumn = all.values().iterator().next();
+            var col = new BaseColumnInfo("?");
+            relationColumn.copyColumnAttributesTo(col);
+            if (!BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI.equals(col.getConceptURI()))
+                query.getParseErrors().add(new QueryParseException(token.getTokenText() + " requires an object column", null, token.getLine(), token.getColumn()));
+        }
+    }
 
     @Override
     public void declareFields()

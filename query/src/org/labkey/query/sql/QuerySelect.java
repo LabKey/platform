@@ -671,11 +671,12 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         private QTable parseLineage(final QNode range)
         {
             QMethodCall methodCall = (QMethodCall)range.childList().get(0);
-            int methodType = methodCall.childList().get(0).getTokenType();
+            var methodIdentifier = methodCall.childList().get(0);
+            int methodType = methodIdentifier.getTokenType();
             QQuery subQuery = (QQuery)methodCall.childList().get(1);
             QIdentifier alias = (QIdentifier)range.childList().get(1);
             QuerySelect sourceQuery = new QuerySelect(_query, subQuery, true);
-            QueryLineage lineageQuery = new QueryLineage(_query, sourceQuery, alias.getIdentifier(), methodType==SqlBaseParser.EXPANCESTORSOF);
+            QueryLineage lineageQuery = new QueryLineage(_query, methodIdentifier, sourceQuery, alias.getIdentifier(), methodType==SqlBaseParser.EXPANCESTORSOF);
             QTable methodTable = new QTable(lineageQuery, lineageQuery.getAlias());
             FieldKey aliasKey = methodTable.getAlias();
             if (_tables.containsKey(aliasKey))
