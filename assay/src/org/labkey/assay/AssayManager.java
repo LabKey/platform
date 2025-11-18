@@ -421,7 +421,7 @@ public class AssayManager implements AssayService
             List<ExpProtocol> allProtocols = getAssayProtocols(container);
             for (ExpProtocol protocol : allProtocols)
             {
-                if (name.equalsIgnoreCase(protocol.getName())) // GitHub Issue 763: case-insensitive name check
+                if (name.equalsIgnoreCase(protocol.getName())) // GitHub Issue 763: case-insensitive name check (https://github.com/LabKey/kanban/issues/763)
                     return protocol;
             }
         }
