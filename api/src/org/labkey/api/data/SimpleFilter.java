@@ -664,9 +664,17 @@ public class SimpleFilter implements Filter
 
     public static class InClause extends MultiValuedFilterClause
     {
+        private InClauseGenerator _tempTableGenerator = null;
+
         public InClause(FieldKey fieldKey, Collection<?> params)
         {
             this(fieldKey, params, false, false);
+        }
+
+        public InClause(FieldKey fieldKey, Collection<?> params, InClauseGenerator tempTableGenerator)
+        {
+            this(fieldKey, params, false, false);
+            _tempTableGenerator = tempTableGenerator;
         }
 
         public InClause(FieldKey fieldKey, Collection<?> params, boolean urlClause)
@@ -837,7 +845,10 @@ public class SimpleFilter implements Filter
             in.appendIdentifier(alias);
 
             // Dialect may want to generate database-specific SQL, especially for very large IN clauses
-            dialect.appendInClauseSql(in, convertedParams);
+            if (null == _tempTableGenerator)
+                dialect.appendInClauseSql(in, convertedParams);
+            else
+                dialect.appendInClauseSqlWithCustomInClauseGenerator(in, convertedParams, _tempTableGenerator);
 
             if (isIncludeNull())
             {

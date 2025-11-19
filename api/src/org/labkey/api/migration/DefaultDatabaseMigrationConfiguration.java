@@ -43,7 +43,7 @@ public class DefaultDatabaseMigrationConfiguration implements DatabaseMigrationC
     }
 
     @Override
-    public TableSelector getTableSelector(DbSchemaType schemaType, TableInfo sourceTable, TableInfo targetTable, Set<String> selectColumnNames, MigrationSchemaHandler schemaHandler)
+    public TableSelector getTableSelector(DbSchemaType schemaType, TableInfo sourceTable, TableInfo targetTable, Set<String> selectColumnNames, MigrationSchemaHandler schemaHandler, @Nullable MigrationTableHandler tableHandler)
     {
         return null;
     }
