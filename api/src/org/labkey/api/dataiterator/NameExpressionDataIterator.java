@@ -38,6 +38,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
     private final Map<String, Pair<NameGenerator, NameGeneratorState>> _nameGeneratorMap = new HashMap<>();
     private final Map<String, String> _newNames = new HashMap<>();
     private final Integer _nameCol;
+    private final String _nameColName;
     private final Integer _expressionCol;
     private final TableInfo _parentTable;
     private final Container _container;
@@ -60,6 +61,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
         _importAliases = importAliases;
 
         Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+        _nameColName = nameColName;
         _nameCol = map.get(nameColName);
         _expressionCol = map.get(expressionColName);
         assert _nameCol != null;
@@ -95,7 +97,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
     private void addNameGenerator(String nameExpression)
     {
         NameGenerator nameGen = new NameGenerator(nameExpression, _parentTable, false, _importAliases, _container, _getNonConflictCountFn, _counterSeqPrefix);
-        NameGeneratorState state = nameGen.createState(false);
+        NameGeneratorState state = nameGen.createState(false, _nameColName);
         _nameGeneratorMap.put(nameExpression, Pair.of(nameGen, state));
     }
 

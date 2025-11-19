@@ -77,12 +77,19 @@ public class NameGeneratorState implements AutoCloseable
     protected final Map<Long, ExpData> dataCache = new LongHashMap<>();
     protected final RemapCache renameCache;
     private final Map<String, Map<String, Object>> objectPropertiesCache = new HashMap<>();
+    private final String _nameField;
 
     public NameGeneratorState(@NotNull NameGenerator nameGenerator, boolean incrementSampleCounts, NameGenerator.SampleNameExpressionSummary expressionSummary)
+    {
+        this(nameGenerator, incrementSampleCounts, expressionSummary, "Name");
+    }
+
+    public NameGeneratorState(@NotNull NameGenerator nameGenerator, boolean incrementSampleCounts, NameGenerator.SampleNameExpressionSummary expressionSummary, String nameField)
     {
         _nameGenerator = nameGenerator;
         _incrementSampleCounts = incrementSampleCounts;
         _container = nameGenerator.getContainer();
+        _nameField = nameField;
 
         DbSequence sampleCounterSequence;
         DbSequence rootCounterSequence;
@@ -274,7 +281,7 @@ public class NameGeneratorState implements AutoCloseable
         }
 
         // If a name is already provided, just use it as is
-        Object currNameObj = rowMap.get("Name");
+        Object currNameObj = rowMap.get(_nameField);
         if (currNameObj != null)
         {
             String currName = currNameObj.toString();
