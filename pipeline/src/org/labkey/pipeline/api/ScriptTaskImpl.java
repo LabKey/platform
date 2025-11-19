@@ -170,7 +170,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             if (scriptFile != null)
                 bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.toString());
 
-            bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, _wd.getDir().getPath());
+            bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, _wd.getDir().toNioPathForRead().toString());
 
             // Thread the timeout option through to the external script engine
             if (_factory.getTimeout() != null && _factory.getTimeout() > 0)
