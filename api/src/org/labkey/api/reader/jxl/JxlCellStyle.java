@@ -18,6 +18,7 @@ package org.labkey.api.reader.jxl;
 import jxl.format.Alignment;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.CellPropertyType;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Color;
 import org.apache.poi.ss.usermodel.FillPatternType;
@@ -25,6 +26,7 @@ import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,6 +64,16 @@ public class JxlCellStyle implements CellStyle
     public short getDataFormat()
     {
         return 0;
+    }
+
+    @Override
+    public void invalidateCachedProperties()
+    {}
+
+    @Override
+    public EnumMap<CellPropertyType,Object> getFormatProperties()
+    {
+        return null;
     }
 
     @Override
