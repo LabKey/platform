@@ -14,5 +14,5 @@ import java.util.Set;
 public interface MigrationTableHandler
 {
     TableInfo getTableInfo();
-    void adjustFilter(SimpleFilter filter, Set<GUID> containers);
+    void adjustFilter(TableInfo sourceTable, SimpleFilter filter, Set<GUID> containers);
 }

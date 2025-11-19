@@ -891,10 +891,10 @@ public class ExperimentModule extends SpringModule
             }
 
             @Override
-            public void adjustFilter(SimpleFilter filter, Set<GUID> containers)
+            public void adjustFilter(TableInfo sourceTable, SimpleFilter filter, Set<GUID> containers)
             {
                 // Exclude assay experiment runs that weren't copied
-                FilterClause excludedClause = handler.getExcludedRowIdClause(getTableInfo(), FieldKey.fromParts("RunId"));
+                FilterClause excludedClause = handler.getExcludedRowIdClause(sourceTable, FieldKey.fromParts("RunId"));
                 if (excludedClause != null)
                     filter.addClause(excludedClause);
             }
@@ -908,10 +908,27 @@ public class ExperimentModule extends SpringModule
             }
 
             @Override
-            public void adjustFilter(SimpleFilter filter, Set<GUID> containers)
+            public void adjustFilter(TableInfo sourceTable, SimpleFilter filter, Set<GUID> containers)
             {
                 // Exclude assay experiment runs that weren't copied
-                FilterClause excludedClause = handler.getExcludedRowIdClause(getTableInfo(), FieldKey.fromParts("ExclusionId", "RunId"));
+                FilterClause excludedClause = handler.getExcludedRowIdClause(sourceTable, FieldKey.fromParts("ExclusionId", "RunId"));
+                if (excludedClause != null)
+                    filter.addClause(excludedClause);
+            }
+        });
+        DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
+        {
+            @Override
+            public TableInfo getTableInfo()
+            {
+                return DbSchema.get("assayrequest", DbSchemaType.Module).getTable("RequestRunsJunction");
+            }
+
+            @Override
+            public void adjustFilter(TableInfo sourceTable, SimpleFilter filter, Set<GUID> containers)
+            {
+                // Exclude assay experiment runs that weren't copied
+                FilterClause excludedClause = handler.getExcludedRowIdClause(sourceTable, FieldKey.fromParts("RunId"));
                 if (excludedClause != null)
                     filter.addClause(excludedClause);
             }
