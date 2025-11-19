@@ -1,4 +1,4 @@
-package org.labkey.assay.plate.query;
+package org.labkey.api.dataiterator;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -6,11 +6,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.dataiterator.DataIterator;
-import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.DataIteratorUtil;
-import org.labkey.api.dataiterator.MapDataIterator;
-import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 
