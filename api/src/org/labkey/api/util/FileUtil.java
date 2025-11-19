@@ -852,11 +852,20 @@ public class FileUtil
     {
         org.labkey.api.util.Path path = originalPath.normalize();
         if (path == null || (!path.isEmpty() && "..".equals(path.get(0))))
-            throw new InvalidPathException(originalPath.toString(), "Path to parent not allowed");
+            throw new InvalidPathReferenceException(originalPath.toString(), "Path to parent not allowed");
         @SuppressWarnings("SSBasedInspection")
         var ret = new File(dir, path.toString());
-        if (!ret.toPath().normalize().startsWith(dir.toPath().normalize()))
-            throw new InvalidPathException(originalPath.toString(), "Path to parent not allowed");
+        boolean valid;
+        try
+        {
+            valid = ret.toPath().normalize().startsWith(dir.toPath().normalize());
+        }
+        catch (InvalidPathException e)
+        {
+            throw new InvalidPathReferenceException(originalPath.toString(), e.getMessage());
+        }
+        if (!valid)
+            throw new InvalidPathReferenceException(originalPath.toString(), "Path to parent not allowed");
         return ret;
     }
 
@@ -866,7 +875,7 @@ public class FileUtil
     {
         path = path.normalize();
         if (!path.isEmpty() && "..".equals(path.get(0)))
-            throw new InvalidPathException(path.toString(), "Path to parent not allowed");
+            throw new InvalidPathReferenceException(path.toString(), "Path to parent not allowed");
         return dir.resolveFile(path);
     }
 
@@ -897,7 +906,7 @@ public class FileUtil
         var ret = new File(dir, name);
 
         if (!ret.toPath().normalize().startsWith(dir.toPath().normalize()))
-            throw new InvalidPathException(name, "Path to parent not allowed");
+            throw new InvalidPathReferenceException(name, "Path to parent not allowed");
         return ret;
     }
 
@@ -908,7 +917,7 @@ public class FileUtil
         var ret = dir.resolve(name);
 
         if (!ret.normalize().startsWith(dir.normalize()))
-            throw new InvalidPathException(name, "Path to parent not allowed");
+            throw new InvalidPathReferenceException(name, "Path to parent not allowed");
         return ret;
     }
 
@@ -919,11 +928,24 @@ public class FileUtil
     {
         int invalidCharacterIndex = StringUtils.indexOfAny(name, '/', File.separatorChar);
         if (invalidCharacterIndex >= 0)
-            throw new InvalidPathException(name, "Invalid file or directory name", invalidCharacterIndex);
+            throw new InvalidPathReferenceException(name, "Invalid file or directory name", invalidCharacterIndex);
         if (".".equals(name) || "..".equals(name))
-            throw new InvalidPathException(name, "Invalid file or directory name");
+            throw new InvalidPathReferenceException(name, "Invalid file or directory name");
     }
 
+    /** Our own subclass for bogus paths that we can special-case in ExceptionUtil in terms of HTTP response codes and logging */
+    public static class InvalidPathReferenceException extends InvalidPathException
+    {
+        public InvalidPathReferenceException(String path, String reason)
+        {
+            super(path, reason);
+        }
+
+        public InvalidPathReferenceException(String name, String reason, int index)
+        {
+            super(name, reason, index);
+        }
+    }
 
     public static String decodeSpaces(@NotNull String str)
     {

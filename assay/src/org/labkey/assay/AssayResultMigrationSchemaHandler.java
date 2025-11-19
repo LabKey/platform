@@ -12,18 +12,15 @@ import org.labkey.api.data.SimpleFilter.OrClause;
 import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.migration.AssaySkipContainers;
 import org.labkey.api.migration.DatabaseMigrationService.DataFilter;
 import org.labkey.api.migration.DefaultMigrationSchemaHandler;
 import org.labkey.api.migration.ExperimentDeleteService;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.assay.plate.PlateReplicateStatsDomainKind;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
 
 class AssayResultMigrationSchemaHandler extends DefaultMigrationSchemaHandler
@@ -38,7 +35,7 @@ class AssayResultMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     private boolean skipTable(TableInfo sourceTable)
     {
         // For now, we're ignoring this table since it's empty in our first migration client's database
-        return Strings.CI.endsWith(sourceTable.getName(), PlateReplicateStatsDomainKind.ASSAY_PLATE_REPLICATE);
+        return Strings.CI.endsWith(sourceTable.getName(), PlateReplicateStatsDomainKind.NAME);
     }
 
     @Override
@@ -63,8 +60,8 @@ class AssayResultMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     @Override
     public void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames)
     {
-        // No filtering on assay results for now; just add the passed in containers. Note that these will be filtered
-        // if AssaySkipContainers is configured.
+        // No row-by-row filtering on assay results for now; just add the passed in containers. Note that these will be
+        // filtered by container if AssaySkipContainers is configured.
         orClause.addClause(getContainerClause(sourceTable, filter.containers()));
     }
 
@@ -92,9 +89,6 @@ class AssayResultMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                 // Delete exp.Data, exp.Object, etc. rows associated with the rows that weren't copied
                 ExperimentDeleteService.get().deleteDataRows(notCopiedObjectIds);
             }
-
-            // TODO: Temp!
-            LOG.info("   " + StringUtilsLabKey.pluralize(new TableSelector(sourceTable, Collections.singleton("DataId")).stream(Integer.class).distinct().count(), "distinct DataId"));
         }
     }
 }

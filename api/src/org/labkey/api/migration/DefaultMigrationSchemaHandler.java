@@ -290,7 +290,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         Set<AttachmentType> unseen = new HashSet<>(AttachmentService.get().getAttachmentTypes());
         unseen.removeAll(SEEN);
 
-        if (SEEN.isEmpty())
+        if (unseen.isEmpty())
             DatabaseMigrationService.LOG.info("All AttachmentTypes have been seen");
         else
             DatabaseMigrationService.LOG.info("These AttachmentTypes have not been seen: {}", unseen.stream().map(type -> type.getClass().getSimpleName()).collect(Collectors.joining(", ")));
