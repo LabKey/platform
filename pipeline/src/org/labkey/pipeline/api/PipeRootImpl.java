@@ -344,7 +344,6 @@ public class PipeRootImpl implements PipeRoot
 
 
     @Override
-    @Nullable
     public File resolvePath(String pathStr)
     {
         if (null == pathStr)
@@ -355,7 +354,7 @@ public class PipeRootImpl implements PipeRoot
 
 
     @Nullable
-    public File resolvePath(org.labkey.api.util.Path path)
+    private File resolvePath(org.labkey.api.util.Path path)
     {
         var pair = _resolveRoot(path);
         if (null == pair)
@@ -365,8 +364,11 @@ public class PipeRootImpl implements PipeRoot
 
 
     @Override
-    public @Nullable FileLike resolvePathToFileLike(String relativePath)
+    public FileLike resolvePathToFileLike(String relativePath)
     {
+        if (null == relativePath)
+            throw new FileUtil.InvalidPathReferenceException(null, "Must specify a file path");
+
         var parsedPath = org.labkey.api.util.Path.parse(relativePath);
 
         if (ROOT_BASE.cloud.equals(_defaultRoot))

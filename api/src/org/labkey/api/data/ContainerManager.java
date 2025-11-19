@@ -585,7 +585,8 @@ public class ContainerManager
         return containersMatchingTabs;
     }
 
-    private static final Set<Container> containersWithBadFolderTypes = new ConcurrentHashSet<>();
+    private static final Set<Integer> containersWithBadFolderTypes = new ConcurrentHashSet<>();
+    private static final Set<String> badFolderTypes = new ConcurrentHashSet<>();
 
     @NotNull
     public static FolderType getFolderType(Container c)
@@ -602,10 +603,16 @@ public class ContainerManager
                 // If we're upgrading then folder types won't be defined yet... don't warn in that case.
                 if (!ModuleLoader.getInstance().isUpgradeInProgress() &&
                     !ModuleLoader.getInstance().isUpgradeRequired() &&
-                    !containersWithBadFolderTypes.contains(c))
+                    containersWithBadFolderTypes.add(c.getRowId()))
                 {
-                    LOG.warn("No such folder type " + name + " for folder " + c.toString());
-                    containersWithBadFolderTypes.add(c);
+                    if (badFolderTypes.add(name))
+                    {
+                        LOG.warn("No such folder type {} for container {}. Additional containers of this folder type will be logged at DEBUG level.", name, c.getPath());
+                    }
+                    else
+                    {
+                        LOG.debug("No such folder type {} for container {}.", name, c.getPath());
+                    }
                 }
 
                 folderType = FolderType.NONE;

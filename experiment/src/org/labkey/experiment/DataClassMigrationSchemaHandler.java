@@ -90,14 +90,18 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
     @Override
     public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
     {
-        // Select all ObjectIds associated with the not-copied rows from the source database. Our notCopiedFilter
-        // works on the data class provisioned table, so we need to use a sub-select (as opposed to a join) to avoid
-        // ambiguous column references.
-        SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM exp.Object WHERE ObjectURI IN (SELECT LSID FROM ")
-            .appendIdentifier(sourceTable.getSelectName())
-            .append(" ")
-            .append(notCopiedFilter.getSQLFragment(sourceTable.getSqlDialect()))
-            .append(")");
+        // Select LSIDs from the just-copied rows in the target table
+        Collection<String> copiedLsids = new TableSelector(targetTable, Collections.singleton("LSID")).getCollection(String.class);
+
+        // Select all ObjectIds associated with the not-copied rows from the source database
+        SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM exp.Data d INNER JOIN ")
+                .appendIdentifier(sourceTable.getSelectName())
+                .append(" dc ON d.LSID = dc.LSID");
+
+        // Don't create an empty IN clause; need to work around issue where "NOT xxx IN (NULL)" evaluates to NULL.
+        if (!copiedLsids.isEmpty())
+            objectIdSql.append(" AND NOT dc.LSID").appendInClause(copiedLsids, sourceTable.getSqlDialect());
+
         Collection<Long> notCopiedObjectIds = new SqlSelector(sourceTable.getSchema(), objectIdSql).getCollection(Long.class);
 
         if (notCopiedObjectIds.isEmpty())

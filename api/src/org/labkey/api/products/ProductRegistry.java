@@ -15,6 +15,7 @@
  */
 package org.labkey.api.products;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -219,7 +220,9 @@ public class ProductRegistry
     public ProductMenuProvider getPrimaryProductMenuForContainer(@NotNull Container container)
     {
         List<String> productIds = getProductIdsForContainer(container);
+        _logger.debug("Product Ids in container '{}' of type '{}' are {}", container.getPath(), container.getFolderType().getName(), StringUtils.join(productIds));
         List<ProductMenuProvider> providers = getRegisteredProducts().stream().filter(provider -> productIds.contains(provider.getProductId())).toList();
+        _logger.debug("Menu providers: {}", providers.stream().map(ProductMenuProvider::getProductId).collect(Collectors.toList()));
         if (providers.isEmpty())
             return null;
 
@@ -229,16 +232,27 @@ public class ProductRegistry
         // see if there's a provider that matches the folder type (need to check this first so if LabKey LIMS or LKB is the configured product you can still show LKSM folders)
         Optional<ProductMenuProvider> optionalProvider = providers.stream().filter(provider -> provider.getFolderTypeName() != null && provider.getFolderTypeName().equals(container.getFolderType().getName())).findFirst();
         if (optionalProvider.isPresent())
+        {
+            _logger.debug("Found product menu provider for folder type '{}'", container.getFolderType().getName());
             return optionalProvider.get();
+        }
 
         List<String> orderedProducts = getProducts(true, false).stream().filter(Product::isEnabled).map(Product::getProductGroupId).toList();
-        ProductMenuProvider highestProvider = providers.stream().min(Comparator.comparing(provider -> orderedProducts.indexOf(provider.getProductId()))).orElse(null);
+        _logger.debug("Products are {}", _products.keySet());
+        _logger.debug("Ordered products are {}", orderedProducts);
+        ProductMenuProvider highestProvider = providers.stream()
+                .min(Comparator.comparing(provider -> orderedProducts.indexOf(provider.getProductId()))).orElse(null);
+        _logger.debug("Highest product menu provider: {}", highestProvider.getProductId());
         // then see if there's a provider that matches the configured product
         Product product = new ProductConfiguration().getCurrentProduct();
         if (product == null)
+        {
+            _logger.debug("Using highest product menu provider.");
             return highestProvider;
+        }
 
         optionalProvider = providers.stream().filter(provider -> provider.getProductId().equals(product.getProductGroupId())).findFirst();
+        _logger.debug("Product from product group: {}", optionalProvider.isPresent() ? optionalProvider.get() : "null");
         // if neither of those is true (when can this happen?), use the highest provider
         return optionalProvider.orElseGet(() -> highestProvider);
     }
