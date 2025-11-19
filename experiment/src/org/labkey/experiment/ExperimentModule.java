@@ -16,7 +16,6 @@
 package org.labkey.experiment;
 
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
@@ -101,7 +100,6 @@ import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
-import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
@@ -185,7 +183,6 @@ import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
 
 public class ExperimentModule extends SpringModule
 {
-    private static final Logger LOG = LogHelper.getLogger(ExperimentModule.class, "Database migration status");
     private static final String SAMPLE_TYPE_WEB_PART_NAME = "Sample Types";
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
 
@@ -887,7 +884,7 @@ public class ExperimentModule extends SpringModule
             @Override
             public TableInfo getTableInfo()
             {
-                return DbSchema.get("premium", DbSchemaType.Module).getTable("Exclusions");
+                return DbSchema.get("premium", DbSchemaType.Bare).getTable("Exclusions");
             }
 
             @Override
@@ -904,7 +901,7 @@ public class ExperimentModule extends SpringModule
             @Override
             public TableInfo getTableInfo()
             {
-                return DbSchema.get("premium", DbSchemaType.Module).getTable("ExclusionMaps");
+                return DbSchema.get("premium", DbSchemaType.Bare).getTable("ExclusionMaps");
             }
 
             @Override
@@ -921,7 +918,7 @@ public class ExperimentModule extends SpringModule
             @Override
             public TableInfo getTableInfo()
             {
-                return DbSchema.get("assayrequest", DbSchemaType.Module).getTable("RequestRunsJunction");
+                return DbSchema.get("assayrequest", DbSchemaType.Bare).getTable("RequestRunsJunction");
             }
 
             @Override
