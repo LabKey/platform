@@ -27,7 +27,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
@@ -144,25 +143,13 @@ import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CUR
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
+import static org.labkey.api.exp.api.SampleTypeDomainKind.SAMPLE_TYPE_FILE_DIRECTORY_NAME;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
 import static org.labkey.api.exp.api.SampleTypeService.MISSING_AMOUNT_ERROR_MESSAGE;
 import static org.labkey.api.exp.api.SampleTypeService.MISSING_UNITS_ERROR_MESSAGE;
 import static org.labkey.api.exp.api.SampleTypeService.UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotCount;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.LSID;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAmount;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawUnits;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialRowId;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
 import static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES;
 import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
@@ -890,6 +877,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (lsid == null)
             throw new ValidationException("lsid required to update row");
 
+        // TODO: Validate LSID in naming pattern points to the correct table
+        // TODO: Validate lookups to sample via LSID point to the correct table
+        Long rowId = asLong(oldRow.get(RowId.name()));
+        if (rowId == null)
+            throw new ValidationException(RowId.name() + " required to update row");
+
         String newName = (String) row.get(Name.name());
         if (row.containsKey(Name.name()) && StringUtils.isEmpty(newName))
             throw new ValidationException("Sample name cannot be blank");
@@ -1009,45 +1002,46 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             throw new ValidationException(String.format("Updating sample data when status is %s is not allowed.", oldStatus.getLabel()));
         }
 
-        keys = new Object[]{lsid};
         TableInfo t = _sampleType.getTinfo();
         // Sample type uses FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle posted files
-        Path path = AssayFileWriter.getUploadDirectoryPath(c, "sampletype").toNioPathForWrite();
+        Path path = AssayFileWriter.getUploadDirectoryPath(c, SAMPLE_TYPE_FILE_DIRECTORY_NAME).toNioPathForWrite();
         convertTypes(user, c, validRowCopy, t, path);
         if (t.getColumnNameSet().stream().anyMatch(validRowCopy::containsKey))
         {
-            ret.putAll(Table.update(user, t, validRowCopy, t.getColumn("lsid"), keys, null, Level.DEBUG));
+            keys = new Object[]{rowId};
+            ret.putAll(Table.update(user, t, validRowCopy, t.getColumn(RowId.name()), keys, null, Level.DEBUG));
         }
 
         ExpMaterialImpl sample = null;
         if (hasNameChange)
         {
-            sample = ExperimentServiceImpl.get().getExpMaterial(lsid);
+            sample = ExperimentServiceImpl.get().getExpMaterial(rowId);
             if (sample != null)
                 ExperimentService.get().addObjectLegacyName(sample.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpMaterial.class), oldName, user);
         }
 
         // update comment
-        if (row.containsKey("flag") || row.containsKey("comment"))
+        if (row.containsKey(Flag.name()) || row.containsKey("comment"))
         {
-            Object o = row.containsKey("flag") ? row.get("flag") : row.get("comment");
-            String flag = Objects.toString(o, null);
-
             if (sample == null)
-                sample = ExperimentServiceImpl.get().getExpMaterial(lsid);
+                sample = ExperimentServiceImpl.get().getExpMaterial(rowId);
             if (sample != null)
+            {
+                Object o = row.containsKey(Flag.name()) ? row.get(Flag.name()) : row.get("comment");
+                String flag = Objects.toString(o, null);
                 sample.setComment(user, flag);
+            }
         }
 
         // update aliases
-        if (row.containsKey("Alias"))
-            AliasInsertHelper.handleInsertUpdate(getContainer(), user, lsid, ExperimentService.get().getTinfoMaterialAliasMap(), row.get("Alias"));
+        if (row.containsKey(Alias.name()))
+            AliasInsertHelper.handleInsertUpdate(getContainer(), user, lsid, ExperimentService.get().getTinfoMaterialAliasMap(), row.get(Alias.name()));
 
-        // search done in postcommit
+        // search done in post-commit
 
         ret.put("lsid", lsid);
         ret.put(AliquotedFromLSID.name(), oldRow.get(AliquotedFromLSID.name()));
-        ret.put(RowId.name(), oldRow.get(RowId.name())); // add RowId for SearchService
+        ret.put(RowId.name(), rowId); // add RowId for SearchService
         return ret;
     }
 

@@ -147,7 +147,7 @@ import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_COUNT_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_VOLUME_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_COUNT_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_VOLUME_LABEL;
-import static org.labkey.api.exp.api.SampleTypeDomainKind.SAMPLETYPE_FILE_DIRECTORY;
+import static org.labkey.api.exp.api.SampleTypeDomainKind.SAMPLE_TYPE_FILE_DIRECTORY_NAME;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotUnit;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
@@ -168,11 +168,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     boolean _supportTableRules = true;
 
     public static final Set<String> MATERIAL_ALT_MERGE_KEYS;
-    public static final Set<String> MATERIAL_ALT_UPDATE_KEYS;
     public static final List<IPropertyValidator> AMOUNT_RANGE_VALIDATORS = new ArrayList<>();
     static {
         MATERIAL_ALT_MERGE_KEYS = Set.of(Column.MaterialSourceId.name(), Column.Name.name());
-        MATERIAL_ALT_UPDATE_KEYS = Set.of(Column.LSID.name());
 
         Lsid rangeValidatorLsid = DefaultPropertyValidator.createValidatorURI(PropertyValidatorType.Range);
         IPropertyValidator amountValidator = PropertyService.get().createValidator(rangeValidatorLsid.toString());
@@ -690,7 +688,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     @Override
                     protected ColumnInfo getPkColumn(TableInfo table)
                     {
-                        return t.getColumn("lsid");
+                        return t.getColumn("lsid"); // TODO: Seems to be pointing at the wrong table
                     }
                 });
             }
@@ -1632,7 +1630,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         TableInfo provisioned = null == _ss ? null : _ss.getTinfo();
         Set<String> provisionedCols = new CaseInsensitiveHashSet(provisioned != null ? provisioned.getColumnNameSet() : Collections.emptySet());
         provisionedCols.remove(Column.RowId.name());
-        provisionedCols.remove(Column.LSID.name());
         provisionedCols.remove(Column.Name.name());
         boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, provisionedCols);
 
@@ -1662,7 +1659,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 // don't select twice
                 if (
                     Column.RowId.name().equalsIgnoreCase(propertyColumn.getColumnName()) ||
-                    Column.LSID.name().equalsIgnoreCase(propertyColumn.getColumnName()) ||
                     Column.Name.name().equalsIgnoreCase(propertyColumn.getColumnName())
                 )
                 {
@@ -1839,17 +1835,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public Set<String> getAltMergeKeys(DataIteratorContext context)
     {
-        if (context.getInsertOption().updateOnly && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
-            return getAltKeysForUpdate();
-
         return MATERIAL_ALT_MERGE_KEYS;
-    }
-
-    @NotNull
-    @Override
-    public Set<String> getAltKeysForUpdate()
-    {
-        return MATERIAL_ALT_UPDATE_KEYS;
     }
 
     @Override
@@ -1886,7 +1872,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         try
         {
             var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasesIncludingAliquot(), sampleTypeObjectId)
-                    .setFileLinkDirectory(SAMPLETYPE_FILE_DIRECTORY);
+                    .setFileLinkDirectory(SAMPLE_TYPE_FILE_DIRECTORY_NAME);
             ExperimentServiceImpl experimentServiceImpl = ExperimentServiceImpl.get();
             SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(getContainer(), SearchService.PRIORITY.modified);
 

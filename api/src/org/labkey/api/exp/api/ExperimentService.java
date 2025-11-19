@@ -147,7 +147,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     enum QueryOptions
     {
-        UseLsidForUpdate,
+        UseLsidForUpdate, // TODO: Use as marker for behaviors
         GetSampleRecomputeCol,
         SkipBulkRemapCache,
         DeferRequiredLineageValidation,
