@@ -172,6 +172,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         Lsid rangeValidatorLsid = DefaultPropertyValidator.createValidatorURI(PropertyValidatorType.Range);
         IPropertyValidator amountValidator = PropertyService.get().createValidator(rangeValidatorLsid.toString());
+        amountValidator.setName("SampleAmountNonNegative");
         amountValidator.setExpressionValue("~gte=0");
         amountValidator.setErrorMessage("Amounts must be non-negative.");
         amountValidator.setColumnNameProvidedData(PROVIDED_DATA_PREFIX + Column.StoredAmount.name());
