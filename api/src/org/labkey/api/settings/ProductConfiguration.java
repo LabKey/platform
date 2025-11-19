@@ -1,11 +1,13 @@
 package org.labkey.api.settings;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.products.Product;
 import org.labkey.api.products.ProductRegistry;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Collection;
 
@@ -13,6 +15,7 @@ public class ProductConfiguration extends AbstractWriteableSettingsGroup impleme
 {
     public static final String SCOPE_PRODUCT_CONFIGURATION = "ProductConfiguration";
     public static final String PROPERTY_NAME = "productKey";
+    private static final Logger _logger = LogHelper.getLogger(ProductConfiguration.class, "Product Configuration properties");
 
     @Override
     protected String getGroupName()
@@ -54,6 +57,7 @@ public class ProductConfiguration extends AbstractWriteableSettingsGroup impleme
     public Product getCurrentProduct()
     {
         String productKey = getCurrentProductKey();
+        _logger.debug("Current product key: {}", productKey);
         if (productKey == null)
             return null;
         return ProductRegistry.getProduct(productKey);

@@ -9796,7 +9796,7 @@ public class AdminController extends SpringActionController
                 }
 
                 if (name.length() > 50)
-                    name = name.substring(0, 50).trim();
+                    name = StringUtilsLabKey.leftSurrogatePairFriendly(name, 50).trim();
 
                 CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(tabContainer, true));
                 CaseInsensitiveHashMap<FolderTab> folderTabMap = new CaseInsensitiveHashMap<>();
@@ -9850,7 +9850,7 @@ public class AdminController extends SpringActionController
             // The name, which shows up on the url, is trimmed to 50 characters. The caption, which is derived from the
             // name, and is editable, is allowed to be 64 characters.
             if (name.length() > 50)
-                name = name.substring(0, 50).trim();
+                name = StringUtilsLabKey.leftSurrogatePairFriendly(name, 50).trim();
 
             Portal.saveParts(container, name);
             Portal.addProperty(container, name, Portal.PROP_CUSTOMTAB);
