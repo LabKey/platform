@@ -6,7 +6,6 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 
 import java.util.ArrayList;
@@ -39,7 +38,7 @@ public class PostgreSqlInClauseTest extends Assert
         assertEquals(1, new SqlSelector(core, shortSql).getRowCount());
 
         ArrayList<Object> l = new ArrayList<>();
-        for (int i = 1; i <= BasePostgreSqlDialect.TEMPTABLE_GENERATOR_MINSIZE + 1; i++)
+        for (int i = 1; i <= SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE + 1; i++)
             l.add(i);
         SQLFragment longSql = new SQLFragment("SELECT COUNT(*) FROM core.usersdata WHERE userid ");
         d.appendInClauseSql(longSql, l);
@@ -50,7 +49,7 @@ public class PostgreSqlInClauseTest extends Assert
         assertEquals(1, new SqlSelector(core, shortSqlStr).getRowCount());
 
         l = new ArrayList<>();
-        for (int i = 1; i <= BasePostgreSqlDialect.TEMPTABLE_GENERATOR_MINSIZE + 1; i++)
+        for (int i = 1; i <= SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE + 1; i++)
             l.add(String.valueOf(i));
         SQLFragment longSqlStr = new SQLFragment("SELECT COUNT(*) FROM core.usersdata WHERE displayname ");
         d.appendInClauseSql(longSqlStr, l);

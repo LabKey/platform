@@ -15,13 +15,15 @@
  */
 package org.labkey.core.dialect;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TempTableInClauseGenerator;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -52,6 +54,16 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     // the future plus servers can be compiled with a different limit, so we query this setting on first connection to
     // each database.
     private int _maxIdentifierByteLength = 63;
+
+    private InClauseGenerator _inClauseGenerator;
+    private final TempTableInClauseGenerator _tempTableInClauseGenerator = new TempTableInClauseGenerator();
+
+    @Override
+    public String prepare(DbScope scope)
+    {
+        initializeInClauseGenerator(scope);
+        return super.prepare(scope);
+    }
 
     @NotNull
     @Override
@@ -127,17 +139,28 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         // Split statements by semicolon and CRLF
         for (String statement : noComments.split(";[\\n\\r]+"))
         {
-            if (StringUtils.startsWithIgnoreCase(statement.trim(), "SET "))
+            if (Strings.CI.startsWith(statement.trim(), "SET "))
                 warnings.add(statement);
         }
 
         return warnings;
     }
 
-    @Override
-    protected void initializeInClauseGenerator(DbScope scope)
+    private void initializeInClauseGenerator(DbScope scope)
     {
         _inClauseGenerator = getJdbcVersion(scope) >= 4 ? new ArrayParameterInClauseGenerator(scope) : new ParameterMarkerInClauseGenerator();
+    }
+
+    @Override
+    public InClauseGenerator getDefaultInClauseGenerator()
+    {
+        return _inClauseGenerator;
+    }
+
+    @Override
+    public TempTableInClauseGenerator getTempTableInClauseGenerator()
+    {
+        return _tempTableInClauseGenerator;
     }
 
     @Override
