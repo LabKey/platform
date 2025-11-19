@@ -2385,12 +2385,17 @@ public class DbScope
             // Copy to avoid ConcurrentModificationExceptions, need to retain original order from LinkedHashMap
             List<Runnable> tasks = new ArrayList<>(getRunnables(transaction).keySet());
 
-            for (Runnable task : tasks)
+            try
             {
-                task.run();
+                for (Runnable task : tasks)
+                {
+                    task.run();
+                }
             }
-
-            transaction.closeCaches();
+            finally
+            {
+                transaction.closeCaches();
+            }
         }
 
         public <T extends Runnable> T add(TransactionImpl transaction, T task)
