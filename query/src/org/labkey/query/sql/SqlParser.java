@@ -885,7 +885,7 @@ public class SqlParser
                 {
                     // rewrite "IN EXPANCESTORS" "IN EXPDESCENDANTS"
                     var method = rhs.getFirstChild();
-                    if (method.getTokenType() != EXPANCESTORSOF && method.getTokenType() != EXPDESCENANTSOF)
+                    if (method.getTokenType() != EXPANCESTORSOF && method.getTokenType() != EXPDESCENDANTSOF)
                     {
                         _parseErrors.add(new QueryParseException("Illegal syntax near 'IN'", null, node.getLine(), node.getCharPositionInLine()));
                         return null;
@@ -967,7 +967,7 @@ public class SqlParser
                 }
 
                 // special case for table returning method
-                var isTableResultMethod = id.getTokenType() == EXPANCESTORSOF || id.getTokenType() == EXPDESCENANTSOF;
+                var isTableResultMethod = id.getTokenType() == EXPANCESTORSOF || id.getTokenType() == EXPDESCENDANTSOF;
                 if (!isTableResultMethod)
                 {
                     try

@@ -677,7 +677,7 @@ likeEscape
 
 
 inList
-	: (EXPANCESTORSOF | EXPDESCENANTSOF) op=OPEN^ {$op.setType(METHOD_CALL);} subQuery CLOSE!
+	: (EXPANCESTORSOF | EXPDESCENDANTSOF) op=OPEN^ {$op.setType(METHOD_CALL);} subQuery CLOSE!
 	| compoundExpr -> ^(IN_LIST compoundExpr)
 	;
 
