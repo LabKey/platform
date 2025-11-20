@@ -1865,6 +1865,39 @@ public class SimpleFilter implements Filter
             }
             return howMany;
         }
+
+        /**
+         * This used to be a PostgreSQL-specific test, but it should run and pass on SQL Server as well. It's largely
+         * redundant with testLargeInClause() above, but causes no harm.
+         */
+        @Test
+        public void testTempTableInClause()
+        {
+            DbSchema core = CoreSchema.getInstance().getSchema();
+            SqlDialect d = core.getSqlDialect();
+
+            SQLFragment shortSql = new SQLFragment("SELECT COUNT(*) FROM core.usersdata WHERE userid ");
+            d.appendInClauseSql(shortSql, Arrays.asList(1, 2, 3));
+            assertEquals(1, new SqlSelector(core, shortSql).getRowCount());
+
+            ArrayList<Object> l = new ArrayList<>();
+            for (int i = 1; i <= SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE + 1; i++)
+                l.add(i);
+            SQLFragment longSql = new SQLFragment("SELECT COUNT(*) FROM core.usersdata WHERE userid ");
+            d.appendInClauseSql(longSql, l);
+            assertEquals(1, new SqlSelector(core, longSql).getRowCount());
+
+            SQLFragment shortSqlStr = new SQLFragment("SELECT COUNT(*) FROM core.usersdata WHERE displayname ");
+            d.appendInClauseSql(shortSqlStr, Arrays.asList("1", "2", "3"));
+            assertEquals(1, new SqlSelector(core, shortSqlStr).getRowCount());
+
+            l = new ArrayList<>();
+            for (int i = 1; i <= SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE + 1; i++)
+                l.add(String.valueOf(i));
+            SQLFragment longSqlStr = new SQLFragment("SELECT COUNT(*) FROM core.usersdata WHERE displayname ");
+            d.appendInClauseSql(longSqlStr, l);
+            assertEquals(1, new SqlSelector(core, longSqlStr).getRowCount());
+        }
     }
 
     public static class BetweenClauseTestCase extends ClauseTestCase

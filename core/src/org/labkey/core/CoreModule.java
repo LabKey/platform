@@ -244,7 +244,6 @@ import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
-import org.labkey.core.dialect.PostgreSqlInClauseTest;
 import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
@@ -1440,7 +1439,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ModuleStaticResolverImpl.TestCase.class,
             NotificationServiceImpl.TestCase.class,
             PortalJUnitTest.class,
-            PostgreSqlInClauseTest.class,
             ProductRegistry.TestCase.class,
             RadeoxRenderer.RadeoxRenderTest.class,
             RhinoService.TestCase.class,
