@@ -114,11 +114,23 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
         return null;
     }
 
+    /**
+     * Normalize value for comparison.
+     * For example -0.0 == 0.0, but:
+     *  Double.doubleToLongBits(-0.0)  // returns -9223372036854775808L
+     *  Double.doubleToLongBits(0.0)   // returns  0L
+     */
+    private double normalizeForComparison(String strVal)
+    {
+        double d = NumberUtils.toDouble(strVal);
+        return d == 0.0d ? 0.0d : d;
+    }
+
     private boolean isValid(Object value, Pair<String, String> constraint)
     {
         if (NumberUtils.isCreatable(String.valueOf(value)))
         {
-            int comparison = Double.compare(NumberUtils.toDouble(String.valueOf(value)), NumberUtils.toDouble(constraint.getValue()));
+            int comparison = Double.compare(normalizeForComparison(String.valueOf(value)), normalizeForComparison(constraint.getValue()));
             return comparisonValid(comparison, constraint.getKey());
         }
         else if (value instanceof Date)
