@@ -175,7 +175,7 @@ public class ZipUtil
 
         if (preZipped)
         {
-            PageFlowUtil.streamFile(response, file, true);
+            PageFlowUtil.streamFile(response, file.toPath(), true);
             return;
         }
 

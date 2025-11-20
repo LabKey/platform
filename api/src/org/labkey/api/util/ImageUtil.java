@@ -37,8 +37,8 @@ import org.xhtmlrenderer.util.XRLogger;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -258,10 +258,10 @@ public class ImageUtil
      * Retrieves a file cached in the session
      */
     @Nullable
-    public static File getFileFromSession(HttpServletRequest request, String key)
+    public static FileLike getFileFromSession(HttpServletRequest request, String key)
     {
         Object o = request.getSession().getAttribute(key);
-        if (o instanceof File file && file.exists())
+        if (o instanceof FileLike file && file.exists())
             return file;
 
         return null;
@@ -314,26 +314,22 @@ public class ImageUtil
                     String sessionKey = helper.getParameter(FILE_SESSION_PARAM);
                     String deleteFile = helper.getParameter(DELETE_FILE_PARAM);
 
-                    File file = getFileFromSession(_context.getRequest(), sessionKey);
+                    FileLike file = getFileFromSession(_context.getRequest(), sessionKey);
                     if (file != null)
                     {
-                        try
+                        try (InputStream in = file.openInputStream())
                         {
-                            BufferedImage img = ImageIO.read(file);
+                            BufferedImage img = ImageIO.read(in);
                             ir = createImageResource(uri, img);
                             _imageCache.put(uri, ir);
 
                             if (BooleanUtils.toBoolean(deleteFile))
                                 file.delete();
                         }
-                        catch(IOException e)
-                        {
-                        }
+                        catch (IOException ignored) {}
                     }
                 }
-                catch(URISyntaxException e)
-                {
-                }
+                catch (URISyntaxException ignored) {}
             }
 
             if (ir != null)

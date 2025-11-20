@@ -1883,7 +1883,7 @@ public class ExperimentController extends SpringActionController
 
             try
             {
-                PageFlowUtil.streamFile(getViewContext().getResponse(), new File(files.getImageFile().getAbsolutePath()), false);
+                PageFlowUtil.streamFile(getViewContext().getResponse(), files.getImageFile().toPath(), false);
             }
             catch (FileNotFoundException e)
             {
@@ -6639,7 +6639,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException();
             }
 
-            PageFlowUtil.streamFile(getViewContext().getResponse(), new File(f.getAbsolutePath()), false);
+            PageFlowUtil.streamFile(getViewContext().getResponse(), f.toPath(), false);
             return null;
         }
 

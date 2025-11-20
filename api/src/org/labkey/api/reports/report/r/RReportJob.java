@@ -42,6 +42,8 @@ import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.Serializable;
+import java.nio.file.CopyOption;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -315,7 +317,7 @@ public class RReportJob extends PipelineJob implements Serializable
                             {
                                 newFile = FileUtil.createTempFile(LOG_FILE_PREFIX, ".log", parentDir);
                                 getJob().setLogFile(newFile);
-                                FileUtil.copyFile(file, newFile);
+                                FileUtil.copyFile(file, newFile, StandardCopyOption.REPLACE_EXISTING);
                             }
                             // report.log != getLogFile(), just regular file
                             else

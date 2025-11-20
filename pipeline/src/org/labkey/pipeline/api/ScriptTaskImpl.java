@@ -310,11 +310,10 @@ public class ScriptTaskImpl extends CommandTaskImpl
             }
         }
 
-        try (TSVMapWriter tsvWriter = new TSVMapWriter(columns, rows);
-            OutputStream out = file.openOutputStream())
+        try (TSVMapWriter tsvWriter = new TSVMapWriter(columns, rows))
         {
             tsvWriter.setHeaderRowVisible(false);
-            tsvWriter.write(out);
+            tsvWriter.write(file.openOutputStream());
         }
     }
 
