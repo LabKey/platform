@@ -152,6 +152,12 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     }
 
     @Override
+    public String getAnalyzeCommandForTable(String tableName)
+    {
+        return "ANALYZE " + tableName;
+    }
+
+    @Override
     public InClauseGenerator getDefaultInClauseGenerator()
     {
         return _inClauseGenerator;

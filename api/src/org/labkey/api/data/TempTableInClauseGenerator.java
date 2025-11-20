@@ -139,10 +139,14 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             }
 
             String indexSql = "CREATE INDEX IX_Id" + new GUID().toStringNoDashes() + " ON " + tableName + "(Id)";
+            String analyzeSql = tempSchema.getSqlDialect().getAnalyzeCommandForTable(tableName);
             try (var ignored = SpringActionController.ignoreSqlUpdates())
             {
-                new SqlExecutor(tempSchema).execute(indexSql);
+                SqlExecutor executor = new SqlExecutor(tempSchema);
+                executor.execute(indexSql);
+                executor.execute(analyzeSql); // Immediately analyze the newly populated & indexed table
             }
+
             TempTableInfo cacheEntry = tempTableInfo;
 
             // Don't bother caching if we're in a transaction

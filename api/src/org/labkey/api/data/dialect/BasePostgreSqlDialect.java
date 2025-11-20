@@ -520,12 +520,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public String getAnalyzeCommandForTable(String tableName)
-    {
-        return "ANALYZE " + tableName;
-    }
-
-    @Override
     protected String getSIDQuery()
     {
         return "SELECT pg_backend_pid();";
