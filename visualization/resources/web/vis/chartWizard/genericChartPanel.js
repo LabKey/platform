@@ -1023,6 +1023,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             config.geomOptions.trendlineType = this.trendline.trendlineType;
             config.geomOptions.trendlineAsymptoteMin = this.trendline.trendlineAsymptoteMin;
             config.geomOptions.trendlineAsymptoteMax = this.trendline.trendlineAsymptoteMax;
+            config.geomOptions.trendlineParameters = this.trendline.trendlineParameters;
         }
 
         if (this.getCustomChartOptions)
@@ -1325,6 +1326,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     trendlineType: chartConfig.geomOptions.trendlineType,
                     trendlineAsymptoteMin: chartConfig.geomOptions.trendlineAsymptoteMin,
                     trendlineAsymptoteMax: chartConfig.geomOptions.trendlineAsymptoteMax,
+                    trendlineParameters: chartConfig.geomOptions.trendlineParameters,
                 }
             }
         }
