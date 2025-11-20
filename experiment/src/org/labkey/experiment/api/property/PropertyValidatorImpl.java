@@ -15,11 +15,12 @@
  */
 package org.labkey.experiment.api.property;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Table;
+import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
@@ -174,14 +175,33 @@ public class PropertyValidatorImpl implements IPropertyValidator
         return PropertyService.get().getValidatorKind(getTypeURI());
     }
 
-    public String getColumnNameProvidedData()
-    {
-        return columnNameProvidedData;
-    }
-
+    @Override
     public void setColumnNameProvidedData(String columnNameProvidedData)
     {
         this.columnNameProvidedData = columnNameProvidedData;
+    }
+
+    @Override
+    public Object getProvidedDataValue(DataIterator dataIterator)
+    {
+        if (columnNameProvidedData != null)
+        {
+            // Get the value from the provided data column
+            int providedDataColIndex = -1;
+            for (int colIndex = 0; colIndex < dataIterator.getColumnCount(); colIndex++)
+            {
+                ColumnInfo colInfo = dataIterator.getColumnInfo(colIndex);
+                if (colInfo != null && columnNameProvidedData.equalsIgnoreCase(colInfo.getName()))
+                {
+                    providedDataColIndex = colIndex;
+                    break;
+                }
+            }
+            if (providedDataColIndex != -1)
+                return dataIterator.get(providedDataColIndex);
+        }
+
+        return null;
     }
 
     @Override

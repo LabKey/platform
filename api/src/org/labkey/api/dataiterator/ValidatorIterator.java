@@ -172,23 +172,7 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
                         if (pv.getPropertyValidator() != null)
                         {
                             // Use :::provided:::Amount in non-negative validator message, instead of converted Amount
-                            String providedDataColumn = pv.getPropertyValidator().getColumnNameProvidedData();
-                            if (providedDataColumn != null)
-                            {
-                                // Get the value from the provided data column
-                                int providedDataColIndex = -1;
-                                for (int colIndex = 0; colIndex < _data.getColumnCount(); colIndex++)
-                                {
-                                    ColumnInfo colInfo = _data.getColumnInfo(colIndex);
-                                    if (colInfo != null && providedDataColumn.equalsIgnoreCase(colInfo.getName()))
-                                    {
-                                        providedDataColIndex = colIndex;
-                                        break;
-                                    }
-                                }
-                                if (providedDataColIndex != -1)
-                                    providedDataValue = _data.get(providedDataColIndex);
-                            }
+                            providedDataValue = pv.getPropertyValidator().getProvidedDataValue(_data);
                         }
                     }
                     String msg = validate(v, rowNum, value, _data, providedDataValue);
