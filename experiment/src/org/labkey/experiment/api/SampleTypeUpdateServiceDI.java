@@ -846,7 +846,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 // if provided value is present, validate provided
                 Object value = row.get(col.getColumnName());
                 Object providedValue = null;
-                if (_sampleType != null && value != null && (StoredAmount.name().equalsIgnoreCase(col.getColumnName()) || "Amount".equalsIgnoreCase(col.getColumnName())))
+                if (_sampleType != null && _sampleType.getMetricUnit() != null && value != null && (StoredAmount.name().equalsIgnoreCase(col.getColumnName()) || "Amount".equalsIgnoreCase(col.getColumnName())))
                 {
                     providedValue = value + " (" + _sampleType.getMetricUnit() + ")";
                 }
