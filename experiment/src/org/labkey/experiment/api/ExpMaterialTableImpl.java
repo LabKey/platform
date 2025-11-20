@@ -56,6 +56,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
@@ -66,15 +67,19 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
@@ -136,6 +141,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
+import static org.labkey.api.data.ColumnRenderPropertiesImpl.NON_NEGATIVE_NUMBER_CONCEPT_URI;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_COUNT_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_VOLUME_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_COUNT_LABEL;
@@ -158,9 +165,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     public static final Set<String> MATERIAL_ALT_MERGE_KEYS;
     public static final Set<String> MATERIAL_ALT_UPDATE_KEYS;
+    public static final List<IPropertyValidator> AMOUNT_RANGE_VALIDATORS = new ArrayList<>();
     static {
         MATERIAL_ALT_MERGE_KEYS = Set.of(Column.MaterialSourceId.name(), Column.Name.name());
         MATERIAL_ALT_UPDATE_KEYS = Set.of(Column.LSID.name());
+
+        Lsid rangeValidatorLsid = DefaultPropertyValidator.createValidatorURI(PropertyValidatorType.Range);
+        IPropertyValidator amountValidator = PropertyService.get().createValidator(rangeValidatorLsid.toString());
+        amountValidator.setName("SampleAmountNonNegative");
+        amountValidator.setExpressionValue("~gte=0");
+        amountValidator.setErrorMessage("Amounts must be non-negative.");
+        amountValidator.setColumnNameProvidedData(PROVIDED_DATA_PREFIX + Column.StoredAmount.name());
+        AMOUNT_RANGE_VALIDATORS.add(amountValidator);
     }
 
     public ExpMaterialTableImpl(UserSchema schema, ContainerFilter cf, @Nullable ExpSampleType sampleType)
@@ -314,6 +330,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 columnInfo.setDescription("The amount of this sample, in the base unit for the sample type's display unit (if defined), currently on hand.");
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
+                columnInfo.setConceptURI(NON_NEGATIVE_NUMBER_CONCEPT_URI);
+                columnInfo.setValidators(AMOUNT_RANGE_VALIDATORS);
                 return columnInfo;
             }
             case StoredAmount ->
@@ -330,6 +348,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     columnInfo.setShownInInsertView(true);
                     columnInfo.setUserEditable(true);
                     columnInfo.setCalculated(false);
+                    columnInfo.setConceptURI(NON_NEGATIVE_NUMBER_CONCEPT_URI);
+                    columnInfo.setValidators(AMOUNT_RANGE_VALIDATORS);
                     return columnInfo;
                 }
                 else
@@ -339,6 +359,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     columnInfo.setLabel(label);
                     columnInfo.setImportAliasesSet(importAliases);
                     columnInfo.setDescription("The amount of this sample currently on hand.");
+                    columnInfo.setConceptURI(NON_NEGATIVE_NUMBER_CONCEPT_URI);
+                    columnInfo.setValidators(AMOUNT_RANGE_VALIDATORS);
                     return columnInfo;
                 }
             }

@@ -832,6 +832,29 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return false;
     }
 
+    // Customize negative amount error message when the provided unit doesn't match sample type unit.
+    // For example, provided value of "-1 kg" would have been converted to "-1000 mg" by now.
+    // This updateRow (going to be deprecated) inconsistent with the data iterator code path, which use provided value "-1" in error message.
+    // TODO: remove this override when consolidating sample update method to remove row by row update
+    @Override
+    protected void validateUpdateRow(Map<String, Object> row) throws ValidationException
+    {
+        for (ColumnInfo col : getQueryTable().getColumns())
+        {
+            if (row.containsKey(col.getColumnName()))
+            {
+                // if provided value is present, validate provided
+                Object value = row.get(col.getColumnName());
+                Object providedValue = null;
+                if (_sampleType != null && _sampleType.getMetricUnit() != null && value != null && (StoredAmount.name().equalsIgnoreCase(col.getColumnName()) || "Amount".equalsIgnoreCase(col.getColumnName())))
+                {
+                    providedValue = value + " (" + _sampleType.getMetricUnit() + ")";
+                }
+                validateValue(col, value, providedValue);
+            }
+        }
+    }
+
     @Override
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
