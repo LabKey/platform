@@ -1263,11 +1263,12 @@ LABKEY.vis.GenericChartHelper = new function(){
         '': { label: 'Point-to-Point', value: '' },
         'Linear': { label: 'Linear Regression', value: 'Linear', equation: 'y = x * slope + intercept' },
         'Polynomial': { label: 'Polynomial', value: 'Polynomial', equation: 'y = a0 + a1 * x + a2 * x^2' },
-        '3 Parameter': { label: 'Nonlinear 3PL', value: '3 Parameter', showMax: true, schemaPrefix: 'assay', equation: 'y = max * abs(x/inflection)^abs(slope) / [1 + abs(x/inflection)^abs(slope)]' },
+        '3 Parameter': { label: 'Nonlinear 3PL (Hill)', value: '3 Parameter', showMax: true, schemaPrefix: 'assay', equation: 'y = max * abs(x/inflection)^abs(slope) / [1 + abs(x/inflection)^abs(slope)]' },
         'Three Parameter': { label: 'Nonlinear 3PL (Alternate)', value: 'Three Parameter', showMax: true, schemaPrefix: 'assay', equation: 'y = max / [1 + (inflection - x) * slope]' },
-        '4 Parameter': { label: 'Nonlinear 4PL', value: '4 Parameter', schemaPrefix: 'assay', equation: 'y = max + (min - max) / [1 + (x/inflection)^slope]' },
+        '4 Parameter': { label: 'Nonlinear 4PL (Hill)', value: '4 Parameter', schemaPrefix: 'assay', equation: 'y = max + (min - max) / [1 + (x/inflection)^slope]' },
         'Four Parameter': { label: 'Nonlinear 4PL (Alternate)', value: 'Four Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [1 + (inflection - x) * slope]' },
-        'Five Parameter': { label: 'Nonlinear 5PL', value: 'Five Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [[1 + (inflection - x) * slope]^asymmetry]' },
+        '5 Parameter': { label: 'Nonlinear 5PL (Hill/Richards)', value: '5 Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / (1 + (2^(1/asymmetry) - 1) * ((inflection / x)^hillSlope))^asymmetry' },
+        'Five Parameter': { label: 'Nonlinear 5PL (Alternate)', value: 'Five Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [[1 + (inflection - x) * slope]^asymmetry]' },
     }
 
     const generateTrendlinePathHover = function(trendline) {
@@ -1319,6 +1320,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             logXScale: chartConfig.scales.x && chartConfig.scales.x.trans === 'log',
             asymptoteMin: chartConfig.geomOptions.trendlineAsymptoteMin,
             asymptoteMax: chartConfig.geomOptions.trendlineAsymptoteMax,
+            parameters: chartConfig.geomOptions.trendlineParameters,
             data: chartConfig.measures.series
                     ? LABKEY.vis.groupCountData(data, generateGroupingAcc(chartConfig.measures.series.name))
                     : [{name: 'All', rawData: data}],
@@ -1338,8 +1340,11 @@ LABKEY.vis.GenericChartHelper = new function(){
                 // we need at least 2 data points for curve fitting
                 if (series.rawData.length > 1) {
                     series.data = await _querySeriesTrendlineData(trendlineConfig, series, xName, yName);
+                } else {
+                    series.error = 'Series ' + series.name + ': Not enough data points for trendline calculation.';
                 }
             } catch (e) {
+                series.error = e;
                 console.error(e);
             }
         }
@@ -1358,9 +1363,39 @@ LABKEY.vis.GenericChartHelper = new function(){
                     y: _getRowValue(row, yName, 'value'),
                 };
             });
-            const xAcc = function(row) { return row.x };
+            const xAcc = function(row) {
+                // if log scale, filter out non-positive x values for min/max calculation used for generated points
+                if (trendlineConfig.logXScale && row.x <= 0) {
+                    return undefined;
+                }
+                return row.x;
+            };
             const xMin = d3.min(points, xAcc);
             const xMax = d3.max(points, xAcc);
+
+            // Get the first non-null value for curveFitName in the seriesData.rawData.
+            // Also make sure that if we have > 1 non-null value, they are all the same.
+            const curveFitName = trendlineConfig.parameters;
+            let providedParams;
+            if (curveFitName) {
+                for (let i = 0; i < seriesData.rawData.length; i++) {
+                    const row = seriesData.rawData[i];
+                    const curveFitValue = _getRowValue(row, curveFitName, 'value');
+                    if (curveFitValue !== null && curveFitValue !== undefined) {
+                        if (providedParams === undefined) {
+                            providedParams = curveFitValue;
+                        } else if (providedParams !== curveFitValue) {
+                            reject('Series "' + seriesData.name + '" - Inconsistent curve fit parameters in "' + curveFitName + '" variable.');
+                            return;
+                        }
+                    }
+                }
+
+                if (!providedParams) {
+                    reject('Series "' + seriesData.name + '" - No curve fit parameters found in "' + curveFitName + '" variable.');
+                    return;
+                }
+            }
 
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('premium', 'calculateCurveFit.api'),
@@ -1368,6 +1403,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 jsonData: {
                     curveFitType: trendlineConfig.type,
                     points: points,
+                    parametersStr: providedParams,
                     logXScale: trendlineConfig.logXScale,
                     asymptoteMin: trendlineConfig.asymptoteMin,
                     asymptoteMax: trendlineConfig.asymptoteMax,
@@ -1379,7 +1415,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     resolve(response);
                 }),
                 failure : LABKEY.Utils.getCallbackWrapper(function(reason) {
-                    reject(reason);
+                    reject('Series "' + seriesData.name + '" - ' + reason.exception);
                 }, this, true),
             });
         });
@@ -1572,9 +1608,14 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
             else if (hasZeroes)
             {
-                message = "Some " + measureName + "-axis values are 0. Plotting all " + measureName + "-axis values as value+1.";
+                message = "Some " + measureName + "-axis values are 0. Plotting all " + measureName + "-axis zero values as Number.EPSILON.";
                 var accFn = aes[measureName];
-                aes[measureName] = function(row){return accFn(row) + 1};
+                aes[measureName] = function(row){
+                    if (accFn(row) === 0) {
+                        return Number.EPSILON;
+                    }
+                    return accFn(row);
+                };
             }
         }
 
@@ -1613,7 +1654,8 @@ LABKEY.vis.GenericChartHelper = new function(){
     var getAllowableTypes = function(field) {
         var numericTypes = ['int', 'float', 'double', 'INTEGER', 'DOUBLE'],
                 nonNumericTypes = ['string', 'date', 'boolean', 'STRING', 'TEXT', 'DATE', 'BOOLEAN'],
-                numericAndDateTypes = numericTypes.concat(['date','DATE']);
+                numericAndDateTypes = numericTypes.concat(['date','DATE']),
+                textTypes = ['string', 'STRING', 'TEXT'];
 
         if (field.altSelectionOnly)
             return [];
@@ -1623,6 +1665,8 @@ LABKEY.vis.GenericChartHelper = new function(){
             return nonNumericTypes;
         else if (field.numericOrDateOnly)
             return numericAndDateTypes;
+        else if (field.textOnly)
+            return textTypes;
         else
             return numericTypes.concat(nonNumericTypes);
     }
@@ -1943,7 +1987,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             data = generateDataForChartType(chartConfig, chartType, geom, data);
         }
 
-        var validation = _validateChartConfig(chartConfig, aes, scales, measureStore);
+        var validation = _validateChartConfig(chartConfig, aes, scales, measureStore, trendlineData);
         _renderMessages(renderTo, validation.messages);
         if (!validation.success)
             return;
@@ -1967,12 +2011,14 @@ LABKEY.vis.GenericChartHelper = new function(){
     var _renderMessages = function(divId, messages) {
         if (messages && messages.length > 0) {
             var errorDiv = document.createElement('div');
-            errorDiv.innerHTML = '<h3 style="color:red;">Error rendering chart:</h3><div>' + messages.join('<br/>') + '</div>';
+            for (var i = 0; i < messages.length; i++) {
+                errorDiv.innerHTML += '<div style="color:red;">Error: ' + messages[i] + '</div>';
+            }
             document.getElementById(divId).appendChild(errorDiv);
         }
     };
 
-    var _validateChartConfig = function(chartConfig, aes, scales, measureStore) {
+    var _validateChartConfig = function(chartConfig, aes, scales, measureStore, trendlineData) {
         var hasNoDataMsg = validateResponseHasData(measureStore, false);
         if (hasNoDataMsg != null)
             return {success: false, messages: [hasNoDataMsg]};
@@ -2002,6 +2048,14 @@ LABKEY.vis.GenericChartHelper = new function(){
                         if (!validation.success)
                             return {success: false, messages: messages};
                     }
+                }
+            }
+        }
+
+        if (trendlineData) {
+            for (var i = 0; i < trendlineData.length; i++) {
+                if (trendlineData[i].error) {
+                    messages.push(trendlineData[i].error);
                 }
             }
         }
