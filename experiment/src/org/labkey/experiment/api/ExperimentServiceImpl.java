@@ -9921,10 +9921,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         continue;
                 }
                 query.append(unionAll);
-                query.append("SELECT LSID, ")
-                        .append("CAST (").appendIdentifier(col.getSelectIdentifier()).append(" AS VARCHAR)")
+                query.append("SELECT M.LSID, ")
+                        .append("CAST (ST.").appendIdentifier(col.getSelectIdentifier()).append(" AS VARCHAR)")
                         .append(" AS ").append(UNIQUE_ID_COL_NAME);
-                query.append(" FROM expsampleset.").append(dialect.quoteIdentifier(provisioned.getName()));
+                query.append(" FROM ").append(provisioned, "ST");
+                query.append(" INNER JOIN ").append(ExperimentService.get().getTinfoMaterial(), "M").append(" ON M.RowId = ST.RowId");
                 query.append(" WHERE ").appendIdentifier(col.getSelectIdentifier()).appendInClause(isIntegerField ? intIds : uniqueIds, dialect);
                 unionAll = "\n UNION ALL\n";
             }
