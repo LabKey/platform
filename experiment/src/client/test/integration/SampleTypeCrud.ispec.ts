@@ -103,7 +103,7 @@ beforeAll(async () => {
             name: SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME,
             aliquotNameExpression: "",
             nameExpression: "",
-            metricUnit: 'mL'
+            metricUnit: 'g'
         }
     };
     await server.post('property', 'createDomain', createPayload, {...topFolderOptions, ...designerReaderOptions}).expect((result) => {
@@ -954,6 +954,135 @@ describe('Aliquot crud', () => {
         it('Test sample type with required sample parents', async () => {
             await verifyRequiredLineageInsertUpdate(server, true, true, topFolderOptions, subfolder1Options, designerReaderOptions, readerUserOptions, editorUserOptions, adminOptions);
         });
+    });
+
+});
+
+describe('Amount/Unit CRUD', () => {
+    it ("Test Amounts/Units validation on insert/import/update/merge", async () => {
+        const dataType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
+        const NO_UNIT_ERROR = 'A Units value must be provided when Amounts are provided.';
+        const NO_AMOUNT_ERROR = 'An Amount value must be provided when Units are provided.';
+        const INCOMPATIBLE_ERROR = 'Units value (L) is not compatible with the ' + dataType + ' display units (g).';
+        const NEGATIVE_ERROR = "Value '-1.1' for field 'Amount' is invalid. Amounts must be non-negative.";
+
+        const dataName = "S-amountCrud";
+
+         let errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\nData1\t1", dataType, "INSERT", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NO_UNIT_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tUnits\nData1\tkg", dataType, "INSERT", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NO_AMOUNT_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\nData1\t1.1\tL", dataType, "INSERT", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(INCOMPATIBLE_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\nData1\t-1.1\tkg", dataType, "INSERT", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importCrossTypeData(server, "Name\tStoredAmount\tUnits\tSampleType\nData1\t-1.1\tkg\t" + dataType ,'IMPORT', topFolderOptions, adminOptions, true);
+        expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+
+        await server.post('query', 'insertRows', {
+            schemaName: 'samples',
+            queryName: dataType,
+            rows: [{
+                name: dataName,
+                amount: -1.1,
+                units: 'kg',
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toContain(NEGATIVE_ERROR);
+        });
+        const sampleRows = await ExperimentCRUDUtils.insertRows(server, [{
+            name: dataName,
+            amount: 123,
+            units: 'kg',
+        }], 'samples', dataType, topFolderOptions, editorUserOptions);
+
+        const sampleRowId = caseInsensitive(sampleRows[0], 'rowId');
+
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tAmount\n" + dataName + "\t321", dataType, "UPDATE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NO_UNIT_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\n" + dataName + "\t321", dataType, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NO_UNIT_ERROR);
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: dataType,
+            rows: [{
+                Amount: 321,
+                rowId: sampleRowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toContain(NO_UNIT_ERROR);
+        });
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: dataType,
+            rows: [{
+                StoredAmount: 321,
+                rowId: sampleRowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toContain(NO_UNIT_ERROR);
+        });
+
+
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tUnits\n" + dataName + "\tg", dataType, "UPDATE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NO_AMOUNT_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tUnits\n" + dataName + "\tg", dataType, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NO_AMOUNT_ERROR);
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: dataType,
+            rows: [{
+                Units: 'kg',
+                rowId: sampleRowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toContain(NO_AMOUNT_ERROR);
+        });
+
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tAmount\tUnits\n" + dataName + "\t321\tL", dataType, "UPDATE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(INCOMPATIBLE_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\n" + dataName + "\t321\tL", dataType, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(INCOMPATIBLE_ERROR);
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: dataType,
+            rows: [{
+                Amount: 321,
+                Units: 'L',
+                rowId: sampleRowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toContain(INCOMPATIBLE_ERROR);
+        });
+
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tAmount\tUnits\n" + dataName + "\t-1.1\tkg", dataType, "UPDATE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\n" + dataName + "\t-1.1\tkg", dataType, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: dataType,
+            rows: [{
+                Amount: -1,
+                Units: 'kg',
+                rowId: sampleRowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            // Note that the row by row update error is different from DIB. This is OK for now since we are planning to deprecate row by row updates.
+            expect(errorResp['exception']).toContain("Value '-1000.0 (g)' for field 'Amount' is invalid. Amounts must be non-negative.");
+        });
+
+        errorMsg = await ExperimentCRUDUtils.importCrossTypeData(server, "Name\tStoredAmount\tUnits\tSampleType\nData1\t-1.1\tkg\t" + dataType ,'UPDATE', topFolderOptions, adminOptions, true);
+        expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importCrossTypeData(server, "Name\tStoredAmount\tUnits\tSampleType\nData1\t-1.1\tkg\t" + dataType ,'MERGE', topFolderOptions, adminOptions, true);
+        expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+
     });
 
 });

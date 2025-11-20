@@ -17,6 +17,7 @@ package org.labkey.experiment.api.property;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -92,7 +93,7 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
 
     @Override
     public boolean validate(IPropertyValidator validator, ColumnRenderProperties field, @NotNull Object value,
-                            List<ValidationError> errors, ValidatorContext validatorCache)
+                            List<ValidationError> errors, ValidatorContext validatorCache, @Nullable Object providedValue)
     {
         assert value != null : "Shouldn't be validating a null value";
 

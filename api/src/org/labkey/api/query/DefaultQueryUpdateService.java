@@ -464,13 +464,13 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return row;
     }
 
-    protected void validateValue(ColumnInfo column, Object value) throws ValidationException
+    protected void validateValue(ColumnInfo column, Object value, Object providedValue) throws ValidationException
     {
         DomainProperty dp = getDomain() == null ? null : getDomain().getPropertyByName(column.getColumnName());
         List<ColumnValidator> validators = ColumnValidators.create(column, dp);
         for (ColumnValidator v : validators)
         {
-            String msg = v.validate(-1, value, _validatorContext);
+            String msg = v.validate(-1, value, _validatorContext, providedValue);
             if (msg != null)
                 throw new ValidationException(msg, column.getName());
         }
@@ -494,12 +494,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             }
             else
             {
-                validateValue(col, value);
+                validateValue(col, value, null);
             }
         }
     }
 
-    private void validateUpdateRow(Map<String, Object> row) throws ValidationException
+    protected void validateUpdateRow(Map<String, Object> row) throws ValidationException
     {
         for (ColumnInfo col : getQueryTable().getColumns())
         {
@@ -507,7 +507,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             if (row.containsKey(col.getColumnName()))
             {
                 Object value = row.get(col.getColumnName());
-                validateValue(col, value);
+                validateValue(col, value, null);
             }
         }
     }
