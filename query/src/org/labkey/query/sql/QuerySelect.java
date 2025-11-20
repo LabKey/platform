@@ -45,6 +45,7 @@ import org.labkey.api.query.QueryParseExceptionUnresolvedField;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
@@ -67,6 +68,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static org.labkey.api.exp.api.ExperimentService.EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS;
 
 
 public class QuerySelect extends AbstractQueryRelation implements Cloneable
@@ -679,7 +681,11 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             QueryLineage lineageQuery = new QueryLineage(_query, methodIdentifier, sourceQuery, alias.getIdentifier(), methodType==SqlBaseParser.EXPANCESTORSOF);
             QTable methodTable = new QTable(lineageQuery, lineageQuery.getAlias());
             FieldKey aliasKey = methodTable.getAlias();
-            if (_tables.containsKey(aliasKey))
+            if (!OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS))
+            {
+                parseError("Syntax error in FROM clause", range);
+            }
+            else if (_tables.containsKey(aliasKey))
             {
                 parseError(aliasKey + " was specified more than once", alias);
             }
