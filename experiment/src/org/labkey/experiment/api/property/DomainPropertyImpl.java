@@ -864,7 +864,7 @@ public class DomainPropertyImpl implements DomainProperty
                     {
                         updateBooleanValue(
                                 new SQLFragment().appendIdentifier(_domain.getDomainKind().getStorageSchemaName()).append(".").appendIdentifier(_domain.getStorageTableName()),
-                                _pd.getLegalSelectName(dialect), _pdOld.getFormat(), null); // GH Issue 755
+                                _pd.getLegalSelectName(dialect), _pdOld.getFormat(), null); // GitHub Issue #647
                     }
                 }
                 else if (propResized)
