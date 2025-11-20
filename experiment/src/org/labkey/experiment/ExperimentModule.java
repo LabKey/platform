@@ -267,6 +267,8 @@ public class ExperimentModule extends SpringModule
         }
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.QUANTITY_COLUMN_SUFFIX_TESTING, "Quantity column suffix testing",
                 "If a column name contains a \"__<unit>\" suffix, this feature allows for testing it as a Quantity display column", false);
+        OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS, "SQL syntax: 'FROM EXPANCESTORS()'",
+                "Support for querying lineage of experiment objects", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
         RoleManager.registerRole(new SampleTypeDesignerRole());
