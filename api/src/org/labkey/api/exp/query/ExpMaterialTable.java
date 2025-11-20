@@ -72,7 +72,8 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
 
         private boolean _hasUnit = false;
         private final String _label;
-        Column() {
+        Column()
+        {
             _label = ColumnInfo.labelFromName(name());
         }
 

@@ -509,9 +509,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
      * presence or absence of columns in the incoming data. If both columns are present, no exception is thrown.
      *
      * @param columns      The set of columns in the input
-     * @param allowsUpdate Whether the type of import supports updates or not
      */
-    public static void confirmAmountAndUnitsColumns(Collection<String> columns, boolean allowsUpdate)
+    public static void confirmAmountAndUnitsColumns(Collection<String> columns)
     {
         boolean hasUnits = columns.stream().anyMatch(column -> column.equalsIgnoreCase(Units.name()));
         boolean hasAmount = columns.stream().anyMatch(column -> StoredAmount.namesAndLabels().contains(column));
@@ -525,25 +524,32 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> updateRows(
+        User user,
+        Container container,
+        List<Map<String, Object>> rows,
+        List<Map<String, Object>> oldKeys,
+        BatchValidationException errors,
+        @Nullable Map<Enum, Object> configParameters,
+        Map<String, Object> extraScriptContext
+    ) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
 
-        if (rows != null && !rows.isEmpty())
-            confirmAmountAndUnitsColumns(rows.get(0).keySet(), true);
-
+        // TODO: Perhaps we invert and if an lsid is included we do row-by-row? For backwards compatibility.
+        //  This would required joining in exp.material to get rowId or name.
         boolean useDib = false;
-        if (rows != null && !rows.isEmpty() && oldKeys == null)
-            useDib = rows.get(0).containsKey("lsid");
-
-        useDib = useDib && hasUniformKeys(rows);
+        if (rows != null && !rows.isEmpty())
+        {
+            confirmAmountAndUnitsColumns(rows.get(0).keySet());
+            useDib = hasUniformKeys(rows);
+        }
 
         List<Map<String, Object>> results;
         DbScope scope = getSchema().getDbSchema().getScope();
         if (useDib)
         {
             Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
-            finalConfigParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
             recordDataIteratorUsed(configParameters);
 
             try
@@ -618,12 +624,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         ColumnInfo unitsCol = null;
         Object amountVal = null;
         ColumnInfo amountCol = null;
-        if (row.containsKey(ExpMaterialTable.Column.Units.name()))
+        if (row.containsKey(Units.name()))
         {
-            unitsVal = row.get(ExpMaterialTable.Column.Units.name());
-            unitsCol = columnMap.get(ExpMaterialTable.Column.Units.name());
+            unitsVal = row.get(Units.name());
+            unitsCol = columnMap.get(Units.name());
         }
-        for (String colName : ExpMaterialTable.Column.StoredAmount.namesAndLabels())
+        for (String colName : StoredAmount.namesAndLabels())
         {
             if (row.containsKey(colName))
             {
@@ -782,7 +788,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Domain domain = getDomain();
         Set<String> fields = domain.getProperties().stream()
                 .filter(dp -> !LSID.name().equalsIgnoreCase(dp.getName())
-                                && !ExpMaterialTable.Column.Name.name().equalsIgnoreCase(dp.getName())
+                                && !Name.name().equalsIgnoreCase(dp.getName())
                                 && (StringUtils.isEmpty(dp.getDerivationDataScope())
                                     || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(dp.getDerivationDataScope())))
                 .map(ImportAliasable::getName)
@@ -993,7 +999,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 validRowCopy.put(updateField, updateValue);
             }
 
-            if (ExpMaterialTable.Column.SampleState.name().equalsIgnoreCase(updateField))
+            if (SampleState.name().equalsIgnoreCase(updateField))
                 hasStatusCol = true;
         }
         // had a locked status before and either not updating the status or updating to a new locked status
@@ -1163,12 +1169,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     private @Nullable Integer getMaterialSourceId(Map<String, Object> row)
     {
-        return getMaterialIntegerValue(row, ExpMaterialTable.Column.MaterialSourceId.name());
+        return getMaterialIntegerValue(row, MaterialSourceId.name());
     }
 
     private @Nullable Long getMaterialRowId(Map<String, Object> row)
     {
-        return MapUtils.getLong(row, ExpMaterialTable.Column.RowId.name());
+        return MapUtils.getLong(row, RowId.name());
     }
 
     private Map<String, Object> getMaterialMap(Long rowId, String lsid, User user, Container container, boolean addInputs)
@@ -1176,7 +1182,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         Filter filter;
         if (rowId != null)
-            filter = new SimpleFilter(ExpMaterialTable.Column.RowId.fieldKey(), rowId);
+            filter = new SimpleFilter(RowId.fieldKey(), rowId);
         else if (lsid != null)
             filter = new SimpleFilter(LSID.fieldKey(), lsid);
         else
@@ -1212,8 +1218,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 sampleTypeId = getMaterialSourceId(keyMap.getValue());
         }
 
-        SimpleFilter filter = new SimpleFilter(ExpMaterialTable.Column.MaterialSourceId.fieldKey(), sampleTypeId);
-        filter.addCondition(ExpMaterialTable.Column.Name.fieldKey(), sampleNames, CompareType.IN);
+        SimpleFilter filter = new SimpleFilter(MaterialSourceId.fieldKey(), sampleTypeId);
+        filter.addCondition(Name.fieldKey(), sampleNames, CompareType.IN);
         filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.NEQ);
 
         return new TableSelector(ExperimentService.get().getTinfoMaterial(), filter, null).exists();
@@ -1240,7 +1246,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 includedColumns.add(remap.get(column.getColumnName()));
         }
 
-        boolean isAllFromMaterialTable = new CaseInsensitiveHashSet(Stream.of(ExpMaterialTable.Column.values())
+        boolean isAllFromMaterialTable = new CaseInsensitiveHashSet(Stream.of(values())
                 .map(Enum::name)
                 .collect(Collectors.toSet()))
                 .containsAll(includedColumns);
@@ -1257,7 +1263,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (isAllFromMaterialTable)
         {
             // ExperimentService.get().getTinfoMaterial() uses Container column, not Folder
-            includedColumns.remove(ExpMaterialTable.Column.Folder.name());
+            includedColumns.remove(Folder.name());
             includedColumns.add("container");
         }
 
@@ -1285,8 +1291,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
-            throws InvalidKeyException, QueryUpdateServiceException
+    public Map<Integer, Map<String, Object>> getExistingRows(
+        User user,
+        Container container,
+        Map<Integer, Map<String, Object>> keys,
+        boolean verifyNoCrossFolderData,
+        boolean verifyExisting,
+        @Nullable Set<String> columns
+    ) throws InvalidKeyException, QueryUpdateServiceException
     {
         ExistingRowSelect existingRowSelect = getExistingRowSelect(columns);
         TableInfo queryTableInfo = existingRowSelect.tableInfo;
@@ -1296,6 +1308,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Map<Integer, String> rowNumLsid = new IntHashMap<>();
 
         Map<Long, Integer> rowIdRowNumMap = new LinkedHashMap<>();
+        // TODO: What if we didn't support lsidRowMap?
         Map<String, Integer> lsidRowNumMap = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
         Map<String, Integer> nameRowNumMap = new LinkedHashMap<>();
         Integer sampleTypeId = null;
@@ -1321,12 +1334,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 nameRowNumMap.put(name, rowNum);
             }
             else
-                throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Type Material.");
+                throw new QueryUpdateServiceException("Either RowId or Name is required to get Sample Type Material.");
         }
 
         if (!rowIdRowNumMap.isEmpty())
         {
-            SimpleFilter filter = new SimpleFilter(ExpMaterialTable.Column.RowId.fieldKey(), rowIdRowNumMap.keySet(), CompareType.IN);
+            SimpleFilter filter = new SimpleFilter(RowId.fieldKey(), rowIdRowNumMap.keySet(), CompareType.IN);
             filter.addCondition(FieldKey.fromParts("Container"), container);
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
@@ -1348,7 +1361,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             useLsid = true;
             allKeys.addAll(lsidRowNumMap.keySet());
 
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(LSID), lsidRowNumMap.keySet(), CompareType.IN);
+            SimpleFilter filter = new SimpleFilter(LSID.fieldKey(), lsidRowNumMap.keySet(), CompareType.IN);
             filter.addCondition(FieldKey.fromParts("Container"), container);
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
@@ -1364,8 +1377,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!nameRowNumMap.isEmpty())
         {
             allKeys.addAll(nameRowNumMap.keySet());
-            SimpleFilter filter = new SimpleFilter(ExpMaterialTable.Column.MaterialSourceId.fieldKey(), sampleTypeId);
-            filter.addCondition(ExpMaterialTable.Column.Name.fieldKey(), nameRowNumMap.keySet(), CompareType.IN);
+            SimpleFilter filter = new SimpleFilter(MaterialSourceId.fieldKey(), sampleTypeId);
+            filter.addCondition(Name.fieldKey(), nameRowNumMap.keySet(), CompareType.IN);
             filter.addCondition(FieldKey.fromParts("Container"), container);
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
@@ -1385,11 +1398,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             // Issue 52922: cross folder merge without Product Folders enabled silently ignores the cross folder row update
             ContainerFilter allCf = new ContainerFilter.AllInProjectPlusShared(container, user); // use a relaxed CF to find existing data from cross containers
 
-            SimpleFilter existingDataFilter = new SimpleFilter(ExpMaterialTable.Column.MaterialSourceId.fieldKey(), sampleTypeId);
-            existingDataFilter.addCondition(FieldKey.fromParts("Container"), allCf.getIds(), CompareType.IN);
+            SimpleFilter existingDataFilter = new SimpleFilter(MaterialSourceId.fieldKey(), sampleTypeId);
+            existingDataFilter.addCondition(allCf.createFilterClause(ExperimentService.get().getSchema(), FieldKey.fromParts("Container")));
+            existingDataFilter.addCondition(useLsid ? LSID.fieldKey() : Name.fieldKey(), allKeys, CompareType.IN);
 
-            existingDataFilter.addCondition(FieldKey.fromParts(useLsid ? "LSID" : "Name"), allKeys, CompareType.IN);
-            Map<String, Object>[] cfRows = new TableSelector(ExperimentService.get().getTinfoMaterial(), existingDataFilter, null).getMapArray();
+            // TODO: Couldn't this question be asked in the query and return a max of one row where the container does not match?
+            Map<String, Object>[] cfRows = new TableSelector(ExperimentService.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet("Container", Name.name()), existingDataFilter, null).getMapArray();
             for (Map<String, Object> row : cfRows)
             {
                 String dataContainer = (String) row.get("container");
@@ -1422,7 +1436,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         Set<String> lsids = new HashSet<>();
         for (Map<String, Object> sampleRow : sampleRows.values())
-            lsids.add((String) sampleRow.get("lsid"));
+            lsids.add(getMaterialLsid(sampleRow));
         List<ExpMaterialImpl> seeds = ExperimentServiceImpl.get().getExpMaterialsByLsid(lsids);
 
         ExperimentServiceImpl.get().addRowsParentsFields(new HashSet<>(seeds), sampleRows, user, container);
@@ -1564,6 +1578,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator source = LoggingDataIterator.wrap(builder.getDataIterator(context));
+            boolean isUpdate = context.getInsertOption() == InsertOption.UPDATE;
 
             // drop columns
             ColumnInfo containerColumn = this.materialTable.getColumn(this.materialTable.getContainerFieldKey());
@@ -1599,6 +1614,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         continue;
                     if (isContainerField && context.isCrossFolderImport() && !context.getInsertOption().updateOnly)
                         continue;
+                    if (isUpdate && RowId.name().equalsIgnoreCase(name))
+                        continue;
                     drop.add(name);
                 }
             }
@@ -1609,7 +1626,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 source = new DropColumnsDataIterator(source, drop);
 
             Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(source);
-            if (context.getInsertOption() == InsertOption.UPDATE)
+            if (isUpdate)
             {
                 SimpleTranslator addAliquotedFrom = new SimpleTranslator(source, context);
 
@@ -1624,7 +1641,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 addAliquotedFrom.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
                 addAliquotedFrom.selectAll();
 
-                var addRequiredColsDI = new SampleUpdateAddColumnsDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId(), columnNameMap.containsKey("lsid"));
+                var addRequiredColsDI = new SampleUpdateAddColumnsDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId(), columnNameMap.containsKey(RowId.name()));
 
                 SimpleTranslator c = new _SamplesCoerceDataIterator(addRequiredColsDI, context, sampleType, materialTable);
                 context.setWithLookupRemapping(false);
@@ -1672,7 +1689,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 return true;
             if (ExperimentService.isInputOutputColumn(name))
                 return true;
-            for (ExpMaterialTable.Column column : ExpMaterialTable.Column.values())
+            for (ExpMaterialTable.Column column : values())
             {
                 if (isExpMaterialColumn(column, name))
                     return true;
@@ -1687,12 +1704,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         private static boolean isNameHeader(String name)
         {
-            return isExpMaterialColumn(ExpMaterialTable.Column.Name, name);
+            return isExpMaterialColumn(Name, name);
         }
 
         private static boolean isDescriptionHeader(String name)
         {
-            return isExpMaterialColumn(ExpMaterialTable.Column.Description, name);
+            return isExpMaterialColumn(Description, name);
         }
 
         private static boolean isSampleStateHeader(String name)
@@ -1702,27 +1719,27 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         private static boolean isCommentHeader(String name)
         {
-            return isExpMaterialColumn(ExpMaterialTable.Column.Flag, name) || "Comment".equalsIgnoreCase(name);
+            return isExpMaterialColumn(Flag, name) || "Comment".equalsIgnoreCase(name);
         }
 
         private static boolean isAliasHeader(String name)
         {
-            return isExpMaterialColumn(ExpMaterialTable.Column.Alias, name);
+            return isExpMaterialColumn(Alias, name);
         }
 
         private static boolean isMaterialExpDateHeader(String name)
         {
-            return isExpMaterialColumn(ExpMaterialTable.Column.MaterialExpDate, name);
+            return isExpMaterialColumn(MaterialExpDate, name);
         }
 
         private static boolean isStoredAmountHeader(String name)
         {
-            return isExpMaterialColumn(ExpMaterialTable.Column.StoredAmount, name) || "Amount".equalsIgnoreCase(name);
+            return isExpMaterialColumn(StoredAmount, name) || StoredAmount.label().equalsIgnoreCase(name);
         }
 
         public static boolean isUnitsHeader(String name)
         {
-            return isExpMaterialColumn(ExpMaterialTable.Column.Units, name);
+            return isExpMaterialColumn(Units, name);
         }
 
         private static boolean isAliquotRollupHeader(String name)
@@ -1737,7 +1754,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     static class _GenerateNamesDataIterator extends SimpleTranslator
     {
         final boolean _allowUserSpecifiedNames;        // whether manual names specification is allowed or only name expression generation
-        final int _batchSize;
         final RemapCache _cache;
         final Container _container;
         final List<Supplier<Map<String, Object>>> _extraPropsFns;
@@ -1786,20 +1802,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             boolean skipDuplicateCheck = context.getConfigParameterBoolean(SkipMaxSampleCounterFunction);
             _nameState = sampleType.getNameGenState(skipDuplicateCheck, true, _container, user);
             lsidBuilder = sampleType.generateSampleLSID();
-            _batchSize = batchSize;
+            _lsidDbSeq = sampleType.getSampleLsidDbSeq(batchSize, sampleType.getContainer());
 
-            boolean useLsidForUpdate = context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
-            if (useLsidForUpdate)
-                selectAll(CaseInsensitiveHashSet.of(Name.name(), RootMaterialRowId.name()));
-            else
-                selectAll(CaseInsensitiveHashSet.of(Name.name(), LSID.name(), RootMaterialRowId.name()));
-
-            _lsidDbSeq = sampleType.getSampleLsidDbSeq(_batchSize, sampleType.getContainer());
+            selectAll(CaseInsensitiveHashSet.of(Name.name(), LSID.name(), RootMaterialRowId.name()));
 
             addColumn(new BaseColumnInfo("name", JdbcType.VARCHAR), (Supplier<String>)() -> generatedName);
-            if (!useLsidForUpdate)
-                addColumn(new BaseColumnInfo("lsid", JdbcType.VARCHAR), (Supplier<String>)() -> lsidBuilder.setObjectId(String.valueOf(_lsidDbSeq.next())).toString());
-            // Ensure we have a cpasType column and it is of the right value
+            addColumn(new BaseColumnInfo("lsid", JdbcType.VARCHAR), (Supplier<String>)() -> lsidBuilder.setObjectId(String.valueOf(_lsidDbSeq.next())).toString());
             addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
             addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
         }

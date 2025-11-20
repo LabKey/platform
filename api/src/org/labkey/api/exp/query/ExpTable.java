@@ -33,6 +33,7 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.Permission;
 
+import java.util.Collections;
 import java.util.Set;
 
 public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
@@ -125,16 +126,15 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
         // by default we do nothing
     }
 
-
     /** returns a column that wraps objectid, this is only required to support the expObject() table method */
     default ColumnInfo getExpObjectColumn()
     {
         return null;
     }
 
-    @Nullable default Set<String> getAltMergeKeys(DataIteratorContext context)
+    @NotNull default Set<String> getAltMergeKeys(DataIteratorContext context)
     {
-        return null;
+        return Collections.emptySet();
     }
 
     class ExpObjectDataColumn extends DataColumn

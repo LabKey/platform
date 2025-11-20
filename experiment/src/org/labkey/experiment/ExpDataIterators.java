@@ -105,7 +105,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -168,15 +167,15 @@ import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAmount;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawUnits;
 import static org.labkey.api.util.IntegerUtils.asLong;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Alias;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Folder;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Flag;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.MaterialSourceId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialRowId;
@@ -312,9 +311,9 @@ public class ExpDataIterators
             Object aliquotedFromObj = data.get(_aliquotedFromColIdx);
             if (aliquotedFromObj != null)
             {
-                if (aliquotedFromObj instanceof String)
+                if (aliquotedFromObj instanceof String s)
                 {
-                    aliquotedFromValue = (String) aliquotedFromObj;
+                    aliquotedFromValue = s;
                 }
                 else if (aliquotedFromObj instanceof Number)
                 {
@@ -1321,9 +1320,9 @@ public class ExpDataIterators
 
                     if (o != null)
                     {
-                        if (o instanceof String)
+                        if (o instanceof String s)
                         {
-                            aliquotParentName = StringUtilsLabKey.unquoteString((String) o);
+                            aliquotParentName = StringUtilsLabKey.unquoteString(s);
                         }
                         else if (o instanceof Number)
                         {
@@ -1345,7 +1344,7 @@ public class ExpDataIterators
                     for (Integer parentCol : _requiredParentCols.keySet())
                     {
                         Object parentVal = get(parentCol);
-                        if (parentVal == null || (parentVal instanceof String && ((String) parentVal).isEmpty()))
+                        if (parentVal == null || (parentVal instanceof String s && s.isEmpty()))
                             getErrors().addRowError(new ValidationException("Missing value for required property: " + _requiredParentCols.get(parentCol)));
                     }
                 }
@@ -2204,7 +2203,7 @@ public class ExpDataIterators
         final Map<String, String> _importAliases;
 
         // expTable is the shared experiment table e.g. exp.Data or exp.Materials
-        public PersistDataIteratorBuilder(@NotNull DataIteratorBuilder in, TableInfo expTable, TableInfo propsTable, ExpObject typeObject, Container container, User user, Map<String, String> importAliases, @Nullable Long ownerObjectId)
+        public PersistDataIteratorBuilder(@NotNull DataIteratorBuilder in, TableInfo expTable, TableInfo propsTable, ExpObject typeObject, Container container, User user, Map<String, String> importAliases)
         {
             _in = in;
             _expTable = expTable;
@@ -2212,7 +2211,7 @@ public class ExpDataIterators
             _dataTypeObject = typeObject;
             _container = container;
             _user = user;
-            _importAliases = importAliases != null ? new CaseInsensitiveHashMap<>(importAliases) : new CaseInsensitiveHashMap<>();
+            _importAliases = importAliases != null ? new CaseInsensitiveHashMap<>(importAliases) : Collections.emptyMap();
         }
 
         public PersistDataIteratorBuilder setIndexFunction(Function<SearchIndexDataKeys, Runnable> indexFunction)
@@ -2256,13 +2255,12 @@ public class ExpDataIterators
             boolean isSample = _expTable instanceof ExpMaterialTableImpl;
 
             SimpleTranslator step1 = new SimpleTranslator(input, context);
-            step1.selectAll(Sets.newCaseInsensitiveHashSet("alias"), _importAliases);
-            if (colNameMap.containsKey("alias"))
-                step1.addColumn(ExperimentService.ALIASCOLUMNALIAS, colNameMap.get("alias")); // see AliasDataIteratorBuilder
+            step1.selectAll(Sets.newCaseInsensitiveHashSet(Alias.name()), _importAliases);
+            if (colNameMap.containsKey(Alias.name()))
+                step1.addColumn(ExperimentService.ALIASCOLUMNALIAS, colNameMap.get(Alias.name())); // see AliasDataIteratorBuilder
 
             CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
             dontUpdate.addAll(NOT_FOR_UPDATE);
-            dontUpdate.add("rowid"); // rowid is added / not dropped for dataclass for QueryUpdateAuditEvent.rowpk audit purpose
             if (context.getInsertOption().updateOnly)
             {
                 dontUpdate.add("objectid");
@@ -2271,46 +2269,50 @@ public class ExpDataIterators
             }
 
             boolean isMergeOrUpdate = context.getInsertOption().allowUpdate;
-            boolean isUpdateUsingLsid = context.getInsertOption().updateOnly && colNameMap.containsKey("lsid") && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
 
             CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
             CaseInsensitiveHashSet propertyKeyColumns = new CaseInsensitiveHashSet();
             if (!isMergeOrUpdate)
                 keyColumns.add(ExpDataTable.Column.LSID.toString());
 
-            NameExpressionOptionService svc = NameExpressionOptionService.get();
-            boolean canUpdateNames = svc.getAllowUserSpecificNamesValue(_container);
+            boolean canUpdateNames = NameExpressionOptionService.get().getAllowUserSpecificNamesValue(_container);
 
             if (isSample)
             {
+                ExpMaterialTableImpl expMaterialTable = (ExpMaterialTableImpl) _expTable;
+
                 if (isMergeOrUpdate)
                 {
-                    if (isUpdateUsingLsid)
+                    boolean isUpdateUsingRowId = context.getInsertOption().updateOnly && colNameMap.containsKey(RowId.name());
+                    if (isUpdateUsingRowId)
                     {
-                        keyColumns.add(ExpDataTable.Column.LSID.toString());
+                        keyColumns.add(RowId.name());
                         if (!canUpdateNames)
-                            dontUpdate.add("name");
+                            dontUpdate.add(Name.name());
                     }
                     else
                     {
-                        keyColumns.addAll(((ExpMaterialTableImpl) _expTable).getAltMergeKeys(context));
-                        propertyKeyColumns.add("name");
+                        keyColumns.addAll(expMaterialTable.getAltMergeKeys(context));
+                        propertyKeyColumns.add(Name.name());
                     }
                 }
 
-                dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
-                dontUpdate.add(RootMaterialRowId.toString());
-                dontUpdate.add(AliquotedFromLSID.toString());
-                dontUpdate.add(ExpMaterialTable.Column.AliquotCount.name());
-                dontUpdate.add(ExpMaterialTable.Column.AliquotVolume.name());
-                dontUpdate.add(ExpMaterialTable.Column.AvailableAliquotCount.name());
-                dontUpdate.add(ExpMaterialTable.Column.AvailableAliquotVolume.name());
+                dontUpdate.addAll(expMaterialTable.getUniqueIdFields());
+                dontUpdate.addAll(
+                    RootMaterialRowId.name(),
+                    AliquotedFromLSID.name(),
+                    AliquotCount.name(),
+                    AliquotVolume.name(),
+                    AvailableAliquotCount.name(),
+                    AvailableAliquotVolume.name()
+                );
             }
             else if (isMergeOrUpdate)
             {
+                boolean isUpdateUsingLsid = context.getInsertOption().updateOnly && colNameMap.containsKey(ExpDataTable.Column.LSID.name()) && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
                 if (isUpdateUsingLsid)
                 {
-                    keyColumns.add(ExpDataTable.Column.LSID.toString());
+                    keyColumns.add(ExpDataTable.Column.LSID.name());
                     if (!canUpdateNames)
                         dontUpdate.add("name");
                 }
@@ -2360,7 +2362,7 @@ public class ExpDataIterators
                     .setFailOnEmptyUpdate(false));
 
             DataIteratorBuilder step5 = step4;
-            if (colNameMap.containsKey("flag") || colNameMap.containsKey("comment"))
+            if (colNameMap.containsKey(Flag.name()) || colNameMap.containsKey("comment"))
             {
                 step5 = LoggingDataIterator.wrap(new ExpDataIterators.FlagDataIteratorBuilder(step4, _user, isSample, _dataTypeObject, _container));
             }
