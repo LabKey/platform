@@ -890,7 +890,7 @@ public class SqlParser
                         _parseErrors.add(new QueryParseException("Illegal syntax near 'IN'", null, node.getLine(), node.getCharPositionInLine()));
                         return null;
                     }
-                    var qInLineage = new QInLineage(node.getType()==IN, method.getTokenType() != EXPANCESTORSOF );
+                    var qInLineage = new QInLineage(node.getType()==IN, method.getTokenType() == EXPANCESTORSOF );
                     qInLineage._replaceChildren(new LinkedList<>(List.of(lhs, rhs.childList().get(1))));
                     return qInLineage;
                 }
