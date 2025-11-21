@@ -141,8 +141,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             String indexSql = "CREATE INDEX IX_Id" + new GUID().toStringNoDashes() + " ON " + tableName + "(Id)";
             try (var ignored = SpringActionController.ignoreSqlUpdates())
             {
-                SqlExecutor executor = new SqlExecutor(tempSchema);
-                executor.execute(indexSql);
+                new SqlExecutor(tempSchema).execute(indexSql);
                 tempSchema.getSqlDialect().updateStatistics(tempTableInfo); // Immediately analyze the newly populated & indexed table
             }
 
