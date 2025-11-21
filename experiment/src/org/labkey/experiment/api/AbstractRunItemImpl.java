@@ -59,6 +59,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyMap;
 import static org.labkey.api.util.IntegerUtils.isIntegral;
 
 /**
@@ -313,16 +314,15 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         return ExpRunImpl.fromRuns(new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
-    protected HashMap<String,ObjectProperty> getObjectProperties(TableInfo ti)
+    protected Map<String, ObjectProperty> getObjectProperties(TableInfo ti)
     {
         if (null == ti)
-            return new HashMap<>();
-        var scope = OntologyManager.getExpSchema().getScope();
-        return scope.executeWithRetryReadOnly(tx ->
+            return emptyMap();
+
+        return OntologyManager.getExpSchema().getScope().executeWithRetryReadOnly(tx ->
         {
-            var ret = new HashMap<String,ObjectProperty>();
-            var selector = new TableSelector(ti, TableSelector.ALL_COLUMNS, new SimpleFilter(FieldKey.fromParts("lsid"), getLSID()), null);
-            selector.forEach(rs ->
+            var ret = new HashMap<String, ObjectProperty>();
+            getObjectPropertiesSelector(ti).forEach(rs ->
             {
                 for (ColumnInfo c : ti.getColumns())
                 {
@@ -335,20 +335,29 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
                     if (null != c.getMvColumnName())
                     {
                         ColumnInfo mv = ti.getColumn(c.getMvColumnName());
-                        mvIndicator = null==mv ? null : (String)mv.getValue(rs);
+                        mvIndicator = null == mv ? null : (String) mv.getValue(rs);
                     }
                     if (null == value && null == mvIndicator)
                         continue;
                     if (null != mvIndicator)
                         value = null;
-                    var prop = new ObjectProperty(getLSID(), getContainer(), c.getPropertyURI(), value, null==c.getPropertyType()? PropertyType.getFromJdbcType(c.getJdbcType()) : c.getPropertyType(), c.getName());
+
+                    var propertyType = null == c.getPropertyType() ? PropertyType.getFromJdbcType(c.getJdbcType()) : c.getPropertyType();
+                    var prop = new ObjectProperty(getLSID(), getContainer(), c.getPropertyURI(), value, propertyType, c.getName());
                     if (null != mvIndicator)
                         prop.setMvIndicator(mvIndicator);
+
                     ret.put(c.getPropertyURI(), prop);
                 }
             });
+
             return ret;
         });
+    }
+
+    protected TableSelector getObjectPropertiesSelector(@NotNull TableInfo table)
+    {
+        return new TableSelector(table, new SimpleFilter(FieldKey.fromParts("lsid"), getLSID()), null);
     }
 
     protected void processIndexValues(

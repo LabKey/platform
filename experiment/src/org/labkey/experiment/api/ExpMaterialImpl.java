@@ -506,8 +506,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         var ti = null == st ? null : st.getTinfo();
         if (null != ti)
         {
-            var selector = new TableSelector(ti, new SimpleFilter(ExpMaterialTable.Column.RowId.fieldKey(), getRowId()), null);
-            selector.forEach(rs ->
+            getObjectPropertiesSelector(ti).forEach(rs ->
             {
                 for (ColumnInfo c : ti.getColumns())
                 {
@@ -555,9 +554,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
-    public Object getProperty(DomainProperty prop)
+    protected TableSelector getObjectPropertiesSelector(@NotNull TableInfo table)
     {
-        return super.getProperty(prop);
+        return new TableSelector(table, new SimpleFilter(ExpMaterialTable.Column.RowId.fieldKey(), getRowId()), null);
     }
 
     @Override
