@@ -60,7 +60,12 @@
                     <fkDbSchema>core</fkDbSchema>
                 </fk>
             </column>
-            <column columnName="BugNumber"/>
+            <column columnName="LabKeyIssue">
+                <columnTitle>LabKey Issue</columnTitle>
+            </column>
+            <column columnName="GitHubIssue">
+                <columnTitle>GitHub Issue</columnTitle>
+            </column>
             <column columnName="Comments">
                 <inputRows>4</inputRows>
             </column>

@@ -37,7 +37,7 @@
     <%}%>
     <% if (getUser() != null && !getUser().isGuest()) {
             ActionURL myExceptions = new ActionURL(MothershipController.ShowExceptionsAction.class, c);
-            myExceptions.addFilter("ExceptionSummary", FieldKey.fromParts("BugNumber"), CompareType.ISBLANK, null);
+            myExceptions.addFilter("ExceptionSummary", FieldKey.fromParts("Issue"), CompareType.ISBLANK, null);
             myExceptions.addFilter("ExceptionSummary", FieldKey.fromParts("AssignedTo", "DisplayName"), CompareType.EQUAL, getUser().getDisplayName(getUser()));
         %>
         <%= link("My Exceptions", myExceptions)%>
