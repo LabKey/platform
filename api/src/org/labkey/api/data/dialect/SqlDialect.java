@@ -546,11 +546,11 @@ public abstract class SqlDialect
     }
 
     // Call directly only in cases where the default temp-table generator won't do, e.g., you need to apply a large IN clause in an external data source
-    public final SQLFragment appendInClauseSqlWithCustomInClauseGenerator(SQLFragment sql, @NotNull Collection<?> params, @Nullable InClauseGenerator tempTableGenerator)
+    public final SQLFragment appendInClauseSqlWithCustomInClauseGenerator(SQLFragment sql, @NotNull Collection<?> params, @Nullable InClauseGenerator largeInClauseGenerator)
     {
-        if (params.size() >= TEMP_TABLE_GENERATOR_MIN_SIZE && tempTableGenerator != null)
+        if (params.size() >= TEMP_TABLE_GENERATOR_MIN_SIZE && largeInClauseGenerator != null)
         {
-            SQLFragment ret = tempTableGenerator.appendInClauseSql(sql, params);
+            SQLFragment ret = largeInClauseGenerator.appendInClauseSql(sql, params);
             if (null != ret)
                 return ret;
         }
