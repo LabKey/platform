@@ -127,6 +127,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     String ILLEGAL_PARENT_ALIAS_CHARSET = "/:<>$[]{};,`\"~!@#$%^*=|?\\";
 
+    String EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS = "org.labkey.api.exp.api.ExperimentService#FROM_EXPANCESTORS";
+
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
     int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;

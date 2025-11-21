@@ -416,7 +416,13 @@ fromRange
 	    ( (subQuery) => subQuery CLOSE (AS? identifier)? -> ^(RANGE subQuery identifier?)
 	    | joinExpression CLOSE -> joinExpression
 	    )
-	;
+    | tableMethod (AS? identifier)? -> ^(RANGE tableMethod identifier?)
+    ;
+
+
+tableMethod
+    : (EXPANCESTORSOF | EXPDESCENDANTSOF) op=OPEN^ {$op.setType(METHOD_CALL);} subQuery CLOSE!
+    ;
 
 
 tableSpecificationWithAnnotation
@@ -671,7 +677,7 @@ likeEscape
 
 
 inList
-	: (EXPDESCENDANTSOF|EXPANCESTORSOF)^ OPEN! subQuery CLOSE!
+	: (EXPANCESTORSOF | EXPDESCENDANTSOF) op=OPEN^ {$op.setType(METHOD_CALL);} subQuery CLOSE!
 	| compoundExpr -> ^(IN_LIST compoundExpr)
 	;
 

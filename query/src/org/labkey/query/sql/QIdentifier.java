@@ -78,9 +78,9 @@ public class QIdentifier extends QFieldKey
 
     public String getIdentifier()
     {
-        if (getTokenType() == SqlBaseParser.IDENT)
-            return getTokenText();
-        return LabKeySql.unquoteIdentifier(getTokenText());
+        if (getTokenType() == SqlBaseParser.QUOTED_IDENTIFIER)
+            return LabKeySql.unquoteIdentifier(getTokenText());
+        return getTokenText();
     }
 
 
