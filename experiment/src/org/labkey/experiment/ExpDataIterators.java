@@ -2327,14 +2327,10 @@ public class ExpDataIterators
                 dontUpdate.add("lastindexed");
             }
 
-            boolean isMergeOrUpdate = context.getInsertOption().allowUpdate;
-
             CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
             CaseInsensitiveHashSet propertyKeyColumns = new CaseInsensitiveHashSet();
-            if (!isMergeOrUpdate)
-                keyColumns.add(ExpDataTable.Column.LSID.toString());
-
             boolean canUpdateNames = NameExpressionOptionService.get().getAllowUserSpecificNamesValue(_container);
+            boolean isMergeOrUpdate = context.getInsertOption().allowUpdate;
 
             if (isSample)
             {
@@ -2366,18 +2362,25 @@ public class ExpDataIterators
                     AvailableAliquotVolume.name()
                 );
             }
-            else if (isMergeOrUpdate)
+            else
             {
-                boolean isUpdateUsingLsid = context.getInsertOption().updateOnly && colNameMap.containsKey(ExpDataTable.Column.LSID.name()) && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
-                if (isUpdateUsingLsid)
+                if (isMergeOrUpdate)
                 {
-                    keyColumns.add(ExpDataTable.Column.LSID.name());
-                    if (!canUpdateNames)
-                        dontUpdate.add("name");
+                    boolean isUpdateUsingLsid = context.getInsertOption().updateOnly && colNameMap.containsKey(ExpDataTable.Column.LSID.name()) && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
+                    if (isUpdateUsingLsid)
+                    {
+                        keyColumns.add(ExpDataTable.Column.LSID.name());
+                        if (!canUpdateNames)
+                            dontUpdate.add(ExpDataTable.Column.Name.name());
+                    }
+                    else
+                    {
+                        keyColumns.addAll(((ExpDataClassDataTableImpl) _expTable).getAltMergeKeys(context));
+                    }
                 }
                 else
                 {
-                    keyColumns.addAll(((ExpDataClassDataTableImpl) _expTable).getAltMergeKeys(context));
+                    keyColumns.add(ExpDataTable.Column.LSID.toString());
                 }
             }
 
