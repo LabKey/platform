@@ -1876,27 +1876,29 @@ public class SimpleFilter implements Filter
             DbSchema core = CoreSchema.getInstance().getSchema();
             SqlDialect d = core.getSqlDialect();
 
-            SQLFragment shortSql = new SQLFragment("SELECT COUNT(*) FROM core.usersdata WHERE userid ");
-            d.appendInClauseSql(shortSql, Arrays.asList(1, 2, 3));
-            assertEquals(1, new SqlSelector(core, shortSql).getRowCount());
+            Collection<Integer> allUserIds = new TableSelector(CoreSchema.getInstance().getTableInfoUsersData(), Collections.singleton("UserId")).getCollection(Integer.class);
+            SQLFragment shortSql = new SQLFragment("SELECT * FROM core.UsersData WHERE UserId");
+            d.appendInClauseSql(shortSql, allUserIds);
+            assertEquals(allUserIds.size(), new SqlSelector(core, shortSql).getRowCount());
 
-            ArrayList<Object> l = new ArrayList<>();
-            for (int i = 1; i <= SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE + 1; i++)
-                l.add(i);
-            SQLFragment longSql = new SQLFragment("SELECT COUNT(*) FROM core.usersdata WHERE userid ");
+            ArrayList<Object> l = new ArrayList<>(allUserIds);
+            while (l.size() < SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE)
+                l.addAll(allUserIds);
+            SQLFragment longSql = new SQLFragment("SELECT * FROM core.UsersData WHERE UserId");
             d.appendInClauseSql(longSql, l);
-            assertEquals(1, new SqlSelector(core, longSql).getRowCount());
+            assertEquals(allUserIds.size(), new SqlSelector(core, longSql).getRowCount());
 
-            SQLFragment shortSqlStr = new SQLFragment("SELECT COUNT(*) FROM core.usersdata WHERE displayname ");
-            d.appendInClauseSql(shortSqlStr, Arrays.asList("1", "2", "3"));
-            assertEquals(1, new SqlSelector(core, shortSqlStr).getRowCount());
+            Collection<String> allDisplayNames = new TableSelector(CoreSchema.getInstance().getTableInfoUsersData(), Collections.singleton("DisplayName")).getCollection(String.class);
+            SQLFragment shortSqlStr = new SQLFragment("SELECT * FROM core.UsersData WHERE DisplayName");
+            d.appendInClauseSql(shortSqlStr, allDisplayNames);
+            assertEquals(allDisplayNames.size(), new SqlSelector(core, shortSqlStr).getRowCount());
 
-            l = new ArrayList<>();
-            for (int i = 1; i <= SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE + 1; i++)
-                l.add(String.valueOf(i));
-            SQLFragment longSqlStr = new SQLFragment("SELECT COUNT(*) FROM core.usersdata WHERE displayname ");
+            l = new ArrayList<>(allDisplayNames);
+            while (l.size() < SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE)
+                l.addAll(allDisplayNames);
+            SQLFragment longSqlStr = new SQLFragment("SELECT * FROM core.UsersData WHERE DisplayName");
             d.appendInClauseSql(longSqlStr, l);
-            assertEquals(1, new SqlSelector(core, longSqlStr).getRowCount());
+            assertEquals(allDisplayNames.size(), new SqlSelector(core, longSqlStr).getRowCount());
         }
     }
 
