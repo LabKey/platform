@@ -1787,11 +1787,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return Collections.unmodifiableList(ret);
     }
 
-
     //
     // UpdatableTableInfo
     //
-
 
     @Override
     public @Nullable Long getOwnerObjectId()
@@ -1820,8 +1818,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public @NotNull Set<String> getAltMergeKeys(DataIteratorContext context)
+    public Set<String> getAltMergeKeys(DataIteratorContext context)
     {
+        if (context.getInsertOption().updateOnly)
+            return getAltKeysForUpdate();
+
         return MATERIAL_ALT_MERGE_KEYS;
     }
 
