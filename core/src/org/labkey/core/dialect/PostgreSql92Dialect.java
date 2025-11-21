@@ -152,9 +152,9 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     }
 
     @Override
-    public String getAnalyzeCommandForTable(String tableName)
+    public SQLFragment getAnalyzeCommandForTable(String tableName)
     {
-        return "ANALYZE " + tableName;
+        return new SQLFragment("ANALYZE ").appendIdentifier(tableName);
     }
 
     @Override
