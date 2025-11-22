@@ -2347,7 +2347,9 @@ public class ExpDataIterators
                     }
                     else
                     {
-                        keyColumns.addAll(expMaterialTable.getAltMergeKeys(context));
+                        Set<String> altMergeKeys = expMaterialTable.getAltMergeKeys(context);
+                        if (altMergeKeys != null)
+                            keyColumns.addAll(altMergeKeys);
                         propertyKeyColumns.add(Name.name());
                     }
                 }
@@ -2375,7 +2377,9 @@ public class ExpDataIterators
                     }
                     else
                     {
-                        keyColumns.addAll(((ExpDataClassDataTableImpl) _expTable).getAltMergeKeys(context));
+                        Set<String> altMergeKeys = ((ExpDataClassDataTableImpl) _expTable).getAltMergeKeys(context);
+                        if (altMergeKeys != null)
+                            keyColumns.addAll(altMergeKeys);
                     }
                 }
                 else

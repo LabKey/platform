@@ -881,7 +881,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     }
 
     @Override
-    public @NotNull Set<String> getAltMergeKeys(DataIteratorContext context)
+    public @Nullable Set<String> getAltMergeKeys(DataIteratorContext context)
     {
         if (context.getInsertOption().updateOnly && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
             return getAltKeysForUpdate();

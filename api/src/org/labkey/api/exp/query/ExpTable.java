@@ -33,7 +33,6 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.Permission;
 
-import java.util.Collections;
 import java.util.Set;
 
 public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
@@ -95,7 +94,6 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
 
     MutableColumnInfo addColumns(Domain domain, @Nullable String legacyName,@Nullable ContainerFilter cf);
 
-
     void setTitle(String title);
 
     void setDescription(String description);
@@ -132,9 +130,9 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
         return null;
     }
 
-    @NotNull default Set<String> getAltMergeKeys(DataIteratorContext context)
+    @Nullable default Set<String> getAltMergeKeys(DataIteratorContext context)
     {
-        return Collections.emptySet();
+        return null;
     }
 
     class ExpObjectDataColumn extends DataColumn
