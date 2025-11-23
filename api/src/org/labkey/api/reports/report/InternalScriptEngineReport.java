@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reports.report;
 
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.ApiModule;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reports.ExternalScriptEngine;
@@ -80,6 +81,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
         }
         catch (ScriptException e)
         {
+            LogManager.getLogger(getClass()).error("Error executing script", e);
             final String error1 = "Error executing command";
             final String error2 = PageFlowUtil.filter(e.getMessage());
 

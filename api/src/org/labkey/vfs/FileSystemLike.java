@@ -269,11 +269,7 @@ public interface FileSystemLike
     static FileLike wrapFile(File root, File f) throws IOException
     {
         if (!root.isDirectory())
-        {
-            var e = new FileNotFoundException(root.getPath());
-            LogManager.getLogger(FileSystemLike.class).error("Failed to wrap file", e);
-            throw e;
-        }
+            throw new FileNotFoundException(root.getPath());
         FileSystemLike fs = new Builder(root.toURI()).build();
         String rel = FileUtil.relativize(root, f, true);
         return fs.getRoot().resolveFile(Path.parse(rel));
@@ -283,11 +279,7 @@ public interface FileSystemLike
     static FileLike wrapFile(java.nio.file.Path root, java.nio.file.Path f) throws IOException
     {
         if (!Files.isDirectory(root))
-        {
-            var e = new FileNotFoundException(root.toString());
-            LogManager.getLogger(FileSystemLike.class).error("Failed to wrap path", e);
-            throw e;
-        }
+            throw new FileNotFoundException(root.toString());
         FileSystemLike fs = new Builder(root.toUri()).build();
         URI relative = URIUtil.relativize(root.toUri(), f.toUri());
         if (null == relative)
