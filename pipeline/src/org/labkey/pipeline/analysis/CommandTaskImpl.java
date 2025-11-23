@@ -815,9 +815,8 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                         action.addOutputParameter(new RecordedAction.ParameterType(name, PropertyType.STRING), value);
                     }
                 }
-
-                _wd.discardFile(file);
             }
+            _wd.discardFile(file);
         }
     }
 }
