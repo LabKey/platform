@@ -1,6 +1,8 @@
 package org.labkey.vfs;
 
 import com.fasterxml.jackson.databind.DeserializationContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -267,7 +269,11 @@ public interface FileSystemLike
     static FileLike wrapFile(File root, File f) throws IOException
     {
         if (!root.isDirectory())
-            throw new FileNotFoundException(root.getPath());
+        {
+            var e = new FileNotFoundException(root.getPath());
+            LogManager.getLogger(FileSystemLike.class).error("Failed to wrap file", e);
+            throw e;
+        }
         FileSystemLike fs = new Builder(root.toURI()).build();
         String rel = FileUtil.relativize(root, f, true);
         return fs.getRoot().resolveFile(Path.parse(rel));
@@ -277,7 +283,11 @@ public interface FileSystemLike
     static FileLike wrapFile(java.nio.file.Path root, java.nio.file.Path f) throws IOException
     {
         if (!Files.isDirectory(root))
-            throw new FileNotFoundException(root.toString());
+        {
+            var e = new FileNotFoundException(root.toString());
+            LogManager.getLogger(FileSystemLike.class).error("Failed to wrap path", e);
+            throw e;
+        }
         FileSystemLike fs = new Builder(root.toUri()).build();
         URI relative = URIUtil.relativize(root.toUri(), f.toUri());
         if (null == relative)
