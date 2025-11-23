@@ -25,7 +25,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.ColumnHeaderType;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -364,7 +363,7 @@ public abstract class ScriptReport extends AbstractReport
     }
 
     @Override
-    public HttpView getRunReportView(ViewContext context) throws Exception
+    public HttpView<?> getRunReportView(ViewContext context) throws Exception
     {
         String tabId = (String) context.get("tabId");
 

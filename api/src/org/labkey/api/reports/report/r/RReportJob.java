@@ -337,7 +337,7 @@ public class RReportJob extends PipelineJob implements Serializable
                     substitutionMap = reportDir.getParent().resolveChild(RReport.SUBSTITUTION_MAP);
                 }
                 else
-                    substitutionMap = reportDir.getParent().resolveChild(RReport.SUBSTITUTION_MAP);
+                    substitutionMap = reportDir.resolveChild(RReport.SUBSTITUTION_MAP);
                 ParamReplacementSvc.get().toFile(outputSubst, substitutionMap);
             }
         }

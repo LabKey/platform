@@ -674,7 +674,7 @@ public class RReport extends ExternalScriptEngineReport
      * If this R Report is using knitr then put all the results into the cache directory instead of a temp
      * directory.  This enables knitr to do its own caching.  If this is a non-Knitr report or we don't have a cache
      * directory because the report was not saved yet, then fall back to the non-cache case.  Note that knitr caching
-     * is not the same as report caching.  Report caching saves off the output parameters of the report and then serves
+     * is different from report caching.  Report caching saves off the output parameters of the report and then serves
      * them up without executing the script again if the incoming URL is the same.
      * For Knitr caching, we always run the R script and let the knitr library manage the caching options.
      * @param executingContainerId id of the container in which the report is running

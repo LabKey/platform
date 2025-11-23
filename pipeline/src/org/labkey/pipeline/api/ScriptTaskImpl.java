@@ -168,7 +168,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
 
             // NOTE: Local path to the script file doesn't need to be rewritten as a remote path
             if (scriptFile != null)
-                bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.toString());
+                bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.toNioPathForRead().toFile().toString());
 
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, _wd.getDir().toNioPathForRead().toString());
 
