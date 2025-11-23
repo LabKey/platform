@@ -1229,7 +1229,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 ValidatorContext validatorContext = new ValidatorContext(context.getContainer(), context.getUser());
                 for (ColumnValidator validator : validators)
                 {
-                    String msg = validator.validate(rowNum, o, validatorContext);
+                    String msg = validator.validate(rowNum, o, validatorContext, null);
                     if (msg != null)
                         errors.add(new PropertyValidationError(msg, label));
                 }

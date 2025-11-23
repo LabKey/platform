@@ -166,7 +166,16 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
                 for (ColumnValidator v : l)
                 {
                     Object value = _data.get(i);
-                    String msg = validate(v, rowNum, value, _data);
+                    Object providedDataValue = value;
+                    if (v instanceof PropertyValidator pv)
+                    {
+                        if (pv.getPropertyValidator() != null)
+                        {
+                            // Use :::provided:::Amount in non-negative validator message, instead of converted Amount
+                            providedDataValue = pv.getPropertyValidator().getProvidedDataValue(_data);
+                        }
+                    }
+                    String msg = validate(v, rowNum, value, _data, providedDataValue);
 
                     if (null != msg)
                     {
@@ -206,12 +215,12 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
         return true;
     }
 
-    protected String validate(ColumnValidator v, int rowNum, Object value, DataIterator data)
+    protected String validate(ColumnValidator v, int rowNum, Object value, DataIterator data, @Nullable Object providedValue)
     {
         String msg;
         // CONSIDER: add validatorContext to ColumnValidator.validate() always
         if (v instanceof PropertyValidator)
-            msg = v.validate(rowNum, value, validatorContext);
+            msg = v.validate(rowNum, value, validatorContext, providedValue);
         else
             msg = v.validate(rowNum, value);
 

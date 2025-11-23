@@ -902,7 +902,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         {
                             try
                             {
-                                String error = validator.validate(rowNum, o, validatorContext);
+                                String error = validator.validate(rowNum, o, validatorContext, null);
                                 if (error != null)
                                     errors.add(new PropertyValidationError(error, pd.getName()));
                             }
@@ -1060,7 +1060,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         {
                             for (ColumnValidator validator : validatorMap.get(pd))
                             {
-                                String error = validator.validate(rowNum, o, validatorContext);
+                                String error = validator.validate(rowNum, o, validatorContext, null);
                                 if (error != null)
                                     errors.add(new PropertyValidationError(error, pd.getName()));
                             }

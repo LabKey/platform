@@ -303,10 +303,10 @@ public class ExpDataIterators
         }
 
         @Override
-        protected String validate(ColumnValidator v, int rowNum, Object value, DataIterator data)
+        protected String validate(ColumnValidator v, int rowNum, Object value, DataIterator data, Object providedValue)
         {
             if (!(v instanceof RequiredValidator) || _aliquotedFromColIdx < 0)
-                return super.validate(v, rowNum, value, data);
+                return super.validate(v, rowNum, value, data, providedValue);
 
             String aliquotedFromValue = null;
             Object aliquotedFromObj = data.get(_aliquotedFromColIdx);
