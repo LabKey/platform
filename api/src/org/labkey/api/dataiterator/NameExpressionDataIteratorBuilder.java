@@ -26,10 +26,7 @@ public class NameExpressionDataIteratorBuilder implements DataIteratorBuilder
 
     public NameExpressionDataIteratorBuilder(DataIteratorBuilder pre, TableInfo parentTable)
     {
-        _pre = pre;
-        _parentTable = parentTable;
-        _nameColumnName = "name";
-        _nameExpressionColumnName = "nameExpression";
+        this(pre, parentTable, "name", "nameExpression");
     }
 
     public NameExpressionDataIteratorBuilder(DataIteratorBuilder pre, TableInfo parentTable, String nameColumn, String nameExpressionColumn)
