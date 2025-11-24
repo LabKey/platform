@@ -18,6 +18,7 @@ package org.labkey.api.assay;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -125,7 +126,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
-import java.nio.file.Files;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -798,11 +798,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 {
                     // Ignore Results domain TargetStudy for now.
                     // The participant resolver will find the TargetStudy on the row.
-                    ExpObject source = switch (pair.first)
-                    {
-                        case Run -> run;
-                        default -> cache.getBatch(run);
-                    };
+                    ExpObject source = pair.first == ExpProtocol.AssayDomainTypes.Run ? run : cache.getBatch(run);
 
                     if (source != null)
                     {
@@ -1280,7 +1276,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         String scriptText;
                         try
                         {
-                            scriptText = Files.readString(scriptFile.toNioPathForRead(), StringUtilsLabKey.DEFAULT_CHARSET);
+                            scriptText = IOUtils.toString(scriptFile.openInputStream(), StringUtilsLabKey.DEFAULT_CHARSET);
                         }
                         catch (IOException e)
                         {
