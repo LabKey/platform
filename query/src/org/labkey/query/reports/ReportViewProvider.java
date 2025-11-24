@@ -262,7 +262,7 @@ public class ReportViewProvider implements DataViewProvider
                 // This is the thumbnail
                 info.setAllowCustomThumbnail(true);
                 info.setThumbnailUrl(ReportUtil.getThumbnailUrl(c, r));
-                info.setDefaultThumbnailUrl(ReportUtil.getDefaultThumbnailUrl(c, r));
+                info.setDefaultThumbnailUrl(ReportUtil.getDefaultThumbnailUrl(r));
 
                 info.setTags(ReportPropsManager.get().getProperties(descriptor.getEntityId(), c));
 

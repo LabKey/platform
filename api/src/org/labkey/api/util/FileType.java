@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * <code>FileType</code>
@@ -323,11 +324,6 @@ public class FileType implements Serializable
      * Looks for a file in the parentDir that matches, in priority order. If one is found, returns its file name.
      * If nothing matches, uses the defaultSuffix to build a file name.
      */
-    public String getName(File parentDir, String basename)
-    {
-        return getName(parentDir.toPath(), basename);
-    }
-
     public String getName(FileLike parentDir, String basename)
     {
         return getName(parentDir.toNioPathForRead(), basename);
@@ -357,8 +353,7 @@ public class FileType implements Serializable
 
     public String getName(String parentDirName, String basename)
     {
-        File parentDir = new File(parentDirName);
-        return getName(parentDir,basename);
+        return getName(new File(parentDirName).toPath(), basename);
     }
 
     /**
@@ -460,11 +455,6 @@ public class FileType implements Serializable
         }
         assert suffix != null : "Could not find matching suffix even though types match";
         return fileName.substring(0, fileName.length() - suffix.length());
-    }
-
-    public File newFile(File parent, String basename)
-    {
-        return FileUtil.appendName(parent, getName(parent, basename));
     }
 
     public FileLike newFile(FileLike parent, String basename)
@@ -624,13 +614,13 @@ public class FileType implements Serializable
 
         FileType fileType = (FileType) o;
 
-        if (_supportGZ != null ? !_supportGZ.equals(fileType._supportGZ) : fileType._supportGZ != null) return false;
-        if (_preferGZ != null ? !_preferGZ.equals(fileType._preferGZ) : fileType._preferGZ != null) return false;
-        if (_dir != null ? !_dir.equals(fileType._dir) : fileType._dir != null) return false;
-        if (_defaultSuffix != null ? !_defaultSuffix.equals(fileType._defaultSuffix) : fileType._defaultSuffix != null)
+        if (!Objects.equals(_supportGZ, fileType._supportGZ)) return false;
+        if (!Objects.equals(_preferGZ, fileType._preferGZ)) return false;
+        if (!Objects.equals(_dir, fileType._dir)) return false;
+        if (!Objects.equals(_defaultSuffix, fileType._defaultSuffix))
             return false;
-        if (_antiTypes != null ? !_antiTypes.equals(fileType._antiTypes) : fileType._antiTypes != null) return false;
-        return !(_suffixes != null ? !_suffixes.equals(fileType._suffixes) : fileType._suffixes != null);
+        if (!Objects.equals(_antiTypes, fileType._antiTypes)) return false;
+        return !(!Objects.equals(_suffixes, fileType._suffixes));
     }
 
     public String getDefaultSuffix()

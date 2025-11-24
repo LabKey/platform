@@ -22,7 +22,6 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ReturnUrlForm;
@@ -84,7 +83,6 @@ import org.springframework.validation.Errors;
 
 import javax.script.ScriptEngine;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -405,7 +403,7 @@ public class ReportUtil
         return sb.toString();
     }
 
-    public static URLHelper getDefaultThumbnailUrl(Container c, Report r)
+    public static URLHelper getDefaultThumbnailUrl(Report r)
     {
         return ThumbnailUtil.getStaticThumbnailURL(r, ImageType.Large);
     }
