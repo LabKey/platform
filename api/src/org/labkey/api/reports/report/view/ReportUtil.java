@@ -19,6 +19,7 @@ package org.labkey.api.reports.report.view;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -608,6 +609,7 @@ public class ReportUtil
      */
     public static String makeExceptionString(Exception e, String formatString)
     {
+        LogManager.getLogger(ReportUtil.class).error("Error executing script - makeExceptionString", e);
         final String error1 = "Error executing command";
         final String error2 = PageFlowUtil.filter(e.getMessage());
         return String.format(formatString, error1, error2);
