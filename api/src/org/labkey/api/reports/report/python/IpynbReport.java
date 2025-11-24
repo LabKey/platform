@@ -183,7 +183,6 @@ public class IpynbReport extends DockerScriptReport
         String apikey = SessionApiKeyManager.get().getApiKey(context.getRequest(), "ipynb report");
         FileLike workingDirectory = getReportDir(context.getContainer().getId());
 
-        assert workingDirectory.toNioPathForRead().isAbsolute();
         if (!workingDirectory.isDirectory())
             throw new IOException("Could not create working directory");
         FileUtil.deleteDirectoryContents(workingDirectory);
