@@ -15,15 +15,17 @@
  */
 package org.labkey.api.reports.report;
 
-import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.ApiModule;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
@@ -36,20 +38,21 @@ import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/*
-* User: Karl Lum
-* Date: Jan 19, 2009
-* Time: 4:11:54 PM
-*/
+/**
+ * Executes scripts, such as R, and renders the results.
+ */
 public class InternalScriptEngineReport extends ScriptEngineReport
 {
     public static final String TYPE = "ReportService.internalScriptEngineReport";
+    private static final Logger LOG = LogHelper.getLogger(InternalScriptEngineReport.class, "Executes scripts, such as R, and renders the results.");
 
     @Override
     public String getType()
@@ -58,7 +61,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
     }
 
     @Override
-    public HttpView<?> renderReport(ViewContext context) throws Exception
+    public HttpView<?> renderReport(ViewContext context) throws ValidationException, SQLException, IOException
     {
         VBox view = new VBox();
         String script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
@@ -81,7 +84,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
         }
         catch (ScriptException e)
         {
-            LogManager.getLogger(getClass()).error("Error executing script", e);
+            LOG.error("Error executing script", e);
             final String error1 = "Error executing command";
             final String error2 = PageFlowUtil.filter(e.getMessage());
 
@@ -146,7 +149,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
                 }
                 return output != null ? output.toString() : "";
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 if (!errors.getBuffer().isEmpty())
                     throw new ScriptException(e.getMessage() + errors.getBuffer());

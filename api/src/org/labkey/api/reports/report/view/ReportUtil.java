@@ -19,7 +19,7 @@ package org.labkey.api.reports.report.view;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -76,6 +76,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ThumbnailUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
@@ -90,6 +91,8 @@ import java.util.regex.Pattern;
 
 public class ReportUtil
 {
+    private static final Logger LOG = LogHelper.getLogger(ReportUtil.class, "Utilities to help with report rendering and management");
+
     public static ActionURL getScriptReportDesignerURL(ViewContext context, ScriptReportBean bean)
     {
         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlCreateScriptReport(context.getContainer());
@@ -395,7 +398,7 @@ public class ReportUtil
 
     public static String getErrors(List<ValidationError> reportErrors)
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (ValidationError error : reportErrors)
             sb.append(error.getMessage()).append("\n");
 
@@ -527,31 +530,6 @@ public class ReportUtil
         return false;
     }
 
-    public static JSONArray getCreateReportButtons(ViewContext context)
-    {
-        List<ReportService.DesignerInfo> designers = new ArrayList<>();
-        for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
-            designers.addAll(provider.getDesignerInfo(context));
-
-        designers.sort(Comparator.comparing(ReportService.DesignerInfo::getLabel));
-
-        JSONArray json = new JSONArray();
-
-        for (ReportService.DesignerInfo info : designers)
-        {
-            JSONObject o = new JSONObject();
-
-            o.put("text", info.getLabel());
-            o.put("id", info.getId());
-            o.put("disabled", info.isDisabled());
-            o.put("icon", info.getIconURL().getLocalURIString());
-            o.put("redirectUrl", info.getDesignerURL().getLocalURIString());
-
-            json.put(o);
-        }
-        return json;
-    }
-
     public static Report getReportById(ViewContext viewContext, String reportIdString)
     {
         ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdString, viewContext.getUser(), viewContext.getContainer());
@@ -609,7 +587,7 @@ public class ReportUtil
      */
     public static String makeExceptionString(Exception e, String formatString)
     {
-        LogManager.getLogger(ReportUtil.class).error("Error executing script - makeExceptionString", e);
+        LOG.warn("Error executing script", e);
         final String error1 = "Error executing command";
         final String error2 = PageFlowUtil.filter(e.getMessage());
         return String.format(formatString, error1, error2);
