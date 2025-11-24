@@ -273,7 +273,7 @@ public class RserveScriptEngine extends RScriptEngine
                 FileLike file = wd.resolveFile(org.labkey.api.util.Path.parse(remotePath));
                 if (!file.getParent().exists())
                 {
-                    FileUtil.mkdir(file.getParent());
+                    FileUtil.mkdirs(file.getParent());
                 }
                 try (InputStream is = rconn.openFile(remotePath);
                      OutputStream fos = file.openOutputStream())
