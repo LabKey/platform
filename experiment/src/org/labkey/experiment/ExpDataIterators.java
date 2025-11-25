@@ -2356,7 +2356,7 @@ public class ExpDataIterators
                                     keyColumns.add(altKey);
                                     if (_propertiesTable.getColumn(altKey) != null)
                                         propertyKeyColumns.add(altKey);
-                                    // TODO: Seems likes we should prevent update of these columns as well
+                                    // TODO: Should we prevent update of these columns when they are being used as a key column?
                                 }
                             }
                         }
