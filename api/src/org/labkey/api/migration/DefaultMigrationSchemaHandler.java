@@ -1,5 +1,6 @@
 package org.labkey.api.migration;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentService;
@@ -27,8 +28,11 @@ import org.labkey.api.migration.DatabaseMigrationService.DataFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.TableSorter;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,10 +42,13 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
 {
+    private static final Logger LOG = LogHelper.getLogger(DefaultMigrationSchemaHandler.class, "Migration shutdown status");
+
     private final DbSchema _schema;
 
     public DefaultMigrationSchemaHandler(DbSchema schema)
@@ -77,7 +84,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
 
         if (!allTables.isEmpty())
         {
-            DatabaseMigrationService.LOG.info("These tables were removed by TableSorter: {}", allTables);
+            LOG.info("These tables were removed by TableSorter: {}", allTables);
         }
 
         return sortedTables.stream()
@@ -250,12 +257,13 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
                 Collection<String> entityIds = new SqlSelector(targetSchema, sql).getCollection(String.class);
                 SQLFragment selectParents = new SQLFragment("Parent");
                 // This query against the source database is likely to contain a large IN clause, so use an alternative InClauseGenerator
-                sourceSchema.getSqlDialect().appendInClauseSql(selectParents, entityIds, getTempTableInClauseGenerator(sourceSchema.getScope()));
+                sourceSchema.getSqlDialect().appendInClauseSqlWithCustomInClauseGenerator(selectParents, entityIds, getTempTableInClauseGenerator(sourceSchema.getScope()));
                 copyAttachments(configuration, sourceSchema, new SQLClause(selectParents), type);
             }
-
-            // TODO: fail if type.getSelectParentEntityIdsSql() returns null?
-            // TODO: throw if some registered AttachmentType is not seen
+            else
+            {
+                throw new ConfigurationException("AttachmentType \"" + type.getUniqueName() + "\" is not configured to find parent EntityIds!");
+            }
         });
     }
 
@@ -267,33 +275,46 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
     }
 
     private static final Set<AttachmentType> SEEN = new HashSet<>();
+    private static final JobRunner ATTACHMENT_JOB_RUNNER = new JobRunner("Attachment JobRunner", 1);
 
     // Copy all core.Documents rows that match the provided filter clause
-    protected void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, FilterClause filterClause, AttachmentType... type)
+    protected final void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, FilterClause filterClause, AttachmentType... type)
     {
         SEEN.addAll(Arrays.asList(type));
         String additionalMessage = " associated with " + Arrays.stream(type).map(t -> t.getClass().getSimpleName()).collect(Collectors.joining(", "));
         TableInfo sourceDocumentsTable = sourceSchema.getScope().getSchema("core", DbSchemaType.Migration).getTable("Documents");
         TableInfo targetDocumentsTable = CoreSchema.getInstance().getTableInfoDocuments();
-        DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceDocumentsTable, targetDocumentsTable, DbSchemaType.Module, false, additionalMessage, new DefaultMigrationSchemaHandler(CoreSchema.getInstance().getSchema())
+
+        // Queue up the core.Documents transfers and let them run in the background
+        ATTACHMENT_JOB_RUNNER.execute(() -> DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceDocumentsTable, targetDocumentsTable, DbSchemaType.Module, false, additionalMessage, new DefaultMigrationSchemaHandler(CoreSchema.getInstance().getSchema())
         {
             @Override
             public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
             {
                 return filterClause;
             }
-        });
+        }));
     }
 
-    public static void logUnseenAttachmentTypes()
+    // Global (not schema- or configuration-specific) cleanup
+    public static void afterMigration() throws InterruptedException
     {
+        // Report any unseen attachment types
         Set<AttachmentType> unseen = new HashSet<>(AttachmentService.get().getAttachmentTypes());
         unseen.removeAll(SEEN);
 
         if (unseen.isEmpty())
-            DatabaseMigrationService.LOG.info("All AttachmentTypes have been seen");
+            LOG.info("All AttachmentTypes have been seen");
         else
-            DatabaseMigrationService.LOG.info("These AttachmentTypes have not been seen: {}", unseen.stream().map(type -> type.getClass().getSimpleName()).collect(Collectors.joining(", ")));
+            throw new ConfigurationException("These AttachmentTypes have not been seen: " + unseen.stream().map(type -> type.getClass().getSimpleName()).collect(Collectors.joining(", ")));
+
+        // Shut down the attachment JobRunner
+        LOG.info("Waiting for core.Documents background transfer to complete");
+        ATTACHMENT_JOB_RUNNER.shutdown();
+        if (ATTACHMENT_JOB_RUNNER.awaitTermination(1, TimeUnit.HOURS))
+            LOG.info("core.Documents background transfer is complete");
+        else
+            LOG.error("core.Documents background transfer did not complete after one hour! Giving up.");
     }
 
     @Override

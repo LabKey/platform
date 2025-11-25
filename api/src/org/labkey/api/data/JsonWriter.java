@@ -180,7 +180,9 @@ public class JsonWriter
 
         props.put("wrappedColumnName", cinfo == null ? null : cinfo.getWrappedColumnName());
         props.put("valueExpression", cinfo == null ? null : cinfo.getValueExpression());
-        props.put("displayWidth", cinfo == null ? null : cinfo.getDisplayWidth());
+
+        if (cinfo != null && cinfo.getDisplayWidth() != null && !cinfo.getDisplayWidth().isEmpty())
+            props.put("displayWidth", cinfo.getDisplayWidth());
 
         ColumnInfo displayField = dc.getDisplayColumnInfo();
         if (displayField != null && displayField != cinfo)
