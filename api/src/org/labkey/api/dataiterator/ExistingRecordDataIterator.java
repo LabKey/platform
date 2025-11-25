@@ -32,7 +32,6 @@ import org.labkey.api.util.UnexpectedException;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -95,15 +94,21 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         var map = DataIteratorUtil.createColumnNameMap(in);
         containerCol = map.get("Container");
 
-        Collection<String> keyNames = null==keys ? target.getPkColumnNames() : keys;
+        Set<String> keyColumnNames = new CaseInsensitiveHashSet(target.getPkColumnNames());
+        if (keys != null)
+            keyColumnNames.addAll(keys);
 
         if (sharedKeys != null)
             _sharedKeys.addAll(sharedKeys);
 
-        _dataColumnNames.addAll(detailed ? map.keySet() : keyNames);
+        if (detailed)
+            _dataColumnNames.addAll(map.keySet());
 
-        for (String name : keyNames)
+        for (String name : keyColumnNames)
         {
+            if (!map.containsKey(name))
+                continue;
+
             Integer index = map.get(name);
             ColumnInfo col = target.getColumn(name);
             if (null == index || null == col)
@@ -114,7 +119,11 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             }
             pkSuppliers.add(in.getSupplier(index));
             pkColumns.add(col);
+            _dataColumnNames.add(name);
         }
+
+        if (pkColumns.isEmpty())
+            throw new IllegalArgumentException("At least one key column is required.");
     }
 
     @Override
