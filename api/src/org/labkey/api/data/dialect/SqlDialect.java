@@ -530,11 +530,11 @@ public abstract class SqlDialect
     // Most callers should use this method
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
-        return appendInClauseSql(sql, params, null);
+        return appendInClauseSqlWithCustomInClauseGenerator(sql, params, null);
     }
 
-    // Use in cases where the default temp schema won't do, e.g., you need to apply a large IN clause in an external data source
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params, InClauseGenerator tempTableGenerator)
+    // Use only in cases where the default temp-table generator won't do, e.g., you need to apply a large IN clause in an external data source
+    public SQLFragment appendInClauseSqlWithCustomInClauseGenerator(SQLFragment sql, @NotNull Collection<?> params, InClauseGenerator tempTableGenerator)
     {
         return DEFAULT_GENERATOR.appendInClauseSql(sql, params);
     }

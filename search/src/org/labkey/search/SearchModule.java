@@ -193,7 +193,7 @@ public class SearchModule extends DefaultModule
             @Override
             public List<TableInfo> getTablesToCopy()
             {
-                return List.of(); // Leave empty -- target server needs to index all documents
+                return List.of(); // Leave empty -- target server will re-index all documents
             }
         });
     }

@@ -11970,8 +11970,12 @@ public class AdminController extends SpringActionController
                     String urlString = cspReport.optString("document-uri", null);
                     if (urlString != null)
                     {
-                        String path = new URLHelper(urlString).deleteParameters().getURIString();
-                        if (null == reports.put(path, Boolean.TRUE) || _log.isDebugEnabled())
+                        URLHelper urlHelper = new URLHelper(urlString);
+                        // URL parameter that tells us to bypass suppression of redundant logging
+                        // Used to make sure that tests of CSP logging are deterministic and convenient
+                        boolean bypassCspDedupe = "true".equals(urlHelper.getParameter("bypassCspDedupe"));
+                        String path = urlHelper.deleteParameters().getURIString();
+                        if (null == reports.put(path, Boolean.TRUE) || _log.isDebugEnabled() || bypassCspDedupe)
                         {
                             // Don't modify forwarded reports; they already have user, ip, user-agent, etc. from the forwarding server.
                             boolean forwarded = jsonObj.optBoolean("forwarded", false);

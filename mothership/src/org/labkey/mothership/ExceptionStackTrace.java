@@ -32,7 +32,8 @@ public class ExceptionStackTrace
     private String _stackTrace;
     private String _stackTraceHash;
     private Integer _assignedTo;
-    private Integer _bugNumber;
+    private Integer _labkeyIssue;
+    private Integer _githubIssue;
     private String _comments;
     private Date _modified;
     private User _modifiedBy;
@@ -94,14 +95,24 @@ public class ExceptionStackTrace
         _assignedTo = assignedTo;
     }
 
-    public Integer getBugNumber()
+    public Integer getLabKeyIssue()
     {
-        return _bugNumber;
+        return _labkeyIssue;
     }
 
-    public void setBugNumber(Integer bugNumber)
+    public void setLabKeyIssue(Integer labkeyIssue)
     {
-        _bugNumber = bugNumber;
+        _labkeyIssue = labkeyIssue;
+    }
+
+    public Integer getGithubIssue()
+    {
+        return _githubIssue;
+    }
+
+    public void setGithubIssue(Integer githubIssue)
+    {
+        _githubIssue = githubIssue;
     }
 
     public String getComments()
