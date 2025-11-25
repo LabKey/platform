@@ -2342,7 +2342,10 @@ public class ExpDataIterators
                     {
                         // Both exp.Material and the provisioned tables have RowId
                         if (colNameMap.containsKey(RowId.name()))
+                        {
                             keyColumns.add(RowId.name());
+                            propertyKeyColumns.add(RowId.name());
+                        }
                         else
                         {
                             // Otherwise, look for alternative keys that have been provided
@@ -2406,7 +2409,7 @@ public class ExpDataIterators
 
             // Since we support detailed audit logging add the ExistingRecordDataIterator here just before TableInsertDataIterator
             // this is a NOOP unless we are merging/updating and detailed logging is enabled
-            DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, Set.of(ExpMaterialTable.Column.MaterialSourceId.name(), ExpDataClassDataTable.Column.ClassId.name()), !isSample);
+            DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, Set.of(ExpMaterialTable.Column.MaterialSourceId.name(), ExpDataClassDataTable.Column.ClassId.name()), true);
 
             // Add RootMaterialRowId if it does not exist
             DataIteratorBuilder step2b = ctx -> {
