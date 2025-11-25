@@ -7550,7 +7550,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         ExpProtocol protocol = ensureSampleDerivationProtocol(info.getUser());
         ExpRunImpl run = createExperimentRun(info.getContainer(), getDerivationRunName(inputMaterials, inputDatas, outputMaterials.size(), outputDatas.size()));
         run.setProtocol(protocol);
-        run.setFilePathRoot(pipeRoot.getRootPath());
+        run.setFilePathRoot(pipeRoot.getRootFileLike());
 
         return run;
     }
@@ -7610,7 +7610,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         ExpProtocol protocol = ensureSampleAliquotProtocol(info.getUser());
         ExpRunImpl run = createExperimentRun(info.getContainer(), getAliquotRunName(parent, aliquots.size()));
         run.setProtocol(protocol);
-        run.setFilePathRoot(pipeRoot.getRootPath());
+        run.setFilePathRoot(pipeRoot.getRootFileLike());
 
         return run;
     }

@@ -60,7 +60,7 @@ public class PurgeParticipantsTask extends TimerTask
             throw new ConfigurationException("Invalid pipeline configuration at the root container");
 
         if (!root.isValid())
-            throw new ConfigurationException("Invalid pipeline configuration at the root container: " + root.getRootPath().getPath());
+            throw new ConfigurationException("Invalid pipeline configuration at the root container: " + root.getRootFileLike());
 
         try
         {
