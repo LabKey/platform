@@ -571,15 +571,12 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public boolean canDelete(User user)
     {
         ExpProtocolImpl protocol = getProtocol();
-        boolean isWorkflow = ExpProtocol.isSampleWorkflowProtocol(protocol.getLSID());
-        if (isWorkflow && getContainer().hasPermission(user, SampleWorkflowDeletePermission.class))
-            return true;
 
         // Issue 50776: To update lineage we need to delete existing runs
         if ((ExperimentServiceImpl.get().isSampleAliquot(protocol) || ExperimentServiceImpl.get().isSampleDerivation(protocol)) && getContainer().hasPermission(user, UpdatePermission.class))
             return true;
 
-        return !isWorkflow && getContainer().hasPermission(user, DeletePermission.class);
+        return getContainer().hasPermission(user, DeletePermission.class);
     }
 
     // Clean up DataInput and MaterialInput exp.object and properties
