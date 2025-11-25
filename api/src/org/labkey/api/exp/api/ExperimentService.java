@@ -82,7 +82,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.vfs.FileLike;
@@ -1182,6 +1181,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void registerNameExpressionType(String dataType, String schemaName, String queryname, String nameExpressionCol);
 
     Map<String, Map<String, Object>> getDomainMetrics();
+
+    void clearAncestors(ExpRunItem runItem);
+    void clearDataAncestors(Collection<Long> dataRowIds);
+    void clearMaterialAncestors(Collection<Long> materialRowIds);
+    void repopulateAncestors();
 
     class XarExportOptions
     {
