@@ -2338,10 +2338,26 @@ public class ExpDataIterators
 
                 if (isMergeOrUpdate)
                 {
-                    boolean isUpdateUsingRowId = context.getInsertOption().updateOnly && colNameMap.containsKey(RowId.name());
-                    if (isUpdateUsingRowId)
+                    if (context.getInsertOption().updateOnly)
                     {
-                        keyColumns.add(RowId.name());
+                        // Both exp.Material and the provisioned tables have RowId
+                        if (colNameMap.containsKey(RowId.name()))
+                            keyColumns.add(RowId.name());
+                        else
+                        {
+                            // Otherwise, look for alternative keys that have been provided
+                            for (String altKey : expMaterialTable.getAltKeysForUpdate())
+                            {
+                                if (colNameMap.containsKey(altKey))
+                                {
+                                    keyColumns.add(altKey);
+                                    if (_propertiesTable.getColumn(altKey) != null)
+                                        propertyKeyColumns.add(altKey);
+                                    // TODO: Seems likes we should prevent update of these columns as well
+                                }
+                            }
+                        }
+
                         if (!canUpdateNames)
                             dontUpdate.add(Name.name());
                     }
@@ -2390,7 +2406,7 @@ public class ExpDataIterators
 
             // Since we support detailed audit logging add the ExistingRecordDataIterator here just before TableInsertDataIterator
             // this is a NOOP unless we are merging/updating and detailed logging is enabled
-            DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, Set.of(ExpMaterialTable.Column.MaterialSourceId.name(), ExpDataClassDataTable.Column.ClassId.name()), true);
+            DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, Set.of(ExpMaterialTable.Column.MaterialSourceId.name(), ExpDataClassDataTable.Column.ClassId.name()), !isSample);
 
             // Add RootMaterialRowId if it does not exist
             DataIteratorBuilder step2b = ctx -> {
@@ -3070,8 +3086,8 @@ public class ExpDataIterators
 
                 if (_isSamples)
                 {
-                    filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), dataType.getRowId());
-                    filter.addCondition(FieldKey.fromParts("Name"), typeData.dataIds, CompareType.IN);
+                    filter = new SimpleFilter(MaterialSourceId.fieldKey(), dataType.getRowId());
+                    filter.addCondition(Name.fieldKey(), typeData.dataIds, CompareType.IN);
                     tableInfo = ExperimentService.get().getTinfoMaterial();
                 }
                 else

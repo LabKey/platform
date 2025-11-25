@@ -884,11 +884,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             throw new ValidationException("lsid required to update row");
 
         // TODO: Validate LSID in naming pattern points to the correct table
-        // TODO: Validate lookups to sample via LSID point to the correct table
         Long rowId = asLong(oldRow.get(RowId.name()));
         if (rowId == null)
             throw new ValidationException(RowId.name() + " required to update row");
 
+        // TODO: This is not replicated in the data iterator pathway
+        //  See ExpMaterialValidatorIterator for a likely destination for this logic.
         String newName = (String) row.get(Name.name());
         if (row.containsKey(Name.name()) && StringUtils.isEmpty(newName))
             throw new ValidationException("Sample name cannot be blank");
@@ -1099,19 +1100,17 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             for (Map<String, Object> k : keys)
             {
-                Long rowId = getMaterialRowId(k);
                 // Issue 40621
                 // adding input fields is expensive, skip input fields for delete since deleted samples are not surfaced on Timeline UI
-                Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k), user, container, false);
+                Map<String, Object> map = getMaterialMap(k);
                 if (map == null)
                     throw new QueryUpdateServiceException("No Sample Type Material found for RowID or LSID");
 
-                if (rowId == null)
-                    rowId = getMaterialRowId(map);
+                Long rowId = getMaterialRowId(map);
                 if (rowId == null)
                     throw new QueryUpdateServiceException("RowID is required to delete a Sample Type Material");
 
-                Long sampleStateId = MapUtils.getLong(map,SampleState.name());
+                Long sampleStateId = MapUtils.getLong(map, SampleState.name());
                 if (!SampleStatusService.get().isOperationPermitted(getContainer(), sampleStateId, SampleTypeService.SampleOperations.Delete))
                 {
                     DataState dataState = SampleStatusService.get().getStateForRowId(container, sampleStateId);
@@ -1177,8 +1176,43 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return MapUtils.getLong(row, RowId.name());
     }
 
-    private Map<String, Object> getMaterialMap(Long rowId, String lsid, User user, Container container, boolean addInputs)
-            throws QueryUpdateServiceException
+    private @Nullable Filter getMaterialFilter(Map<String, Object> keys)
+    {
+        Long rowId = getMaterialRowId(keys);
+        if (rowId != null)
+            return new SimpleFilter(RowId.fieldKey(), rowId);
+
+        String lsid = getMaterialLsid(keys);
+        if (lsid != null)
+            return new SimpleFilter(LSID.fieldKey(), lsid);
+
+        String name = getMaterialName(keys);
+        Integer materialSourceId = getMaterialSourceId(keys);
+        if (name != null && materialSourceId != null)
+        {
+            SimpleFilter filter = new SimpleFilter(Name.fieldKey(), name);
+            filter.addCondition(MaterialSourceId.fieldKey(), materialSourceId);
+            return filter;
+        }
+
+        return null;
+    }
+
+    private Map<String, Object> getMaterialMap(Map<String, Object> keys) throws QueryUpdateServiceException
+    {
+        Filter filter = getMaterialFilter(keys);
+        if (filter == null)
+            throw new QueryUpdateServiceException("Either RowId, LSID, or Name and MaterialSourceId is required to get Sample Type Material.");
+
+        return new TableSelector(getQueryTable(), filter, null).getMap();
+    }
+
+    private @Nullable Map<String, Object> getMaterialMapWithInputs(
+        Long rowId,
+        String lsid,
+        User user,
+        Container container
+    ) throws QueryUpdateServiceException
     {
         Filter filter;
         if (rowId != null)
@@ -1189,7 +1223,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Type Material.");
 
         Map<String, Object> sampleRow = new TableSelector(getQueryTable(), filter, null).getMap();
-        if (null == sampleRow || !addInputs)
+        if (null == sampleRow)
             return sampleRow;
 
         ExperimentService experimentService = ExperimentService.get();
@@ -1451,10 +1485,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!hasPermission(user, ReadPermission.class))
             throw new UnauthorizedException("You do not have permission to read data from this table.");
 
+        // TODO: This could be optimized to perform a single request to get all rows that share the same keys.
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (Map<String, Object> k : keys)
         {
-            Map<String, Object> materialMap = getMaterialMap(getMaterialRowId(k), getMaterialLsid(k), user, container, false);
+            Map<String, Object> materialMap = getMaterialMap(k);
             if (materialMap != null)
                 result.add(materialMap);
         }
@@ -1464,7 +1499,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws QueryUpdateServiceException
     {
-        return getMaterialMap(getMaterialRowId(keys), getMaterialLsid(keys), user, container, true);
+        return getMaterialMapWithInputs(getMaterialRowId(keys), getMaterialLsid(keys), user, container);
     }
 
     private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container, SampleTypeServiceImpl.SampleChangeType reason)

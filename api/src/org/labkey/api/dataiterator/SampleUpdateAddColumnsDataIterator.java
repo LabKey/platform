@@ -18,12 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.MaterialSourceId;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialRowId;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
 public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator

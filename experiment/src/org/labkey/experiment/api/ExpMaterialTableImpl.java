@@ -158,10 +158,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     Set<String> _uniqueIdFields;
     boolean _supportTableRules = true;
 
-    public static final Set<String> MATERIAL_ALT_MERGE_KEYS;
-    public static final List<IPropertyValidator> AMOUNT_RANGE_VALIDATORS = new ArrayList<>();
+    private static final Set<String> MATERIAL_ALT_KEYS;
+    private static final List<IPropertyValidator> AMOUNT_RANGE_VALIDATORS = new ArrayList<>();
     static {
-        MATERIAL_ALT_MERGE_KEYS = CaseInsensitiveHashSet.of(MaterialSourceId.name(), Name.name());
+        MATERIAL_ALT_KEYS = CaseInsensitiveHashSet.of(MaterialSourceId.name(), Name.name());
 
         Lsid rangeValidatorLsid = DefaultPropertyValidator.createValidatorURI(PropertyValidatorType.Range);
         IPropertyValidator amountValidator = PropertyService.get().createValidator(rangeValidatorLsid.toString());
@@ -1820,18 +1820,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public Set<String> getAltMergeKeys(DataIteratorContext context)
     {
-        if (context.getInsertOption().updateOnly)
-            return getAltKeysForUpdate();
-
-        return MATERIAL_ALT_MERGE_KEYS;
+        return MATERIAL_ALT_KEYS;
     }
 
     @Override
     public @NotNull Set<String> getAltKeysForUpdate()
     {
-        // TODO: Seems like we should not need to specify this but in some cases we skip logic because
-        //  there are no explicit merge keys. Namely, see TriggerDataBuilderHelper.Before.getDataIterator().
-        return CaseInsensitiveHashSet.of(RowId.name());
+        return MATERIAL_ALT_KEYS;
     }
 
     @Override
