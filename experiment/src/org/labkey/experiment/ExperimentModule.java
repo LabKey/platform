@@ -16,7 +16,6 @@
 package org.labkey.experiment;
 
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
@@ -31,9 +30,12 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -74,6 +76,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.migration.ExperimentDeleteService;
+import org.labkey.api.migration.MigrationTableHandler;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
@@ -82,6 +85,7 @@ import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -91,11 +95,11 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
-import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
@@ -179,7 +183,6 @@ import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
 
 public class ExperimentModule extends SpringModule
 {
-    private static final Logger LOG = LogHelper.getLogger(ExperimentModule.class, "Database migration status");
     private static final String SAMPLE_TYPE_WEB_PART_NAME = "Sample Types";
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
 
@@ -876,7 +879,59 @@ public class ExperimentModule extends SpringModule
             });
         }
 
-        DatabaseMigrationService.get().registerSchemaHandler(new ExperimentMigrationSchemaHandler());
+        ExperimentMigrationSchemaHandler handler = new ExperimentMigrationSchemaHandler();
+        DatabaseMigrationService.get().registerSchemaHandler(handler);
+        DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
+        {
+            @Override
+            public TableInfo getTableInfo()
+            {
+                return DbSchema.get("premium", DbSchemaType.Bare).getTable("Exclusions");
+            }
+
+            @Override
+            public void adjustFilter(TableInfo sourceTable, SimpleFilter filter, Set<GUID> containers)
+            {
+                // Exclude assay experiment runs that weren't copied
+                FilterClause excludedClause = handler.getExcludedRowIdClause(sourceTable, FieldKey.fromParts("RunId"));
+                if (excludedClause != null)
+                    filter.addClause(excludedClause);
+            }
+        });
+        DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
+        {
+            @Override
+            public TableInfo getTableInfo()
+            {
+                return DbSchema.get("premium", DbSchemaType.Bare).getTable("ExclusionMaps");
+            }
+
+            @Override
+            public void adjustFilter(TableInfo sourceTable, SimpleFilter filter, Set<GUID> containers)
+            {
+                // Exclude assay experiment runs that weren't copied
+                FilterClause excludedClause = handler.getExcludedRowIdClause(sourceTable, FieldKey.fromParts("ExclusionId", "RunId"));
+                if (excludedClause != null)
+                    filter.addClause(excludedClause);
+            }
+        });
+        DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
+        {
+            @Override
+            public TableInfo getTableInfo()
+            {
+                return DbSchema.get("assayrequest", DbSchemaType.Bare).getTable("RequestRunsJunction");
+            }
+
+            @Override
+            public void adjustFilter(TableInfo sourceTable, SimpleFilter filter, Set<GUID> containers)
+            {
+                // Exclude assay experiment runs that weren't copied
+                FilterClause excludedClause = handler.getExcludedRowIdClause(sourceTable, FieldKey.fromParts("RunId"));
+                if (excludedClause != null)
+                    filter.addClause(excludedClause);
+            }
+        });
         DatabaseMigrationService.get().registerSchemaHandler(new SampleTypeMigrationSchemaHandler());
         DataClassMigrationSchemaHandler dcHandler = new DataClassMigrationSchemaHandler();
         DatabaseMigrationService.get().registerSchemaHandler(dcHandler);

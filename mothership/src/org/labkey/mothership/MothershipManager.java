@@ -62,8 +62,8 @@ public class MothershipManager
     private static final String MOTHERSHIP_SECURE_CATEGORY = "mothershipSecure";
     private static final String CURRENT_BUILD_DATE_PROP = "currentBuildDate";
     private static final String UPGRADE_MESSAGE_PROP = "upgradeMessage";
-    private static final String CREATE_ISSUE_URL_PROP = "createIssueURL";
     private static final String ISSUES_CONTAINER_PROP = "issuesContainer";
+    private static final String GITHUB_REPO = "githubRepo";
     private static final String MARKETING_MESSAGE_PROP = "marketingMessage";
     private static final String UPTIME_CONTAINER_PROP = "uptimeContainer";
     private static final String STATUS_CAKE_API_KEY_PROP = "statusCakeApiKey";
@@ -551,14 +551,14 @@ public class MothershipManager
         saveProperty(MARKETING_MESSAGE_PROP, message);
     }
 
-    public String getCreateIssueURL()
+    public String getGitHubRepo()
     {
-        return getStringProperty(CREATE_ISSUE_URL_PROP);
+        return getStringProperty(GITHUB_REPO);
     }
 
-    public void setCreateIssueURL(String url)
+    public void setGitHubRepo(String repo)
     {
-        saveProperty(CREATE_ISSUE_URL_PROP, url);
+        saveProperty(GITHUB_REPO, repo);
     }
 
     public void updateExceptionStackTrace(ExceptionStackTrace stackTrace, User user)
