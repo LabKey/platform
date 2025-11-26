@@ -2465,10 +2465,47 @@ public class ExpDataIterators
 
             // Add other column validators here...
 
-            if (!validate.hasValidators())
-                return di;
+            if (validate.hasValidators())
+                di = validate;
 
-            return LoggingDataIterator.wrap(validate);
+            return LoggingDataIterator.wrap(new SampleUpdateNamePolicyDataIterator(di, context, _container));
+        }
+    }
+
+    private static class SampleUpdateNamePolicyDataIterator extends WrapperDataIterator
+    {
+        private final DataIteratorContext _context;
+        private final Integer _nameCol;
+
+        protected SampleUpdateNamePolicyDataIterator(DataIterator di, DataIteratorContext context, Container container)
+        {
+            super(di);
+            _context = context;
+
+            if (NameExpressionOptionService.get().getAllowUserSpecificNamesValue(container))
+                _nameCol = null;
+            else
+                _nameCol = DataIteratorUtil.createColumnNameMap(di).get(Name.name());
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+            if (!hasNext)
+                return false;
+
+            if (_nameCol == null || _context.getErrors().hasErrors() || getExistingRecord() == null)
+                return true;
+
+            Object newNameObj = get(_nameCol);
+            String newName = newNameObj == null ? null : String.valueOf(newNameObj);
+            String oldName = (String) getExistingRecord().get(Name.name());
+
+            if (!StringUtils.isEmpty(newName) && !newName.equals(oldName))
+                _context.getErrors().addRowError(new ValidationException("User-specified sample name not allowed"));
+
+            return true;
         }
     }
 
