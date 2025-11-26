@@ -29,6 +29,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mbean.SearchMXBean;
+import org.labkey.api.migration.DatabaseMigrationConfiguration;
 import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.migration.DefaultMigrationSchemaHandler;
 import org.labkey.api.module.DefaultModule;
@@ -194,6 +195,13 @@ public class SearchModule extends DefaultModule
             public List<TableInfo> getTablesToCopy()
             {
                 return List.of(); // Leave empty -- target server will re-index all documents
+            }
+
+            @Override
+            public void afterMigration(DatabaseMigrationConfiguration configuration)
+            {
+                // Clear index and all last indexed tracking
+                SearchService.get().deleteIndex("Database was just migrated");
             }
         });
     }
