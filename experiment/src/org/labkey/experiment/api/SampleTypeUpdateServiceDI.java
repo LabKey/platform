@@ -888,8 +888,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (rowId == null)
             throw new ValidationException(RowId.name() + " required to update row");
 
-        // TODO: This is not replicated in the data iterator pathway
-        //  See ExpMaterialValidatorIterator for a likely destination for this logic.
+        // See ExpDataIterators.SampleUpdateOnlyDataIteratorBuilder for data iterator logical equivalent
         String newName = (String) row.get(Name.name());
         if (row.containsKey(Name.name()) && StringUtils.isEmpty(newName))
             throw new ValidationException("Sample name cannot be blank");

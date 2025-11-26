@@ -2312,15 +2312,16 @@ public class ExpDataIterators
 
             assert _expTable instanceof ExpMaterialTableImpl || _expTable instanceof ExpDataClassDataTableImpl;
             boolean isSample = _expTable instanceof ExpMaterialTableImpl;
+            boolean isMergeOrUpdate = context.getInsertOption().allowUpdate;
+            boolean isUpdateOnly = context.getInsertOption().updateOnly;
 
             SimpleTranslator step1 = new SimpleTranslator(input, context);
             step1.selectAll(Sets.newCaseInsensitiveHashSet(Alias.name()), _importAliases);
             if (colNameMap.containsKey(Alias.name()))
                 step1.addColumn(ExperimentService.ALIASCOLUMNALIAS, colNameMap.get(Alias.name())); // see AliasDataIteratorBuilder
 
-            CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
-            dontUpdate.addAll(NOT_FOR_UPDATE);
-            if (context.getInsertOption().updateOnly)
+            CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet(NOT_FOR_UPDATE);
+            if (isUpdateOnly)
             {
                 dontUpdate.add("objectid");
                 dontUpdate.add("cpastype");
@@ -2330,7 +2331,6 @@ public class ExpDataIterators
             CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
             CaseInsensitiveHashSet propertyKeyColumns = new CaseInsensitiveHashSet();
             boolean canUpdateNames = NameExpressionOptionService.get().getAllowUserSpecificNamesValue(_container);
-            boolean isMergeOrUpdate = context.getInsertOption().allowUpdate;
 
             if (isSample)
             {
@@ -2338,7 +2338,7 @@ public class ExpDataIterators
 
                 if (isMergeOrUpdate)
                 {
-                    if (context.getInsertOption().updateOnly)
+                    if (isUpdateOnly)
                     {
                         // Both exp.Material and the provisioned tables have RowId
                         if (colNameMap.containsKey(RowId.name()))
@@ -2387,7 +2387,7 @@ public class ExpDataIterators
             {
                 if (isMergeOrUpdate)
                 {
-                    boolean isUpdateUsingLsid = context.getInsertOption().updateOnly && colNameMap.containsKey(ExpDataTable.Column.LSID.name()) && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
+                    boolean isUpdateUsingLsid = isUpdateOnly && colNameMap.containsKey(ExpDataTable.Column.LSID.name()) && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
                     if (isUpdateUsingLsid)
                     {
                         keyColumns.add(ExpDataTable.Column.LSID.name());
@@ -2407,13 +2407,59 @@ public class ExpDataIterators
                 }
             }
 
-            // Since we support detailed audit logging add the ExistingRecordDataIterator here just before TableInsertDataIterator
-            // this is a NOOP unless we are merging/updating and detailed logging is enabled
-            DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, Set.of(ExpMaterialTable.Column.MaterialSourceId.name(), ExpDataClassDataTable.Column.ClassId.name()), true);
+            // Since we support detailed audit logging, add the ExistingRecordDataIterator here just before TableInsertDataIterator.
+            // This is a NOOP unless we are merging/updating and detailed logging is enabled
+            DataIteratorBuilder dib = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, Set.of(ExpMaterialTable.Column.MaterialSourceId.name(), ExpDataClassDataTable.Column.ClassId.name()), true);
 
-            // Add RootMaterialRowId if it does not exist
-            DataIteratorBuilder step2b = ctx -> {
-                DataIterator in = step2a.getDataIterator(ctx);
+            if (isSample)
+            {
+                // Add RootMaterialRowId if it does not exist
+                dib = getRootMaterialRowIdBuilder(dib);
+
+                if (isMergeOrUpdate)
+                    dib = new SampleStatusCheckIteratorBuilder(dib, _container);
+
+                if (isUpdateOnly)
+                    dib = new SampleUpdateOnlyDataIteratorBuilder(dib, context, _container, _user);
+            }
+
+            // Insert into exp.data then the provisioned table
+            // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowId)
+            dib = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(dib, _expTable, _container)
+                    .setKeyColumns(keyColumns)
+                    .setDontUpdate(dontUpdate)
+                    .setAddlSkipColumns(_excludedColumns)
+                    .setCommitRowsBeforeContinuing(true)
+                    .setFailOnEmptyUpdate(false));
+
+            // pass in remap columns to help reconcile columns that may be aliased in the virtual table
+            dib = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(dib, _propertiesTable, _container)
+                    .setKeyColumns(propertyKeyColumns.isEmpty() ? keyColumns : propertyKeyColumns)
+                    .setDontUpdate(dontUpdate)
+                    .setVocabularyProperties(PropertyService.get().findVocabularyProperties(_container, colNameMap.keySet()))
+                    .setRemapSchemaColumns(((UpdateableTableInfo) _expTable).remapSchemaColumns())
+                    .setFailOnEmptyUpdate(false));
+
+            if (colNameMap.containsKey(Flag.name()) || colNameMap.containsKey("comment"))
+                dib = new FlagDataIteratorBuilder(dib, _user, isSample, _dataTypeObject, _container);
+
+            // Wire up derived parent/child data and materials
+            dib = new DerivationDataIteratorBuilder(dib, _container, _user, isSample, _dataTypeObject, false, false /* Validation already done in StandardDataIterator */);
+
+            if (isSample && !context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns) && colNameMap.containsKey(ROOT_RECOMPUTE_ROWID_COL))
+                dib = new AliquotRollupDataIteratorBuilder(dib, _container);
+
+            // Hack: add the alias and lsid values back into the input, so we can process them in the chained data iterator
+            if (null != _indexFunction)
+                dib = new SearchIndexIteratorBuilder(dib, _indexFunction); // may need to add this after the aliases are set
+
+            return dib.getDataIterator(context);
+        }
+
+        private DataIteratorBuilder getRootMaterialRowIdBuilder(DataIteratorBuilder dib)
+        {
+            return ctx -> {
+                DataIterator in = dib.getDataIterator(ctx);
                 var map = DataIteratorUtil.createColumnNameMap(in);
                 if (map.containsKey(RootMaterialRowId.toString()) || !map.containsKey(RowId.toString()))
                     return in;
@@ -2422,50 +2468,44 @@ public class ExpDataIterators
                 ret.addAliasColumn(RootMaterialRowId.toString(), map.get(RowId.toString()));
                 return ret;
             };
+        }
+    }
 
-            DataIteratorBuilder step2c = step2b;
-            if (isSample && isMergeOrUpdate)
+    private static class SampleUpdateOnlyDataIteratorBuilder implements DataIteratorBuilder
+    {
+        private final Container _container;
+        private final DataIteratorBuilder _in;
+        private final User _user;
+
+        public SampleUpdateOnlyDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context, Container container, User user)
+        {
+            _container = container;
+            _in = in;
+            _user = user;
+
+            assert context.getInsertOption().updateOnly : "SampleUpdateOnlyDataIteratorBuilder should only be used for UPDATE_ONLY";
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator di = _in.getDataIterator(context);
+            ValidatorIterator validate = new ValidatorIterator(di, context, _container, _user);
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(validate);
+
+            Integer index = map.get(Name.name());
+            if (index != null)
             {
-                step2c = LoggingDataIterator.wrap(new ExpDataIterators.SampleStatusCheckIteratorBuilder(step2b, _container));
+                ColumnInfo column = di.getColumnInfo(index);
+                validate.addValidator(index, new RequiredValidator(column.getColumnName(), false, false, "Sample name cannot be blank"));
             }
 
-            // Insert into exp.data then the provisioned table
-            // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)
-            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2c, _expTable, _container)
-                    .setKeyColumns(keyColumns)
-                    .setDontUpdate(dontUpdate)
-                    .setAddlSkipColumns(_excludedColumns)
-                    .setCommitRowsBeforeContinuing(true)
-                    .setFailOnEmptyUpdate(false));
+            // Add other column validators here...
 
-            // pass in remap columns to help reconcile columns that may be aliased in the virtual table
-            DataIteratorBuilder step4 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step3, _propertiesTable, _container)
-                    .setKeyColumns(propertyKeyColumns.isEmpty() ? keyColumns : propertyKeyColumns)
-                    .setDontUpdate(dontUpdate)
-                    .setVocabularyProperties(PropertyService.get().findVocabularyProperties(_container, colNameMap.keySet()))
-                    .setRemapSchemaColumns(((UpdateableTableInfo)_expTable).remapSchemaColumns())
-                    .setFailOnEmptyUpdate(false));
+            if (!validate.hasValidators())
+                return di;
 
-            DataIteratorBuilder step5 = step4;
-            if (colNameMap.containsKey(Flag.name()) || colNameMap.containsKey("comment"))
-            {
-                step5 = LoggingDataIterator.wrap(new ExpDataIterators.FlagDataIteratorBuilder(step4, _user, isSample, _dataTypeObject, _container));
-            }
-
-            // Wire up derived parent/child data and materials
-            DataIteratorBuilder step6 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step5, _container, _user, isSample, _dataTypeObject, false, false/*Validation already done in StandardDataIterator*/));
-
-            DataIteratorBuilder step7 = step6;
-            boolean hasRollUpColumns = colNameMap.containsKey(ROOT_RECOMPUTE_ROWID_COL);
-            if (isSample && !context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns) && hasRollUpColumns)
-                step7 = LoggingDataIterator.wrap(new ExpDataIterators.AliquotRollupDataIteratorBuilder(step6, _container));
-
-            // Hack: add the alias and lsid values back into the input, so we can process them in the chained data iterator
-            DataIteratorBuilder step8 = step7;
-            if (null != _indexFunction)
-                step8 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step7, _indexFunction)); // may need to add this after the aliases are set
-
-            return LoggingDataIterator.wrap(step8.getDataIterator(context));
+            return LoggingDataIterator.wrap(validate);
         }
     }
 
@@ -3231,7 +3271,7 @@ public class ExpDataIterators
         }
     }
 
-    public static class SampleStatusCheckDataIterator extends WrapperDataIterator
+    private static class SampleStatusCheckDataIterator extends WrapperDataIterator
     {
         private final Set<String> SAMPLE_IMPORT_BASE_FIELDS = new CaseInsensitiveHashSet(
                 "LSID",
