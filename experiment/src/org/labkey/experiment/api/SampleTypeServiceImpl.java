@@ -253,7 +253,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             List<Unit> commonUnits = getSupportedUnits();
             if (mUnit == null || !commonUnits.contains(mUnit))
             {
-                throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnitsString + ").  Supported values are: " + StringUtils.join(commonUnits, ", ") + ".");
+                if (defaultUnits != null)
+                    commonUnits = commonUnits.stream().filter(u -> u.getKindOfQuantity() == defaultUnits.getKindOfQuantity()).collect(Collectors.toList());
+                throw new ConversionExceptionWithMessage("Unsupported Units value (" + rawUnitsString + "). Supported values are: " + StringUtils.join(commonUnits, ", ") + ".");
             }
             if (defaultUnits != null && mUnit.getKindOfQuantity() != defaultUnits.getKindOfQuantity())
                 throw new ConversionExceptionWithMessage(String.format(CONVERSION_EXCEPTION_MESSAGE, rawUnits, sampleTypeName == null ? "" : sampleTypeName, defaultUnits));
@@ -1639,10 +1641,16 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (volumeUnits == null || volumeUnits.isEmpty())
             return null;
 
+        Set<String> uniqueAliquotUnits = volumeUnits.stream() .map(AliquotAmountUnitResult::unit).collect(Collectors.toSet());
+        boolean hasSameAliquotUnit = uniqueAliquotUnits.size() <= 1;
+
+
         Unit totalUnit = null;
         String totalUnitsStr;
         if (!StringUtils.isEmpty(sampleTypeUnitsStr))
             totalUnitsStr = sampleTypeUnitsStr;
+        else if (hasSameAliquotUnit && !StringUtils.isEmpty(volumeUnits.get(0).unit)) // if all aliquots have the same unit, prefer it over parent's unit
+            totalUnitsStr = volumeUnits.get(0).unit;
         else if (!StringUtils.isEmpty(sampleItemUnitsStr))
             totalUnitsStr = sampleItemUnitsStr;
         else // use the unit of the first aliquot if there are no other indications
