@@ -857,17 +857,18 @@ public class ExpDataIterators
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator pre = _pre.getDataIterator(context);
+            DataIterator di = _pre.getDataIterator(context);
             if (context.getConfigParameters().containsKey(SampleTypeUpdateServiceDI.Options.SkipDerivation))
-                return pre;
+                return di;
 
             if (context.getInsertOption() != QueryUpdateService.InsertOption.UPDATE)
-                return LoggingDataIterator.wrap(new DerivationDataIterator(pre, context, _container, _user, _currentDataType, _isSample, _skipAliquot));
+                di = new DerivationDataIterator(di, context, _container, _user, _currentDataType, _isSample, _skipAliquot);
+            else if (_isSample)
+                di = new SampleUpdateDerivationDataIterator(di, context, _container, _user, _currentDataType, _checkRequiredParents);
+            else
+                di = new DataUpdateDerivationDataIterator(di, context, _container, _user, _currentDataType, _checkRequiredParents);
 
-            if (_isSample)
-                return LoggingDataIterator.wrap(new SampleUpdateDerivationDataIterator(pre, context, _container, _user, _currentDataType, _checkRequiredParents));
-
-            return LoggingDataIterator.wrap(new DataUpdateDerivationDataIterator(pre, context, _container, _user, _currentDataType, _checkRequiredParents));
+            return LoggingDataIterator.wrap(di);
         }
     }
 
