@@ -94,9 +94,11 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         var map = DataIteratorUtil.createColumnNameMap(in);
         containerCol = map.get("Container");
 
-        Set<String> keyColumnNames = new CaseInsensitiveHashSet(target.getPkColumnNames());
-        if (keys != null)
-            keyColumnNames.addAll(keys);
+        Set<String> keyNames = new CaseInsensitiveHashSet();
+        if (keys == null)
+            keyNames.addAll(target.getPkColumnNames());
+        else
+            keyNames.addAll(keys);
 
         if (sharedKeys != null)
             _sharedKeys.addAll(sharedKeys);
@@ -104,7 +106,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         if (detailed)
             _dataColumnNames.addAll(map.keySet());
 
-        for (String name : keyColumnNames)
+        for (String name : keyNames)
         {
             if (!map.containsKey(name))
                 continue;

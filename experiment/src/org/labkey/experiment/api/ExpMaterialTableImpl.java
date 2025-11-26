@@ -1830,6 +1830,44 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
+    public @Nullable Set<String> getExistingRecordKeyColumnNames(DataIteratorContext context, Map<String, Integer> colNameMap)
+    {
+        if (!context.getInsertOption().allowUpdate)
+            return null;
+
+        Set<String> keyColumnNames = new CaseInsensitiveHashSet();
+        if (context.getInsertOption().updateOnly)
+        {
+            if (colNameMap.containsKey(RowId.name()))
+                keyColumnNames.add(RowId.name());
+            else
+            {
+                for (String altKey : getAltKeysForUpdate())
+                {
+                    if (colNameMap.containsKey(altKey))
+                        keyColumnNames.add(altKey);
+                }
+            }
+        }
+        else
+        {
+            Set<String> altMergeKeys = getAltMergeKeys(context);
+            if (altMergeKeys == null)
+                return null;
+
+            keyColumnNames.addAll(altMergeKeys);
+        }
+
+        return keyColumnNames;
+    }
+
+    @Override
+    public @Nullable Set<String> getExistingRecordSharedKeyColumnNames()
+    {
+        return CaseInsensitiveHashSet.of(MaterialSourceId.name());
+    }
+
+    @Override
     @NotNull
     public List<Set<String>> getAdditionalRequiredInsertColumns()
     {

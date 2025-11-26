@@ -33,6 +33,7 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.Permission;
 
+import java.util.Map;
 import java.util.Set;
 
 public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
@@ -131,6 +132,22 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
     }
 
     @Nullable default Set<String> getAltMergeKeys(DataIteratorContext context)
+    {
+        return null;
+    }
+
+    /**
+     * Returns the set of key column names for this table to be specified as key columns for the ExistingRecordDataIterator.
+     */
+    @Nullable default Set<String> getExistingRecordKeyColumnNames(DataIteratorContext context, Map<String, Integer> colNameMap)
+    {
+        return null;
+    }
+
+    /**
+     * Returns the set of key column names for this table to be specified as shared key columns for the ExistingRecordDataIterator.
+     */
+    @Nullable default Set<String> getExistingRecordSharedKeyColumnNames()
     {
         return null;
     }

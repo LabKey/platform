@@ -85,10 +85,9 @@ import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.AbstractExpSchema;
 import org.labkey.api.exp.query.DataClassUserSchema;
-import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataTable;
-import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
@@ -2250,7 +2249,7 @@ public class ExpDataIterators
     public static class PersistDataIteratorBuilder implements DataIteratorBuilder
     {
         private final DataIteratorBuilder _in;
-        private final TableInfo _expTable;
+        private final ExpTable<?> _expTable;
         private final TableInfo _propertiesTable;
         private final ExpObject _dataTypeObject;
         private final Container _container;
@@ -2262,7 +2261,7 @@ public class ExpDataIterators
         final Map<String, String> _importAliases;
 
         // expTable is the shared experiment table e.g. exp.Data or exp.Materials
-        public PersistDataIteratorBuilder(@NotNull DataIteratorBuilder in, TableInfo expTable, TableInfo propsTable, ExpObject typeObject, Container container, User user, Map<String, String> importAliases)
+        public PersistDataIteratorBuilder(@NotNull DataIteratorBuilder in, ExpTable<?> expTable, TableInfo propsTable, ExpObject typeObject, Container container, User user, Map<String, String> importAliases)
         {
             _in = in;
             _expTable = expTable;
@@ -2332,48 +2331,22 @@ public class ExpDataIterators
             CaseInsensitiveHashSet propertyKeyColumns = new CaseInsensitiveHashSet();
             boolean canUpdateNames = NameExpressionOptionService.get().getAllowUserSpecificNamesValue(_container);
 
+            var keys = _expTable.getExistingRecordKeyColumnNames(context, colNameMap);
+            if (keys != null)
+                keyColumns.addAll(keys);
+
+            for (String key : keyColumns)
+            {
+                if (_propertiesTable.getColumn(key) != null)
+                    propertyKeyColumns.add(key);
+            }
+
             if (isSample)
             {
-                ExpMaterialTableImpl expMaterialTable = (ExpMaterialTableImpl) _expTable;
+                if (isUpdateOnly && !canUpdateNames)
+                    dontUpdate.add(Name.name());
 
-                if (isMergeOrUpdate)
-                {
-                    if (isUpdateOnly)
-                    {
-                        // Both exp.Material and the provisioned tables have RowId
-                        if (colNameMap.containsKey(RowId.name()))
-                        {
-                            keyColumns.add(RowId.name());
-                            propertyKeyColumns.add(RowId.name());
-                        }
-                        else
-                        {
-                            // Otherwise, look for alternative keys that have been provided
-                            for (String altKey : expMaterialTable.getAltKeysForUpdate())
-                            {
-                                if (colNameMap.containsKey(altKey))
-                                {
-                                    keyColumns.add(altKey);
-                                    if (_propertiesTable.getColumn(altKey) != null)
-                                        propertyKeyColumns.add(altKey);
-                                    // TODO: Should we prevent update of these columns when they are being used as a key column?
-                                }
-                            }
-                        }
-
-                        if (!canUpdateNames)
-                            dontUpdate.add(Name.name());
-                    }
-                    else
-                    {
-                        Set<String> altMergeKeys = expMaterialTable.getAltMergeKeys(context);
-                        if (altMergeKeys != null)
-                            keyColumns.addAll(altMergeKeys);
-                        propertyKeyColumns.add(Name.name());
-                    }
-                }
-
-                dontUpdate.addAll(expMaterialTable.getUniqueIdFields());
+                dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
                 dontUpdate.addAll(
                     RootMaterialRowId.name(),
                     AliquotedFromLSID.name(),
@@ -2390,26 +2363,15 @@ public class ExpDataIterators
                     boolean isUpdateUsingLsid = isUpdateOnly && colNameMap.containsKey(ExpDataTable.Column.LSID.name()) && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
                     if (isUpdateUsingLsid)
                     {
-                        keyColumns.add(ExpDataTable.Column.LSID.name());
                         if (!canUpdateNames)
                             dontUpdate.add(ExpDataTable.Column.Name.name());
                     }
-                    else
-                    {
-                        Set<String> altMergeKeys = ((ExpDataClassDataTableImpl) _expTable).getAltMergeKeys(context);
-                        if (altMergeKeys != null)
-                            keyColumns.addAll(altMergeKeys);
-                    }
-                }
-                else
-                {
-                    keyColumns.add(ExpDataTable.Column.LSID.toString());
                 }
             }
 
             // Since we support detailed audit logging, add the ExistingRecordDataIterator here just before TableInsertDataIterator.
             // This is a NOOP unless we are merging/updating and detailed logging is enabled
-            DataIteratorBuilder dib = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, Set.of(ExpMaterialTable.Column.MaterialSourceId.name(), ExpDataClassDataTable.Column.ClassId.name()), true);
+            DataIteratorBuilder dib = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, _expTable.getExistingRecordSharedKeyColumnNames(), true);
 
             if (isSample)
             {
@@ -2434,7 +2396,7 @@ public class ExpDataIterators
 
             // pass in remap columns to help reconcile columns that may be aliased in the virtual table
             dib = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(dib, _propertiesTable, _container)
-                    .setKeyColumns(propertyKeyColumns.isEmpty() ? keyColumns : propertyKeyColumns)
+                    .setKeyColumns(propertyKeyColumns)
                     .setDontUpdate(dontUpdate)
                     .setVocabularyProperties(PropertyService.get().findVocabularyProperties(_container, colNameMap.keySet()))
                     .setRemapSchemaColumns(((UpdateableTableInfo) _expTable).remapSchemaColumns())

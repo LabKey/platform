@@ -896,6 +896,37 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     }
 
     @Override
+    public @Nullable Set<String> getExistingRecordKeyColumnNames(DataIteratorContext context, Map<String, Integer> colNameMap)
+    {
+        Set<String> keyColumnNames = new CaseInsensitiveHashSet();
+
+        if (context.getInsertOption().allowUpdate)
+        {
+            boolean isUpdateUsingLsid = context.getInsertOption().updateOnly && colNameMap.containsKey(ExpDataTable.Column.LSID.name()) && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
+            if (isUpdateUsingLsid)
+                keyColumnNames.add(Column.LSID.name());
+            else
+            {
+                Set<String> altMergeKeys = getAltMergeKeys(context);
+                if (altMergeKeys == null)
+                    return null;
+
+                keyColumnNames.addAll(altMergeKeys);
+            }
+        }
+        else
+            keyColumnNames.add(Column.LSID.name());
+
+        return keyColumnNames;
+    }
+
+    @Override
+    public @Nullable Set<String> getExistingRecordSharedKeyColumnNames()
+    {
+        return CaseInsensitiveHashSet.of(Column.ClassId.name());
+    }
+
+    @Override
     @NotNull
     public List<Set<String>> getAdditionalRequiredInsertColumns()
     {
