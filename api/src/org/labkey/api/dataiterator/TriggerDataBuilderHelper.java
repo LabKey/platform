@@ -149,23 +149,16 @@ public class TriggerDataBuilderHelper
             di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, _target, !context.getInsertOption().updateOnly));
             context.setWithLookupRemapping(false);
 
-            boolean shouldCache = true;
-            boolean skipExistingRecord = !isMergeOrUpdate || existingRecordKeyColumnNames == null || isNewFolderImport;
-            if (!skipExistingRecord)
-            {
-                if (context.getInsertOption().mergeRows)
-                {
-                    if (_target.supportsInsertOption(QueryUpdateService.InsertOption.MERGE))
-                        di = ExistingRecordDataIterator.createBuilder(di, _target, existingRecordKeyColumnNames, sharedKeys, true).getDataIterator(context);
-                    else
-                        shouldCache = false;
-                }
-            }
+            // Skip existing records
+            if (!context.getInsertOption().allowUpdate || existingRecordKeyColumnNames == null || isNewFolderImport)
+                return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(di), context));
 
-            if (shouldCache)
-                di = new CachingDataIterator(di);
+            // Merge request but merge is not supported
+            if (context.getInsertOption().mergeRows && !_target.supportsInsertOption(QueryUpdateService.InsertOption.MERGE))
+                return LoggingDataIterator.wrap(new BeforeIterator(di, context));
 
-            return LoggingDataIterator.wrap(new BeforeIterator(di, context));
+            di = ExistingRecordDataIterator.createBuilder(di, _target, existingRecordKeyColumnNames, sharedKeys, true).getDataIterator(context);
+            return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(di), context));
         }
     }
 
