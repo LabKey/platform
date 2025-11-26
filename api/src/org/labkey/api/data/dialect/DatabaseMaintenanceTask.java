@@ -24,7 +24,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.springframework.jdbc.BadSqlGrammarException;
 
-class DatabaseMaintenanceTask implements MaintenanceTask
+public class DatabaseMaintenanceTask implements MaintenanceTask
 {
     @Override
     public String getDescription()
@@ -41,13 +41,17 @@ class DatabaseMaintenanceTask implements MaintenanceTask
     @Override
     public void run(Logger log)
     {
-        DbScope scope = DbScope.getLabKeyScope();
+        run(DbScope.getLabKeyScope(), log);
+    }
+
+    public static void run(DbScope scope, Logger log)
+    {
         String url = null;
 
         try
         {
             url = scope.getDataSourceProperties().getUrl();
-            log.info("Database maintenance on " + url + " started");
+            log.info("Database maintenance on {} started", url);
         }
         catch (Exception e)
         {
@@ -69,6 +73,6 @@ class DatabaseMaintenanceTask implements MaintenanceTask
         }
 
         if (null != url)
-            log.info("Database maintenance on " + url + " complete");
+            log.info("Database maintenance on {} complete", url);
     }
 }
