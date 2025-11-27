@@ -41,6 +41,7 @@ import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.data.AuditConfigurable;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -1060,6 +1061,40 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             throw new ApiUsageException(reservedError);
     }
 
+    private boolean hasIncompatibleUnits(ExpSampleTypeImpl st, String newUnitStr)
+    {
+        if (StringUtils.isEmpty(newUnitStr) || newUnitStr.equalsIgnoreCase(st.getMetricUnit()))
+            return false;
+
+        boolean hasToValidateUnit = true;
+        Unit newUnit = Unit.fromName(newUnitStr);
+        if (!StringUtils.isEmpty(st.getMetricUnit()))
+        {
+            Unit oldUnit = Unit.fromName(st.getMetricUnit());
+            if (oldUnit != null && newUnit != null)
+                hasToValidateUnit = !oldUnit.getBase().equals(newUnit.getBase());
+        }
+
+        if (hasToValidateUnit)
+        {
+            SimpleFilter filter = new SimpleFilter();
+            filter.addCondition(FieldKey.fromParts("CpasType"), st.getLSID());
+            filter.addCondition(FieldKey.fromParts("StoredAmount"), null, CompareType.NONBLANK);
+            if (newUnit != null && newUnit.getBase() == Unit.unit.getBase())
+            {
+                List<String> compatibleUnits = KindOfQuantity.Count.getCommonUnits().stream().map(Unit::name).collect(Collectors.toList());
+                filter.addCondition(FieldKey.fromParts("Units"), compatibleUnits, CompareType.NOT_IN);
+            }
+            else
+                filter.addCondition(FieldKey.fromParts("Units"), newUnitStr, CompareType.NEQ);
+
+            TableSelector ts = new TableSelector(getTinfoMaterial(), filter, null);
+            return ts.exists();
+        }
+
+        return false;
+    }
+
     @Override
     public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
@@ -1117,6 +1152,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 st.setAliquotNameExpression(aliquotIdPattern);
 
             st.setLabelColor(options.getLabelColor());
+
+            if (hasIncompatibleUnits(st, options.getMetricUnit()))
+                throw new ApiUsageException("Unable to update 'Display Units' to '" + options.getMetricUnit() + "'. There are existing samples with incompatible units.");
+
             st.setMetricUnit(options.getMetricUnit());
 
             if (options.getImportAliases() != null && !options.getImportAliases().isEmpty())

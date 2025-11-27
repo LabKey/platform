@@ -39,7 +39,7 @@ public enum KindOfQuantity
         @Override
         public List<Unit> getCommonUnits()
         {
-            return List.of(Unit.unit, Unit.pcs, Unit.pack, Unit.blocks, Unit.slides, Unit.cells, Unit.box, Unit.kit, Unit.tests, Unit.bottle);
+            return List.of(Unit.unit, Unit.blocks, Unit.bottle, Unit.box, Unit.cells, Unit.kit, Unit.pack, Unit.pcs, Unit.slides, Unit.tests);
         }
     };
 

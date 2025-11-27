@@ -2081,7 +2081,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     return validatedUnit.name();
                 }
                 // if there's a base unit, return the base unit name otherwise return the name of the given unit
-                return validatedUnit == null ? null : baseUnit != null ? baseUnit.name() : validatedUnit.name(); // prefer provided count
+                return validatedUnit == null ? null : baseUnit != null ? baseUnit.name() : validatedUnit.name();
             }
 
             @Override
