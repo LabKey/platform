@@ -1654,8 +1654,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 }
             }
 
-            if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
-                drop.remove("lsid");
             if (!drop.isEmpty())
                 source = new DropColumnsDataIterator(source, drop);
 

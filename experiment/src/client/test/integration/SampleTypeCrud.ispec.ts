@@ -1070,13 +1070,17 @@ describe('Amount/Unit CRUD', () => {
         expect(errorMsg.text).toContain(NEGATIVE_ERROR);
         errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\n" + dataName + "\t-1.1\tkg", dataType, "MERGE", topFolderOptions, editorUserOptions);
         expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+
+        // Using row-by-row
         await server.post('query', 'updateRows', {
             schemaName: 'samples',
             queryName: dataType,
             rows: [{
                 Amount: -1,
                 Units: 'kg',
-                rowId: sampleRowId
+                rowId: sampleRowId,
+            },{
+                rowId: sampleRowId,
             }]
         }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
             const errorResp = JSON.parse(result.text);
@@ -1084,11 +1088,24 @@ describe('Amount/Unit CRUD', () => {
             expect(errorResp['exception']).toContain("Value '-1000.0 (g)' for field 'Amount' is invalid. Amounts must be non-negative.");
         });
 
+        // Using data iterator
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: dataType,
+            rows: [{
+                Amount: -1,
+                Units: 'kg',
+                rowId: sampleRowId,
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toContain("Value '-1' for field 'Amount' is invalid. Amounts must be non-negative.");
+        });
+
         errorMsg = await ExperimentCRUDUtils.importCrossTypeData(server, "Name\tStoredAmount\tUnits\tSampleType\nData1\t-1.1\tkg\t" + dataType ,'UPDATE', topFolderOptions, adminOptions, true);
         expect(errorMsg.text).toContain(NEGATIVE_ERROR);
         errorMsg = await ExperimentCRUDUtils.importCrossTypeData(server, "Name\tStoredAmount\tUnits\tSampleType\nData1\t-1.1\tkg\t" + dataType ,'MERGE', topFolderOptions, adminOptions, true);
         expect(errorMsg.text).toContain(NEGATIVE_ERROR);
-
     });
 
     it ("Test units conversion on insert/update", async () => {
