@@ -20,7 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.annotations.Migrate;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
@@ -94,7 +94,7 @@ public interface SpecimenService
 
     void registerRequestCustomizer(SpecimenRequestCustomizer customizer);
 
-    AttachmentType getSpecimenRequestEventType();
+    AttachmentParentType getSpecimenRequestEventType();
 
     /** Hooks to allow other modules to control a few items about how specimens are treated */
     interface SpecimenRequestCustomizer

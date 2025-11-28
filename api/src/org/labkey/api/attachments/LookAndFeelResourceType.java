@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 
-public class LookAndFeelResourceType implements AttachmentType
+public class LookAndFeelResourceType implements AttachmentParentType
 {
     private static final LookAndFeelResourceType INSTANCE = new LookAndFeelResourceType();
 
@@ -35,7 +35,7 @@ public class LookAndFeelResourceType implements AttachmentType
     @Override
     public @NotNull String getUniqueName()
     {
-        return getClass().getName();
+        return "LookAndFeelResource";
     }
 
     @Override

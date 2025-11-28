@@ -2,7 +2,7 @@ package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -198,7 +198,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
     }
 
     @Override
-    public @NotNull Collection<AttachmentType> getAttachmentTypes()
+    public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
     {
         return List.of(ExpDataClassType.get());
     }

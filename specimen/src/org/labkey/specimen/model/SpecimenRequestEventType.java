@@ -17,11 +17,11 @@ package org.labkey.specimen.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.specimen.SpecimenSchema;
 
-public class SpecimenRequestEventType implements AttachmentType
+public class SpecimenRequestEventType implements AttachmentParentType
 {
     private static final SpecimenRequestEventType INSTANCE = new SpecimenRequestEventType();
 
@@ -37,7 +37,7 @@ public class SpecimenRequestEventType implements AttachmentType
     @Override
     public @NotNull String getUniqueName()
     {
-        return getClass().getName();
+        return "SpecimenRequest";
     }
 
     @Override

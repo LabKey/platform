@@ -17,14 +17,14 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 
 /**
  * Identifies avatar (user-account associated image/icon) attachments
  */
-public class AvatarType implements AttachmentType
+public class AvatarType implements AttachmentParentType
 {
     private static final AvatarType INSTANCE = new AvatarType();
 
@@ -40,7 +40,7 @@ public class AvatarType implements AttachmentType
     @Override
     public @NotNull String getUniqueName()
     {
-        return getClass().getName();
+        return "UserAvatar";
     }
 
     @Override

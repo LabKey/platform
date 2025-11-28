@@ -3,7 +3,7 @@ package org.labkey.core;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentCache;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.CompareType.CompareClause;
@@ -210,7 +210,7 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
     }
 
     @Override
-    public @NotNull Collection<AttachmentType> getAttachmentTypes()
+    public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
     {
         return List.of(
             AuthenticationLogoType.get(),

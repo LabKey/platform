@@ -3,7 +3,7 @@ package org.labkey.experiment;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.CompareType.CompareClause;
@@ -275,7 +275,7 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     @Override
-    public @NotNull Collection<AttachmentType> getAttachmentTypes()
+    public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
     {
         return List.of(
             ExpProtocolAttachmentType.get(),

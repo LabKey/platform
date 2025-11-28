@@ -4,7 +4,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
@@ -274,11 +274,11 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         return new TempTableInClauseGenerator(() -> sourceScope.getSchema("temp", DbSchemaType.Bare));
     }
 
-    private static final Set<AttachmentType> SEEN = new HashSet<>();
+    private static final Set<AttachmentParentType> SEEN = new HashSet<>();
     private static final JobRunner ATTACHMENT_JOB_RUNNER = new JobRunner("Attachment JobRunner", 1);
 
     // Copy all core.Documents rows that match the provided filter clause
-    protected final void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, FilterClause filterClause, AttachmentType... type)
+    protected final void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, FilterClause filterClause, AttachmentParentType... type)
     {
         SEEN.addAll(Arrays.asList(type));
         String additionalMessage = " associated with " + Arrays.stream(type).map(t -> t.getClass().getSimpleName()).collect(Collectors.joining(", "));
@@ -300,7 +300,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
     public static void afterMigration() throws InterruptedException
     {
         // Report any unseen attachment types
-        Set<AttachmentType> unseen = new HashSet<>(AttachmentService.get().getAttachmentTypes());
+        Set<AttachmentParentType> unseen = new HashSet<>(AttachmentService.get().getAttachmentParentTypes());
         unseen.removeAll(SEEN);
 
         if (unseen.isEmpty())
@@ -318,7 +318,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
     }
 
     @Override
-    public @NotNull Collection<AttachmentType> getAttachmentTypes()
+    public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
     {
         return List.of();
     }

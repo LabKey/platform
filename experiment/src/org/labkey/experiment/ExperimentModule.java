@@ -277,8 +277,8 @@ public class ExperimentModule extends SpringModule
         RoleManager.registerRole(new SampleTypeDesignerRole());
         RoleManager.registerRole(new DataClassDesignerRole());
 
-        AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
-        AttachmentService.get().registerAttachmentType(ExpProtocolAttachmentType.get());
+        AttachmentService.get().registerAttachmentParentType(ExpRunAttachmentType.get());
+        AttachmentService.get().registerAttachmentParentType(ExpProtocolAttachmentType.get());
 
         WebdavService.get().addExpDataProvider((path, container) -> ExperimentService.get().getAllExpDataByURL(path, container));
         ExperimentService.get().registerObjectReferencer(ExperimentServiceImpl.get());
@@ -574,7 +574,7 @@ public class ExperimentModule extends SpringModule
             folderRegistry.addImportFactory(new SampleStatusFolderImporter.Factory());
         }
 
-        AttachmentService.get().registerAttachmentType(ExpDataClassType.get());
+        AttachmentService.get().registerAttachmentParentType(ExpDataClassType.get());
 
         WebdavService.get().addProvider(new ScriptsResourceProvider());
 

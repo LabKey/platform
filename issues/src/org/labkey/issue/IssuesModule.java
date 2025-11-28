@@ -100,7 +100,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         IssuesListDefService.get().registerIssuesListDefProvider(new GeneralIssuesListDefProvider());
 
         NotificationService.get().registerNotificationType(IssueObject.class.getName(), "Issues", "fa-bug");
-        AttachmentService.get().registerAttachmentType(IssueCommentType.get());
+        AttachmentService.get().registerAttachmentParentType(IssueCommentType.get());
     }
 
     @Override
