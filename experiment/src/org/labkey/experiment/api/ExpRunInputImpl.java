@@ -115,6 +115,12 @@ public abstract class ExpRunInputImpl<InputType extends AbstractRunInput> extend
     }
 
     @Override
+    public final Integer getCreatedById()
+    {
+        return getTargetApplication().getCreatedById();
+    }
+
+    @Override
     public final Date getCreated()
     {
         return getTargetApplication().getCreated();
@@ -124,6 +130,12 @@ public abstract class ExpRunInputImpl<InputType extends AbstractRunInput> extend
     public final User getModifiedBy()
     {
         return getTargetApplication().getModifiedBy();
+    }
+
+    @Override
+    public final Integer getModifiedById()
+    {
+        return getTargetApplication().getModifiedById();
     }
 
     @Override

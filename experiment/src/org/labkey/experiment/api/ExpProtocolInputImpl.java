@@ -72,10 +72,24 @@ public abstract class ExpProtocolInputImpl<T extends AbstractProtocolInput, I ex
     }
 
     @Override
+    public Integer getCreatedById()
+    {
+        ExpProtocol protocol = getProtocol();
+        return null == protocol ? null : protocol.getCreatedById();
+    }
+
+    @Override
     public User getModifiedBy()
     {
         ExpProtocol protocol = getProtocol();
         return null == protocol ? null : protocol.getModifiedBy();
+    }
+
+    @Override
+    public Integer getModifiedById()
+    {
+        ExpProtocol protocol = getProtocol();
+        return null == protocol ? null : protocol.getModifiedById();
     }
 
     @Override

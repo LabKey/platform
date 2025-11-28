@@ -109,10 +109,24 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     }
 
     @Override
+    public Integer getCreatedById()
+    {
+        ExpRun run = getRun();
+        return null == run ? null : run.getCreatedById();
+    }
+
+    @Override
     public User getModifiedBy()
     {
         ExpRun run = getRun();
         return null == run ? null : run.getModifiedBy();
+    }
+
+    @Override
+    public Integer getModifiedById()
+    {
+        ExpRun run = getRun();
+        return null == run ? null : run.getModifiedById();
     }
 
     @Override
