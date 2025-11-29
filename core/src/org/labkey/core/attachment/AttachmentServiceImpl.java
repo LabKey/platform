@@ -202,6 +202,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             AttachmentAuditProvider.AttachmentAuditEvent attachmentEvent = new AttachmentAuditProvider.AttachmentAuditEvent(c == null ? ContainerManager.getRoot() : c, comment);
 
             attachmentEvent.setAttachmentParentEntityId(parent.getEntityId());
+            attachmentEvent.setParentType(parent.getAttachmentParentType().getUniqueName());
             attachmentEvent.setAttachment(filename);
 
             AuditLogService.get().addEvent(user, attachmentEvent);
