@@ -1557,8 +1557,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             if (!StringUtils.isEmpty(sampleTypeUnit))
             {
+                Unit sampleTypeDisplayUnit = Unit.valueOf(sampleTypeUnit);
                 // if sample type has unit, use it for simple rollup without need for conversion
-                Unit sampleTypeBaseUnit = Unit.valueOf(sampleTypeUnit).getBase();
+                Unit sampleTypeBaseUnit = sampleTypeDisplayUnit.getBase();
                 String baseUnit = sampleTypeBaseUnit.name();
 
                 TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
@@ -1570,31 +1571,61 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                     int precisionScale = sampleTypeBaseUnit.getPrecisionScale();
 
-                    SQLFragment statsSql = new SQLFragment("SELECT rootmaterialrowid, SUM(storedamount) AS total_volume, \n")
-                            .append("SUM(CASE WHEN samplestate ").appendInClause(availableSampleStates, tableInfo.getSqlDialect()).append(" THEN storedamount ELSE 0 END) AS avail_volume, \n")
-                            .append("CASE WHEN MIN(units) = MAX(units) THEN MIN(units) ELSE ? END AS common_unit \n").add(sampleTypeUnit)
-                            .append("FROM exp.material \n")
-                            .append("WHERE rootmaterialrowid ")
-                            .appendInClause(sublist, tableInfo.getSqlDialect())
-                            .append(" AND rowid != rootmaterialrowid\n")
-                            .append(" GROUP BY rootmaterialrowid\n");
+                    boolean isCountUnitType = sampleTypeBaseUnit.getKindOfQuantity() == KindOfQuantity.Count;
+                    String aliquotUnitSql = isCountUnitType ? "CASE WHEN MIN(im.units) = MAX(im.units) THEN MIN(im.units) ELSE ? END" : "?";
 
-                    SQLFragment quickRollUpSql = new SQLFragment("UPDATE exp.material AS m SET \n")
-                            .append("aliquotvolume = ROUND(COALESCE(stats.total_volume, 0)::NUMERIC, ?),\n").add(precisionScale)
-                            .append("aliquotunit = stats.common_unit,\n")
-                            .append("availablealiquotvolume = ROUND(COALESCE(stats.avail_volume, 0)::NUMERIC, ?)\n").add(precisionScale)
-                            .append("FROM (")
-                            .append(statsSql)
-                            .append(") AS stats\n")
-                            .append("WHERE m.rowid = stats.rootmaterialrowid"
-                    );
+                    SQLFragment statsSql = new SQLFragment("SELECT im.rootmaterialrowid, SUM(im.storedamount) AS total_volume, \n")
+                            .append("SUM(CASE WHEN im.samplestate ").appendInClause(availableSampleStates, tableInfo.getSqlDialect()).append(" THEN im.storedamount ELSE 0 END) AS avail_volume, \n")
+                            .append(aliquotUnitSql)
+                            .append(" AS common_unit \n").add(baseUnit)
+                            .append("FROM exp.material im\n")
+                            .append("WHERE im.rootmaterialrowid ")
+                            .appendInClause(sublist, tableInfo.getSqlDialect())
+                            .append(" AND im.rowid != im.rootmaterialrowid\n")
+                            .append(" GROUP BY im.rootmaterialrowid\n");
+
+                    SQLFragment quickRollUpSql = null;
+
+                    if (tableInfo.getSchema().getSqlDialect().isSqlServer())
+                    {
+                        /*
+                         * SqlServer needs to specify the alias in the FROM clause, and use that alias as the target of the update.
+                         */
+                        quickRollUpSql = new SQLFragment("UPDATE exp.material SET \n")
+                                .append("aliquotvolume = ROUND(CAST(COALESCE(stats.total_volume, 0) AS NUMERIC(18,6)) , ?),\n").add(precisionScale)
+                                .append("aliquotunit = stats.common_unit,\n")
+                                .append("availablealiquotvolume = ROUND(CAST(COALESCE(stats.avail_volume, 0) AS NUMERIC(18,6)), ?)\n").add(precisionScale)
+                                .append("FROM exp.material m INNER JOIN (")
+                                .append(statsSql)
+                                .append(") AS stats\n")
+                                .append("ON m.rowid = stats.rootmaterialrowid"
+                                );
+                    }
+                    else
+                    {
+                        /*
+                         * Alias usage: PostgreSQL allows you to use an alias in the UPDATE clause itself
+                         * Type casting: PostgreSQL uses ::NUMERIC for type casting.
+                         * JOIN condition: The WHERE clause is used for joining the tables instead of an INNER JOIN with ON.
+                         */
+                        quickRollUpSql = new SQLFragment("UPDATE exp.material AS m SET \n")
+                                .append("aliquotvolume = ROUND(COALESCE(stats.total_volume, 0)::NUMERIC, ?),\n").add(precisionScale)
+                                .append("aliquotunit = stats.common_unit,\n")
+                                .append("availablealiquotvolume = ROUND(COALESCE(stats.avail_volume, 0)::NUMERIC, ?)\n").add(precisionScale)
+                                .append("FROM (")
+                                .append(statsSql)
+                                .append(") AS stats\n")
+                                .append("WHERE m.rowid = stats.rootmaterialrowid"
+                                );
+                    }
+
                     new SqlExecutor(tableInfo.getSchema()).execute(quickRollUpSql);
 
                     // Now clear out rollups for samples that have zero aliquots
-                    SQLFragment quickClearRollupSql = new SQLFragment("UPDATE exp.material AS m SET \n")
+                    SQLFragment quickClearRollupSql = new SQLFragment("UPDATE exp.material SET \n")
                             .append("aliquotvolume = 0, availablealiquotvolume = 0, ")
                             .append("aliquotunit = ?\n").add(baseUnit)
-                            .append("WHERE m.rowid = m.rootmaterialrowid AND m.AliquotCount = 0 AND m.rowid ")
+                            .append("WHERE rowid = rootmaterialrowid AND AliquotCount = 0 AND rowid ")
                             .appendInClause(sublist, tableInfo.getSqlDialect());
                     new SqlExecutor(tableInfo.getSchema()).execute(quickClearRollupSql);
 
