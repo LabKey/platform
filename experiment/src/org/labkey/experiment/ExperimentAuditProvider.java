@@ -44,7 +44,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -98,17 +97,6 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
     public String getDescription()
     {
         return "Data about assay run creations, deletions, modifications.";
-    }
-
-    @Override
-    public Map<FieldKey, String> legacyNameMap()
-    {
-        Map<FieldKey, String> legacyNames = super.legacyNameMap();
-        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_PROTOCOL_LSID);
-        legacyNames.put(FieldKey.fromParts("key2"), COLUMN_NAME_RUN_LSID);
-        legacyNames.put(FieldKey.fromParts("key3"), COLUMN_NAME_PROTOCOL_RUN);
-        legacyNames.put(FieldKey.fromParts("intKey1"), COLUMN_NAME_RUN_GROUP);
-        return legacyNames;
     }
 
     @Override

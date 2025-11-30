@@ -79,16 +79,6 @@ public class MessageAuditProvider extends AbstractAuditTypeProvider implements A
     }
 
     @Override
-    public Map<FieldKey, String> legacyNameMap()
-    {
-        Map<FieldKey, String> legacyNames = super.legacyNameMap();
-        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_FROM);
-        legacyNames.put(FieldKey.fromParts("key2"), COLUMN_NAME_TO);
-        legacyNames.put(FieldKey.fromParts("key3"), COLUMN_NAME_CONTENT_TYPE);
-        return legacyNames;
-    }
-
-    @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
         return (Class<K>)MessageAuditEvent.class;
