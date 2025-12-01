@@ -886,7 +886,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         return result;
-
     }
 
     @Override
@@ -898,7 +897,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (lsid == null)
             throw new ValidationException("lsid required to update row");
 
-        // TODO: Validate LSID in naming pattern points to the correct table
         Long rowId = asLong(oldRow.get(RowId.name()));
         if (rowId == null)
             throw new ValidationException(RowId.name() + " required to update row");
@@ -908,6 +906,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (row.containsKey(Name.name()) && StringUtils.isEmpty(newName))
             throw new ValidationException("Sample name cannot be blank");
 
+        // See ExpDataIterators.SampleUpdateNamePolicyDataIterator for data iterator logical equivalent
         String oldName = (String) oldRow.get(Name.name());
         boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
         if (hasNameChange && !NameExpressionOptionService.get().getAllowUserSpecificNamesValue(c))
@@ -1356,7 +1355,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Map<Integer, String> rowNumLsid = new IntHashMap<>();
 
         Map<Long, Integer> rowIdRowNumMap = new LinkedHashMap<>();
-        // TODO: What if we didn't support lsidRowMap?
         Map<String, Integer> lsidRowNumMap = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
         Map<String, Integer> nameRowNumMap = new LinkedHashMap<>();
         Integer sampleTypeId = null;
