@@ -96,18 +96,6 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
     }
 
     @Override
-    public Map<FieldKey, String> legacyNameMap()
-    {
-        Map<FieldKey, String> legacyMap =  super.legacyNameMap();
-        legacyMap.put(FieldKey.fromParts("key1"), COLUMN_NAME_ROW_PK);
-        legacyMap.put(FieldKey.fromParts("key2"), COLUMN_NAME_SCHEMA_NAME);
-        legacyMap.put(FieldKey.fromParts("key3"), COLUMN_NAME_QUERY_NAME);
-        legacyMap.put(FieldKey.fromParts("Property", AbstractAuditDomainKind.OLD_RECORD_PROP_NAME), AbstractAuditDomainKind.OLD_RECORD_PROP_NAME);
-        legacyMap.put(FieldKey.fromParts("Property", AbstractAuditDomainKind.NEW_RECORD_PROP_NAME), AbstractAuditDomainKind.NEW_RECORD_PROP_NAME);
-        return legacyMap;
-    }
-
-    @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
         return (Class<K>)QueryUpdateAuditEvent.class;
