@@ -47,6 +47,12 @@ public abstract class ExpIdentifiableEntityImpl<Type extends IdentifiableEntity>
     }
 
     @Override
+    public Integer getCreatedById()
+    {
+        return _object.getCreatedBy();
+    }
+
+    @Override
     public Date getModified()
     {
         return _object.getModified();
@@ -56,5 +62,11 @@ public abstract class ExpIdentifiableEntityImpl<Type extends IdentifiableEntity>
     public User getModifiedBy()
     {
         return UserManager.getUser(_object.getModifiedBy());
+    }
+
+    @Override
+    public Integer getModifiedById()
+    {
+        return _object.getModifiedBy();
     }
 }

@@ -57,6 +57,8 @@ import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.notification.NotificationMenuView;
+import org.labkey.api.products.ProductMenuProvider;
+import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.AuthenticationManager;
@@ -3394,5 +3396,41 @@ public class PageFlowUtil
         }
 
         return nl.getLength();
+    }
+
+    public static class AppUrls
+    {
+        protected static ActionURL appendFrag(ActionURL url, String... appURLParts)
+        {
+            if (url == null)
+                return null;
+
+            String s = url.getFragment();
+            String fragment = (s == null ? "" : s) + "/" + String.join("/", appURLParts);
+            return (ActionURL) url.setFragment(fragment);
+        }
+
+        protected static ActionURL app(Container container, boolean includeDefault)
+        {
+            return getAppURL(container, includeDefault);
+        }
+
+        public static ActionURL getAppURL(Container container, boolean includeDefault)
+        {
+            ProductMenuProvider menuProvider = ProductRegistry.get().getPrimaryProductMenuForContainer(container);
+            if (menuProvider != null)
+                return menuProvider.getAppURL(container);
+
+            return includeDefault ? new ActionURL() : null;
+        }
+
+        public static String getAppName(Container container)
+        {
+            ProductMenuProvider product = ProductRegistry.get().getPrimaryProductMenuForContainer(container);
+            if (product != null)
+                return product.getProductName();
+
+            return "";
+        }
     }
 }

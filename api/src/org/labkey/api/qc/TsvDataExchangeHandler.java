@@ -1310,12 +1310,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
 
         @Override
-        public @Nullable Long getWorkflowTask()
-        {
-            return null;
-        }
-
-        @Override
         public User getUser()
         {
             return _context.getUser();

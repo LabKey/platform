@@ -3395,9 +3395,8 @@ public class ExperimentController extends SpringActionController
                 if (run != null)
                 {
                     if (!run.canDelete(getUser()))
-                        throw new UnauthorizedException("You do not have permission to delete " +
-                                (ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID()) ? "jobs" : "runs")
-                                + " in " + run.getContainer());
+                        throw new UnauthorizedException("You do not have permission to delete runs in "
+                                 + run.getContainer());
 
                     runs.add(run);
                     idToRunMap.put(run.getRowId(), run);
@@ -3499,8 +3498,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("Could not find run with ID " + form.getRunId());
             }
             if (!run.canDelete(getUser()))
-                throw new UnauthorizedException("You do not have permission to delete "
-                        + (ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID()) ? "jobs" : "runs") + " in this container.");
+                throw new UnauthorizedException("You do not have permission to delete runs in this container.");
 
             run.delete(getUser());
             return new ApiSimpleResponse("success", true);

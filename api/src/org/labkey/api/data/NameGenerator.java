@@ -1658,6 +1658,12 @@ public class NameGenerator
         return new NameGeneratorState(this, incrementSampleCounts, _expressionSummary.sampleSummary);
     }
 
+    @NotNull
+    public NameGeneratorState createState(boolean incrementSampleCounts, String nameField)
+    {
+        return new NameGeneratorState(this, incrementSampleCounts, _expressionSummary.sampleSummary, nameField);
+    }
+
     public String generateName(@NotNull NameGeneratorState state, @NotNull Map<String, Object> rowMap) throws NameGenerationException
     {
         return state.nextName(rowMap, null, null, null, null);
