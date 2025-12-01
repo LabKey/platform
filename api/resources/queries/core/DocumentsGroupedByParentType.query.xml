@@ -5,6 +5,7 @@
                 <columns>
                     <column columnName="Count">
                         <url replaceMissing="blankValue">query-executeQuery.view?schemaName=core&amp;queryName=Documents&amp;query.ParentType~eq=${ParentType}&amp;query.containerFilterName=${containerFilterName}</url>
+                        <formatString>#,##0</formatString>
                     </column>
                 </columns>
             </table>
