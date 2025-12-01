@@ -478,7 +478,7 @@ public class AdminController extends SpringActionController
         // Diagnostics
         AdminConsole.addLink(Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
         AdminConsole.addLink(Diagnostics, "attachments", PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(root, "core", "DocumentsGroupedByParentType")
-            .addParameter("query." + QueryParam.containerFilterName, "AllFolders"));
+            .addParameter("query." + QueryParam.containerFilterName, "AllFolders"), ApplicationAdminPermission.class);
         AdminConsole.addLink(Diagnostics, "attachments - old", new ActionURL(AttachmentsAction.class, root));
         AdminConsole.addLink(Diagnostics, "caches", new ActionURL(CachesAction.class, root));
         AdminConsole.addLink(Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root), AdminOperationsPermission.class);
