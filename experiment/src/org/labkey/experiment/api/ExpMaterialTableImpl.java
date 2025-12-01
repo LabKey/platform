@@ -95,7 +95,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.RowIdForeignKey;
-import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.search.SearchService;
@@ -241,7 +240,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case LSID ->
             {
-                return wrapColumn(alias, _rootTable.getColumn(LSID.name()));
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn(LSID.name()));
+                columnInfo.setHidden(true);
+                columnInfo.setReadOnly(true);
+                columnInfo.setUserEditable(false);
+                columnInfo.setShownInInsertView(false);
+                columnInfo.setShownInDetailsView(false);
+                columnInfo.setShownInUpdateView(false);
+                return columnInfo;
             }
             case MaterialSourceId ->
             {
@@ -272,6 +278,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn(RootMaterialRowId.name()));
                 columnInfo.setFk(getExpSchema().getMaterialForeignKey(getLookupContainerFilter(), RowId.name()));
                 columnInfo.setLabel("Root Material");
+                columnInfo.setHidden(true);
+                columnInfo.setReadOnly(true);
+                columnInfo.setShownInInsertView(false);
+                columnInfo.setShownInDetailsView(false);
+                columnInfo.setShownInUpdateView(false);
                 columnInfo.setUserEditable(false);
 
                 // NK: Here we mark the column as not required AND nullable which is the opposite of the database where
@@ -288,6 +299,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 columnInfo.setSqlTypeName("lsidtype");
                 columnInfo.setFk(getExpSchema().getMaterialForeignKey(getLookupContainerFilter(), LSID.name()));
                 columnInfo.setLabel("Aliquoted From Parent");
+                columnInfo.setHidden(true);
+                columnInfo.setReadOnly(true);
+                columnInfo.setUserEditable(false);
+                columnInfo.setShownInInsertView(false);
+                columnInfo.setShownInDetailsView(false);
+                columnInfo.setShownInUpdateView(false);
                 return columnInfo;
             }
             case IsAliquot ->
@@ -403,23 +420,32 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case SampleSet ->
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("CpasType"));
-                // NOTE: populateColumns() overwrites this with a QueryForeignKey.  Can this be removed?
-                columnInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, null, null, "LSID", "Name")
+                columnInfo.setFk(new QueryForeignKey(_userSchema, getContainerFilter(), ExpSchema.SCHEMA_NAME, getContainer(), null, ExpSchema.TableType.SampleSets.name(), "lsid", null)
                 {
                     @Override
-                    public TableInfo getLookupTableInfo()
+                    protected ContainerFilter getLookupContainerFilter()
                     {
-                        ExpSampleTypeTable sampleTypeTable = ExperimentService.get().createSampleTypeTable(ExpSchema.TableType.SampleSets.toString(), _userSchema, getLookupContainerFilter());
-                        sampleTypeTable.populate();
-                        return sampleTypeTable;
-                    }
+                        // Be sure that we can resolve the sample type if it's defined in a separate container.
+                        // Same as CurrentPlusProjectAndShared but includes SampleSet's container as well.
+                        // Issue 37982: Sample Type: Link to precursor sample type does not resolve correctly if sample has
+                        // parents in current sample type and a sample type in the parent container
+                        Set<Container> containers = new HashSet<>();
+                        if (null != getSampleType())
+                            containers.add(getSampleType().getContainer());
+                        containers.add(getContainer());
+                        if (getContainer().getProject() != null)
+                            containers.add(getContainer().getProject());
+                        containers.add(ContainerManager.getSharedContainer());
+                        ContainerFilter cf = new ContainerFilter.CurrentPlusExtras(_userSchema.getContainer(), _userSchema.getUser(), containers);
 
-                    @Override
-                    public StringExpression getURL(ColumnInfo parent)
-                    {
-                        return super.getURL(parent, true);
+                        if (null != _containerFilter && _containerFilter.getType() != ContainerFilter.Type.Current)
+                            cf = new UnionContainerFilter(_containerFilter, cf);
+                        return cf;
                     }
                 });
+                columnInfo.setReadOnly(true);
+                columnInfo.setUserEditable(false);
+                columnInfo.setShownInInsertView(false);
                 return columnInfo;
             }
             case SourceProtocolLSID ->
@@ -479,7 +505,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case Run ->
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn("RunId"));
+                ret.setFk(getExpSchema().getRunIdForeignKey(getContainerFilter()));
                 ret.setReadOnly(true);
+                ret.setShownInInsertView(false);
+                ret.setShownInUpdateView(false);
                 return ret;
             }
             case RowId ->
@@ -541,7 +570,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case SampleState ->
             {
-                boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && !SampleStatusService.get().getAllProjectStates(getContainer()).isEmpty();
+                boolean statusEnabled = isStatusEnabled(getContainer());
                 var ret = wrapColumn(alias, _rootTable.getColumn(column.name()));
                 ret.setLabel("Status");
                 ret.setHidden(!statusEnabled);
@@ -648,7 +677,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case MaterialExpDate ->
             {
-                var ret = wrapColumn(alias, _rootTable.getColumn("MaterialExpDate"));
+                var ret = wrapColumn(alias, _rootTable.getColumn(MaterialExpDate.name()));
                 ret.setLabel("Expiration Date");
                 ret.setShownInDetailsView(true);
                 ret.setShownInInsertView(true);
@@ -659,35 +688,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
-    @Override
-    public MutableColumnInfo createPropertyColumn(String alias)
+    private static boolean isStatusEnabled(Container c)
     {
-        var ret = super.createPropertyColumn(alias);
-        if (_ss != null)
-        {
-            final TableInfo t = _ss.getTinfo();
-            if (t != null)
-            {
-                ret.setFk(new LookupForeignKey()
-                {
-                    @Override
-                    public TableInfo getLookupTableInfo()
-                    {
-                        return t;
-                    }
-
-                    @Override
-                    protected ColumnInfo getPkColumn(TableInfo table)
-                    {
-                        return t.getColumn("lsid"); // TODO: Seems to be pointing at the wrong table
-                    }
-                });
-            }
-        }
-        ret.setIsUnselectable(true);
-        ret.setDescription("A holder for any custom fields associated with this sample");
-        ret.setHidden(true);
-        return ret;
+        return SampleStatusService.get().supportsSampleStatus() && !SampleStatusService.get().getAllProjectStates(c).isEmpty();
     }
 
     private Unit getSampleTypeUnit()
@@ -745,7 +748,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(RunApplicationOutput);
         addColumn(SourceProtocolLSID);
 
+        List<FieldKey> defaultCols = new ArrayList<>();
         var nameCol = addColumn(Name);
+        defaultCols.add(Name.fieldKey());
         if (st != null && st.hasNameAsIdCol())
         {
             // Show the Name field but don't mark is as required when using name expressions
@@ -771,97 +776,28 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         addColumn(Alias);
         addColumn(Description);
-
-        var typeColumnInfo = addColumn(SampleSet);
-        typeColumnInfo.setFk(new QueryForeignKey(_userSchema, getContainerFilter(), ExpSchema.SCHEMA_NAME, getContainer(), null, ExpSchema.TableType.SampleSets.name(), "lsid", null)
-        {
-            @Override
-            protected ContainerFilter getLookupContainerFilter()
-            {
-                // Be sure that we can resolve the sample type if it's defined in a separate container.
-                // Same as CurrentPlusProjectAndShared but includes SampleSet's container as well.
-                // Issue 37982: Sample Type: Link to precursor sample type does not resolve correctly if sample has
-                // parents in current sample type and a sample type in the parent container
-                Set<Container> containers = new HashSet<>();
-                if (null != st)
-                    containers.add(st.getContainer());
-                containers.add(getContainer());
-                if (getContainer().getProject() != null)
-                    containers.add(getContainer().getProject());
-                containers.add(ContainerManager.getSharedContainer());
-                ContainerFilter cf = new ContainerFilter.CurrentPlusExtras(_userSchema.getContainer(), _userSchema.getUser(), containers);
-
-                if (null != _containerFilter && _containerFilter.getType() != ContainerFilter.Type.Current)
-                    cf = new UnionContainerFilter(_containerFilter, cf);
-                return cf;
-            }
-        });
-
-        typeColumnInfo.setReadOnly(true);
-        typeColumnInfo.setUserEditable(false);
-        typeColumnInfo.setShownInInsertView(false);
-
+        addColumn(SampleSet);
         addColumn(MaterialExpDate);
+        defaultCols.add(MaterialExpDate.fieldKey());
         addContainerColumn(Folder, null);
-        var runCol = addColumn(Run);
-        runCol.setFk(new ExpSchema(_userSchema.getUser(), getContainer()).getRunIdForeignKey(getContainerFilter()));
-        runCol.setShownInInsertView(false);
-        runCol.setShownInUpdateView(false);
-
-        var colLSID = addColumn(LSID);
-        colLSID.setHidden(true);
-        colLSID.setReadOnly(true);
-        colLSID.setUserEditable(false);
-        colLSID.setShownInInsertView(false);
-        colLSID.setShownInDetailsView(false);
-        colLSID.setShownInUpdateView(false);
-
-        var rootRowId = addColumn(RootMaterialRowId);
-        rootRowId.setHidden(true);
-        rootRowId.setReadOnly(true);
-        rootRowId.setUserEditable(false);
-        rootRowId.setShownInInsertView(false);
-        rootRowId.setShownInDetailsView(false);
-        rootRowId.setShownInUpdateView(false);
-
-        var aliquotParentLSID = addColumn(AliquotedFromLSID);
-        aliquotParentLSID.setHidden(true);
-        aliquotParentLSID.setReadOnly(true);
-        aliquotParentLSID.setUserEditable(false);
-        aliquotParentLSID.setShownInInsertView(false);
-        aliquotParentLSID.setShownInDetailsView(false);
-        aliquotParentLSID.setShownInUpdateView(false);
-
+        if (getContainer().hasProductFolders())
+            defaultCols.add(Folder.fieldKey());
+        addColumn(Run);
+        defaultCols.add(Run.fieldKey());
+        addColumn(LSID);
+        addColumn(RootMaterialRowId);
+        addColumn(AliquotedFromLSID);
         addColumn(IsAliquot);
         addColumn(Created);
         addColumn(CreatedBy);
         addColumn(Modified);
         addColumn(ModifiedBy);
-
-        List<FieldKey> defaultCols = new ArrayList<>();
-        defaultCols.add(Name.fieldKey());
-        defaultCols.add(MaterialExpDate.fieldKey());
-        boolean hasProductFolders = getContainer().hasProductFolders();
-        if (hasProductFolders)
-            defaultCols.add(Folder.fieldKey());
-        defaultCols.add(Run.fieldKey());
-
         if (st == null)
             defaultCols.add(SampleSet.fieldKey());
-
         addColumn(Flag);
-
-        var statusColInfo = addColumn(SampleState);
-        boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && !SampleStatusService.get().getAllProjectStates(getContainer()).isEmpty();
-        statusColInfo.setShownInDetailsView(statusEnabled);
-        statusColInfo.setShownInInsertView(statusEnabled);
-        statusColInfo.setShownInUpdateView(statusEnabled);
-        statusColInfo.setHidden(!statusEnabled);
-        statusColInfo.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
-        if (statusEnabled)
+        addColumn(SampleState);
+        if (isStatusEnabled(getContainer()))
             defaultCols.add(SampleState.fieldKey());
-        statusColInfo.setFk(new QueryForeignKey.Builder(getUserSchema(), getSampleStatusLookupContainerFilter())
-                .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
 
         // TODO is this a real Domain???
         if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
@@ -1190,7 +1126,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (null != dp)
             {
                 PropertyColumn.copyAttributes(schema.getUser(), propColumn, dp.getPropertyDescriptor(), schema.getContainer(),
-                    SchemaKey.fromParts("samples"), st.getName(), RowId.fieldKey(), null, getLookupContainerFilter());
+                    SamplesSchema.SCHEMA_SAMPLES, st.getName(), RowId.fieldKey(), null, getLookupContainerFilter());
 
                 if (idCols.contains(dp))
                 {

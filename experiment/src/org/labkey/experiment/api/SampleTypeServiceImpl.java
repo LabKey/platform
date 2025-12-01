@@ -698,11 +698,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         // Delete sequences (genId and the unique counters)
         DbSequenceManager.deleteLike(c, ExpSampleType.SEQUENCE_PREFIX, (int)source.getRowId(), getExpSchema().getSqlDialect());
 
-        SchemaKey samplesSchema = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
-        QueryService.get().fireQueryDeleted(user, c, null, samplesSchema, singleton(source.getName()));
-
-        SchemaKey expMaterialsSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, materials.toString());
-        QueryService.get().fireQueryDeleted(user, c, null, expMaterialsSchema, singleton(source.getName()));
+        QueryService.get().fireQueryDeleted(user, c, null, SamplesSchema.SCHEMA_SAMPLES, singleton(source.getName()));
+        QueryService.get().fireQueryDeleted(user, c, null, ExpSchema.SCHEMA_EXP_MATERIALS, singleton(source.getName()));
 
         // Remove SampleType from search index
         try (Timing ignored = MiniProfiler.step("search docs"))

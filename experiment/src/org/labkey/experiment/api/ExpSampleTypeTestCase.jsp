@@ -991,7 +991,6 @@ public void testSampleTypeWithVocabularyProperties() throws Exception
     oldKey.put("RowId", insertedSample.get(0).get("RowId"));
     oldKeys.add(oldKey);
 
-    // TODO: Either support update of property columns via data iterator or watch out for this case and fallback to _update
     var updatedSample = helper.updateRows(c, rowsToUpdate, oldKeys, sampleName, schema);
     assertEquals("Custom Property is not updated", updatedSampleType,
             OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(helper.typePropertyName)).getStringValue());

@@ -2391,6 +2391,7 @@ public class ExpDataIterators
             dib = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(dib, _expTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
+                    .setVocabularyProperties(PropertyService.get().findVocabularyProperties(_container, colNameMap.keySet()))
                     .setAddlSkipColumns(_excludedColumns)
                     .setCommitRowsBeforeContinuing(true)
                     .setFailOnEmptyUpdate(false));
@@ -2399,7 +2400,6 @@ public class ExpDataIterators
             dib = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(dib, _propertiesTable, _container)
                     .setKeyColumns(propertyKeyColumns)
                     .setDontUpdate(dontUpdate)
-                    .setVocabularyProperties(PropertyService.get().findVocabularyProperties(_container, colNameMap.keySet()))
                     .setRemapSchemaColumns(((UpdateableTableInfo) _expTable).remapSchemaColumns())
                     .setFailOnEmptyUpdate(false));
 

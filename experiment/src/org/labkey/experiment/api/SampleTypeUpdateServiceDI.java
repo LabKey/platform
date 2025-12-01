@@ -525,7 +525,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     private static boolean useDataIteratorForUpdate(
-        Container container,
         List<Map<String, Object>> rows,
         List<Map<String, Object>> oldKeys
     )
@@ -541,10 +540,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         // All rows must have a uniform set of keys for the data iterator to work.
         useDib = useDib && hasUniformKeys(rows);
-
-        // Updating vocabulary column values is not supported via data iterator. The underlying StatementUtils expects
-        // the getObjectURIColumnName() ("LSID" in the case of samples) column to reside on the provisioned table.
-        useDib = useDib && PropertyService.get().findVocabularyProperties(container, columnNames).isEmpty();
 
         return useDib;
     }
@@ -563,7 +558,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         if (rows != null && !rows.isEmpty())
             confirmAmountAndUnitsColumns(rows.get(0).keySet());
-        boolean useDib = useDataIteratorForUpdate(container, rows, oldKeys);
+        boolean useDib = useDataIteratorForUpdate(rows, oldKeys);
 
         List<Map<String, Object>> results;
         DbScope scope = getSchema().getDbSchema().getScope();
