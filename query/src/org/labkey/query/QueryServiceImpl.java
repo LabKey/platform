@@ -23,6 +23,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
@@ -65,7 +66,7 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SQLGenerationException;
+import org.labkey.api.data.SQLParameterException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
@@ -120,6 +121,7 @@ import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -1360,7 +1362,7 @@ public class QueryServiceImpl implements QueryService
         {
             // Note: Can't use standard filter (getFilter(suffix)) below since we must allow ".qview.xml"
             return unmodifiable(resources
-                    .filter(resource -> StringUtils.endsWithIgnoreCase(resource.getName(), CustomViewXmlReader.XML_FILE_EXTENSION))
+                    .filter(resource -> Strings.CI.endsWith(resource.getName(), CustomViewXmlReader.XML_FILE_EXTENSION))
                     .map(ModuleCustomViewDef::new)
                     .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
         }
@@ -2683,7 +2685,9 @@ public class QueryServiceImpl implements QueryService
             }
             catch (ConversionException e)
             {
-                throw new RuntimeSQLException(new SQLGenerationException(ConvertHelper.getStandardConversionErrorMessage(value, p.getName(), p.getJdbcType().getJavaClass())));
+                SQLParameterException paramException = new SQLParameterException(ConvertHelper.getStandardConversionErrorMessage(value, p.getName(), p.getJdbcType().getJavaClass()));
+                ExceptionUtil.decorateException(paramException, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+                throw new RuntimeSQLException(paramException);
             }
         }
     }

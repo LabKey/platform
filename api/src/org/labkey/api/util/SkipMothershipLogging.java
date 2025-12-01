@@ -16,13 +16,9 @@
 
 package org.labkey.api.util;
 
-/*
-* User: adam
-* Date: Aug 10, 2009
-* Time: 2:03:50 PM
-*/
-
-// Exceptions implement this interface to tell mothership not to log them
+/**
+ * Exceptions implement this interface as a tag to tell mothership not to log them
+ */
 public interface SkipMothershipLogging
 {
 }
