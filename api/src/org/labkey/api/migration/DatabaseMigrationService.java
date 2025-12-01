@@ -48,6 +48,7 @@ public interface DatabaseMigrationService
 
     // By default, no-op implementations
     default void registerSchemaHandler(MigrationSchemaHandler schemaHandler) {}
+    default void registerTableHandler(MigrationTableHandler tableHandler) {}
     default void registerMigrationFilter(MigrationFilter filter) {}
 
     default @Nullable MigrationFilter getMigrationFilter(String propertyName)
