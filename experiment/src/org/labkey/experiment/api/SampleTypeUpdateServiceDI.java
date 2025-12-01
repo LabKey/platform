@@ -81,6 +81,7 @@ import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -523,6 +524,31 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         throw new ConversionExceptionWithMessage(MISSING_UNITS_ERROR_MESSAGE);
     }
 
+    private static boolean useDataIteratorForUpdate(
+        Container container,
+        List<Map<String, Object>> rows,
+        List<Map<String, Object>> oldKeys
+    )
+    {
+        if (rows == null || rows.isEmpty() || oldKeys != null)
+            return false;
+
+        Set<String> columnNames = rows.get(0).keySet();
+
+        // For backwards compatibility we continue to allow specification of an LSID as a key iff RowId is not provided.
+        // This is only supported via row-by-row update.
+        boolean useDib = !(columnNames.contains(LSID.name()) && !columnNames.contains(RowId.name()));
+
+        // All rows must have a uniform set of keys for the data iterator to work.
+        useDib = useDib && hasUniformKeys(rows);
+
+        // Updating vocabulary column values is not supported via data iterator. The underlying StatementUtils expects
+        // the getObjectURIColumnName() ("LSID" in the case of samples) column to reside on the provisioned table.
+        useDib = useDib && PropertyService.get().findVocabularyProperties(container, columnNames).isEmpty();
+
+        return useDib;
+    }
+
     @Override
     public List<Map<String, Object>> updateRows(
         User user,
@@ -535,15 +561,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     ) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-
-        // TODO: Perhaps we invert and if an lsid is included we do row-by-row? For backwards compatibility.
-        //  This would required joining in exp.material to get rowId or name.
-        boolean useDib = false;
         if (rows != null && !rows.isEmpty())
-        {
             confirmAmountAndUnitsColumns(rows.get(0).keySet());
-            useDib = hasUniformKeys(rows);
-        }
+        boolean useDib = useDataIteratorForUpdate(container, rows, oldKeys);
 
         List<Map<String, Object>> results;
         DbScope scope = getSchema().getDbSchema().getScope();

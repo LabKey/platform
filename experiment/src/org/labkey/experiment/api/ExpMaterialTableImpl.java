@@ -1777,13 +1777,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         // Rewrite the "idx_material_ak" unique index over "Folder", "SampleSet", "Name" to just "Name"
         // Issue 25397: Don't include the "idx_material_ak" index if the "Name" column hasn't been added to the table.
-        // Some FKs to ExpMaterialTable don't include the "Name" column (e.g. NabBaseTable.Specimen)
+        // Some FKs to ExpMaterialTable don't include the "Name" column (e.g., NabBaseTable.Specimen)
         String indexName = "idx_material_ak";
         List<IndexDefinition> ret = new ArrayList<>(super.getUniqueIndices());
         if (getColumn("Name") != null)
             ret.add(new IndexDefinition(indexName, IndexType.Unique, Arrays.asList(getColumn("Name")), null));
         else
-            ret.removeIf(   def -> def.name().equals(indexName));
+            ret.removeIf(def -> def.name().equals(indexName));
         return Collections.unmodifiableList(ret);
     }
 

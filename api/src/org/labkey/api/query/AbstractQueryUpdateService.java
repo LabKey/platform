@@ -808,7 +808,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     // used by updateRows to check if all rows have the same set of keys
     // prepared statement can only be used to updateRows if all rows have the same set of keys
-    protected boolean hasUniformKeys(List<Map<String, Object>> rowsToUpdate)
+    protected static boolean hasUniformKeys(List<Map<String, Object>> rowsToUpdate)
     {
         if (rowsToUpdate == null || rowsToUpdate.isEmpty())
             return false;

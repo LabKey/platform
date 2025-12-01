@@ -2468,7 +2468,10 @@ public class ExpDataIterators
             if (validate.hasValidators())
                 di = validate;
 
-            return LoggingDataIterator.wrap(new SampleUpdateNamePolicyDataIterator(di, context, _container));
+            if (!NameExpressionOptionService.get().getAllowUserSpecificNamesValue(_container))
+                return LoggingDataIterator.wrap(new SampleUpdateNamePolicyDataIterator(di, context));
+
+            return LoggingDataIterator.wrap(di);
         }
     }
 
@@ -2477,15 +2480,11 @@ public class ExpDataIterators
         private final DataIteratorContext _context;
         private final Integer _nameCol;
 
-        protected SampleUpdateNamePolicyDataIterator(DataIterator di, DataIteratorContext context, Container container)
+        protected SampleUpdateNamePolicyDataIterator(DataIterator di, DataIteratorContext context)
         {
             super(di);
             _context = context;
-
-            if (NameExpressionOptionService.get().getAllowUserSpecificNamesValue(container))
-                _nameCol = null;
-            else
-                _nameCol = DataIteratorUtil.createColumnNameMap(di).get(Name.name());
+            _nameCol = DataIteratorUtil.createColumnNameMap(di).get(Name.name());
         }
 
         @Override
@@ -2545,13 +2544,9 @@ public class ExpDataIterators
         private final int _dataIdIndex;
         private final Map<String, Set<String>> _idsPerType = new HashMap<>();
         private final Map<String, Set<String>> _parentIdsPerType = new HashMap<>();
-
         private final Map<String, Container> _containerMap = new CaseInsensitiveHashMap<>();
-
         private final boolean _isCrossFolderUpdate;
-
         private final TSVWriter _tsvWriter;
-
 
         public MultiDataTypeCrossProjectDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isCrossType, boolean isCrossFolder, ExpObject dataType, boolean isSamples)
         {
