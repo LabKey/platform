@@ -171,9 +171,11 @@ import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.SchemaKey;
@@ -475,7 +477,9 @@ public class AdminController extends SpringActionController
 
         // Diagnostics
         AdminConsole.addLink(Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
-        AdminConsole.addLink(Diagnostics, "attachments", new ActionURL(AttachmentsAction.class, root));
+        AdminConsole.addLink(Diagnostics, "attachments", PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(root, "core", "DocumentsGroupedByParentType")
+            .addParameter("query." + QueryParam.containerFilterName, "AllFolders"));
+        AdminConsole.addLink(Diagnostics, "attachments - old", new ActionURL(AttachmentsAction.class, root));
         AdminConsole.addLink(Diagnostics, "caches", new ActionURL(CachesAction.class, root));
         AdminConsole.addLink(Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Diagnostics, "credits", new ActionURL(CreditsAction.class, root));
