@@ -98,7 +98,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
                     {
                         _reader.close();
                     }
-                    catch (IOException x2) {}
+                    catch (IOException ignored) {}
                 }
             }
 

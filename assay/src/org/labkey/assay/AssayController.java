@@ -803,7 +803,7 @@ public class AssayController extends SpringActionController
     public static class AssayFileUploadAction extends AbstractFileUploadAction<AssayFileUploadForm>
     {
         @Override
-        protected File getTargetFile(String filename) throws IOException
+        protected FileLike getTargetFile(String filename) throws IOException
         {
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
                 throw new UploadException("Pipeline root must be configured before uploading assay files", HttpServletResponse.SC_NOT_FOUND);
@@ -811,7 +811,7 @@ public class AssayController extends SpringActionController
             try
             {
                 FileLike targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
-                return FileUtil.findUniqueFileName(filename, targetDirectory).toNioPathForWrite().toFile();
+                return FileUtil.findUniqueFileName(filename, targetDirectory);
             }
             catch (ExperimentException e)
             {
@@ -820,13 +820,13 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public String getResponse(AssayFileUploadForm form, Map<String, Pair<File, String>> files)
+        public String getResponse(AssayFileUploadForm form, Map<String, Pair<FileLike, String>> files)
         {
             JSONObject fullMap = new JSONObject();
-            for (Map.Entry<String, Pair<File, String>> entry : files.entrySet())
+            for (Map.Entry<String, Pair<FileLike, String>> entry : files.entrySet())
             {
                 String paramName = entry.getKey();
-                File file = entry.getValue().getKey();
+                FileLike file = entry.getValue().getKey();
                 String originalName = entry.getValue().getValue();
 
                 DataType dataType = getDataType(form, originalName);
@@ -840,7 +840,7 @@ public class AssayController extends SpringActionController
                 FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(getContainer(), "Assay file uploaded.");
                 event.setProvidedFileName(originalName);
                 event.setFile(file.getName());
-                event.setDirectory(file.getParent());
+                event.setDirectory(file.toNioPathForRead().toFile().getParent());
                 AuditLogService.get().addEvent(getUser(), event);
                 JSONObject jsonData = ExperimentJSONConverter.serializeData(data, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
 
