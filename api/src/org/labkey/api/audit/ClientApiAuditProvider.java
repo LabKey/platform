@@ -100,21 +100,6 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
     }
 
     @Override
-    public Map<FieldKey, String> legacyNameMap()
-    {
-        Map<FieldKey, String> legacyNames = super.legacyNameMap();
-
-        // 'key1' mapped to 'subtype' and other 'keyN' are mapped to 'stringN-1'
-        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_SUBTYPE);
-        legacyNames.put(FieldKey.fromParts("key2"), COLUMN_NAME_STRING1);
-        legacyNames.put(FieldKey.fromParts("key3"), COLUMN_NAME_STRING2);
-        legacyNames.put(FieldKey.fromParts("intKey1"), COLUMN_NAME_INT1);
-        legacyNames.put(FieldKey.fromParts("intKey2"), COLUMN_NAME_INT2);
-        legacyNames.put(FieldKey.fromParts("intKey3"), COLUMN_NAME_INT3);
-        return legacyNames;
-    }
-
-    @Override
     public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
         DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
