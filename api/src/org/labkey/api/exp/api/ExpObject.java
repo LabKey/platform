@@ -70,8 +70,10 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
     }
     
     User getCreatedBy();
+    Integer getCreatedById();
     Date getCreated();
     User getModifiedBy();
+    Integer getModifiedById();
     Date getModified();
 
     void save(User user) throws BatchValidationException;

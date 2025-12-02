@@ -68,6 +68,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
@@ -75,6 +76,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.RowIdForeignKey;
@@ -455,7 +457,15 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 var workflowTaskCol = wrapColumn(alias, _rootTable.getColumn("WorkflowTask"));
                 workflowTaskCol.setShownInInsertView(false);
                 workflowTaskCol.setShownInUpdateView(false);
-                workflowTaskCol.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
+                // the "workflow" schema is part of the samplemanagement module
+                if (ModuleLoader.getInstance().hasModule("samplemanagement"))
+                {
+                    workflowTaskCol.setFk(
+                            QueryForeignKey.from(this.getUserSchema(), getContainerFilter())
+                                    .schema("workflow", getContainer())
+                                    .to("Task", "RowId", "Name")
+                    );
+                }
                 workflowTaskCol.setLabel("Workflow Task");
                 return workflowTaskCol;
             default:
@@ -1020,8 +1030,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     {
                         Long newWorkflowTaskId = value == null ? null : (Long)ConvertUtils.convert(value.toString(), Long.class);
                         Long oldWorkflowTaskID = null;
-                        if (run.getWorkflowTask() != null)
-                            oldWorkflowTaskID = run.getWorkflowTask().getRowId();
+                        if (run.getWorkflowTaskId() != null)
+                            oldWorkflowTaskID = run.getWorkflowTaskId();
 
                         appendPropertyIfChanged(auditComment, Column.WorkflowTask.toString(), oldWorkflowTaskID, newWorkflowTaskId);
                         run.setWorkflowTaskId(newWorkflowTaskId);

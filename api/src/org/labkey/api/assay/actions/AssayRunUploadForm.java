@@ -90,7 +90,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     protected Map<DomainProperty, String> _runProperties = null;
     private String _comments;
     private String _name;
-    private Long _workflowTask;
+    private Long _workflowTaskId;
     private String _dataCollectorName;
     private boolean _multiRunUpload;
     private String _uploadStep;
@@ -214,14 +214,14 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     }
 
     @Override
-    public @Nullable Long getWorkflowTask()
+    public @Nullable Long getWorkflowTaskId()
     {
-        return _workflowTask;
+        return _workflowTaskId;
     }
 
-    public void setWorkflowTask(Long workflowTask)
+    public void setWorkflowTaskId(Long workflowTaskId)
     {
-        _workflowTask = workflowTask;
+        _workflowTaskId = workflowTaskId;
     }
 
     public String getDataCollectorName()
