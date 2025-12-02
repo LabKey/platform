@@ -431,7 +431,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from exp-25.013-25.014.sql
+     * Called from exp-25.014-25.015.sql
      */
     @SuppressWarnings("unused")
     public static void dropProvisionedSampleTypeLsidColumn(ModuleContext context)
