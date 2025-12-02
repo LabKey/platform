@@ -42,8 +42,6 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
 import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.migration.DefaultMigrationSchemaHandler;
