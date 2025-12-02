@@ -901,12 +901,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (rowId == null)
             throw new ValidationException(RowId.name() + " required to update row");
 
-        // See ExpDataIterators.SampleUpdateOnlyDataIteratorBuilder for data iterator logical equivalent
+        /** See {@link ExpDataIterators.SampleUpdateOnlyDataIteratorBuilder} for data iterator logical equivalent */
         String newName = (String) row.get(Name.name());
         if (row.containsKey(Name.name()) && StringUtils.isEmpty(newName))
             throw new ValidationException("Sample name cannot be blank");
 
-        // See ExpDataIterators.SampleUpdateNamePolicyDataIterator for data iterator logical equivalent
+        /** See {@link ExpDataIterators.SampleNameChangeDataIterator} for data iterator logical equivalent */
         String oldName = (String) oldRow.get(Name.name());
         boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
         if (hasNameChange && !NameExpressionOptionService.get().getAllowUserSpecificNamesValue(c))
@@ -915,6 +915,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         String oldAliquotedFromLSID = (String) oldRow.get(AliquotedFromLSID.name());
         boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);
 
+        /** See {@link ExpDataIterators.AliquotRollupDataIterator} for data iterator logical equivalent */
         Integer aliquotRollupRoot = null;
         SampleTypeService stService = SampleTypeService.get();
         if (!_sampleType.isMedia() && isAliquot)
@@ -976,6 +977,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         rowCopy.remove(RootMaterialRowId.name());
         rowCopy.remove(ExpMaterial.ALIQUOTED_FROM_INPUT);
 
+        /** See {@link ExpDataIterators.SampleStatusCheckDataIterator} for data iterator logical equivalent */
         // We need to allow updating from one locked status to another locked status, but without other changes
         // and updating from either locked or unlocked to something else while also updating other metadata
         DataState oldStatus = SampleStatusService.get().getStateForRowId(getContainer(), MapUtils.getLong(oldRow,SampleState.name()));
@@ -1022,6 +1024,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             throw new ValidationException(String.format("Updating sample data when status is %s is not allowed.", oldStatus.getLabel()));
         }
 
+        /** See {@link ExpDataIterators.FileLinkDataIterator} for data iterator logical equivalent */
         TableInfo t = _sampleType.getTinfo();
         // Sample type uses FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle posted files
         Path path = AssayFileWriter.getUploadDirectoryPath(c, SAMPLE_TYPE_FILE_DIRECTORY_NAME).toNioPathForWrite();
@@ -1032,6 +1035,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             ret.putAll(Table.update(user, t, validRowCopy, t.getColumn(RowId.name()), keys, null, Level.DEBUG));
         }
 
+        /** See {@link ExpDataIterators.SampleNameChangeDataIterator} for data iterator logical equivalent */
         ExpMaterialImpl sample = null;
         if (hasNameChange)
         {
@@ -1041,6 +1045,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         // update comment
+        /** See {@link ExpDataIterators.FlagDataIterator} for data iterator logical equivalent */
         if (row.containsKey(Flag.name()) || row.containsKey("comment"))
         {
             if (sample == null)
@@ -1054,6 +1059,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         // update aliases
+        /** See {@link ExpDataIterators.AliasDataIterator} for data iterator logical equivalent */
         if (row.containsKey(Alias.name()))
             AliasInsertHelper.handleInsertUpdate(getContainer(), user, lsid, ExperimentService.get().getTinfoMaterialAliasMap(), row.get(Alias.name()));
 

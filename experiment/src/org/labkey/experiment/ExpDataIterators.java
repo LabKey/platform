@@ -455,11 +455,11 @@ public class ExpDataIterators
                 Map<String, Object> existingMap = getExistingRecord();
                 if (existingMap != null && !existingMap.isEmpty())
                 {
-                    Pair<Boolean, Integer> needRecac = determineRecalcFromExistingRecord(i, existingMap);
-                    if (needRecac == null)
+                    Pair<Boolean, Integer> needRecalc = determineRecalcFromExistingRecord(i, existingMap);
+                    if (needRecalc == null)
                         return null;
-                    if (needRecac.first && needRecac.second != null)
-                        return needRecac.second;
+                    if (needRecalc.first && needRecalc.second != null)
+                        return needRecalc.second;
                 }
 
                 // without existing record, or if existing record is missing root information, we have to be conservative and assume this is a new aliquot, or an amount/status update
@@ -2477,23 +2477,29 @@ public class ExpDataIterators
             if (validate.hasValidators())
                 di = validate;
 
-            if (!NameExpressionOptionService.get().getAllowUserSpecificNamesValue(_container))
-                return LoggingDataIterator.wrap(new SampleUpdateNamePolicyDataIterator(di, context));
-
-            return LoggingDataIterator.wrap(di);
+            return LoggingDataIterator.wrap(new SampleNameChangeDataIterator(di, context, _container, _user));
         }
     }
 
-    private static class SampleUpdateNamePolicyDataIterator extends WrapperDataIterator
+    private static class SampleNameChangeDataIterator extends WrapperDataIterator
     {
         private final DataIteratorContext _context;
         private final Integer _nameCol;
+        private final boolean _isAllowUserSpecificNamesValue;
+        private final User _user;
 
-        protected SampleUpdateNamePolicyDataIterator(DataIterator di, DataIteratorContext context)
+        protected SampleNameChangeDataIterator(
+            DataIterator di,
+            DataIteratorContext context,
+            Container container,
+            User user
+        )
         {
             super(di);
             _context = context;
             _nameCol = DataIteratorUtil.createColumnNameMap(di).get(Name.name());
+            _isAllowUserSpecificNamesValue = NameExpressionOptionService.get().getAllowUserSpecificNamesValue(container);
+            _user = user;
         }
 
         @Override
@@ -2503,15 +2509,27 @@ public class ExpDataIterators
             if (!hasNext)
                 return false;
 
-            if (_nameCol == null || _context.getErrors().hasErrors() || getExistingRecord() == null)
+            var existingRecord = getExistingRecord();
+            if (_nameCol == null || _context.getErrors().hasErrors() || existingRecord == null)
                 return true;
 
             Object newNameObj = get(_nameCol);
             String newName = newNameObj == null ? null : String.valueOf(newNameObj);
-            String oldName = (String) getExistingRecord().get(Name.name());
+            String oldName = (String) existingRecord.get(Name.name());
+            boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
 
-            if (!StringUtils.isEmpty(newName) && !newName.equals(oldName))
-                _context.getErrors().addRowError(new ValidationException("User-specified sample name not allowed"));
+            if (hasNameChange)
+            {
+                if (_isAllowUserSpecificNamesValue)
+                {
+                    Long rowId = asLong(existingRecord.get(RowId.name()));
+                    var sample = ExperimentService.get().getExpMaterial(rowId);
+                    if (sample != null)
+                        ExperimentService.get().addObjectLegacyName(sample.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpMaterial.class), oldName, _user);
+                }
+                else
+                    _context.getErrors().addRowError(new ValidationException("User-specified sample name not allowed"));
+            }
 
             return true;
         }
