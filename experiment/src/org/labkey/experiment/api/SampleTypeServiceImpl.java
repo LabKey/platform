@@ -1592,9 +1592,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                          * SqlServer needs to specify the alias in the FROM clause, and use that alias as the target of the update.
                          */
                         quickRollUpSql = new SQLFragment("UPDATE exp.material SET \n")
-                                .append("aliquotvolume = ROUND(CAST(COALESCE(stats.total_volume, 0) AS NUMERIC(18,6)) , ?),\n").add(precisionScale)
+                                .append("aliquotvolume = ROUND(CAST(COALESCE(stats.total_volume, 0) AS NUMERIC(38,12)) , ?),\n").add(precisionScale)
                                 .append("aliquotunit = stats.common_unit,\n")
-                                .append("availablealiquotvolume = ROUND(CAST(COALESCE(stats.avail_volume, 0) AS NUMERIC(18,6)), ?)\n").add(precisionScale)
+                                .append("availablealiquotvolume = ROUND(CAST(COALESCE(stats.avail_volume, 0) AS NUMERIC(38,12)), ?)\n").add(precisionScale)
                                 .append("FROM exp.material m INNER JOIN (")
                                 .append(statsSql)
                                 .append(") AS stats\n")
