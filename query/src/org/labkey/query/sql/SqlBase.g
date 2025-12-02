@@ -155,6 +155,7 @@ tokens
 ALL : 'all';
 ANY : 'any';
 AND : 'and';
+ARRAY : 'array[';   // kinda a hack to avoid making "ARRAY" a new keyword
 ARRAY_AGG : 'array_agg';
 AS : 'as';
 AVG : 'avg';
@@ -756,7 +757,8 @@ starAtom
 
 // level 0 - the basic element of an expression
 primaryExpression
-	:   id=identPrimary
+	:   ARRAY exprList ']' -> ^(METHOD_CALL IDENT["ARRAY_CONSTRUCT"] exprList)
+	|   id=identPrimary
 	|   constant
 	|   OPEN! ( expression | subQuery) CLOSE!
 	|   PARAM^ (NUM_INT)?
