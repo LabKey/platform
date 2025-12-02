@@ -90,7 +90,6 @@ import org.labkey.api.data.ResultsFactory;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ShowRows;
-import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
@@ -210,7 +209,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.GridView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -227,7 +225,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
-import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.study.CohortFilterFactory;
@@ -265,7 +262,6 @@ import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
-import org.labkey.study.model.UploadLog;
 import org.labkey.study.model.VisitDataset;
 import org.labkey.study.model.VisitDatasetType;
 import org.labkey.study.model.VisitImpl;
@@ -2712,19 +2708,19 @@ public class StudyController extends BaseStudyController
                 columnMap.put(_form.getSequenceNum(), column);
             }
 
-            Pair<List<String>, UploadLog> result = StudyPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, getLookupResolutionType(), file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
+            List<String> lsids = StudyPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, getLookupResolutionType(), file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
 
-            if (!result.getKey().isEmpty())
+            if (!lsids.isEmpty())
             {
                 // Log the import when SUMMARY is configured, if DETAILED is configured the DetailedAuditLogDataIterator will handle each row change.
                 // It would be nice in the future to replace the DetailedAuditLogDataIterator with a general purpose AuditLogDataIterator
                 // that can delegate the audit behavior type to the AuditDataHandler, so this code can go away
                 //
-                String comment = "Dataset data imported. " + result.getKey().size() + " rows imported";
-                new DatasetDefinition.DatasetAuditHandler(_def).addAuditEvent(getUser(), getContainer(), AuditBehaviorType.SUMMARY, comment, result.getValue());
+                String comment = "Dataset data imported. " + lsids.size() + " rows imported";
+                new DatasetDefinition.DatasetAuditHandler(_def).addAuditEvent(getUser(), getContainer(), AuditBehaviorType.SUMMARY, comment);
             }
 
-            return result.getKey().size();
+            return lsids.size();
         }
 
         @Override
@@ -2840,66 +2836,6 @@ public class StudyController extends BaseStudyController
         public void setManifest(String manifest)
         {
             _manifest = manifest;
-        }
-    }
-
-    @RequiresPermission(UpdatePermission.class)
-    public class ShowUploadHistoryAction extends SimpleViewAction<IdForm>
-    {
-        String _datasetLabel;
-
-        @Override
-        public ModelAndView getView(IdForm form, BindException errors)
-        {
-            TableInfo tInfo = StudySchema.getInstance().getTableInfoUploadLog();
-            DataRegion dr = new DataRegion();
-            dr.addColumns(tInfo, "RowId,Created,CreatedBy,Status,Description");
-            GridView gv = new GridView(dr, errors);
-            DisplayColumn dc = new SimpleDisplayColumn(null) {
-                @Override
-                public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
-                {
-                    ActionURL url = new ActionURL(DownloadTsvAction.class, ctx.getContainer()).addParameter("id", String.valueOf(ctx.get("RowId")));
-                    out.write(LinkBuilder.labkeyLink("Download Data File", url));
-                }
-            };
-            dr.addDisplayColumn(dc);
-
-            SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
-            if (form.getId() != 0)
-            {
-                filter.addCondition(Dataset.DATASET_KEY, form.getId());
-                DatasetDefinition dsd = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), form.getId());
-                if (dsd != null)
-                    _datasetLabel = dsd.getLabel();
-            }
-
-            gv.setFilter(filter);
-            return gv;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Upload History" + (null != _datasetLabel ? " for " + _datasetLabel : ""));
-        }
-    }
-
-    @RequiresPermission(UpdatePermission.class)
-    public static class DownloadTsvAction extends SimpleViewAction<IdForm>
-    {
-        @Override
-        public ModelAndView getView(IdForm form, BindException errors) throws Exception
-        {
-            UploadLog ul = StudyPublishManager.getInstance().getUploadLog(getContainer(), form.getId());
-            PageFlowUtil.streamFile(getViewContext().getResponse(), new File(ul.getFilePath()).toPath(), true);
-
-            return null;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
         }
     }
 

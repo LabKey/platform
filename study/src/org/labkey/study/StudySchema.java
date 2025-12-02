@@ -128,11 +128,6 @@ public class StudySchema
         return getSchema().getTable("ParticipantVisit");
     }
 
-    public TableInfo getTableInfoUploadLog()
-    {
-        return getSchema().getTable("UploadLog");
-    }
-
     public TableInfo getTableInfoCohort()
     {
         return getSchema().getTable("Cohort");

@@ -2566,7 +2566,7 @@ public class StudyManager
 
             SchemaKey schemaPath = SchemaKey.fromParts(SCHEMA.getSchemaName());
             QueryService.get().fireQueryDeleted(user, study.getContainer(), null, schemaPath, Collections.singleton(ds.getName()));
-            new DatasetDefinition.DatasetAuditHandler(ds).addAuditEvent(user, study.getContainer(), AuditBehaviorType.DETAILED, "Dataset deleted: " + ds.getName(), null);
+            new DatasetDefinition.DatasetAuditHandler(ds).addAuditEvent(user, study.getContainer(), AuditBehaviorType.DETAILED, "Dataset deleted: " + ds.getName());
 
             transaction.addCommitTask(() ->
                 unindexDataset(ds),
@@ -2682,8 +2682,6 @@ public class StudyManager
             //
             Table.delete(SCHEMA.getTableInfoVisitMap(), containerFilter);
             assert deletedTables.add(SCHEMA.getTableInfoVisitMap());
-            Table.delete(StudySchema.getInstance().getTableInfoUploadLog(), containerFilter);
-            assert deletedTables.add(StudySchema.getInstance().getTableInfoUploadLog());
             Table.delete(_datasetHelper.getTableInfo(), containerFilter);
             _datasetHelper.clearCache(c);
             assert deletedTables.add(_datasetHelper.getTableInfo());

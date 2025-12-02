@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.collections.IntHashMap"%>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.TableInfo"%>
 <%@ page import="org.labkey.api.pipeline.PipelineService"%>
-<%@ page import="org.labkey.api.security.SecurityManager"%>
+<%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page import="org.labkey.api.security.permissions.Permission" %>
-<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
@@ -49,7 +49,6 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="static org.labkey.study.model.DatasetDomainKindProperties.TIME_KEY_FIELD_DISPLAY" %>
-<%@ page import="org.labkey.api.collections.IntHashMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -130,13 +129,6 @@ if (permissions.contains(AdminPermission.class))
     {
         buttons.add(button("Delete All Rows").onClick("truncateTable();"));
     }
-}
-
-if (permissions.contains(UpdatePermission.class) && !isDatasetInherited)
-{
-    ActionURL showHistoryURL = new ActionURL(StudyController.ShowUploadHistoryAction.class, c);
-    showHistoryURL.addParameter("id", dataset.getDatasetId());
-    buttons.add(button("Show Import History").href(showHistoryURL));
 }
 
 if (permissions.contains(AdminPermission.class) && !isDatasetInherited)

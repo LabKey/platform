@@ -2667,7 +2667,6 @@ study/src/org/labkey/study/model/StudyImpl.java -text
 study/src/org/labkey/study/model/StudyLsidHandler.java -text
 study/src/org/labkey/study/model/StudyManager.java -text
 study/src/org/labkey/study/model/StudySnapshot.java -text
-study/src/org/labkey/study/model/UploadLog.java -text
 study/src/org/labkey/study/model/VisitDataset.java -text
 study/src/org/labkey/study/model/VisitDatasetType.java -text
 study/src/org/labkey/study/model/VisitImpl.java -text

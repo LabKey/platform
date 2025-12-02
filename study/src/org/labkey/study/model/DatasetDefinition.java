@@ -1843,7 +1843,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
          * @param requiredAuditType The expected audit behavior type. If this does not match the type set on the
          *                          dataset, then the event will not be logged.
          */
-        public void addAuditEvent(User user, Container c, AuditBehaviorType requiredAuditType, String comment, @Nullable UploadLog ul)
+        public void addAuditEvent(User user, Container c, AuditBehaviorType requiredAuditType, String comment)
 
         {
             TableInfo table = _dataset.getTableInfo(user);
@@ -1851,10 +1851,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 return;
 
             DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c, comment, _dataset.getDatasetId());
-            if (ul != null)
-            {
-                event.setLsid(ul.getFilePath());
-            }
             AuditLogService.get().addEvent(user, event);
         }
     }

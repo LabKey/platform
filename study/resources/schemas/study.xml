@@ -1564,18 +1564,6 @@
       <column columnName="Container"/>
     </columns>
   </table>
-  <table tableName="UploadLog" tableDbType="TABLE">
-    <columns>
-      <column columnName="RowId"/>
-      <column columnName="Container"/>
-      <column columnName="Created"/>
-      <column columnName="CreatedBy"/>
-      <column columnName="Description"/>
-      <column columnName="FilePath"/>
-      <column columnName="DatasetId"/>
-      <column columnName="Status"/>
-    </columns>
-  </table>
   <table tableName="ParticipantVisit" tableDbType="TABLE">
     <description>Contains one row per subject/visit combination in the study.  Note that this table is populated dynamically as specimen, assay, and dataset data are loaded, and is guaranteed to always be complete.</description>
     <columns>

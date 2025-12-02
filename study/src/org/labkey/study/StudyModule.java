@@ -391,8 +391,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             folderRegistry.addFactories(new StudyWriterFactory(), new StudyImporterFactory());
         }
 
-        FileContentService.get().addFileListener(new TableUpdaterFileListener(StudySchema.getInstance().getTableInfoUploadLog(), "FilePath", TableUpdaterFileListener.Type.filePath, "RowId"));
-
         DatasetDefinition.cleanupOrphanedDatasetDomains();
 
         OptionalFeatureService.get().addExperimentalFeatureFlag(StudyQuerySchema.EXPERIMENTAL_STUDY_SUBSCHEMAS, "Use sub-schemas in Study",
