@@ -519,6 +519,7 @@ public class ExpDataIterators
         final Supplier<Object> _nameCol;
         Map<String, Object> _lsidAliasMap = new HashMap<>();
         private final TableInfo _expAliasTable;
+        private final boolean _isUpdateOnly;
 
         protected AliasDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, TableInfo expAliasTable, ExpObject dataType, boolean isSample)
         {
@@ -526,9 +527,10 @@ public class ExpDataIterators
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _aliasCol = map.get(ALIASCOLUMNALIAS) == null ? null : di.getSupplier(map.get(ALIASCOLUMNALIAS));
-            _lsidCol = map.get("lsid") == null ? null : di.getSupplier(map.get("lsid"));
-            _nameCol = map.get("name") == null ? null : di.getSupplier(map.get("name"));
+            _lsidCol = map.get(LSID.name()) == null ? null : di.getSupplier(map.get(LSID.name()));
+            _nameCol = map.get(Name.name()) == null ? null : di.getSupplier(map.get(Name.name()));
             _expAliasTable = expAliasTable;
+            _isUpdateOnly = _context.getInsertOption().updateOnly;
         }
 
         @Override
@@ -549,7 +551,7 @@ public class ExpDataIterators
                 // Collect alias values and map them by LSID
                 String lsid = null;
 
-                if (_nameCol != null && (_context.getInsertOption().mergeRows || _context.getInsertOption().updateOnly))
+                if (_nameCol != null && (_context.getInsertOption().mergeRows || _isUpdateOnly))
                 {
                     Object nameValue = _nameCol.get();
                     if (nameValue instanceof String name)
@@ -565,6 +567,13 @@ public class ExpDataIterators
                     Object lsidValue = _lsidCol.get();
                     if (lsidValue instanceof String lsidString)
                         lsid = lsidString;
+                }
+
+                if (lsid == null && _isUpdateOnly)
+                {
+                    Map<String, Object> oldRow = getExistingRecord();
+                    if (oldRow != null)
+                        lsid = (String) oldRow.get(LSID.name());
                 }
 
                 if (!StringUtils.isEmpty(lsid))
