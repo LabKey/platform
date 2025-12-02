@@ -279,10 +279,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     @Override
     public Map<FieldKey, String> legacyNameMap()
     {
-        Map<FieldKey, String> legacyNames = new LinkedHashMap<>();
-        legacyNames.put(FieldKey.fromParts("ContainerId"), "Container");
-        legacyNames.put(FieldKey.fromParts("Date"), "Created");
-        return legacyNames;
+        return new LinkedHashMap<>();
     }
 
     public static Container getDomainContainer()

@@ -194,9 +194,21 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
     }
 
     @Override
+    public Integer getCreatedById()
+    {
+        return _object.getCreatedBy();
+    }
+
+    @Override
     public User getModifiedBy()
     {
         return _object.getModifiedBy() == null ? null : UserManager.getUser(_object.getModifiedBy().intValue());
+    }
+
+    @Override
+    public Integer getModifiedById()
+    {
+        return _object.getModifiedBy();
     }
 
     @Override

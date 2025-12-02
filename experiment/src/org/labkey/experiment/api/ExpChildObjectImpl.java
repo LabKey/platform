@@ -111,6 +111,12 @@ public class ExpChildObjectImpl extends ExpObjectImpl
     }
 
     @Override
+    public Integer getCreatedById()
+    {
+        return _parent.getCreatedById();
+    }
+
+    @Override
     public Date getCreated()
     {
         return _parent.getCreated();
@@ -120,6 +126,12 @@ public class ExpChildObjectImpl extends ExpObjectImpl
     public User getModifiedBy()
     {
         return _parent.getModifiedBy();
+    }
+
+    @Override
+    public Integer getModifiedById()
+    {
+        return _parent.getModifiedById();
     }
 
     @Override

@@ -4250,9 +4250,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     protocolImpl = protocolImpls.computeIfAbsent(protocol, ExpProtocol::getImplementation);
 
                     if (!run.canDelete(user))
-                        throw new UnauthorizedException("You do not have permission to delete " +
-                                (ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID()) ? "jobs" : "runs")
-                                + " in " + run.getContainer());
+                        throw new UnauthorizedException("You do not have permission to delete runs in " + run.getContainer());
                     StudyPublishService publishService = StudyPublishService.get();
                     if (publishService != null)
                     {
