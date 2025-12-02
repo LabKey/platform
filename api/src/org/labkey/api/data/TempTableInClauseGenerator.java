@@ -142,7 +142,9 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             try (var ignored = SpringActionController.ignoreSqlUpdates())
             {
                 new SqlExecutor(tempSchema).execute(indexSql);
+                tempSchema.getSqlDialect().updateStatistics(tempTableInfo); // Immediately analyze the newly populated & indexed table
             }
+
             TempTableInfo cacheEntry = tempTableInfo;
 
             // Don't bother caching if we're in a transaction
