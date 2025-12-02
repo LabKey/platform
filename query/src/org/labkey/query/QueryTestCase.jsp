@@ -79,6 +79,8 @@
 <%@ page import="static java.util.Objects.requireNonNull" %>
 <%@ page import="static java.util.Objects.requireNonNull" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
+<%@ page import="org.labkey.api.data.SqlSelector" %>
+<%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%!
 
@@ -1134,6 +1136,7 @@ d,seven,twelve,day,month,date,duration,guid
     private final String hash = GUID.makeHash();
 
     private QuerySchema lists;
+    private SqlDialect dialect;
 
     @Before
     public void setUp()
@@ -1142,6 +1145,7 @@ d,seven,twelve,day,month,date,duration,guid
         assertNotNull(QueryService.get().getEnvironment(QueryService.Environment.USER));
         assertNotNull(QueryService.get().getEnvironment(QueryService.Environment.CONTAINER));
         Assume.assumeTrue(getClass().getSimpleName() + " requires list module", ListService.get() != null);
+        dialect = CoreSchema.getInstance().getSqlDialect();
     }
 
 
@@ -1859,5 +1863,74 @@ d,seven,twelve,day,month,date,duration,guid
             if (!involvedColumnMap.containsKey(expectedColumn))
                 Assert.fail("Involved column '" + expectedColumn + "' not found for sql:\n" + sql);
         }
+    }
+
+    Boolean booleanSelect(SQLFragment s)
+    {
+        SQLFragment select = new SQLFragment("SELECT ").append(s);
+        return new SqlSelector(DbScope.getLabKeyScope(), select).getObject(Boolean.class);
+    }
+
+    SQLFragment array(String... strings)
+    {
+        var args = Arrays.stream(strings).map(SQLFragment::unsafe).toList().toArray(new SQLFragment[0]);
+        return dialect.array_construct(args);
+    }
+
+    @Test
+    public void testDialectArrayMethods()
+    {
+        if (!dialect.supportsArrays())
+            return;
+
+        var elNull = new SQLFragment("NULL");
+        var elA = new SQLFragment("'A'");
+        var elB = new SQLFragment("'B'");
+
+        assertTrue(  booleanSelect(dialect.element_in_array( elA,    array("'A'", "'B'")  )));
+        assertTrue(  booleanSelect(dialect.element_in_array( elA,    array("'A'", "NULL") )));
+        assertFalse( booleanSelect(dialect.element_in_array( elA,    array("'B'")         )));
+        // this returns NULL, unfortunately using "=" semantics rather than "IS NOT DISTINCT FROM"
+        assertNull(  booleanSelect(dialect.element_in_array( elA,    array("'B'", "NULL") )));
+        assertNull( booleanSelect(dialect.element_in_array( elNull, array("'A'", "'B'")  )));
+        assertNull(  booleanSelect(dialect.element_in_array( elNull, array("'A'", "NULL") )));
+        assertNull(  booleanSelect(dialect.element_in_array( elA,    elNull)));
+
+        assertFalse( booleanSelect(dialect.element_not_in_array( elA,    array("'A'", "'B'")  )));
+        assertFalse( booleanSelect(dialect.element_not_in_array( elA,    array("'A'", "NULL") )));
+        assertTrue(  booleanSelect(dialect.element_not_in_array( elA,    array("'B'")         )));
+        assertNull(  booleanSelect(dialect.element_not_in_array( elA,    array("'B'", "NULL") )));
+        assertNull(  booleanSelect(dialect.element_not_in_array( elNull, array("'A'", "'B'")  )));
+        assertNull(  booleanSelect(dialect.element_not_in_array( elNull, array("'A'", "NULL") )));
+        assertNull(  booleanSelect(dialect.element_not_in_array( elA,    elNull)));
+
+        assertTrue(  booleanSelect(dialect.array_all_in_array( array("'A'"), array("'A'") )));
+        assertTrue(  booleanSelect(dialect.array_all_in_array( array("'A'","'A'"), array("'A'") )));
+        assertTrue(  booleanSelect(dialect.array_all_in_array( array("'A'", "'B'", "'B'"), array("'A'","'B'","'C'") )));
+        assertFalse( booleanSelect(dialect.array_all_in_array( array("'A'"), array("NULL")  )));
+        assertFalse( booleanSelect(dialect.array_all_in_array( array("NULL"), array("'A'")  )));
+        assertFalse( booleanSelect(dialect.array_all_in_array( array("NULL"), array("NULL")  )));
+        assertNull(  booleanSelect(dialect.array_all_in_array( elNull, array("NULL") )));
+        assertNull(  booleanSelect(dialect.array_all_in_array( array("NULL"), elNull )));
+
+        assertTrue(  booleanSelect(dialect.array_some_in_array( array("'A'", "'B'", "'C'"), array("'A'") )));
+        assertTrue(  booleanSelect(dialect.array_some_in_array( array("'A'"), array("'A'", "'B'", "'C'") )));
+        assertTrue(  booleanSelect(dialect.array_some_in_array( array("'A'","'X'"), array("'A'", "'Y'") )));
+        assertFalse( booleanSelect(dialect.array_some_in_array( array("'A'","'B'"), array("'X'", "'Y'") )));
+        assertFalse( booleanSelect(dialect.array_some_in_array( array("'A'"), array("NULL")  )));
+        assertFalse( booleanSelect(dialect.array_some_in_array( array("NULL"), array("'A'")  )));
+        assertFalse( booleanSelect(dialect.array_some_in_array( array("NULL"), array("NULL")  )));
+        assertNull(  booleanSelect(dialect.array_some_in_array( elNull, array("NULL") )));
+        assertNull(  booleanSelect(dialect.array_some_in_array( array("NULL"), elNull )));
+
+        assertFalse( booleanSelect(dialect.array_none_in_array( array("'A'", "'B'", "'C'"), array("'A'") )));
+        assertFalse( booleanSelect(dialect.array_none_in_array( array("'A'"), array("'A'", "'B'", "'C'") )));
+        assertFalse( booleanSelect(dialect.array_none_in_array( array("'A'","'X'"), array("'A'", "'Y'") )));
+        assertTrue(  booleanSelect(dialect.array_none_in_array( array("'A'","'B'"), array("'X'", "'Y'") )));
+        assertTrue(  booleanSelect(dialect.array_none_in_array( array("'A'"), array("NULL")  )));
+        assertTrue(  booleanSelect(dialect.array_none_in_array( array("NULL"), array("'A'")  )));
+        assertTrue(  booleanSelect(dialect.array_none_in_array( array("NULL"), array("NULL")  )));
+        assertNull(  booleanSelect(dialect.array_none_in_array( elNull, array("NULL") )));
+        assertNull(  booleanSelect(dialect.array_none_in_array( array("NULL"), elNull )));
     }
 %>
