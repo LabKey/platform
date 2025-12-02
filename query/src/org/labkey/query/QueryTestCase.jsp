@@ -1933,4 +1933,38 @@ d,seven,twelve,day,month,date,duration,guid
         assertNull(  booleanSelect(dialect.array_none_in_array( elNull, array("NULL") )));
         assertNull(  booleanSelect(dialect.array_none_in_array( array("NULL"), elNull )));
     }
+
+    @Test
+    public void testArraySql() throws SQLException
+    {
+        var testSql = """
+                SELECT 'a' as test, false as expected, array_contains_all(     ARRAY['A','X'], ARRAY['A','B'] ) as result
+                UNION ALL
+                SELECT 'b' as test, true as expected,  array_contains_any(     ARRAY['A','X'], ARRAY['A','B'] ) as result
+                UNION ALL
+                SELECT 'c' as test, false as expected, array_contains_none(    ARRAY['A','X'], ARRAY['A','B'] ) as result
+                UNION ALL
+                SELECT 'd' as test, false as expected, array_is_same(          ARRAY['A','X'], ARRAY['A','B'] ) as result
+                UNION ALL
+                SELECT 'd' as test, true as expected,  array_is_same(          ARRAY['A','B'], ARRAY['A','B'] ) as result
+                UNION ALL
+                SELECT 'e' as test, true as expected,  array_contains_element( ARRAY['A','B'], 'B') as result
+                UNION ALL
+                SELECT 'f' as test, false as expected, array_contains_element( ARRAY['A','B'], 'X') as result
+                """;
+
+        Container container = JunitUtil.getTestContainer();
+        User user = TestContext.get().getUser();
+        var schema = DefaultSchema.get(user, container).getSchema("core");
+        try (var rs =QueryService.get().select(schema, testSql);)
+        {
+            while (rs.next())
+            {
+                var test = rs.getString(1);
+                var expected = rs.getBoolean(2);
+                var result = rs.getBoolean(3);
+                assertEquals("test " + test + " failed", expected, result);
+            }
+        }
+    }
 %>
