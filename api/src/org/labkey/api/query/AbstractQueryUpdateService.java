@@ -269,17 +269,24 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         context.setInsertOption(forImport);
         context.setConfigParameters(configParameters);
         configureDataIteratorContext(context);
-        if (configParameters != null)
-        {
-            try
-            {
-                configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
-            } catch (UnsupportedOperationException ignore)
-            {
-                // configParameters is immutable, likely originated from a junit test
-            }
-        }
+        recordDataIteratorUsed(configParameters);
+
         return context;
+    }
+
+    protected void recordDataIteratorUsed(@Nullable Map<Enum, Object> configParameters)
+    {
+        if (configParameters == null)
+            return;
+
+        try
+        {
+            configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
+        }
+        catch (UnsupportedOperationException ignore)
+        {
+            // configParameters is immutable, likely originated from a junit test
+        }
     }
 
     /**

@@ -1361,26 +1361,31 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
         {
             Integer rowNum = keyMap.getKey();
-
             Long rowId = getMaterialRowId(keyMap.getValue());
-            String lsid = getMaterialLsid(keyMap.getValue());
-            String name = getMaterialName(keyMap.getValue());
-            Integer materialSourceId = getMaterialSourceId(keyMap.getValue());
-
             if (rowId != null)
+            {
                 rowIdRowNumMap.put(rowId, rowNum);
-            else if (lsid != null)
+                continue;
+            }
+
+            String lsid = getMaterialLsid(keyMap.getValue());
+            if (lsid != null)
             {
                 lsidRowNumMap.put(lsid, rowNum);
                 rowNumLsid.put(rowNum, lsid);
+                continue;
             }
-            else if (name != null && materialSourceId != null)
+
+            String name = getMaterialName(keyMap.getValue());
+            Integer materialSourceId = getMaterialSourceId(keyMap.getValue());
+            if (name != null && materialSourceId != null)
             {
                 sampleTypeId = materialSourceId;
                 nameRowNumMap.put(name, rowNum);
+                continue;
             }
-            else
-                throw new QueryUpdateServiceException("Either RowId or Name is required to get Sample Type Material.");
+
+            throw new QueryUpdateServiceException("Either RowId or Name is required to get Sample Type Material.");
         }
 
         if (!rowIdRowNumMap.isEmpty())
@@ -1390,9 +1395,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
-                Long rowId = asLong(row.get("rowid"));
+                Long rowId = asLong(row.get(RowId.name()));
                 Integer rowNum = rowIdRowNumMap.get(rowId);
-                String sampleLsid = (String) row.get("lsid");
+                String sampleLsid = (String) row.get(LSID.name());
 
                 rowNumLsid.put(rowNum, sampleLsid);
                 sampleRows.put(rowNum, row);
@@ -1412,7 +1417,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
-                String sampleLsid = (String) row.get("lsid");
+                String sampleLsid = (String) row.get(LSID.name());
                 Integer rowNum = lsidRowNumMap.get(sampleLsid);
                 sampleRows.put(rowNum, row);
 
@@ -1429,9 +1434,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
-                String name = (String) row.get("name");
+                String name = (String) row.get(Name.name());
                 Integer rowNum = nameRowNumMap.get(name);
-                String sampleLsid = (String) row.get("lsid");
+                String sampleLsid = (String) row.get(LSID.name());
                 sampleRows.put(rowNum, row);
                 rowNumLsid.put(rowNum, sampleLsid);
 
