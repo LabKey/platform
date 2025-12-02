@@ -20,6 +20,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.NamePlusIdDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;

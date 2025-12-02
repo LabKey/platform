@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -80,14 +79,6 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
     public UserAuditProvider()
     {
         super(new UserAuditDomainKind());
-    }
-
-    @Override
-    public Map<FieldKey, String> legacyNameMap()
-    {
-        Map<FieldKey, String> legacyNames = super.legacyNameMap();
-        legacyNames.put(FieldKey.fromParts("intKey1"), COLUMN_NAME_USER);
-        return legacyNames;
     }
 
     @Override

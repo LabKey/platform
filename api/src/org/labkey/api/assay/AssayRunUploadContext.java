@@ -72,7 +72,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     String getName();
 
-    default @Nullable Long getWorkflowTask()
+    default @Nullable Long getWorkflowTaskId()
     {
         return null;
     }
@@ -253,7 +253,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected ViewContext _context;
         protected String _comments;
         protected String _name;
-        protected Long _workflowTask;
+        protected Long _workflowTaskId;
         protected String _targetStudy;
         protected Long _reRunId;
         protected AssayRunUploadContext.ReImportOption _reImportOption;
@@ -318,9 +318,9 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
             return self();
         }
 
-        public final FACTORY setWorkflowTask(Long workflowTask)
+        public final FACTORY setWorkflowTaskId(Long workflowTaskId)
         {
-            _workflowTask = workflowTask;
+            _workflowTaskId = workflowTaskId;
             return self();
         }
 

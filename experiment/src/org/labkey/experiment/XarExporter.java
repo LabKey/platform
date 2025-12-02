@@ -330,15 +330,15 @@ public class XarExporter
             addProtocolApplication(application, run, xApplications);
         }
 
-        ExpProtocolApplication workflowTask = run.getWorkflowTask();
-
-        if (workflowTask != null)
-        {
-            // Due to the way ProtocolApplication LSIDs are generated we can't actually round trip them the normal way
-            // via the LSIDRelativizer. Instead we construct an LSID out of the object ID with a custom prefix.
-            String workflowObjectId = Lsid.parse(workflowTask.getLSID()).getObjectId();
-            xRun.setWorkflowTaskLSID("${WorkflowTaskReference}:" + workflowObjectId);
-        }
+        // TODO need to update this for run workflowTaskId support in XAR on workflow job folder export/import is supported
+        //ExpProtocolApplication workflowTask = run.getWorkflowTask();
+        //if (workflowTask != null)
+        //{
+        //    // Due to the way ProtocolApplication LSIDs are generated we can't actually round trip them the normal way
+        //    // via the LSIDRelativizer. Instead we construct an LSID out of the object ID with a custom prefix.
+        //    String workflowObjectId = Lsid.parse(workflowTask.getLSID()).getObjectId();
+        //    xRun.setWorkflowTaskLSID("${WorkflowTaskReference}:" + workflowObjectId);
+        //}
 
         // get AssayService.get().getProvider(run).getXarCallbacks().beforeXarExportRun() with simple attempt at caching for common case
         if (null != AssayService.get())

@@ -128,12 +128,9 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
     }
 
     @Override
-    public @Nullable Long getWorkflowTask()
+    public @Nullable Long getWorkflowTaskId()
     {
-        if (_run.getWorkflowTask() != null)
-            return _run.getWorkflowTask().getRowId();
-
-        return null;
+        return _run.getWorkflowTaskId();
     }
 
     @Override

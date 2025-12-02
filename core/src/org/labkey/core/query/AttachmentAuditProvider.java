@@ -83,15 +83,6 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
         return "Data about attachment additions, deletions, modifications and downloads";
     }
 
-    @Override
-    public Map<FieldKey, String> legacyNameMap()
-    {
-        Map<FieldKey, String> legacyMap =  super.legacyNameMap();
-        legacyMap.put(FieldKey.fromParts("EntityId"), COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID);
-        legacyMap.put(FieldKey.fromParts("key1"), COLUMN_NAME_ATTACHMENT);
-        return legacyMap;
-    }
-
     public int moveEvents(Container targetContainer, Collection<Integer> entityIds)
     {
         return moveEvents(targetContainer, COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID, entityIds);

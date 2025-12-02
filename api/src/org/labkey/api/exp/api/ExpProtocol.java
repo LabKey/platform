@@ -175,6 +175,7 @@ public interface ExpProtocol extends ExpObject
         return lsid.contains(ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX);
     }
 
+    // TODO remove this and its relatives once the workflow folder import/export rewrite has happened.
     static boolean isSampleWorkflowProtocol(String lsid)
     {
         return isSampleWorkflowTaskProtocol(lsid) || isSampleWorkflowJobProtocol(lsid);
