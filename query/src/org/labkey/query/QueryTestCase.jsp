@@ -1937,6 +1937,9 @@ d,seven,twelve,day,month,date,duration,guid
     @Test
     public void testArraySql() throws SQLException
     {
+        if (!dialect.supportsArrays())
+            return;
+
         var testSql = """
                 SELECT 'a' as test, false as expected, array_contains_all(     ARRAY['A','X'], ARRAY['A','B'] ) as result
                 UNION ALL
