@@ -460,9 +460,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
             LOG.info("Dropped lsid column from {} of {} sample types successfully.", successCount, sampleTypes.size());
 
-            if (sampleTypeTable != null)
-                throw new IllegalArgumentException("We must stop this work!");
-
             tx.commit();
         }
     }
