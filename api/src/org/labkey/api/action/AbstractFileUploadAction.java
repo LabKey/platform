@@ -186,7 +186,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
                 return;
             }
 
-            if (form.getFileName().length == form.getFileContent().length)  // TODO - restore before commiting
+            if (form.getFileName().length != form.getFileContent().length)
             {
                 error(writer, "Must include the same number of fileName and fileContent parameter values", HttpServletResponse.SC_BAD_REQUEST);
                 return;
