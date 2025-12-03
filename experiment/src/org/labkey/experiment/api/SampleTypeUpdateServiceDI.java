@@ -1678,6 +1678,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 }
             }
 
+            if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
+                drop.remove(LSID.name());
             if (!drop.isEmpty())
                 source = new DropColumnsDataIterator(source, drop);
 
@@ -1815,7 +1817,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         final List<Supplier<Map<String, Object>>> _extraPropsFns;
         final SampleNameGeneratorState _nameState;
         final Lsid.LsidBuilder lsidBuilder;
-        final DbSequence _lsidDbSeq;
         final ExpSampleTypeImpl _sampleType;
         final User _user;
 
@@ -1858,12 +1859,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             boolean skipDuplicateCheck = context.getConfigParameterBoolean(SkipMaxSampleCounterFunction);
             _nameState = sampleType.getNameGenState(skipDuplicateCheck, true, _container, user);
             lsidBuilder = sampleType.generateSampleLSID();
-            _lsidDbSeq = sampleType.getSampleLsidDbSeq(batchSize, sampleType.getContainer());
 
-            selectAll(CaseInsensitiveHashSet.of(Name.name(), LSID.name(), RootMaterialRowId.name()));
+            boolean useLsidForUpdate = context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
+            if (useLsidForUpdate)
+                selectAll(CaseInsensitiveHashSet.of(Name.name(), RootMaterialRowId.name()));
+            else
+                selectAll(CaseInsensitiveHashSet.of(Name.name(), LSID.name(), RootMaterialRowId.name()));
 
             addColumn(new BaseColumnInfo("name", JdbcType.VARCHAR), (Supplier<String>)() -> generatedName);
-            addColumn(new BaseColumnInfo("lsid", JdbcType.VARCHAR), (Supplier<String>)() -> lsidBuilder.setObjectId(String.valueOf(_lsidDbSeq.next())).toString());
+            if (!useLsidForUpdate)
+            {
+                DbSequence lsidDbSeq = sampleType.getSampleLsidDbSeq(batchSize, sampleType.getContainer());
+                addColumn(new BaseColumnInfo("lsid", JdbcType.VARCHAR), (Supplier<String>) () -> lsidBuilder.setObjectId(String.valueOf(lsidDbSeq.next())).toString());
+            }
             addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
             addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
         }

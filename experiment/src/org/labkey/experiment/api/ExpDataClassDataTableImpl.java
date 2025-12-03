@@ -902,22 +902,23 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         if (context.getInsertOption().allowUpdate)
         {
-            boolean isUpdateUsingLsid = context.getInsertOption().updateOnly && colNameMap.containsKey(ExpDataTable.Column.LSID.name()) && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
+            boolean isUpdateUsingLsid = context.getInsertOption().updateOnly &&
+                    colNameMap.containsKey(ExpDataTable.Column.LSID.name()) &&
+                    context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
+
             if (isUpdateUsingLsid)
                 keyColumnNames.add(Column.LSID.name());
             else
             {
                 Set<String> altMergeKeys = getAltMergeKeys(context);
-                if (altMergeKeys == null)
-                    return null;
-
-                keyColumnNames.addAll(altMergeKeys);
+                if (altMergeKeys != null)
+                    keyColumnNames.addAll(altMergeKeys);
             }
         }
         else
             keyColumnNames.add(Column.LSID.name());
 
-        return keyColumnNames;
+        return keyColumnNames.isEmpty() ? null : keyColumnNames;
     }
 
     @Override
