@@ -1570,6 +1570,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         return;
 
                     int precisionScale = sampleTypeBaseUnit.getPrecisionScale();
+                    if (precisionScale > 9 && sampleTypeDisplayUnit.getValue() > 1e-9)
+                    {
+                        // reserve higher precisionScale for when display units are very small, like ng or pg
+                        precisionScale = 9;
+                    }
 
                     boolean isCountUnitType = sampleTypeBaseUnit.getKindOfQuantity() == KindOfQuantity.Count;
                     String aliquotUnitSql = isCountUnitType ? "CASE WHEN MIN(im.units) = MAX(im.units) THEN MIN(im.units) ELSE ? END" : "?";
