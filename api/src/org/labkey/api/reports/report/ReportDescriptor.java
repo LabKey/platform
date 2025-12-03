@@ -403,7 +403,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
     {
         final StringBuffer sb = new StringBuffer();
         String strAnd = "";
-        for (Map.Entry entry : _props.entrySet())
+        for (Map.Entry<String, Object> entry : _props.entrySet())
         {
             sb.append(strAnd);
             if (null == entry.getKey())
@@ -416,12 +416,12 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
                 for (String value : ((List<String>)entry.getValue()))
                 {
                     sb.append(delim);
-                    encode(sb, (String)entry.getKey(), value);
+                    encode(sb, entry.getKey(), value);
                     delim = "&";
                 }
             }
             else
-                encode(sb, (String)entry.getKey(), String.valueOf(v));
+                encode(sb, entry.getKey(), String.valueOf(v));
 
             strAnd = "&";
         }
@@ -532,9 +532,9 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
                 continue;
 
             final Object value = entry.getValue();
-            if (value instanceof List)
+            if (value instanceof List<?> l)
             {
-                for (Object item : ((List)value))
+                for (Object item : l)
                 {
                     addProperty(context, props, entry.getKey(), item);
                 }

@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report.r.view;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.report.r.RReport;
@@ -27,8 +28,9 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,20 +51,20 @@ public class TsvOutput extends AbstractParamReplacement
     }
 
     @Override
-    protected File getSubstitution(File directory) throws Exception
+    protected @Nullable FileLike getSubstitution(FileLike directory) throws IOException
     {
-        File file;
+        FileLike file;
         if (directory != null)
             file = FileUtil.createTempFile(RReport.FILE_PREFIX, "Result.tsv", directory);
         else
-            file = FileUtil.createTempFile(RReport.FILE_PREFIX, "Result.tsv");
+            file = FileUtil.createTempFileLike(RReport.FILE_PREFIX, "Result.tsv");
 
         addFile(file);
         return file;
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput(File file)
+    public ScriptOutput renderAsScriptOutput(FileLike file) throws IOException
     {
         TabReportView view = new TabReportView(this);
         String tsv = view.renderInternalAsString(file);
@@ -74,16 +76,16 @@ public class TsvOutput extends AbstractParamReplacement
     }
 
     @Override
-    public HttpView getView(ViewContext context)
+    public HttpView<?> getView(ViewContext context)
     {
         return new TabReportView(this);
     }
 
-    public static TabLoader createTabLoader(File file)
+    public static TabLoader createTabLoader(FileLike file) throws IOException
     {
-        if (file != null && file.exists() && (file.length() > 0))
+        if (file != null && file.exists() && (file.getSize() > 0))
         {
-            TabLoader tabLoader = new TabLoader(file, true) {
+            TabLoader tabLoader = new TabLoader(file.openInputStream(), true, null) {
                 @Override
                 protected String getDefaultColumnName(int col)
                 {
@@ -108,10 +110,10 @@ public class TsvOutput extends AbstractParamReplacement
         }
 
         @Override
-        protected String renderInternalAsString(File file)
+        protected String renderInternalAsString(FileLike file) throws IOException
         {
-            if (exists(file))
-                return PageFlowUtil.getFileContentsAsString(file);
+            if (file.exists())
+                return PageFlowUtil.getStreamContentsAsString(file.openInputStream());
 
             return null;
         }
@@ -119,7 +121,7 @@ public class TsvOutput extends AbstractParamReplacement
         @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            for (File file : getFiles())
+            for (FileLike file : getFiles())
             {
                 TabLoader tabLoader = createTabLoader(file);
                 if (tabLoader != null)
@@ -167,7 +169,7 @@ public class TsvOutput extends AbstractParamReplacement
                     out.write("<tr>");
                     for (ColumnDescriptor col : display)
                     {
-                        if (Number.class.isAssignableFrom(col.getClass()))
+                        if (Number.class.isAssignableFrom(col.getDataClass()))
                             out.write("<td class=\"labkey-column-header\" align=\"right\">");
                         else
                             out.write("<td class=\"labkey-column-header\">");
@@ -177,7 +179,7 @@ public class TsvOutput extends AbstractParamReplacement
                     }
                     out.write("</tr>");
 
-                    for (Map m : data)
+                    for (Map<String, Object> m : data)
                     {
                         if (row % 2 == 0)
                             out.write("<tr class=\"labkey-row\">");

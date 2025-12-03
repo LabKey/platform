@@ -54,7 +54,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -62,7 +61,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -121,7 +119,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             @Override
             public HttpView<?> render(List<ParamReplacement> parameters) throws IOException
             {
-                return renderViews(ExternalScriptEngineReport.this, view, parameters, false);
+                return renderViews(ExternalScriptEngineReport.this, view, parameters);
             }
         });
 
@@ -153,7 +151,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             public List<ScriptOutput> render(List<ParamReplacement> parameters) throws IOException
             {
 
-                return renderParameters(ExternalScriptEngineReport.this, scriptOutputs, parameters, false );
+                return renderParameters(ExternalScriptEngineReport.this, scriptOutputs, parameters);
             }
         });
 
@@ -251,13 +249,13 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         return renderer.render(outputSubst);
     }
 
-    private HttpView handleException(Exception e)
+    private HttpView<?> handleException(Exception e)
     {
         return HtmlView.unsafe(ReportUtil.makeExceptionString(e, "<font class=\"labkey-error\">%s</font><pre>%s</pre>"));
     }
 
     @Override
-    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
+    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, FileLike inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
         ScriptEngine engine = getScriptEngine(context.getContainer());
 
@@ -284,16 +282,15 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         if (null != output)
         {
             FileLike console = getReportDirFileLike(context.getContainer().getId()).resolveChild(CONSOLE_OUTPUT);
-            File consoleFile = FileSystemLike.toFile(console);
 
-            try (PrintWriter pw = PrintWriters.getPrintWriter(consoleFile))
+            try (PrintWriter pw = PrintWriters.getPrintWriter(console.openOutputStream()))
             {
                 pw.write(output.toString());
             }
 
             ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(ConsoleOutput.ID);
             param.setName("console");
-            param.addFile(consoleFile);
+            param.addFile(console);
             outputSubst.add(param);
         }
     }
@@ -303,18 +300,18 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
      */
     protected void saveAdditionalFileOutput(List<ParamReplacement> outputSubst, @NotNull ContainerUser context)
     {
-        FileLike reportDirFileLike = getReportDirFileLike(context.getContainer().getId());
-        File reportDir = FileSystemLike.toFile(reportDirFileLike);
+        FileLike reportDir = getReportDirFileLike(context.getContainer().getId());
         if (reportDir != null && reportDir.exists())
         {
             Set<String> boundFiles = new CaseInsensitiveHashSet();
             for (ParamReplacement param : outputSubst)
             {
-                for (File file : param.getFiles())
+                for (FileLike file : param.getFiles())
                     boundFiles.add(file.getName());
             }
 
-            File[] additionalFiles = reportDir.listFiles((dir, name) -> {
+            List<FileLike> additionalFiles = reportDir.getChildren(x -> {
+                String name = x.getName();
                 if (boundFiles.contains(name))
                     return false;
                 else if ("input_data.tsv".equalsIgnoreCase(name))
@@ -326,7 +323,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                 return true;
             });
 
-            for (File file : additionalFiles)
+            for (FileLike file : additionalFiles)
             {
                 for (ParamReplacement param : outputSubst)
                 {
@@ -340,7 +337,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         }
     }
 
-    protected Object runScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
+    protected Object runScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, FileLike inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
         RConnectionHolder rh = null;
         try (TransformSession session = SecurityManager.createTransformSession(context))
@@ -413,27 +410,27 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         if (getDescriptor().getReportId() != null &&
             BooleanUtils.toBoolean(getDescriptor().getProperty(ReportDescriptor.Prop.cached))) {
             synchronized (_cachedReportURLMap) {
-                File cacheDir = getCacheDir(context.getContainer().getId());
+                FileLike cacheDir = getCacheDir(context.getContainer().getId());
 
                 if (null == cacheDir)
                     return;
 
                 try {
-                    File mapFile = FileUtil.appendName(cacheDir, SUBSTITUTION_MAP);
+                    FileLike mapFile = cacheDir.resolveChild(SUBSTITUTION_MAP);
 
                     for (ParamReplacement param : replacements)
                     {
-                        List<Pair<File, File>> changes = new ArrayList<>();
-                        for (File src : param.getFiles())
+                        List<Pair<FileLike, FileLike>> changes = new ArrayList<>();
+                        for (FileLike src : param.getFiles())
                         {
-                            File dst = FileUtil.appendName(cacheDir, src.getName());
+                            FileLike dst = cacheDir.resolveChild(src.getName());
                             if (src.exists() && FileUtil.createTempFile(dst))
                             {
                                 FileUtil.copyFile(src, dst);
 
                                 if (param.getId().equals(ConsoleOutput.ID))
                                 {
-                                    try (BufferedWriter bw = new BufferedWriter(new FileWriter(dst, true)))
+                                    try (BufferedWriter bw = new BufferedWriter(PrintWriters.getPrintWriter(dst.openOutputStream())))
                                     {
                                         bw.write("\nLast cached update : " + DateUtil.formatDateTime(context.getContainer()) + "\n");
                                     }
@@ -442,7 +439,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                             }
                         }
 
-                        for (Pair<File, File> change : changes)
+                        for (Pair<FileLike, FileLike> change : changes)
                         {
                             param.getFiles().remove(change.getKey());
                             param.addFile(change.getValue());
@@ -459,7 +456,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
     public void clearCache(@NotNull String executingContainerId)
     {
-        File cacheDir = getCacheDir(executingContainerId);
+        FileLike cacheDir = getCacheDir(executingContainerId);
         if (null != cacheDir && cacheDir.exists())
             FileUtil.deleteDir(cacheDir);
     }
@@ -476,13 +473,13 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                     clearCache(context.getContainer().getId());
                     return false;
                 }
-                File cacheDir = getCacheDir(context.getContainer().getId());
+                FileLike cacheDir = getCacheDir(context.getContainer().getId());
                 if (null == cacheDir)
                     return false;
 
                 try
                 {
-                    replacements.addAll(ParamReplacementSvc.get().fromFile(FileUtil.appendName(cacheDir, SUBSTITUTION_MAP)));
+                    replacements.addAll(ParamReplacementSvc.get().fromFile(cacheDir.resolveChild(SUBSTITUTION_MAP)));
                     return !replacements.isEmpty();
                 }
                 catch (Exception e)
@@ -538,12 +535,15 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         super.beforeDelete(context);
     }
 
-    protected File getCacheDir(@NotNull String executingContainerId)
+    protected FileLike getCacheDir(@NotNull String executingContainerId)
     {
         if (getDescriptor().getReportId() == null)
             return null;
 
-        File cacheDir = new File(getTempRoot(getDescriptor()), executingContainerId + File.separator + "Report_" + FileUtil.makeLegalName(getDescriptor().getReportId().toString()) + File.separator + CACHE_DIR);
+        FileLike cacheDir = getTempRootFileLike(getDescriptor()).
+                resolveChild(executingContainerId).
+                resolveChild("Report_" + FileUtil.makeLegalName(getDescriptor().getReportId().toString())).
+                resolveChild(CACHE_DIR);
 
         if (!cacheDir.exists())
         {
@@ -561,7 +561,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     }
 
     @Override
-    public HttpView renderDataView(ViewContext context) throws Exception
+    public HttpView<?> renderDataView(ViewContext context) throws Exception
     {
         QueryView view = createQueryView(context, getDescriptor());
 
@@ -605,11 +605,5 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             }
         }
         return appPath;
-    }
-
-    @Override
-    public boolean isSandboxed()
-    {
-        return false;
     }
 }

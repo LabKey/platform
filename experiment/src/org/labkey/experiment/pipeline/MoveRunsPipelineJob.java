@@ -29,9 +29,8 @@ import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
-
-import java.io.File;
-import java.nio.file.Path;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 /**
  * User: jeckels
@@ -75,9 +74,9 @@ public class MoveRunsPipelineJob extends PipelineJob
     }
 
     @Override
-    protected Path getWorkingDirectoryString()
+    protected FileLike getWorkingDirectoryString()
     {
-        return getPipeRoot().isCloudRoot() ? FileUtil.getTempDirectory().toPath() : new File(FileUtil.getAbsolutePath(_sourceContainer, ExperimentPipelineProvider.getMoveDirectory(getPipeRoot()))).toPath();
+        return getPipeRoot().isCloudRoot() ? FileUtil.getTempDirectoryFileLike() : FileSystemLike.wrapFile(FileUtil.getAbsoluteCaseSensitivePath(_sourceContainer, ExperimentPipelineProvider.getMoveDirectory(getPipeRoot()).toNioPathForRead()));
     }
 
     @Override
@@ -103,7 +102,7 @@ public class MoveRunsPipelineJob extends PipelineJob
     }
 
     @Override
-    public TaskPipeline getTaskPipeline()
+    public TaskPipeline<?> getTaskPipeline()
     {
         return PipelineJobService.get().getTaskPipeline(new TaskId(MoveRunsPipelineJob.class));
     }

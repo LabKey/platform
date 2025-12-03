@@ -122,6 +122,11 @@ public class RecordedAction
         addInput(input.toURI(), role, false);
     }
 
+    public void addInputIfNotPresent(FileLike input, String role)
+    {
+        addInput(input.toURI(), role, false);
+    }
+
     /**
      * Exp.data has a constraint that will only allow a given file
      * once per action, so by default this will throw an exception
@@ -151,12 +156,22 @@ public class RecordedAction
         addOutput(output.toURI(), role, transientFile, false);
     }
 
+    public void addOutput(FileLike output, String role, boolean transientFile)
+    {
+        addOutput(output.toURI(), role, transientFile, false);
+    }
+
     public void addOutputIfNotPresent(File output, String role, boolean transientFile)
     {
         addOutput(output.toURI(), role, transientFile, false, false);
     }
 
     public void addOutput(File output, String role, boolean transientFile, boolean generated)
+    {
+        addOutput(output.toURI(), role, transientFile, generated);
+    }
+
+    public void addOutput(FileLike output, String role, boolean transientFile, boolean generated)
     {
         addOutput(output.toURI(), role, transientFile, generated);
     }

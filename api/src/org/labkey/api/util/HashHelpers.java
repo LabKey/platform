@@ -15,9 +15,9 @@
  */
 package org.labkey.api.util;
 
+import org.labkey.vfs.FileLike;
+
 import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
@@ -31,14 +31,12 @@ public class HashHelpers
 {
     private static final int BYTE_ARRAY_SIZE = 4096;
 
-    public static String hashFileContents(File file)  throws IOException
+    public static String hashFileContents(FileLike file)  throws IOException
     {
-        InputStream is = null;
-        try
+        try (InputStream is = new BufferedInputStream(file.openInputStream()))
         {
             MessageDigest md = MessageDigest.getInstance("SHA");
             byte[] byteArray = new byte[BYTE_ARRAY_SIZE];
-            is = new BufferedInputStream(new FileInputStream(file));
             int len;
             while ((len = is.read(byteArray)) > 0)
                md.update(byteArray, 0, len);
@@ -47,11 +45,6 @@ public class HashHelpers
         catch (NoSuchAlgorithmException e)
         {
             throw new RuntimeException(e);
-        }
-        finally
-        {
-            if (is != null)
-                try { is.close(); } catch (IOException e) {}
         }
     }
 

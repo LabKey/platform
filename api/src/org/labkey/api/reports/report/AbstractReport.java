@@ -205,13 +205,13 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     }
 
     @Override
-    public HttpView renderDataView(ViewContext context) throws Exception
+    public HttpView<?> renderDataView(ViewContext context) throws Exception
     {
         return HtmlView.of("No Data view available for this report");
     }
 
     @Override
-    public HttpView getRunReportView(ViewContext context) throws Exception
+    public HttpView<?> getRunReportView(ViewContext context) throws Exception
     {
         return renderReport(context);
     }

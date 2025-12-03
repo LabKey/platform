@@ -68,7 +68,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
@@ -189,7 +188,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     /*
      * Create the .tsv associated with the data grid for this report.
      */
-    public File createInputDataFile(@NotNull ViewContext context) throws SQLException, IOException, ValidationException
+    public FileLike createInputDataFile(@NotNull ViewContext context) throws SQLException, IOException, ValidationException
     {
         FileLike resultFile = getReportDirFileLike(context.getContainer().getId()).resolveChild(DATA_INPUT);
         ResultsFactory factory = () -> {
@@ -202,51 +201,9 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                 throw new RuntimeException(e);
             }
         };
-        return _createInputDataFile(context, factory, FileSystemLike.toFile(resultFile));
+        return _createInputDataFile(context, factory, resultFile);
     }
 
-
-    /**
-     * @param executingContainerId id of the container in which the report is running
-     * @return directory, which has been created, to contain the generated report
-     * <p>
-     * Note: This method used to stash results in members (_tempFolder and _tempFolderPipeline), but that no longer works
-     * now that we cache reports between threads (e.g., Thread.currentThread().getId() is part of the path).
-     *
-     * Consider using the variant which returns a FileLike object
-     */
-    @Deprecated
-    public File getReportDir(@NotNull String executingContainerId)
-    {
-        boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
-        return getReportDir(executingContainerId, isPipeline);
-    }
-
-    @Deprecated
-    protected File getReportDir(@NotNull String executingContainerId, boolean isPipeline)
-    {
-
-        File tempRoot = getTempRoot(getDescriptor());
-        String reportId = FileUtil.makeLegalName(String.valueOf(getDescriptor().getReportId())).replaceAll(" ", "_");
-
-        File tempFolder;
-
-        if (isPipeline)
-        {
-            String identifier = RReportJob.getJobIdentifier();
-            if (identifier != null)
-                tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + executingContainerId + File.separator + "Report_" + reportId, identifier);
-            else
-                tempFolder = new File(tempRoot, executingContainerId + File.separator + "Report_" + reportId);
-        }
-        else
-            tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + executingContainerId + File.separator + "Report_" + reportId, String.valueOf(Thread.currentThread().getId()));
-
-        if (!tempFolder.exists())
-            tempFolder.mkdirs();
-
-        return tempFolder;
-    }
 
     /**
      * @param executingContainerId id of the container in which the report is running
@@ -312,9 +269,9 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     public static void scheduledFileCleanup(Logger log)
     {
         final long cutoff = System.currentTimeMillis() - (1000 * 3600 * 24);
-        File root = getTempRoot(ReportService.get().createDescriptorInstance(RReportDescriptor.TYPE));
+        FileLike root = getTempRootFileLike(ReportService.get().createDescriptorInstance(RReportDescriptor.TYPE));
 
-        for (File file : root.listFiles())
+        for (FileLike file : root.getChildren())
         {
             if (file.isDirectory())
             {
@@ -323,8 +280,15 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             }
             else
             {
-                // shouldn't be loose files here, so delete anyway
-                file.delete();
+                try
+                {
+                    // shouldn't be loose files here, so delete anyway
+                    file.delete();
+                }
+                catch (IOException e)
+                {
+                    log.info("Unable to delete temporary report file: " + file.getPath(), e);
+                }
             }
         }
 
@@ -337,14 +301,14 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
      * specified cutoff, and if there are no thread subfolders, delete the parent.
      *
      */
-    protected static void deleteReportDir(File dir, long cutoff)
+    protected static void deleteReportDir(FileLike dir, long cutoff)
     {
         if (dir.isDirectory())
         {
             boolean empty = true;
-            for (File child : dir.listFiles())
+            for (FileLike child : dir.getChildren())
             {
-                if (child.lastModified() < cutoff)
+                if (child.getLastModified() < cutoff)
                 {
                     FileUtil.deleteDir(child);
                 }
@@ -442,7 +406,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     /**
      * used to render output parameters for script execution without rendering the output into HTML
      */
-    public static List<ScriptOutput> renderParameters(ScriptEngineReport report, final List<ScriptOutput> scriptOutputs, List<ParamReplacement> parameters, boolean deleteTempFiles) throws IOException
+    public static List<ScriptOutput> renderParameters(ScriptEngineReport report, final List<ScriptOutput> scriptOutputs, List<ParamReplacement> parameters) throws IOException
     {
         return handleParameters(report, parameters, new ParameterHandler<>()
         {
@@ -452,7 +416,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                 param.setReport(report);
                 try
                 {
-                    for (File file : param.getFiles())
+                    for (FileLike file : param.getFiles())
                     {
                         // Even if there is a script error we keep processing the output parameters. If the parameter
                         // files don't exist then don't create a parameter object.
@@ -487,7 +451,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         });
     }
 
-    public static HttpView<?> renderViews(ScriptEngineReport report, final VBox view, Collection<ParamReplacement> parameters, boolean deleteTempFiles) throws IOException
+    public static HttpView<?> renderViews(ScriptEngineReport report, final VBox view, Collection<ParamReplacement> parameters) throws IOException
     {
         return handleParameters(report, parameters, new ParameterHandler<>()
         {
@@ -581,7 +545,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     protected static boolean isViewable(ParamReplacement param, List<String> sectionNames)
     {
-        for (File data : param.getFiles())
+        for (FileLike data : param.getFiles())
         {
             if (data.exists())
             {
@@ -593,7 +557,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return false;
     }
 
-    protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws Exception
+    protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, FileLike inputDataTsv, Map<String, Object> inputParameters) throws Exception
     {
         return createScript(engine, context, outputSubst, inputDataTsv, inputParameters, false);
     }
@@ -602,24 +566,18 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
      * Create the script to be executed by the scripting engine
      *
      */
-    protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters, boolean isRStudio) throws Exception
+    protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, FileLike inputDataTsv, Map<String, Object> inputParameters, boolean isRStudio) throws Exception
     {
         return processScript(engine, context, getDescriptor().getProperty(ScriptReportDescriptor.Prop.script), inputDataTsv, outputSubst, inputParameters, true, isRStudio);
     }
 
-    public abstract String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException;
+    public abstract String runScript(ViewContext context, List<ParamReplacement> outputSubst, FileLike inputDataTsv, Map<String, Object> inputParameters) throws ScriptException;
 
-
-    protected String processScript(ScriptEngine engine, ViewContext context, String script, File inputFile, List<ParamReplacement> outputSubst, Map<String, Object> inputParameters, boolean includeProlog) throws Exception
-    {
-        return processScript(engine, context, script, inputFile, outputSubst, inputParameters, includeProlog, false);
-    }
 
     /**
      * Takes a script source, adds a prolog, processes any input and output replacement parameters
-     *
      */
-    protected String processScript(ScriptEngine engine, ViewContext context, String script, File inputFile, List<ParamReplacement> outputSubst, Map<String, Object> inputParameters, boolean includeProlog, boolean isRStudio) throws Exception
+    protected String processScript(ScriptEngine engine, ViewContext context, String script, FileLike inputFile, List<ParamReplacement> outputSubst, Map<String, Object> inputParameters, boolean includeProlog, boolean isRStudio) throws Exception
     {
         if (!StringUtils.isEmpty(script) && isRStudio)
             script = ParamReplacementSvc.get().transformInlineReplacements(script); // transform old inline syntax to comment syntax
@@ -634,30 +592,25 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return script;
     }
 
-    protected String getScriptProlog(ScriptEngine engine, ViewContext context, File inputFile, Map<String, Object> inputParameters)
+    protected String getScriptProlog(ScriptEngine engine, ViewContext context, FileLike inputFile, Map<String, Object> inputParameters)
     {
         return null;
     }
 
-    protected String concatScriptProlog(ScriptEngine engine, ViewContext context, String script, File inputFile, Map<String, Object> inputParameters)
-    {
-        return concatScriptProlog(engine, context, script, inputFile, inputParameters, false);
-    }
-
-    protected String concatScriptProlog(ScriptEngine engine, ViewContext context, String script, File inputFile, Map<String, Object> inputParameters, boolean isRStudio)
+    protected String concatScriptProlog(ScriptEngine engine, ViewContext context, String script, FileLike inputFile, Map<String, Object> inputParameters, boolean isRStudio)
     {
         return StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) + script;
     }
 
-    protected String processInputReplacement(ScriptEngine engine, String script, @Nullable File inputFile, boolean isRStudio)
+    protected String processInputReplacement(ScriptEngine engine, String script, @Nullable FileLike inputFile, boolean isRStudio)
     {
-        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile == null ? null : inputFile.getAbsolutePath().replaceAll("\\\\", "/"), isRStudio, null);
+        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile == null ? null : inputFile.toNioPathForRead().toFile().getAbsolutePath().replaceAll("\\\\", "/"), isRStudio, null);
     }
 
     protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements, @NotNull ContainerUser context, boolean isRStudio) throws Exception
     {
         FileLike reportDir = getReportDirFileLike(context.getContainer().getId());
-        return ParamReplacementSvc.get().processParamReplacement(script, FileSystemLike.toFile(reportDir), null, replacements, isRStudio);
+        return ParamReplacementSvc.get().processParamReplacement(script, reportDir, null, replacements, isRStudio);
     }
 
 
@@ -704,7 +657,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         }
     }
 
-    protected static class TempFileCleanup extends HttpView
+    protected static class TempFileCleanup extends HttpView<Object>
     {
         private final FileLike _dir;
 

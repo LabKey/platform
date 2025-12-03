@@ -21,6 +21,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -85,7 +87,7 @@ public class FastaDataLoader extends DataLoader
         setScrollable(true);
         setHasColumnHeaders(hasColumnHeaders);
 
-        _loader = new GenericFastaLoader(inputFile);
+        _loader = new GenericFastaLoader(FileSystemLike.wrapFile(inputFile));
     }
 
     public void setCharacterFilter(FastaLoader.CharacterFilter characterFilter)
@@ -142,7 +144,7 @@ public class FastaDataLoader extends DataLoader
 
     private static class GenericFastaLoader extends FastaLoader<Map<String, Object>>
     {
-        public GenericFastaLoader(File fastaFile)
+        public GenericFastaLoader(FileLike fastaFile)
         {
             super(fastaFile, new FastaIteratorElementFactory<>()
             {

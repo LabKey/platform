@@ -27,6 +27,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.vfs.FileLike;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
@@ -56,18 +57,15 @@ public interface PipeRoot extends SecurableResource
     @NotNull
     FileLike getRootFileLike();
 
-    @Deprecated // prefer getRootFileLike()
     @NotNull
-    File getLogDirectory();
-
-    @NotNull
-    FileLike getLogDirectoryFileLike(boolean forWrite);
+    FileLike getLogDirectory(boolean forWrite);
 
     @Nullable
     Path resolveToNioPath(String path);
 
     @Nullable
     Path resolveToNioPathFromUrl(String url);
+    FileLike resolveToFileLikeFromUrl(String url) throws IOException;
 
     /**
      * @return the file that's at the given relativePath from the pipeline root. When the root

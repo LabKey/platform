@@ -28,6 +28,7 @@ import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -50,14 +51,14 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
 
     private final Map<Integer, DatasetImportInfo> _datasetInfoMap = new LinkedHashMap<>();
     private final List<ImportTypesHelper.Builder> _builders = new ArrayList<>();
-    private Map<File, Pair<String, String>> _inputDataMap;
+    private Map<FileLike, Pair<String, String>> _inputDataMap;
 
     public DatasetInferSchemaReader(VirtualFile datasetsDirectory, String datasetsFileName, StudyImpl study, StudyImportContext studyImportContext)
     {
         super(datasetsDirectory, datasetsFileName, study, studyImportContext);
     }
 
-    public DatasetInferSchemaReader(VirtualFile datasetsDirectory, StudyImpl study, StudyImportContext studyImportContext, Map<File, Pair<String, String>> inputDataMap)
+    public DatasetInferSchemaReader(VirtualFile datasetsDirectory, StudyImpl study, StudyImportContext studyImportContext, Map<FileLike, Pair<String, String>> inputDataMap)
     {
         super(datasetsDirectory, null, study, studyImportContext);
         _inputDataMap = inputDataMap;
@@ -105,7 +106,7 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
             List<Integer> datasetIds = _study.getDatasets().stream()
                 .map(DatasetDefinition::getDatasetId)
                 .sorted(Comparator.comparingInt(o -> o))
-                .collect(Collectors.toList());
+                .toList();
 
             // next available dataset ID
             int nextId = datasetIds.isEmpty() ? 1000 : datasetIds.get(datasetIds.size()-1) + 1;
@@ -176,7 +177,7 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
         // data instead of just the legacy regex method
         if (_inputDataMap != null)
         {
-            for (Map.Entry<File, Pair<String, String>> entry : _inputDataMap.entrySet())
+            for (Map.Entry<FileLike, Pair<String, String>> entry : _inputDataMap.entrySet())
             {
                 if (entry.getKey().getName().equalsIgnoreCase(name))
                 {
@@ -196,9 +197,7 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
         Matcher m = _filePattern.matcher(name);
         if (m.matches())
         {
-            String key = m.group(1);
-            if (key != null)
-                return key;
+            return m.group(1);
         }
         return null;
     }
@@ -207,7 +206,7 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
     protected List<String> getDatasetFileNames()
     {
         if (_inputDataMap != null)
-            return _inputDataMap.keySet().stream().map(File::getName).collect(Collectors.toList());
+            return _inputDataMap.keySet().stream().map(FileLike::getName).collect(Collectors.toList());
         else
             return super.getDatasetFileNames();
     }

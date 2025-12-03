@@ -16,13 +16,13 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-
-import java.io.File;
+import org.labkey.vfs.FileLike;
 
 /**
  * User: Karl Lum
@@ -38,13 +38,13 @@ public class HrefOutput extends ImageOutput
     }
 
     @Override
-    protected File getSubstitution(File directory)
+    protected @Nullable FileLike getSubstitution(FileLike directory)
     {
         return null;
     }
 
     @Override
-    public HttpView getView(ViewContext context)
+    public HttpView<?> getView(ViewContext context)
     {
         return null;
     }

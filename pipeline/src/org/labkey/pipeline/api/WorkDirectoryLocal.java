@@ -19,8 +19,8 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.WorkDirFactory;
 import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 
 /**
@@ -36,20 +36,20 @@ public class WorkDirectoryLocal extends AbstractWorkDirectory
         @Override
         public WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, boolean useDeterministicFolderPath, Logger log) throws IOException
         {
-            File dir = FT_WORK_DIR.newFile(support.getAnalysisDirectory(),
+            FileLike dir = FT_WORK_DIR.newFile(support.getAnalysisDirectory(),
                     support.getBaseName());
 
             return new WorkDirectoryLocal(support, this, dir, useDeterministicFolderPath, log);
         }
     }
 
-    public WorkDirectoryLocal(FileAnalysisJobSupport support, WorkDirFactory factory, File dir, boolean reuseExistingDirectory, Logger log) throws IOException
+    public WorkDirectoryLocal(FileAnalysisJobSupport support, WorkDirFactory factory, FileLike dir, boolean reuseExistingDirectory, Logger log) throws IOException
     {
         super(support, factory, dir, reuseExistingDirectory, log);
     }
 
     @Override
-    public File inputFile(File fileInput, boolean forceCopy) throws IOException
+    public FileLike inputFile(FileLike fileInput, boolean forceCopy) throws IOException
     {
         if (!forceCopy)
             return fileInput;
@@ -57,7 +57,7 @@ public class WorkDirectoryLocal extends AbstractWorkDirectory
     }
 
     @Override
-    public File inputFile(File fileInput, File fileWork, boolean forceCopy) throws IOException
+    public FileLike inputFile(FileLike fileInput, FileLike fileWork, boolean forceCopy) throws IOException
     {
         if (!forceCopy)
             return fileInput;

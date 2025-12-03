@@ -17,8 +17,8 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
-import java.nio.file.Path;
 import java.util.Set;
 
 // Temporary service that provides entry points to ease migration of code from study module to specimen module
@@ -41,7 +41,7 @@ public interface SpecimenMigrationService
     ActionURL getSelectedSpecimensURL(Container c);
     ActionURL getSpecimensURL(Container c);
 
-    void importSpecimenArchive(@Nullable Path inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
+    void importSpecimenArchive(@Nullable FileLike inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
                                boolean syncParticipantVisit) throws PipelineJobException, ValidationException;
 
     void clearRequestCaches(Container c);
