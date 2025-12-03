@@ -75,18 +75,6 @@ public class PathMapperImpl implements PathMapper
     }
 
     /**
-     * Returns a copy of the path map as strings
-     */
-    @Override
-    @Deprecated //Use getURIPathMap instead
-    public Map<String, String> getPathMap()
-    {
-        Map<String, String> stringMap = new LinkedHashMap<>();
-        _uriMap.forEach((k, v) -> stringMap.put(k.toString(), v.toString()));
-        return stringMap;
-    }
-
-    /**
      *
      * @return unmodifiable copy of underlying uri map
      */

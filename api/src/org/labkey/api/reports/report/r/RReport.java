@@ -346,12 +346,12 @@ public class RReport extends ExternalScriptEngineReport
     }
 
     @Override
-    protected String getScriptProlog(ScriptEngine engine, ViewContext context, File inputFile, Map<String, Object> inputParameters)
+    protected String getScriptProlog(ScriptEngine engine, ViewContext context, FileLike inputFile, Map<String, Object> inputParameters)
     {
         return getScriptProlog(engine, context, inputFile, inputParameters, false);
     }
 
-    protected String getScriptProlog(ScriptEngine engine, ViewContext context, File inputFile, Map<String, Object> inputParameters, boolean isRStudio)
+    protected String getScriptProlog(ScriptEngine engine, ViewContext context, FileLike inputFile, Map<String, Object> inputParameters, boolean isRStudio)
     {
         StringBuilder labkey = new StringBuilder();
 
@@ -373,8 +373,10 @@ public class RReport extends ExternalScriptEngineReport
             }
         }
 
-        labkey.append("labkey.url <- function (controller, action, list){paste(labkey.url.base,controller,labkey.url.path,action,\".view?\",paste(names(list),list,sep=\"=\",collapse=\"&\"),sep=\"\")}\n" +
-            "labkey.resolveLSID <- function(lsid){paste(labkey.url.base,\"experiment/resolveLSID.view?lsid=\",lsid,sep=\"\");}\n");
+        labkey.append("""
+                labkey.url <- function (controller, action, list){paste(labkey.url.base,controller,labkey.url.path,action,".view?",paste(names(list),list,sep="=",collapse="&"),sep="")}
+                labkey.resolveLSID <- function(lsid){paste(labkey.url.base,"experiment/resolveLSID.view?lsid=",lsid,sep="");}
+                """);
         labkey.append("labkey.user.email=").append(toR(context.getUser().getEmail())).append("\n");
 
         ActionURL url = context.getActionURL();
@@ -452,7 +454,7 @@ public class RReport extends ExternalScriptEngineReport
     }
 
     @Override
-    protected String concatScriptProlog(ScriptEngine engine, ViewContext context, String script, File inputFile, Map<String, Object> inputParameters, boolean isRStudio)
+    protected String concatScriptProlog(ScriptEngine engine, ViewContext context, String script, FileLike inputFile, Map<String, Object> inputParameters, boolean isRStudio)
     {
         String yamlScript = "";
         String yamlSyntaxPrefix = "---\n";
@@ -573,14 +575,14 @@ public class RReport extends ExternalScriptEngineReport
     }
 
     // append the pipeline roots to the prolog
-    public static File getPipelineRoot(ViewContext context)
+    public static FileLike getPipelineRoot(ViewContext context)
     {
         //
         // currently we ignore the supplemental directory and only return the primary directory/override
         // if the supplemental directory is important then consider making this a list
         //
         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(context.getContainer());
-        return pipelineRoot.getRootPath();
+        return pipelineRoot.getRootFileLike();
     }
 
     public void setScriptSource(String script)
@@ -588,14 +590,14 @@ public class RReport extends ExternalScriptEngineReport
         getDescriptor().setProperty(ScriptReportDescriptor.Prop.script, script);
     }
 
-    public static String getLocalPath(File f)
+    public static String getLocalPath(FileLike f)
     {
-        File fAbsolute = FileUtil.getAbsoluteCaseSensitiveFile(f);
+        File fAbsolute = FileUtil.getAbsoluteCaseSensitiveFile(f.toNioPathForRead().toFile());
         return fAbsolute.getAbsolutePath().replaceAll("\\\\", "/");
     }
 
     @Override
-    protected String processInputReplacement(ScriptEngine engine, String script, @Nullable File inputFile, boolean isRStudio)
+    protected String processInputReplacement(ScriptEngine engine, String script, @Nullable FileLike inputFile, boolean isRStudio)
     {
         RScriptEngine rengine = (RScriptEngine) engine;
         String remotePath = inputFile == null ? null : rengine.getRemotePath(inputFile);
@@ -606,21 +608,20 @@ public class RReport extends ExternalScriptEngineReport
     protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements, @NotNull ContainerUser context, boolean isRStudio) throws Exception
     {
         FileLike reportDirFileLike = getReportDirFileLike(context.getContainer().getId());
-        File reportDir = FileSystemLike.toFile(reportDirFileLike);
         RScriptEngine rengine = (RScriptEngine)engine;
-        String localPath = getLocalPath(reportDir);
+        String localPath = getLocalPath(reportDirFileLike);
         String remoteRoot = rengine.getRemotePath(localPath);
-        return ParamReplacementSvc.get().processParamReplacement(script, reportDir, remoteRoot, replacements, isRStudio);
+        return ParamReplacementSvc.get().processParamReplacement(script, reportDirFileLike, remoteRoot, replacements, isRStudio);
     }
 
     @Override
-    protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws Exception
+    protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, FileLike inputDataTsv, Map<String, Object> inputParameters) throws Exception
     {
         return createScript(engine, context, outputSubst, inputDataTsv, inputParameters, false);
     }
 
     @Override
-    public String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters, boolean isRStudio) throws Exception
+    public String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, FileLike inputDataTsv, Map<String, Object> inputParameters, boolean isRStudio) throws Exception
     {
         String script = super.createScript(engine, context, outputSubst, inputDataTsv, inputParameters, isRStudio);
         FileLike inputData = getReportDirFileLike(context.getContainer().getId()).resolveChild(DATA_INPUT);
@@ -645,7 +646,7 @@ public class RReport extends ExternalScriptEngineReport
                     final String rExtension = ((RReport) report).getScriptFileExtension();
                     final FileLike rScriptFile = getReportDirFileLike(context.getContainer().getId()).resolveChild(rName + rExtension);
 
-                    String includedScript = processScript(engine, context, rScript, FileSystemLike.toFile(inputData), outputSubst, inputParameters, false, isRStudio);
+                    String includedScript = processScript(engine, context, rScript, inputData, outputSubst, inputParameters, false, isRStudio);
 
                     try (PrintWriter pw = PrintWriters.getPrintWriter(rScriptFile.toNioPathForWrite()))
                     {
@@ -673,35 +674,21 @@ public class RReport extends ExternalScriptEngineReport
      * If this R Report is using knitr then put all the results into the cache directory instead of a temp
      * directory.  This enables knitr to do its own caching.  If this is a non-Knitr report or we don't have a cache
      * directory because the report was not saved yet, then fall back to the non-cache case.  Note that knitr caching
-     * is not the same as report caching.  Report caching saves off the output parameters of the report and then serves
+     * is different from report caching.  Report caching saves off the output parameters of the report and then serves
      * them up without executing the script again if the incoming URL is the same.
      * For Knitr caching, we always run the R script and let the knitr library manage the caching options.
      * @param executingContainerId id of the container in which the report is running
      */
     @Override
-    public File getReportDir(@NotNull String executingContainerId)
-    {
-        File reportDir = null;
-
-        if (getKnitrFormat() != RReportDescriptor.KnitrFormat.None)
-            reportDir = getCacheDir(executingContainerId);
-
-        if (null == reportDir)
-            reportDir = super.getReportDir(executingContainerId);
-
-         return reportDir;
-    }
-
-    @Override
     public FileLike getReportDirFileLike(@NotNull String executingContainerId)
     {
-        File reportDir = null;
+        FileLike reportDir = null;
 
         if (getKnitrFormat() != RReportDescriptor.KnitrFormat.None)
             reportDir = getCacheDir(executingContainerId);
 
         if (reportDir != null)
-            return FileSystemLike.wrapFile(reportDir);
+            return reportDir;
 
         return super.getReportDirFileLike(executingContainerId);
     }
@@ -721,7 +708,7 @@ public class RReport extends ExternalScriptEngineReport
 
 
     @Override
-    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
+    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, FileLike inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
         ScriptEngine engine = getScriptEngine(context.getContainer());
         if (engine != null)
@@ -741,7 +728,7 @@ public class RReport extends ExternalScriptEngineReport
                 }
                 else
                 {
-                    File knitrOutput = new File((String)bindings.get(RScriptEngine.KNITR_OUTPUT));
+                    FileLike knitrOutput = FileSystemLike.wrapFile(new File((String)bindings.get(RScriptEngine.KNITR_OUTPUT)));
                     saveKnitrOutput(knitrOutput, outputSubst);
                 }
                 saveAdditionalFileOutput(outputSubst, context);
@@ -757,7 +744,7 @@ public class RReport extends ExternalScriptEngineReport
         throw new ScriptException("A script engine implementation was not found for the specified report");
     }
 
-    private void saveKnitrOutput(File knitrOutput, List<ParamReplacement> outputSubst)
+    private void saveKnitrOutput(FileLike knitrOutput, List<ParamReplacement> outputSubst)
     {
         KnitrOutput param = new KnitrOutput();
         param.setName("Knitr");
@@ -864,10 +851,13 @@ public class RReport extends ExternalScriptEngineReport
         // issue 27527: only use the write.table default script if we have a labkey.data data frame
         return getDescriptor().getProperty("dataRegionName") == null
             ? ""
-            : "# This sample code returns the query data in tab-separated values format, which LabKey then\n" +
-                "# renders as HTML. Replace this code with your R script. See the Help tab for more details.\n\n" +
-                "# ${tsvout:tsvfile}\n" +
-                "write.table(labkey.data, file = \"tsvfile\", sep = \"\\t\", qmethod = \"double\", col.names=NA)\n";
+            : """
+                # This sample code returns the query data in tab-separated values format, which LabKey then
+                # renders as HTML. Replace this code with your R script. See the Help tab for more details.
+                
+                # ${tsvout:tsvfile}
+                write.table(labkey.data, file = "tsvfile", sep = "\\t", qmethod = "double", col.names=NA)
+                """;
     }
 
     @Override
@@ -1004,10 +994,14 @@ public class RReport extends ExternalScriptEngineReport
             RScriptEngine r = (RScriptEngine)LabKeyScriptEngineManager.get().getEngineByExtension(context.getContainer(), "r");
             //r.getBindings(ScriptContext.ENGINE_SCOPE).put(RScriptEngine.KNITR_FORMAT, RReportDescriptor.KnitrFormat.Markdown);
             Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
-            String pre = "---\n" +
-                    "title: My Report\n" +
-                    "---\n" +
-                    "hello \n\nworld\n";
+            String pre = """
+                    ---
+                    title: My Report
+                    ---
+                    hello\s
+                    
+                    world
+                    """;
 
             boolean isRStudio = false;
             String post = report.concatScriptProlog(r, context, pre, null, (Map)params, isRStudio);

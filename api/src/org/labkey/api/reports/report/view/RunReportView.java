@@ -96,7 +96,7 @@ public abstract class RunReportView extends TabStripView
                 sb.append("</td></tr>");
             }
             sb.append("</table>");
-            include(new HttpView() {
+            include(new HttpView<>() {
 
                 @Override
                 protected void renderInternal(Object model, PrintWriter out)

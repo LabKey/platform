@@ -31,9 +31,6 @@ import java.util.Map;
  */
 public interface PathMapper
 {
-    @Deprecated //Please use getURIPathMap
-    Map<String, String> getPathMap();
-
     Map<URI, URI> getURIPathMap();
 
     @Deprecated //Please use the URI version

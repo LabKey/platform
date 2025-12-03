@@ -38,9 +38,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -136,9 +134,9 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
      * @return Path String for a local working directory, temporary if root is cloud based
      */
     @Override
-    protected Path getWorkingDirectoryString()
+    protected FileLike getWorkingDirectoryString()
     {
-        return _dirAnalysis.toNioPathForWrite().toAbsolutePath();
+        return _dirAnalysis;
     }
 
     public AbstractFileAnalysisJob(AbstractFileAnalysisJob job, FileLike fileInput)
@@ -186,7 +184,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public boolean isSplittable()
     {
-        return _splittable && getInputFilePaths().size() > 1;
+        return _splittable && getInputFiles().size() > 1;
     }
 
     @Override
@@ -202,7 +200,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     }
 
     @Override
-    public TaskPipeline getTaskPipeline()
+    public TaskPipeline<?> getTaskPipeline()
     {
         return PipelineJobService.get().getTaskPipeline(getTaskPipelineId());
     }
@@ -263,69 +261,75 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     }
 
     @Override
-    public FileLike getDataDirectoryFileLike()
+    public FileLike getDataDirectory()
     {
         return _dirData;
     }
 
     @Override
-    public File getAnalysisDirectory()
+    public FileLike getAnalysisDirectory()
     {
-        return _dirAnalysis.toNioPathForWrite().toFile();
+        return _dirAnalysis;
     }
 
     @Override
-    public File findOutputFile(@NotNull String outputDir, @NotNull String fileName)
+    public FileLike findOutputFile(@NotNull String outputDir, @NotNull String fileName)
     {
         return getOutputFile(outputDir, fileName, getPipeRoot(), getLogger(), getAnalysisDirectory());
     }
 
-    public static File getOutputFile(@NotNull String outputDir, @NotNull String fileName, PipeRoot root, Logger log, File analysisDirectory)
+    public static FileLike getOutputFile(@NotNull String outputDir, @NotNull String fileName, PipeRoot root, Logger log, FileLike analysisDirectory)
     {
-        File dir;
+        FileLike dir;
         if (outputDir.startsWith("/"))
         {
-            dir = root.resolvePath(outputDir);
+            dir = root.resolvePathToFileLike(outputDir);
             if (dir == null)
                 throw new RuntimeException("Output directory not under pipeline root: " + outputDir);
 
             if (!NetworkDrive.exists(dir))
             {
                 log.info("Creating output directory under pipeline root: " + dir);
-                if (!dir.mkdirs())
-                    throw new RuntimeException("Failed to create output directory under pipeline root: " + outputDir);
+                try
+                {
+                    dir.mkdirs();
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException("Failed to create output directory under pipeline root: " + outputDir, e);
+                }
             }
         }
         else
         {
-            dir = new File(analysisDirectory, outputDir);
+            dir = analysisDirectory.resolveChild(outputDir);
             if (!NetworkDrive.exists(dir))
             {
                 log.info("Creating output directory under pipeline analysis dir: " + dir);
-                if (!dir.mkdirs())
-                    throw new RuntimeException("Failed to create output directory under analysis dir: " + outputDir);
+                try
+                {
+                    dir.mkdirs();
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException("Failed to create output directory under analysis dir: " + outputDir, e);
+                }
             }
         }
 
-        return new File(dir, fileName);
+        return dir.resolveChild(fileName);
     }
 
     @Override
-    public List<File> getInputFiles()
+    public List<FileLike> getInputFiles()
     {
-        return getInputFilePaths().stream().map(Path::toFile).collect(Collectors.toList());
+        return _filesInput;
     }
 
     @Override
-    public List<Path> getInputFilePaths()
+    public FileLike getParametersFile()
     {
-        return _filesInput.stream().map(FileLike::toNioPathForRead).toList();
-    }
-
-    @Override
-    public File getParametersFile()
-    {
-        return _fileParameters.toNioPathForRead().toFile();
+        return _fileParameters;
     }
 
     @Override
@@ -392,7 +396,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public String getDescription()
     {
-        return getDataDescription(getDataDirectoryFileLike(), getBaseName(), getJoinedBaseName(), getProtocolName(), _filesInput);
+        return getDataDescription(getDataDirectory(), getBaseName(), getJoinedBaseName(), getProtocolName(), _filesInput);
     }
 
     @Override
