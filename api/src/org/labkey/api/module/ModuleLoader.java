@@ -1386,17 +1386,15 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     {
         _javaVersion = JavaVersion.get();
 
-        final String message;
-
         if (!_javaVersion.isTested())
-            message = "has not been tested with LabKey Server";
+            logJavaWarning("has not been tested with LabKey Server");
         else if (_javaVersion.isDeprecated())
-            message = "is no longer supported";
-        else
-            message = null;
+            logJavaWarning("is no longer supported");
+    }
 
-        if (message != null)
-            _log.warn("The deployed version of Java, {}, {}. We recommend installing {}.", JavaVersion.getJavaVersionDescription(), message, JavaVersion.getRecommendedJavaVersion());
+    private void logJavaWarning(String message)
+    {
+        _log.warn("The deployed version of Java, {}, {}. We recommend installing {}.", JavaVersion.getJavaVersionDescription(), message, JavaVersion.getRecommendedJavaVersion());
     }
 
     public JavaVersion getJavaVersion()
