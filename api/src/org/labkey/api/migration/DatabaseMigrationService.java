@@ -74,7 +74,7 @@ public interface DatabaseMigrationService
         String value = filterParts[1];
         FilterClause clause = CompareType.EQUAL.createFilterClause(new FieldKey(null, column), value);
         // If another container is already using this filter clause, then simply add this guid to that filter.
-        // Otherwise, add a new domain filter to the list.
+        // Otherwise, add a new data filter to the list.
         dataFilters.stream()
             .filter(df -> df.column().equals(column) && df.condition().equals(clause))
             .findFirst()
