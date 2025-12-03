@@ -1085,6 +1085,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 List<String> compatibleUnits = KindOfQuantity.Count.getCommonUnits().stream().map(Unit::name).collect(Collectors.toList());
                 filter.addCondition(FieldKey.fromParts("Units"), compatibleUnits, CompareType.NOT_IN);
             }
+            else if (newUnit != null)
+                filter.addCondition(FieldKey.fromParts("Units"), newUnit.getBase().name(), CompareType.NEQ);
             else
                 filter.addCondition(FieldKey.fromParts("Units"), newUnitStr, CompareType.NEQ);
 
