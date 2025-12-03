@@ -1566,7 +1566,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
 
-                 ListUtils.partition(new ArrayList<>(withAmountsParents), 1000).forEach(sublist ->
+                ListUtils.partition(new ArrayList<>(withAmountsParents), 1000).forEach(sublist ->
                 {
                     if (sublist.isEmpty())
                         return;
@@ -1718,9 +1718,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (volumeUnits == null || volumeUnits.isEmpty())
             return null;
 
-        Set<String> uniqueAliquotUnits = volumeUnits.stream() .map(AliquotAmountUnitResult::unit).collect(Collectors.toSet());
+        Set<String> uniqueAliquotUnits = volumeUnits.stream().map(AliquotAmountUnitResult::unit).collect(Collectors.toSet());
         boolean hasSameAliquotUnit = uniqueAliquotUnits.size() <= 1;
-
 
         Unit totalUnit = null;
         String totalUnitsStr;
