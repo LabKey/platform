@@ -740,7 +740,7 @@ public class ExperimentModule extends SpringModule
                 results.put("sampleNegativeAmountCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE storedamount < 0").getObject(Long.class));
                 results.put("sampleUnitsDifferCount", new SqlSelector(schema, "SELECT COUNT(*) from exp.material m JOIN exp.materialSource s ON m.materialsourceid = s.rowid WHERE m.units != s.metricunit").getObject(Long.class));
                 results.put("sampleTypesWithoutUnitsCount", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit IS NULL").getObject(Long.class));
-                results.put("sampleTypesWithMassTypeUnit", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit IN ('kg', 'g', 'mg', 'ug', 'ng', 'pg')").getObject(Long.class));
+                results.put("sampleTypesWithMassTypeUnit", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit IN ('kg', 'g', 'mg', 'ug', 'ng')").getObject(Long.class));
                 results.put("sampleTypesWithVolumeTypeUnit", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit IN ('L', 'mL', 'uL')").getObject(Long.class));
                 results.put("sampleTypesWithCountTypeUnit", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit = ?", "unit").getObject(Long.class));
 

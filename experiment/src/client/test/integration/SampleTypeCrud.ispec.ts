@@ -979,7 +979,7 @@ describe('Amount/Unit CRUD', () => {
         errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\nData1\t1.1\tcells", dataType, "INSERT", topFolderOptions, editorUserOptions);
         expect(errorMsg.text).toContain('Units value (cells) is not compatible with the ' + dataType + ' display units (g).');
         errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\nData1\t1.1\tbogus", dataType, "INSERT", topFolderOptions, editorUserOptions);
-        expect(errorMsg.text).toContain('Unsupported Units value (bogus). Supported values are: kg, g, mg, ug, ng, pg.');
+        expect(errorMsg.text).toContain('Unsupported Units value (bogus). Supported values are: kg, g, mg, ug, ng.');
         errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\nData1\t-1.1\tkg", dataType, "INSERT", topFolderOptions, editorUserOptions);
         expect(errorMsg.text).toContain(NEGATIVE_ERROR);
         errorMsg = await ExperimentCRUDUtils.importCrossTypeData(server, "Name\tStoredAmount\tUnits\tSampleType\nData1\t-1.1\tkg\t" + dataType ,'IMPORT', topFolderOptions, adminOptions, true);
@@ -1115,7 +1115,6 @@ describe('Amount/Unit CRUD', () => {
         }
 
         let sampleRowsWithUnits = await ExperimentCRUDUtils.insertRows(server, [
-            {name: 'S-pg', amount: 4.56, units: 'pg'},
             {name: 'S-ng', amount: 4.56, units: 'ng'},
             {name: 'S-ug', amount: 4.56, units: 'ug'},
             {name: 'S-mg', amount: 4.56, units: 'mg'},
@@ -1125,7 +1124,6 @@ describe('Amount/Unit CRUD', () => {
 
         // check for storedamount in g
         let expectedRawAmounts : {} = {
-            'S-pg': 4.56e-12,
             'S-ng': 4.56e-9,
             'S-ug': 4.56e-6,
             'S-mg': 0.00456,
@@ -1133,7 +1131,6 @@ describe('Amount/Unit CRUD', () => {
             'S-kg': 4560,
         };
         let expectedStoredAmounts : {} = {
-            'S-pg': 4.56e-6,
             'S-ng': 4.56e-3,
             'S-ug': 4.56,
             'S-mg': 4560,
@@ -1160,7 +1157,6 @@ describe('Amount/Unit CRUD', () => {
         }
 
         expectedRawAmounts = {
-            'S-pg': 6.54e-12,
             'S-ng': 6.54e-9,
             'S-ug': 6.54e-6,
             'S-mg': 0.00654,
@@ -1168,7 +1164,6 @@ describe('Amount/Unit CRUD', () => {
             'S-kg': 6540,
         };
         expectedStoredAmounts = {
-            'S-pg': 6.54e-6,
             'S-ng': 6.54e-3,
             'S-ug': 6.54,
             'S-mg': 6540,
