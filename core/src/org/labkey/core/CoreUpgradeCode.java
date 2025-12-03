@@ -186,6 +186,7 @@ public class CoreUpgradeCode implements UpgradeCode
     /**
      * Called from core-25.008-25.009.sql
      */
+    @SuppressWarnings("unused")
     @DeferredUpgrade
     public static void populateAttachmentParentTypeColumn(ModuleContext context)
     {
@@ -197,11 +198,11 @@ public class CoreUpgradeCode implements UpgradeCode
             LOG.info("Populating attachment parent type for {}", type.getUniqueName());
 
             SQLFragment updateSql = new SQLFragment("UPDATE ")
-                .append(CoreSchema.getInstance().getTableInfoDocuments(), "d")
+                .append(CoreSchema.getInstance().getTableInfoDocuments())
                 .append(" SET ParentType = ?")
                 .add(type.getUniqueName())
                 .append(" WHERE ");
-            type.addWhereSql(updateSql, "d.Parent", "d.DocumentName");
+            type.addWhereSql(updateSql, "Parent", "DocumentName");
 
             new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(updateSql);
         }
