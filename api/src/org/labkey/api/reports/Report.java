@@ -61,13 +61,13 @@ public interface Report extends AttachmentParent, ThumbnailProvider
      * Return the data view (if any) for this report. Many reports are created from a source
      * data grid (or query view), this view can be displayed on another tab with the rendered results.
      */
-    HttpView renderDataView(ViewContext context) throws Exception;
+    HttpView<?> renderDataView(ViewContext context) throws Exception;
 
     /**
      * Returns a view appropriate for displaying report results, may be a simple view, or
      * it may aggregate more than one of the rendered views a report can display.
      */
-    HttpView getRunReportView(ViewContext context) throws Exception;
+    HttpView<?> getRunReportView(ViewContext context) throws Exception;
 
     ReportDescriptor getDescriptor();
     void setDescriptor(ReportDescriptor descriptor);

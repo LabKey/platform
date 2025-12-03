@@ -25,6 +25,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.PrintWriters;
+import org.labkey.vfs.FileLike;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -34,8 +35,6 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -196,7 +195,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
             HttpServletRequest basicRequest = getViewContext().getRequest();
 
             // Parameter name (String) -> File on disk/original file name Pair
-            Map<String, Pair<File, String>> savedFiles = new HashMap<>();
+            Map<String, Pair<FileLike, String>> savedFiles = new HashMap<>();
 
             if (basicRequest instanceof MultipartHttpServletRequest request)
             {
@@ -212,7 +211,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
                     {
                         if (!file.isEmpty())
                         {
-                            File f = handleFile(filename, input, writer);
+                            FileLike f = handleFile(filename, input, writer);
                             if (f == null)
                             {
                                 return;
@@ -229,7 +228,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
                 String content = form.getFileContent()[i];
                 if (content != null)
                 {
-                    File f = handleFile(filename, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)), writer);
+                    FileLike f = handleFile(filename, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)), writer);
                     if (f != null)
                     {
                         savedFiles.put("FileContent" + (i == 0 ? "" : (i + 1)), new Pair<>(f, filename));
@@ -249,7 +248,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
         }
     }
 
-    protected File handleFile(String filename, InputStream input, Writer writer) throws IOException
+    protected FileLike handleFile(String filename, InputStream input, Writer writer) throws IOException
     {
         if (filename == null || input == null)
         {
@@ -261,9 +260,9 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
         String legalName = FileUtil.makeLegalName(filename);
         try
         {
-            File targetFile = getTargetFile(legalName);
+            FileLike targetFile = getTargetFile(legalName);
 
-            try (OutputStream output = new FileOutputStream(targetFile))
+            try (OutputStream output = targetFile.openOutputStream())
             {
                 byte[] buffer = new byte[1024];
                 int len;
@@ -305,15 +304,17 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
         }
     }
 
-    /** Figures out where to write the uploaded file */
-    protected abstract File getTargetFile(String filename) throws IOException;
+    /**
+     * Figures out where to write the uploaded file
+     */
+    protected abstract FileLike getTargetFile(String filename) throws IOException;
 
     /**
      * Callback once the file has been written to the server's file system.
      * @param files HTTP parameter name -> [File as saved on disk (potentially renamed to be unique, Original file name in POST]
      * @return a meaningful handle that the client can use to refer to the file
      */
-    public abstract String getResponse(FORM form, Map<String, Pair<File, String>> files) throws UploadException;
+    public abstract String getResponse(FORM form, Map<String, Pair<FileLike, String>> files) throws IOException;
 
     private void error(Writer writer, String message, int statusCode) throws IOException
     {

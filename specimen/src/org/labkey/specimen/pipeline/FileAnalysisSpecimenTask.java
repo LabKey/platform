@@ -18,10 +18,9 @@ import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.vfs.FileLike;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
 
@@ -36,10 +35,10 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
     }
 
     @Override
-    protected Path getSpecimenFile(PipelineJob job)
+    protected FileLike getSpecimenFile(PipelineJob job)
     {
         FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
-        List<Path> paths = support.getInputFilePaths();
+        List<FileLike> paths = support.getInputFiles();
         // there should only be a single file associated with this task
         assert paths.size() == 1;
         return paths.get(0);
@@ -60,7 +59,7 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
         if (support.getParameters().containsKey(MERGE_SPECIMEN))
             isMerge = BooleanUtils.toBoolean(support.getParameters().get(MERGE_SPECIMEN));
 
-        getJob().getLogger().info("Specimen merge option is set to : " + isMerge);
+        getJob().getLogger().info("Specimen merge option is set to: {}", isMerge);
         return isMerge;
     }
 
@@ -72,14 +71,14 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
 
     private static class ImportHelper extends DefaultImportHelper
     {
-        private Path _tempDir;
+        private FileLike _tempDir;
 
         @Override
-        public VirtualFile getSpecimenDir(PipelineJob job, SimpleStudyImportContext ctx, @Nullable Path inputFile) throws IOException, ImportException, PipelineJobException
+        public VirtualFile getSpecimenDir(PipelineJob job, SimpleStudyImportContext ctx, @Nullable FileLike inputFile) throws ImportException, PipelineJobException
         {
             if (inputFile != null)
             {
-                try (TikaInputStream is = TikaInputStream.get(Files.newInputStream(inputFile)))
+                try (TikaInputStream is = TikaInputStream.get(inputFile.openInputStream()))
                 {
                     // determine the type of file being imported
                     DefaultDetector detector = new DefaultDetector();
@@ -97,9 +96,9 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
                         //
                         ctx.getLogger().info("Single specimen file detected, moving to a temp folder for processing.");
                         String tempDirName = DateUtil.formatDateTime(new Date(), "yyMMddHHmmssSSS");
-                        _tempDir = inputFile.getParent().resolve(tempDirName);
+                        _tempDir = inputFile.getParent().resolveChild(tempDirName);
                         FileUtil.createDirectory(_tempDir);
-                        Files.copy(inputFile, _tempDir.resolve(inputFile.getFileName()));
+                        FileUtil.copyFile(inputFile, _tempDir.resolveChild(inputFile.getName()));
 
                         return new FileSystemFile(_tempDir);
                     }
@@ -132,7 +131,7 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
         }
 
         @Override
-        public PipelineJob.Task createTask(PipelineJob job)
+        public FileAnalysisSpecimenTask createTask(PipelineJob job)
         {
             return new FileAnalysisSpecimenTask(this, job);
         }

@@ -17,7 +17,9 @@ package org.labkey.api.pipeline;
 
 import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,60 +48,76 @@ public interface WorkDirectory
     /**
      * @return the directory where the input files live and where the output files will end up
      */
-    File getDir();
+    FileLike getDir();
 
-    /** Informs the WorkDirectory that a new file is being created. It is treated as a Function.output */
-    File newFile(String name);
+    /**
+     * Informs the WorkDirectory that a new file is being created. It is treated as a Function.output
+     */
+    FileLike newFile(String name);
 
-    /** Informs the WorkDirectory that a new file is being created. */
-    File newFile(Function f, String name);
+    /**
+     * Informs the WorkDirectory that a new file is being created.
+     */
+    FileLike newFile(Function f, String name);
 
-    /** Informs the WorkDirectory that a new file is being created. It is treated as a Function.output */
-    File newFile(FileType type);
+    /**
+     * Informs the WorkDirectory that a new file is being created. It is treated as a Function.output
+     */
+    FileLike newFile(FileType type);
 
     /**
      * Indicates that a file is to be used as input. The implementation can choose whether it needs to be copied, unless
      * forceCopy is true (in which case it will always be copied to the work directory
+     *
      * @return the full path to the file where it is available for use
      */
-    File inputFile(File fileInput, boolean forceCopy) throws IOException;
-
-    default File inputFile(FileLike fileInput, boolean forceCopy) throws IOException
-    {
-        return inputFile(fileInput.toNioPathForRead().toFile(), forceCopy);
-    }
-
+    FileLike inputFile(FileLike fileInput, boolean forceCopy) throws IOException;
 
     /**
      * Indicates that a file is to be used as input. The implementation can choose whether it needs to be copied, unless
      * forceCopy is true (in which case it will always be copied to the work directory.  This version of the method allows the caller
      * to manually specify the destination file, which allows callers to place files into subdirectories of the work directory
+     *
      * @return the full path to the file where it is available for use
      */
-    File inputFile(File fileInput, File fileWork, boolean forceCopy) throws IOException;
-    
+    FileLike inputFile(FileLike fileInput, FileLike fileWork, boolean forceCopy) throws IOException;
+
+    /** Use the FileLike version instead */
+    @Deprecated
+    default File inputFile(File fileInput, File fileWork, boolean forceCopy)
+    {
+        try
+        {
+            return inputFile(FileSystemLike.wrapFile(fileInput), FileSystemLike.wrapFile(fileWork), forceCopy).toNioPathForRead().toFile();
+        }
+        catch (IOException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
+
     /** @return the relative path of the file relative to the work directory itself. The file is presumed to be under the work directory. */
-    String getRelativePath(File fileWork) throws IOException;
+    String getRelativePath(FileLike fileWork) throws IOException;
 
     /**
      * @return the final location for file after it's copied out of the work directory
      */
-    File outputFile(File fileWork) throws IOException;
+    FileLike outputFile(FileLike fileWork) throws IOException;
 
     /**
      * @return the final location for file after it's copied out of the work directory
      */
-    File outputFile(File fileWork, String nameDest) throws IOException;
+    FileLike outputFile(FileLike fileWork, String nameDest) throws IOException;
 
     /**
      * @return copies the file to the specified location
      */
-    File outputFile(File fileWork, File dest) throws IOException;
+    FileLike outputFile(FileLike fileWork, FileLike dest) throws IOException;
 
     /**
      * Delete a file from the working directory
      */
-    void discardFile(File fileWork) throws IOException;
+    void discardFile(FileLike fileWork) throws IOException;
 
     /** Deletes any inputs that were copied into this working directory */
     void discardCopiedInputs() throws IOException;
@@ -121,7 +139,7 @@ public interface WorkDirectory
      * Pipeline inputs are copied to the working directory.  If the passed file was already copied to the work directory, this will
      * return the local copy.
      */
-    File getWorkingCopyForInput(File f);
+    FileLike getWorkingCopyForInput(FileLike f);
 
     /**
      * Ensures that we have a lock, if needed. The lock must be released by the caller. Locks can be configured so that
@@ -129,9 +147,9 @@ public interface WorkDirectory
      */
     CopyingResource ensureCopyingLock() throws IOException;
 
-    List<File> getWorkFiles(Function f, TaskPath tp);
+    List<FileLike> getWorkFiles(Function f, TaskPath tp);
 
-    File newWorkFile(Function output, TaskPath taskPath, String baseName);
+    FileLike newWorkFile(Function output, TaskPath taskPath, String baseName);
 
     /** A lock for copying files over a network share, for convenient use with try-with-resources */
     interface CopyingResource extends AutoCloseable

@@ -43,10 +43,10 @@ public class TransformResultsAction extends BaseAssayAction<TransformResultsActi
         {
             FileLike downloadFile = transformDir.resolveChild(form.getName());
             // isn't this always true?
-            if(URIUtil.isDescendant(transformDir.toURI(), downloadFile.toURI()))
+            if (URIUtil.isDescendant(transformDir.toURI(), downloadFile.toURI()))
             {
                 HttpServletResponse response = getViewContext().getResponse();
-                PageFlowUtil.streamFile(response, FileSystemLike.toFile(downloadFile), true);
+                PageFlowUtil.streamFile(response, downloadFile, true);
             }
         }
 

@@ -64,6 +64,7 @@ import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.CopyOption;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -304,6 +305,11 @@ public class FileUtil
         return true;
     }
 
+    public static void copyDirectory(FileLike src, FileLike dest) throws IOException
+    {
+        copyDirectory(src.toNioPathForRead(), dest.toNioPathForWrite());
+    }
+
 
     public static void copyDirectory(Path srcPath, Path destPath) throws IOException
     {
@@ -514,7 +520,6 @@ public class FileUtil
 
     public static boolean renameTo(FileLike from, FileLike to)
     {
-        // TODO FileLike.renameTo()
         return toFileForRead(from).renameTo(toFileForWrite(to));
     }
 
@@ -650,6 +655,16 @@ public class FileUtil
      */
     @Nullable
     public static String getExtension(File file)
+    {
+        return getExtension(file.getName());
+    }
+
+    /**
+     * Returns the file name extension without the dot, null if there
+     * isn't one.
+     */
+    @Nullable
+    public static String getExtension(FileLike file)
     {
         return getExtension(file.getName());
     }
@@ -1019,6 +1034,11 @@ public class FileUtil
     }
 
 
+    public static String relativize(FileLike home, FileLike file, boolean canonicalize) throws IOException
+    {
+        return relativize(home.toNioPathForRead().toFile(), file.toNioPathForRead().toFile(), canonicalize);
+    }
+
     /**
      * Get relative path of File 'file' with respect to 'home' directory
      * <p><pre>
@@ -1143,15 +1163,10 @@ public class FileUtil
         return path.toString();
     }
 
-    public static void copyFile(FileLike src, FileLike dst) throws IOException
+    public static void copyFile(FileLike src, FileLike dst, CopyOption... options) throws IOException
     {
-        try (InputStream in = src.openInputStream();
-            OutputStream out = dst.openOutputStream())
-        {
-            copyData(in, out);
-        }
+        Files.copy(src.toNioPathForRead(), dst.toNioPathForWrite(), options);
     }
-
 
     public static void copyFile(File src, File dst) throws IOException
     {
@@ -1825,6 +1840,11 @@ quickScan:
         else
             createFile(file.toPath());
         return true;
+    }
+
+    public static boolean createTempFile(FileLike file) throws IOException
+    {
+        return createTempFile(file.toNioPathForWrite().toFile());
     }
 
 

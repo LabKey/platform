@@ -1478,10 +1478,10 @@ public class ReportsController extends SpringActionController
             {
                 try
                 {
-                    File file = rReport.createInputDataFile(getViewContext());
+                    FileLike file = rReport.createInputDataFile(getViewContext());
                     if (file.exists())
                     {
-                        PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), true);
+                        PageFlowUtil.streamFile(getViewContext().getResponse(), file.toNioPathForRead(), true);
                     }
                 }
                 catch (SQLException e)
@@ -1511,7 +1511,7 @@ public class ReportsController extends SpringActionController
             String cacheFile = (String) getViewContext().get(ImageUtil.CACHE_FILE_PARAM);
             if (sessionKey != null)
             {
-                File file = ImageUtil.getFileFromSession(getViewContext().getRequest(), sessionKey);
+                FileLike file = ImageUtil.getFileFromSession(getViewContext().getRequest(), sessionKey);
                 if (file != null)
                 {
                     Map<String, String> responseHeaders = Collections.emptyMap();
@@ -1521,18 +1521,18 @@ public class ReportsController extends SpringActionController
 
                         responseHeaders.put("Pragma", "private");
                         responseHeaders.put("Cache-Control", "private, max-age=3600");
-                        _log.debug("Caching file: " + file.getAbsolutePath());
+                        _log.debug("Caching file: " + file);
                     }
-                    PageFlowUtil.streamFile(getViewContext().getResponse(), responseHeaders, file.toPath(), BooleanUtils.toBoolean(attachment));
+                    PageFlowUtil.streamFile(getViewContext().getResponse(), responseHeaders, file, BooleanUtils.toBoolean(attachment));
                     if (BooleanUtils.toBoolean(deleteFile))
                     {
                         file.delete();
-                        _log.debug("Deleting file: " + file.getAbsolutePath());
+                        _log.debug("Deleting file: " + file);
                     }
                     return null;
                 }
             }
-            return new HtmlView(HtmlString.of("Requested Resource not found"));
+            return new HtmlView(HtmlString.of("Requested resource not found"));
         }
 
         @Override
@@ -2008,7 +2008,7 @@ public class ReportsController extends SpringActionController
             Resource imageResource = ReportUtil.getModuleImageFile(report, imageFilePrefix);
 
             if (null != imageResource)
-                PageFlowUtil.streamFile(getViewContext().getResponse(), ((FileResource) imageResource).getFile(), true);
+                PageFlowUtil.streamFile(getViewContext().getResponse(), ((FileResource) imageResource).getFile().toPath(), true);
 
             return null;
         }

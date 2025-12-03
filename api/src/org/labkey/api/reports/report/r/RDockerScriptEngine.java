@@ -30,6 +30,7 @@ import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.vfs.FileLike;
 
 import javax.script.ScriptContext;
 import javax.script.ScriptException;
@@ -38,14 +39,12 @@ import java.io.FileFilter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
-import java.util.Map;
 
 /**
  * Created by matthew on 7/14/17.
  */
 public class RDockerScriptEngine extends RScriptEngine
 {
-    private static final Logger LOG = LogManager.getLogger(RDockerScriptEngine.class);
     private static DockerService _ds;
 
     private final String _remoteWorkingDir;
@@ -66,17 +65,10 @@ public class RDockerScriptEngine extends RScriptEngine
 
             void setMapping()
             {
-                String wd = getWorkingDir(getContext()).getAbsolutePath().replace("\\","/").replace("/./","/");
+                String wd = getWorkingDir(getContext()).toNioPathForRead().toFile().getAbsolutePath().replace("\\","/").replace("/./","/");
                 super.setPathMap(Collections.singletonMap(
                         _remoteWorkingDir,
                         new File(wd).toURI().toString()));
-            }
-
-            @Override
-            public Map<String, String> getPathMap()
-            {
-                setMapping();
-                return super.getPathMap();
             }
 
             @Override
@@ -103,7 +95,7 @@ public class RDockerScriptEngine extends RScriptEngine
     }
 
     @Override
-    protected Object eval(File scriptFile, ScriptContext context) throws ScriptException
+    protected Object eval(FileLike scriptFile, ScriptContext context) throws ScriptException
     {
         StringBuffer output = new StringBuffer();
         if (null != _ds)
@@ -141,7 +133,7 @@ public class RDockerScriptEngine extends RScriptEngine
     }
 
     @Override
-    public String getRemotePath(File localFile)
+    public String getRemotePath(FileLike localFile)
     {
         // get absolute path to make sure the paths are consistent
         URI localUri = FileUtil.getAbsoluteCaseSensitiveFile(localFile).toURI();

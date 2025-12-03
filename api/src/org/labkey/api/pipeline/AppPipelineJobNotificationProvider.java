@@ -194,7 +194,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
 
             return successMsg.toString();
         }
-        else if (job instanceof AssayUploadPipelineJob)
+        else if (job instanceof AssayUploadPipelineJob<?> assayJob)
         {
             String successMsg = "Successfully imported assay run";
 
@@ -202,7 +202,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             {
                 String assayName = (String) info.get("assayName");
 
-                String filename = ((AssayUploadPipelineJob<?>) job).getPrimaryFile().getName();
+                String filename = assayJob.getPrimaryFile().getName();
                 if (!filename.endsWith(".tmp"))
                 {
                     successMsg += " from " + filename;
@@ -229,10 +229,10 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
                     "\n" +
                     rawErrorMsg;// resolveErrorMessage on client
         }
-        else if (job instanceof AssayUploadPipelineJob)
+        else if (job instanceof AssayUploadPipelineJob<?> assayJob)
         {
             return "Failed to import assay run from " +
-                    ((AssayUploadPipelineJob<?>) job).getPrimaryFile().getName() +
+                    assayJob.getPrimaryFile().getName() +
                     "\n" +
                     rawErrorMsg;
         }
