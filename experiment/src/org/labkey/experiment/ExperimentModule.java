@@ -892,10 +892,10 @@ public class ExperimentModule extends SpringModule
             @Override
             public void adjustFilter(TableInfo sourceTable, SimpleFilter filter, Set<GUID> containers)
             {
-                // Exclude assay experiment runs that weren't copied
-                FilterClause excludedClause = handler.getExcludedRowIdClause(sourceTable, FieldKey.fromParts("RunId"));
-                if (excludedClause != null)
-                    filter.addClause(excludedClause);
+                // Include experiment runs that were copied
+                FilterClause includedClause = handler.getIncludedRowIdClause(sourceTable, FieldKey.fromParts("RunId"));
+                if (includedClause != null)
+                    filter.addClause(includedClause);
             }
         });
         DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
@@ -909,10 +909,10 @@ public class ExperimentModule extends SpringModule
             @Override
             public void adjustFilter(TableInfo sourceTable, SimpleFilter filter, Set<GUID> containers)
             {
-                // Exclude assay experiment runs that weren't copied
-                FilterClause excludedClause = handler.getExcludedRowIdClause(sourceTable, FieldKey.fromParts("ExclusionId", "RunId"));
-                if (excludedClause != null)
-                    filter.addClause(excludedClause);
+                // Include experiment runs that were copied
+                FilterClause includedClause = handler.getIncludedRowIdClause(sourceTable, FieldKey.fromParts("ExclusionId", "RunId"));
+                if (includedClause != null)
+                    filter.addClause(includedClause);
             }
         });
         DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
@@ -926,10 +926,10 @@ public class ExperimentModule extends SpringModule
             @Override
             public void adjustFilter(TableInfo sourceTable, SimpleFilter filter, Set<GUID> containers)
             {
-                // Exclude assay experiment runs that weren't copied
-                FilterClause excludedClause = handler.getExcludedRowIdClause(sourceTable, FieldKey.fromParts("RunId"));
-                if (excludedClause != null)
-                    filter.addClause(excludedClause);
+                // Include experiment runs that were copied
+                FilterClause includedClause = handler.getIncludedRowIdClause(sourceTable, FieldKey.fromParts("RunId"));
+                if (includedClause != null)
+                    filter.addClause(includedClause);
             }
         });
         DatabaseMigrationService.get().registerSchemaHandler(new SampleTypeMigrationSchemaHandler());

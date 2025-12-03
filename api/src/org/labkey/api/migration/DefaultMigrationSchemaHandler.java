@@ -275,7 +275,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
     }
 
     private static final Set<AttachmentParentType> SEEN = new HashSet<>();
-    private static final JobRunner ATTACHMENT_JOB_RUNNER = new JobRunner("Attachment JobRunner", 1);
+    private static final JobRunner ATTACHMENT_JOB_RUNNER = new JobRunner("Attachment JobRunner", 1, () -> "Attachments");
 
     // Copy all core.Documents rows that match the provided filter clause
     protected final void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, FilterClause filterClause, AttachmentParentType... type)
@@ -309,12 +309,12 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
             throw new ConfigurationException("These AttachmentTypes have not been seen: " + unseen.stream().map(type -> type.getClass().getSimpleName()).collect(Collectors.joining(", ")));
 
         // Shut down the attachment JobRunner
-        LOG.info("Waiting for core.Documents background transfer to complete");
+        LOG.info("Waiting for attachments background transfer to complete");
         ATTACHMENT_JOB_RUNNER.shutdown();
         if (ATTACHMENT_JOB_RUNNER.awaitTermination(1, TimeUnit.HOURS))
-            LOG.info("core.Documents background transfer is complete");
+            LOG.info("Attachments background transfer is complete");
         else
-            LOG.error("core.Documents background transfer did not complete after one hour! Giving up.");
+            LOG.error("Attachments background transfer did not complete after one hour! Giving up.");
     }
 
     @Override
