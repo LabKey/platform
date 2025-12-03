@@ -742,7 +742,7 @@ public class ExperimentModule extends SpringModule
                 results.put("sampleTypesWithoutUnitsCount", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit IS NULL").getObject(Long.class));
                 results.put("sampleTypesWithMassTypeUnit", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit IN ('kg', 'g', 'mg', 'ug', 'ng', 'pg')").getObject(Long.class));
                 results.put("sampleTypesWithVolumeTypeUnit", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit IN ('L', 'mL', 'uL')").getObject(Long.class));
-                results.put("sampleTypesWithCountTypeUnit", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit = ?)", "unit").getObject(Long.class));
+                results.put("sampleTypesWithCountTypeUnit", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit = ?", "unit").getObject(Long.class));
 
                 results.put("duplicateSampleMaterialNameCount", new SqlSelector(schema, "SELECT COUNT(*) as duplicateCount FROM " +
                         "(SELECT name, cpastype FROM exp.material WHERE cpastype <> 'Material' GROUP BY name, cpastype HAVING COUNT(*) > 1) d").getObject(Long.class));
