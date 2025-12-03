@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static org.labkey.core.dialect.PostgreSql92Dialect.PRODUCT_NAME;
+
 /**
  * Enum that specifies the versions of PostgreSQL that LabKey supports plus their properties
  */
@@ -23,6 +25,8 @@ public enum PostgreSqlVersion
     POSTGRESQL_17(170, false, true, PostgreSql_17_Dialect::new),
     POSTGRESQL_18(180, false, true, PostgreSql_18_Dialect::new),
     POSTGRESQL_FUTURE(Integer.MAX_VALUE, true, false, PostgreSql_18_Dialect::new);
+
+    public static final String RECOMMENDED = PRODUCT_NAME + " 18.x is the recommended version.";
 
     private final int _version;
     private final boolean _deprecated;
