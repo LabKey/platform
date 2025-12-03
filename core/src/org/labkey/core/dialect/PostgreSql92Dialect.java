@@ -48,7 +48,6 @@ import java.util.regex.Pattern;
 abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
 {
     public static final String PRODUCT_NAME = "PostgreSQL";
-    public static final String RECOMMENDED = PRODUCT_NAME + " 17.x is the recommended version.";
 
     // This has been the standard PostgreSQL identifier max byte length for many years. However, this could change in
     // the future plus servers can be compiled with a different limit, so we query this setting on first connection to
