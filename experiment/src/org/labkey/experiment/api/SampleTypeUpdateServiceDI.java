@@ -38,7 +38,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConversionExceptionWithMessage;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.Filter;
@@ -50,9 +49,7 @@ import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -1427,16 +1424,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             if (!containerIds.isEmpty())
             {
-                TableInfo table = ExperimentService.get().getTinfoMaterial();
-                DbSchema schema = table.getSchema();
+                SimpleFilter filter = new SimpleFilter(MaterialSourceId.fieldKey(), sampleTypeId);
+                filter.addCondition(FieldKey.fromParts("Container"), containerIds, CompareType.IN);
+                filter.addCondition(Name.fieldKey(), allKeys, CompareType.IN);
 
-                SQLFragment sql = new SQLFragment("SELECT Name FROM ").append(table)
-                        .append(" WHERE MaterialSourceId = ?").add(sampleTypeId)
-                        .append(" AND Name ").appendInClause(allKeys, schema.getSqlDialect())
-                        .append(" AND Container ").appendInClause(containerIds, schema.getSqlDialect())
-                        .append(" LIMIT 1");
-
-                var row = new SqlSelector(schema, sql).getMap();
+                var row = new TableSelector(ExperimentService.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet(Name.name()), filter, null).setMaxRows(1).getMap();
                 if (row != null)
                     throw new InvalidKeyException("Sample does not belong to " + container.getName() + " container: " + row.get("name") + ".");
             }
