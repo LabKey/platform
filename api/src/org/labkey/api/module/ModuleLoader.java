@@ -678,9 +678,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         _log.info("Server installation GUID: {}, server session GUID: {}", AppProps.getInstance().getServerGUID(), AppProps.getInstance().getServerSessionGUID());
         _log.info("Deploying to context path {}", AppProps.getInstance().getContextPath());
 
-        // Temporary logging to help track down issues we're having with upgrading XMLBeans from v5.2.0. TODO: Remove after upgrade
-        _log.info("XMLBeans version: {}", XmlBeans.getVersion());
-
         synchronized (_modulesLock)
         {
             checkForRenamedModules();
