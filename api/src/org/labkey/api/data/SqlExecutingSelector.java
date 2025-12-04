@@ -567,7 +567,9 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             if (null != _sql)
                 ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, _sql.toDebugString(), false);
 
-            throw getExceptionFramework().translate(getScope(), "ExecutingSelector", e);
+            RuntimeException translated = getExceptionFramework().translate(getScope(), "ExecutingSelector", e);
+            ExceptionUtil.copyDecorations(e, translated);
+            throw translated;
         }
     }
 }

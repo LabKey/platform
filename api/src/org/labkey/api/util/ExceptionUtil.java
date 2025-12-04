@@ -106,6 +106,14 @@ public class ExceptionUtil
      */
     private static final Map<String, ExceptionTally> EXCEPTION_TALLIES = Collections.synchronizedMap(new HashMap<>());
 
+    public static void copyDecorations(Throwable source, Throwable target)
+    {
+        for (Map.Entry<Enum<?>, String> entry : getExceptionDecorations(source).entrySet())
+        {
+            decorateException(target, entry.getKey(), entry.getValue(), false);
+        }
+    }
+
     private static class ExceptionTally
     {
         /** Total number of times the exception has happened */
