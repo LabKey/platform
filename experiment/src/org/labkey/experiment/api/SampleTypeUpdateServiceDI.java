@@ -530,16 +530,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (rows == null || rows.isEmpty() || oldKeys != null)
             return false;
 
-        Set<String> columnNames = rows.get(0).keySet();
-
-        // For backwards compatibility we continue to allow specification of an LSID as a key iff RowId is not provided.
-        // This is only supported via row-by-row update.
-        boolean useDib = !(columnNames.contains(LSID.name()) && !columnNames.contains(RowId.name()));
-
-        // All rows must have a uniform set of keys for the data iterator to work.
-        useDib = useDib && hasUniformKeys(rows);
-
-        return useDib;
+        return hasUniformKeys(rows);
     }
 
     @Override
@@ -866,6 +857,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
+        if (row.containsKey(LSID.name()) && !(row.containsKey(RowId.name()) || row.containsKey(Name.name())))
+            throw new ValidationException("Either RowId or Name is required to update a sample.");
+
         Map<String, Object> result = super.updateRow(user, container, row, oldRow, allowOwner, retainCreation);
 
         // add MaterialInput/DataInputs field from parent alias
@@ -1183,9 +1177,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return null;
     }
 
-    private @Nullable Integer getMaterialSourceId(Map<String, Object> row)
+    private @Nullable Long getMaterialSourceId(Map<String, Object> row)
     {
-        return getMaterialIntegerValue(row, MaterialSourceId.name());
+        return MapUtils.getLong(row, MaterialSourceId.name());
     }
 
     private @Nullable Long getMaterialRowId(Map<String, Object> row)
@@ -1193,7 +1187,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return MapUtils.getLong(row, RowId.name());
     }
 
-    private @Nullable Filter getMaterialFilter(Map<String, Object> keys)
+    private @Nullable Filter getMaterialFilter(Map<String, Object> keys, boolean useSampleType)
     {
         Long rowId = getMaterialRowId(keys);
         if (rowId != null)
@@ -1204,12 +1198,23 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             return new SimpleFilter(LSID.fieldKey(), lsid);
 
         String name = getMaterialName(keys);
-        Integer materialSourceId = getMaterialSourceId(keys);
-        if (name != null && materialSourceId != null)
+        if (name != null)
         {
-            SimpleFilter filter = new SimpleFilter(Name.fieldKey(), name);
-            filter.addCondition(MaterialSourceId.fieldKey(), materialSourceId);
-            return filter;
+            Long materialSourceId = null;
+            if (useSampleType)
+            {
+                if (_sampleType != null)
+                    materialSourceId = _sampleType.getRowId();
+            }
+            else
+                materialSourceId = getMaterialSourceId(keys);
+
+            if (materialSourceId != null)
+            {
+                SimpleFilter filter = new SimpleFilter(Name.fieldKey(), name);
+                filter.addCondition(MaterialSourceId.fieldKey(), materialSourceId);
+                return filter;
+            }
         }
 
         return null;
@@ -1217,46 +1222,22 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     private Map<String, Object> getMaterialMap(Map<String, Object> keys) throws QueryUpdateServiceException
     {
-        Filter filter = getMaterialFilter(keys);
-        if (filter == null)
-            throw new QueryUpdateServiceException("Either RowId, LSID, or Name and MaterialSourceId is required to get Sample Type Material.");
-
-        return new TableSelector(getQueryTable(), filter, null).getMap();
+        return getMaterialMap(keys, false);
     }
 
-    private @Nullable Map<String, Object> getMaterialMapWithInputs(
-        Long rowId,
-        String lsid,
-        User user,
-        Container container
-    ) throws QueryUpdateServiceException
+    private Map<String, Object> getMaterialMap(Map<String, Object> keys, boolean useSampleType) throws QueryUpdateServiceException
     {
-        Filter filter;
-        if (rowId != null)
-            filter = new SimpleFilter(RowId.fieldKey(), rowId);
-        else if (lsid != null)
-            filter = new SimpleFilter(LSID.fieldKey(), lsid);
-        else
-            throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Type Material.");
+        Filter filter = getMaterialFilter(keys, useSampleType);
+        if (filter == null)
+            throw new QueryUpdateServiceException("Either RowId, LSID, or Name and MaterialSourceId is required to get sample.");
 
-        Map<String, Object> sampleRow = new TableSelector(getQueryTable(), filter, null).getMap();
-        if (null == sampleRow)
-            return sampleRow;
-
-        ExperimentService experimentService = ExperimentService.get();
-        ExpMaterial seed = rowId != null ? experimentService.getExpMaterial(rowId) : experimentService.getExpMaterial(lsid);
-        if (null == seed)
-            return sampleRow;
-
-        ExperimentServiceImpl.get().addParentsFields(seed, sampleRow, user, container);
-
-        return sampleRow;
+        return new TableSelector(getQueryTable(), filter, null).getMap();
     }
 
     @Override
     public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
     {
-        Integer sampleTypeId = null;
+        Long sampleTypeId = null;
         Set<String> sampleNames = new HashSet<>();
         for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
         {
@@ -1358,7 +1339,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Map<Integer, Map<String, Object>> sampleRows = new LinkedHashMap<>();
         Map<Long, Integer> rowIdRowNumMap = new LinkedHashMap<>();
         Map<String, Integer> nameRowNumMap = new LinkedHashMap<>();
-        Integer sampleTypeId = null;
+        Long sampleTypeId = null;
         for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
         {
             Integer rowNum = keyMap.getKey();
@@ -1370,7 +1351,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             String name = getMaterialName(keyMap.getValue());
-            Integer materialSourceId = getMaterialSourceId(keyMap.getValue());
+            Long materialSourceId = getMaterialSourceId(keyMap.getValue());
             if (name != null && materialSourceId != null)
             {
                 sampleTypeId = materialSourceId;
@@ -1493,7 +1474,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         List<Long> rowIds = new ArrayList<>();
         List<String> lsids = new ArrayList<>();
-        Map<Integer, List<String>> namesBySourceId = new HashMap<>();
+        Map<Long, List<String>> namesBySourceId = new HashMap<>();
         int nameCount = 0;
 
         // Each row could be keyed differently
@@ -1514,7 +1495,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             String name = getMaterialName(row);
-            Integer materialSourceId = getMaterialSourceId(row);
+            Long materialSourceId = getMaterialSourceId(row);
             if (name != null && materialSourceId != null)
             {
                 namesBySourceId.computeIfAbsent(materialSourceId, k -> new ArrayList<>()).add(name);
@@ -1534,7 +1515,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         else if (nameCount == keys.size() && namesBySourceId.size() == 1)
         {
             // If all rows are being queried by name and share the same material source id, use a single filter
-            Map.Entry<Integer, List<String>> entry = namesBySourceId.entrySet().iterator().next();
+            Map.Entry<Long, List<String>> entry = namesBySourceId.entrySet().iterator().next();
             filter = new SimpleFilter(MaterialSourceId.fieldKey(), entry.getKey());
             filter.addCondition(Name.fieldKey(), entry.getValue(), CompareType.IN);
         }
@@ -1545,7 +1526,21 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws QueryUpdateServiceException
     {
-        return getMaterialMapWithInputs(getMaterialRowId(keys), getMaterialLsid(keys), user, container);
+        Map<String, Object> sampleRow = getMaterialMap(keys, true);
+        if (sampleRow == null)
+            return null;
+
+        Long sampleRowId = asLong(sampleRow.get(RowId.name()));
+        if (sampleRowId == null)
+            throw new QueryUpdateServiceException("Failed to resolve sample rowId.");
+
+        ExpMaterial seed = ExperimentService.get().getExpMaterial(sampleRowId);
+        if (null == seed)
+            return sampleRow;
+
+        ExperimentServiceImpl.get().addParentsFields(seed, sampleRow, user, container);
+
+        return sampleRow;
     }
 
     private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container, SampleTypeServiceImpl.SampleChangeType reason)
