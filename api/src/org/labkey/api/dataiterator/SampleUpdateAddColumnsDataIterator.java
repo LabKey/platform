@@ -5,13 +5,13 @@ import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.StringUtilsLabKey;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -113,18 +113,14 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
         int rowsToFetch = 50;
         String keyFieldName = pkColumn.getName();
         boolean numericKey = pkColumn.isNumericType();
+        JdbcType jdbcType = pkColumn.getJdbcType();
         Map<Integer, Object> rowKeyMap = new LinkedHashMap<>();
         Map<Object, Integer> keyRowMap = new LinkedHashMap<>();
         do
         {
             lastPrefetchRowNumber = asInteger(_delegate.get(0));
             Object keyObj = pkSupplier.get();
-
-            Object key = null;
-            if (keyObj instanceof String s)
-                key = numericKey ? Long.valueOf(s) : StringUtilsLabKey.unquoteString(s);
-            else if (keyObj instanceof Number)
-                key = numericKey ? keyObj : keyObj.toString();
+            Object key = jdbcType.convert(keyObj);
 
             if (numericKey)
             {

@@ -29,8 +29,6 @@ import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.CaseInsensitiveMapWrapper;
-import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
@@ -40,6 +38,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConversionExceptionWithMessage;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.Filter;
@@ -51,7 +50,9 @@ import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -81,7 +82,6 @@ import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -109,6 +109,7 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -1358,10 +1359,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Set<String> selectColumns = existingRowSelect.columns;
 
         Map<Integer, Map<String, Object>> sampleRows = new LinkedHashMap<>();
-        Map<Integer, String> rowNumLsid = new IntHashMap<>();
-
         Map<Long, Integer> rowIdRowNumMap = new LinkedHashMap<>();
-        Map<String, Integer> lsidRowNumMap = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
         Map<String, Integer> nameRowNumMap = new LinkedHashMap<>();
         Integer sampleTypeId = null;
         for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
@@ -1371,14 +1369,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             if (rowId != null)
             {
                 rowIdRowNumMap.put(rowId, rowNum);
-                continue;
-            }
-
-            String lsid = getMaterialLsid(keyMap.getValue());
-            if (lsid != null)
-            {
-                lsidRowNumMap.put(lsid, rowNum);
-                rowNumLsid.put(rowNum, lsid);
                 continue;
             }
 
@@ -1403,37 +1393,17 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 Long rowId = asLong(row.get(RowId.name()));
                 Integer rowNum = rowIdRowNumMap.get(rowId);
-                String sampleLsid = (String) row.get(LSID.name());
-
-                rowNumLsid.put(rowNum, sampleLsid);
                 sampleRows.put(rowNum, row);
             }
         }
 
-        Set<String> allKeys = new HashSet<>();
-        boolean useLsid = false;
+        Set<String> allKeys;
 
-        if (!lsidRowNumMap.isEmpty())
+        if (nameRowNumMap.isEmpty())
+            allKeys = Collections.emptySet();
+        else
         {
-            useLsid = true;
-            allKeys.addAll(lsidRowNumMap.keySet());
-
-            SimpleFilter filter = new SimpleFilter(LSID.fieldKey(), lsidRowNumMap.keySet(), CompareType.IN);
-            filter.addCondition(FieldKey.fromParts("Container"), container);
-            Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
-            for (Map<String, Object> row : rows)
-            {
-                String sampleLsid = (String) row.get(LSID.name());
-                Integer rowNum = lsidRowNumMap.get(sampleLsid);
-                sampleRows.put(rowNum, row);
-
-                allKeys.remove(sampleLsid);
-            }
-        }
-
-        if (!nameRowNumMap.isEmpty())
-        {
-            allKeys.addAll(nameRowNumMap.keySet());
+            allKeys = new HashSet<>(nameRowNumMap.keySet());
             SimpleFilter filter = new SimpleFilter(MaterialSourceId.fieldKey(), sampleTypeId);
             filter.addCondition(Name.fieldKey(), nameRowNumMap.keySet(), CompareType.IN);
             filter.addCondition(FieldKey.fromParts("Container"), container);
@@ -1442,29 +1412,32 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 String name = (String) row.get(Name.name());
                 Integer rowNum = nameRowNumMap.get(name);
-                String sampleLsid = (String) row.get(LSID.name());
                 sampleRows.put(rowNum, row);
-                rowNumLsid.put(rowNum, sampleLsid);
-
                 allKeys.remove(name);
             }
         }
 
         if (verifyNoCrossFolderData && !allKeys.isEmpty())
         {
-            // Issue 52922: cross folder merge without Product Folders enabled silently ignores the cross folder row update
-            ContainerFilter allCf = new ContainerFilter.AllInProjectPlusShared(container, user); // use a relaxed CF to find existing data from cross containers
+            // Issue 52922: cross-folder merge without Product Folders enabled silently ignores the cross-folder
+            // row update. Use a relaxed container filter to find existing data from cross-containers.
+            ContainerFilter cf = new ContainerFilter.AllInProjectPlusShared(container, user);
+            Set<GUID> containerIds = new HashSet<>(Objects.requireNonNull(cf.getIds()));
+            containerIds.remove(container.getEntityId());
 
-            SimpleFilter existingDataFilter = new SimpleFilter(MaterialSourceId.fieldKey(), sampleTypeId);
-            existingDataFilter.addCondition(allCf.createFilterClause(ExperimentService.get().getSchema(), FieldKey.fromParts("Container")));
-            existingDataFilter.addCondition(useLsid ? LSID.fieldKey() : Name.fieldKey(), allKeys, CompareType.IN);
-
-            // TODO: Couldn't this question be asked in the query and return a max of one row where the container does not match?
-            Map<String, Object>[] cfRows = new TableSelector(ExperimentService.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet("Container", Name.name()), existingDataFilter, null).getMapArray();
-            for (Map<String, Object> row : cfRows)
+            if (!containerIds.isEmpty())
             {
-                String dataContainer = (String) row.get("container");
-                if (!dataContainer.equals(container.getId()))
+                TableInfo table = ExperimentService.get().getTinfoMaterial();
+                DbSchema schema = table.getSchema();
+
+                SQLFragment sql = new SQLFragment("SELECT Name FROM ").append(table)
+                        .append(" WHERE MaterialSourceId = ?").add(sampleTypeId)
+                        .append(" AND Name ").appendInClause(allKeys, schema.getSqlDialect())
+                        .append(" AND Container ").appendInClause(containerIds, schema.getSqlDialect())
+                        .append(" LIMIT 1");
+
+                var row = new SqlSelector(schema, sql).getMap();
+                if (row != null)
                     throw new InvalidKeyException("Sample does not belong to " + container.getName() + " container: " + row.get("name") + ".");
             }
         }
@@ -1508,7 +1481,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!hasPermission(user, ReadPermission.class))
             throw new UnauthorizedException("You do not have permission to read data from this table.");
 
-        // TODO: This could be optimized to perform a single request to get all rows that share the same keys.
+        // Determine if there is a filter we can use to get all the rows in a single query
+        SimpleFilter filter = getRowsFilter(keys);
+        if (filter != null)
+            return new TableSelector(getQueryTable(), filter, null).getMapCollection().stream().toList();
+
+        // Otherwise, fallback to querying for each row individually
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (Map<String, Object> k : keys)
         {
@@ -1517,6 +1495,59 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 result.add(materialMap);
         }
         return result;
+    }
+
+    private @Nullable SimpleFilter getRowsFilter(List<Map<String, Object>> keys) throws QueryUpdateServiceException
+    {
+        List<Long> rowIds = new ArrayList<>();
+        List<String> lsids = new ArrayList<>();
+        Map<Integer, List<String>> namesBySourceId = new HashMap<>();
+        int nameCount = 0;
+
+        // Each row could be keyed differently
+        for (Map<String, Object> row : keys)
+        {
+            Long rowId = getMaterialRowId(row);
+            if (rowId != null)
+            {
+                rowIds.add(rowId);
+                continue;
+            }
+
+            String lsid = getMaterialLsid(row);
+            if (lsid != null)
+            {
+                lsids.add(lsid);
+                continue;
+            }
+
+            String name = getMaterialName(row);
+            Integer materialSourceId = getMaterialSourceId(row);
+            if (name != null && materialSourceId != null)
+            {
+                namesBySourceId.computeIfAbsent(materialSourceId, k -> new ArrayList<>()).add(name);
+                nameCount++;
+                continue;
+            }
+
+            throw new QueryUpdateServiceException("Either RowId, LSID, or Name and MaterialSourceId is required to get Sample Type Material.");
+        }
+
+        // But we can optimize if they all share the same filter
+        SimpleFilter filter = null;
+        if (rowIds.size() == keys.size())
+            filter = new SimpleFilter(RowId.fieldKey(), rowIds, CompareType.IN);
+        else if (lsids.size() == keys.size())
+            filter = new SimpleFilter(LSID.fieldKey(), lsids, CompareType.IN);
+        else if (nameCount == keys.size() && namesBySourceId.size() == 1)
+        {
+            // If all rows are being queried by name and share the same material source id, use a single filter
+            Map.Entry<Integer, List<String>> entry = namesBySourceId.entrySet().iterator().next();
+            filter = new SimpleFilter(MaterialSourceId.fieldKey(), entry.getKey());
+            filter.addCondition(Name.fieldKey(), entry.getValue(), CompareType.IN);
+        }
+
+        return filter;
     }
 
     @Override

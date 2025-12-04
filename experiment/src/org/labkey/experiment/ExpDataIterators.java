@@ -1008,15 +1008,17 @@ public class ExpDataIterators
             return allParts;
         }
 
-        protected void _processRun(ExpRunItem runItem,
-                                   List<UploadSampleRunRecord> runRecords,
-                                   Set<Pair<String, String>> parentNames,
-                                   RemapCache cache,
-                                   Map<Long, ExpMaterial> materialCache,
-                                   Map<Long, ExpData> dataCache,
-                                   @Nullable String aliquotedFrom,
-                                   String dataType /*sample type or source type name*/,
-                                   boolean updateOnly) throws ValidationException, ExperimentException
+        protected void _processRun(
+            ExpRunItem runItem,
+            List<UploadSampleRunRecord> runRecords,
+            Set<Pair<String, String>> parentNames,
+            RemapCache cache,
+            Map<Long, ExpMaterial> materialCache,
+            Map<Long, ExpData> dataCache,
+            @Nullable String aliquotedFrom,
+            String dataType /*sample type or source type name*/,
+            boolean updateOnly
+        ) throws ValidationException, ExperimentException
         {
             Pair<RunInputOutputBean, RunInputOutputBean> pair;
             if (_context.getInsertOption().allowUpdate)
@@ -2500,6 +2502,9 @@ public class ExpDataIterators
             _nameCol = DataIteratorUtil.createColumnNameMap(di).get(Name.name());
             _isAllowUserSpecificNamesValue = NameExpressionOptionService.get().getAllowUserSpecificNamesValue(container);
             _user = user;
+
+            if (!di.supportsGetExistingRecord())
+                throw new IllegalArgumentException("DataIterator must support getExistingRecord()");
         }
 
         @Override
