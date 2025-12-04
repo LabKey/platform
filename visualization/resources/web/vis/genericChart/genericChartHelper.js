@@ -1053,6 +1053,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             layers = [], clipRect,
             emptyTextFn = function(){return '';},
             plotConfig = {
+                legendPos: chartConfig.legendPos,
                 renderTo: renderTo,
                 rendererType: 'd3',
                 width: chartConfig.width,
@@ -1469,8 +1470,14 @@ LABKEY.vis.GenericChartHelper = new function(){
             });
 
             var wrapLines = _wrapXAxisTickTextLines(scales, plotConfig, maxLen, data);
-            // min bottom margin: 50, max bottom margin: 150
-            margins.bottom = Math.min(150, 60 + ((wrapLines - 1) * 25));
+
+            if (!chartConfig.legendPos || chartConfig.legendPos === 'right') {
+                // min bottom margin: 60, max bottom margin: 150
+                margins.bottom = Math.min(150, 60 + ((wrapLines - 1) * 25));
+            } else {
+                // min bottom margin: 166, max bottom margin: 360
+                margins.bottom = Math.min(360, 170 + ((wrapLines - 1) * 25));
+            }
         }
 
         // issue 31857: allow custom margins to be set in Chart Layout dialog

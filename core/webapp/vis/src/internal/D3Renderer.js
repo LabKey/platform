@@ -1762,7 +1762,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             y = plot.grid.height / 2;
         } else if (name == 'x') {
             x = plot.grid.leftEdge + (plot.grid.rightEdge - plot.grid.leftEdge) / 2;
-            y = plot.grid.height - (plot.labels[name].position != undefined ? plot.labels[name].position : 10);
+            y = plot.grid.bottomEdge + (plot.labels[name].position != undefined ? plot.labels[name].position : 50);
         } else if (name == 'xTop') {
             x = plot.grid.leftEdge + (plot.grid.rightEdge - plot.grid.leftEdge) / 2;
             y = plot.grid.topEdge - (plot.labels[name].position != undefined ? plot.labels[name].position : 25);
@@ -1907,10 +1907,17 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         var fontFamily = plot.fontFamily ? plot.fontFamily : 'Roboto, arial, helvetica, sans-serif';
         selection.attr('font-family', fontFamily).attr('font-size', '11px');
 
-        xPad = plot.scales.yRight && plot.scales.yRight.scale ? 50 : 0;
-        glyphX = plot.grid.rightEdge + 30 + xPad;
-        textX = glyphX + 15;
-        yAcc = function(d, i) {return plot.grid.topEdge + (i * 15);};
+        if (plot.legendPos === 'bottom') {
+            glyphX = plot.grid.leftEdge + 5;
+            textX = glyphX + 15;
+            yAcc = function(d, i) {return (plot.grid.bottomEdge + 60) + (i * 15);};
+        } else {
+            xPad = plot.scales.yRight && plot.scales.yRight.scale ? 50 : 0;
+            glyphX = plot.grid.rightEdge + 30 + xPad;
+            textX = glyphX + 15;
+            yAcc = function(d, i) {return plot.grid.topEdge + (i * 15);};
+        }
+
         colorAcc = function(d) {
             return d.color ? d.color : (d.separator ? '#FFF' : '#000');
         };
