@@ -31,7 +31,7 @@ import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.MessageAuditProvider;
 import org.labkey.api.data.Container;
@@ -106,7 +106,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         EmailTemplateService.get().registerTemplate(AnnouncementManager.NotificationEmailTemplate.class);
         EmailTemplateService.get().registerTemplate(AnnouncementDigestProvider.DailyDigestEmailTemplate.class);
 
-        AttachmentService.get().registerAttachmentType(AnnouncementType.get());
+        AttachmentService.get().registerAttachmentParentType(AnnouncementType.get());
     }
 
     @Override
@@ -201,7 +201,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
             }
 
             @Override
-            public @NotNull Collection<AttachmentType> getAttachmentTypes()
+            public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
             {
                 // It's theoretically possible to deploy Announcement without Wiki, so conditionalize
                 WikiService ws = WikiService.get();

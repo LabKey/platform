@@ -16,7 +16,7 @@
 package org.labkey.wiki.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.EntityAttachmentParent;
 
 public class WikiAttachmentParent extends EntityAttachmentParent
@@ -28,7 +28,7 @@ public class WikiAttachmentParent extends EntityAttachmentParent
 
     @NotNull
     @Override
-    public AttachmentType getAttachmentType()
+    public AttachmentParentType getAttachmentParentType()
     {
         return WikiType.get();
     }

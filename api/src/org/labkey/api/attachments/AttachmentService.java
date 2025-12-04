@@ -131,12 +131,12 @@ public interface AttachmentService
 
     void clearLastIndexed(List<String> parentIds);
 
-    void registerAttachmentType(AttachmentType type);
+    void registerAttachmentParentType(AttachmentParentType type);
 
     /**
      * Returns a collection of all registered AttachmentTypes
      **/
-    Collection<AttachmentType> getAttachmentTypes();
+    Collection<AttachmentParentType> getAttachmentParentTypes();
 
     HttpView<?> getAdminView(ActionURL currentUrl);
 

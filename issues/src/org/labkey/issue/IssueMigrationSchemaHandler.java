@@ -2,7 +2,7 @@ package org.labkey.issue;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -79,7 +79,7 @@ public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     @Override
-    public @NotNull Collection<AttachmentType> getAttachmentTypes()
+    public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
     {
         return List.of(IssueCommentType.get());
     }

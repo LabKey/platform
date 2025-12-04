@@ -20,20 +20,20 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SQLFragment;
 
 /**
- * Tags {@link Attachment} objects based on their intended use and what they're attached to. Does not
- * indicate that they are a file of a particular type/format.
+ * Tags {@link Attachment} objects based on what they're attached to. Does not indicate that they are a file of a
+ * particular type/format.
  */
-public interface AttachmentType
+public interface AttachmentParentType
 {
     SQLFragment NO_ENTITY_IDS = new SQLFragment("SELECT NULL AS EntityId WHERE 1 = 0");
 
-    AttachmentType UNKNOWN = new AttachmentType()
+    AttachmentParentType UNKNOWN = new AttachmentParentType()
     {
         @NotNull
         @Override
         public String getUniqueName()
         {
-            return "UnknownAttachmentType";
+            return "Unknown";
         }
 
         @Override
@@ -43,6 +43,7 @@ public interface AttachmentType
         }
     };
 
+    // A short, human-friendly, unique name for this attachment parent type
     @NotNull String getUniqueName();
 
     /**
