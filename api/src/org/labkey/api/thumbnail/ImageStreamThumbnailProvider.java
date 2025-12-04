@@ -20,7 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.attachments.SvgSource;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
@@ -147,8 +147,8 @@ public class ImageStreamThumbnailProvider implements ThumbnailProvider
     }
 
     @Override
-    public @NotNull AttachmentType getAttachmentType()
+    public @NotNull AttachmentParentType getAttachmentParentType()
     {
-        return _provider.getAttachmentType();
+        return _provider.getAttachmentParentType();
     }
 }

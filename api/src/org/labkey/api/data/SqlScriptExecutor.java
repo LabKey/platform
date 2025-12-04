@@ -17,13 +17,14 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.DefaultModule.UpgradeMethod;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.lang.reflect.Method;
 import java.sql.Connection;
@@ -41,7 +42,7 @@ import java.util.stream.Collectors;
  */
 public class SqlScriptExecutor
 {
-    private static final Logger _log = LogManager.getLogger(SqlScriptExecutor.class);
+    private static final Logger LOG = LogHelper.getLogger(SqlScriptExecutor.class, "Upgrade code invocations");
 
     private final String _scriptName;
     private final String _sql;
@@ -202,6 +203,10 @@ public class SqlScriptExecutor
 
             UpgradeMethod upgradeMethod = new UpgradeMethod(_moduleContext, _scriptName, _methodName);
 
+            // Make sure cached database metadata reflects all previously executed SQL. For example, core.UpgradeSteps
+            // needs to appear as "in the physical database" before any deferred upgrade methods can be stashed.
+            CacheManager.clearAllKnownCaches();
+
             try
             {
                 // Retrieve Method in all cases (even deferred upgrade) to proactively validate
@@ -209,12 +214,12 @@ public class SqlScriptExecutor
 
                 if (method.isAnnotationPresent(DeferredUpgrade.class))
                 {
-                    _log.info("Adding deferred upgrade to execute {}", upgradeMethod.getDisplayName());
+                    LOG.info("Adding deferred upgrade to execute {}", upgradeMethod.getDisplayName());
                     _moduleContext.addDeferredUpgradeMethod(upgradeMethod);
                 }
                 else
                 {
-                    _log.info("Executing {}", upgradeMethod.getDisplayName());
+                    LOG.info("Executing {}", upgradeMethod.getDisplayName());
                     _moduleContext.invokeUpgradeMethod(upgradeMethod);
                 }
             }
@@ -222,6 +227,11 @@ public class SqlScriptExecutor
             {
                 // Give the upgrade code a chance to recognize something that doesn't map to a Java method.
                 upgradeMethod.getUpgradeCode().fallthroughHandler(_methodName);
+            }
+            finally
+            {
+                // Just to be safe
+                CacheManager.clearAllKnownCaches();
             }
         }
     }

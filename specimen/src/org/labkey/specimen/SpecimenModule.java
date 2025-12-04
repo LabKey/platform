@@ -140,7 +140,7 @@ public class SpecimenModule extends SpringModule
         RoleManager.registerRole(new SpecimenCoordinatorRole());
         RoleManager.registerRole(new SpecimenRequesterRole());
 
-        AttachmentService.get().registerAttachmentType(SpecimenRequestEventType.get());
+        AttachmentService.get().registerAttachmentParentType(SpecimenRequestEventType.get());
 
         addController("specimen", SpecimenController.class, "study-samples");
         addController("specimen-api", SpecimenApiController.class, "study-samples-api", "specimens-api");

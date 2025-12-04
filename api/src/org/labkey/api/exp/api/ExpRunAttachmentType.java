@@ -17,10 +17,10 @@ package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.SQLFragment;
 
-public class ExpRunAttachmentType implements AttachmentType
+public class ExpRunAttachmentType implements AttachmentParentType
 {
     private static final ExpRunAttachmentType INSTANCE = new ExpRunAttachmentType();
 
@@ -36,7 +36,7 @@ public class ExpRunAttachmentType implements AttachmentType
     @Override
     public @NotNull String getUniqueName()
     {
-        return getClass().getName();
+        return "ExpRun";
     }
 
     @Override

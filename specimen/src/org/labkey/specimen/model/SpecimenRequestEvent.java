@@ -18,7 +18,7 @@ package org.labkey.specimen.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.AbstractStudyCachable;
 
@@ -152,7 +152,7 @@ public class SpecimenRequestEvent extends AbstractStudyCachable<Integer, Specime
     }
 
     @Override
-    public @NotNull AttachmentType getAttachmentType()
+    public @NotNull AttachmentParentType getAttachmentParentType()
     {
         return SpecimenRequestEventType.get();
     }

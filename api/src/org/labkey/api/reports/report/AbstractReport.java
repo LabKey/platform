@@ -21,7 +21,7 @@ import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -323,7 +323,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
 
     @NotNull
     @Override
-    public AttachmentType getAttachmentType()
+    public AttachmentParentType getAttachmentParentType()
     {
         return ReportType.get();
     }
