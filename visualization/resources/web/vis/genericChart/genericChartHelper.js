@@ -1179,7 +1179,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                             geom: new LABKEY.vis.Geom.Path({
                                 color: '#' + chartConfig.geomOptions.pointFillColor,
                                 size: chartConfig.geomOptions.lineWidth?chartConfig.geomOptions.lineWidth:3,
-                                opacity:chartConfig.geomOptions.opacity
+                                opacity:chartConfig.geomOptions.opacity,
+                                // dashed: true,
                             }),
                             aes: pathAes
                         })
@@ -1199,11 +1200,29 @@ LABKEY.vis.GenericChartHelper = new function(){
             plotConfig.margins = margins;
         }
 
-        if (chartConfig.measures.color)
+        if (chartConfig.measures.color || chartConfig.geomOptions.colorPaletteScale)
         {
             scales.color = {
                 colorType: chartConfig.geomOptions.colorPaletteScale,
                 scaleType: 'discrete'
+            }
+        }
+
+        if (!LABKEY.Utils.isEmptyObj(chartConfig.measuresOptions?.series)) {
+            const colorValueMap = {};
+            const shapeValueMap = {};
+            Object.entries(chartConfig.measuresOptions.series).forEach(([key, val]) => {
+                if (val.color) colorValueMap[key] = val.color;
+                if (val.shape) shapeValueMap[key] = LABKEY.vis.Scale.ShapeMap[val.shape];
+            });
+
+            if (!LABKEY.Utils.isEmptyObj(colorValueMap)) {
+                if (!scales.color) scales.color = { scaleType: 'discrete' };
+                scales.color.scale = LABKEY.vis.Scale.ValueMapDiscrete(colorValueMap);
+            }
+            if (!LABKEY.Utils.isEmptyObj(shapeValueMap)) {
+                if (!scales.shape) scales.shape = { scaleType: 'discrete' };
+                scales.shape.scale = LABKEY.vis.Scale.ValueMapDiscrete(shapeValueMap);
             }
         }
 
