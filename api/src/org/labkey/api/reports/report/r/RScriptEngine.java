@@ -19,12 +19,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.vfs.FileLike;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
-import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
@@ -59,14 +59,9 @@ public class RScriptEngine extends ExternalScriptEngine
         return new RScriptEngineFactory(_def);
     }
 
-    public File prepareScript(String script)
+    protected FileLike prepareScriptFile(String script, ScriptContext context, List<String> extensions)
     {
-        return prepareScriptFile(script, context, Arrays.asList(_def.getExtensions()), false);
-    }
-
-    protected File prepareScriptFile(String script, ScriptContext context, List<String> extensions, boolean createWrapper)
-    {
-        File scriptFile;
+        FileLike scriptFile;
         if (getKnitrFormat(context) != RReportDescriptor.KnitrFormat.None)
         {
             //
@@ -78,13 +73,10 @@ public class RScriptEngine extends ExternalScriptEngine
             List<String> preprocessExtensions = Arrays.asList(getKnitrExtension(context, extensions));
             scriptFile = writeScriptFile(script, context, preprocessExtensions);
 
-            if (createWrapper)
-            {
-                // write a new script (the acutal .R script to be run) as the preprocessing script and use
-                // this as the script file we pass to the script engine
-                String preprocessScript = createKnitrScript(context, scriptFile);
-                scriptFile = writeScriptFile(preprocessScript, context, extensions);
-            }
+            // write a new script (the actual .R script to be run) as the preprocessing script and use
+            // this as the script file we pass to the script engine
+            String preprocessScript = createKnitrScript(context, scriptFile);
+            scriptFile = writeScriptFile(preprocessScript, context, extensions);
         }
         else
         {
@@ -101,7 +93,7 @@ public class RScriptEngine extends ExternalScriptEngine
 
         if (!extensions.isEmpty())
         {
-            File scriptFile = prepareScriptFile(script, context, extensions, true);
+            FileLike scriptFile = prepareScriptFile(script, context, extensions);
             return eval(scriptFile, context);
         }
         else
@@ -162,19 +154,19 @@ public class RScriptEngine extends ExternalScriptEngine
         return (String) v;
     }
 
-    protected String getInputFilename(File inputScript)
+    protected String getInputFilename(FileLike inputScript)
     {
-        return inputScript.getAbsolutePath().replaceAll("\\\\", "/");
+        return inputScript.toNioPathForRead().toFile().getAbsolutePath().replaceAll("\\\\", "/");
     }
 
-    protected String getOutputFilename(File inputScript)
+    protected String getOutputFilename(FileLike inputScript)
     {
         String outputFilename;
         // do not call getInputFilename here as we do not want to invoke
         // any overrides.  The output file name should be the local path even
         // in the Rserve case since this file is manipulated on the labkey
         // server
-        String inputFilename = inputScript.getAbsolutePath().replaceAll("\\\\", "/");
+        String inputFilename = inputScript.toNioPathForRead().toFile().getAbsolutePath().replaceAll("\\\\", "/");
         String ext = "html";
 
         if (inputFilename.lastIndexOf('.') != -1)
@@ -197,7 +189,7 @@ public class RScriptEngine extends ExternalScriptEngine
     }
 
 
-    public String getRemotePath(File localFile)
+    public String getRemotePath(FileLike localFile)
     {
         return RReport.getLocalPath(localFile);
     }
@@ -209,7 +201,7 @@ public class RScriptEngine extends ExternalScriptEngine
     }
 
 
-    protected String createKnitrScript(ScriptContext context, File inputScript)
+    protected String createKnitrScript(ScriptContext context, FileLike inputScript)
     {
         if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.None)
             return null;

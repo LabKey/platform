@@ -20,8 +20,10 @@ import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * User: Dax Hawkins
@@ -36,11 +38,11 @@ public abstract class DownloadParamReplacement extends AbstractParamReplacement
         super(id);
     }
 
-    protected final File getSubstitution(File directory, String extension)
+    protected final FileLike getSubstitution(FileLike directory, String extension)
     {
         String fileName;
         String tokenName = getName();
-        File file = null;
+        FileLike file = null;
         if (tokenName != null)
         {
             String tokenExtension = FileUtil.getExtension(tokenName);
@@ -50,16 +52,16 @@ public abstract class DownloadParamReplacement extends AbstractParamReplacement
                 fileName = getName().concat(extension);
 
             if (directory != null)
-                file = FileUtil.appendPath(directory, Path.parse(fileName));
+                file = directory.resolveFile(Path.parse(fileName));
         }
         if (file != null)
             addFile(file);
         return file;
     }
 
-    protected ScriptOutput renderAsScriptOutput(File file, DownloadOutputView view, ScriptOutput.ScriptOutputType scriptOutputType)
+    protected ScriptOutput renderAsScriptOutput(FileLike file, DownloadOutputView view, ScriptOutput.ScriptOutputType scriptOutputType) throws IOException
     {
-        String downloadUrl  = view.renderInternalAsString(file);
+        String downloadUrl = view.renderInternalAsString(file);
 
         if (null != downloadUrl)
             return new ScriptOutput(scriptOutputType, getName(), downloadUrl);

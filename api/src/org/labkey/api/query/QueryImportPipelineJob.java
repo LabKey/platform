@@ -16,8 +16,8 @@ import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -47,7 +47,7 @@ public class QueryImportPipelineJob extends PipelineJob
 
     public static class QueryImportAsyncContextBuilder
     {
-        File _primaryFile;
+        FileLike _primaryFile;
         boolean _hasColumnHeaders;
         String _fileContentType;
 
@@ -74,7 +74,7 @@ public class QueryImportPipelineJob extends PipelineJob
 
         }
 
-        public File getPrimaryFile()
+        public FileLike getPrimaryFile()
         {
             return _primaryFile;
         }
@@ -146,7 +146,7 @@ public class QueryImportPipelineJob extends PipelineJob
             _jobNotificationProvider = jobNotificationProvider;
         }
 
-        public QueryImportAsyncContextBuilder setPrimaryFile(File primaryFile)
+        public QueryImportAsyncContextBuilder setPrimaryFile(FileLike primaryFile)
         {
             _primaryFile = primaryFile;
             return this;

@@ -27,7 +27,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.writer.ContainerUser;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /*
 * User: Dave
@@ -85,7 +84,7 @@ public class DbReportIdentifier extends AbstractReportIdentifier
             if (user != null && container != null)
             {
                 // Filter all available reports by name to see if we get a single match
-                List<Report> matchingReports = ReportService.get().getReports(user, container).stream().filter((r) -> suffix.equalsIgnoreCase(r.getDescriptor().getReportName())).collect(Collectors.toList());
+                List<Report> matchingReports = ReportService.get().getReports(user, container).stream().filter((r) -> suffix.equalsIgnoreCase(r.getDescriptor().getReportName())).toList();
 
                 LOG.debug("Found " + matchingReports.size() + " matching DB-based reports for id '" + id + "' for user " + user.getEmail() + " in " + container.getPath());
 
@@ -110,7 +109,7 @@ public class DbReportIdentifier extends AbstractReportIdentifier
     @Override
     public String toString()
     {
-        return PREFIX + String.valueOf(getRowId());
+        return PREFIX + getRowId();
     }
 
     @Override

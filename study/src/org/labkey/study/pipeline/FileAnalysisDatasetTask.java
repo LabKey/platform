@@ -30,6 +30,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 
 import java.io.File;
@@ -67,7 +68,7 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
     protected VirtualFile getDatasetsDirectory()
     {
         FileAnalysisJobSupport jobSupport = getJob().getJobSupport(FileAnalysisJobSupport.class);
-        File dataDir = jobSupport.getDataDirectory();
+        FileLike dataDir = jobSupport.getDataDirectory();
         if (dataDir.exists())
         {
             return new FileSystemFile(dataDir);
@@ -92,11 +93,11 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
                 return new RecordedActionSet();
             }
 
-            Map<File, Pair<String, String>> inputDataMap = new HashMap<>();
+            Map<FileLike, Pair<String, String>> inputDataMap = new HashMap<>();
 
             // guaranteed to only have a single file
             assert jobSupport.getInputFiles().size() == 1;
-            for (File file : jobSupport.getInputFiles())
+            for (FileLike file : jobSupport.getInputFiles())
             {
                 if (params.containsKey(DATASET_ID_KEY))
                     inputDataMap.put(file, new Pair<>(DATASET_ID_KEY, params.get(DATASET_ID_KEY)));

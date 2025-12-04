@@ -30,6 +30,7 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URIUtil;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -59,12 +60,12 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
     protected FileAnalysisJobSupport _support;
     protected final WorkDirFactory _factory;
-    protected final File _dir;
+    protected final FileLike _dir;
     protected final Logger _jobLog;
-    protected final HashMap<File, File> _copiedInputs = new HashMap<>();
+    protected final HashMap<FileLike, FileLike> _copiedInputs = new HashMap<>();
 
     protected CopyingResource _copyingResource;
-    protected File _transferToDirOnFailure = null;
+    protected FileLike _transferToDirOnFailure = null;
 
     public static abstract class AbstractFactory implements WorkDirFactory
     {
@@ -111,7 +112,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         }
     }
 
-    public AbstractWorkDirectory(FileAnalysisJobSupport support, WorkDirFactory factory, File dir, boolean reuseExistingDirectory, Logger log) throws IOException
+    public AbstractWorkDirectory(FileAnalysisJobSupport support, WorkDirFactory factory, FileLike dir, boolean reuseExistingDirectory, Logger log) throws IOException
     {
         _support = support;
         _factory = factory;
@@ -140,13 +141,13 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     @Override
     public void acceptFilesAsOutputs(Map<String, TaskPath> expectedOutputs, RecordedAction action) throws IOException
     {
-        File[] remainingFiles = getDir().listFiles();
+        List<FileLike> remainingFiles = getDir().getChildren();
 
         if (remainingFiles != null)
         {
             try (WorkDirectory.CopyingResource lock = ensureCopyingLock())
             {
-                Set<File> copiedFiles = new HashSet<>();
+                Set<FileLike> copiedFiles = new HashSet<>();
                 // First handle anything that's been explicitly configured
                 for (Map.Entry<String, TaskPath> entry : expectedOutputs.entrySet())
                 {
@@ -162,13 +163,13 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 _jobLog.debug("Already copied files: " + copiedFiles);
 
                 // Slurp up any other files too
-                File[] additionalFiles = getDir().listFiles();
-                if (additionalFiles != null && additionalFiles.length > 0)
+                List<FileLike> additionalFiles = getDir().getChildren();
+                if (!additionalFiles.isEmpty())
                 {
                     _jobLog.debug("Additional files: " + Arrays.asList(additionalFiles));
                 }
 
-                for (File workFile : remainingFiles)
+                for (FileLike workFile : remainingFiles)
                 {
                     if (copiedFiles.contains(workFile))
                     {
@@ -193,7 +194,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                     }
                     else
                     {
-                        File f = outputFile(workFile);
+                        FileLike f = outputFile(workFile);
                         String role = "";
                         String baseName = _support.getBaseName();
                         if (f.getName().startsWith(baseName))
@@ -216,7 +217,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                         if (f.isDirectory())
                         {
                             // It's a directory, so add all of the child files instead of the directory itself
-                            Collection<File> contents = FileUtils.listFiles(f, FileFilterUtils.fileFileFilter(), FileFilterUtils.trueFileFilter());
+                            Collection<File> contents = FileUtils.listFiles(f.toNioPathForRead().toFile(), FileFilterUtils.fileFileFilter(), FileFilterUtils.trueFileFilter());
                             for (File content : contents)
                             {
                                 action.addOutput(content, role, false, true);
@@ -234,7 +235,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     }
 
     @Override
-    public List<File> getWorkFiles(WorkDirectory.Function f, TaskPath tp)
+    public List<FileLike> getWorkFiles(Function f, TaskPath tp)
     {
         if (tp == null)
             return Collections.emptyList();
@@ -255,22 +256,22 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             baseNames = Collections.singletonList(baseName);
         }
 
-        ArrayList<File> files = new ArrayList<>();
+        List<FileLike> files = new ArrayList<>();
         for (String baseName : baseNames)
             files.add(newWorkFile(f, tp, baseName));
         return files;
     }
 
-    private Set<File> outputFile(TaskPath tp, String role, RecordedAction action) throws IOException
+    private Set<FileLike> outputFile(TaskPath tp, String role, RecordedAction action) throws IOException
     {
-        Set<File> result = new HashSet<>();
-        List<File> filesWork = getWorkFiles(WorkDirectory.Function.output, tp);
-        for (File fileWork : filesWork)
+        Set<FileLike> result = new HashSet<>();
+        List<FileLike> filesWork = getWorkFiles(WorkDirectory.Function.output, tp);
+        for (FileLike fileWork : filesWork)
         {
-            File fileOutput = switch (tp.getOutputLocation())
+            FileLike fileOutput = switch (tp.getOutputLocation())
             {
-                case ANALYSIS_DIR -> new File(_support.getAnalysisDirectory(), fileWork.getName());
-                case DATA_DIR -> new File(_support.getDataDirectory(), fileWork.getName());
+                case ANALYSIS_DIR -> _support.getAnalysisDirectory().resolveChild(fileWork.getName());
+                case DATA_DIR -> _support.getDataDirectory().resolveChild(fileWork.getName());
                 case PATH -> _support.findOutputFile(tp.getOutputDir(), fileWork.getName());
                 default -> _support.findOutputFile(fileWork.getName());
             };
@@ -286,7 +287,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 // CONSIDER: Unfortunately, with a local work directory, this may hide files
                 // that are auto-generated by the command in place.  Such files will not be recorded as output.
                 if (tp.isOptional() ||
-                        !_support.getAnalysisDirectory().equals(fileOutput.getParentFile()))
+                        !_support.getAnalysisDirectory().equals(fileOutput.getParent()))
                 {
                     if (NetworkDrive.exists(fileOutput))
                     {
@@ -299,7 +300,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             if (!tp.isOptional() || fileWork.exists())
             {
                 // Add it as an output if it's non-optional, or if it's optional and the file exists
-                File f = outputFile(fileWork, fileOutput);
+                FileLike f = outputFile(fileWork, fileOutput);
                 action.addOutput(f, role, false, true);
                 result.add(fileWork);
             }
@@ -308,37 +309,37 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     }
 
     @Override
-    public File getDir()
+    public FileLike getDir()
     {
         return _dir;
     }
 
-    private void copyFile(File source, File target) throws IOException
+    private void copyFile(FileLike source, FileLike target) throws IOException
     {
-        NetworkDrive.ensureDrive(source.getAbsolutePath());
-        NetworkDrive.ensureDrive(target.getAbsolutePath());
+        NetworkDrive.ensureDrive(source);
+        NetworkDrive.ensureDrive(target);
 
         try (WorkDirectory.CopyingResource lock = ensureCopyingLock())
         {
             _jobLog.info("Copying " + source + " to " + target);
             if (source.isDirectory())
             {
-                FileUtils.copyDirectory(source, target);
+                FileUtil.copyDirectory(source.toNioPathForRead(), target.toNioPathForWrite());
             }
             else
             {
-                FileUtils.copyFile(source, target);
+                FileUtil.copyFile(source, target);
             }
         }
     }
 
-    protected File copyInputFile(File fileInput) throws IOException
+    protected FileLike copyInputFile(FileLike fileInput) throws IOException
     {
-        File fileWork = newFile(fileInput.getName());
+        FileLike fileWork = newFile(fileInput.getName());
         return copyInputFile(fileInput, fileWork);
     }
 
-    protected File copyInputFile(File fileInput, File fileWork) throws IOException
+    protected FileLike copyInputFile(FileLike fileInput, FileLike fileWork) throws IOException
     {
         //ensure fileWork is a descendent of workDir
         if (getRelativePath(fileWork) == null)
@@ -351,7 +352,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         return fileWork;
     }
 
-    private File getDir(Function f, String name)
+    private FileLike getDir(Function f, String name)
     {
         if (Function.output.equals(f))
         {
@@ -361,34 +362,34 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         }
         else
         {
-            File file = _support.findInputFile(name);
-            return file.getParentFile();
+            FileLike file = _support.findInputFile(name);
+            return file.getParent();
         }
     }
 
     @Override
-    public File newFile(FileType type)
+    public FileLike newFile(FileType type)
     {
         // TODO: Issue 20143: pipeline: Custom output directory for task outputs
         return newFile(Function.output, type.getName(_dir, _support.getBaseName()));
     }
 
     @Override
-    public File newFile(String name)
+    public FileLike newFile(String name)
     {
         return newFile(Function.output, name);
     }
 
     @Override
-    public File newFile(Function f, String name)
+    public FileLike newFile(Function f, String name)
     {
-        File file = new File(getDir(f, name), name);
+        FileLike file = getDir(f, name).resolveChild(name);
 
         if (Function.input.equals(f))
         {
             // See if the file has already been copied into the working directory.
             // In which case, the copied version should be used.
-            File fileWork = _copiedInputs.get(file);
+            FileLike fileWork = _copiedInputs.get(file);
             if (fileWork != null)
                 return fileWork;
         }
@@ -397,32 +398,32 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     }
 
     @Override
-    public String getRelativePath(File fileWork) throws IOException
+    public String getRelativePath(FileLike fileWork) throws IOException
     {
         return FileUtil.relativize(_dir, fileWork, true);
     }
 
     @Override
-    public File outputFile(File fileWork) throws IOException
+    public FileLike outputFile(FileLike fileWork) throws IOException
     {
         return outputFile(fileWork, fileWork.getName());
     }
 
     @Override
-    public File outputFile(File fileWork, String nameDest) throws IOException
+    public FileLike outputFile(FileLike fileWork, String nameDest) throws IOException
     {
         return outputFile(fileWork, _support.findOutputFile(nameDest));
     }
 
     @Override
-    public File outputFile(File fileWork, File fileDest) throws IOException
+    public FileLike outputFile(FileLike fileWork, FileLike fileDest) throws IOException
     {
-        NetworkDrive.ensureDrive(fileDest.getAbsolutePath());
+        NetworkDrive.ensureDrive(fileDest);
 
         // TPP treats .xml.gz as a native format, follow suit
         if (fileWork.getName().endsWith(".gz") && !fileDest.getName().endsWith(".gz"))
         {
-            fileDest = new File(fileDest.getPath()+".gz");
+            fileDest = fileDest.getParent().resolveChild(fileDest.getName() + ".gz");
         }
 
         if (!fileWork.exists())
@@ -434,8 +435,8 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             throw new FileNotFoundException("Failed to find expected output " + fileWork);
         }
         ensureDescendant(fileWork);
-        File fileReplace = null;
-        File fileCopy = null;
+        FileLike fileReplace = null;
+        FileLike fileCopy = null;
 
         try (WorkDirectory.CopyingResource lock = ensureCopyingLock())
         {
@@ -443,7 +444,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             {
                 // If the destination exists, rename it out of the way while we try to
                 // replace it. Rename within the same directory is always an atomic action.
-                fileReplace = FT_MOVE.newFile(fileDest.getParentFile(), fileDest.getName());
+                fileReplace = FT_MOVE.newFile(fileDest.getParent(), fileDest.getName());
                 _jobLog.info("Moving " + fileDest + " to " + fileReplace);
                 if (!fileDest.renameTo(fileReplace))
                 {
@@ -459,14 +460,14 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 // File.renameTo() is the most efficient way to move a file, but it annoyingly doesn't necessarily
                 // work across different file systems.  Use a copy to a .copy file, and then an
                 // atomic rename within the same directory to the destination.
-                fileCopy = FT_COPY.newFile(fileDest.getParentFile(), fileDest.getName());
+                fileCopy = FT_COPY.newFile(fileDest.getParent(), fileDest.getName());
                 if (directory)
                 {
-                    FileUtils.copyDirectory(fileWork, fileCopy);
+                    FileUtil.copyDirectory(fileWork, fileCopy);
                 }
                 else
                 {
-                    FileUtils.copyFile(fileWork, fileCopy);
+                    FileUtil.copyFile(fileWork, fileCopy);
                 }
                 if (!fileCopy.renameTo(fileDest))
                 {
@@ -492,7 +493,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             }
             if (fileReplace != null)
             {
-                File fileRemove = fileReplace;
+                FileLike fileRemove = fileReplace;
                 fileReplace = null;    // Output file is successfully in place.
 
                 _jobLog.info("Removing " + fileRemove);
@@ -502,7 +503,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             {
                 if (directory)
                 {
-                    FileUtils.deleteDirectory(fileWork);
+                    FileUtil.deleteDir(fileWork);
                 }
                 else if (!fileWork.delete())
                 {
@@ -524,13 +525,13 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             }
         }
 
-        _factory.setPermissions(fileDest);
+        _factory.setPermissions(fileDest.toNioPathForWrite().toFile());
 
         return fileDest;
     }
 
     @Override
-    public void discardFile(File fileWork) throws IOException
+    public void discardFile(FileLike fileWork) throws IOException
     {
         _jobLog.debug("discarding file: " + fileWork.getPath());
         ensureDescendant(fileWork);
@@ -543,7 +544,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
             if (fileWork.isDirectory())
             {
-                FileUtils.deleteDirectory(fileWork);
+                FileUtil.deleteDir(fileWork);
             }
 
             if (fileWork.exists())
@@ -565,7 +566,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     {
         if (NetworkDrive.exists(_dir))
         {
-            for (File input : _copiedInputs.values())
+            for (FileLike input : _copiedInputs.values())
                 discardFile(input);
             _copiedInputs.clear();
         }
@@ -580,12 +581,12 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         {
             if (!success && _transferToDirOnFailure != null)
             {
-                File dest = FileUtil.findUniqueFileName(_dir.getName(), _transferToDirOnFailure);
+                FileLike dest = FileUtil.findUniqueFileName(_dir.getName(), _transferToDirOnFailure);
                 _jobLog.debug("after failure, moving working directory to: " + dest.getPath());
 
                 try
                 {
-                    FileUtils.moveDirectory(_dir, dest);
+                    FileUtils.moveDirectory(_dir.toNioPathForRead().toFile(), dest.toNioPathForRead().toFile());
                 }
                 catch (IOException e)
                 {
@@ -599,11 +600,11 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             {
                 StringBuilder message = new StringBuilder();
                 message.append("Failed to remove work directory ").append(_dir);
-                File[] files = _dir.listFiles();
-                if (files != null && files.length > 0)
+                List<FileLike> files = _dir.getChildren();
+                if (!files.isEmpty())
                 {
                     message.append(" unexpected files found:");
-                    for (File f : files)
+                    for (FileLike f : files)
                         message.append("\n").append(f.getName());
                 }
 
@@ -612,7 +613,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         }
     }
 
-    private void ensureDescendant(File fileWork) throws IOException
+    private void ensureDescendant(FileLike fileWork) throws IOException
     {
         if (!URIUtil.isDescendant(_dir.toURI(), fileWork.toURI()))
             throw new IOException("The file " + fileWork + " is not a descendant of " + _dir);
@@ -634,7 +635,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     }
 
     @Override
-    public File newWorkFile(WorkDirectory.Function f, TaskPath tp, String baseName)
+    public FileLike newWorkFile(Function f, TaskPath tp, String baseName)
     {
         if (tp == null)
             return null;
@@ -665,7 +666,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     }
 
     @Override
-    public File getWorkingCopyForInput(File f)
+    public FileLike getWorkingCopyForInput(FileLike f)
     {
         return _copiedInputs.get(f);
     }

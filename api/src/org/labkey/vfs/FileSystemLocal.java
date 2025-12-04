@@ -220,11 +220,11 @@ public class FileSystemLocal extends AbstractFileSystemLike
         }
 
         @Override
-        public OutputStream openOutputStream() throws IOException
+        public OutputStream openOutputStream(boolean append) throws IOException
         {
             if (!canWriteFiles())
                 throw new UnauthorizedException();
-            return new FileOutputStream(file);
+            return new FileOutputStream(file, append);
         }
 
         @Override

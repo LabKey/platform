@@ -103,7 +103,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         {
             throw new NotFoundException("Pipeline root is not configured for folder " + container);
         }
-        run.setFilePathRoot(pipeRoot.getRootPath());
+        run.setFilePathRoot(pipeRoot.getRootFileLike());
 
         return run;
     }
