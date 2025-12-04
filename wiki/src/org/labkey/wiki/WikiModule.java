@@ -78,7 +78,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         WikiService.setInstance(WikiManager.get());
 
-        AttachmentService.get().registerAttachmentType(WikiType.get());
+        AttachmentService.get().registerAttachmentParentType(WikiType.get());
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)

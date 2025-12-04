@@ -19,7 +19,7 @@ package org.labkey.specimen;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PropertyManager;
@@ -369,7 +369,7 @@ public class SpecimenServiceImpl implements SpecimenService
     }
 
     @Override
-    public AttachmentType getSpecimenRequestEventType()
+    public AttachmentParentType getSpecimenRequestEventType()
     {
         return SpecimenRequestEventType.get();
     }

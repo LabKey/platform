@@ -168,6 +168,8 @@ public abstract class AbstractRole implements Role
 
     protected void addExcludedPrincipal(UserPrincipal principal)
     {
+        if (null == principal)
+            throw new IllegalStateException("Attempting to exclude a null principal!");
         _excludedPrincipals.add(principal);
     }
 

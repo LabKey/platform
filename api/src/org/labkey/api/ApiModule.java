@@ -217,10 +217,10 @@ public class ApiModule extends CodeOnlyModule
     protected void init()
     {
         ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/vfs", this);
-        AttachmentService.get().registerAttachmentType(ReportType.get());
-        AttachmentService.get().registerAttachmentType(LookAndFeelResourceType.get());
-        AttachmentService.get().registerAttachmentType(AuthenticationLogoType.get());
-        AttachmentService.get().registerAttachmentType(AvatarType.get());
+        AttachmentService.get().registerAttachmentParentType(ReportType.get());
+        AttachmentService.get().registerAttachmentParentType(LookAndFeelResourceType.get());
+        AttachmentService.get().registerAttachmentParentType(AuthenticationLogoType.get());
+        AttachmentService.get().registerAttachmentParentType(AvatarType.get());
 
         PropertyManager.registerEncryptionMigrationHandler();
         AuthenticationManager.registerEncryptionMigrationHandler();

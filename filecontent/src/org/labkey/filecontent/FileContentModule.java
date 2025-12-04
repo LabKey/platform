@@ -76,7 +76,7 @@ public class FileContentModule extends DefaultModule
         addController("filecontent", FileContentController.class);
         PropertyService.get().registerDomainKind(new FilePropertiesDomainKind());
         FileContentService.setInstance(FileContentServiceImpl.getInstance());
-        AttachmentService.get().registerAttachmentType(FileSystemAttachmentType.get());
+        AttachmentService.get().registerAttachmentParentType(FileSystemAttachmentType.get());
     }
 
     @Override

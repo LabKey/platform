@@ -58,6 +58,7 @@
       <column columnName="Owner"/>
       <column columnName="Container"/>
       <column columnName="Parent"/>
+      <column columnName="ParentType"/>
       <column columnName="DocumentName"/>
       <column columnName="DocumentSize"/>
       <column columnName="DocumentType"/>

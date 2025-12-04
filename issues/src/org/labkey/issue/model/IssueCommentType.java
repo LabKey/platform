@@ -16,11 +16,11 @@
 package org.labkey.issue.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.issues.IssuesSchema;
 
-public class IssueCommentType implements AttachmentType
+public class IssueCommentType implements AttachmentParentType
 {
     private static final IssueCommentType INSTANCE = new IssueCommentType();
 
@@ -36,7 +36,7 @@ public class IssueCommentType implements AttachmentType
     @Override
     public @NotNull String getUniqueName()
     {
-        return getClass().getName();
+        return "IssueComment";
     }
 
     @Override
