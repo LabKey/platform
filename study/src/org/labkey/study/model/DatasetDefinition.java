@@ -36,8 +36,37 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AuditConfigurable;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.Transaction;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ExceptionFramework;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NullColumnInfo;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.Transient;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -1843,7 +1872,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
          * @param requiredAuditType The expected audit behavior type. If this does not match the type set on the
          *                          dataset, then the event will not be logged.
          */
-        public void addAuditEvent(User user, Container c, AuditBehaviorType requiredAuditType, String comment, @Nullable UploadLog ul)
+        public void addAuditEvent(User user, Container c, AuditBehaviorType requiredAuditType, String comment)
 
         {
             TableInfo table = _dataset.getTableInfo(user);
@@ -1851,10 +1880,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 return;
 
             DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c, comment, _dataset.getDatasetId());
-            if (ul != null)
-            {
-                event.setLsid(ul.getFilePath());
-            }
             AuditLogService.get().addEvent(user, event);
         }
     }
