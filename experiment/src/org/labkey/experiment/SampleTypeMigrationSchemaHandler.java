@@ -14,6 +14,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.migration.DatabaseMigrationService.DataFilter;
 import org.labkey.api.migration.DefaultMigrationSchemaHandler;
+import org.labkey.api.migration.FilePathWriter;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
 
@@ -167,5 +168,12 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 
             ExperimentMigrationSchemaHandler.deleteObjectIds(objectIdClause);
         }
+    }
+
+    @Override
+    public void writeFilePaths(FilePathWriter writer, Set<GUID> guids)
+    {
+        // TODO: Enumerate FileLink fields in sample types in the filtered containers (guids) and write out those file
+        // paths. Current client has none.
     }
 }
