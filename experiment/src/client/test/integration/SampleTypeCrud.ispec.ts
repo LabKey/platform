@@ -1122,7 +1122,7 @@ describe('Amount/Unit CRUD', () => {
             {name: 'S-kg', amount: 4.56, units: 'kg'},
         ], 'samples', sampleTypeMass, topFolderOptions, editorUserOptions);
 
-        // check for storedamount in g
+        // check for raw amount in g and display amount in ug
         let expectedRawAmounts : {} = {
             'S-ng': 4.56e-9,
             'S-ug': 4.56e-6,
@@ -1208,8 +1208,8 @@ describe('Amount/Unit CRUD', () => {
 
         const countRows = [
             {name: 'S-unit', amount: 4.56, units: 'unit'},
-            {name: 'S-pcs', amount: 4.56, units: 'pcs'},
-            {name: 'S-kit', amount: 4.56, units: 'kit'},
+            {name: 'S-pcs', amount: 4.56, units: 'pieces'},
+            {name: 'S-kit', amount: 4.56, units: 'kits'},
             {name: 'S-cells', amount: 4.56, units: 'cells'}
         ]
         sampleRowsWithUnits = await ExperimentCRUDUtils.insertRows(server, countRows, 'samples', sampleTypeCount, topFolderOptions, editorUserOptions);
@@ -1249,19 +1249,19 @@ describe('Amount/Unit CRUD', () => {
     async function verifyCountTypeAliquotRollup(sampleTypeName: string, hasSampleTypeDisplayUnit: boolean) {
         const dataRows = [
             {name: 'S-no-amount'},
-            {AliquotedFrom: 'S-no-amount', name: 'S-no-pcs1', amount: 2, units: 'pcs'},
-            {AliquotedFrom: 'S-no-amount', name: 'S-no-pcs2', amount: 2, units: 'pcs'},
+            {AliquotedFrom: 'S-no-amount', name: 'S-no-pcs1', amount: 2, units: 'pieces'},
+            {AliquotedFrom: 'S-no-amount', name: 'S-no-pcs2', amount: 2, units: 'pieces'},
             {name: 'S-unit', amount: 1, units: 'unit'},
             {AliquotedFrom: 'S-unit', name: 'S-unit-unit1', amount: 2, units: 'unit'},
             {AliquotedFrom: 'S-unit', name: 'S-unit-unit2', amount: 2, units: 'unit'},
-            {name: 'S-pcs', amount: 1, units: 'pcs'},
-            {AliquotedFrom: 'S-pcs', name: 'S-pcs-pcs1', amount: 2, units: 'pcs'},
-            {AliquotedFrom: 'S-pcs', name: 'S-pcs-pcs2', amount: 2, units: 'pcs'},
-            {name: 'S-kit', amount: 1, units: 'kit'},
-            {AliquotedFrom: 'S-kit', name: 'S-kit-pcs1', amount: 2, units: 'pcs'},
-            {AliquotedFrom: 'S-kit', name: 'S-kit-pcs2', amount: 2, units: 'pcs'},
+            {name: 'S-pcs', amount: 1, units: 'pieces'},
+            {AliquotedFrom: 'S-pcs', name: 'S-pcs-pcs1', amount: 2, units: 'pieces'},
+            {AliquotedFrom: 'S-pcs', name: 'S-pcs-pcs2', amount: 2, units: 'pieces'},
+            {name: 'S-kit', amount: 1, units: 'kits'},
+            {AliquotedFrom: 'S-kit', name: 'S-kit-pcs1', amount: 2, units: 'pieces'},
+            {AliquotedFrom: 'S-kit', name: 'S-kit-pcs2', amount: 2, units: 'pieces'},
             {name: 'S-cells', amount: 1, units: 'cells'},
-            {AliquotedFrom: 'S-cells', name: 'S-cells-pcs1', amount: 2, units: 'pcs'},
+            {AliquotedFrom: 'S-cells', name: 'S-cells-pcs1', amount: 2, units: 'pieces'},
             {AliquotedFrom: 'S-cells', name: 'S-cells-cells2', amount: 2, units: 'cells'},
         ]
 
@@ -1272,10 +1272,10 @@ describe('Amount/Unit CRUD', () => {
         }
 
         let expectedAliquotUnit = {
-            'S-no-amount': 'pcs',
+            'S-no-amount': 'pieces',
             'S-unit': 'unit',
-            'S-pcs': 'pcs',
-            'S-kit': 'pcs',
+            'S-pcs': 'pieces',
+            'S-kit': 'pieces',
             'S-cells': hasSampleTypeDisplayUnit ? 'unit' : 'cells',
         };
 

@@ -19,10 +19,10 @@ public enum Unit
     count(KindOfQuantity.Count, unit, 1.0, 2, "count",
             Quantity.class,
             "count", "count"),
-    pcs(KindOfQuantity.Count, unit, 1.0, 2, "pcs",
+    pieces(KindOfQuantity.Count, unit, 1.0, 2, "pieces",
             Quantity.class,
-            "pcs", "pcs"),
-    pack(KindOfQuantity.Count, unit, 1.0, 2, "pack",
+            "piece", "pieces"),
+    packs(KindOfQuantity.Count, unit, 1.0, 2, "packs",
             Quantity.class,
             "pack", "packs"),
     blocks(KindOfQuantity.Count, unit, 1.0, 2, "blocks",
@@ -34,16 +34,16 @@ public enum Unit
     cells(KindOfQuantity.Count, unit, 1.0, 2, "cells",
             Quantity.class,
             "cell", "cells"),
-    box(KindOfQuantity.Count, unit, 1.0, 2, "box",
+    boxes(KindOfQuantity.Count, unit, 1.0, 2, "box",
             Quantity.class,
             "box", "boxes"),
-    kit(KindOfQuantity.Count, unit, 1.0, 2, "kit",
+    kits(KindOfQuantity.Count, unit, 1.0, 2, "kits",
             Quantity.class,
             "kit", "kits"),
     tests(KindOfQuantity.Count, unit, 1.0, 2, "tests",
             Quantity.class,
             "test", "tests"),
-    bottle(KindOfQuantity.Count, unit, 1.0, 2, "bottle",
+    bottles(KindOfQuantity.Count, unit, 1.0, 2, "bottles",
             Quantity.class,
             "bottle", "bottles"),
 
@@ -233,7 +233,7 @@ public enum Unit
             assertFalse(Unit.kg.isBase());
             assertTrue(Unit.unit.isBase());
             assertFalse(Unit.count.isBase());
-            assertFalse(Unit.bottle.isBase());
+            assertFalse(Unit.bottles.isBase());
         }
 
         @Test
@@ -245,13 +245,16 @@ public enum Unit
             assertTrue(Unit.g.isCompatible(Unit.mg));
             assertFalse(Unit.g.isCompatible(Unit.mL));
             assertTrue(Unit.unit.isCompatible(Unit.count));
-            assertTrue(Unit.unit.isCompatible(Unit.pcs));
-            assertTrue(Unit.unit.isCompatible(Unit.pack));
-            assertTrue(Unit.unit.isCompatible(Unit.bottle));
+            assertTrue(Unit.unit.isCompatible(Unit.pieces));
+            assertTrue(Unit.unit.isCompatible(Unit.packs));
+            assertTrue(Unit.unit.isCompatible(Unit.bottles));
             assertTrue(Unit.unit.isCompatible(Unit.blocks));
-            assertTrue(Unit.unit.isCompatible(Unit.box));
+            assertTrue(Unit.unit.isCompatible(Unit.boxes));
             assertTrue(Unit.unit.isCompatible(Unit.slides));
+            assertTrue(Unit.cells.isCompatible(Unit.slides));
+            assertTrue(Unit.cells.isCompatible(Unit.unit));
             assertFalse(Unit.unit.isCompatible(Unit.mL));
+            assertFalse(Unit.bottles.isCompatible(Unit.mL));
             assertFalse(Unit.mL.isCompatible(null));
         }
 

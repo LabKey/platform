@@ -149,9 +149,13 @@ import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_COUN
 import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_VOLUME_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.SAMPLETYPE_FILE_DIRECTORY;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotUnit;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAliquotUnit;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAvailableAliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
@@ -569,7 +573,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case RawAliquotVolume ->
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn(AliquotVolume.name()));
-                ret.setLabel("Raw " + ALIQUOT_VOLUME_LABEL);
+                ret.setLabel(RawAliquotVolume.label());
                 ret.setShownInDetailsView(false);
                 return ret;
             }
@@ -578,7 +582,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 Unit typeUnit = getSampleTypeUnit();
                 if (typeUnit != null)
                 {
-                    SampleTypeAmountDisplayColumn columnInfo = new SampleTypeAmountDisplayColumn(this, Column.AliquotVolume.name(), Column.AliquotUnit.name(), ALIQUOT_VOLUME_LABEL, Collections.emptySet(), typeUnit);
+                    SampleTypeAmountDisplayColumn columnInfo = new SampleTypeAmountDisplayColumn(this, Column.AliquotVolume.name(), AliquotUnit.name(), ALIQUOT_VOLUME_LABEL, Collections.emptySet(), typeUnit);
                     columnInfo.setDisplayColumnFactory(colInfo -> new SampleTypeAmountPrecisionDisplayColumn(colInfo, typeUnit));
                     columnInfo.setDescription("The total amount of this sample's aliquots, in the display unit for the sample type, currently on hand.");
                     return columnInfo;
@@ -593,7 +597,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case RawAvailableAliquotVolume ->
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn(AvailableAliquotVolume.name()));
-                ret.setLabel("Raw " + AVAILABLE_ALIQUOT_VOLUME_LABEL);
+                ret.setLabel(RawAvailableAliquotVolume.label());
                 ret.setShownInDetailsView(false);
                 return ret;
             }
@@ -602,9 +606,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 Unit typeUnit = getSampleTypeUnit();
                 if (typeUnit != null)
                 {
-                    SampleTypeAmountDisplayColumn columnInfo = new SampleTypeAmountDisplayColumn(this, Column.AvailableAliquotVolume.name(), Column.AliquotUnit.name(), AVAILABLE_ALIQUOT_VOLUME_LABEL, Collections.emptySet(), typeUnit);
+                    SampleTypeAmountDisplayColumn columnInfo = new SampleTypeAmountDisplayColumn(this, Column.AvailableAliquotVolume.name(), AliquotUnit.name(), AVAILABLE_ALIQUOT_VOLUME_LABEL, Collections.emptySet(), typeUnit);
                     columnInfo.setDisplayColumnFactory(colInfo -> new SampleTypeAmountPrecisionDisplayColumn(colInfo, typeUnit));
-                    columnInfo.setDescription("The total amount of this sample's aliquots that's available, in the display unit for the sample type, currently on hand.");
+                    columnInfo.setDescription("The total amount of this sample's available aliquots currently on hand, in the display unit for the sample type.");
                     return columnInfo;
                 }
                 else
@@ -624,7 +628,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 var ret =  wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
                 ret.setShownInDetailsView(false);
-                ret.setLabel("Raw Aliquot Unit");
+                ret.setLabel(RawAliquotUnit.label());
                 return ret;
             }
             case AliquotUnit ->
@@ -641,7 +645,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 Unit typeUnit = getSampleTypeUnit();
                 if (typeUnit != null)
                 {
-                    SampleTypeUnitDisplayColumn columnInfo = new SampleTypeUnitDisplayColumn(this, Column.AliquotUnit.name(), typeUnit);
+                    SampleTypeUnitDisplayColumn columnInfo = new SampleTypeUnitDisplayColumn(this, AliquotUnit.name(), typeUnit);
                     columnInfo.setFk(fk);
                     columnInfo.setDescription("The sample type display units associated with the AliquotAmount for this sample.");
                     return columnInfo;
@@ -888,7 +892,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         addColumn(Column.AliquotCount);
         addColumn(Column.AliquotVolume);
-        addColumn(Column.AliquotUnit);
+        addColumn(AliquotUnit);
         addColumn(Column.AvailableAliquotCount);
         addColumn(Column.AvailableAliquotVolume);
 
@@ -944,7 +948,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         rawUnitsColumn.setShownInInsertView(false);
         rawUnitsColumn.setShownInUpdateView(false);
 
-        var rawAliquotVolumeColumn = addColumn(Column.RawAliquotVolume);
+        var rawAliquotVolumeColumn = addColumn(RawAliquotVolume);
         rawAliquotVolumeColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             @Override
@@ -956,7 +960,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     public void addQueryFieldKeys(Set<FieldKey> keys)
                     {
                         super.addQueryFieldKeys(keys);
-                        keys.add(FieldKey.fromParts(AliquotVolume));
+                        keys.add(AliquotVolume.fieldKey());
 
                     }
                 };
@@ -967,7 +971,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         rawAliquotVolumeColumn.setShownInInsertView(false);
         rawAliquotVolumeColumn.setShownInUpdateView(false);
 
-        var rawAvailableAliquotVolumeColumn = addColumn(Column.RawAvailableAliquotVolume);
+        var rawAvailableAliquotVolumeColumn = addColumn(RawAvailableAliquotVolume);
         rawAvailableAliquotVolumeColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             @Override
@@ -979,7 +983,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     public void addQueryFieldKeys(Set<FieldKey> keys)
                     {
                         super.addQueryFieldKeys(keys);
-                        keys.add(FieldKey.fromParts(AvailableAliquotVolume));
+                        keys.add(AvailableAliquotVolume.fieldKey());
 
                     }
                 };
@@ -990,7 +994,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         rawAvailableAliquotVolumeColumn.setShownInInsertView(false);
         rawAvailableAliquotVolumeColumn.setShownInUpdateView(false);
 
-        var rawAliquotUnitColumn = addColumn(Column.RawAliquotUnit);
+        var rawAliquotUnitColumn = addColumn(RawAliquotUnit);
         rawAliquotUnitColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             @Override
@@ -1002,7 +1006,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     public void addQueryFieldKeys(Set<FieldKey> keys)
                     {
                         super.addQueryFieldKeys(keys);
-                        keys.add(FieldKey.fromParts(Column.AliquotUnit));
+                        keys.add(AliquotUnit.fieldKey());
 
                     }
                 };
@@ -1265,7 +1269,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (selectedColumns.contains(new FieldKey(null, Column.IsAliquot.name())))
             selectedColumns.add(new FieldKey(null, Column.RootMaterialRowId.name()));
         if (selectedColumns.contains(new FieldKey(null, AliquotVolume.name())) || selectedColumns.contains(new FieldKey(null, AvailableAliquotVolume.name())))
-            selectedColumns.add(new FieldKey(null, Column.AliquotUnit.name()));
+            selectedColumns.add(new FieldKey(null, AliquotUnit.name()));
         selectedColumns.addAll(wrappedFieldKeys);
         if (null != getFilter())
             selectedColumns.addAll(getFilter().getAllFieldKeys());
