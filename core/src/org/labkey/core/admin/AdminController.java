@@ -479,7 +479,6 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
         AdminConsole.addLink(Diagnostics, "attachments", PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(root, "core", "DocumentsGroupedByParentType")
             .addParameter("query." + QueryParam.containerFilterName, "AllFolders"), ApplicationAdminPermission.class);
-        AdminConsole.addLink(Diagnostics, "attachments - old", new ActionURL(AttachmentsAction.class, root));
         AdminConsole.addLink(Diagnostics, "caches", new ActionURL(CachesAction.class, root));
         AdminConsole.addLink(Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Diagnostics, "credits", new ActionURL(CreditsAction.class, root));
@@ -3581,22 +3580,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction
-    public class AttachmentsAction extends SimpleViewAction<Object>
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            return AttachmentService.get().getAdminView(getViewContext().getActionURL());
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            addAdminNavTrail(root, "Attachments", getClass());
-        }
-    }
-
+    // Left behind with no link in the UI; this could be useful to track down orphaned attachments during the migration
+    // process. Should delete after attachment migration is complete (late 2026?).
     @AdminConsoleAction
     public class FindAttachmentParentsAction extends SimpleViewAction<Object>
     {
