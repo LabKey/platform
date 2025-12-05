@@ -55,6 +55,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -114,7 +115,7 @@ public class ExcelLoader extends DataLoader
     {
         try
         {
-            try (InputStream inputStream = dataFile.openInputStream())
+            try (InputStream inputStream = new BufferedInputStream(dataFile.openInputStream()))
             {
                 return ExcelLoader.FILE_TYPE.isType(dataFile.toNioPathForRead(), null, FileUtil.readHeader(inputStream, 8 * 1024));
             }
