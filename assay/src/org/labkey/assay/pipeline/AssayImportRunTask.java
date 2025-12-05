@@ -35,7 +35,6 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.pipeline.XarGeneratorId;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.AbstractTaskFactory;
@@ -424,8 +423,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
     public static class Factory extends AbstractTaskFactory<AssayImportRunTaskFactorySettings, Factory>
     {
-        private final FileType _outputType = XarGeneratorId.FT_PIPE_XAR_XML;
-
         private String _providerName = "${" + PROVIDER_NAME_PROPERTY + "}";
         private String _protocolName = "${" + PROTOCOL_NAME_PROPERTY + "}";
 
@@ -466,11 +463,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         public List<FileType> getInputTypes()
         {
             return Collections.emptyList();
-        }
-
-        public FileType ßgetOutputType()
-        {
-            return _outputType;
         }
 
         @Override
