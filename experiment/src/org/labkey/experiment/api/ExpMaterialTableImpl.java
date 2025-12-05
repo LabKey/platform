@@ -688,6 +688,26 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
+    @Override
+    public MutableColumnInfo createPropertyColumn(String alias)
+    {
+        var ret = wrapColumn(alias, _rootTable.getColumn(RowId.name()));
+
+        if (_ss != null && _ss.getTinfo() != null)
+        {
+            ForeignKey fk = new QueryForeignKey.Builder(getUserSchema(), getLookupContainerFilter())
+                .table(_ss.getTinfo())
+                .key(RowId.name())
+                .build();
+            ret.setFk(fk);
+        }
+
+        ret.setIsUnselectable(true);
+        ret.setDescription("A holder for any custom fields associated with this sample");
+        ret.setHidden(true);
+        return ret;
+    }
+
     private static boolean isStatusEnabled(Container c)
     {
         return SampleStatusService.get().supportsSampleStatus() && !SampleStatusService.get().getAllProjectStates(c).isEmpty();
