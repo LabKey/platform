@@ -1764,6 +1764,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 }
                 catch (IllegalArgumentException ignore)
                 {
+                    // if aliquot units are incompatible, skip
                 }
 
                 double convertedAmount = 0;

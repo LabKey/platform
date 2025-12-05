@@ -1208,8 +1208,8 @@ describe('Amount/Unit CRUD', () => {
 
         const countRows = [
             {name: 'S-unit', amount: 4.56, units: 'unit'},
-            {name: 'S-pcs', amount: 4.56, units: 'pieces'},
-            {name: 'S-kit', amount: 4.56, units: 'kits'},
+            {name: 'S-pieces', amount: 4.56, units: 'pieces'},
+            {name: 'S-kits', amount: 4.56, units: 'kits'},
             {name: 'S-cells', amount: 4.56, units: 'cells'}
         ]
         sampleRowsWithUnits = await ExperimentCRUDUtils.insertRows(server, countRows, 'samples', sampleTypeCount, topFolderOptions, editorUserOptions);
