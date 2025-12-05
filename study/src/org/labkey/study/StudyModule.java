@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -285,7 +285,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         NotificationService.get().registerNotificationType(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, "Study", "fa-users");
 
-        AttachmentService.get().registerAttachmentType(ProtocolDocumentType.get());
+        AttachmentService.get().registerAttachmentParentType(ProtocolDocumentType.get());
 
         // Register so all administrators get this permission
         RoleManager.registerPermission(new ManageStudyPermission());
@@ -543,7 +543,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             }
 
             @Override
-            public @NotNull Collection<AttachmentType> getAttachmentTypes()
+            public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
             {
                 SpecimenService ss = SpecimenService.get();
 

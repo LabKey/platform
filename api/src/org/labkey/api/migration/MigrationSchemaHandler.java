@@ -2,7 +2,7 @@ package org.labkey.api.migration;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
@@ -54,7 +54,7 @@ public interface MigrationSchemaHandler
 
     void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Set<GUID> copyContainers);
 
-    @NotNull Collection<AttachmentType> getAttachmentTypes();
+    @NotNull Collection<AttachmentParentType> getAttachmentTypes();
 
     void afterMigration(DatabaseMigrationConfiguration configuration);
 }
