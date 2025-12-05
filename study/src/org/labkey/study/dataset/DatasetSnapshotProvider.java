@@ -487,7 +487,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                                 ViewContext context = form.getViewContext();
                                 new DatasetDefinition.DatasetAuditHandler(dsDef).addAuditEvent(context.getUser(), context.getContainer(), AuditBehaviorType.DETAILED,
-                                        "Dataset snapshot was updated. " + numRowsDeleted + " rows were removed and replaced with " + newRows.size() + " rows.", null);
+                                        "Dataset snapshot was updated. " + numRowsDeleted + " rows were removed and replaced with " + newRows.size() + " rows.");
 
                                 def.setLastUpdated(new Date());
                                 def.save(form.getViewContext().getUser());
@@ -504,7 +504,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 {
                     ViewContext context = form.getViewContext();
                     new DatasetDefinition.DatasetAuditHandler(dsDef).addAuditEvent(context.getUser(), context.getContainer(), AuditBehaviorType.DETAILED,
-                            "Dataset snapshot was not updated. Cause of failure: " + e.getMessage(), null);
+                            "Dataset snapshot was not updated. Cause of failure: " + e.getMessage());
                 }
             }
         }
@@ -791,7 +791,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, _def.getName());
                         if (dsDef != null)
                             new DatasetDefinition.DatasetAuditHandler(dsDef).addAuditEvent(context.getUser(), context.getContainer(), AuditBehaviorType.DETAILED,
-                                    "Dataset snapshot was not updated. Cause of failure: " + errors.getMessage(), null);
+                                    "Dataset snapshot was not updated. Cause of failure: " + errors.getMessage());
                     }
                 }
             }

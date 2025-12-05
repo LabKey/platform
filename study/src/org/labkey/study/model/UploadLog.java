@@ -33,7 +33,6 @@ public class UploadLog
     private Date created;
     private int userId;
     private String description;
-    private String filePath;
     private int datasetId;
     private String status;
 
@@ -85,16 +84,6 @@ public class UploadLog
     public void setDescription(String description)
     {
         this.description = description;
-    }
-
-    public String getFilePath()
-    {
-        return filePath;
-    }
-
-    public void setFilePath(String filePath)
-    {
-        this.filePath = filePath;
     }
 
     public int getDatasetId()
