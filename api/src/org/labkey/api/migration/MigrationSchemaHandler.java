@@ -59,5 +59,5 @@ public interface MigrationSchemaHandler
 
     void afterMigration(DatabaseMigrationConfiguration configuration);
 
-    void writeFilePaths(PrintWriter writer, Set<GUID> guids);
+    void writeFilePaths(FilePathWriter writer, Set<GUID> guids);
 }

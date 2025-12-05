@@ -335,7 +335,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
     }
 
     @Override
-    public void writeFilePaths(PrintWriter writer, Set<GUID> guids)
+    public void writeFilePaths(FilePathWriter writer, Set<GUID> guids)
     {
     }
 }
