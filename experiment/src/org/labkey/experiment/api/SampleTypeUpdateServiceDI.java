@@ -244,7 +244,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     protected DataIteratorBuilder preTriggerDataIterator(DataIteratorBuilder in, DataIteratorContext context)
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        return new PrepareDataIteratorBuilder(_sampleType, (ExpMaterialTableImpl) getQueryTable(), in, getContainer(), getUser());
+        return new PreTriggerDataIteratorBuilder(_sampleType, (ExpMaterialTableImpl) getQueryTable(), in, getContainer(), getUser());
     }
 
     @Override
@@ -1631,7 +1631,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     // TODO: validate/compare functionality of CoerceDataIterator and loadRows()
-    private static class PrepareDataIteratorBuilder implements DataIteratorBuilder
+    private static class PreTriggerDataIteratorBuilder implements DataIteratorBuilder
     {
         private static final int BATCH_SIZE = 100;
 
@@ -1641,7 +1641,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         final Container container;
         final User user;
 
-        public PrepareDataIteratorBuilder(@NotNull ExpSampleTypeImpl sampleType, ExpMaterialTableImpl materialTable, DataIteratorBuilder in, Container container, User user)
+        public PreTriggerDataIteratorBuilder(@NotNull ExpSampleTypeImpl sampleType, ExpMaterialTableImpl materialTable, DataIteratorBuilder in, Container container, User user)
         {
             this.sampleType = sampleType;
             this.builder = in;
@@ -1654,10 +1654,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator source = LoggingDataIterator.wrap(builder.getDataIterator(context));
+            boolean isMerge = context.getInsertOption() == InsertOption.MERGE;
             boolean isUpdate = context.getInsertOption() == InsertOption.UPDATE;
 
             // drop columns
-            ColumnInfo containerColumn = this.materialTable.getColumn(this.materialTable.getContainerFieldKey());
+            ColumnInfo containerColumn = materialTable.getColumn(materialTable.getContainerFieldKey());
             String containerFieldLabel = containerColumn.getLabel();
             var drop = new CaseInsensitiveHashSet();
             for (int i = 1; i <= source.getColumnCount(); i++)
@@ -1690,8 +1691,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         continue;
                     if (isContainerField && context.isCrossFolderImport() && !context.getInsertOption().updateOnly)
                         continue;
-                    if (isUpdate && RowId.name().equalsIgnoreCase(name))
-                        continue;
+                    if (RowId.name().equalsIgnoreCase(name))
+                    {
+                        if (isUpdate)
+                            continue;
+                        if (isMerge)
+                            throw new IllegalArgumentException("RowId is not accepted when merging samples. Specify only the sample name instead.");
+                    }
                     drop.add(name);
                 }
             }

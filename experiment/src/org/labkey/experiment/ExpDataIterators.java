@@ -531,6 +531,9 @@ public class ExpDataIterators
             _nameCol = map.get(Name.name()) == null ? null : di.getSupplier(map.get(Name.name()));
             _expAliasTable = expAliasTable;
             _isUpdateOnly = _context.getInsertOption().updateOnly;
+
+            if (_isUpdateOnly && !di.supportsGetExistingRecord())
+                throw new IllegalArgumentException("DataIterator must support getExistingRecord() to update aliases");
         }
 
         @Override
@@ -752,6 +755,7 @@ public class ExpDataIterators
         final Integer _lsidCol;
         final Integer _nameCol;
         final Integer _flagCol;
+        final boolean _isUpdateOnly;
 
         protected FlagDataIterator(DataIterator di, DataIteratorContext context, User user, boolean isSample, ExpObject dataType, Container container)
         {
@@ -762,6 +766,10 @@ public class ExpDataIterators
             _lsidCol = map.get("lsid");
             _nameCol = map.get("name");
             _flagCol = map.containsKey("flag") ? map.get("flag") : map.get("comment");
+            _isUpdateOnly = _context.getInsertOption().updateOnly;
+
+            if (_isUpdateOnly && !di.supportsGetExistingRecord())
+                throw new IllegalArgumentException("DataIterator must support getExistingRecord() to update flag/comment");
         }
 
         @Override
@@ -779,7 +787,7 @@ public class ExpDataIterators
                 return true;
 
             ExpObject expObject = null;
-            if (_nameCol != null && (_context.getInsertOption().mergeRows || _context.getInsertOption().updateOnly))
+            if (_nameCol != null && (_context.getInsertOption().mergeRows || _isUpdateOnly))
             {
                 Object nameValue = get(_nameCol);
                 if (nameValue instanceof String name)
@@ -791,6 +799,17 @@ public class ExpDataIterators
                 Object lsidValue = get(_lsidCol);
                 if (lsidValue instanceof String lsid)
                     expObject = getExpObjectByLsid(lsid);
+            }
+
+            if (expObject == null && _isUpdateOnly)
+            {
+                Map<String, Object> oldRow = getExistingRecord();
+                if (oldRow != null)
+                {
+                    String lsid = (String) oldRow.get(LSID.name());
+                    if (lsid != null)
+                        expObject = getExpObjectByLsid(lsid);
+                }
             }
 
             if (expObject != null)
@@ -1108,7 +1127,7 @@ public class ExpDataIterators
         }
     }
     
-    static class DerivationDataIterator extends DerivationDataIteratorBase
+    private static class DerivationDataIterator extends DerivationDataIteratorBase
     {
         final Integer _aliquotParentCol;
         final Map<String, String> _lsidNames;
@@ -1273,7 +1292,7 @@ public class ExpDataIterators
         }
     }
     
-    static class SampleUpdateDerivationDataIterator extends DerivationDataIteratorBase
+    private static class SampleUpdateDerivationDataIterator extends DerivationDataIteratorBase
     {
         final Integer _aliquotParentCol; // Map from Data name to Set of (parentColName, parentName)
         final Map<Object, String> _aliquotParents; // Map of Data name and its aliquotedFromLSID
@@ -1407,7 +1426,7 @@ public class ExpDataIterators
         }
     }
 
-    static class DataUpdateDerivationDataIterator extends DerivationDataIteratorBase
+    private static class DataUpdateDerivationDataIterator extends DerivationDataIteratorBase
     {
         // Map from Data name to Set of (parentColName, parentName)
         final Map<String, Set<Pair<String, String>>> _parentNames;
@@ -2113,6 +2132,9 @@ public class ExpDataIterators
             _rowIds = new LongArrayList(100);
 
             _isInsert = !context.getInsertOption().allowUpdate; // only useRowIdCol for INSERT. For UPDATE, rowId usually is not available. For MERGE, rowId is a new DBSequence value for existing data
+
+            if (!_isInsert && !di.supportsGetExistingRecord())
+                throw new IllegalArgumentException("DataIterator must support getExistingRecord() for search index update.");
         }
 
         static Long asLong(Object o)
@@ -2391,10 +2413,15 @@ public class ExpDataIterators
                 dib = getRootMaterialRowIdBuilder(dib);
 
                 if (isMergeOrUpdate)
+                {
                     dib = new SampleStatusCheckIteratorBuilder(dib, _container);
 
-                if (isUpdateOnly)
-                    dib = new SampleUpdateOnlyDataIteratorBuilder(dib, context, _container, _user);
+                    if (isUpdateOnly)
+                    {
+                        dib = new SampleUpdateOnlyValidatorsIteratorBuilder(dib, _container, _user);
+                        dib = new SampleNameChangeDataIteratorBuilder(dib, _user, canUpdateNames);
+                    }
+                }
             }
 
             // Insert into exp.data then the provisioned table
@@ -2445,19 +2472,17 @@ public class ExpDataIterators
         }
     }
 
-    private static class SampleUpdateOnlyDataIteratorBuilder implements DataIteratorBuilder
+    private static class SampleUpdateOnlyValidatorsIteratorBuilder implements DataIteratorBuilder
     {
         private final Container _container;
         private final DataIteratorBuilder _in;
         private final User _user;
 
-        public SampleUpdateOnlyDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context, Container container, User user)
+        public SampleUpdateOnlyValidatorsIteratorBuilder(@NotNull DataIteratorBuilder in, Container container, User user)
         {
             _container = container;
             _in = in;
             _user = user;
-
-            assert context.getInsertOption().updateOnly : "SampleUpdateOnlyDataIteratorBuilder should only be used for UPDATE_ONLY";
         }
 
         @Override
@@ -2479,7 +2504,28 @@ public class ExpDataIterators
             if (validate.hasValidators())
                 di = validate;
 
-            return LoggingDataIterator.wrap(new SampleNameChangeDataIterator(di, context, _container, _user));
+            return LoggingDataIterator.wrap(di);
+        }
+    }
+
+    private static class SampleNameChangeDataIteratorBuilder implements DataIteratorBuilder
+    {
+        private final DataIteratorBuilder _in;
+        private final boolean _canUpdateNames;
+        private final User _user;
+
+        public SampleNameChangeDataIteratorBuilder(@NotNull DataIteratorBuilder in, User user, boolean canUpdateNames)
+        {
+            _in = in;
+            _canUpdateNames = canUpdateNames;
+            _user = user;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator di = _in.getDataIterator(context);
+            return LoggingDataIterator.wrap(new SampleNameChangeDataIterator(di, context, _user, _canUpdateNames));
         }
     }
 
@@ -2487,20 +2533,20 @@ public class ExpDataIterators
     {
         private final DataIteratorContext _context;
         private final Integer _nameCol;
-        private final boolean _isAllowUserSpecificNamesValue;
+        private final boolean _canUpdateNames;
         private final User _user;
 
         protected SampleNameChangeDataIterator(
             DataIterator di,
             DataIteratorContext context,
-            Container container,
-            User user
+            User user,
+            boolean canUpdateNames
         )
         {
             super(di);
             _context = context;
             _nameCol = DataIteratorUtil.createColumnNameMap(di).get(Name.name());
-            _isAllowUserSpecificNamesValue = NameExpressionOptionService.get().getAllowUserSpecificNamesValue(container);
+            _canUpdateNames = canUpdateNames;
             _user = user;
 
             if (!di.supportsGetExistingRecord())
@@ -2514,27 +2560,29 @@ public class ExpDataIterators
             if (!hasNext)
                 return false;
 
+            if (_nameCol == null || _context.getErrors().hasErrors())
+                return true;
+
             var existingRecord = getExistingRecord();
-            if (_nameCol == null || _context.getErrors().hasErrors() || existingRecord == null)
+            if (existingRecord == null)
                 return true;
 
             Object newNameObj = get(_nameCol);
             String newName = newNameObj == null ? null : String.valueOf(newNameObj);
             String oldName = (String) existingRecord.get(Name.name());
             boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
+            if (!hasNameChange)
+                return true;
 
-            if (hasNameChange)
+            if (_canUpdateNames)
             {
-                if (_isAllowUserSpecificNamesValue)
-                {
-                    Long rowId = asLong(existingRecord.get(RowId.name()));
-                    var sample = ExperimentService.get().getExpMaterial(rowId);
-                    if (sample != null)
-                        ExperimentService.get().addObjectLegacyName(sample.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpMaterial.class), oldName, _user);
-                }
-                else
-                    _context.getErrors().addRowError(new ValidationException("User-specified sample name not allowed"));
+                Long rowId = asLong(existingRecord.get(RowId.name()));
+                ExpMaterial sample = ExperimentService.get().getExpMaterial(rowId);
+                if (sample != null)
+                    ExperimentService.get().addObjectLegacyName(sample.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpMaterial.class), oldName, _user);
             }
+            else
+                _context.getErrors().addRowError(new ValidationException("User-specified sample name not allowed"));
 
             return true;
         }
