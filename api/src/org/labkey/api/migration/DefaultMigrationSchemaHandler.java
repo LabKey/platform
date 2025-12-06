@@ -34,7 +34,6 @@ import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -307,7 +306,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         if (unseen.isEmpty())
             LOG.info("All AttachmentTypes have been seen");
         else
-            throw new ConfigurationException("These AttachmentTypes have not been seen: " + unseen.stream().map(type -> type.getClass().getSimpleName()).collect(Collectors.joining(", ")));
+            LOG.error("These AttachmentTypes have not been seen: {}", unseen.stream().map(type -> type.getClass().getSimpleName()).collect(Collectors.joining(", ")));
 
         // Shut down the attachment JobRunner
         LOG.info("Waiting for attachments background transfer to complete");
