@@ -34,7 +34,7 @@ public enum Unit
     cells(KindOfQuantity.Count, unit, 1.0, 2, "cells",
             Quantity.class,
             "cell", "cells"),
-    boxes(KindOfQuantity.Count, unit, 1.0, 2, "box",
+    boxes(KindOfQuantity.Count, unit, 1.0, 2, "boxes",
             Quantity.class,
             "box", "boxes"),
     kits(KindOfQuantity.Count, unit, 1.0, 2, "kits",
