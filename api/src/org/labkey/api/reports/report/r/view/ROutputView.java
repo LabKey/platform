@@ -29,11 +29,8 @@ import org.labkey.api.view.HttpView;
 import org.labkey.vfs.FileLike;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -128,7 +125,7 @@ public class ROutputView extends HttpView<Object>
         return null;
     }
 
-    protected void renderTitle(Object model, PrintWriter out)
+    protected void renderTitle(PrintWriter out)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -164,7 +161,7 @@ public class ROutputView extends HttpView<Object>
         return null;
     }
 
-    protected boolean exists(File file)
+    protected boolean existsWithContent(FileLike file)
     {
         long size = 0;
 
@@ -181,11 +178,7 @@ public class ROutputView extends HttpView<Object>
             if (ALLOW_REMOTE_FILESIZE_BYPASS && _isRemote)
                 return true;
 
-            try
-            {
-                size = Files.size(Paths.get(file.getAbsolutePath()));
-            }
-            catch(IOException ignore){}
+            size = file.getSize();
         }
 
         return (size > 0);
@@ -199,16 +192,12 @@ public class ROutputView extends HttpView<Object>
 
         if (tempDir.exists())
         {
-            File[] filesToDelete = tempDir.listFiles(new FileFilter(){
-                @Override
-                public boolean accept(File file)
+            File[] filesToDelete = tempDir.listFiles(file -> {
+                if (!file.isDirectory() && file.getName().startsWith(PREFIX))
                 {
-                    if (!file.isDirectory() && file.getName().startsWith(PREFIX))
-                    {
-                        return file.lastModified() < cutoff;
-                    }
-                    return false;
+                    return file.lastModified() < cutoff;
                 }
+                return false;
             });
             
             for (File file : filesToDelete)

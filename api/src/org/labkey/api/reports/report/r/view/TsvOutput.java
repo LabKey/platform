@@ -112,7 +112,7 @@ public class TsvOutput extends AbstractParamReplacement
         @Override
         protected String renderInternalAsString(FileLike file) throws IOException
         {
-            if (file.exists())
+            if (existsWithContent(file))
                 return PageFlowUtil.getStreamContentsAsString(file.openInputStream());
 
             return null;
@@ -126,104 +126,111 @@ public class TsvOutput extends AbstractParamReplacement
                 TabLoader tabLoader = createTabLoader(file);
                 if (tabLoader != null)
                 {
-                    ColumnDescriptor[] cols = tabLoader.getColumns();
-                    List<Map<String, Object>> data = tabLoader.load();
-
-                    List<ColumnDescriptor> display = new ArrayList<>();
-                    HashMap<String, ColumnDescriptor> hrefs = new HashMap<>(tabLoader.getColumns().length * 2);
-                    HashMap<String, ColumnDescriptor> styles = new HashMap<>(tabLoader.getColumns().length * 2);
-
-                    for (ColumnDescriptor col : cols)
-                        hrefs.put(col.name, null);
-
-                    for (ColumnDescriptor col : cols)
+                    try
                     {
-                        if (col.name.endsWith(".href") || col.name.endsWith("_href"))
+                        ColumnDescriptor[] cols = tabLoader.getColumns();
+                        List<Map<String, Object>> data = tabLoader.load();
+
+                        List<ColumnDescriptor> display = new ArrayList<>();
+                        HashMap<String, ColumnDescriptor> hrefs = new HashMap<>(tabLoader.getColumns().length * 2);
+                        HashMap<String, ColumnDescriptor> styles = new HashMap<>(tabLoader.getColumns().length * 2);
+
+                        for (ColumnDescriptor col : cols)
+                            hrefs.put(col.name, null);
+
+                        for (ColumnDescriptor col : cols)
                         {
-                            String name = col.name.substring(0,col.name.length()-".href".length());
-                            if (hrefs.containsKey(name))
+                            if (col.name.endsWith(".href") || col.name.endsWith("_href"))
                             {
-                                hrefs.put(name,col);
-                                continue;
+                                String name = col.name.substring(0, col.name.length() - ".href".length());
+                                if (hrefs.containsKey(name))
+                                {
+                                    hrefs.put(name, col);
+                                    continue;
+                                }
                             }
-                        }
-                        if (col.name.endsWith(".style") || col.name.endsWith("_style"))
-                        {
-                            String name = col.name.substring(0,col.name.length()-".style".length());
-                            if (hrefs.containsKey(name))
+                            if (col.name.endsWith(".style") || col.name.endsWith("_style"))
                             {
-                                styles.put(name,col);
-                                continue;
+                                String name = col.name.substring(0, col.name.length() - ".style".length());
+                                if (hrefs.containsKey(name))
+                                {
+                                    styles.put(name, col);
+                                    continue;
+                                }
                             }
+                            display.add(col);
                         }
-                        display.add(col);
-                    }
 
-                    int row = 0;
-                    out.write("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
-                    renderTitle(model, out);
-                    if (isCollapse())
-                        out.write("<tr style=\"display:none\"><td><table>");
-                    else
-                        out.write("<tr><td><table class=\"labkey-r-tsvout\">");
-                    out.write("<tr>");
-                    for (ColumnDescriptor col : display)
-                    {
-                        if (Number.class.isAssignableFrom(col.getDataClass()))
-                            out.write("<td class=\"labkey-column-header\" align=\"right\">");
+                        int row = 0;
+                        out.write("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
+                        renderTitle(out);
+                        if (isCollapse())
+                            out.write("<tr style=\"display:none\"><td><table>");
                         else
-                            out.write("<td class=\"labkey-column-header\">");
-                        out.write(PageFlowUtil.filter(col.name, true, true));
-                        out.write("</td>");
-                        row++;
-                    }
-                    out.write("</tr>");
-
-                    for (Map<String, Object> m : data)
-                    {
-                        if (row % 2 == 0)
-                            out.write("<tr class=\"labkey-row\">");
-                        else
-                            out.write("<tr class=\"labkey-alternate-row\">");
+                            out.write("<tr><td><table class=\"labkey-r-tsvout\">");
+                        out.write("<tr>");
                         for (ColumnDescriptor col : display)
                         {
-                            Object colVal = m.get(col.name);
-                            if ("NA".equals(colVal))
-                                colVal = null;
-                            ColumnDescriptor hrefCol = hrefs.get(col.name);
-                            String href = hrefCol == null ? null : ConvertUtils.convert((m.get(hrefCol.name)));
-                            ColumnDescriptor styleCol = styles.get(col.name);
-                            String style = styleCol == null ? null : ConvertUtils.convert((m.get(styleCol.name)));
-
-                            out.write("<td");
-                            if (Number.class.isAssignableFrom(col.clazz))
-                                out.write(" align=\"right\"");
-                            if (null != style)
-                            {
-                                out.write(" style=\"");
-                                out.write(PageFlowUtil.filter(style));
-                                out.write("\"");
-                            }
-                            out.write(">");
-                            if (null != href)
-                            {
-                                out.write("<a href=\"");
-                                out.write(PageFlowUtil.filter(href));
-                                out.write("\">");
-                            }
-                            if (null == colVal)
-                                out.write("&nbsp;");
+                            if (Number.class.isAssignableFrom(col.getDataClass()))
+                                out.write("<td class=\"labkey-column-header\" align=\"right\">");
                             else
-                                out.write(PageFlowUtil.filter(ConvertUtils.convert(colVal), true, true));
-                            if (null != href)
-                                out.write("</a>");
+                                out.write("<td class=\"labkey-column-header\">");
+                            out.write(PageFlowUtil.filter(col.name, true, true));
                             out.write("</td>");
+                            row++;
                         }
                         out.write("</tr>");
-                        row++;
+
+                        for (Map<String, Object> m : data)
+                        {
+                            if (row % 2 == 0)
+                                out.write("<tr class=\"labkey-row\">");
+                            else
+                                out.write("<tr class=\"labkey-alternate-row\">");
+                            for (ColumnDescriptor col : display)
+                            {
+                                Object colVal = m.get(col.name);
+                                if ("NA".equals(colVal))
+                                    colVal = null;
+                                ColumnDescriptor hrefCol = hrefs.get(col.name);
+                                String href = hrefCol == null ? null : ConvertUtils.convert((m.get(hrefCol.name)));
+                                ColumnDescriptor styleCol = styles.get(col.name);
+                                String style = styleCol == null ? null : ConvertUtils.convert((m.get(styleCol.name)));
+
+                                out.write("<td");
+                                if (Number.class.isAssignableFrom(col.clazz))
+                                    out.write(" align=\"right\"");
+                                if (null != style)
+                                {
+                                    out.write(" style=\"");
+                                    out.write(PageFlowUtil.filter(style));
+                                    out.write("\"");
+                                }
+                                out.write(">");
+                                if (null != href)
+                                {
+                                    out.write("<a href=\"");
+                                    out.write(PageFlowUtil.filter(href));
+                                    out.write("\">");
+                                }
+                                if (null == colVal)
+                                    out.write("&nbsp;");
+                                else
+                                    out.write(PageFlowUtil.filter(ConvertUtils.convert(colVal), true, true));
+                                if (null != href)
+                                    out.write("</a>");
+                                out.write("</td>");
+                            }
+                            out.write("</tr>");
+                            row++;
+                        }
+                        out.write("</table></td></tr>");
+                        out.write("</table>");
                     }
-                    out.write("</table></td></tr>");
-                    out.write("</table>");
+                    finally
+                    {
+                        tabLoader.close();
+                    }
                 }
             }
         }
