@@ -16,16 +16,12 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.converters.IntegerConverter;
-import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -50,7 +46,6 @@ import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
@@ -100,7 +95,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -116,7 +110,6 @@ import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -143,14 +136,12 @@ import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CUR
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
-import static org.labkey.api.exp.api.SampleTypeDomainKind.SAMPLE_TYPE_FILE_DIRECTORY_NAME;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
 import static org.labkey.api.exp.api.SampleTypeService.MISSING_AMOUNT_ERROR_MESSAGE;
 import static org.labkey.api.exp.api.SampleTypeService.MISSING_UNITS_ERROR_MESSAGE;
 import static org.labkey.api.exp.api.SampleTypeService.UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
-import static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES;
 import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
@@ -158,13 +149,7 @@ import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.r
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
 
 /**
- *
- * This replaces the old row at a time UploadSamplesHelper.uploadMaterials() implementations.
- *
- * originally copied from ExpDataClassDataTableImpl.DataClassDataUpdateService,
- *
- * TODO find remaining shared code and refactor
- *
+ * QueryUpdateService implementation for samples in sample types.
  */
 public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 {
@@ -523,17 +508,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         throw new ConversionExceptionWithMessage(MISSING_UNITS_ERROR_MESSAGE);
     }
 
-    private static boolean useDataIteratorForUpdate(
-        List<Map<String, Object>> rows,
-        List<Map<String, Object>> oldKeys
-    )
-    {
-        if (rows == null || rows.isEmpty() || oldKeys != null)
-            return false;
-
-        return hasUniformKeys(rows);
-    }
-
     @Override
     public List<Map<String, Object>> updateRows(
         User user,
@@ -546,65 +520,49 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     ) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        if (rows != null && !rows.isEmpty())
-            confirmAmountAndUnitsColumns(rows.get(0).keySet());
-        boolean useDib = useDataIteratorForUpdate(rows, oldKeys);
+        if (rows == null || rows.isEmpty())
+            return Collections.emptyList();
 
         List<Map<String, Object>> results;
         DbScope scope = getSchema().getDbSchema().getScope();
-        if (useDib)
-        {
-            Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
-            recordDataIteratorUsed(configParameters);
+        Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
+        recordDataIteratorUsed(configParameters);
 
-            try
-            {
-                results = scope.executeWithRetry(transaction ->
-                {
-                    var context = getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters);
-                    var ret = super._updateRowsUsingDIB(user, container, rows, context, extraScriptContext);
-                    // we need to throw if we don't want executeWithRetry() attempt commit()
-                    if (context.getErrors().hasErrors())
-                        throw new DbScope.RetryPassthroughException(context.getErrors());
-                    return ret;
-                });
-            }
-            catch (DbScope.RetryPassthroughException retryException)
-            {
-                retryException.rethrow(BatchValidationException.class);
-                throw retryException.throwRuntimeException();
-            }
-        }
-        else
+        try
         {
-            results = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
-
-            SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified);
-            scope.addCommitTask(() ->
+            results = scope.executeWithRetry(transaction ->
             {
-                List<Long> orderedRowIds = new ArrayList<>();
-                for (Map<String, Object> result : results)
+                var context = getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters);
+                int index = 0;
+                List<Map<String, Object>> ret = new ArrayList<>();
+
+                while (index < rows.size())
                 {
-                    Long rowId = MapUtils.getLong(result, RowId.name());
-                    if (rowId != null)
-                        orderedRowIds.add(rowId);
+                    var rowKeys = new CaseInsensitiveHashSet(rows.get(index).keySet());
+                    confirmAmountAndUnitsColumns(rowKeys);
+
+                    var nextIndex = index + 1;
+                    while (nextIndex < rows.size() && rowKeys.equals(new CaseInsensitiveHashSet(rows.get(nextIndex).keySet())))
+                        nextIndex++;
+
+                    var rowsToProcess = rows.subList(index, nextIndex);
+                    index = nextIndex;
+
+                    var subRet = super._updateRowsUsingDIB(user, container, rowsToProcess, context, extraScriptContext);
+                    if (subRet != null)
+                        ret.addAll(subRet);
                 }
-                // Issue 51263: order by RowId to reduce deadlock
-                Collections.sort(orderedRowIds);
 
-                ExpMaterialTableImpl tableInfo = (ExpMaterialTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(_sampleType.getName());
-                ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
-                        queue.addRunnable((q) ->
-                        {
-                            for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterials(sublist))
-                                expMaterial.index(q, tableInfo);
-                        })
-                );
-            }, DbScope.CommitTaskOption.POSTCOMMIT);
-
-            /* setup mini dataiterator pipeline to process lineage */
-            DataIterator di = _toDataIteratorBuilder("updateRows.lineage", results).getDataIterator(new DataIteratorContext());
-            ExpDataIterators.derive(user, container, di, true, _sampleType, true);
+                // we need to throw if we don't want executeWithRetry() attempt commit()
+                if (context.getErrors().hasErrors())
+                    throw new DbScope.RetryPassthroughException(context.getErrors());
+                return ret;
+            });
+        }
+        catch (DbScope.RetryPassthroughException retryException)
+        {
+            retryException.rethrow(BatchValidationException.class);
+            throw retryException.throwRuntimeException();
         }
 
         if (results != null && !results.isEmpty() && !errors.hasErrors())
@@ -777,17 +735,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         throw new IllegalStateException("Overridden .getRow()/.getRows() calls .getMaterialMap()");
     }
 
-    public Set<String> getAliquotSpecificFields()
-    {
-        Domain domain = getDomain();
-        Set<String> fields = domain.getProperties().stream()
-                .filter(dp -> ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()))
-                .map(ImportAliasable::getName)
-                .collect(Collectors.toSet());
-
-        return new CaseInsensitiveHashSet(fields);
-    }
-
     public Set<String> getSampleMetaFields()
     {
         Domain domain = getDomain();
@@ -831,29 +778,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return false;
     }
 
-    // Customize negative amount error message when the provided unit doesn't match sample type unit.
-    // For example, provided value of "-1 kg" would have been converted to "-1000 mg" by now.
-    // This updateRow (going to be deprecated) inconsistent with the data iterator code path, which use provided value "-1" in error message.
-    // TODO: remove this override when consolidating sample update method to remove row by row update
-    @Override
-    protected void validateUpdateRow(Map<String, Object> row) throws ValidationException
-    {
-        for (ColumnInfo col : getQueryTable().getColumns())
-        {
-            if (row.containsKey(col.getColumnName()))
-            {
-                // if provided value is present, validate provided
-                Object value = row.get(col.getColumnName());
-                Object providedValue = null;
-                if (_sampleType != null && _sampleType.getMetricUnit() != null && value != null && (StoredAmount.name().equalsIgnoreCase(col.getColumnName()) || "Amount".equalsIgnoreCase(col.getColumnName())))
-                {
-                    providedValue = value + " (" + _sampleType.getMetricUnit() + ")";
-                }
-                validateValue(col, value, providedValue);
-            }
-        }
-    }
-
     @Override
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
@@ -882,186 +806,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
+    protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys)
     {
-        assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        // LSID was stripped by super.updateRows() and is needed to insert into the dataclass provisioned table
-        String lsid = (String) oldRow.get("lsid");
-        if (lsid == null)
-            throw new ValidationException("lsid required to update row");
-
-        Long rowId = asLong(oldRow.get(RowId.name()));
-        if (rowId == null)
-            throw new ValidationException(RowId.name() + " required to update row");
-
-        /** See {@link ExpDataIterators.SampleUpdateOnlyDataIteratorBuilder} for data iterator logical equivalent */
-        String newName = (String) row.get(Name.name());
-        if (row.containsKey(Name.name()) && StringUtils.isEmpty(newName))
-            throw new ValidationException("Sample name cannot be blank");
-
-        /** See {@link ExpDataIterators.SampleNameChangeDataIterator} for data iterator logical equivalent */
-        String oldName = (String) oldRow.get(Name.name());
-        boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
-        if (hasNameChange && !NameExpressionOptionService.get().getAllowUserSpecificNamesValue(c))
-            throw new ValidationException("User-specified sample name not allowed");
-
-        String oldAliquotedFromLSID = (String) oldRow.get(AliquotedFromLSID.name());
-        boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);
-
-        /** See {@link ExpDataIterators.AliquotRollupDataIterator} for data iterator logical equivalent */
-        Integer aliquotRollupRoot = null;
-        SampleTypeService stService = SampleTypeService.get();
-        if (!_sampleType.isMedia() && isAliquot)
-        {
-            Integer aliquotRoot = (Integer) oldRow.get(RootMaterialRowId.name());
-
-            if (row.containsKey(StoredAmount.name()) || row.containsKey(Units.name()))
-            {
-                Unit oldRowUnits = stService.getValidatedUnit(oldRow.get(Units.name()), _sampleType.getBaseUnit(), _sampleType.getName());
-                Unit rowUnits = stService.getValidatedUnit(row.get(Units.name()), _sampleType.getBaseUnit(), _sampleType.getName());
-                Quantity oldQuantity = null;
-                Quantity newQuantity = null;
-                if (oldRowUnits != null && oldRow.get(StoredAmount.name()) != null)
-                    oldQuantity = Quantity.of((Number) oldRow.get(StoredAmount.name()), oldRowUnits);
-                if (rowUnits != null && row.get(StoredAmount.name()) != null)
-                    newQuantity = Quantity.of((Number) row.get(StoredAmount.name()), rowUnits);
-
-                if (newQuantity != null && (oldQuantity == null || !oldQuantity.equals(newQuantity)))
-                {
-                    if (aliquotRoot != null)
-                        aliquotRollupRoot = aliquotRoot;
-                }
-            }
-
-            if (aliquotRollupRoot == null && row.containsKey(SampleState.name()))
-            {
-                List<Long> availableSampleStatuses = new ArrayList<>();
-                if (SampleStatusService.get().supportsSampleStatus())
-                {
-                    for (DataState state: SampleStatusService.get().getAllProjectStates(c))
-                    {
-                        if (ExpSchema.SampleStateType.Available.name().equals(state.getStateType()))
-                            availableSampleStatuses.add(state.getRowId());
-                    }
-                }
-
-                if (!availableSampleStatuses.isEmpty())
-                {
-                    Long oldState = asLong(oldRow.get(SampleState.name()));
-                    Long newState = asLong(row.get(SampleState.name()));
-                    if (isAliquotStatusChangeNeedRecalc(availableSampleStatuses, oldState, newState))
-                        aliquotRollupRoot = aliquotRoot;
-                }
-            }
-        }
-
-        Set<String> aliquotFields = getAliquotSpecificFields();
-        Set<String> sampleMetaFields = getSampleMetaFields();
-
-        // Replace attachment columns with filename and keep AttachmentFiles
-        Map<String, Object> rowCopy = new CaseInsensitiveHashMap<>();
-
-        // remove aliquotedFrom from row, or error out
-        rowCopy.putAll(row);
-        String newAliquotedFromLSID = (String) rowCopy.get(AliquotedFromLSID.name());
-        if (!StringUtils.isEmpty(newAliquotedFromLSID) && !newAliquotedFromLSID.equals(oldAliquotedFromLSID))
-            throw new ValidationException("Updating aliquotedFrom is not supported");
-        rowCopy.remove(AliquotedFromLSID.name());
-        rowCopy.remove(RootMaterialRowId.name());
-        rowCopy.remove(ExpMaterial.ALIQUOTED_FROM_INPUT);
-
-        /** See {@link ExpDataIterators.SampleStatusCheckDataIterator} for data iterator logical equivalent */
-        // We need to allow updating from one locked status to another locked status, but without other changes
-        // and updating from either locked or unlocked to something else while also updating other metadata
-        DataState oldStatus = SampleStatusService.get().getStateForRowId(getContainer(), MapUtils.getLong(oldRow,SampleState.name()));
-        boolean oldAllowsOp = SampleStatusService.get().isOperationPermitted(oldStatus, SampleTypeService.SampleOperations.EditMetadata);
-        DataState newStatus = SampleStatusService.get().getStateForRowId(getContainer(), MapUtils.getLong(rowCopy,SampleState.name()));
-        boolean newAllowsOp = SampleStatusService.get().isOperationPermitted(newStatus, SampleTypeService.SampleOperations.EditMetadata);
-
-        Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowCopy, oldRow, keys));
-
-        if (aliquotRollupRoot != null)
-            ret.put(ROOT_RECOMPUTE_ROWID_COL, aliquotRollupRoot);
-
-        Map<String, Object> validRowCopy = new CaseInsensitiveHashMap<>();
-        boolean hasNonStatusChange = false;
-        boolean hasStatusCol = false;
-        for (String updateField : rowCopy.keySet())
-        {
-            Object updateValue = rowCopy.get(updateField);
-            boolean isAliquotField = aliquotFields.contains(updateField);
-            boolean isSampleMetaField = sampleMetaFields.contains(updateField);
-
-            if (isAliquot && isSampleMetaField)
-            {
-                Object oldMetaValue = oldRow.get(updateField);
-                if (!Objects.equals(oldMetaValue, updateValue))
-                    LOG.warn("Sample metadata update has been skipped for an aliquot");
-            }
-            else if (!isAliquot && isAliquotField)
-            {
-                LOG.warn("Aliquot-specific field update has been skipped for a sample.");
-            }
-            else
-            {
-                hasNonStatusChange = hasNonStatusChange || !SampleTypeServiceImpl.statusUpdateColumns.contains(updateField.toLowerCase());
-                validRowCopy.put(updateField, updateValue);
-            }
-
-            if (SampleState.name().equalsIgnoreCase(updateField))
-                hasStatusCol = true;
-        }
-        // had a locked status before and either not updating the status or updating to a new locked status
-        if (hasNonStatusChange && !oldAllowsOp && (!hasStatusCol || !newAllowsOp))
-        {
-            throw new ValidationException(String.format("Updating sample data when status is %s is not allowed.", oldStatus.getLabel()));
-        }
-
-        /** See {@link ExpDataIterators.FileLinkDataIterator} for data iterator logical equivalent */
-        TableInfo t = _sampleType.getTinfo();
-        // Sample type uses FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle posted files
-        Path path = AssayFileWriter.getUploadDirectoryPath(c, SAMPLE_TYPE_FILE_DIRECTORY_NAME).toNioPathForWrite();
-        convertTypes(user, c, validRowCopy, t, path);
-        if (t.getColumnNameSet().stream().anyMatch(validRowCopy::containsKey))
-        {
-            keys = new Object[]{rowId};
-            ret.putAll(Table.update(user, t, validRowCopy, t.getColumn(RowId.name()), keys, null, Level.DEBUG));
-        }
-
-        /** See {@link ExpDataIterators.SampleNameChangeDataIterator} for data iterator logical equivalent */
-        ExpMaterialImpl sample = null;
-        if (hasNameChange)
-        {
-            sample = ExperimentServiceImpl.get().getExpMaterial(rowId);
-            if (sample != null)
-                ExperimentService.get().addObjectLegacyName(sample.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpMaterial.class), oldName, user);
-        }
-
-        // update comment
-        /** See {@link ExpDataIterators.FlagDataIterator} for data iterator logical equivalent */
-        if (row.containsKey(Flag.name()) || row.containsKey("comment"))
-        {
-            if (sample == null)
-                sample = ExperimentServiceImpl.get().getExpMaterial(rowId);
-            if (sample != null)
-            {
-                Object o = row.containsKey(Flag.name()) ? row.get(Flag.name()) : row.get("comment");
-                String flag = Objects.toString(o, null);
-                sample.setComment(user, flag);
-            }
-        }
-
-        // update aliases
-        /** See {@link ExpDataIterators.AliasDataIterator} for data iterator logical equivalent */
-        if (row.containsKey(Alias.name()))
-            AliasInsertHelper.handleInsertUpdate(getContainer(), user, lsid, ExperimentService.get().getTinfoMaterialAliasMap(), row.get(Alias.name()));
-
-        // search done in post-commit
-
-        ret.put("lsid", lsid);
-        ret.put(AliquotedFromLSID.name(), oldRow.get(AliquotedFromLSID.name()));
-        ret.put(RowId.name(), rowId); // add RowId for SearchService
-        return ret;
+        throw new UnsupportedOperationException("_update() is no longer supported for samples");
     }
 
     @Override
@@ -1162,20 +909,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     private @Nullable String getMaterialName(Map<String, Object> row)
     {
         return getMaterialStringValue(row, Name.name());
-    }
-
-    IntegerConverter _converter = new IntegerConverter();
-
-    private @Nullable Integer getMaterialIntegerValue(Map<String, Object> row, String columnName)
-    {
-        if (row != null)
-        {
-            Object o = row.get(columnName);
-            if (o != null)
-                return _converter.convert(Integer.class, o);
-        }
-
-        return null;
     }
 
     private @Nullable Long getMaterialSourceId(Map<String, Object> row)

@@ -1084,8 +1084,7 @@ describe('Amount/Unit CRUD', () => {
             }]
         }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
             const errorResp = JSON.parse(result.text);
-            // Note that the row by row update error is different from DIB. This is OK for now since we are planning to deprecate row by row updates.
-            expect(errorResp['exception']).toContain("Value '-1000.0 (g)' for field 'Amount' is invalid. Amounts must be non-negative.");
+            expect(errorResp['exception']).toContain("Value '-1' for field 'Amount' is invalid. Amounts must be non-negative.");
         });
 
         // Using data iterator

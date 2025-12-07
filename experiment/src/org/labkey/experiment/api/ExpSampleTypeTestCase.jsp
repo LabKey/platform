@@ -1088,6 +1088,7 @@ public void testSampleTypeWithVocabularyProperties() throws Exception
     oldKey.put("RowId", insertedSample.get(0).get("RowId"));
     oldKeys.add(oldKey);
 
+    // TODO: Figure out why LSID is no longer being pulled through on the row (even though this was previously invoking DIB pathway)
     var updatedSample = helper.updateRows(c, rowsToUpdate, oldKeys, sampleName, schema);
     assertEquals("Custom Property is not updated", updatedSampleType,
             OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(helper.typePropertyName)).getStringValue());
