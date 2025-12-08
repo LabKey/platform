@@ -37,7 +37,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CounterDefinition;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ImportAliasable;
@@ -2447,9 +2446,6 @@ public class ExpDataIterators
                     .setCommitRowsBeforeContinuing(true)
                     .setFailOnEmptyUpdate(false));
 
-            if (isSample && isUpdateOnly)
-                dib = new EnsureLsidIteratorBuilder(dib, _expTable);
-
             // pass in remap columns to help reconcile columns that may be aliased in the virtual table
             dib = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(dib, _propertiesTable, _container)
                     .setKeyColumns(propertyKeyColumns)
@@ -2485,42 +2481,6 @@ public class ExpDataIterators
                 ret.addAliasColumn(RootMaterialRowId.toString(), map.get(RowId.toString()));
                 return ret;
             };
-        }
-    }
-
-    /**
-     * This ensures the LSID column is included in the reselected row.
-     */
-    private static class EnsureLsidIteratorBuilder implements DataIteratorBuilder
-    {
-        private final DataIteratorBuilder _in;
-        private final ColumnInfo _lsidCol;
-
-        private EnsureLsidIteratorBuilder(@NotNull DataIteratorBuilder in, ExpTable<?> expTable)
-        {
-            _in = in;
-            _lsidCol = expTable.getColumn(LSID.fieldKey());
-        }
-
-        @Override
-        public DataIterator getDataIterator(DataIteratorContext context)
-        {
-            DataIterator di = _in.getDataIterator(context);
-            if (!di.supportsGetExistingRecord())
-                throw new IllegalArgumentException("DataIterator must support getExistingRecord()");
-
-            Map<String,Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            if (map.containsKey(LSID.name()))
-                return di;
-
-            var ret = new SimpleTranslator(di, context);
-            ret.selectAll();
-            ret.addColumn(_lsidCol, (Supplier<Object>) () -> {
-                Map<String, Object> old = ret.getExistingRecord();
-                return old == null ? null : old.get(LSID.name());
-            });
-
-            return ret;
         }
     }
 

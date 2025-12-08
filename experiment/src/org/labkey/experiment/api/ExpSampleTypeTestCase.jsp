@@ -1044,7 +1044,7 @@ public void testSampleTypeWithVocabularyProperties() throws Exception
 {
     User user = TestContext.get().getUser();
 
-    String sampleName = "SamplesWithVocabularyProperties";
+    String sampleTypeName = "SamplesWithVocabularyProperties";
     String sampleType = "TypeA";
     String updatedSampleType = "TypeB";
     String sampleColor = "Blue";
@@ -1054,29 +1054,32 @@ public void testSampleTypeWithVocabularyProperties() throws Exception
     Map<String, String> vocabularyPropertyURIs = helper.getVocabularyPropertyURIS(mockDomain);
 
     // create a sample type
-    createSampleType(sampleName, List.of(new GWTPropertyDescriptor("name", "string")), null);
+    createSampleType(sampleTypeName, List.of(new GWTPropertyDescriptor("name", "string")), null);
 
     // insert a sample
+    var sampleName = "TestSample";
     ArrayListMap<String, Object> row = new ArrayListMap<>();
-    row.put("name", "TestSample");
+    row.put("name", sampleName);
     row.put(vocabularyPropertyURIs.get(helper.typePropertyName), sampleType);
     row.put(vocabularyPropertyURIs.get(helper.colorPropertyName), sampleColor);
     row.put(vocabularyPropertyURIs.get(helper.agePropertyName), null); // inserting a property with null value
     List<Map<String, Object>> rows = helper.buildRows(row);
 
     UserSchema schema = getSampleSchema();
-    var insertedSample = helper.insertRows(c, rows, sampleName, schema);
+    var insertedSample = helper.insertRows(c, rows, sampleTypeName, schema).get(0);
+    var sampleLsid = insertedSample.get("LSID").toString();
+    var sampleRowId = insertedSample.get("RowId");
 
     assertEquals("Custom Property is not inserted", sampleType,
-            OntologyManager.getPropertyObjects(c, insertedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(helper.typePropertyName)).getStringValue());
+            OntologyManager.getPropertyObjects(c, sampleLsid).get(vocabularyPropertyURIs.get(helper.typePropertyName)).getStringValue());
 
     // Verifying property with null value is not inserted
     assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(helper.agePropertyName)).size());
 
     // update inserted sample
     ArrayListMap<String, Object> rowToUpdate = new ArrayListMap<>();
-    rowToUpdate.put("name", "TestSample");
-    rowToUpdate.put("RowId", insertedSample.get(0).get("RowId"));
+    rowToUpdate.put("name", sampleName);
+    rowToUpdate.put("RowId", sampleRowId);
     rowToUpdate.put(vocabularyPropertyURIs.get(helper.typePropertyName), updatedSampleType);
     rowToUpdate.put(vocabularyPropertyURIs.get(helper.colorPropertyName), null); // nulling out existing property
     rowToUpdate.put(vocabularyPropertyURIs.get(helper.agePropertyName), sampleAge); //inserting a new property in update rows
@@ -1084,20 +1087,20 @@ public void testSampleTypeWithVocabularyProperties() throws Exception
 
     List<Map<String, Object>> oldKeys = new ArrayList<>();
     ArrayListMap<String, Object> oldKey = new ArrayListMap<>();
-    oldKey.put("name", "TestSample");
-    oldKey.put("RowId", insertedSample.get(0).get("RowId"));
+    oldKey.put("name", sampleName);
+    oldKey.put("RowId", sampleRowId);
     oldKeys.add(oldKey);
 
-    var updatedSample = helper.updateRows(c, rowsToUpdate, oldKeys, sampleName, schema);
+    helper.updateRows(c, rowsToUpdate, oldKeys, sampleTypeName, schema);
     assertEquals("Custom Property is not updated", updatedSampleType,
-            OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(helper.typePropertyName)).getStringValue());
+            OntologyManager.getPropertyObjects(c, sampleLsid).get(vocabularyPropertyURIs.get(helper.typePropertyName)).getStringValue());
 
     // Verify property updated to a null value gets deleted
     assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(helper.colorPropertyName)).size());
 
     // Verify property inserted during update rows in inserted
     assertEquals("New Property is not inserted with update rows", sampleAge,
-            OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(helper.agePropertyName)).getFloatValue().intValue());
+            OntologyManager.getPropertyObjects(c, sampleLsid).get(vocabularyPropertyURIs.get(helper.agePropertyName)).getFloatValue().intValue());
 }
 
 @Test
