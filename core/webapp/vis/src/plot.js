@@ -329,7 +329,7 @@ boxPlot.render();
 
         if (foundLegendScale) {
             if (!legendPos || legendPos === 'right') {
-                right = right + 75;
+                right = right + 150;
             } else if (legendPos === 'bottom') {
                 // The goal here is to net us space to render one item per color of our discrete color scale (8 items)
                 bottom = bottom += 170;

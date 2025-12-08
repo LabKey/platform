@@ -1471,12 +1471,12 @@ LABKEY.vis.GenericChartHelper = new function(){
 
             var wrapLines = _wrapXAxisTickTextLines(scales, plotConfig, maxLen, data);
 
-            if (!chartConfig.legendPos || chartConfig.legendPos === 'right') {
+            if (chartConfig.legendPos === 'bottom') {
+                // min bottom margin: 170, max bottom margin: 360
+                margins.bottom = Math.min(360, 170 + ((wrapLines - 1) * 25));
+            } else {
                 // min bottom margin: 60, max bottom margin: 150
                 margins.bottom = Math.min(150, 60 + ((wrapLines - 1) * 25));
-            } else {
-                // min bottom margin: 166, max bottom margin: 360
-                margins.bottom = Math.min(360, 170 + ((wrapLines - 1) * 25));
             }
         }
 
