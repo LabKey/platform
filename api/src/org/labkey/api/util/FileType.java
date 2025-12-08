@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * <code>FileType</code>
@@ -51,14 +52,14 @@ public class FileType implements Serializable
     // For serialization
     protected FileType() {}
     
-    public File findInputFile(FileAnalysisJobSupport support, String baseName)
+    public FileLike findInputFile(FileAnalysisJobSupport support, String baseName)
     {
         if (_suffixes.size() > 1)
         {
             for (String suffix : _suffixes)
             {
-                File f = support.findInputFile(baseName + suffix);
-                if (f != null && NetworkDrive.exists(f))
+                FileLike f = support.findInputFile(baseName + suffix);
+                if (NetworkDrive.exists(f))
                 {
                     return f;
                 }
@@ -264,8 +265,8 @@ public class FileType implements Serializable
         return name;
     }
 
-    /** Uses the preferred suffix, useful when there's not a directory of existing files to reference */
-    /** if _preferGZ is set, will use preferred suffix.gz since TPP treats .gz as native format,
+    /** Uses the preferred suffix, useful when there's not a directory of existing files to reference.
+     *  if _preferGZ is set, will use preferred suffix.gz since TPP treats .gz as native format,
      *  unless non-gz file exists */
     public String getDefaultName(String basename)
     {
@@ -288,10 +289,7 @@ public class FileType implements Serializable
     public int addSuffix(String newsuffix)
     {
         List<String> s = new ArrayList<>(_suffixes.size()+1);
-        for (String suffix : _suffixes)
-        {
-            s.add(suffix);
-        }
+        s.addAll(_suffixes);
         s.add(newsuffix);
         _suffixes = s;
         return _suffixes.size();
@@ -303,10 +301,7 @@ public class FileType implements Serializable
     public int addAntiFileType(FileType anti)
     {
         List<FileType> s = new ArrayList<>(_antiTypes.size()+1);
-        for (FileType a : _antiTypes)
-        {
-            s.add(a);
-        }
+        s.addAll(_antiTypes);
         s.add(anti);
         _antiTypes = s;
         return _antiTypes.size();
@@ -329,11 +324,6 @@ public class FileType implements Serializable
      * Looks for a file in the parentDir that matches, in priority order. If one is found, returns its file name.
      * If nothing matches, uses the defaultSuffix to build a file name.
      */
-    public String getName(File parentDir, String basename)
-    {
-        return getName(parentDir.toPath(), basename);
-    }
-
     public String getName(FileLike parentDir, String basename)
     {
         return getName(parentDir.toNioPathForRead(), basename);
@@ -363,23 +353,16 @@ public class FileType implements Serializable
 
     public String getName(String parentDirName, String basename)
     {
-        File parentDir = new File(parentDirName);
-        return getName(parentDir,basename);
+        return getName(new File(parentDirName).toPath(), basename);
     }
 
     /**
      * Looks for a file in the parentDir that matches, in priority order. If one is found, returns its file name.
      * If nothing matches, uses the defaultSuffix to build a file name.
      */
-    @Deprecated //please switch to using the nio.Path version as the File class can have issues using full URIs
-    public File getFile(File parentDir, String basename)
+    public FileLike getFile(FileLike parentDir, String basename)
     {
-        return new File(parentDir, getName(parentDir, basename));
-    }
-
-    public Path getPath(Path parentDir, String basename)
-    {
-        return FileUtil.appendName(parentDir, getName(parentDir, basename));
+        return parentDir.resolveChild(getName(parentDir, basename));
     }
 
     /**
@@ -474,11 +457,6 @@ public class FileType implements Serializable
         return fileName.substring(0, fileName.length() - suffix.length());
     }
 
-    public File newFile(File parent, String basename)
-    {
-        return FileUtil.appendName(parent, getName(parent, basename));
-    }
-
     public FileLike newFile(FileLike parent, String basename)
     {
         return parent.resolveChild(getName(parent, basename));
@@ -532,7 +510,7 @@ public class FileType implements Serializable
     /**
      * Checks if the path matches any of the suffixes and the file header if provided.
      */
-    public boolean isType(@Nullable String filePath, @Nullable String contentType, @Nullable byte[] header)
+    public boolean isType(@Nullable String filePath, @Nullable String contentType, byte @Nullable[] header)
     {
         String providedContentType = contentType; // Save it for later
 
@@ -624,7 +602,7 @@ public class FileType implements Serializable
      * @param header First few K of the file.
      * @return True if the header matches, false otherwise.
      */
-    public boolean isHeaderMatch(@NotNull byte[] header)
+    public boolean isHeaderMatch(byte @NotNull [] header)
     {
         return false;
     }
@@ -636,13 +614,13 @@ public class FileType implements Serializable
 
         FileType fileType = (FileType) o;
 
-        if (_supportGZ != null ? !_supportGZ.equals(fileType._supportGZ) : fileType._supportGZ != null) return false;
-        if (_preferGZ != null ? !_preferGZ.equals(fileType._preferGZ) : fileType._preferGZ != null) return false;
-        if (_dir != null ? !_dir.equals(fileType._dir) : fileType._dir != null) return false;
-        if (_defaultSuffix != null ? !_defaultSuffix.equals(fileType._defaultSuffix) : fileType._defaultSuffix != null)
+        if (!Objects.equals(_supportGZ, fileType._supportGZ)) return false;
+        if (!Objects.equals(_preferGZ, fileType._preferGZ)) return false;
+        if (!Objects.equals(_dir, fileType._dir)) return false;
+        if (!Objects.equals(_defaultSuffix, fileType._defaultSuffix))
             return false;
-        if (_antiTypes != null ? !_antiTypes.equals(fileType._antiTypes) : fileType._antiTypes != null) return false;
-        return !(_suffixes != null ? !_suffixes.equals(fileType._suffixes) : fileType._suffixes != null);
+        if (!Objects.equals(_antiTypes, fileType._antiTypes)) return false;
+        return !(!Objects.equals(_suffixes, fileType._suffixes));
     }
 
     public String getDefaultSuffix()
@@ -711,25 +689,6 @@ public class FileType implements Serializable
         _extensionsMutuallyExclusive = extensionsMutuallyExclusive;
     }
 
-    /**
-     * @return a FileType that will only match on the default suffix for this FileType
-     */
-    public FileType getDefaultFileType()
-    {
-        if (!_suffixes.isEmpty())
-        {
-            FileType ft = new FileType(_defaultSuffix);
-            ft._dir = _dir;
-            ft._supportGZ = _supportGZ.booleanValue();
-            ft._preferGZ = _preferGZ.booleanValue();
-            return ft;
-        }
-        else
-        {
-            return this;
-        }
-    }
-
     public String getDefaultRole()
     {
         if (_defaultSuffix.contains("."))
@@ -762,7 +721,7 @@ public class FileType implements Serializable
             // simple case
             FileType ft = new FileType(".foo");
             assertTrue(ft.isType("test.foo"));
-            assertTrue(!ft.isType("test.foo.gz"));
+            assertFalse(ft.isType("test.foo.gz"));
             assertEquals("test.foo",ft.getDefaultName("test"));
 
             // support for .gz
@@ -792,7 +751,7 @@ public class FileType implements Serializable
             // antitypes - for example avoid mistaking protxml ".pep-prot.xml" for pepxml ".xml"
             assertTrue(ftt.isType("test.foo.bar"));
             ftt.addAntiFileType(new FileType(".foo.bar"));
-            assertTrue(!ftt.isType("test.foo.bar"));
+            assertFalse(ftt.isType("test.foo.bar"));
             assertTrue(ftt.isType("test.foo"));
             assertTrue(ftt.isType("test.bar"));
 

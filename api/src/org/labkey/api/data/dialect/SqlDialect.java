@@ -102,6 +102,7 @@ public abstract class SqlDialect
 {
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     public static final String CUSTOM_UNIQUE_ERROR_MESSAGE = "Constraint violation: cannot insert duplicate value for column";
+    public static final int TEMP_TABLE_GENERATOR_MIN_SIZE = 1000;
 
     protected static final Logger LOG = LogHelper.getLogger(SqlDialect.class, "Database warnings and errors");
     protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
@@ -527,16 +528,33 @@ public abstract class SqlDialect
 
     private static final InClauseGenerator DEFAULT_GENERATOR = new ParameterMarkerInClauseGenerator();
 
-    // Most callers should use this method
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
+    public InClauseGenerator getDefaultInClauseGenerator()
     {
-        return appendInClauseSqlWithCustomInClauseGenerator(sql, params, null);
+        return DEFAULT_GENERATOR;
     }
 
-    // Use only in cases where the default temp-table generator won't do, e.g., you need to apply a large IN clause in an external data source
-    public SQLFragment appendInClauseSqlWithCustomInClauseGenerator(SQLFragment sql, @NotNull Collection<?> params, InClauseGenerator tempTableGenerator)
+    // Dialects that support temp-table IN clauses must override this method
+    public InClauseGenerator getTempTableInClauseGenerator()
     {
-        return DEFAULT_GENERATOR.appendInClauseSql(sql, params);
+        return null;
+    }
+
+    // Most callers should use this method
+    public final SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
+    {
+        return appendInClauseSqlWithCustomInClauseGenerator(sql, params, getTempTableInClauseGenerator());
+    }
+
+    // Call directly only in cases where the default temp-table generator won't do, e.g., you need to apply a large IN clause in an external data source
+    public final SQLFragment appendInClauseSqlWithCustomInClauseGenerator(SQLFragment sql, @NotNull Collection<?> params, @Nullable InClauseGenerator largeInClauseGenerator)
+    {
+        if (params.size() >= TEMP_TABLE_GENERATOR_MIN_SIZE && largeInClauseGenerator != null)
+        {
+            SQLFragment ret = largeInClauseGenerator.appendInClauseSql(sql, params);
+            if (null != ret)
+                return ret;
+        }
+        return getDefaultInClauseGenerator().appendInClauseSql(sql, params);
     }
 
     public SQLFragment appendCaseInsensitiveLikeClause(SQLFragment sql, @NotNull String matchStr, @Nullable String wildcardPrefix, @Nullable String wildcardSuffix, char escapeChar)
@@ -1352,7 +1370,7 @@ public abstract class SqlDialect
         }
     }
 
-    public abstract String getAnalyzeCommandForTable(String tableName);
+    public abstract SQLFragment getAnalyzeCommandForTable(String tableName);
 
     protected abstract String getSIDQuery();
 
@@ -1370,7 +1388,7 @@ public abstract class SqlDialect
 
     public boolean updateStatistics(TableInfo table)
     {
-        String sql = getAnalyzeCommandForTable(table.getSelectName());
+        SQLFragment sql = getAnalyzeCommandForTable(table.getSelectName());
         if (sql != null)
         {
             new SqlExecutor(table.getSchema()).execute(sql);

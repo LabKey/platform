@@ -29,7 +29,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentService.DuplicateFilenameException;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.CoreSchema;
@@ -1059,7 +1059,7 @@ public class WikiManager implements WikiService
     }
 
     @Override
-    public AttachmentType getAttachmentType()
+    public AttachmentParentType getAttachmentType()
     {
         return WikiType.get();
     }

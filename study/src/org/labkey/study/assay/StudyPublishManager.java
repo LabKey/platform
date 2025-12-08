@@ -579,7 +579,7 @@ public class StudyPublishManager implements StudyPublishService
             run.setProtocol(studyPublishProtocol);
             ViewBackgroundInfo info = new ViewBackgroundInfo(targetContainer, user, null);
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
-            run.setFilePathRoot(pipeRoot.getRootPath());
+            run.setFilePathRoot(pipeRoot.getRootFileLike());
 
             run = ExperimentService.get().saveSimpleExperimentRun(run,
                     Collections.emptyMap(),

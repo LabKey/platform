@@ -19,7 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlScriptManager;
@@ -237,9 +236,6 @@ public class ModuleContext implements Cloneable
 
     public void invokeUpgradeMethod(UpgradeMethod upgradeMethod)
     {
-        // Make sure cached database metadata reflects all previously executed SQL
-        CacheManager.clearAllKnownCaches();
-
         try
         {
             upgradeMethod.invoke(this);
@@ -247,11 +243,6 @@ public class ModuleContext implements Cloneable
         catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e)
         {
             throw new RuntimeException("Can't invoke " + upgradeMethod.getDisplayName(), e);
-        }
-        finally
-        {
-            // Just to be safe
-            CacheManager.clearAllKnownCaches();
         }
     }
 

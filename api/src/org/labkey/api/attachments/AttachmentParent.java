@@ -22,5 +22,5 @@ public interface AttachmentParent
 {
     String getEntityId();
     String getContainerId();
-    @NotNull AttachmentType getAttachmentType();
+    @NotNull AttachmentParentType getAttachmentParentType();
 }

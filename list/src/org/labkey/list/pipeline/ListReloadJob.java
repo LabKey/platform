@@ -26,24 +26,24 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.list.model.ListImportContext;
 import org.labkey.list.model.ListImporter;
+import org.labkey.vfs.FileLike;
 
-import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 
 public class ListReloadJob extends PipelineJob
 {
-    private final Path _dataFile;
+    private final FileLike _dataFile;
     private final ListImportContext _importContext;
 
     @JsonCreator
-    protected ListReloadJob(@JsonProperty("_dataFile") Path dataFile, @JsonProperty("_importContext") ListImportContext importContext)
+    protected ListReloadJob(@JsonProperty("_dataFile") FileLike dataFile, @JsonProperty("_importContext") ListImportContext importContext)
     {
         _dataFile = dataFile;
         _importContext = importContext;
     }
 
-    public ListReloadJob(ViewBackgroundInfo info, @NotNull PipeRoot root, Path dataFile, Path logFile, @NotNull ListImportContext importContext)
+    public ListReloadJob(ViewBackgroundInfo info, @NotNull PipeRoot root, FileLike dataFile, FileLike logFile, @NotNull ListImportContext importContext)
     {
         super(null, info, root);
         _dataFile = dataFile;
@@ -69,7 +69,7 @@ public class ListReloadJob extends PipelineJob
         setStatus("RELOADING", "Job started at: " + DateUtil.nowISO());
         ListImporter importer = new ListImporter(_importContext);
 
-        String fileName = _dataFile.getFileName().toString();
+        String fileName = _dataFile.getName();
 
         getLogger().info("Loading " + fileName);
 

@@ -18,7 +18,7 @@ package org.labkey.experiment.api;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
@@ -35,15 +35,15 @@ import org.labkey.api.util.Pair;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ExpDataClassType implements AttachmentType
+public class ExpDataClassType implements AttachmentParentType
 {
-    private static final AttachmentType INSTANCE = new ExpDataClassType();
+    private static final AttachmentParentType INSTANCE = new ExpDataClassType();
 
     private ExpDataClassType()
     {
     }
 
-    public static AttachmentType get()
+    public static AttachmentParentType get()
     {
         return INSTANCE;
     }
@@ -51,7 +51,7 @@ public class ExpDataClassType implements AttachmentType
     @Override
     public @NotNull String getUniqueName()
     {
-        return getClass().getName();
+        return "DataClass";
     }
 
     @Override

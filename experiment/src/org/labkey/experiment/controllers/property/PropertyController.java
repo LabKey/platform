@@ -21,15 +21,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.util.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.Action;
@@ -55,7 +52,6 @@ import org.labkey.api.data.NameExpressionValidationResult;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
@@ -124,7 +120,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -1341,7 +1336,7 @@ public class PropertyController extends SpringActionController
         private static final String SESSION_ATTR_NAME = "org.labkey.domain.tempFile";
 
         @Override
-        protected File getTargetFile(String filename) throws IOException
+        protected FileLike getTargetFile(String filename) throws IOException
         {
             int dotIndex = filename.lastIndexOf(".");
             if (dotIndex < 0)
@@ -1355,13 +1350,13 @@ public class PropertyController extends SpringActionController
                 // File.createTempFile() requires that the prefix be at least three characters long
                 prefix = "prefix-" + prefix;  
             }
-            File tempFile = FileUtil.createTempFile(prefix, suffix);
-            tempFile.deleteOnExit();
+            FileLike tempFile = FileUtil.createTempFileLike(prefix, suffix);
+            tempFile.toNioPathForRead().toFile().deleteOnExit();
             return tempFile;
         }
 
         @Override
-        public String getResponse(FileUploadForm form, Map<String, Pair<File, String>> files) throws UploadException
+        public String getResponse(FileUploadForm form, Map<String, Pair<FileLike, String>> files) throws IOException
         {
             if (files.isEmpty())
             {
@@ -1371,7 +1366,7 @@ public class PropertyController extends SpringActionController
             {
                 StringBuilder message = new StringBuilder();
                 String separator = "";
-                for (Pair<File, String> fileStringPair : files.values())
+                for (Pair<FileLike, String> fileStringPair : files.values())
                 {
                     message.append(separator);
                     separator = ", ";

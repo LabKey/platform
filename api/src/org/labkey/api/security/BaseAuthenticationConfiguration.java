@@ -1,7 +1,7 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.ContainerManager;
 
 import java.util.Collections;
@@ -45,7 +45,7 @@ public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationP
     }
 
     @Override
-    public @NotNull AttachmentType getAttachmentType()
+    public @NotNull AttachmentParentType getAttachmentParentType()
     {
         return AuthenticationLogoType.get();
     }

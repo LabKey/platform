@@ -16,14 +16,15 @@
 
 package org.labkey.api.reports.report.r.view;
 
-import org.labkey.api.attachments.AttachmentParent;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
+import java.io.IOException;
 
 /**
  * User: Karl Lum
@@ -39,35 +40,35 @@ public class PostscriptOutput extends DownloadParamReplacement
     }
 
     @Override
-    protected File getSubstitution(File directory)
+    protected @Nullable FileLike getSubstitution(FileLike directory)
     {
         return getSubstitution(directory, ".ps");
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput(File file)
+    public ScriptOutput renderAsScriptOutput(FileLike file) throws IOException
     {
-        if (getReport() instanceof AttachmentParent)
-            return renderAsScriptOutput(file, new PostscriptReportView(this, getReport()),
+        if (getReport() != null)
+            return renderAsScriptOutput(file, new PostscriptReportView(this),
                     ScriptOutput.ScriptOutputType.postscript);
         else
             return renderAsScriptOutputError();
     }
 
     @Override
-    public HttpView getView(ViewContext context)
+    public HttpView<?> getView(ViewContext context)
     {
-        if (getReport() instanceof AttachmentParent)
-            return new PostscriptReportView(this, getReport());
+        if (getReport() != null)
+            return new PostscriptReportView(this);
         else
             return HtmlView.of(DownloadParamReplacement.UNABLE_TO_RENDER);
     }
 
     public static class PostscriptReportView extends DownloadOutputView
     {
-        PostscriptReportView(ParamReplacement param, AttachmentParent parent)
+        PostscriptReportView(ParamReplacement param)
         {
-            super(param, parent, "Postscript");
+            super(param, "Postscript");
         }
     }
 }

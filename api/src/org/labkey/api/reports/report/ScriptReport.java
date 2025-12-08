@@ -25,7 +25,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.ColumnHeaderType;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -171,7 +170,7 @@ public abstract class ScriptReport extends AbstractReport
     /*
      * Create the .tsv associated with the data grid for this report.
      */
-    public File _createInputDataFile(@NotNull ViewContext context, ResultsFactory factory, File resultFile) throws SQLException, IOException, ValidationException
+    public FileLike _createInputDataFile(@NotNull ViewContext context, ResultsFactory factory, FileLike  resultFile) throws SQLException, IOException, ValidationException
     {
         try (StashingResultsFactory srf = new StashingResultsFactory(factory))
         {
@@ -192,8 +191,7 @@ public abstract class ScriptReport extends AbstractReport
                 try (TSVGridWriter tsv = new TSVGridWriter(srf, dataColumns))
                 {
                     tsv.setColumnHeaderType(ColumnHeaderType.Name); // CONSIDER: Use FieldKey instead
-                    FileUtil.createTempFile(resultFile);
-                    tsv.write(resultFile);
+                    tsv.write(resultFile.openOutputStream());
                 }
             }
         }
@@ -365,7 +363,7 @@ public abstract class ScriptReport extends AbstractReport
     }
 
     @Override
-    public HttpView getRunReportView(ViewContext context) throws Exception
+    public HttpView<?> getRunReportView(ViewContext context) throws Exception
     {
         String tabId = (String) context.get("tabId");
 

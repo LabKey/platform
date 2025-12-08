@@ -23,7 +23,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.VBox;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 
 import java.io.PrintWriter;
 import java.util.Collection;
@@ -32,7 +31,7 @@ import java.util.Collection;
  * User: Karl Lum
  * Date: Feb 21, 2008
  */
-public class RenderBackgroundRReportView extends HttpView
+public class RenderBackgroundRReportView extends HttpView<Object>
 {
     private final RReport _report;
 
@@ -54,10 +53,10 @@ public class RenderBackgroundRReportView extends HttpView
             // if the job is complete, show the results of the job
             if (substitutionMap.exists())
             {
-                Collection<ParamReplacement> outputSubst = ParamReplacementSvc.get().fromFile(FileSystemLike.toFile(substitutionMap));
+                Collection<ParamReplacement> outputSubst = ParamReplacementSvc.get().fromFile(substitutionMap);
                 VBox innerView = new VBox();
                 view.addView(innerView);
-                RReport.renderViews(_report, view, outputSubst, false);
+                RReport.renderViews(_report, view, outputSubst);
             }
             include(view);
         }

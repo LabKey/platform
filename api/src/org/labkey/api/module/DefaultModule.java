@@ -1438,7 +1438,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public void addDeferredUpgradeMethod(ModuleContext moduleContext, UpgradeMethod upgradeMethod)
     {
         TableInfo table = CoreSchema.getInstance().getTableInfoUpgradeSteps();
-        Table.insert(moduleContext.getUpgradeUser(), table, upgradeMethod);
+        Table.insert(null, table, upgradeMethod);
     }
 
     /**

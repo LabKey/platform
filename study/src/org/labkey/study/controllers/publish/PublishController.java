@@ -242,7 +242,7 @@ public class PublishController extends SpringActionController
                 throw new ConfigurationException("Invalid pipeline configuration for " + c);
 
             if (!root.isValid())
-                throw new ConfigurationException("Invalid pipeline configuration for " + c + ", " + root.getRootPath().getPath());
+                throw new ConfigurationException("Invalid pipeline configuration for " + c + ", " + root.getRootFileLike());
 
             try
             {

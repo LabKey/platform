@@ -17,11 +17,11 @@ package org.labkey.api.files;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 
-public class FileSystemAttachmentType implements AttachmentType
+public class FileSystemAttachmentType implements AttachmentParentType
 {
     private static final FileSystemAttachmentType INSTANCE = new FileSystemAttachmentType();
 
@@ -37,7 +37,7 @@ public class FileSystemAttachmentType implements AttachmentType
     @Override
     public @NotNull String getUniqueName()
     {
-        return getClass().getName();
+        return "FileSystem";
     }
 
     @Override

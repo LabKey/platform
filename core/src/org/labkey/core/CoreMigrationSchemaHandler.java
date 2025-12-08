@@ -3,7 +3,7 @@ package org.labkey.core;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentCache;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.CompareType.CompareClause;
@@ -198,10 +198,11 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
         // Default handling for core's standard attachment types
         super.copyAttachments(configuration, sourceSchema, targetSchema, copyContainers);
 
-        // Special handling for LookAndFeelResourceType, which must select from the source database
+        // Special handling for LookAndFeelResourceType, which must select from the source database. Keep in sync with
+        // LookAndFeelResourceType.addWhereSql().
         SQLFragment sql = new SQLFragment()
             .append("Parent").appendInClause(copyContainers, sourceSchema.getSqlDialect())
-            .append("AND (DocumentName IN (?, ?) OR ")
+            .append(" AND (DocumentName IN (?, ?) OR ")
             .add(AttachmentCache.FAVICON_FILE_NAME)
             .add(AttachmentCache.STYLESHEET_FILE_NAME)
             .append("DocumentName LIKE '" + AttachmentCache.LOGO_FILE_NAME_PREFIX + "%' OR ")
@@ -210,7 +211,7 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
     }
 
     @Override
-    public @NotNull Collection<AttachmentType> getAttachmentTypes()
+    public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
     {
         return List.of(
             AuthenticationLogoType.get(),

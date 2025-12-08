@@ -19,7 +19,7 @@ package org.labkey.list;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -121,7 +121,7 @@ public class ListModule extends SpringModule
         RoleManager.registerPermission(new DesignListPermission());
         RoleManager.registerPermission(new ManagePicklistsPermission());
 
-        AttachmentService.get().registerAttachmentType(ListItemType.get());
+        AttachmentService.get().registerAttachmentParentType(ListItemType.get());
         ExperimentService.get().addExperimentListener(new PicklistMaterialListener());
 
         QueryService.get().addCompareType(new PicklistSampleCompareType());
@@ -166,7 +166,7 @@ public class ListModule extends SpringModule
 
         DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(ListSchema.getInstance().getSchema()){
             @Override
-            public @NotNull Collection<AttachmentType> getAttachmentTypes()
+            public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
             {
                 return Set.of(ListItemType.get());
             }

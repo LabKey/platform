@@ -35,7 +35,6 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.pipeline.XarGeneratorId;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.AbstractTaskFactory;
@@ -46,7 +45,6 @@ import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
-import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.XMLBeanTaskFactoryFactory;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
@@ -70,6 +68,7 @@ import org.labkey.pipeline.xml.TaskType;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -95,7 +94,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
     public static class FactoryFactory implements XMLBeanTaskFactoryFactory
     {
         @Override
-        public TaskFactory create(TaskId taskId, TaskType xobj, Path taskDir)
+        public Factory create(TaskId taskId, TaskType xobj, Path taskDir)
         {
             if (taskId.getModuleName() == null)
                 throw new IllegalArgumentException("Task factory must be defined by a module");
@@ -143,27 +142,9 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         }
 
         @Override
-        public boolean isJobComplete(PipelineJob job)
-        {
-            return false;
-        }
-
-        @Override
-        public PipelineJob.Task createTask(PipelineJob job)
+        public AssayImportRunTask createTask(PipelineJob job)
         {
             return new AssayImportRunTask(this, job);
-        }
-
-        @Override
-        public List<String> getProtocolActionNames()
-        {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<FileType> getInputTypes()
-        {
-            return Collections.emptyList();
         }
 
         @Override
@@ -233,17 +214,17 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
          * triggered location
          */
         @Override
-        List<RecordedAction.DataFile> getOutputs(PipelineJob job) throws PipelineJobException
+        List<RecordedAction.DataFile> getOutputs(PipelineJob job)
         {
             List<RecordedAction.DataFile> outputs = new ArrayList<>();
-            File dataFile = getDataFile(job);
+            FileLike dataFile = getDataFile(job);
             job.getLogger().info("Importing output data file : " + dataFile.getName());
             outputs.add(new RecordedAction.DataFile(dataFile.toURI(), "RESULTS-DATA", false, false));
 
             return outputs;
         }
 
-        private File getDataFile(PipelineJob job)
+        private FileLike getDataFile(PipelineJob job)
         {
             FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
 
@@ -256,14 +237,14 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         @Nullable
         List<Map<String, Object>> getRawData(PipelineJob job) throws PipelineJobException
         {
-            File dataFile = getDataFile(job);
+            FileLike dataFile = getDataFile(job);
             try
             {
                 if (ExcelLoader.isExcel(dataFile))
                 {
                     job.getLogger().info("Processing excel file: " + dataFile.getName());
                     // check to see if this is a multi-sheet format
-                    try (ExcelLoader loader = new ExcelLoader(dataFile, true))
+                    try (ExcelLoader loader = new ExcelLoader(new BufferedInputStream(dataFile.openInputStream()), true, null))
                     {
                         List<String> sheets = loader.getSheetNames();
                         if (sheets.size() > 1)
@@ -286,12 +267,12 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 else if ("zip".equalsIgnoreCase(FileUtil.getExtension(dataFile)))
                 {
                     ensureExplodedZip(job, dataFile);
-                    File dir = getExplodedZipDir(job, dataFile);
-                    File[] results = dir.listFiles((dir1, name) -> RESULTS_NAME.equalsIgnoreCase(FileUtil.getBaseName(name)));
+                    FileLike dir = getExplodedZipDir(job, dataFile);
+                    List<FileLike> results = dir.getChildren((f) -> RESULTS_NAME.equalsIgnoreCase(FileUtil.getBaseName(f)));
 
-                    if (results != null && results.length == 1)
+                    if (results.size() == 1)
                     {
-                        File resultFile = results[0];
+                        FileLike resultFile = results.get(0);
                         job.getLogger().info("Found results file named : " + resultFile + ", loading into results data.");
                         try (DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null))
                         {
@@ -310,7 +291,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         @Override
         @NotNull Map<String, Object> getBatchProperties(PipelineJob job) throws PipelineJobException
         {
-            File dataFile = getDataFile(job);
+            FileLike dataFile = getDataFile(job);
             try
             {
                 if (ExcelLoader.isExcel(dataFile))
@@ -320,11 +301,11 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 else if ("zip".equalsIgnoreCase(FileUtil.getExtension(dataFile)))
                 {
                     ensureExplodedZip(job, dataFile);
-                    File dir = getExplodedZipDir(job, dataFile);
-                    File[] results = dir.listFiles((dir1, name) -> BATCH_PROPS_NAME.equalsIgnoreCase(FileUtil.getBaseName(name)));
-                    if (results != null && results.length == 1)
+                    FileLike dir = getExplodedZipDir(job, dataFile);
+                    List<FileLike> results = dir.getChildren((f) -> BATCH_PROPS_NAME.equalsIgnoreCase(FileUtil.getBaseName(f)));
+                    if (results.size() == 1)
                     {
-                        File resultFile = results[0];
+                        FileLike resultFile = results.get(0);
                         job.getLogger().info("Found batch properties file named : " + resultFile + ", loading into results data.");
                         try (DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null))
                         {
@@ -343,7 +324,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         @Override
         @NotNull Map<String, Object> getRunProperties(PipelineJob job) throws PipelineJobException
         {
-            File dataFile = getDataFile(job);
+            FileLike dataFile = getDataFile(job);
             try
             {
                 if (ExcelLoader.isExcel(dataFile))
@@ -353,11 +334,11 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 else if ("zip".equalsIgnoreCase(FileUtil.getExtension(dataFile)))
                 {
                     ensureExplodedZip(job, dataFile);
-                    File dir = getExplodedZipDir(job, dataFile);
-                    File[] results = dir.listFiles((dir1, name) -> RUN_PROPS_NAME.equalsIgnoreCase(FileUtil.getBaseName(name)));
-                    if (results != null && results.length == 1)
+                    FileLike dir = getExplodedZipDir(job, dataFile);
+                    List<FileLike> results = dir.getChildren((f) -> RUN_PROPS_NAME.equalsIgnoreCase(FileUtil.getBaseName(f)));
+                    if (results.size() == 1)
                     {
-                        File resultFile = results[0];
+                        FileLike resultFile = results.get(0);
                         job.getLogger().info("Found run properties file named : " + resultFile + ", loading into results data.");
                         try (DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null))
                         {
@@ -376,17 +357,17 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         @Override
         void cleanUp(PipelineJob job)
         {
-            File dataFile = getDataFile(job);
+            FileLike dataFile = getDataFile(job);
             if ("zip".equalsIgnoreCase(FileUtil.getExtension(dataFile)))
             {
-                File dir = getExplodedZipDir(job, dataFile);
+                FileLike dir = getExplodedZipDir(job, dataFile);
                 FileUtil.deleteDir(dir, job.getLogger());
             }
         }
 
-        private Map<String, Object> loadProperties(File dataFile, String sheetName, Logger log) throws PipelineJobException
+        private Map<String, Object> loadProperties(FileLike dataFile, String sheetName, Logger log) throws PipelineJobException
         {
-            try (ExcelLoader loader = new ExcelLoader(dataFile, true))
+            try (ExcelLoader loader = new ExcelLoader(dataFile.openInputStream(), true, null))
             {
                 if (loader.getSheetNames().contains(sheetName))
                 {
@@ -417,9 +398,9 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             return properties;
         }
 
-        private void ensureExplodedZip(PipelineJob job, File dataFile) throws PipelineJobException
+        private void ensureExplodedZip(PipelineJob job, FileLike dataFile) throws PipelineJobException
         {
-            File explodedDir = getExplodedZipDir(job, dataFile);
+            FileLike explodedDir = getExplodedZipDir(job, dataFile);
             if (!explodedDir.exists())
             {
                 try
@@ -433,17 +414,15 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             }
         }
 
-        private File getExplodedZipDir(PipelineJob job, File dataFile)
+        private FileLike getExplodedZipDir(PipelineJob job, FileLike dataFile)
         {
-            File analysisDir = ((AbstractFileAnalysisJob)job).getAnalysisDirectory();
-            return FileUtil.appendName(analysisDir, String.format("%s-expanded", dataFile.getName()));
+            FileLike analysisDir = ((AbstractFileAnalysisJob)job).getAnalysisDirectory();
+            return analysisDir.resolveChild(String.format("%s-expanded", dataFile.getName()));
         }
     }
 
     public static class Factory extends AbstractTaskFactory<AssayImportRunTaskFactorySettings, Factory>
     {
-        private final FileType _outputType = XarGeneratorId.FT_PIPE_XAR_XML;
-
         private String _providerName = "${" + PROVIDER_NAME_PROPERTY + "}";
         private String _protocolName = "${" + PROTOCOL_NAME_PROPERTY + "}";
 
@@ -452,7 +431,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             super(AssayImportRunTaskId.class);
         }
 
-        public Factory(Class namespaceClass)
+        public Factory(Class<?> namespaceClass)
         {
             super(namespaceClass);
         }
@@ -475,7 +454,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         }
 
         @Override
-        public PipelineJob.Task createTask(PipelineJob job)
+        public AssayImportRunTask createTask(PipelineJob job)
         {
             return new AssayImportRunTask(this, job);
         }
@@ -484,11 +463,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         public List<FileType> getInputTypes()
         {
             return Collections.emptyList();
-        }
-
-        public FileType getOutputType()
-        {
-            return _outputType;
         }
 
         @Override
@@ -592,7 +566,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             throw new PipelineJobException("Assay protocol not found: " + protocolName);
         }
 
-        List<RecordedAction.DataFile> getOutputs(PipelineJob job) throws PipelineJobException
+        List<RecordedAction.DataFile> getOutputs(PipelineJob job)
         {
             return Collections.emptyList();
         }
@@ -615,7 +589,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             return Collections.emptyMap();
         }
 
-        void cleanUp(PipelineJob job) throws PipelineJobException
+        void cleanUp(PipelineJob job)
         {
         }
     }
@@ -820,7 +794,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             createData(matchedFile, assayDataType);
 
 
-            AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> factory
+            AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory<?, ?>> factory
                     = provider.createRunUploadFactory(protocol, user, container);
 
             factory.setName(getName());
@@ -846,7 +820,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             factory.setLogger(getJob().getLogger());
 
-            AssayRunUploadContext uploadContext = factory.create();
+            AssayRunUploadContext<?> uploadContext = factory.create();
 
             Long batchId = null;
 
@@ -860,7 +834,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             if (getJob() instanceof FileAnalysisJobSupport)
             {
-                File analysisDir = getJob().getJobSupport(FileAnalysisJobSupport.class).getAnalysisDirectory();
+                FileLike analysisDir = getJob().getJobSupport(FileAnalysisJobSupport.class).getAnalysisDirectory();
                 run.setFilePathRoot(analysisDir);
             }
 
@@ -875,7 +849,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 //            }
 
             // Check if we've been cancelled. If so, delete any newly created runs from the database
-            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(getJob().getLogFile());
+            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(getJob().getContainer(), getJob().getLogFileLike());
             if (statusFile != null && (PipelineJob.TaskStatus.cancelled.matches(statusFile.getStatus()) || PipelineJob.TaskStatus.cancelling.matches(statusFile.getStatus())))
             {
                 getJob().info("Deleting run " + run.getName() + " due to cancellation request");

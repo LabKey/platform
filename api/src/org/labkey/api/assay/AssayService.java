@@ -41,9 +41,9 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -144,7 +144,7 @@ public interface AssayService
     /**
      * Creates a run, but does not persist it to the database. Creates the run only, no protocol applications, etc.
      */
-    ExpRun createExperimentRun(@Nullable String name, Container container, ExpProtocol protocol, @Nullable File file);
+    ExpRun createExperimentRun(@Nullable String name, Container container, ExpProtocol protocol, @Nullable FileLike file);
 
     /**
      * Returns the list of valid locations an assay design can be created in.

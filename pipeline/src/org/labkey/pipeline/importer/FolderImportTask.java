@@ -70,18 +70,18 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
             job.getJobSupport(CloudArchiveImporterSupport.class).updateWorkingRoot(importRoot);
         }
 
-        boolean isFileAnalysisJob = FileAnalysisJobSupport.class.isInstance(job); // File watcher triggered job
+        boolean isFileAnalysisJob = job instanceof FileAnalysisJobSupport; // File watcher triggered job
         if (isFileAnalysisJob)
         {
             FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
             ImportOptions options = new ImportOptions(job.getContainerId(), job.getUser().getUserId());
-            options.setAnalysisDir(support.getDataDirectoryFileLike());
+            options.setAnalysisDir(support.getDataDirectory());
 
-            job = new FolderImportJob(job.getContainer(), job.getUser(), null, support.findInputFileLike(FOLDER_XML), FOLDER_XML, job.getPipeRoot(), options);
+            job = new FolderImportJob(job.getContainer(), job.getUser(), null, support.findInputFile(FOLDER_XML), FOLDER_XML, job.getPipeRoot(), options);
             job.setStatus(PipelineJob.TaskStatus.running.toString(), "Starting folder import job", true);
 
             importContext = ((FolderImportJob) job).getImportContext();
-            vf = new FileSystemFile(support.getDataDirectoryFileLike());
+            vf = new FileSystemFile(support.getDataDirectory());
         }
         /* Standard Pipeline triggered job */
         else

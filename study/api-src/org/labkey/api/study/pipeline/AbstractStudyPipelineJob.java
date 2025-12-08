@@ -36,9 +36,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.xml.StudyDocument;
-
-import java.io.File;
-import java.nio.file.Path;
+import org.labkey.vfs.FileLike;
 
 // Allows some sharing of code between study publication and specimen refresh
 public abstract class AbstractStudyPipelineJob extends PipelineJob
@@ -55,7 +53,7 @@ public abstract class AbstractStudyPipelineJob extends PipelineJob
 
         setDstContainer(destination);
 
-        Path tempLogFile = root.getLogDirectoryFileLike(true).resolveChild(FileUtil.makeFileNameWithTimestamp(getLogName(), "log")).toNioPathForWrite();
+        FileLike tempLogFile = root.getLogDirectory(true).resolveChild(FileUtil.makeFileNameWithTimestamp(getLogName(), "log"));
         setLogFile(tempLogFile);
     }
 
