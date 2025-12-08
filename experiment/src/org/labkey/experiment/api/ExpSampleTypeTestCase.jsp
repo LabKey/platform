@@ -550,8 +550,8 @@ public void testAliases() throws Exception
     // Update, keyed by rowId
     {
         rows = new ArrayList<>();
-        rows.add(CaseInsensitiveHashMap.of("rowId", fooSample.getRowId(), "alias", "ken, griffey", "flag", "norway"));
-        rows.add(CaseInsensitiveHashMap.of("rowId", booSample.getRowId(), "alias", "edgar, martinez", "flag", "sweden"));
+        rows.add(CaseInsensitiveHashMap.of("Row Id", fooSample.getRowId(), "alias", "ken, griffey", "flag", "norway"));
+        rows.add(CaseInsensitiveHashMap.of("Row Id", booSample.getRowId(), "alias", "edgar, martinez", "flag", "sweden"));
 
         updateSampleRows(st.getName(), rows);
 
@@ -788,6 +788,23 @@ public void testUpdateSomeParents() throws Exception
         rows.clear();
         rows.add(CaseInsensitiveHashMap.of("rowId", C1.getRowId(), "name", "C1", "MaterialInputs/Parent1Samples", "P1-1"));
         rows.add(CaseInsensitiveHashMap.of("rowId", C4.getRowId(), "name", "C5", "MaterialInputs/Parent1Samples", null)); // intentionally mix up name
+
+        try
+        {
+            updateService.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
+            fail("Expected to throw exception");
+        }
+        catch (Exception e)
+        {
+            assertThat(e.getMessage(), containsString("RowId is not accepted when merging samples. Specify only the sample name instead."));
+        }
+    }
+
+    // Attempt to merge using "Row Id" label
+    {
+        rows.clear();
+        rows.add(CaseInsensitiveHashMap.of("Row Id", C1.getRowId(), "name", "C1", "MaterialInputs/Parent1Samples", "P1-1"));
+        rows.add(CaseInsensitiveHashMap.of("Row Id", C4.getRowId(), "name", "C5", "MaterialInputs/Parent1Samples", null)); // intentionally mix up name
 
         try
         {

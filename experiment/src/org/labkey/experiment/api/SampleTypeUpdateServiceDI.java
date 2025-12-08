@@ -137,6 +137,7 @@ import static java.util.Collections.emptyMap;
 import static org.labkey.api.audit.AuditHandler.DELTA_PROVIDED_DATA_PREFIX;
 import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
 import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
+import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs;
 import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
@@ -711,7 +712,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     private Map<Container, List<ExpMaterial>> getMaterialsForMoveRows(Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors)
     {
-        Set<Long> sampleIds = rows.stream().map(row -> MapUtils.getLong(row,RowId.name())).collect(Collectors.toSet());
+        Set<Long> sampleIds = rows.stream().map(row -> MapUtils.getLong(row, RowId.name())).collect(Collectors.toSet());
         if (sampleIds.isEmpty())
         {
             errors.addRowError(new ValidationException("Sample IDs must be specified for the move operation."));
@@ -1681,17 +1682,17 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         continue;
                     if (isAliasHeader(name))
                         continue;
-                    if (isSampleStateHeader(name))
+                    if (isExpMaterialColumn(SampleState, name))
                         continue;
-                    if (isMaterialExpDateHeader(name))
+                    if (isExpMaterialColumn(MaterialExpDate, name))
                         continue;
-                    if (isStoredAmountHeader(name))
+                    if (isExpMaterialColumn(StoredAmount, name))
                         continue;
-                    if (isUnitsHeader(name))
+                    if (isExpMaterialColumn(Units, name))
                         continue;
                     if (isContainerField && context.isCrossFolderImport() && !context.getInsertOption().updateOnly)
                         continue;
-                    if (RowId.name().equalsIgnoreCase(name))
+                    if (isExpMaterialColumn(RowId, name))
                     {
                         if (isUpdate)
                             continue;
@@ -1723,11 +1724,17 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 addAliquotedFrom.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
                 addAliquotedFrom.selectAll();
 
-                var addRequiredColsDI = new SampleUpdateAddColumnsDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId(), columnNameMap.containsKey(RowId.name()));
+                DataIterator di = new SampleUpdateAddColumnsDataIterator(
+                    new CachingDataIterator(addAliquotedFrom),
+                    materialTable,
+                    sampleType.getRowId(),
+                    getKeyColumnAlias(materialTable, columnNameMap)
+                );
 
-                SimpleTranslator c = new _SamplesCoerceDataIterator(addRequiredColsDI, context, sampleType, materialTable);
+                di = new _SamplesCoerceDataIterator(di, context, sampleType, materialTable);
                 context.setWithLookupRemapping(false);
-                return LoggingDataIterator.wrap(c);
+
+                return LoggingDataIterator.wrap(di);
             }
 
             // CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
@@ -1752,17 +1759,34 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 addColumns.addNullColumn(ROOT_RECOMPUTE_ROWID_COL, JdbcType.INTEGER);
                 addColumns.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
             }
-            DataIterator dataIterator = LoggingDataIterator.wrap(addColumns);
+
+            DataIterator di = LoggingDataIterator.wrap(addColumns);
 
             // Table Counters
-            DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(dataIterator, sampleType.getContainer(), materialTable, ExpSampleType.SEQUENCE_PREFIX, sampleType.getRowId());
-            dataIterator = dib.getDataIterator(context);
+            di = ExpDataIterators.CounterDataIteratorBuilder
+                    .create(di, sampleType.getContainer(), materialTable, ExpSampleType.SEQUENCE_PREFIX, sampleType.getRowId())
+                    .getDataIterator(context);
 
             // sampleset.createSampleNames() + generate lsid
             // TODO: does not handle insertIgnore
-            DataIterator names = new _GenerateNamesDataIterator(sampleType, container, user, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize);
-
+            DataIterator names = new _GenerateNamesDataIterator(sampleType, container, user, DataIteratorUtil.wrapMap(di, false), context, batchSize);
             return LoggingDataIterator.wrap(names);
+        }
+
+        private static @NotNull String getKeyColumnAlias(TableInfo materialTable, @NotNull Map<String, Integer> columnNameMap)
+        {
+            // Currently, SampleUpdateAddColumnsDataIterator is being called before a translator is invoked to
+            // remap column labels to columns (e.g., "Row Id" -> "RowId"). Due to this, we need to search the
+            // map of columns for the key column.
+            var rowIdAliases = ImportAliasable.Helper.createImportSet(materialTable.getColumn(RowId.fieldKey()));
+            rowIdAliases.retainAll(columnNameMap.keySet());
+
+            if (rowIdAliases.size() == 1)
+                return rowIdAliases.iterator().next();
+            if (rowIdAliases.isEmpty())
+                return Name.name();
+
+            throw new IllegalArgumentException(String.format(DUPLICATE_COLUMN_IN_DATA_ERROR, RowId.name()));
         }
 
         private static boolean isReservedHeader(String name)
@@ -1794,11 +1818,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             return isExpMaterialColumn(Description, name);
         }
 
-        private static boolean isSampleStateHeader(String name)
-        {
-            return isExpMaterialColumn(SampleState, name);
-        }
-
         private static boolean isCommentHeader(String name)
         {
             return isExpMaterialColumn(Flag, name) || "Comment".equalsIgnoreCase(name);
@@ -1807,21 +1826,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private static boolean isAliasHeader(String name)
         {
             return isExpMaterialColumn(Alias, name);
-        }
-
-        private static boolean isMaterialExpDateHeader(String name)
-        {
-            return isExpMaterialColumn(MaterialExpDate, name);
-        }
-
-        private static boolean isStoredAmountHeader(String name)
-        {
-            return isExpMaterialColumn(StoredAmount, name) || StoredAmount.label().equalsIgnoreCase(name);
-        }
-
-        public static boolean isUnitsHeader(String name)
-        {
-            return isExpMaterialColumn(Units, name);
         }
 
         private static boolean isAliquotRollupHeader(String name)

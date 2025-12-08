@@ -40,7 +40,7 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
     final IntHashMap<Integer> aliquotRoots = new IntHashMap<>();
     final IntHashMap<Integer> sampleState = new IntHashMap<>();
 
-    public SampleUpdateAddColumnsDataIterator(DataIterator in, TableInfo target, long sampleTypeId, boolean useRowId)
+    public SampleUpdateAddColumnsDataIterator(DataIterator in, TableInfo target, long sampleTypeId, String keyColumnName)
     {
         super(in);
         this._unwrapped = (CachingDataIterator)in;
@@ -52,7 +52,6 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
         this._rootMaterialRowIdColIndex = map.get(RootMaterialRowId.name());
         this._currentSampleStateColIndex = map.get(CURRENT_SAMPLE_STATUS_COLUMN_NAME);
 
-        String keyColumnName = useRowId ? RowId.name() : Name.name();
         Integer index = map.get(keyColumnName);
         ColumnInfo col = target.getColumn(keyColumnName);
         if (null == index || null == col)
