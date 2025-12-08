@@ -287,6 +287,16 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     // ARRAY and SET syntax
     //
 
+    // NOTE LabKey currently does not support ARRAY[VARCHAR], use ARRAY[text] instead
+    //
+    // Postgres string literals can be auto-cast to both VARCHAR and TEXT.  These all work
+    //    'color' = 'color'::varchar
+    //    'color' = 'color'::text
+    //     ARRAY['color'] = ARRAY['color'::text];
+    // However, ARRAY[text] cannot be auto cast to ARRAY[varchar]
+    //     ARRAY['color'] = ARRAY['color'::varchar];    -- ERROR!
+    //
+
 
     @Override
     public boolean supportsArrays()

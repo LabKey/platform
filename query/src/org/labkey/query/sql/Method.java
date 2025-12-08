@@ -48,7 +48,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.Pair;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 
@@ -61,7 +60,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 
 import static org.labkey.query.sql.Method.TimestampDiffInterval.SQL_TSI_FRAC_SECOND;
@@ -1554,6 +1552,27 @@ public abstract class Method
         }
     }
 
+    static class TextArrayConstructMethod extends Method
+    {
+        TextArrayConstructMethod(String name)
+        {
+            super(name, JdbcType.ARRAY, 0, Integer.MAX_VALUE);
+        }
+
+        @Override
+        public MethodInfo getMethodInfo()
+        {
+            return new AbstractMethodInfo(JdbcType.ARRAY)
+            {
+                @Override
+                public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+                {
+                    return new SQLFragment("CAST(").append(dialect.array_construct(arguments)).append(" AS TEXT[])");
+                }
+            };
+        }
+    }
+
 
     final static Map<String, Method> postgresMethods = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
 
@@ -1617,6 +1636,7 @@ public abstract class Method
     {
         // (ELEMENT...)
         postgresMethods.put("array_construct", new ArrayConstructMethod("array_construct"));
+        postgresMethods.put("textarray_construct", new TextArrayConstructMethod("textarray_construct"));
 
         // (ARRAY, ELEMENT)
         postgresMethods.put("array_contains_element", new ArrayOperatorMethod("array_contains_element",  (d,a,b) -> d.element_in_array(b,a)));
