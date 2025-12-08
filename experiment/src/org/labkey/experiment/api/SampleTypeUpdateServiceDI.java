@@ -532,7 +532,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             results = scope.executeWithRetry(transaction ->
             {
-                var context = getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters);
                 int index = 0;
                 List<Map<String, Object>> ret = new ArrayList<>();
 
@@ -548,14 +547,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     var rowsToProcess = rows.subList(index, nextIndex);
                     index = nextIndex;
 
+                    var context = getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters);
+
                     var subRet = super._updateRowsUsingDIB(user, container, rowsToProcess, context, extraScriptContext);
+
+                    // we need to throw if we don't want executeWithRetry() attempt commit()
+                    if (context.getErrors().hasErrors())
+                        throw new DbScope.RetryPassthroughException(context.getErrors());
+
                     if (subRet != null)
                         ret.addAll(subRet);
                 }
 
-                // we need to throw if we don't want executeWithRetry() attempt commit()
-                if (context.getErrors().hasErrors())
-                    throw new DbScope.RetryPassthroughException(context.getErrors());
                 return ret;
             });
         }
