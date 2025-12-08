@@ -1169,8 +1169,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                             geom: new LABKEY.vis.Geom.Path({
                                 color: '#' + chartConfig.geomOptions.pointFillColor,
                                 size: chartConfig.geomOptions.lineWidth?chartConfig.geomOptions.lineWidth:3,
-                                opacity:chartConfig.geomOptions.opacity,
-                                // dashed: true,
+                                opacity:chartConfig.geomOptions.opacity
                             }),
                             aes: pathAes
                         })
