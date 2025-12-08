@@ -123,7 +123,7 @@ public class ImageOutput extends AbstractParamReplacement
         {
             String imgUrl = null;
 
-            if (file.exists())
+            if (existsWithContent(file))
             {
                 FileLike imgFile;
                 if (!_deleteFile)
@@ -157,7 +157,7 @@ public class ImageOutput extends AbstractParamReplacement
                 if (null != imgUrl)
                 {
                     out.write("<table class=\"labkey-output\">");
-                    renderTitle(model, out);
+                    renderTitle(out);
                     if (isCollapse())
                         out.write("<tr style=\"display:none\"><td>");
                     else
