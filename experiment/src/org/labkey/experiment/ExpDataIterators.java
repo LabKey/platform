@@ -37,6 +37,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CounterDefinition;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ImportAliasable;
@@ -64,6 +65,7 @@ import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.dataiterator.ValidatorIterator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -82,6 +84,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.AbstractExpSchema;
 import org.labkey.api.exp.query.DataClassUserSchema;
@@ -2424,15 +2427,28 @@ public class ExpDataIterators
                 }
             }
 
+            Set<DomainProperty> vocabProps = PropertyService.get().findVocabularyProperties(_container, colNameMap.keySet());
+
+            // Ensure the property cache is cleared after vocabulary changes
+            if (isMergeOrUpdate && !vocabProps.isEmpty())
+            {
+                var tx = _expTable.getSchema().getScope().getCurrentTransaction();
+                if (tx != null)
+                    tx.addCommitTask(OntologyManager::clearPropertyCache, DbScope.CommitTaskOption.POSTCOMMIT);
+            }
+
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowId)
             dib = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(dib, _expTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
-                    .setVocabularyProperties(PropertyService.get().findVocabularyProperties(_container, colNameMap.keySet()))
+                    .setVocabularyProperties(vocabProps)
                     .setAddlSkipColumns(_excludedColumns)
                     .setCommitRowsBeforeContinuing(true)
                     .setFailOnEmptyUpdate(false));
+
+            if (isSample && isUpdateOnly)
+                dib = new EnsureLsidIteratorBuilder(dib, _expTable);
 
             // pass in remap columns to help reconcile columns that may be aliased in the virtual table
             dib = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(dib, _propertiesTable, _container)
@@ -2469,6 +2485,42 @@ public class ExpDataIterators
                 ret.addAliasColumn(RootMaterialRowId.toString(), map.get(RowId.toString()));
                 return ret;
             };
+        }
+    }
+
+    /**
+     * This ensures the LSID column is included in the reselected row.
+     */
+    private static class EnsureLsidIteratorBuilder implements DataIteratorBuilder
+    {
+        private final DataIteratorBuilder _in;
+        private final ColumnInfo _lsidCol;
+
+        private EnsureLsidIteratorBuilder(@NotNull DataIteratorBuilder in, ExpTable<?> expTable)
+        {
+            _in = in;
+            _lsidCol = expTable.getColumn(LSID.fieldKey());
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator di = _in.getDataIterator(context);
+            if (!di.supportsGetExistingRecord())
+                throw new IllegalArgumentException("DataIterator must support getExistingRecord()");
+
+            Map<String,Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            if (map.containsKey(LSID.name()))
+                return di;
+
+            var ret = new SimpleTranslator(di, context);
+            ret.selectAll();
+            ret.addColumn(_lsidCol, (Supplier<Object>) () -> {
+                Map<String, Object> old = ret.getExistingRecord();
+                return old == null ? null : old.get(LSID.name());
+            });
+
+            return ret;
         }
     }
 

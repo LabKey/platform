@@ -524,32 +524,31 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             return Collections.emptyList();
 
         List<Map<String, Object>> results;
-        DbScope scope = getSchema().getDbSchema().getScope();
         Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
         recordDataIteratorUsed(configParameters);
 
         try
         {
-            results = scope.executeWithRetry(transaction ->
+            results = getSchema().getDbSchema().getScope().executeWithRetry(tx ->
             {
                 int index = 0;
                 List<Map<String, Object>> ret = new ArrayList<>();
 
                 while (index < rows.size())
                 {
-                    var rowKeys = new CaseInsensitiveHashSet(rows.get(index).keySet());
+                    CaseInsensitiveHashSet rowKeys = new CaseInsensitiveHashSet(rows.get(index).keySet());
                     confirmAmountAndUnitsColumns(rowKeys);
 
-                    var nextIndex = index + 1;
+                    int nextIndex = index + 1;
                     while (nextIndex < rows.size() && rowKeys.equals(new CaseInsensitiveHashSet(rows.get(nextIndex).keySet())))
                         nextIndex++;
 
-                    var rowsToProcess = rows.subList(index, nextIndex);
+                    List<Map<String, Object>> rowsToProcess = rows.subList(index, nextIndex);
                     index = nextIndex;
 
-                    var context = getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters);
+                    DataIteratorContext context = getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters);
 
-                    var subRet = super._updateRowsUsingDIB(user, container, rowsToProcess, context, extraScriptContext);
+                    List<Map<String, Object>> subRet = super._updateRowsUsingDIB(user, container, rowsToProcess, context, extraScriptContext);
 
                     // we need to throw if we don't want executeWithRetry() attempt commit()
                     if (context.getErrors().hasErrors())
