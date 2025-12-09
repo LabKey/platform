@@ -39,8 +39,6 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
@@ -337,10 +335,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn(StoredAmount.name()));
                 columnInfo.setDisplayColumnFactory(colInfo -> new SampleTypeAmountPrecisionDisplayColumn(colInfo, null));
-                columnInfo.setDescription("The amount of this sample, in the base unit for the sample type's display unit (if defined), currently on hand.");
-                columnInfo.setUserEditable(false);
-                columnInfo.setReadOnly(true);
                 columnInfo.setConceptURI(NON_NEGATIVE_NUMBER_CONCEPT_URI);
+                columnInfo.setDescription("The amount of this sample, in the base unit for the sample type's display unit (if defined), currently on hand.");
+                columnInfo.setHidden(true);
+                columnInfo.setReadOnly(true);
+                columnInfo.setShownInDetailsView(false);
+                columnInfo.setShownInInsertView(false);
+                columnInfo.setShownInUpdateView(false);
+                columnInfo.setUserEditable(false);
                 columnInfo.setValidators(AMOUNT_RANGE_VALIDATORS);
                 return columnInfo;
             }
@@ -378,8 +380,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn(Units.name()));
                 columnInfo.setDescription("The units associated with the Stored Amount for this sample.");
-                columnInfo.setUserEditable(false);
+                columnInfo.setHidden(true);
                 columnInfo.setReadOnly(true);
+                columnInfo.setShownInDetailsView(false);
+                columnInfo.setShownInInsertView(false);
+                columnInfo.setShownInUpdateView(false);
+                columnInfo.setUserEditable(false);
                 return columnInfo;
             }
             case Units ->
@@ -592,7 +598,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn(AliquotVolume.name()));
                 ret.setLabel(RawAliquotVolume.label());
+                ret.setHidden(true);
                 ret.setShownInDetailsView(false);
+                ret.setShownInInsertView(false);
+                ret.setShownInUpdateView(false);
                 return ret;
             }
             case AliquotVolume ->
@@ -616,7 +625,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn(AvailableAliquotVolume.name()));
                 ret.setLabel(RawAvailableAliquotVolume.label());
+                ret.setHidden(true);
                 ret.setShownInDetailsView(false);
+                ret.setShownInInsertView(false);
+                ret.setShownInUpdateView(false);
                 return ret;
             }
             case AvailableAliquotVolume ->
@@ -644,9 +656,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case RawAliquotUnit ->
             {
-                var ret =  wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
-                ret.setShownInDetailsView(false);
+                var ret = wrapColumn(alias, _rootTable.getColumn(AliquotUnit.name()));
                 ret.setLabel(RawAliquotUnit.label());
+                ret.setHidden(true);
+                ret.setShownInDetailsView(false);
+                ret.setShownInInsertView(false);
+                ret.setShownInUpdateView(false);
                 return ret;
             }
             case AliquotUnit ->
@@ -694,13 +709,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         var ret = wrapColumn(alias, _rootTable.getColumn(RowId.name()));
 
         if (_ss != null && _ss.getTinfo() != null)
-        {
-            ForeignKey fk = new QueryForeignKey.Builder(getUserSchema(), getLookupContainerFilter())
-                .table(_ss.getTinfo())
-                .key(RowId.name())
-                .build();
-            ret.setFk(fk);
-        }
+            ret.setFk(new QueryForeignKey.Builder(getUserSchema(), getLookupContainerFilter()).table(_ss.getTinfo()).key(RowId.name()).build());
 
         ret.setIsUnselectable(true);
         ret.setDescription("A holder for any custom fields associated with this sample");
@@ -847,119 +856,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Units);
         defaultCols.add(Units.fieldKey());
 
-        var rawAmountColumn = addColumn(RawAmount);
-        rawAmountColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new DataColumn(colInfo)
-                {
-                    @Override
-                    public void addQueryFieldKeys(Set<FieldKey> keys)
-                    {
-                        super.addQueryFieldKeys(keys);
-                        keys.add(StoredAmount.fieldKey());
-
-                    }
-                };
-            }
-        });
-        rawAmountColumn.setHidden(true);
-        rawAmountColumn.setShownInDetailsView(false);
-        rawAmountColumn.setShownInInsertView(false);
-        rawAmountColumn.setShownInUpdateView(false);
-
-        var rawUnitsColumn = addColumn(RawUnits);
-        rawUnitsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new DataColumn(colInfo)
-                {
-                    @Override
-                    public void addQueryFieldKeys(Set<FieldKey> keys)
-                    {
-                        super.addQueryFieldKeys(keys);
-                        keys.add(Units.fieldKey());
-                    }
-                };
-            }
-        });
-        rawUnitsColumn.setHidden(true);
-        rawUnitsColumn.setShownInDetailsView(false);
-        rawUnitsColumn.setShownInInsertView(false);
-        rawUnitsColumn.setShownInUpdateView(false);
-
-        var rawAliquotVolumeColumn = addColumn(RawAliquotVolume);
-        rawAliquotVolumeColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new DataColumn(colInfo)
-                {
-                    @Override
-                    public void addQueryFieldKeys(Set<FieldKey> keys)
-                    {
-                        super.addQueryFieldKeys(keys);
-                        keys.add(AliquotVolume.fieldKey());
-
-                    }
-                };
-            }
-        });
-        rawAliquotVolumeColumn.setHidden(true);
-        rawAliquotVolumeColumn.setShownInDetailsView(false);
-        rawAliquotVolumeColumn.setShownInInsertView(false);
-        rawAliquotVolumeColumn.setShownInUpdateView(false);
-
-        var rawAvailableAliquotVolumeColumn = addColumn(RawAvailableAliquotVolume);
-        rawAvailableAliquotVolumeColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new DataColumn(colInfo)
-                {
-                    @Override
-                    public void addQueryFieldKeys(Set<FieldKey> keys)
-                    {
-                        super.addQueryFieldKeys(keys);
-                        keys.add(AvailableAliquotVolume.fieldKey());
-
-                    }
-                };
-            }
-        });
-        rawAvailableAliquotVolumeColumn.setHidden(true);
-        rawAvailableAliquotVolumeColumn.setShownInDetailsView(false);
-        rawAvailableAliquotVolumeColumn.setShownInInsertView(false);
-        rawAvailableAliquotVolumeColumn.setShownInUpdateView(false);
-
-        var rawAliquotUnitColumn = addColumn(RawAliquotUnit);
-        rawAliquotUnitColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new DataColumn(colInfo)
-                {
-                    @Override
-                    public void addQueryFieldKeys(Set<FieldKey> keys)
-                    {
-                        super.addQueryFieldKeys(keys);
-                        keys.add(AliquotUnit.fieldKey());
-
-                    }
-                };
-            }
-        });
-        rawAliquotUnitColumn.setHidden(true);
-        rawAliquotUnitColumn.setShownInDetailsView(false);
-        rawAliquotUnitColumn.setShownInInsertView(false);
-        rawAliquotUnitColumn.setShownInUpdateView(false);
+        addColumn(RawAmount).getRenderer().addQueryFieldKeys(new HashSet<>(Set.of(StoredAmount.fieldKey())));
+        addColumn(RawUnits).getRenderer().addQueryFieldKeys(new HashSet<>(Set.of(Units.fieldKey())));
+        addColumn(RawAliquotVolume).getRenderer().addQueryFieldKeys(new HashSet<>(Set.of(AliquotVolume.fieldKey())));
+        addColumn(RawAvailableAliquotVolume).getRenderer().addQueryFieldKeys(new HashSet<>(Set.of(AvailableAliquotVolume.fieldKey())));
+        addColumn(RawAliquotUnit).getRenderer().addQueryFieldKeys(new HashSet<>(Set.of(AliquotUnit.fieldKey())));
 
         if (InventoryService.get() != null && (st == null || !st.isMedia()))
             defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
@@ -1009,10 +910,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Properties);
 
         var colInputs = addColumn(Inputs);
-        addMethod("Inputs", new LineageMethod(colInputs, true), Set.of(colInputs.getFieldKey()));
+        addMethod(Inputs.name(), new LineageMethod(colInputs, true), Set.of(colInputs.getFieldKey()));
 
         var colOutputs = addColumn(Outputs);
-        addMethod("Outputs", new LineageMethod(colOutputs, false), Set.of(colOutputs.getFieldKey()));
+        addMethod(Outputs.name(), new LineageMethod(colOutputs, false), Set.of(colOutputs.getFieldKey()));
 
         addExpObjectMethod();
 
@@ -1151,7 +1052,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (idCols.contains(dp))
                 {
                     propColumn.setNullable(false);
-                    propColumn.setDisplayColumnFactory(new IdColumnRendererFactory());
+                    propColumn.setDisplayColumnFactory(c -> new DataColumn(c)
+                    {
+                        @Override
+                        protected boolean isDisabledInput(RenderContext ctx)
+                        {
+                            return !super.isDisabledInput() && ctx.getMode() != DataRegion.MODE_INSERT;
+                        }
+                    });
                 }
 
                 // Issue 38341: domain designer advanced settings 'show in default view' setting is not respected
@@ -1643,29 +1551,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         sql.appendComment("</ExpMaterialTableImpl.getJoinSQL()>", getSqlDialect());
         return sql;
-    }
-
-    private class IdColumnRendererFactory implements DisplayColumnFactory
-    {
-        @Override
-        public DisplayColumn createRenderer(ColumnInfo colInfo)
-        {
-            return new IdColumnRenderer(colInfo);
-        }
-    }
-
-    private static class IdColumnRenderer extends DataColumn
-    {
-        public IdColumnRenderer(ColumnInfo col)
-        {
-            super(col);
-        }
-
-        @Override
-        protected boolean isDisabledInput(RenderContext ctx)
-        {
-            return !super.isDisabledInput() && ctx.getMode() != DataRegion.MODE_INSERT;
-        }
     }
 
     private static class SampleTypeAmountDisplayColumn extends ExprColumn

@@ -259,8 +259,8 @@ public class DataColumn extends DisplayColumn
         {
             keys.add(_boundColumn.getFieldKey());
             StringExpression effectiveURL = _boundColumn.getEffectiveURL();
-            if (effectiveURL instanceof DetailsURL)
-                keys.addAll(((DetailsURL) effectiveURL).getFieldKeys());
+            if (effectiveURL instanceof DetailsURL url)
+                keys.addAll(url.getFieldKeys());
         }
         if (_displayColumn != null)
             keys.add(_displayColumn.getFieldKey());
