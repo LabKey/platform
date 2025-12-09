@@ -19,6 +19,33 @@ public enum Unit
     count(KindOfQuantity.Count, unit, 1.0, 2, "count",
             Quantity.class,
             "count", "count"),
+    pieces(KindOfQuantity.Count, unit, 1.0, 2, "pieces",
+            Quantity.class,
+            "piece", "pieces"),
+    packs(KindOfQuantity.Count, unit, 1.0, 2, "packs",
+            Quantity.class,
+            "pack", "packs"),
+    blocks(KindOfQuantity.Count, unit, 1.0, 2, "blocks",
+            Quantity.class,
+            "block", "blocks"),
+    slides(KindOfQuantity.Count, unit, 1.0, 2, "slides",
+            Quantity.class,
+            "slide", "slides"),
+    cells(KindOfQuantity.Count, unit, 1.0, 2, "cells",
+            Quantity.class,
+            "cell", "cells"),
+    boxes(KindOfQuantity.Count, unit, 1.0, 2, "boxes",
+            Quantity.class,
+            "box", "boxes"),
+    kits(KindOfQuantity.Count, unit, 1.0, 2, "kits",
+            Quantity.class,
+            "kit", "kits"),
+    tests(KindOfQuantity.Count, unit, 1.0, 2, "tests",
+            Quantity.class,
+            "test", "tests"),
+    bottles(KindOfQuantity.Count, unit, 1.0, 2, "bottles",
+            Quantity.class,
+            "bottle", "bottles"),
 
     mL(KindOfQuantity.Volume, null, 1e0, 6, "mL",
             Quantity.Volume_ml.class,
@@ -51,27 +78,27 @@ public enum Unit
             "picoliter", "picoliters",
             "pl", "picolitre", "picolitres"),
 
-    g(KindOfQuantity.Mass, null, 1e0, 9, "g",
+    g(KindOfQuantity.Mass, null, 1e0, 12, "g",
             Quantity.Mass_g.class,
             "gram", "grams"),
-    Mg(KindOfQuantity.Mass, g, 1e6, 12, "Mg",
+    Mg(KindOfQuantity.Mass, g, 1e6, 15, "Mg",
             Quantity.Mass_Megag.class,
             "megagram", "megagrams",
             "tonne", "tonnes"),
-    kg(KindOfQuantity.Mass, g, 1e3, 12, "kg",
+    kg(KindOfQuantity.Mass, g, 1e3, 15, "kg",
             Quantity.Mass_kg.class,
             "kilogram", "kilograms"),
-    mg(KindOfQuantity.Mass, g, 1e-3, 6, "mg",
+    mg(KindOfQuantity.Mass, g, 1e-3, 9, "mg",
             Quantity.Mass_mg.class,
             "milligram", "milligrams"),
-    ug(KindOfQuantity.Mass, g, 1e-6, 3, "ug",
+    ug(KindOfQuantity.Mass, g, 1e-6, 6, "ug",
             Quantity.Mass_ug.class,
             "microgram", "micrograms",
         "μg"),
     ng(KindOfQuantity.Mass, g, 1e-9, 3, "ng",
             Quantity.Mass_ng.class,
             "nanogram", "nanograms"),
-    pg(KindOfQuantity.Mass, g, 1e-12, 3, "pg",
+    pg(KindOfQuantity.Mass, g, 1e-12, 0, "pg",
             Quantity.Mass_pg.class,
             "picogram", "picograms");
 
@@ -206,6 +233,7 @@ public enum Unit
             assertFalse(Unit.kg.isBase());
             assertTrue(Unit.unit.isBase());
             assertFalse(Unit.count.isBase());
+            assertFalse(Unit.bottles.isBase());
         }
 
         @Test
@@ -217,7 +245,16 @@ public enum Unit
             assertTrue(Unit.g.isCompatible(Unit.mg));
             assertFalse(Unit.g.isCompatible(Unit.mL));
             assertTrue(Unit.unit.isCompatible(Unit.count));
+            assertTrue(Unit.unit.isCompatible(Unit.pieces));
+            assertTrue(Unit.unit.isCompatible(Unit.packs));
+            assertTrue(Unit.unit.isCompatible(Unit.bottles));
+            assertTrue(Unit.unit.isCompatible(Unit.blocks));
+            assertTrue(Unit.unit.isCompatible(Unit.boxes));
+            assertTrue(Unit.unit.isCompatible(Unit.slides));
+            assertTrue(Unit.cells.isCompatible(Unit.slides));
+            assertTrue(Unit.cells.isCompatible(Unit.unit));
             assertFalse(Unit.unit.isCompatible(Unit.mL));
+            assertFalse(Unit.bottles.isCompatible(Unit.mL));
             assertFalse(Unit.mL.isCompatible(null));
         }
 

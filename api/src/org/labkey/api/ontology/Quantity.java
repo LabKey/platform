@@ -465,6 +465,10 @@ public class Quantity extends Number implements Comparable<Quantity>
             assertEquals(Quantity.of(0, Unit.count), parse("0 units"));
             assertEquals(Quantity.of(0, Unit.count), parse("0count"));
 
+            assertEquals(Quantity.of(1, Unit.count), parse("1", Unit.boxes));
+            assertEquals(Quantity.of(1, Unit.unit), parse("1", Unit.blocks));
+            assertEquals(Quantity.of(1, Unit.cells), parse("1", Unit.tests));
+
             assertEquals(parse("1000mg", Unit.g), parse("0.001kg", Unit.g));
             assertEquals(parse(" 1000mg", Unit.g), parse("0.001kg", Unit.g));
             assertEquals(parse("1000mg ", Unit.g), parse("0.001kg", Unit.g));
