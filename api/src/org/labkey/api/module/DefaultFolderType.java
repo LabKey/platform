@@ -425,6 +425,7 @@ public class DefaultFolderType implements FolderType
         if (null == s_defaultModules)
         {
             Set<Module> defaultModules = new HashSet<>();
+            defaultModules.add(getModule("core")); // GitHub Issue 712
             if (ModuleLoader.getInstance().hasModule("Announcements"))
                 defaultModules.add(getModule("Announcements"));
             if (ModuleLoader.getInstance().hasModule("FileContent"))
