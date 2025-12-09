@@ -157,7 +157,7 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                             throw(e);
                         }
                         log.info("Importing the runs XAR file: " + runsXarFile.getName());
-                        XarReader runsReader = new FolderXarImporterFactory.FolderExportXarReader(runsXarSource, job);
+                        XarReader runsReader = new FolderXarImporterFactory.FolderExportXarReader(runsXarSource, job, ctx);
                         runsReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                         runsReader.parseAndLoad(false, ctx.getAuditBehaviorType());
                     }
@@ -220,7 +220,7 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
             log.error("Failed to initialize types XAR source", e);
             throw(e);
         }
-        return new FolderXarImporterFactory.FolderExportXarReader(typesXarSource, job);
+        return new FolderXarImporterFactory.FolderExportXarReader(typesXarSource, job, ctx);
     }
 
     protected PipelineJob getDummyPipelineJob(FolderImportContext ctx)
