@@ -216,6 +216,8 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
+            if (pre == null)
+                return null; // can happen if context has errors
 
             SimpleTranslator counterTranslator = new SimpleTranslator(pre, context);
             counterTranslator.setDebugName("Counter Def");
@@ -349,6 +351,9 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
+            if (pre == null)
+                return null; // can happen if context has errors
+
             return LoggingDataIterator.wrap(new AliquotRollupDataIterator(pre, context, _container));
         }
     }
@@ -508,8 +513,11 @@ public class ExpDataIterators
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new AliasDataIterator(pre, context, _container, _user, _expAliasTable, _dataType, _isSample));
+            DataIterator di = _in.getDataIterator(context);
+            if (di == null)
+                return null; // can happen if context has errors
+
+            return LoggingDataIterator.wrap(new AliasDataIterator(di, context, _container, _user, _expAliasTable, _dataType, _isSample));
         }
     }
 
@@ -627,6 +635,9 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
+            if (pre == null)
+                return null; // can happen if context has errors
+
             return LoggingDataIterator.wrap(new AutoLinkToStudyDataIterator(DataIteratorUtil.wrapMap(pre, false), _schema, _container, _user, _sampleType));
         }
     }
@@ -747,6 +758,9 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
+            if (pre == null)
+                return null; // can happen if context has errors
+
             return LoggingDataIterator.wrap(new FlagDataIterator(pre, context, _user, _isSample, _expObject, _container));
         }
     }
@@ -888,6 +902,9 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator di = _pre.getDataIterator(context);
+            if (di == null)
+                return null; // can happen if context has errors
+
             if (context.getConfigParameters().containsKey(SampleTypeUpdateServiceDI.Options.SkipDerivation))
                 return di;
 
@@ -2104,6 +2121,9 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _pre.getDataIterator(context);
+            if (pre == null)
+                return null; // can happen if context has errors
+
             return LoggingDataIterator.wrap(new SearchIndexIterator(pre, context, _indexFunction));
         }
     }
@@ -2501,6 +2521,9 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator di = _in.getDataIterator(context);
+            if (di == null)
+                return null; // can happen if context has errors
+
             ValidatorIterator validate = new ValidatorIterator(di, context, _container, _user);
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(validate);
 
@@ -2537,6 +2560,9 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator di = _in.getDataIterator(context);
+            if (di == null)
+                return null; // can happen if context has errors
+
             return LoggingDataIterator.wrap(new SampleNameChangeDataIterator(di, context, _user, _canUpdateNames));
         }
     }
@@ -2640,7 +2666,7 @@ public class ExpDataIterators
         private final boolean _isCrossFolderUpdate;
         private final TSVWriter _tsvWriter;
 
-        public MultiDataTypeCrossProjectDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isCrossType, boolean isCrossFolder, ExpObject dataType, boolean isSamples)
+        private MultiDataTypeCrossProjectDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isCrossType, boolean isCrossFolder, ExpObject dataType, boolean isSamples)
         {
             super(di);
             _context = context;
@@ -3300,6 +3326,11 @@ public class ExpDataIterators
                 _context.getErrors().addRowError(new ValidationException("Unable to write data for '" + typeData.dataType.getName() + "'."));
             }
         }
+
+        public static String getRowIdNotAcceptedMessage(String action)
+        {
+            return String.format("RowId is not accepted when %s samples. Specify only the sample name instead.", action);
+        }
     }
 
     public static class MultiDataTypeCrossProjectDataIteratorBuilder implements DataIteratorBuilder
@@ -3326,8 +3357,18 @@ public class ExpDataIterators
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new MultiDataTypeCrossProjectDataIterator(pre, context, _container, _user, _isCrossType, _isCrossFolder, _dataType, _isSamples));
+            DataIterator di = _in.getDataIterator(context);
+            if (di == null)
+                return null; // can happen if context has errors
+
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            if (_isSamples && map.get(RowId.name()) != null)
+            {
+                context.getErrors().addRowError(new ValidationException(MultiDataTypeCrossProjectDataIterator.getRowIdNotAcceptedMessage("importing"), RowId.name()));
+                return null;
+            }
+
+            return LoggingDataIterator.wrap(new MultiDataTypeCrossProjectDataIterator(di, context, _container, _user, _isCrossType, _isCrossFolder, _dataType, _isSamples));
         }
     }
 
@@ -3354,6 +3395,9 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
+            if (pre == null)
+                return null; // can happen if context has errors
+
             return LoggingDataIterator.wrap(new SampleStatusCheckDataIterator(pre, context, _container));
         }
     }

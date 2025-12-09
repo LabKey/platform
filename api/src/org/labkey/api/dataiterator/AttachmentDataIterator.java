@@ -202,8 +202,11 @@ public class AttachmentDataIterator extends WrapperDataIterator
                 throw new IllegalStateException("Originating data iterator is null");
 
             DataIterator it = builder.getDataIterator(context);
+            if (it == null)
+                return null; // can happen if context has errors
+
             Domain domain = ti.getDomain();
-            if(domain == null)
+            if (domain == null)
                 return it;
 
             // find attachment columns
