@@ -1097,17 +1097,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 // if user has set a max but not a min, default to 0 for bar chart
                 scales.y.domain[0] = min;
             }
-        }
-        else if (renderType === 'box_plot' && chartConfig.pointType === 'all')
-        {
-            layers.push(
-                new LABKEY.vis.Layer({
-                    geom: LABKEY.vis.GenericChartHelper.generatePointGeom(chartConfig.geomOptions),
-                    aes: {hoverText: LABKEY.vis.GenericChartHelper.generatePointHover(chartConfig.measures)}
-                })
-            );
-        }
-        else if (renderType === 'line_plot') {
+        } else if (renderType === 'line_plot') {
             var xName = chartConfig.measures.x.name,
                 isDate = isDateType(getMeasureType(chartConfig.measures.x));
 
@@ -1199,11 +1189,29 @@ LABKEY.vis.GenericChartHelper = new function(){
             plotConfig.margins = margins;
         }
 
-        if (chartConfig.measures.color)
+        if (chartConfig.measures.color || chartConfig.geomOptions.colorPaletteScale)
         {
             scales.color = {
                 colorType: chartConfig.geomOptions.colorPaletteScale,
                 scaleType: 'discrete'
+            }
+        }
+
+        if (!LABKEY.Utils.isEmptyObj(chartConfig.measuresOptions?.series)) {
+            const colorValueMap = {};
+            const shapeValueMap = {};
+            Object.entries(chartConfig.measuresOptions.series).forEach(([key, val]) => {
+                if (val.color) colorValueMap[key] = val.color;
+                if (val.shape) shapeValueMap[key] = LABKEY.vis.Scale.ShapeMap[val.shape];
+            });
+
+            if (!LABKEY.Utils.isEmptyObj(colorValueMap)) {
+                if (!scales.color) scales.color = { scaleType: 'discrete' };
+                scales.color.scale = LABKEY.vis.Scale.ValueMapDiscrete(colorValueMap);
+            }
+            if (!LABKEY.Utils.isEmptyObj(shapeValueMap)) {
+                if (!scales.shape) scales.shape = { scaleType: 'discrete' };
+                scales.shape.scale = LABKEY.vis.Scale.ValueMapDiscrete(shapeValueMap);
             }
         }
 
@@ -1239,6 +1247,17 @@ LABKEY.vis.GenericChartHelper = new function(){
                 new LABKEY.vis.Layer({
                     data: data,
                     geom: geom
+                })
+            );
+        }
+
+        // render box plot points after box layer so they are not obscured
+        if (renderType === 'box_plot' && chartConfig.pointType === 'all')
+        {
+            layers.push(
+                new LABKEY.vis.Layer({
+                    geom: LABKEY.vis.GenericChartHelper.generatePointGeom(chartConfig.geomOptions),
+                    aes: {hoverText: LABKEY.vis.GenericChartHelper.generatePointHover(chartConfig.measures)}
                 })
             );
         }
