@@ -1908,9 +1908,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         selection.attr('font-family', fontFamily).attr('font-size', '11px');
 
         if (plot.legendPos === 'bottom') {
+            // Render the legendTop relative to the xLabel position, which defaults to 50 below the grid.bottomEdge
+            const xLabelOffset = plot.labels.x.position ?? 50;
+            let legendTop = plot.grid.bottomEdge + xLabelOffset + 10;
             glyphX = plot.grid.leftEdge + 5;
             textX = glyphX + 15;
-            yAcc = function(d, i) {return (plot.grid.bottomEdge + 60) + (i * 15);};
+            yAcc = function(d, i) {return legendTop + (i * 15);};
         } else {
             xPad = plot.scales.yRight && plot.scales.yRight.scale ? 50 : 0;
             glyphX = plot.grid.rightEdge + 30 + xPad;
