@@ -42,8 +42,6 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
 import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.migration.DefaultMigrationSchemaHandler;
@@ -228,7 +226,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Double getSchemaVersion()
     {
-        return 25.003;
+        return 25.005;
     }
 
     @Override
@@ -390,8 +388,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         {
             folderRegistry.addFactories(new StudyWriterFactory(), new StudyImporterFactory());
         }
-
-        FileContentService.get().addFileListener(new TableUpdaterFileListener(StudySchema.getInstance().getTableInfoUploadLog(), "FilePath", TableUpdaterFileListener.Type.filePath, "RowId"));
 
         DatasetDefinition.cleanupOrphanedDatasetDomains();
 

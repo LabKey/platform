@@ -1,0 +1,1 @@
+ALTER TABLE study.uploadlog DROP CONSTRAINT UQ_UploadLog_FilePath;

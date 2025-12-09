@@ -16,9 +16,9 @@
 
 package org.labkey.study.model;
 
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
@@ -226,12 +226,12 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
-import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PERSONNEL_TABLE_NAME;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PRODUCT_TABLE_NAME;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.TREATMENT_TABLE_NAME;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 public class StudyManager
 {
@@ -2566,7 +2566,7 @@ public class StudyManager
 
             SchemaKey schemaPath = SchemaKey.fromParts(SCHEMA.getSchemaName());
             QueryService.get().fireQueryDeleted(user, study.getContainer(), null, schemaPath, Collections.singleton(ds.getName()));
-            new DatasetDefinition.DatasetAuditHandler(ds).addAuditEvent(user, study.getContainer(), AuditBehaviorType.DETAILED, "Dataset deleted: " + ds.getName(), null);
+            new DatasetDefinition.DatasetAuditHandler(ds).addAuditEvent(user, study.getContainer(), AuditBehaviorType.DETAILED, "Dataset deleted: " + ds.getName());
 
             transaction.addCommitTask(() ->
                 unindexDataset(ds),
