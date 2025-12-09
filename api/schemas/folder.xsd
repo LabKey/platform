@@ -93,6 +93,7 @@
                 <xs:element name="moduleProperties" minOccurs="0" type="modulePropertiesType"/>
                 <xs:element name="xar" minOccurs="0" type="exportDirType" />
                 <xs:element name="inventory" minOccurs="0" type="exportDirType"/>
+                <xs:element name="workflow" minOccurs="0" type="exportDirType"/>
                 <xs:element name="fileBrowserConfig" minOccurs="0" maxOccurs="1">
                     <xs:complexType>
                         <xs:attribute name="file" type="xs:string">
