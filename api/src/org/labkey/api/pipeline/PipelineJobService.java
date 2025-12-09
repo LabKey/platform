@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.formSchema.FormSchema;
 import org.labkey.api.pipeline.file.PathMapper;
+import org.labkey.api.security.User;
 import org.labkey.api.util.QuietCloser;
 
 import java.io.FileNotFoundException;
@@ -192,7 +193,7 @@ public interface PipelineJobService extends TaskPipelineRegistry
         RemoteExecutionEngine
     }
 
-    FormSchema getFormSchema(Container container);
+    FormSchema getFormSchema(Container container, User user);
 
     /** @return true if the current instance is the web server, which has access to more resources including the
      * primary database, or false if we're on a remote server
