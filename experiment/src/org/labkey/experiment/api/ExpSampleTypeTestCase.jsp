@@ -789,15 +789,9 @@ public void testUpdateSomeParents() throws Exception
         rows.add(CaseInsensitiveHashMap.of("rowId", C1.getRowId(), "name", "C1", "MaterialInputs/Parent1Samples", "P1-1"));
         rows.add(CaseInsensitiveHashMap.of("rowId", C4.getRowId(), "name", "C5", "MaterialInputs/Parent1Samples", null)); // intentionally mix up name
 
-        try
-        {
-            updateService.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
-            fail("Expected to throw exception");
-        }
-        catch (Exception e)
-        {
-            assertThat(e.getMessage(), containsString("RowId is not accepted when merging samples. Specify only the sample name instead."));
-        }
+        updateService.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
+        assertThat(errors.getMessage(), containsString("RowId is not accepted when merging samples. Specify only the sample name instead."));
+        errors = new BatchValidationException();
     }
 
     // Attempt to merge using "Row Id" label
@@ -806,15 +800,37 @@ public void testUpdateSomeParents() throws Exception
         rows.add(CaseInsensitiveHashMap.of("Row Id", C1.getRowId(), "name", "C1", "MaterialInputs/Parent1Samples", "P1-1"));
         rows.add(CaseInsensitiveHashMap.of("Row Id", C4.getRowId(), "name", "C5", "MaterialInputs/Parent1Samples", null)); // intentionally mix up name
 
-        try
-        {
-            updateService.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
-            fail("Expected to throw exception");
-        }
-        catch (Exception e)
-        {
-            assertThat(e.getMessage(), containsString("RowId is not accepted when merging samples. Specify only the sample name instead."));
-        }
+        updateService.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
+        assertThat(errors.getMessage(), containsString("RowId is not accepted when merging samples. Specify only the sample name instead."));
+        errors = new BatchValidationException();
+    }
+
+    // Attempt to update using outdated "LSID" and do not specify any other keys
+    // Note: using try/catch here as updateRows() executes with retry which throws
+    // if validation exceptions are encountered.
+    try
+    {
+        rows.clear();
+        rows.add(CaseInsensitiveHashMap.of("LSID", C1.getLSID(), "MaterialInputs/Parent1Samples", "P1-1"));
+        rows.add(CaseInsensitiveHashMap.of("LSID", C4.getLSID(), "MaterialInputs/Parent1Samples", null));
+
+        updateService.updateRows(user, c, rows, null, errors, null, null);
+        fail("Expected to throw exception");
+    }
+    catch (Exception e)
+    {
+        assertThat(e.getMessage(), containsString("LSID is no longer accepted as a key for sample update"));
+    }
+
+    // Attempt to merge using outdated "LSID" and do not specify any other keys
+    {
+        rows.clear();
+        rows.add(CaseInsensitiveHashMap.of("LSID", C1.getLSID(), "MaterialInputs/Parent1Samples", "P1-1"));
+        rows.add(CaseInsensitiveHashMap.of("LSID", C4.getLSID(), "MaterialInputs/Parent1Samples", null));
+
+        updateService.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
+        assertThat(errors.getMessage(), containsString("LSID is no longer accepted as a key for sample merge"));
+        errors = new BatchValidationException();
     }
 
     // now update the children with various types of modifications to the parentage
