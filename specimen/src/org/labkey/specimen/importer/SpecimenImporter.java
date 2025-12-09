@@ -57,6 +57,7 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.ImportProgress;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
@@ -69,7 +70,6 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
-import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.DefaultSchema;
@@ -1993,7 +1993,7 @@ public class SpecimenImporter extends SpecimenTableManager
         DataIteratorBuilder standardEtl = StandardDataIteratorBuilder.forInsert(target, specimenWrapped, getContainer(), getUser(), dix);
         DataIteratorBuilder persist = ((UpdateableTableInfo)target).persistRows(standardEtl, dix);
         Pump pump = new Pump(persist, dix);
-        pump.setProgress(new ListImportProgress()
+        pump.setProgress(new ImportProgress()
         {
             long heartBeat = HeartBeat.currentTimeMillis();
 

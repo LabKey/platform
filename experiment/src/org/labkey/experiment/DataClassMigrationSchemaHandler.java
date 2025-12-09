@@ -135,7 +135,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
                     }
                 })
                 .forEach(SEQUENCE_IDS::add);
-            LOG.info("{} added to the SequenceIdentity set",
+            LOG.info("   {} added to the SequenceIdentity set",
                 StringUtilsLabKey.pluralize(SEQUENCE_IDS.size() - startSize, "unique SequenceId was", "unique SequenceIds were"));
         }
     }

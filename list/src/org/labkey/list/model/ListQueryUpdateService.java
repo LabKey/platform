@@ -42,11 +42,11 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.ImportProgress;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -229,7 +229,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     public int insertUsingDataIterator(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir,
-                                       @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, InsertOption insertOption, LookupResolutionType lookupResolutionType)
+                                       @Nullable ImportProgress progress, boolean supportAutoIncrementKey, InsertOption insertOption, LookupResolutionType lookupResolutionType)
     {
         if (!_list.isVisible(user))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");

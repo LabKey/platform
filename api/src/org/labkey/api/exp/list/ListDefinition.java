@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.ImportProgress;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
@@ -269,8 +270,8 @@ public interface ListDefinition extends Comparable<ListDefinition>
     ListItem getListItemForEntityId(String entityId, User user);
 
     int insertListItems(User user, Container container, List<ListItem> listItems) throws IOException;
-    int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, LookupResolutionType lookupResolutionType) throws IOException;
-    int importListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, LookupResolutionType lookupResolutionType, QueryUpdateService.InsertOption insertOption) throws IOException;
+    int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ImportProgress progress, boolean supportAutoIncrementKey, LookupResolutionType lookupResolutionType) throws IOException;
+    int importListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ImportProgress progress, boolean supportAutoIncrementKey, LookupResolutionType lookupResolutionType, QueryUpdateService.InsertOption insertOption) throws IOException;
 
     @Nullable TableInfo getTable(User user);
     @Nullable TableInfo getTable(User user, Container c);

@@ -30,13 +30,13 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.ImportProgress;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -610,13 +610,13 @@ public class ListDefinitionImpl implements ListDefinition
 
 
     @Override
-    public int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, LookupResolutionType lookupResolutionType)
+    public int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ImportProgress progress, boolean supportAutoIncrementKey, LookupResolutionType lookupResolutionType)
     {
         return importListItems(user, container, loader, errors, attachmentDir, progress, supportAutoIncrementKey, lookupResolutionType, QueryUpdateService.InsertOption.INSERT);
     }
 
     @Override
-    public int importListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, LookupResolutionType lookupResolutionType, QueryUpdateService.InsertOption insertOption)
+    public int importListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ImportProgress progress, boolean supportAutoIncrementKey, LookupResolutionType lookupResolutionType, QueryUpdateService.InsertOption insertOption)
     {
         ListQuerySchema schema = new ListQuerySchema(user, container);
         TableInfo table = schema.getTable(_def.getName());
