@@ -1959,7 +1959,7 @@ d,seven,twelve,day,month,date,duration,guid
         Container container = JunitUtil.getTestContainer();
         User user = TestContext.get().getUser();
         var schema = DefaultSchema.get(user, container).getSchema("core");
-        try (var rs =QueryService.get().select(schema, testSql);)
+        try (var rs =QueryService.get().select(schema, testSql))
         {
             while (rs.next())
             {
