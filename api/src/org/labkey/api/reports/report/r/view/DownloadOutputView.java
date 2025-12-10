@@ -86,7 +86,7 @@ public abstract class DownloadOutputView extends ROutputView
                 return;
 
             out.write("<table class=\"labkey-output\">");
-            renderTitle(model, out);
+            renderTitle(out);
             if (isCollapse())
                 out.write("<tr style=\"display:none\"><td>");
             else

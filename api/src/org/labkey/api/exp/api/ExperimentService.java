@@ -393,6 +393,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     @NotNull List<? extends ExpMaterial> getExpMaterialsByName(String name, @Nullable Container container, User user);
 
+    @NotNull List<? extends ExpMaterial> getExpMaterialsByName(@NotNull Collection<String> names, @NotNull String sampleTypeName, @NotNull Container container, User user);
+
     @Nullable ExpData findExpData(
         Container c,
         User user,

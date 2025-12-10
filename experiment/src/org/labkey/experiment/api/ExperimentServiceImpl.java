@@ -855,6 +855,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             .toList();
     }
 
+    @NotNull
+    @Override
+    public List<ExpMaterialImpl> getExpMaterialsByName(@NotNull Collection<String> names, @NotNull String sampleTypeName, @NotNull Container container, User user)
+    {
+        ExpSampleType sampleType = SampleTypeService.get().getSampleType(container, user, sampleTypeName);
+        if (sampleType == null)
+            return Collections.emptyList();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.Name.name()), names, IN);
+        filter.addCondition(FieldKey.fromParts("Container"), container);
+        filter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
+
+        return getExpMaterials(filter)
+                .stream()
+                .filter(m -> m.getContainer().hasPermission(user, ReadPermission.class) && m.getSampleType() != null)
+                .toList();
+    }
+
     public @Nullable ExpMaterialImpl getExpMaterial(SimpleFilter filter)
     {
         Material material = new TableSelector(getTinfoMaterial(), filter, null).getObject(Material.class);

@@ -35,7 +35,6 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.pipeline.XarGeneratorId;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.AbstractTaskFactory;
@@ -46,7 +45,6 @@ import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
-import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.XMLBeanTaskFactoryFactory;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
@@ -70,6 +68,7 @@ import org.labkey.pipeline.xml.TaskType;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -95,7 +94,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
     public static class FactoryFactory implements XMLBeanTaskFactoryFactory
     {
         @Override
-        public TaskFactory create(TaskId taskId, TaskType xobj, Path taskDir)
+        public Factory create(TaskId taskId, TaskType xobj, Path taskDir)
         {
             if (taskId.getModuleName() == null)
                 throw new IllegalArgumentException("Task factory must be defined by a module");
@@ -245,7 +244,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 {
                     job.getLogger().info("Processing excel file: " + dataFile.getName());
                     // check to see if this is a multi-sheet format
-                    try (ExcelLoader loader = new ExcelLoader(dataFile.openInputStream(), true, null))
+                    try (ExcelLoader loader = new ExcelLoader(new BufferedInputStream(dataFile.openInputStream()), true, null))
                     {
                         List<String> sheets = loader.getSheetNames();
                         if (sheets.size() > 1)
@@ -424,8 +423,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
     public static class Factory extends AbstractTaskFactory<AssayImportRunTaskFactorySettings, Factory>
     {
-        private final FileType _outputType = XarGeneratorId.FT_PIPE_XAR_XML;
-
         private String _providerName = "${" + PROVIDER_NAME_PROPERTY + "}";
         private String _protocolName = "${" + PROTOCOL_NAME_PROPERTY + "}";
 
@@ -434,7 +431,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             super(AssayImportRunTaskId.class);
         }
 
-        public Factory(Class namespaceClass)
+        public Factory(Class<?> namespaceClass)
         {
             super(namespaceClass);
         }
@@ -466,11 +463,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         public List<FileType> getInputTypes()
         {
             return Collections.emptyList();
-        }
-
-        public FileType getOutputType()
-        {
-            return _outputType;
         }
 
         @Override
@@ -802,7 +794,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             createData(matchedFile, assayDataType);
 
 
-            AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> factory
+            AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory<?, ?>> factory
                     = provider.createRunUploadFactory(protocol, user, container);
 
             factory.setName(getName());
@@ -828,7 +820,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             factory.setLogger(getJob().getLogger());
 
-            AssayRunUploadContext uploadContext = factory.create();
+            AssayRunUploadContext<?> uploadContext = factory.create();
 
             Long batchId = null;
 
@@ -857,7 +849,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 //            }
 
             // Check if we've been cancelled. If so, delete any newly created runs from the database
-            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(getJob().getLogFile());
+            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(getJob().getContainer(), getJob().getLogFileLike());
             if (statusFile != null && (PipelineJob.TaskStatus.cancelled.matches(statusFile.getStatus()) || PipelineJob.TaskStatus.cancelling.matches(statusFile.getStatus())))
             {
                 getJob().info("Deleting run " + run.getName() + " due to cancellation request");

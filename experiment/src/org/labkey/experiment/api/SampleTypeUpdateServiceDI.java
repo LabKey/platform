@@ -87,6 +87,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.ontology.KindOfQuantity;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.DataState;
@@ -2074,6 +2075,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
 
                 Unit validatedUnit = SampleTypeService.get().getValidatedUnit(o, baseUnit, sampleTypeName);
+                if (validatedUnit != null && baseUnit != null && KindOfQuantity.Count == validatedUnit.getKindOfQuantity() && validatedUnit.getValue() == baseUnit.getValue())
+                {
+                    // if both units are 'count' units and have the same value, prefer returning provided unit name
+                    return validatedUnit.name();
+                }
                 // if there's a base unit, return the base unit name otherwise return the name of the given unit
                 return validatedUnit == null ? null : baseUnit != null ? baseUnit.name() : validatedUnit.name();
             }

@@ -57,7 +57,7 @@ public class JsonOutput extends AbstractParamReplacement
     }
 
     @Override
-    public HttpView getView(ViewContext context)
+    public HttpView<?> getView(ViewContext context)
     {
         return new JsonOutputView(this);
     }
@@ -85,7 +85,7 @@ public class JsonOutput extends AbstractParamReplacement
         @Override
         protected String renderInternalAsString(FileLike file) throws IOException
         {
-            if (file.exists())
+            if (existsWithContent(file))
                 return PageFlowUtil.getStreamContentsAsString(file.openInputStream());
 
             return null;
@@ -101,7 +101,7 @@ public class JsonOutput extends AbstractParamReplacement
                 if (null != rawValue)
                 {
                     out.write("<table class=\"labkey-output\">");
-                    renderTitle(model, out);
+                    renderTitle(out);
                     if (isCollapse())
                         out.write("<tr style=\"display:none\"><td><pre>");
                     else

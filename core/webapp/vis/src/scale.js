@@ -27,6 +27,51 @@ LABKEY.vis.Scale.DarkColorDiscrete = function(){
     return ["#378a70", "#f34704", "#4b67a6", "#d53597", "#72a124", "#c8a300", "#d19641", "#808080"];
 };
 
+/*
+ * Alternative to d3.scale.ordinal that allows for a value map to be provided for specific values.
+ * If a value is not found in the value map, it falls back to the standard behavior of d3.scale.ordinal.
+ */
+LABKEY.vis.Scale.ValueMapDiscrete = function(valueMap) {
+    let index = {};
+    let domain = [];
+    let range = [];
+
+    function scale(d) {
+        let i = index[d];
+        if (i === undefined) {
+            i = domain.push(d) - 1;
+            index[d] = i;
+        }
+
+        if (valueMap && valueMap.hasOwnProperty(d)) {
+            return valueMap[d];
+        }
+
+        return range[i % range.length];
+    }
+
+    // copied from d3.scale.ordinal
+    scale.domain = function(_) {
+        if (!arguments.length) return domain.slice();
+        domain = [];
+        index = {};
+        for (const value of _) {
+            if (index[value] !== undefined) continue;
+            index[value] = domain.push(value) - 1;
+        }
+        return scale;
+    };
+
+    // copied from d3.scale.ordinal
+    scale.range = function(_) {
+        if (!arguments.length) return range.slice();
+        range = Array.from(_);
+        return scale;
+    };
+
+    return scale;
+}
+
 /**
  * Function that returns a discrete scale used to determine the shape of points in {@link LABKEY.vis.Geom.BoxPlot} and
  * {@link LABKEY.vis.Geom.Point} geoms.
@@ -56,6 +101,14 @@ LABKEY.vis.Scale.Shape = function(){
     };
 
     return [circle, triangle, square, diamond, x];
+};
+
+LABKEY.vis.Scale.ShapeMap = {
+    'circle': LABKEY.vis.Scale.Shape()[0],
+    'triangle': LABKEY.vis.Scale.Shape()[1],
+    'square': LABKEY.vis.Scale.Shape()[2],
+    'diamond': LABKEY.vis.Scale.Shape()[3],
+    'x': LABKEY.vis.Scale.Shape()[4]
 };
 
 LABKEY.vis.Scale.DataspaceShape = function(){

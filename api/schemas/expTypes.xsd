@@ -96,7 +96,7 @@
 			<xs:element name="Comments" type="string" minOccurs="0"/>
             <xs:element name="ExperimentLSID" type="string" minOccurs="0" maxOccurs="1" />
 			<xs:element name="Properties" type="exp:PropertyCollectionType" minOccurs="0"/>
-            <xs:element name="WorkflowTaskLSID" type="string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="WorkflowTaskId" type="string" minOccurs="0" maxOccurs="1" />
             <xs:element name="ReplacedByRunLSID" type="string" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>Reference to another run that defines an updated version of this data</xs:documentation>

@@ -98,7 +98,7 @@ public class HtmlOutput extends AbstractParamReplacement
         @Override
         protected String renderInternalAsString(FileLike file) throws Exception
         {
-            if (file.exists())
+            if (existsWithContent(file))
                 return PageFlowUtil.addScriptNonces(PageFlowUtil.getStreamContentsAsString(file.openInputStream()));
 
             return null;
@@ -113,7 +113,7 @@ public class HtmlOutput extends AbstractParamReplacement
                 if (null != html)
                 {
                     out.write("<table class=\"labkey-output\">");
-                    renderTitle(model, out);
+                    renderTitle(out);
                     if (isCollapse())
                         out.write("<tr style=\"display:none\"><td>");
                     else
