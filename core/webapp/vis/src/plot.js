@@ -314,16 +314,25 @@ boxPlot.render();
         var margins = {}, top = 75, right = 75, bottom = 50, left = 75; // Defaults.
         var foundLegendScale = false, foundYRight = false;
 
-        for(var i = 0; i < allAes.length; i++){
+        for (var i = 0; i < allAes.length; i++){
             var aes = allAes[i];
-            if(!foundLegendScale && (aes.shape || (aes.color && (!scales.color || (scales.color && scales.color.scaleType == 'discrete'))) || aes.outlierColor || aes.outlierShape || aes.pathColor) && legendPos != 'none'){
+
+            if (!foundLegendScale && (aes.shape || (aes.color && (!scales.color || (scales.color && scales.color.scaleType === 'discrete'))) || aes.outlierColor || aes.outlierShape || aes.pathColor) && legendPos !== 'none'){
                 foundLegendScale = true;
-                right = right + 150;
             }
 
-            if(!foundYRight && aes.yRight){
+            if (!foundYRight && aes.yRight){
                 foundYRight = true;
                 right = right + 25;
+            }
+        }
+
+        if (foundLegendScale) {
+            if (!legendPos || legendPos === 'right') {
+                right = right + 150;
+            } else if (legendPos === 'bottom') {
+                // The goal here is to net us space to render one item per color of our discrete color scale (8 items)
+                bottom = bottom += 170;
             }
         }
 
@@ -331,22 +340,22 @@ boxPlot.render();
             userMargins = {};
         }
 
-        if(typeof userMargins.top === 'undefined'){
+        if (typeof userMargins.top === 'undefined'){
             margins.top = top + (labels && labels.subtitle ? 20 : 0);
         } else {
             margins.top = userMargins.top;
         }
-        if(typeof userMargins.right === 'undefined'){
+        if (typeof userMargins.right === 'undefined'){
             margins.right = right;
         } else {
             margins.right = userMargins.right;
         }
-        if(typeof userMargins.bottom === 'undefined'){
+        if (typeof userMargins.bottom === 'undefined'){
             margins.bottom = bottom;
         } else {
             margins.bottom = userMargins.bottom;
         }
-        if(typeof userMargins.left === 'undefined'){
+        if (typeof userMargins.left === 'undefined'){
             margins.left = left;
         } else {
             margins.left = userMargins.left;
@@ -918,7 +927,7 @@ boxPlot.render();
         this.data = config.data ? config.data : null; // An array of rows, required. Each row could have several pieces of data. (e.g. {subjectId: '249534596', hemoglobin: '350', CD4:'1400', day:'120'})
         this.layers = config.layers ? config.layers : []; // An array of layers, required. (e.g. a layer for a CD4 line chart over time, and a layer for a Hemoglobin line chart over time).
         this.clipRect = config.clipRect ? config.clipRect : false;
-        this.legendPos = config.legendPos;
+        this.legendPos = config.legendPos ?? 'right';
         this.legendNoWrap = config.legendNoWrap;
         this.throwErrors = config.throwErrors || false; // Allows the configuration to specify whether chart errors should be thrown or logged (default).
         this.brushing = ('brushing' in config && config.brushing != null && config.brushing != undefined) ? config.brushing : null;
@@ -1033,7 +1042,7 @@ boxPlot.render();
                 this.layers[i].render(this.renderer, this.grid, this.scales, this.data, this.aes, i);
             }
 
-            if(!this.legendPos || (this.legendPos && !(this.legendPos == "none"))){
+            if (this.legendPos !== "none") {
                 this.renderer.renderLegend();
             }
 
