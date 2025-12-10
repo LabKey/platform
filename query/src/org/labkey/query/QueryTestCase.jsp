@@ -1949,11 +1949,11 @@ d,seven,twelve,day,month,date,duration,guid
                 UNION ALL
                 SELECT 'd' as test, false as expected, array_is_same(          ARRAY['A','X'], ARRAY['A','B'] ) as result
                 UNION ALL
-                SELECT 'd' as test, true as expected,  array_is_same(          ARRAY['A','B'], ARRAY['A','B'] ) as result
+                SELECT 'e' as test, true as expected,  array_is_same(          ARRAY['A','B'], ARRAY['A','B'] ) as result
                 UNION ALL
-                SELECT 'e' as test, true as expected,  array_contains_element( ARRAY['A','B'], 'B') as result
+                SELECT 'f' as test, true as expected,  array_contains_element( ARRAY['A','B'], 'B') as result
                 UNION ALL
-                SELECT 'f' as test, false as expected, array_contains_element( ARRAY['A','B'], 'X') as result
+                SELECT 'g' as test, false as expected, array_contains_element( ARRAY['A','B'], 'X') as result
                 """;
 
         Container container = JunitUtil.getTestContainer();
