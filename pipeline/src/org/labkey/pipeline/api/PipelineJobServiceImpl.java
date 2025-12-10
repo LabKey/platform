@@ -702,8 +702,6 @@ public class PipelineJobServiceImpl implements PipelineJobService
         List<Option<String>> userOptions = new ArrayList<>(SecurityManager.getUsersWithPermissions(container, Set.of(InsertPermission.class)).stream()
                 .map(u -> new Option<>(u.getDisplayName(user), u.getDisplayName(user)))
                 .toList());
-        // allow empty selection
-        userOptions.add(new Option<>("", ""));
 
         String usernameHelpText = "The file watcher will run as this user in the pipeline. Users in this list have insert permissions for the folder. Some tasks may require this user to have admin permissions.";
         String assayProviderHelpText = "Use this provider for running assay import runs. This will be the name of the assay type eg : General or " +
@@ -717,7 +715,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
                 new TextareaField("description", "Description", null, false, ""),
                 new SelectField<>("type", "Type", null, true, typeDefaultValue, typeOptions),
                 new SelectField<>("pipelineId", "Pipeline Task", "Select a Pipeline Task", true, null, taskOptions),
-                new SelectField("username", "Run as Username", null, false, "", userOptions, usernameHelpText, usernameHref),
+                new SelectField("username", "Run as Username", null, true, null, userOptions, usernameHelpText, usernameHref),
                 new TextField("assay provider", "Assay Provider", "General", false, null, assayProviderHelpText, assayProviderHref),
                 new CheckboxField("enabled", "Enable this Trigger", false, true)
         );
