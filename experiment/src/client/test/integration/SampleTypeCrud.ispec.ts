@@ -504,6 +504,7 @@ describe('Import with update / merge', () => {
             schemaName: 'exp',
             queryName: 'materials',
             'query.columns': 'RowId, Name, MaterialSourceId, Description',
+            'query.Name~in': ['FL-1', 'SP-10'].join(';'),
             'query.sort': 'RowId',
         }, { ...topFolderOptions, ...adminOptions }).expect(successfulResponse);
 
