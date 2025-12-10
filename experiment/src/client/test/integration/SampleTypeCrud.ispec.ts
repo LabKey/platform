@@ -10,6 +10,7 @@ import {
     verifyRequiredLineageInsertUpdate
 } from './utils';
 import { caseInsensitive, SAMPLE_TYPE_DESIGNER_ROLE } from '@labkey/components';
+const { importSample, insertRows } = ExperimentCRUDUtils;
 
 // @ts-expect-error process is not available in a browser environment
 const server = hookServer(process.env);
@@ -314,7 +315,6 @@ describe('Sample Type Designer', () => {
 
 });
 
-
 describe('Import with update / merge', () => {
     it ("Issue 52922: Blank sample id in the file are getting ignored in update from file", async () => {
         const BLANK_KEY_UPDATE_ERROR = 'Name value not provided';
@@ -387,9 +387,89 @@ describe('Import with update / merge', () => {
         expect(successResp.text.indexOf('"success" : true') > -1).toBeTruthy();
 
     });
+    it('Support RowId lookup and renaming', async () => {
+        const dataType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
+        const initialName = 'RowIdLookupTest';
+        const newName = 'RenamedViaRowId';
 
+        const rows = await insertRows(server, [{
+            name: initialName,
+            description: 'Original Description'
+        }], 'samples', dataType, topFolderOptions, editorUserOptions);
+
+        // Capture the generated RowId from the insert response
+        // Note: Assuming standard response structure where 'rows' array contains the returned data
+        const rowId = caseInsensitive(rows[0], 'rowId');
+        expect(rowId).toBeDefined();
+
+        // Test: Update Description using ONLY RowId (Name column omitted)
+        // This validates that the importer can lookup by RowId alone
+        let updateTsv = `RowId\tDescription\n${rowId}\tUpdated Description via RowId`;
+        let resp = await importSample(server, updateTsv, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
+        expect(resp.text.indexOf('"success" : true') > -1).toBeTruthy();
+
+        // Test: Update Name using RowId + Name (Renaming)
+        // This validates that providing both keys looks up by RowId and updates the Name
+        updateTsv = `RowId\tName\n${rowId}\t${newName}`;
+        resp = await importSample(server, updateTsv, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
+        expect(resp.text.indexOf('"success" : true') > -1).toBeTruthy();
+
+        // Verify Rename: Attempt to update using the NEW Name
+        // If the rename worked, looking up by the new Name should succeed
+        updateTsv = `Name\tDescription\n${newName}\tDescription after rename`;
+        resp = await importSample(server, updateTsv, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
+        expect(resp.text.indexOf('"success" : true') > -1).toBeTruthy();
+
+        // Verify Rename: Attempt to update using the OLD Name
+        // This should now fail because the record was renamed, proving the old key is gone
+        updateTsv = `Name\tDescription\n${initialName}\tShould fail`;
+        resp = await importSample(server, updateTsv, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
+        expect(resp.text.indexOf('Sample does not exist') > -1).toBeTruthy();
+    });
+    it('Error when supplying RowId during MERGE', async () => {
+        const dataType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
+        const sampleName = 'MergeRowIdErrorTest';
+
+        const rows = await insertRows(server, [{
+            name: sampleName,
+            description: 'created'
+        }], 'samples', dataType, topFolderOptions, editorUserOptions);
+
+        const rowId = caseInsensitive(rows[0], 'rowId');
+        expect(rowId).toBeDefined();
+
+        // MERGE with RowId should fail
+        // Even if the name matches and rowId is correct, the presence of the column should trigger the error
+        const mergeTsv = `RowId\tName\tDescription\n${rowId}\t${sampleName}\tShould fail`;
+        const resp = await importSample(server, mergeTsv, dataType, 'MERGE', topFolderOptions, editorUserOptions);
+
+        // Check for the specific error message
+        expect(resp.text.indexOf('RowId is not accepted when merging samples. Specify only the sample name instead.') > -1).toBeTruthy();
+    });
+    it('Error when supplying LSID without RowId or Name', async () => {
+        const dataType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
+        const sampleName = 'LsidKeyErrorTest';
+        const LSID_UPDATE_ERROR = "LSID is no longer accepted as a key for sample update. Specify a RowId or Name instead.";
+        const LSID_MERGE_ERROR = "LSID is no longer accepted as a key for sample merge. Specify a RowId or Name instead.";
+
+        const rows = await insertRows(server, [{
+            name: sampleName,
+            description: 'created'
+        }], 'samples', dataType, topFolderOptions, editorUserOptions);
+
+        const lsid = caseInsensitive(rows[0], 'lsid');
+        expect(lsid).toBeDefined();
+
+        // UPDATE: LSID provided as key (Name/RowId missing)
+        const tsv = `LSID\tDescription\n${lsid}\tShould fail`;
+        let resp = await importSample(server, tsv, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
+        expect(resp.text.indexOf(LSID_UPDATE_ERROR) > -1).toBeTruthy();
+
+        // MERGE: LSID provided as key (Name/RowId missing)
+        resp = await importSample(server, tsv, dataType, 'MERGE', topFolderOptions, editorUserOptions);
+        expect(resp.text.indexOf(LSID_MERGE_ERROR) > -1).toBeTruthy();
+    });
 });
-
 
 describe('Aliquot crud', () => {
     describe("SMAliquotImportExportTest", () => {

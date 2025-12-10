@@ -143,7 +143,6 @@ import static org.labkey.api.exp.api.SampleTypeService.MISSING_UNITS_ERROR_MESSA
 import static org.labkey.api.exp.api.SampleTypeService.UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
 import static org.labkey.api.util.IntegerUtils.asLong;
-import static org.labkey.experiment.ExpDataIterators.MultiDataTypeCrossProjectDataIterator.getRowIdNotAcceptedMessage;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
@@ -1463,7 +1462,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                             continue;
                         if (isMerge)
                         {
-                            context.getErrors().addRowError(new ValidationException(getRowIdNotAcceptedMessage("merging"), RowId.name()));
+                            context.getErrors().addRowError(new ValidationException("RowId is not accepted when merging samples. Specify only the sample name instead.", RowId.name()));
                             return null;
                         }
                     }
