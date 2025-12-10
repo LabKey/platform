@@ -116,7 +116,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
 
     public static String getStandardWarningMessage(String warning, String databaseProductVersion)
     {
-        return "LabKey Server " + warning + " " + PostgreSql92Dialect.PRODUCT_NAME + " version " + databaseProductVersion + ". " + PostgreSql92Dialect.RECOMMENDED;
+        return "LabKey Server " + warning + " " + PostgreSql92Dialect.PRODUCT_NAME + " version " + databaseProductVersion + ". " + PostgreSqlVersion.RECOMMENDED;
     }
 
     @Override
