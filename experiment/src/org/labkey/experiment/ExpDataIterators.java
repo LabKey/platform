@@ -40,6 +40,7 @@ import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SimpleFilter;
@@ -2661,6 +2662,7 @@ public class ExpDataIterators
         private final Map<String, Set<String>> _orderDependencies = new HashMap<>();
         private final int _dataIdIndex;
         private final FieldKey _dataKey;
+        private final boolean _dataKeyIsNumeric;
         private final Map<String, Set<String>> _idsPerType = new HashMap<>();
         private final Map<String, Set<String>> _parentIdsPerType = new HashMap<>();
         private final Map<String, Container> _containerMap = new CaseInsensitiveHashMap<>();
@@ -2680,34 +2682,40 @@ public class ExpDataIterators
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
 
             // Determine the dataId column
-            if (_isSamples)
             {
-                int dataIdIndex = -1;
-                FieldKey dataKey = null;
+                int index;
+                FieldKey dataKey;
+                boolean isNumeric;
 
-                for (String dataId : RowId.namesAndLabels())
+                if (_isSamples)
                 {
-                    if (map.containsKey(dataId))
+                    var foundId = RowId.namesAndLabels().stream()
+                            .filter(map::containsKey)
+                            .findFirst();
+
+                    if (foundId.isPresent())
                     {
-                        dataIdIndex = map.get(dataId);
+                        index = map.get(foundId.get());
                         dataKey = RowId.fieldKey();
-                        break;
+                        isNumeric = true;
+                    }
+                    else
+                    {
+                        index = map.getOrDefault(Name.name(), -1);
+                        dataKey = Name.fieldKey();
+                        isNumeric = false;
                     }
                 }
-
-                if (dataKey == null)
+                else
                 {
-                    dataIdIndex = map.getOrDefault(Name.name(), -1);
-                    dataKey = Name.fieldKey();
+                    index = map.getOrDefault(ExpDataTable.Column.Name.name(), -1);
+                    dataKey = ExpDataTable.Column.Name.fieldKey();
+                    isNumeric = false;
                 }
 
-                _dataIdIndex = dataIdIndex;
+                _dataIdIndex = index;
                 _dataKey = dataKey;
-            }
-            else
-            {
-                _dataIdIndex = map.getOrDefault(ExpDataTable.Column.Name.name(), -1);
-                _dataKey = ExpDataTable.Column.Name.fieldKey();
+                _dataKeyIsNumeric = isNumeric;
             }
 
             _tsvWriter = new TSVWriter() // Used to quote values with newline/tabs/quotes
@@ -3232,9 +3240,10 @@ public class ExpDataIterators
                 {
                     if (index == _dataIdIndex)
                     {
-                        _idsPerType.computeIfAbsent(typeData.dataType.getName(), k -> new HashSet<>()).add(data.toString());
+                        String dataString = data.toString();
+                        _idsPerType.computeIfAbsent(typeData.dataType.getName(), k -> new HashSet<>()).add(dataString);
                         if (_isCrossFolderUpdate)
-                            typeData.dataIds.add(data);
+                            typeData.dataIds.add(_dataKeyIsNumeric ? JdbcType.BIGINT.convert(data) : dataString);
                     }
 
                     // if the data represents a derivation dependency between types, and we're creating ids within the file,
@@ -3290,7 +3299,8 @@ public class ExpDataIterators
                 Set<Object> notFoundIds = new HashSet<>(typeData.dataIds);
                 for (Map<String, Object> row : rows)
                 {
-                    Object identifier = row.get(_dataKey.getName());
+                    Object raw = row.get(_dataKey.getName());
+                    Object identifier = _dataKeyIsNumeric ? asLong(raw) : raw;
                     notFoundIds.remove(identifier);
                     String dataContainer = (String) row.get("container");
                     // could be updating the same data multiple times in a single import, the import will later be rejected
