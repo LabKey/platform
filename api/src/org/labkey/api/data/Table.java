@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -50,6 +51,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.BaseScanner;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
@@ -571,7 +573,7 @@ public class Table
     // Standard SQLException catch block: log exception, query SQL, and params
     static void logException(@Nullable SQLFragment sql, @Nullable Connection conn, SQLException e, Level logLevel)
     {
-        if (SqlDialect.isCancelException(e))
+        if (SqlDialect.isCancelException(e) || ExceptionUtil.isIgnorable(e))
         {
             return;
         }
@@ -585,7 +587,7 @@ public class Table
             String trim = sql.getSQL().trim();
 
             // Treat a ConstraintException during INSERT/UPDATE as a WARNING. Treat all other SQLExceptions as an ERROR.
-            if (RuntimeSQLException.isConstraintException(e) && (StringUtils.startsWithIgnoreCase(trim, "INSERT") || StringUtils.startsWithIgnoreCase(trim, "UPDATE")))
+            if (RuntimeSQLException.isConstraintException(e) && (Strings.CI.startsWith(trim, "INSERT") || Strings.CI.startsWith(trim, "UPDATE")))
             {
                 // Log this ConstraintException if log Level is WARN (the default) or lower. Skip logging for callers that request just ERRORs.
                 if (Level.WARN.isMoreSpecificThan(logLevel))
@@ -1409,7 +1411,7 @@ public class Table
             //noinspection EmptyTryBlock,UnusedDeclaration
             try (ResultSet rs = new TableSelector(tinfo).getResultSet()){}
 
-            Map[] maps = new TableSelector(tinfo).getMapArray();
+            Map<?, ?>[] maps = new TableSelector(tinfo).getMapArray();
             assertNotNull(maps);
 
             Principal[] principals = new TableSelector(tinfo).getArray(Principal.class);
@@ -1739,7 +1741,7 @@ public class Table
         //
 
         Domain domain = tableDelete.getDomain();
-        DomainKind domainKind = tableDelete.getDomainKind();
+        DomainKind<?> domainKind = tableDelete.getDomainKind();
         if (null != domain && null != domainKind && StringUtils.isEmpty(domainKind.getStorageSchemaName()))
         {
             if (!d.isPostgreSQL() && !d.isSqlServer())
