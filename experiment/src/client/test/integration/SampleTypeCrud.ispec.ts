@@ -469,6 +469,52 @@ describe('Import with update / merge', () => {
         resp = await importSample(server, tsv, dataType, 'MERGE', topFolderOptions, editorUserOptions);
         expect(resp.text.indexOf(LSID_MERGE_ERROR) > -1).toBeTruthy();
     });
+    it('MaterialSourceId is immutable during update', async () => {
+        // Arrange
+        const firstSampleType = SAMPLE_ALIQUOT_IMPORT_TYPE_NAME;
+        const secondSampleType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
+        const [firstSample] = await insertRows(server, [{ name: 'FL-1', description: 'Yolo' }], 'samples', firstSampleType, topFolderOptions, editorUserOptions);
+        const [secondSample] = await insertRows(server, [{ name: 'SP-10', description: 'Hello' }], 'samples', secondSampleType, topFolderOptions, editorUserOptions);
+        const firstRowId = caseInsensitive(firstSample, 'rowId');
+        const secondRowId = caseInsensitive(secondSample, 'rowId');
+
+        // Fetch sample type rowIds
+        let resp = await server.post('query', 'selectRows', {
+            schemaName: 'exp',
+            queryName: 'SampleSets',
+            'query.columns': 'RowId, Name',
+            'query.Name~in': [firstSampleType, secondSampleType].join(';'),
+            'query.sort': 'Name',
+        }, { ...topFolderOptions, ...adminOptions }).expect(successfulResponse);
+        const firstSampleTypeRowId = caseInsensitive(resp.body.rows[0], 'RowId');
+        const secondSampleTypeRowId = caseInsensitive(resp.body.rows[1], 'RowId');
+
+        let tsv = 'RowId\tSampleType\tDescription\n';
+        tsv += `${firstRowId}\t${firstSampleType}\tShould be FL-1\n`;
+        tsv += `${secondRowId}\t${secondSampleType}\tShould be SP-10\n`;
+
+        // Act
+        resp = await importSample(server, tsv, firstSampleType, 'UPDATE', topFolderOptions, editorUserOptions);
+        expect(resp.body.success).toEqual(true);
+        expect(resp.body.rowCount).toEqual(2);
+
+        // Assert
+        // Verify that the MaterialSourceId is not altered for these rows
+        resp = await server.post('query', 'selectRows', {
+            schemaName: 'exp',
+            queryName: 'materials',
+            'query.columns': 'RowId, Name, MaterialSourceId, Description',
+            'query.sort': 'RowId',
+        }, { ...topFolderOptions, ...adminOptions }).expect(successfulResponse);
+
+        expect(caseInsensitive(resp.body.rows[0], 'Name')).toEqual('FL-1');
+        expect(caseInsensitive(resp.body.rows[0], 'MaterialSourceId')).toEqual(firstSampleTypeRowId);
+        expect(caseInsensitive(resp.body.rows[0], 'Description')).toEqual('Should be FL-1');
+
+        expect(caseInsensitive(resp.body.rows[1], 'Name')).toEqual('SP-10');
+        expect(caseInsensitive(resp.body.rows[1], 'MaterialSourceId')).toEqual(secondSampleTypeRowId);
+        expect(caseInsensitive(resp.body.rows[1], 'Description')).toEqual('Should be SP-10');
+    })
 });
 
 describe('Aliquot crud', () => {

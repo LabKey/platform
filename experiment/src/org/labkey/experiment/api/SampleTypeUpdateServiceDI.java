@@ -1494,8 +1494,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 if (!columnNameMap.containsKey(RootMaterialRowId.name()))
                     addAliquotedFrom.addNullColumn(RootMaterialRowId.name(), JdbcType.INTEGER);
                 addAliquotedFrom.addNullColumn(CURRENT_SAMPLE_STATUS_COLUMN_NAME, JdbcType.INTEGER);
-                addAliquotedFrom.addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
-                addAliquotedFrom.addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
+                addAliquotedFrom.addColumn(new BaseColumnInfo(CpasType.fieldKey(), JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
+                addAliquotedFrom.addColumn(new BaseColumnInfo(MaterialSourceId.fieldKey(), JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
                 addAliquotedFrom.addNullColumn(ROOT_RECOMPUTE_ROWID_COL, JdbcType.INTEGER);
                 addAliquotedFrom.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
                 addAliquotedFrom.selectAll();
@@ -1671,14 +1671,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             else
                 selectAll(CaseInsensitiveHashSet.of(Name.name(), LSID.name(), RootMaterialRowId.name()));
 
-            addColumn(new BaseColumnInfo("name", JdbcType.VARCHAR), (Supplier<String>)() -> generatedName);
+            addColumn(new BaseColumnInfo(Name.fieldKey(), JdbcType.VARCHAR), (Supplier<String>)() -> generatedName);
             if (!useLsidForUpdate)
             {
                 DbSequence lsidDbSeq = sampleType.getSampleLsidDbSeq(batchSize, sampleType.getContainer());
-                addColumn(new BaseColumnInfo("lsid", JdbcType.VARCHAR), (Supplier<String>) () -> lsidBuilder.setObjectId(String.valueOf(lsidDbSeq.next())).toString());
+                addColumn(new BaseColumnInfo(LSID.name(), JdbcType.VARCHAR), (Supplier<String>) () -> lsidBuilder.setObjectId(String.valueOf(lsidDbSeq.next())).toString());
             }
-            addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
-            addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
+            addColumn(new BaseColumnInfo(CpasType.fieldKey(), JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
+            addColumn(new BaseColumnInfo(MaterialSourceId.fieldKey(), JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
         }
 
         @Override
@@ -1882,7 +1882,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 {
                     ExpMaterialTable.Column field = entry.getKey();
                     JdbcType jdbcType = entry.getValue();
-                    var col = new BaseColumnInfo(field.name(), jdbcType);
+                    var col = new BaseColumnInfo(field.fieldKey(), jdbcType);
 
                     addColumn(col, new AliquotRollupConvertColumn(field, jdbcType, aliquotedFromDataColInd));
                 }

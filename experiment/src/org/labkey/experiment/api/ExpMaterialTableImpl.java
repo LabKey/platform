@@ -1786,7 +1786,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         var set = new CaseInsensitiveHashSet();
         set.addAll(TableInfo.defaultExcludedDetailedUpdateAuditFields);
-        set.addAll(ExpDataIterators.NOT_FOR_UPDATE);
+        set.addAll(ExpDataIterators.MATERIAL_NOT_FOR_UPDATE);
         // We don't want the inventory columns to show up in the sample timeline audit record;
         // they are captured in their own audit record.
         set.addAll(InventoryService.InventoryStatusColumn.names());

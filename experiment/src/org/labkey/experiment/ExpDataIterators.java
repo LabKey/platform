@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -2294,14 +2295,32 @@ public class ExpDataIterators
         }
     }
 
-    public static final Set<String> NOT_FOR_UPDATE = Sets.newCaseInsensitiveHashSet(
-            ExpDataTable.Column.RowId.toString(),
-            ExpDataTable.Column.LSID.toString(),
-            ExpDataTable.Column.Created.toString(),
-            ExpDataTable.Column.CreatedBy.toString(),
-            AliquotedFromLSID.toString(),
-            RootMaterialRowId.toString(),
-            "genId");
+    // Common fields in both exp.data and exp.material that cannot be updated
+    private static final Set<String> COMMON_NOT_FOR_UPDATE = CaseInsensitiveHashSet.of(
+            Created.name(),
+            CreatedBy.name(),
+            LSID.name(),
+            RowId.name(),
+            "genId"
+    );
+
+    public static final Set<String> DATA_NOT_FOR_UPDATE;
+    public static final Set<String> MATERIAL_NOT_FOR_UPDATE;
+
+    static {
+        DATA_NOT_FOR_UPDATE = COMMON_NOT_FOR_UPDATE;
+
+        Set<String> materialNotForUpdate = Sets.newCaseInsensitiveHashSet(COMMON_NOT_FOR_UPDATE);
+        materialNotForUpdate.addAll(CaseInsensitiveHashSet.of(
+                AliquotCount.name(),
+                AliquotedFromLSID.name(),
+                AliquotVolume.name(),
+                AvailableAliquotCount.name(),
+                AvailableAliquotVolume.name(),
+                RootMaterialRowId.name()
+        ));
+        MATERIAL_NOT_FOR_UPDATE = Collections.unmodifiableSet(materialNotForUpdate);
+    }
 
     public static class PersistDataIteratorBuilder implements DataIteratorBuilder
     {
@@ -2311,7 +2330,7 @@ public class ExpDataIterators
         private final ExpObject _dataTypeObject;
         private final Container _container;
         private final User _user;
-        private final Set<String> _excludedColumns = new HashSet<>(List.of("generated","runId","sourceapplicationid")); // generated has database DEFAULT 0
+        private final Set<String> _excludedColumns = CaseInsensitiveHashSet.of("generated", RunId.name(), SourceApplicationId.name()); // generated has database DEFAULT 0
 
         private String _fileLinkDirectory = null;
         Function<SearchIndexDataKeys, Runnable> _indexFunction;
@@ -2376,12 +2395,14 @@ public class ExpDataIterators
             if (colNameMap.containsKey(Alias.name()))
                 step1.addColumn(ExperimentService.ALIASCOLUMNALIAS, colNameMap.get(Alias.name())); // see AliasDataIteratorBuilder
 
-            CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet(NOT_FOR_UPDATE);
-            if (isUpdateOnly)
+            CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet(isSample ? MATERIAL_NOT_FOR_UPDATE : DATA_NOT_FOR_UPDATE);
+            if (isMergeOrUpdate)
             {
-                dontUpdate.add("objectid");
-                dontUpdate.add("cpastype");
-                dontUpdate.add("lastindexed");
+                // Common fields in both exp.data and exp.material that cannot be updated
+                dontUpdate.addAll(CpasType.name(), ObjectId.name());
+
+                if (isSample)
+                    dontUpdate.add(MaterialSourceId.name());
             }
 
             CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
@@ -2404,25 +2425,17 @@ public class ExpDataIterators
                     dontUpdate.add(Name.name());
 
                 dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
-                dontUpdate.addAll(
-                    RootMaterialRowId.name(),
-                    AliquotedFromLSID.name(),
-                    AliquotCount.name(),
-                    AliquotVolume.name(),
-                    AvailableAliquotCount.name(),
-                    AvailableAliquotVolume.name()
-                );
             }
             else
             {
                 if (isMergeOrUpdate)
                 {
-                    boolean isUpdateUsingLsid = isUpdateOnly && colNameMap.containsKey(ExpDataTable.Column.LSID.name()) && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
-                    if (isUpdateUsingLsid)
-                    {
-                        if (!canUpdateNames)
-                            dontUpdate.add(ExpDataTable.Column.Name.name());
-                    }
+                    boolean isUpdateUsingLsid = isUpdateOnly &&
+                            colNameMap.containsKey(ExpDataTable.Column.LSID.name()) &&
+                            context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
+
+                    if (isUpdateUsingLsid && !canUpdateNames)
+                        dontUpdate.add(ExpDataTable.Column.Name.name());
                 }
             }
 
@@ -3243,7 +3256,22 @@ public class ExpDataIterators
                         String dataString = data.toString();
                         _idsPerType.computeIfAbsent(typeData.dataType.getName(), k -> new HashSet<>()).add(dataString);
                         if (_isCrossFolderUpdate)
-                            typeData.dataIds.add(_dataKeyIsNumeric ? JdbcType.BIGINT.convert(data) : dataString);
+                        {
+                            if (_dataKeyIsNumeric)
+                            {
+                                try
+                                {
+                                    typeData.dataIds.add(JdbcType.BIGINT.convert(data));
+                                }
+                                catch (ConversionException e)
+                                {
+                                    _context.getErrors().addRowError(new ValidationException(e.getMessage() + " on row " + get(0), _dataKey.getName()));
+                                    return;
+                                }
+                            }
+                            else
+                                typeData.dataIds.add(dataString);
+                        }
                     }
 
                     // if the data represents a derivation dependency between types, and we're creating ids within the file,
