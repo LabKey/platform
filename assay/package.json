@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "7.2.1-fb-remove-sample-lsid.0"
+    "@labkey/components": "7.2.1-fb-remove-sample-lsid.1"
   },
   "devDependencies": {
     "@labkey/build": "8.7.0",
