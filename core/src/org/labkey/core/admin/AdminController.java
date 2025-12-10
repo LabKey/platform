@@ -64,6 +64,7 @@ import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.QueryViewAction.QueryExportForm;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
@@ -105,6 +106,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Container.ContainerException;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.ConvertHelper;
@@ -171,11 +173,9 @@ import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.SchemaKey;
@@ -189,6 +189,7 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Directive;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -477,8 +478,7 @@ public class AdminController extends SpringActionController
 
         // Diagnostics
         AdminConsole.addLink(Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
-        AdminConsole.addLink(Diagnostics, "attachments", PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(root, "core", "DocumentsGroupedByParentType")
-            .addParameter("query." + QueryParam.containerFilterName, "AllFolders"), ApplicationAdminPermission.class);
+        AdminConsole.addLink(Diagnostics, "attachments", new ActionURL(AttachmentsAction.class, root));
         AdminConsole.addLink(Diagnostics, "caches", new ActionURL(CachesAction.class, root));
         AdminConsole.addLink(Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Diagnostics, "credits", new ActionURL(CreditsAction.class, root));
@@ -2608,14 +2608,17 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private abstract class AbstractPostgresAction extends QueryViewAction<QueryViewAction.QueryExportForm, QueryView>
+    private abstract class AbstractPostgresAction extends AbstractAdminQueryAction
     {
-        private final String _queryName;
-
         protected AbstractPostgresAction(String queryName)
         {
-            super(QueryExportForm.class);
-            _queryName = queryName;
+            super("query", queryName);
+        }
+
+        @Override
+        protected UserSchema getUserSchema()
+        {
+            return new PostgresUserSchema(getUser(), getContainer());
         }
 
         @Override
@@ -2623,34 +2626,18 @@ public class AdminController extends SpringActionController
         {
             if (!CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
             {
-                throw new NotFoundException("Only available with Postgres as the primary database");
+                throw new NotFoundException("Available only with Postgres as the primary database");
             }
 
-            QuerySettings qSettings = new QuerySettings(getViewContext(), "query", _queryName);
-            QueryView result = new QueryView(new PostgresUserSchema(getUser(), getContainer()), qSettings, errors)
-            {
-                @Override
-                public DataView createDataView()
-                {
-                    // Troubleshooters don't have normal read access to the root container so grant them special access
-                    // for these queries
-                    DataView view = super.createDataView();
-                    view.getRenderContext().getViewContext().addContextualRole(ReaderRole.class);
-                    return view;
-                }
-           };
-            result.setTitle(_queryName);
-            result.setFrame(WebPartView.FrameType.PORTAL);
-            return result;
+            return super.createQueryView(form, errors, forExport, dataRegion);
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("postgresActivity");
-            addAdminNavTrail(root, "Postgres " + _queryName, this.getClass());
+            addAdminNavTrail(root, "Postgres " + getQueryName(), this.getClass());
         }
-
     }
 
     @AdminConsoleAction
@@ -3577,6 +3564,94 @@ public class AdminController extends SpringActionController
             // In the standard case, redirect to the pipeline details URL
             // If the test is invoking system maintenance then return the URL instead
             return form.isTest() ? null : _url;
+        }
+    }
+
+    private abstract static class AbstractAdminQueryAction extends QueryViewAction<QueryExportForm, QueryView>
+    {
+        private final String _schemaName;
+        private final String _queryName;
+
+        protected AbstractAdminQueryAction(String schemaName, String queryName)
+        {
+            super(QueryExportForm.class);
+            _schemaName = schemaName;
+            _queryName = queryName;
+        }
+
+        @Override
+        public void setViewContext(ViewContext context)
+        {
+            // Troubleshooters don't have read permissions but DataRegion requires it. I don't love poking an elevated
+            // user into the ViewContext, but this is the only way I could get DataRegion to see read permission on
+            // tables that are wrapped by a query (e.g., core.Documents used by DocumentsGroupedByParentType.sql).
+            context.setUser(ElevatedUser.getElevatedUser(context.getUser(), ReaderRole.class));
+            super.setViewContext(context);
+        }
+
+        @Override
+        protected QueryView createQueryView(QueryExportForm form, BindException errors, boolean forExport, @Nullable String dataRegion) throws Exception
+        {
+            QuerySettings qSettings = new QuerySettings(getViewContext(), _schemaName, _queryName);
+            if (qSettings.getContainerFilterName() == null)
+                qSettings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());
+            QueryView result = new QueryView(getUserSchema(), qSettings, errors);
+            result.setTitle(_queryName);
+            result.setFrame(WebPartView.FrameType.PORTAL);
+            return result;
+        }
+
+        protected String getQueryName()
+        {
+            return _queryName;
+        }
+
+        abstract protected UserSchema getUserSchema();
+    }
+
+    @AdminConsoleAction
+    public class AttachmentsAction extends AbstractAdminQueryAction
+    {
+        @SuppressWarnings("unused") // Invoked via reflection
+        public AttachmentsAction()
+        {
+            super("core", "DocumentsGroupedByParentTypeAdmin");
+        }
+
+        @Override
+        protected UserSchema getUserSchema()
+        {
+            return new CoreQuerySchema(getUser(), getContainer(), false);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "Documents Grouped by Parent Type", getClass());
+        }
+    }
+
+    @SuppressWarnings("unused") // Linked from core.DocumentsGroupedByParentTypeAdmin
+    @AdminConsoleAction
+    public class AttachmentsForTypeAction extends AbstractAdminQueryAction
+    {
+        @SuppressWarnings("unused") // Invoked via reflection
+        public AttachmentsForTypeAction()
+        {
+            super("core", "Documents");
+        }
+
+        @Override
+        protected UserSchema getUserSchema()
+        {
+            return new CoreQuerySchema(getUser(), getContainer(), false);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            String parentType = getViewContext().getActionURL().getParameter("core.ParentType~eq");
+            addAdminNavTrail(root, "Documents Belonging to Parent Type" + (parentType != null ? " \"" + parentType + "\"" : ""), getClass());
         }
     }
 
