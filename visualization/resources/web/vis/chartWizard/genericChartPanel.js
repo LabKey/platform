@@ -1029,6 +1029,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (this.getCustomChartOptions)
             config.customOptions = this.getCustomChartOptions();
 
+        // Apps can set the legendPos to "bottom", so we use the legendPos if it's set on the original config
+        if (this.savedReportInfo?.visualizationConfig?.chartConfig?.legendPos)
+            config.legendPos = this.savedReportInfo.visualizationConfig.chartConfig.legendPos;
+
         return config;
     },
 
