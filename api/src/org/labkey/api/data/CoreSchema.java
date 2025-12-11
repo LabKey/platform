@@ -191,4 +191,9 @@ public class CoreSchema
     {
         return getSchema().getTable("EmailOptions");
     }
+
+    public TableInfo getTableInfoContainerPath()
+    {
+        return getSchema().getTable("ContainerPath");
+    }
 }
