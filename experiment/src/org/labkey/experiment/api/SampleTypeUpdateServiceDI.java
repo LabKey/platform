@@ -993,46 +993,37 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new TableSelector(ExperimentService.get().getTinfoMaterial(), filter, null).exists();
     }
 
-    private record ExistingRowSelect(TableInfo tableInfo, Set<String> columns, boolean includeParent) {}
+    private record ExistingRowSelect(Set<String> columns, boolean includeParent) {}
 
     private @NotNull ExistingRowSelect getExistingRowSelect(@Nullable Set<String> dataColumns)
     {
         if (!(getQueryTable() instanceof UpdateableTableInfo updatable) || dataColumns == null)
-            return new ExistingRowSelect(getQueryTable(), ALL_COLUMNS, true);
+            return new ExistingRowSelect(ALL_COLUMNS, true);
 
         CaseInsensitiveHashMap<String> remap = updatable.remapSchemaColumns();
         if (null == remap)
             remap = CaseInsensitiveHashMap.of();
 
         // AliquotRollupDataIterator needs "samplestate", "storedamount", "rootmaterialrowId", "units" for MERGE option
-        Set<String> includedColumns = new CaseInsensitiveHashSet(Name.name(), LSID.name(), RowId.name(), SampleState.name(), StoredAmount.name(), RootMaterialRowId.name(), Units.name());
+        // "RawAmount" and "RawUnits" are needed to replace converted amount and unit values with raw values so the
+        // audit difference is accurate.
+        Set<String> includedColumns = new CaseInsensitiveHashSet(
+                LSID.name(),
+                Name.name(),
+                RawAmount.name(),
+                RawUnits.name(),
+                RootMaterialRowId.name(),
+                RowId.name(),
+                SampleState.name(),
+                StoredAmount.name(),
+                Units.name()
+        );
         for (ColumnInfo column : getQueryTable().getColumns())
         {
             if (dataColumns.contains(column.getColumnName()))
                 includedColumns.add(column.getColumnName());
             else if (dataColumns.contains(remap.get(column.getColumnName())))
                 includedColumns.add(remap.get(column.getColumnName()));
-        }
-
-        boolean isAllFromMaterialTable = new CaseInsensitiveHashSet(Stream.of(values())
-                .map(Enum::name)
-                .collect(Collectors.toSet()))
-                .containsAll(includedColumns);
-
-        // only include RawAmount and Raw units if no isAllFromMaterialTable,
-        // needed to replace converted amount and unit values with raw values so audit difference is accurate
-        if (!isAllFromMaterialTable)
-        {
-            includedColumns.add(RawAmount.name());
-            includedColumns.add(RawUnits.name());
-        }
-
-        TableInfo selectTable = isAllFromMaterialTable ? ExperimentService.get().getTinfoMaterial() : getQueryTable();
-        if (isAllFromMaterialTable)
-        {
-            // ExperimentService.get().getTinfoMaterial() uses Container column, not Folder
-            includedColumns.remove(Folder.name());
-            includedColumns.add("container");
         }
 
         boolean hasParentInput = false;
@@ -1043,7 +1034,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 Map<String, String> importAliases = _sampleType.getImportAliases();
                 for (String col : dataColumns)
                 {
-                    if (ExperimentService.isInputOutputColumn(col) || Strings.CI.equals("parent",col) || importAliases.containsKey(col))
+                    if (ExperimentService.isInputOutputColumn(col) || Strings.CI.equals("parent", col) || importAliases.containsKey(col))
                     {
                         hasParentInput = true;
                         break;
@@ -1055,7 +1046,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
         }
 
-        return new ExistingRowSelect(selectTable, includedColumns, hasParentInput);
+        return new ExistingRowSelect(includedColumns, hasParentInput);
     }
 
     @Override
@@ -1069,7 +1060,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     ) throws InvalidKeyException, QueryUpdateServiceException
     {
         ExistingRowSelect existingRowSelect = getExistingRowSelect(columns);
-        TableInfo queryTableInfo = existingRowSelect.tableInfo;
         Set<String> selectColumns = existingRowSelect.columns;
 
         Map<Integer, Map<String, Object>> sampleRows = new LinkedHashMap<>();
@@ -1106,7 +1096,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             missingRowIds = new HashSet<>(rowIdRowNumMap.keySet());
             SimpleFilter filter = new SimpleFilter(RowId.fieldKey(), rowIdRowNumMap.keySet(), CompareType.IN);
             filter.addCondition(FieldKey.fromParts("Container"), container);
-            Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
+            Map<String, Object>[] rows = new TableSelector(getQueryTable(), selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 Long rowId = asLong(row.get(RowId.name()));
@@ -1125,7 +1115,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             SimpleFilter filter = new SimpleFilter(MaterialSourceId.fieldKey(), sampleTypeId);
             filter.addCondition(Name.fieldKey(), nameRowNumMap.keySet(), CompareType.IN);
             filter.addCondition(FieldKey.fromParts("Container"), container);
-            Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
+            Map<String, Object>[] rows = new TableSelector(getQueryTable(), selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 String name = (String) row.get(Name.name());
@@ -1149,7 +1139,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 {
                     SimpleFilter filter = new SimpleFilter(RowId.fieldKey(), missingRowIds, CompareType.IN);
                     filter.addCondition(FieldKey.fromParts("Container"), containerIds, CompareType.IN);
-                    var row = new TableSelector(ExperimentService.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet(RowId.name(), Name.name()), filter, null).setMaxRows(1).getMap();
+                    var row = new TableSelector(ExperimentService.get().getTinfoMaterial(), CaseInsensitiveHashSet.of(RowId.name(), Name.name()), filter, null).setMaxRows(1).getMap();
                     if (row != null)
                         throw new InvalidKeyException("Sample does not belong to " + container.getName() + " container: " + row.get(Name.name()) + " (" + row.get(RowId.name()) + ").");
                 }
@@ -1160,7 +1150,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     filter.addCondition(FieldKey.fromParts("Container"), containerIds, CompareType.IN);
                     filter.addCondition(Name.fieldKey(), missingNames, CompareType.IN);
 
-                    var row = new TableSelector(ExperimentService.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet(Name.name()), filter, null).setMaxRows(1).getMap();
+                    var row = new TableSelector(ExperimentService.get().getTinfoMaterial(), CaseInsensitiveHashSet.of(Name.name()), filter, null).setMaxRows(1).getMap();
                     if (row != null)
                         throw new InvalidKeyException("Sample does not belong to " + container.getName() + " container: " + row.get(Name.name()) + ".");
                 }
@@ -1176,7 +1166,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         // if contains domain fields, check for aliquot specific fields
-        if (!queryTableInfo.getName().equalsIgnoreCase("material"))
+        if (!getQueryTable().getName().equalsIgnoreCase("material"))
         {
             Set<String> parentOnlyFields = getSampleMetaFields();
             for (Map.Entry<Integer, Map<String, Object>> rowNumSampleRow : sampleRows.entrySet())

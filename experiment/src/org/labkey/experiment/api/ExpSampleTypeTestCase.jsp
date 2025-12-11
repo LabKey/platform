@@ -758,7 +758,7 @@ public void testUpdateSomeParents() throws Exception
     rows.add(CaseInsensitiveHashMap.of("rowId", parent2Type.getSample(c, "P2-1").getRowId(), "MaterialInputs/ChildSamples", "C1"));
     try
     {
-        updateService.updateRows(user, c, rows, null, errors, null, null);
+        getSampleTypeUpdateService(parent2Type.getName()).updateRows(user, c, rows, null, errors, null, null);
         fail("Expected to throw exception");
     }
     catch (Exception e)
