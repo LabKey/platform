@@ -426,26 +426,6 @@ describe('Import with update / merge', () => {
         resp = await importSample(server, updateTsv, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
         expect(resp.text.indexOf('Sample does not exist') > -1).toBeTruthy();
     });
-    it('Error when supplying RowId during MERGE', async () => {
-        const dataType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
-        const sampleName = 'MergeRowIdErrorTest';
-
-        const rows = await insertRows(server, [{
-            name: sampleName,
-            description: 'created'
-        }], 'samples', dataType, topFolderOptions, editorUserOptions);
-
-        const rowId = caseInsensitive(rows[0], 'rowId');
-        expect(rowId).toBeDefined();
-
-        // MERGE with RowId should fail
-        // Even if the name matches and rowId is correct, the presence of the column should trigger the error
-        const mergeTsv = `RowId\tName\tDescription\n${rowId}\t${sampleName}\tShould fail`;
-        const resp = await importSample(server, mergeTsv, dataType, 'MERGE', topFolderOptions, editorUserOptions);
-
-        // Check for the specific error message
-        expect(resp.text.indexOf('RowId is not accepted when merging samples. Specify only the sample name instead.') > -1).toBeTruthy();
-    });
     it('Error when supplying LSID without RowId or Name', async () => {
         const dataType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
         const sampleName = 'LsidKeyErrorTest';

@@ -1450,11 +1450,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         keysCheck.add(RowId.name());
                         if (isUpdate)
                             continue;
-                        if (isMerge)
-                        {
-                            context.getErrors().addRowError(new ValidationException("RowId is not accepted when merging samples. Specify only the sample name instead.", RowId.name()));
-                            return null;
-                        }
                     }
                     if (isExpMaterialColumn(LSID, name))
                         keysCheck.add(LSID.name());
