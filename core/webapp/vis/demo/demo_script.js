@@ -14,7 +14,7 @@ var CD4PointLayer = new LABKEY.vis.Layer({
 });
 
 var CD4PathLayer = new LABKEY.vis.Layer({
-	geom: new LABKEY.vis.Geom.Path({size: 3, opacity: .4}),
+	geom: new LABKEY.vis.Geom.Path({size: 3, opacity: 0.8}),
 	name: 'CD4+ (cells/mm3)',
 	aes: {
 		y: function(row){return row.study_LabResults_CD4.value}
@@ -31,7 +31,7 @@ var hemoglobinPointLayer = new LABKEY.vis.Layer({
 });
 
 var hemoglobinPathLayer = new LABKEY.vis.Layer({
-	geom: new LABKEY.vis.Geom.Path({opacity: .4}),
+	geom: new LABKEY.vis.Geom.Path({opacity: 0.8}),
 	name: 'Hemoglobin',
 	aes: {
 		yRight: function(row){return row.study_LabResults_Hemoglobin.value}
@@ -104,6 +104,7 @@ var coffeePathLayer = new LABKEY.vis.Layer({
     geom: new LABKEY.vis.Geom.Path({}),
     aes: {
         pathColor: 'person',
+        lineType: 'person',
         group: 'person'
     }
 });
@@ -136,6 +137,12 @@ var coffeePlot = new LABKEY.vis.Plot({
             scaleType: 'discrete',
             scale: function(group) {
                 return group == 'LabKey Dev 1 Efficiency' ? '#0000A0' : '#ADD8E6';
+            }
+        },
+        lineType: {
+            scaleType: 'discrete',
+            scale: function(group) {
+                return group == 'LabKey Dev 1 Efficiency' ? 'dashed' : 'solid';
             }
         },
         xTop: {

@@ -74,6 +74,9 @@ LABKEY.vis.Geom.XY.prototype.initAesthetics = function(scales, layerAes, parentA
     this.colorAes = layerAes.color ? layerAes.color : parentAes.color;
     this.colorScale = scales.color ? scales.color : null;
 
+    this.lineTypeAes = layerAes.lineType ? layerAes.lineType : parentAes.lineType;
+    this.lineTypeScale = scales.lineType ? scales.lineType : null;
+
     if(!this.yAes){
         console.error('y aesthetic is required for ' + this.type + ' geom to render.');
         return false;
@@ -238,6 +241,7 @@ LABKEY.vis.Geom.Bin.prototype.render = function(renderer, grid, scales, data, la
  * @param {Number} [config.opacity] (Optional) Number between 0 and 1, used to determine the opacity of all paths.
  *                                   Useful if there are many overlapping paths. Defaults to 1.
  * @param {boolean} [config.dashed] (Optional) True for dashed path, false for solid path. Defaults to false.
+ * @param {boolean} [config.dotted] (Optional) True for dotted path, false for solid path. Defaults to false.
  */
 LABKEY.vis.Geom.Path = function(config){
     this.type = "Path";
@@ -249,6 +253,7 @@ LABKEY.vis.Geom.Path = function(config){
     this.size = ('size' in config && config.size != null && config.size != undefined) ? config.size : 3;
     this.opacity = ('opacity' in config && config.opacity != null && config.opacity != undefined) ? config.opacity : 1;
     this.dashed = ('dashed' in config && config.dashed != null && config.dashed != undefined) ? config.dashed : false;
+    this.dotted = ('dotted' in config && config.dotted != null && config.dotted != undefined) ? config.dotted : false;
 
     this._dataspaceBoxPlot = ('dataspaceBoxPlot' in config && config.dataspaceBoxPlot != null && config.dataspaceBoxPlot != undefined) ? config.dataspaceBoxPlot : false;
 
@@ -264,6 +269,7 @@ LABKEY.vis.Geom.Path.prototype.render = function(renderer, grid, scales, data, l
     this.sortFnAes = layerAes.sortFn ? layerAes.sortFn : parentAes.sortFn;
     this.sizeAes = layerAes.size ? layerAes.size : parentAes.size;
     this.pathColorAes = layerAes.pathColor ? layerAes.pathColor : parentAes.pathColor;
+    this.lineTypeAes = layerAes.lineType ? layerAes.lineType : parentAes.lineType;
     this.sizeScale = scales.size;
 
     this.hoverTextAes = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
