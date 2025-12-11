@@ -280,4 +280,106 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         );
         return new SqlSelector(table.getSchema(), sql).getCollection(Sequence.class);
     }
+
+
+    //
+    // ARRAY and SET syntax
+    //
+
+    // NOTE LabKey currently does not support ARRAY[VARCHAR], use ARRAY[text] instead
+    //
+    // Postgres string literals can be auto-cast to both VARCHAR and TEXT.  These all work
+    //    'color' = 'color'::varchar
+    //    'color' = 'color'::text
+    //     ARRAY['color'] = ARRAY['color'::text];
+    // However, ARRAY[text] cannot be auto cast to ARRAY[varchar]
+    //     ARRAY['color'] = ARRAY['color'::varchar];    -- ERROR!
+    //
+
+
+    @Override
+    public boolean supportsArrays()
+    {
+        return true;
+    }
+
+    @Override
+    public SQLFragment array_construct(SQLFragment[] elements)
+    {
+        SQLFragment ret = new SQLFragment();
+        ret.append("ARRAY[");
+        String separator = "";
+        for (SQLFragment element : elements)
+        {
+            ret.append(separator);
+            ret.append(element);
+            separator = ", ";
+        }
+        ret.append("]");
+        return ret;
+    }
+
+    @Override
+    public SQLFragment array_all_in_array(SQLFragment a, SQLFragment b)
+    {
+        SQLFragment ret = new SQLFragment();
+        ret.append("(").append(a).append(") <@ (").append(b).append(")");
+        return ret;
+    }
+
+    @Override
+    public SQLFragment array_some_in_array(SQLFragment a, SQLFragment b)
+    {
+        SQLFragment ret = new SQLFragment();
+        ret.append("(").append(a).append(") && (").append(b).append(")");
+        return ret;
+    }
+
+    @Override
+    public SQLFragment array_none_in_array(SQLFragment a, SQLFragment b)
+    {
+        return new SQLFragment(" NOT (").append(array_some_in_array(a, b)).append(")");
+    }
+
+    @Override
+    public SQLFragment array_same_array(SQLFragment a, SQLFragment b)
+    {
+        SQLFragment ret = new SQLFragment();
+        ret.append(array_all_in_array(a, b)).append(" AND ").append(array_all_in_array(b, a));
+        return ret;
+    }
+
+    @Override
+    public SQLFragment array_not_same_array(SQLFragment a, SQLFragment b)
+    {
+        SQLFragment ret = new SQLFragment();
+        ret.append("NOT (").append(array_all_in_array(a, b)).append(") OR NOT (").append(array_all_in_array(b, a)).append(")");
+        return ret;
+    }
+
+    @Override
+    public SQLFragment element_in_array(SQLFragment a, SQLFragment b)
+    {
+        SQLFragment ret = new SQLFragment();
+        ret.append("(").append(a).append(")");
+        // DOCs imply that IS NOT DISTINCT FROM ANY should work, but it doesn't???
+        // ret.append(" IS NOT DISTINCT FROM ANY(");
+        ret.append(" = ANY(");
+        ret.append(b);
+        ret.append(")");
+        return ret;
+    }
+
+    @Override
+    public SQLFragment element_not_in_array(SQLFragment a, SQLFragment b)
+    {
+        SQLFragment ret = new SQLFragment();
+        ret.append("(").append(a).append(")");
+        // DOCs imply that IS NOT DISTINCT FROM ANY should work, but it doesn't???
+        // ret.append(" IS DISTINCT FROM ALL(");
+        ret.append(" <> ALL(");
+        ret.append(b);
+        ret.append(")");
+        return ret;
+    }
 }
