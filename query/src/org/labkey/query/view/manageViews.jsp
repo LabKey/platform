@@ -59,14 +59,16 @@
     QueryManager mgr = QueryManager.get();
     List<CstmView> views = new ArrayList<>();
 
-    if (getViewContext().hasPermission(UpdatePermission.class))
+    if (getViewContext().getUser().hasSiteAdminPermission())
     {
-        views.addAll(mgr.getCstmViews(c, schemaName, queryName, null, null, false, true));
+        views.addAll(mgr.getCstmViews(c, schemaName, queryName, null, null, false, false));
     }
-
-    if (!user.isGuest())
+    else
     {
-        views.addAll(mgr.getCstmViews(c, schemaName, queryName, null, user, false, false));
+        if (getViewContext().hasPermission(UpdatePermission.class))
+            views.addAll(mgr.getCstmViews(c, schemaName, queryName, null, null, false, true));
+        if (!user.isGuest())
+            views.addAll(mgr.getCstmViews(c, schemaName, queryName, null, user, false, false));
     }
 
     // UNDONE: Requires queryName and schemaName for now.  We need a method to get all session views in a container.
