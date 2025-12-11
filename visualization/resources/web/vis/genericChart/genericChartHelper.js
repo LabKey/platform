@@ -1132,6 +1132,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 if (hasSeries) {
                     pathAes.pathColor = generateGroupingAcc(chartConfig.measures.series.name);
                     pathAes.group = generateGroupingAcc(chartConfig.measures.series.name);
+                    pathAes.lineType = generateGroupingAcc(chartConfig.measures.series.name);
                     pathAes.hoverText = function (row) { return chartConfig.measures.series.label + ': ' + row.group };
                 }
                 // if no series measures but we have multiple y-measures, force the color and grouping to be distinct for each measure
@@ -1212,9 +1213,11 @@ LABKEY.vis.GenericChartHelper = new function(){
         if (!LABKEY.Utils.isEmptyObj(chartConfig.measuresOptions?.series)) {
             const colorValueMap = {};
             const shapeValueMap = {};
+            const lineTypeValueMap = {};
             Object.entries(chartConfig.measuresOptions.series).forEach(([key, val]) => {
                 if (val.color) colorValueMap[key] = val.color;
                 if (val.shape) shapeValueMap[key] = LABKEY.vis.Scale.ShapeMap[val.shape];
+                if (val.lineType) lineTypeValueMap[key] = val.lineType;
             });
 
             if (!LABKEY.Utils.isEmptyObj(colorValueMap)) {
@@ -1224,6 +1227,10 @@ LABKEY.vis.GenericChartHelper = new function(){
             if (!LABKEY.Utils.isEmptyObj(shapeValueMap)) {
                 if (!scales.shape) scales.shape = { scaleType: 'discrete' };
                 scales.shape.scale = LABKEY.vis.Scale.ValueMapDiscrete(shapeValueMap);
+            }
+            if (!LABKEY.Utils.isEmptyObj(lineTypeValueMap)) {
+                if (!scales.lineType) scales.lineType = { scaleType: 'discrete' };
+                scales.lineType.scale = LABKEY.vis.Scale.ValueMapDiscrete(lineTypeValueMap);
             }
         }
 
