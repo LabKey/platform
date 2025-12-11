@@ -23,7 +23,9 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnDecorator;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ExpandableTextDisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PropertySchema;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.DialectStringHandler;
@@ -94,6 +96,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         var licenseCol = addTextColumn("License");
         licenseCol.setURL(StringExpressionFactory.createURL("${LicenseURL}"));
         licenseCol.setURLTargetWindow("_blank");
+        addTextColumn("Folder").setDisplayColumnFactory(new ExpandableTextDisplayColumnFactory());
         addTextColumn("LicenseURL").setHidden(true);
         addTextColumn("VcsRevision");
         addTextColumn("VcsURL");
@@ -109,7 +112,8 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
             FieldKey.fromParts("SchemaVersion"),
             FieldKey.fromParts("Label"),
             FieldKey.fromParts("Organization"),
-            FieldKey.fromParts("License")
+            FieldKey.fromParts("License"),
+            FieldKey.fromParts("Folder")
         ));
     }
 
@@ -225,12 +229,27 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         String token = ret.addCommonTableExpression(getSqlDialect(), "modulestableconstants", tableName, cte);
 
         // join with core.modules
-        ret.append("(SELECT m.name, m.schemaversion, m.classname, m.schemas");
+        ret.append("(SELECT m.name, m.schemaversion, m.classname, m.schemas, AF.folder");
         ret.append(",").append(tableName).append(".*");
         ret.append("\n");
         ret.append("FROM ").append(getFromTable().getFromSQL("m")).append("\n");
         ret.append("INNER JOIN ").append(token).append(" ").append(tableName).append(" ON m.name = ").append(tableName).append(".ModuleName\n");
         // CONSIDER: LEFT OUTER JOIN to include rows from core.modules for modules not currently installed
+
+        PropertySchema.getInstance().getTableInfoProperties();
+        // find the folders that the module is active in, I don't think this is entirely accurate.
+        SQLFragment moduleFolders = new SQLFragment("(SELECT PROP.name AS module, ")
+                .append(getSqlDialect().getGroupConcat(new SQLFragment("C.path"), true, true, "\n")).append(" AS folder FROM ")
+                .append(PropertySchema.getInstance().getTableInfoPropertySets(), "PS")
+                .append(" JOIN ").append(PropertySchema.getInstance().getTableInfoProperties(), "PROP")
+                .append(" ON PS.set = PROP.set")
+                .append(" JOIN ").append(CoreSchema.getInstance().getTableInfoContainerPath(), "C")
+                .append(" ON PS.objectId = C.entityid")
+                .append(" WHERE PS.category = 'activeModules'")
+                .append(" GROUP BY PROP.name")
+                .append(") AF");
+
+        ret.append("JOIN ").append(moduleFolders).append(" ON AF.module = m.name ");
 
         // WHERE
         SQLFragment filterFrag = getFilter().getSQLFragment(getFromTable(), null);
