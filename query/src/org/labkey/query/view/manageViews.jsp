@@ -109,22 +109,25 @@
 <% } %>
 </p>
 
-<table>
+<table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
-        <th>Schema</th>
-        <th>Query</th>
-        <th>View Name</th>
-        <th>Flags</th>
-        <th>Owner</th>
-        <th>Created</th>
-        <th>Created&nbsp;By</th>
-        <th>Modified</th>
-        <th>Modified&nbsp;By</th>
+        <td class="labkey-column-header">Schema</td>
+        <td class="labkey-column-header">Query</td>
+        <td class="labkey-column-header">View Name</td>
+        <td class="labkey-column-header">Flags</td>
+        <td class="labkey-column-header">Owner</td>
+        <td class="labkey-column-header">Created</td>
+        <td class="labkey-column-header">Created By</td>
+        <td class="labkey-column-header">Modified</td>
+        <td class="labkey-column-header">Modified By</td>
+        <td class="labkey-column-header"></td>
     </tr>
     <% if (getViewContext().hasPermission(UpdatePermission.class))
     {
+        int count = 1;
         for (CstmView view : views)
         {
+            count++;
             List<String> flags = new ArrayList<>();
             if (view.getCustomViewId() == 0)
                 flags.add("<em>session</em>");
@@ -135,7 +138,7 @@
             if (mgr.isSnapshot(view.getFlags()))
                 flags.add("shapshot");
     %>
-    <tr>
+    <tr class="<%=getShadeRowClass(count)%>">
         <td><%=h(view.getSchema())%>
         </td>
         <td><%=h(view.getQueryName())%>
