@@ -141,7 +141,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
                     throw(e);
                 }
 
-                FolderExportXarReader reader = new FolderExportXarReader(xarSource, job);
+                FolderExportXarReader reader = new FolderExportXarReader(xarSource, job, ctx);
                 XarImportContext xarCtx = ctx.getContext(XarImportContext.class);
                 if (xarCtx != null)
                 {
@@ -236,6 +236,11 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         public FolderExportXarReader(XarSource source, PipelineJob job)
         {
             super(source, job);
+        }
+
+        public FolderExportXarReader(XarSource source, PipelineJob job, FolderImportContext ctx)
+        {
+            super(source, job, ctx);
         }
 
         @Override

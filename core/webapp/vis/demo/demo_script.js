@@ -73,6 +73,12 @@ var labResultsPlotConfig = {
         },
         shape: {
             scaleType: 'discrete'
+        },
+        color: {
+            scaleType: 'discrete',
+            scale: LABKEY.vis.Scale.ValueMapDiscrete(
+                { '249318596 CD4+ (cells/mm3)': 'gray', '249318596 Hemoglobin': 'gray', '249320107 CD4+ (cells/mm3)': 'black', '249320107 Hemoglobin': 'black' }
+            )
         }
     }
 };

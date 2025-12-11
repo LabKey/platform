@@ -51,4 +51,5 @@ public class FolderArchiveDataTypes
     public static final String DATA_CLASS_DATA = "Data Class Data";
     public static final String INVENTORY = "Inventory locations and items";
     public static final String VIEW_CATEGORIES = "Categories";
+    public static final String WORKFLOW = "Workflow jobs, templates, tasks, actions and entities";
 }

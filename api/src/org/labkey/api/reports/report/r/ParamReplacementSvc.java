@@ -659,7 +659,7 @@ public class ParamReplacementSvc
          }
      }
 
-     public Collection<ParamReplacement> fromFile(FileLike file) throws Exception
+     public Collection<ParamReplacement> fromFile(FileLike file) throws IOException
      {
          Map<String, ParamReplacement> outputSubstMap = new HashMap<>();
          if (file.exists())
