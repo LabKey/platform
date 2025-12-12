@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -81,7 +82,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.vfs.FileLike;
@@ -125,6 +125,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     String LINEAGE_DEFAULT_MAXIMUM_DEPTH_PROPERTY_NAME = "lineageDefaultMaximumDepth";
 
     String ILLEGAL_PARENT_ALIAS_CHARSET = "/:<>$[]{};,`\"~!@#$%^*=|?\\";
+
+    String EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS = "org.labkey.api.exp.api.ExperimentService#FROM_EXPANCESTORS";
 
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
@@ -390,6 +392,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Looks in all the sample types visible from the given container for a single match with the specified name
      */
     @NotNull List<? extends ExpMaterial> getExpMaterialsByName(String name, @Nullable Container container, User user);
+
+    @NotNull List<? extends ExpMaterial> getExpMaterialsByName(@NotNull Collection<String> names, @NotNull String sampleTypeName, @NotNull Container container, User user);
 
     @Nullable ExpData findExpData(
         Container c,
@@ -821,7 +825,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void deleteExperimentRunsByRowIds(Container container, final User user, long... runRowIds);
 
-    void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable String userComment, @NotNull Collection<Long> runRowIds);
+    void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable String userComment, @NotNull Collection<Long> runRowIds, @Nullable Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails);
 
     void deleteExpExperimentByRowId(Container container, User user, long experimentId);
 
@@ -1179,6 +1183,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void registerNameExpressionType(String dataType, String schemaName, String queryname, String nameExpressionCol);
 
     Map<String, Map<String, Object>> getDomainMetrics();
+
+    void clearAncestors(ExpRunItem runItem);
+    void clearDataAncestors(Collection<Long> dataRowIds);
+    void clearMaterialAncestors(Collection<Long> materialRowIds);
+    void repopulateAncestors();
 
     class XarExportOptions
     {

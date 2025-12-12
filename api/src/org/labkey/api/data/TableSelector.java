@@ -396,7 +396,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     }
 
     /**
-     * Setting this options asks the TableSelector to add additional display columns to the generated SQL, as well
+     * Setting this option asks the TableSelector to add additional display columns to the generated SQL, as well
 
      * as forcing the results to be sorted.
      * @return this

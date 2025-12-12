@@ -44,17 +44,19 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
 {
     public static final String COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID = "AttachmentParentEntityId";
     public static final String COLUMN_NAME_ATTACHMENT = "Attachment";
+    public static final String COLUMN_NAME_PARENT_TYPE = "ParentType";
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
-    static {
-
+    static
+    {
         defaultVisibleColumns.add(FieldKey.fromParts("Created"));
         defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
         defaultVisibleColumns.add(FieldKey.fromParts("ImpersonatedBy"));
         defaultVisibleColumns.add(FieldKey.fromParts("ProjectId"));
         defaultVisibleColumns.add(FieldKey.fromParts("Container"));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_ATTACHMENT));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PARENT_TYPE));
         defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
     }
 
@@ -81,15 +83,6 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
         return "Data about attachment additions, deletions, modifications and downloads";
     }
 
-    @Override
-    public Map<FieldKey, String> legacyNameMap()
-    {
-        Map<FieldKey, String> legacyMap =  super.legacyNameMap();
-        legacyMap.put(FieldKey.fromParts("EntityId"), COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID);
-        legacyMap.put(FieldKey.fromParts("key1"), COLUMN_NAME_ATTACHMENT);
-        return legacyMap;
-    }
-
     public int moveEvents(Container targetContainer, Collection<Integer> entityIds)
     {
         return moveEvents(targetContainer, COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID, entityIds);
@@ -110,6 +103,7 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
     public static class AttachmentAuditEvent extends AuditTypeEvent
     {
         private String _attachmentParentEntityId;
+        private String _parentType;
         private String _attachment;     // the attachment name
 
         public AttachmentAuditEvent()
@@ -132,6 +126,16 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
             _attachmentParentEntityId = attachmentParentEntityId;
         }
 
+        public String getParentType()
+        {
+            return _parentType;
+        }
+
+        public void setParentType(String parentType)
+        {
+            _parentType = parentType;
+        }
+
         public String getAttachment()
         {
             return _attachment;
@@ -148,6 +152,7 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
             Map<String, Object> elements = new LinkedHashMap<>();
             elements.put("attachmentName", getAttachment());
             elements.put("attachmentParentEntityId", getAttachmentParentEntityId());
+            elements.put("parentType", getParentType());
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
         }
@@ -167,6 +172,7 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID, PropertyType.STRING, 36)); // UNDONE: Is needed ? .setEntityId(true));
             fields.add(createPropertyDescriptor(COLUMN_NAME_ATTACHMENT, PropertyType.STRING, null, null, true));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_PARENT_TYPE, PropertyType.STRING));
             _fields = Collections.unmodifiableSet(fields);
         }
 

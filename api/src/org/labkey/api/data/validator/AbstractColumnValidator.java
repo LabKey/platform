@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data.validator;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.property.ValidatorContext;
 
@@ -37,7 +38,7 @@ public abstract class AbstractColumnValidator implements ColumnValidator
     }
 
     @Override
-    public String validate(int rowNum, Object value, ValidatorContext validatorContext)
+    public String validate(int rowNum, Object value, ValidatorContext validatorContext, @Nullable Object providedValue)
     {
         return validate(rowNum, value);
     }

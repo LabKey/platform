@@ -111,13 +111,13 @@ public class CoreWarningProvider implements WarningProvider
         DbScope labkeyScope = DbScope.getLabKeyScope();
         labkeyScope.getSqlDialect().addAdminWarningMessages(warnings, showAllWarnings);
 
-        getHeapSizeWarnings(warnings, showAllWarnings);
+        addHeapSizeWarnings(warnings, showAllWarnings);
 
-        getConnectionPoolSizeWarnings(warnings, labkeyScope, showAllWarnings);
+        addConnectionPoolSizeWarnings(warnings, labkeyScope, showAllWarnings);
 
-        getJavaWarnings(warnings, showAllWarnings);
+        addJavaWarnings(warnings, showAllWarnings);
 
-        getTomcatWarnings(warnings, showAllWarnings);
+        addTomcatWarnings(warnings, showAllWarnings);
     }
 
     @Override
@@ -131,19 +131,19 @@ public class CoreWarningProvider implements WarningProvider
 
         if (context == null || context.getUser().hasRootPermission(TroubleshooterPermission.class))
         {
-            getUserRequestedAdminOnlyModeWarnings(warnings, showAllWarnings, context == null || context.getUser().hasSiteAdminPermission());
+            addUserRequestedAdminOnlyModeWarnings(warnings, showAllWarnings, context == null || context.getUser().hasSiteAdminPermission());
 
-            getModuleErrorWarnings(warnings, showAllWarnings);
+            addModuleErrorWarnings(warnings, showAllWarnings);
 
-            getProbableLeakCountWarnings(warnings, showAllWarnings);
+            addProbableLeakCountWarnings(warnings, showAllWarnings);
 
-            getWebSocketConnectionWarnings(warnings, showAllWarnings);
+            addWebSocketConnectionWarnings(warnings, showAllWarnings);
 
-            getDbSchemaWarnings(warnings, showAllWarnings);
+            addDbSchemaWarnings(warnings, showAllWarnings);
 
-            getPasswordRuleWarnings(warnings, showAllWarnings);
+            addPasswordRuleWarnings(warnings, showAllWarnings);
 
-            getDeprecatedFeatureWarnings(warnings, showAllWarnings);
+            addDeprecatedFeatureWarnings(warnings, showAllWarnings);
         }
 
         // Issue 50015 - only show upgrade message to full site admins
@@ -185,7 +185,7 @@ public class CoreWarningProvider implements WarningProvider
 
     private static final int MAX_SCHEMA_PROBLEMS_TO_SHOW = 3;
 
-    private void getDbSchemaWarnings(Warnings warnings, boolean showAllWarnings)
+    private void addDbSchemaWarnings(Warnings warnings, boolean showAllWarnings)
     {
         Map<String, List<SiteValidationResult>> schemaProblems = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         schemaProblems.putAll(_dbSchemaWarnings);
@@ -216,13 +216,13 @@ public class CoreWarningProvider implements WarningProvider
         }
     }
 
-    private void getPasswordRuleWarnings(Warnings warnings, boolean showAllWarnings)
+    private void addPasswordRuleWarnings(Warnings warnings, boolean showAllWarnings)
     {
         if (showAllWarnings || (!AppProps.getInstance().isDevMode() && DbLoginService.get().getPasswordRule().isDeprecated()))
             warnings.add(HtmlString.of("Database authentication is configured with \"" + DbLoginService.get().getPasswordRule().name() + "\" strength, which is not appropriate for production deployments. This option will be removed in the next major release."));
     }
 
-    private void getHeapSizeWarnings(Warnings warnings, boolean showAllWarnings)
+    private void addHeapSizeWarnings(Warnings warnings, boolean showAllWarnings)
     {
         // Issue 9683 - show admins warning about inadequate heap size (< 2GB)
         MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
@@ -239,7 +239,7 @@ public class CoreWarningProvider implements WarningProvider
     }
 
     // Warn if running in production mode with an inadequate labkey db connection pool size
-    private void getConnectionPoolSizeWarnings(Warnings warnings, DbScope labkeyScope, boolean showAllWarnings)
+    private void addConnectionPoolSizeWarnings(Warnings warnings, DbScope labkeyScope, boolean showAllWarnings)
     {
         if (showAllWarnings || !AppProps.getInstance().isDevMode())
         {
@@ -256,7 +256,7 @@ public class CoreWarningProvider implements WarningProvider
         }
     }
 
-    private void getJavaWarnings(Warnings warnings, boolean showAllWarnings)
+    private void addJavaWarnings(Warnings warnings, boolean showAllWarnings)
     {
         if (showAllWarnings || ModuleLoader.getInstance().getJavaVersion().isDeprecated())
         {
@@ -294,7 +294,7 @@ public class CoreWarningProvider implements WarningProvider
         return _deployedApps;
     }
 
-    private void getTomcatWarnings(Warnings warnings, boolean showAllWarnings)
+    private void addTomcatWarnings(Warnings warnings, boolean showAllWarnings)
     {
         if (showAllWarnings || ModuleLoader.getInstance().getTomcatVersion().isDeprecated())
         {
@@ -322,7 +322,7 @@ public class CoreWarningProvider implements WarningProvider
         }
     }
 
-    private void getModuleErrorWarnings(Warnings warnings, boolean showAllWarnings)
+    private void addModuleErrorWarnings(Warnings warnings, boolean showAllWarnings)
     {
         //module failures during startup--show to admins
         Map<String, Throwable> moduleFailures = ModuleLoader.getInstance().getModuleFailures();
@@ -347,13 +347,13 @@ public class CoreWarningProvider implements WarningProvider
                 "schemas should be deleted via the ", "Module Details page", PageFlowUtil.urlProvider(AdminUrls.class).getModulesDetailsURL());
     }
 
-    private void getWebSocketConnectionWarnings(Warnings warnings, boolean showAllWarnings)
+    private void addWebSocketConnectionWarnings(Warnings warnings, boolean showAllWarnings)
     {
         if (showAllWarnings || WebSocketConnectionManager.getInstance().showWarning())
             addStandardWarning(warnings, "The WebSocket connection failed. LabKey Server uses WebSockets to send notifications and alert users when their session ends.", "configTomcat#websocket", "Tomcat Configuration");
     }
 
-    private void getUserRequestedAdminOnlyModeWarnings(Warnings warnings, boolean showAllWarnings, boolean isSiteAdmin)
+    private void addUserRequestedAdminOnlyModeWarnings(Warnings warnings, boolean showAllWarnings, boolean isSiteAdmin)
     {
         //admin-only mode--show to admins
         if (showAllWarnings || AppProps.getInstance().isUserRequestedAdminOnlyMode())
@@ -363,7 +363,7 @@ public class CoreWarningProvider implements WarningProvider
         }
     }
 
-    private void getProbableLeakCountWarnings(Warnings warnings, boolean showAllWarnings)
+    private void addProbableLeakCountWarnings(Warnings warnings, boolean showAllWarnings)
     {
         if (AppProps.getInstance().isDevMode())
         {
@@ -378,7 +378,7 @@ public class CoreWarningProvider implements WarningProvider
         }
     }
 
-    private void getDeprecatedFeatureWarnings(Warnings warnings, boolean showAllWarnings)
+    private void addDeprecatedFeatureWarnings(Warnings warnings, boolean showAllWarnings)
     {
         Collection<OptionalFeatureFlag> flags = OptionalFeatureService.get().getOptionalFeatureFlags(OptionalFeatureService.FeatureType.Deprecated);
         List<String> deprecated = flags.stream()

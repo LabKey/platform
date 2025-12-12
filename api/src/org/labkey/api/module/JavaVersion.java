@@ -31,8 +31,9 @@ import java.util.stream.Collectors;
 public enum JavaVersion
 {
     JAVA_UNSUPPORTED(-1, true, false, null),
-    JAVA_17(17, false, true, "https://docs.oracle.com/en/java/javase/17/docs/api/java.base/"),
-    JAVA_FUTURE(Integer.MAX_VALUE, false, false, "https://docs.oracle.com/en/java/javase/17/docs/api/java.base/");
+    JAVA_17(17, true, true, "https://docs.oracle.com/en/java/javase/17/docs/api/java.base/"),
+    JAVA_25(25, false, true, "https://docs.oracle.com/en/java/javase/25/docs/api/java.base/"),
+    JAVA_FUTURE(Integer.MAX_VALUE, false, false, "https://docs.oracle.com/en/java/javase/25/docs/api/java.base/");
 
     private final int _version;
     private final boolean _deprecated;
@@ -73,7 +74,7 @@ public enum JavaVersion
 
     public static JavaVersion get()
     {
-        // Determine current Java specification version, normalized to an int (e.g., 17, 18, 19, 20...).
+        // Determine current Java specification version, normalized to an int (e.g., 17, 20, 25, 31...).
         // Commons lang methods like SystemUtils.isJavaVersionAtLeast() aren't an option because that library isn't
         // released often enough to keep up with the Java rapid release cadence.
         String[] versionArray = SystemUtils.JAVA_SPECIFICATION_VERSION.split("\\.");
@@ -109,7 +110,7 @@ public enum JavaVersion
 
     public static String getRecommendedJavaVersion()
     {
-        return "Eclipse Temurin 17 64-bit with HotSpot JVM";
+        return "Eclipse Temurin 25 64-bit with HotSpot JVM";
     }
 
     public static class TestCase extends Assert
@@ -131,12 +132,25 @@ public enum JavaVersion
             test(15, JAVA_UNSUPPORTED);
             test(16, JAVA_UNSUPPORTED);
 
+            test(18, JAVA_UNSUPPORTED);
+            test(19, JAVA_UNSUPPORTED);
+            test(20, JAVA_UNSUPPORTED);
+            test(21, JAVA_UNSUPPORTED);
+            test(22, JAVA_UNSUPPORTED);
+            test(23, JAVA_UNSUPPORTED);
+            test(24, JAVA_UNSUPPORTED);
+
             // Good
             test(17, JAVA_17);
+            test(25, JAVA_25);
 
             // Future
-            test(18, JAVA_FUTURE);
-            test(19, JAVA_FUTURE);
+            test(26, JAVA_FUTURE);
+            test(27, JAVA_FUTURE);
+            test(28, JAVA_FUTURE);
+            test(29, JAVA_FUTURE);
+            test(30, JAVA_FUTURE);
+            test(31, JAVA_FUTURE);
         }
 
         private void test(int version, JavaVersion expectedVersion)

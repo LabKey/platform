@@ -15,7 +15,8 @@
  */
 package org.labkey.api.pipeline;
 
-import java.io.File;
+import org.labkey.vfs.FileLike;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -51,7 +52,7 @@ public interface ParamParser
 
     String getXMLFromMap(Map<String, String> params);
 
-    void writeFromMap(Map<String, String> params, File fileDest) throws IOException;
+    void writeFromMap(Map<String, String> params, FileLike fileDest) throws IOException;
 
     /**
      * <code>Error</code>

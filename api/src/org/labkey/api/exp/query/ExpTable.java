@@ -22,7 +22,9 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -133,5 +135,38 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
     @Nullable default Set<String> getAltMergeKeys(DataIteratorContext context)
     {
         return null;
+    }
+
+    class ExpObjectDataColumn extends DataColumn
+    {
+        public ExpObjectDataColumn(ColumnInfo colInfo)
+        {
+            super(colInfo);
+        }
+
+        @Override
+        public Object getValue(RenderContext ctx)
+        {
+            return 0;
+        }
+
+        @Override
+        public Object getDisplayValue(RenderContext ctx)
+        {
+            var v = super.getValue(ctx);
+            return null == v ? v : "lineage object";
+        }
+
+        @Override
+        public boolean isSortable()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isFilterable()
+        {
+            return false;
+        }
     }
 }

@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ScriptOutput;
@@ -23,8 +24,9 @@ import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
+import java.io.IOException;
 
 /**
  * User: Karl Lum
@@ -40,27 +42,27 @@ public class ConsoleOutput extends AbstractParamReplacement
     }
 
     /* create an output for a known file */
-    public ConsoleOutput(File output)
+    public ConsoleOutput(FileLike output)
     {
         super(ID);
         addFile(output);
     }
 
     @Override
-    protected File getSubstitution(File directory) throws Exception
+    protected @Nullable FileLike getSubstitution(FileLike directory) throws IOException
     {
-        File file;
+        FileLike file;
         if (directory != null)
             file = FileUtil.createTempFile(RReport.FILE_PREFIX, "Result.txt", directory);
         else
-            file = FileUtil.createTempFile(RReport.FILE_PREFIX, "Result.txt");
+            file = FileUtil.createTempFileLike(RReport.FILE_PREFIX, "Result.txt");
 
         addFile(file);
         return file;
     }
 
     @Override
-    public HttpView getView(ViewContext context)
+    public HttpView<?> getView(ViewContext context)
     {
         ROutputView view = new TextOutput.TextOutputView(this);
         view.setLabel("Console output");
@@ -71,7 +73,7 @@ public class ConsoleOutput extends AbstractParamReplacement
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput(File file) throws Exception
+    public ScriptOutput renderAsScriptOutput(FileLike file) throws Exception
     {
         ROutputView view = new TextOutput.TextOutputView(this);
         String console = view.renderInternalAsString(file);

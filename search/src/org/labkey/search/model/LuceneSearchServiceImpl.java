@@ -879,7 +879,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                     _log.debug("indexing docid: " + r.getDocumentId());
             }
 
-            return index(r.getDocumentId(), doc);
+            boolean result = index(r.getDocumentId(), doc);
+
+            if (_log.isDebugEnabled())
+            {
+                if (_log.isTraceEnabled())
+                    _log.trace("finished indexing " + dump(r, doc));
+                else
+                    _log.debug("finished indexing docid: " + r.getDocumentId());
+            }
+
+            return result;
         }
         catch (NoClassDefFoundError err)
         {
@@ -1607,7 +1617,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     }
 
     @Override
-    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
+    public SearchWebPart getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
     {
         return new SearchWebPart(includeSubfolders, textBoxWidth, includeHelpLink, isWebpart);
     }

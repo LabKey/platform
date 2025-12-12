@@ -28,6 +28,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.FileSystemAttachmentType;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
@@ -75,7 +76,7 @@ public class FileContentModule extends DefaultModule
         addController("filecontent", FileContentController.class);
         PropertyService.get().registerDomainKind(new FilePropertiesDomainKind());
         FileContentService.setInstance(FileContentServiceImpl.getInstance());
-        AttachmentService.get().registerAttachmentType(FileSystemAttachmentType.get());
+        AttachmentService.get().registerAttachmentParentType(FileSystemAttachmentType.get());
     }
 
     @Override

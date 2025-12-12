@@ -106,6 +106,14 @@ public class ExceptionUtil
      */
     private static final Map<String, ExceptionTally> EXCEPTION_TALLIES = Collections.synchronizedMap(new HashMap<>());
 
+    public static void copyDecorations(Throwable source, Throwable target)
+    {
+        for (Map.Entry<Enum<?>, String> entry : getExceptionDecorations(source).entrySet())
+        {
+            decorateException(target, entry.getKey(), entry.getValue(), false);
+        }
+    }
+
     private static class ExceptionTally
     {
         /** Total number of times the exception has happened */
@@ -864,6 +872,21 @@ public class ExceptionUtil
             errorType = ErrorRenderer.ErrorType.notFound;
             message = ex.getMessage();
             unhandledException = null;
+        }
+        else if (ex instanceof FileUtil.InvalidPathReferenceException ipre)
+        {
+            responseStatus = HttpServletResponse.SC_NOT_FOUND;
+            errorType = ErrorRenderer.ErrorType.notFound;
+            if (ex.getMessage() != null)
+            {
+                message = ex.getMessage();
+                responseStatusMessage = message;
+            }
+            else
+                message = responseStatus + ": Page not Found";
+            unhandledException = null;
+            log.info("InvalidPathReferenceException: {}", ipre.getInput());
+            log.debug("InvalidPathReferenceException", ex);
         }
         else if (ex instanceof NotFoundException)
         {

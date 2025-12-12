@@ -76,6 +76,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.labkey.query.sql.antlr.SqlBaseParser.*;
@@ -83,10 +84,8 @@ import static org.labkey.query.sql.antlr.SqlBaseParser.*;
 
 /**
  * SqlParser is responsible for the first two phases of the SQL transformation process
- *
  * step one - the ANTLR parser returns a tree of Nodes
  * step two - translate the tree into a tree of QNodes
- * 
  */
 
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored","ThrowableInstanceNeverThrown"})
@@ -94,7 +93,6 @@ public class SqlParser
 {
     // these are not a regular method and need special handling
     public static final String FIND_COLUMN_METHOD_NAME = "findcolumn";
-    public static final String IFDEFINED_METHOD_NAME = "ifdefined";
 
 
     private static final Logger _log = LogHelper.getLogger(SqlParser.class, "LabKey SQL parser");
@@ -241,11 +239,10 @@ public class SqlParser
             {
                 CommonTree parseRoot = (CommonTree) selectScope.getTree();
                 assert parseRoot != null;
-//                assert dump(parseRoot);
                 assert parseRoot.getType() == STATEMENT;
-                assert parseRoot.getChildCount()==1 || parseRoot.getChildCount()==2 || parseRoot.getChildCount() == 3;
+                assert parseRoot.getChildCount() == 1 || parseRoot.getChildCount() == 2 || parseRoot.getChildCount() == 3;
 
-                ArrayList<CommonTree> list = new ArrayList<>((Collection<CommonTree>)parseRoot.getChildren());
+                ArrayList<CommonTree> list = new ArrayList<>((Collection<CommonTree>) parseRoot.getChildren());
                 CommonTree parameters;
 
 
@@ -316,12 +313,17 @@ public class SqlParser
                 else
                     errors.add(new QueryParseException("This does not look like a WITH, SELECT or UNION query", null, 0, 0));
             }
-            
+
             for (Throwable e : _parseErrors)
             {
                 errors.add(wrapParseException(e));
             }
 
+            if (null != _root)
+            {
+                dump(_root);
+                _log.debug(toPrefixString(_root));
+            }
             return _root;
         }
         catch (Exception e)
@@ -398,7 +400,7 @@ public class SqlParser
                 assert dump(qnodeRoot);
                 assert MemTracker.getInstance().put(qnodeRoot);
 
-                _root = qnodeRoot != null && qnodeRoot instanceof QExpr ? (QExpr) qnodeRoot : null;
+                _root = qnodeRoot instanceof QExpr ? (QExpr) qnodeRoot : null;
             }
 
             for (Throwable e : _parseErrors)
@@ -547,24 +549,6 @@ public class SqlParser
         return true;
     }
 
-    static public String makeLegalIdentifier(String str)
-    {
-        StringBuilder ret = new StringBuilder();
-        for (int i = 0; i < str.length(); i ++)
-        {
-            char ch = str.charAt(i);
-            if (isLegalIdentifierChar(ch, i == 0))
-            {
-                ret.append(ch);
-            }
-            else
-            {
-                ret.append('_');
-            }
-        }
-        return ret.toString();
-    }
-    
 
     //
     // IMPL
@@ -824,11 +808,6 @@ public class SqlParser
             assert 1 == node.getChildCount();
             return convertParseTree((CommonTree)node.getChild(0), true);
         }
-        if (node.getToken().getType() == EXPDESCENDANTSOF || node.getToken().getType() == EXPANCESTORSOF)
-        {
-            assert 1 == node.getChildCount();
-            return convertParseTree((CommonTree)node.getChild(0), false);
-        }
 
         LinkedList<QNode> l = new LinkedList<>();
         for (int i=0 ; i<node.getChildCount() ; i++)
@@ -838,10 +817,12 @@ public class SqlParser
                 continue;
             boolean fn = node.getType() == METHOD_CALL && i==0;
             QNode q = convertParseTree(child, constExpr && !fn);
-            if (q != null)
-                l.add(q);
-            else
+            if (q == null)
+            {
                 assert !_parseErrors.isEmpty();
+                return null;
+            }
+            l.add(q);
         }
         return convertNode(node, l, constExpr);
     }
@@ -895,9 +876,29 @@ public class SqlParser
                 }
                 return first(children);
             }
+            case IN:
+            case NOT_IN:
+            {
+                var lhs = firstOrThrow(children);
+                var rhs = secondOrThrow(children);
+                if (rhs.getTokenType() == METHOD_CALL)
+                {
+                    // rewrite "IN EXPANCESTORS" "IN EXPDESCENDANTS"
+                    var method = rhs.getFirstChild();
+                    if (method.getTokenType() != EXPANCESTORSOF && method.getTokenType() != EXPDESCENDANTSOF)
+                    {
+                        _parseErrors.add(new QueryParseException("Illegal syntax near 'IN'", null, node.getLine(), node.getCharPositionInLine()));
+                        return null;
+                    }
+                    var qInLineage = new QInLineage(node.getType()==IN, method.getTokenType() == EXPANCESTORSOF );
+                    qInLineage._replaceChildren(new LinkedList<>(List.of(lhs, rhs.childList().get(1))));
+                    return qInLineage;
+                }
+            }
             case METHOD_CALL:
             {
-                QNode id = first(children), exprList = second(children);
+                @NotNull QNode id = firstOrThrow(children);
+                @NotNull QNode exprList = secondOrThrow(children);
 
                 // check for special case table method "findColumn", this isn't a real method so it's easier if it has its own node type
 
@@ -964,26 +965,31 @@ public class SqlParser
                     if (args.size() == 3)
                         validateTimestampConstant(args.get(2));
                 }
-                
-                try
+
+                // special case for table returning method
+                var isTableResultMethod = id.getTokenType() == EXPANCESTORSOF || id.getTokenType() == EXPDESCENDANTSOF;
+                if (!isTableResultMethod)
                 {
-                    Method m = Method.resolve(_dialect, name);
-                    if (null != m)
+                    try
                     {
-                        m.validate(node, exprList.childList(), _parseErrors, _parseWarnings);
+                        Method m = Method.resolve(_dialect, name);
+                        if (null != m)
+                        {
+                            m.validate(node, exprList.childList(), _parseErrors, _parseWarnings);
+                        }
+                    }
+                    catch (IllegalArgumentException x)
+                    {
+                        if (failOnUnrecognizedMethodName)
+                            _parseErrors.add(new QueryParseException("Unknown method " + name, null, id.getLine(), id.getColumn()));
                     }
                 }
-                catch (IllegalArgumentException x)
-                {
-                    if (failOnUnrecognizedMethodName)
-                        _parseErrors.add(new QueryParseException("Unknown method " + name, null, id.getLine(), id.getColumn()));
-                }
-                
                 break;
             }
             case AGGREGATE:
             {
-                if (constExpr) return constError(node);
+                if (constExpr)
+                    return constError(node);
                 QAggregate qAggregate = (QAggregate)qnode(node, children, false);
                 if (!qAggregate.getType().dialectSupports(_dialect))
                 {
@@ -1009,7 +1015,7 @@ public class SqlParser
             case TIMESTAMP_LITERAL:
             case DATE_LITERAL:
             {
-                String s = LabKeySql.unquoteString(first(children).getTokenText());
+                String s = LabKeySql.unquoteString(firstOrThrow(children).getTokenText());
                 try
                 {
                     if (node.getType() == TIMESTAMP_LITERAL)
@@ -1064,12 +1070,12 @@ public class SqlParser
             }
             case RANGE:
             {
-                if (constExpr) return constError(node);
+                if (constExpr)
+                    return constError(node);
                 // copy an annotations on the table specifications to the range node
                 QUnknownNode range = (QUnknownNode)qnode(node, children, false);
                 var annotations = ((SupportsAnnotations)node.getChild(0)).getAnnotations();
-                if (null != annotations)
-                    range.setAnnotations(QNode.convertAnnotations(annotations));
+                range.setAnnotations(QNode.convertAnnotations(annotations));
                 return range;
             }
             default:
@@ -1161,6 +1167,8 @@ public class SqlParser
                                     QSelectFrom innerSelectFrom,                    // [out] inner SelectFrom to be filled in
                                     @NotNull Map<FieldKey, QExpr> groupByAliasMap)  // [out] alias map for GroupBy
     {
+        if (null == _dialect)
+            throw new IllegalStateException("dialect is required");
         AliasManager aliasManager = new AliasManager(_dialect);     // Need to assign unique names to selected fields for them to be used in outer select
         for (QNode child : select.children())                       // Claim existing aliases
         {
@@ -1396,7 +1404,7 @@ public class SqlParser
             _parseErrors.add(new QueryParseException("Path substition is empty", null, -1, -1));
             return null;
         }
-        // NOTE the "/" forces this to be interpreted as directory (not a schema name)
+        // NOTE the "/" forces this to be interpreted as a directory (not a schema name)
         if (!pathString.endsWith(("/")))
             pathString += "/";
         return new QIdentifier(pathString);
@@ -1510,12 +1518,20 @@ public class SqlParser
         return !children.isEmpty() ? children.get(0) : null;
     }
 
+    private static @NotNull QNode firstOrThrow(LinkedList<QNode> children)
+    {
+        return Objects.requireNonNull(first(children));
+    }
 
     private static QNode second(LinkedList<QNode> children)
     {
         return children.size() > 1 ? children.get(1) : null;
     }
-    
+
+    private static @NotNull QNode secondOrThrow(LinkedList<QNode> children)
+    {
+        return Objects.requireNonNull(second(children));
+    }
 
     private QNode constantToStringNode(QNode node)
     {
@@ -1640,6 +1656,8 @@ public class SqlParser
             case AS:
                 q = new QAs();
                 break;
+            case EXPANCESTORSOF:
+            case EXPDESCENDANTSOF:
             case IDENT:
             case QUOTED_IDENTIFIER:
                 return QIdentifier.create(node);
@@ -1767,7 +1785,6 @@ public class SqlParser
             case NOT: case AND: case OR: case LIKE: case NOT_LIKE:
             case BIT_AND: case BIT_OR: case BIT_XOR: case UNARY_PLUS:
                 Operator op = Operator.ofTokenType(type);
-                assert op != null : "No Operation found for type " + type + ". If you are on a development system, you may need to rebuild";
                 if (op == null)
                 {
                     _parseErrors.add(new QueryParseException("Unexpected token '" + node.getText() + "'", null, node.getLine(), node.getCharPositionInLine()));
@@ -1777,10 +1794,10 @@ public class SqlParser
                 break;
             case IN: case NOT_IN:
                 CommonTree right = (CommonTree)node.getChild(1);
-                if (right.getToken().getType() == EXPANCESTORSOF || right.getToken().getType() == EXPDESCENDANTSOF)
+                if (right.getToken().getType() == METHOD_CALL)
                 {
-                    node.setChild(1, right.getChild(0));
-                    q = new QInLineage(type==IN, right.getToken().getType() == EXPANCESTORSOF);
+                    // We should have handled this in convertTree()
+                    throw new QueryParseException("Error parsing IN expression", null, node.getLine(), node.getCharPositionInLine());
                 }
                 else
                 {
@@ -1965,6 +1982,7 @@ public class SqlParser
 
 
     
+    @SuppressWarnings("JUnitMalformedDeclaration")
     public static class SqlParserTestCase extends Assert
     {
         List<Pair<String, String>> parseExprs = Arrays.asList(
@@ -2071,7 +2089,7 @@ public class SqlParser
                     "(WithQuery (WITH (AS peeps1 (QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (RANGE R))))) (AS peeps (UNION (QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (RANGE peeps1)))) (QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (RANGE peeps))) (WHERE (= 1 0)))))) (QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (RANGE peeps)))))")
         );
 
-        private void good(String sql) throws Exception
+        private void good(String sql)
         {
             List<QueryParseException> errors = new ArrayList<>();
             QNode q = (new SqlParser()).parseQuery(sql,errors,null);
@@ -2091,7 +2109,7 @@ public class SqlParser
         private void bad(String sql)
         {
             List<QueryParseException> errors = new ArrayList<>();
-            QNode q = (new SqlParser()).parseQuery(sql,errors,null);
+            (new SqlParser()).parseQuery(sql,errors,null);
             if (errors.isEmpty())
                 fail("BAD: " + sql);
         }
@@ -2175,7 +2193,7 @@ public class SqlParser
                 }
             }
             long end = System.currentTimeMillis();
-            _log.trace("SqlParser.testSql(): " + DateUtil.formatDuration(end-start));
+            _log.trace("SqlParser.testSql(): {}", DateUtil.formatDuration(end - start));
         }
 
         @Test

@@ -54,6 +54,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.mothership.IssueDisplayColumn;
 import org.labkey.mothership.MothershipController;
 import org.labkey.mothership.MothershipManager;
 import org.labkey.mothership.StackTraceDisplayColumn;
@@ -356,10 +357,15 @@ public class MothershipSchema extends UserSchema
         result.wrapAllColumns(true);
         result.getMutableColumnOrThrow("StackTrace").setDisplayColumnFactory(StackTraceDisplayColumn::new);
 
+        SQLFragment issueSql = new SQLFragment("COALESCE(GitHubIssue, LabKeyIssue)");
+        ExprColumn issueCol = new ExprColumn(result, "Issue", issueSql, JdbcType.VARCHAR);
+        issueCol.setDisplayColumnFactory(IssueDisplayColumn::new);
+        result.addColumn(issueCol);
+
         String path = MothershipManager.get().getIssuesContainer();
         ActionURL issueURL = PageFlowUtil.urlProvider(IssuesUrls.class).getDetailsURL(ContainerManager.getForPath(path));
-        issueURL.addParameter("issueId", "${BugNumber}");
-        result.getMutableColumnOrThrow("BugNumber").setURL(StringExpressionFactory.createURL(issueURL));
+        issueURL.addParameter("issueId", "${LabKeyIssue}");
+        result.getMutableColumnOrThrow("LabKeyIssue").setURL(StringExpressionFactory.createURL(issueURL));
 
         result.setTitleColumn("ExceptionStackTraceId");
         DetailsURL url = new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), Collections.singletonMap("exceptionStackTraceId", "ExceptionStackTraceId"));
@@ -378,7 +384,7 @@ public class MothershipSchema extends UserSchema
         defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId"));
         defaultCols.add(FieldKey.fromParts("Instances"));
         defaultCols.add(FieldKey.fromParts("LastReport"));
-        defaultCols.add(FieldKey.fromParts("BugNumber"));
+        defaultCols.add(FieldKey.fromParts("Issue"));
         defaultCols.add(FieldKey.fromParts("AssignedTo"));
         defaultCols.add(FieldKey.fromParts("StackTrace"));
         defaultCols.add(FieldKey.fromParts("ModifiedBy"));

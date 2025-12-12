@@ -107,7 +107,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         protected FileLike getXarFile(PipelineJob job)
         {
             FileAnalysisJobSupport jobSupport = job.getJobSupport(FileAnalysisJobSupport.class);
-            return getOutputType().newFile(jobSupport.getAnalysisDirectoryFileLike(), jobSupport.getBaseName());
+            return getOutputType().newFile(jobSupport.getAnalysisDirectory(), jobSupport.getBaseName());
         }
 
         @Override

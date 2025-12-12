@@ -51,6 +51,7 @@ public class FolderImportContext extends AbstractFolderContext
     private String _xarJobId;
 
     private final HashSet<String> _importedReports = new HashSet<>();
+    private Map<Long, Long> _assayRunWorkflowTaskMap = new HashMap<>();
 
     private static final String FOLDER_IMPORT_DB_SEQUENCE_PREFIX = "FolderImportJobCounter-";
 
@@ -178,6 +179,16 @@ public class FolderImportContext extends AbstractFolderContext
     public void addImportedReport(ReportDescriptor d)
     {
         _importedReports.add(ReportUtil.getSerializedName(d));
+    }
+
+    public Map<Long, Long> getAssayRunWorkflowTaskMap()
+    {
+        return _assayRunWorkflowTaskMap;
+    }
+
+    public void setAssayRunWorkflowTaskMap(Map<Long, Long> assayRunWorkflowTaskMap)
+    {
+        _assayRunWorkflowTaskMap = assayRunWorkflowTaskMap;
     }
 
     @Override

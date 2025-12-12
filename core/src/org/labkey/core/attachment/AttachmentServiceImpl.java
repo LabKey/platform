@@ -20,6 +20,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -29,7 +30,7 @@ import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.attachments.DocumentWriter;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -139,7 +140,7 @@ import java.util.TreeSet;
 public class AttachmentServiceImpl implements AttachmentService, ContainerManager.ContainerListener
 {
     private static final String UPLOAD_LOG = ".upload.log";
-    private static final Map<String, AttachmentType> ATTACHMENT_TYPE_MAP = new HashMap<>();
+    private static final Map<String, AttachmentParentType> ATTACHMENT_TYPE_MAP = new HashMap<>();
     private static final Set<String> ATTACHMENT_COLUMNS = Set.of("Parent", "Container", "DocumentName", "DocumentSize", "DocumentType", "Created", "CreatedBy", "LastIndexed");
 
     public AttachmentServiceImpl()
@@ -201,6 +202,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             AttachmentAuditProvider.AttachmentAuditEvent attachmentEvent = new AttachmentAuditProvider.AttachmentAuditEvent(c == null ? ContainerManager.getRoot() : c, comment);
 
             attachmentEvent.setAttachmentParentEntityId(parent.getEntityId());
+            attachmentEvent.setParentType(parent.getAttachmentParentType().getUniqueName());
             attachmentEvent.setAttachment(filename);
 
             AuditLogService.get().addEvent(user, attachmentEvent);
@@ -310,6 +312,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             hm.put("DocumentSize", file.getSize());
             hm.put("DocumentType", file.getContentType());
             hm.put("Parent", parent.getEntityId());
+            hm.put("ParentType", parent.getAttachmentParentType().getUniqueName());
             hm.put("Container", parent.getContainerId());
             Table.insert(user, coreTables().getTableInfoDocuments(), hm);
 
@@ -742,18 +745,29 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
-    public void registerAttachmentType(AttachmentType type)
+    public void registerAttachmentParentType(AttachmentParentType type)
     {
-        ATTACHMENT_TYPE_MAP.put(type.getUniqueName(), type);
+        String uniqueName = type.getUniqueName();
+
+        if (uniqueName.contains("."))
+            throw new IllegalArgumentException("Invalid attachment parent type name: " + uniqueName);
+
+        ATTACHMENT_TYPE_MAP.put(uniqueName, type);
+    }
+
+    @Override
+    public Collection<AttachmentParentType> getAttachmentParentTypes()
+    {
+        return ATTACHMENT_TYPE_MAP.values();
     }
 
     @Override
     public HttpView<?> getAdminView(ActionURL currentUrl)
     {
         String requestedType = currentUrl.getParameter("type");
-        AttachmentType attachmentType = null != requestedType ? ATTACHMENT_TYPE_MAP.get(requestedType) : null;
+        AttachmentParentType attachmentParentType = null != requestedType ? ATTACHMENT_TYPE_MAP.get(requestedType) : null;
 
-        if (null == attachmentType)
+        if (null == attachmentParentType)
         {
             boolean findAttachmentParents = "1".equals(currentUrl.getParameter("find"));
 
@@ -761,7 +775,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             // core.Documents for each type is needed to associate the Type values with the associated rows.
             List<SQLFragment> selectStatements = new LinkedList<>();
 
-            for (AttachmentType type : ATTACHMENT_TYPE_MAP.values())
+            for (AttachmentParentType type : getAttachmentParentTypes())
             {
                 SQLFragment selectStatement = new SQLFragment();
 
@@ -785,7 +799,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             SQLFragment whereSql = new SQLFragment();
             String sep = "";
 
-            for (AttachmentType type : ATTACHMENT_TYPE_MAP.values())
+            for (AttachmentParentType type : getAttachmentParentTypes())
             {
                 whereSql.append(sep);
                 sep = " OR";
@@ -828,19 +842,19 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             else
             {
                 navMenu.addChild(new NavTree("Remove TableName Column",
-                        new ActionURL(AdminController.AttachmentsAction.class, ContainerManager.getRoot()))
+                    new ActionURL(AdminController.AttachmentsAction.class, ContainerManager.getRoot()))
                 );
 
                 if (schemasToIgnore.isEmpty())
                 {
                     navMenu.addChild(new NavTree("Ignore Audit Schema",
-                            new ActionURL(AdminController.AttachmentsAction.class, ContainerManager.getRoot()).addParameter("find", 1).addParameter("ignore", "Audit"))
+                        new ActionURL(AdminController.AttachmentsAction.class, ContainerManager.getRoot()).addParameter("find", 1).addParameter("ignore", "Audit"))
                     );
                 }
                 else
                 {
                     navMenu.addChild(new NavTree("Include All Schemas",
-                            new ActionURL(AdminController.AttachmentsAction.class, ContainerManager.getRoot()).addParameter("find", 1))
+                        new ActionURL(AdminController.AttachmentsAction.class, ContainerManager.getRoot()).addParameter("find", 1))
                     );
                 }
             }
@@ -854,14 +868,14 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             SQLFragment oneTypeSql = new SQLFragment("SELECT d.Container, c.Name, d.Parent, d.DocumentName FROM core.Documents d\n" +
                 "INNER JOIN core.Containers c ON c.EntityId = d.Container\n" +
                 "WHERE ");
-            addAndVerifyWhereSql(attachmentType, oneTypeSql);
+            addAndVerifyWhereSql(attachmentParentType, oneTypeSql);
             oneTypeSql.append("\nORDER BY Container, Parent, DocumentName");
 
-            return getResultSetView(oneTypeSql, attachmentType.getUniqueName() + " Attachments", null);
+            return getResultSetView(oneTypeSql, attachmentParentType.getUniqueName() + " Attachments", null);
         }
     }
 
-    private void addAndVerifyWhereSql(AttachmentType attachmentType, SQLFragment sql)
+    private void addAndVerifyWhereSql(AttachmentParentType attachmentType, SQLFragment sql)
     {
         int initialLength = sql.length();
         attachmentType.addWhereSql(sql, "d.Parent", "d.DocumentName");
@@ -913,12 +927,12 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         String expression;
         String where = null;
 
-        if (StringUtils.containsIgnoreCase(column.getName(), "EntityId"))
+        if (Strings.CI.contains(column.getName(), "EntityId"))
         {
             // TODO convert all this to use SQLFragment
             expression = column.getSelectIdentifier().getSql().getRawSQL();
         }
-        else if (StringUtils.endsWithIgnoreCase(column.getName(), "LSID"))
+        else if (Strings.CI.endsWith(column.getName(), "LSID"))
         {
             Pair<String, String> pair = Lsid.getSqlExpressionToExtractObjectId(column.getSelectIdentifier().getSql().getRawSQL(), column.getSqlDialect());
             expression = pair.first;

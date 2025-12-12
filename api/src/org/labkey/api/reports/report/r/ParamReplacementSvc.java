@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report.r;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -31,10 +32,14 @@ import org.labkey.api.reports.report.r.view.HrefOutput;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
 import org.labkey.api.writer.PrintWriters;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,11 +47,11 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.labkey.api.reports.report.ScriptEngineReport.DATA_INPUT;
 import static org.labkey.api.reports.report.ScriptEngineReport.INPUT_FILE_TSV;
 
@@ -65,11 +70,11 @@ public class ParamReplacementSvc
 
     /* Inline substitution parameters "${}" are deprecated, use comment substitution "#${}" instead. */
     // the default inline param replacement pattern : ${}
-    private static final String REPLACEMENT_PARAM = "\\$\\{(.*?)\\}"; /* Deprecated */
+    private static final String REPLACEMENT_PARAM = "\\$\\{(.*?)}"; /* Deprecated */
     private static final Pattern DEFAULT_INLINE_SCRIPT_PATTERN = Pattern.compile(REPLACEMENT_PARAM); /* Deprecated */
     // Enable ${} or equivalent escape sequences for {}.  Note that this
     // makes the match group 2 for the token name instead of 1
-    private static final String REPLACEMENT_PARAM_ESC = "\\$(\\{|%7[bB])(.*?)(\\}|%7[dD])"; /* Deprecated */
+    private static final String REPLACEMENT_PARAM_ESC = "\\$(\\{|%7[bB])(.*?)(}|%7[dD])"; /* Deprecated */
     private static final Pattern ESC_INLINE_SCRIPT_PATTERN = Pattern.compile(REPLACEMENT_PARAM_ESC); /* Deprecated */
 
     private static final String REGEX_PARAM_REGEX = "(regex\\()(.*)(\\))"; /* Deprecated */
@@ -78,7 +83,7 @@ public class ParamReplacementSvc
     // the default comment param replacement pattern : #${:} \n
     public static final String COMMENT_LINE_REGEX = "#\\p{Space}*" + REPLACEMENT_PARAM + "\\p{Space}+";
     public static final Pattern COMMENT_LINE_PATTERN = Pattern.compile(COMMENT_LINE_REGEX);
-    public static final String COMMENT_REGEX_REGEX = "#\\p{Space}*\\$\\{(\\p{Print}*" + REGEX_PARAM_REGEX + ")\\p{Print}*\\}";
+    public static final String COMMENT_REGEX_REGEX = "#\\p{Space}*\\$\\{(\\p{Print}*" + REGEX_PARAM_REGEX + ")\\p{Print}*}";
     public static final String COMMENT_BLOCK_REGEX = COMMENT_LINE_REGEX + "(\\p{Print}+\"\\p{Print}+\")";
     public static final String COMMENT_PARAM_REGEX = "(" + COMMENT_BLOCK_REGEX + ")|(" + COMMENT_REGEX_REGEX + ")";
     public static final Pattern DEFAULT_COMMENT_PATTERN = Pattern.compile(COMMENT_PARAM_REGEX);
@@ -251,8 +256,8 @@ public class ParamReplacementSvc
     {
         StringBuilder sb = new StringBuilder("Deprecated replacement '" + paramName + "'");
         if (sourceName != null)
-            sb.append(" in " + sourceName);
-        sb.append(": " + message);
+            sb.append(" in ").append(sourceName);
+        sb.append(": ").append(message);
         return sb.toString();
     }
 
@@ -273,7 +278,7 @@ public class ParamReplacementSvc
         {
             try {
                 String className = _outputSubstitutions.get(id);
-                return (ParamReplacement)Class.forName(className).newInstance();
+                return (ParamReplacement)Class.forName(className).getDeclaredConstructor().newInstance();
             }
             catch (Exception e)
             {
@@ -481,7 +486,7 @@ public class ParamReplacementSvc
      * @param parentDirectory - the parent directory to create the output files for each param replacement.
      * @param outputReplacements - the list of processed replacements found in the source script.
      */
-    public String processParamReplacement(String script, File parentDirectory, String remoteParentDirectoryPath, List<ParamReplacement> outputReplacements, boolean isRStudio) throws Exception
+    public String processParamReplacement(String script, FileLike parentDirectory, String remoteParentDirectoryPath, List<ParamReplacement> outputReplacements, boolean isRStudio) throws Exception
     {
         if (isRStudio)
         {
@@ -499,7 +504,7 @@ public class ParamReplacementSvc
      * @param remoteParentDirectoryPath - the remote reference to this path if specified; may be null
      * @param outputReplacements - the list of processed replacements found in the source script.
      */
-    public String processParamReplacement(String script, File parentDirectory, String remoteParentDirectoryPath, List<ParamReplacement> outputReplacements, SubstitutionSyntax pattern) throws Exception
+    public String processParamReplacement(String script, FileLike parentDirectory, String remoteParentDirectoryPath, List<ParamReplacement> outputReplacements, SubstitutionSyntax pattern) throws Exception
     {
         Matcher m = pattern.getMatchPattern().matcher(script);
         StringBuilder sb = new StringBuilder();
@@ -510,7 +515,7 @@ public class ParamReplacementSvc
             ParamReplacement param = fromToken(tokenString);
             if (param != null)
             {
-                File resultFile = param.convertSubstitution(parentDirectory);
+                FileLike resultFile = param.convertSubstitution(parentDirectory);
                 String resultFileName = "";
 
                 if (resultFile != null)
@@ -527,13 +532,13 @@ public class ParamReplacementSvc
                     }
                     else
                     {
-                        resultFileName = resultFile.getAbsolutePath().replaceAll("\\\\", "/");
+                        resultFileName = resultFile.toNioPathForRead().toFile().getAbsolutePath().replaceAll("\\\\", "/");
                     }
 
                     // NOTE: dollar signs in the path will cause "java.lang.IllegalArgumentException: Illegal group reference" from Matcher.appendReplacement
                     resultFileName = resultFileName.replaceAll("\\$", "\\\\\\$");
 
-                    _log.debug("Found output parameter '" + param.getName() + "'.  Mapping local file '" + resultFile.getAbsolutePath() + "' to '" + resultFileName + "'");
+                    _log.debug("Found output parameter '" + param.getName() + "'.  Mapping local file '" + resultFile + "' to '" + resultFileName + "'");
                 }
                 String replacementStr = pattern.getReplacementStr(resultFileName, m.group(0), param.getName());
                 outputReplacements.add(param);
@@ -545,7 +550,7 @@ public class ParamReplacementSvc
         return sb.toString();
     }
 
-    public String processHrefParamReplacement(Report report, String script, File parentDirectory)
+    public String processHrefParamReplacement(Report report, String script, FileLike parentDirectory) throws IOException
     {
         String commentProcessedScript = processHrefParamReplacement(report, script, parentDirectory, SubstitutionSyntax.COMMENT);
         return processHrefParamReplacement(report, commentProcessedScript, parentDirectory, SubstitutionSyntax.INLINE);
@@ -561,7 +566,7 @@ public class ParamReplacementSvc
      * @param parentDirectory - the parent directory to create the output files for each param replacement.
      * @param pattern - the remote reference to this path if specified; may be null
      */
-    public String processHrefParamReplacement(Report report, String script, File parentDirectory, SubstitutionSyntax pattern)
+    public String processHrefParamReplacement(Report report, String script, FileLike parentDirectory, SubstitutionSyntax pattern) throws IOException
     {
         Matcher m = pattern.getEscapedMatchPattern().matcher(script);
         StringBuilder sb = new StringBuilder();
@@ -570,11 +575,10 @@ public class ParamReplacementSvc
         {
             String tokenString = m.group(pattern.getEscapedTokenGroupIndex());
             ParamReplacement param = fromToken(tokenString);
-            if (param != null && HrefOutput.class.isInstance(param))
+            if (param instanceof HrefOutput href)
             {
-                HrefOutput href = (HrefOutput) param;
                 href.setReport(report);
-                File file = new File(parentDirectory, href.getName());
+                FileLike file = parentDirectory.resolveFile(Path.parse(href.getName()));
                 if (file.exists())
                 {
                     href.addFile(file);
@@ -596,7 +600,7 @@ public class ParamReplacementSvc
 
     private boolean isRelativeHref(String href)
     {
-        return !(startsWith(href,"$") || startsWith(href,"http:") || startsWith(href,"https:") || startsWith(href,"/"));
+        return !(Strings.CS.startsWith(href,"$") || Strings.CS.startsWith(href,"http:") || Strings.CS.startsWith(href,"https:") || Strings.CS.startsWith(href,"/"));
     }
 
     /**
@@ -607,7 +611,7 @@ public class ParamReplacementSvc
      * @param script - the script upon which to replace the Href parameters
      * @param parentDirectory - the parent directory to create the output files for each param replacement.
      */
-    public String processRelativeHrefReplacement(Report report, String script, File parentDirectory)
+    public String processRelativeHrefReplacement(Report report, String script, FileLike parentDirectory) throws IOException
     {
         Matcher m = Pattern.compile("(href|src)=\"([^\"]*)\"").matcher(script);
         StringBuilder sb = new StringBuilder();
@@ -626,7 +630,7 @@ public class ParamReplacementSvc
             HrefOutput href = new HrefOutput();
             href.setName(path);
             href.setReport(report);
-            File file = new File(parentDirectory, href.getName());
+            FileLike file = parentDirectory.resolveFile(Path.parse(href.getName()));
             ScriptOutput so = null;
             if (file.exists())
             {
@@ -644,23 +648,23 @@ public class ParamReplacementSvc
         return sb.toString();
     }
 
-    public void toFile(List<ParamReplacement> outputSubst, File file) throws Exception
+    public void toFile(List<ParamReplacement> outputSubst, FileLike file) throws Exception
      {
-         try (PrintWriter bw = PrintWriters.getPrintWriter(file))
+         try (PrintWriter bw = PrintWriters.getPrintWriter(file.openOutputStream()))
          {
              outputSubst.stream().
                      filter(output -> output.getName() != null).
-                     forEach(output -> output.getFiles().stream().filter(outputFile -> outputFile != null).
-                     forEach(outputFile -> bw.write(output.getId() + '\t' + output.getName() + '\t' + outputFile.getAbsolutePath() + '\t' + PageFlowUtil.toQueryString(output.getProperties().entrySet()) + '\n')));
+                     forEach(output -> output.getFiles().stream().filter(Objects::nonNull).
+                     forEach(outputFile -> bw.write(output.getId() + '\t' + output.getName() + '\t' + outputFile.toNioPathForRead().toFile().getAbsolutePath() + '\t' + PageFlowUtil.toQueryString(output.getProperties().entrySet()) + '\n')));
          }
      }
 
-     public Collection<ParamReplacement> fromFile(File file) throws Exception
+     public Collection<ParamReplacement> fromFile(FileLike file) throws IOException
      {
          Map<String, ParamReplacement> outputSubstMap = new HashMap<>();
          if (file.exists())
          {
-             try (BufferedReader br = Readers.getReader(file))
+             try (BufferedReader br = Readers.getReader(file.openInputStream()))
              {
                  String l;
                  while ((l = br.readLine()) != null)
@@ -676,7 +680,7 @@ public class ParamReplacementSvc
                          if (handler != null)
                          {
                              handler.setName(parts[1]);
-                             handler.addFile(new File(parts[2]));
+                             handler.addFile(FileSystemLike.wrapFile(new File(parts[2])));
                              handler.setProperties(PageFlowUtil.mapFromQueryString(parts[3]));
                          }
                      }
@@ -720,8 +724,8 @@ public class ParamReplacementSvc
     }
 
     private static final String TRANSFORMED_INPUT_FILE_NAME_PREFIX = "rStudioInputFileName";
-    private static final String INLINE_INPUT_DATA_REGEX = "(?m)^[^#\\r\\n]*(\\$\\{input_data\\}).*$";
-    private static final String INLINE_REGEX_REGEX = "(?m)^[^#\\r\\n]*\\$\\{.*regex.*\\}.*$";
+    private static final String INLINE_INPUT_DATA_REGEX = "(?m)^[^#\\r\\n]*(\\$\\{input_data}).*$";
+    private static final String INLINE_REGEX_REGEX = "(?m)^[^#\\r\\n]*\\$\\{.*regex.*}.*$";
     private static final String INLINE_OUTPUT_REGEX = "(?m)^[^#\\r\\n]*(" + REPLACEMENT_PARAM + ").*$";
 
     private static final Pattern INLINE_INPUT_DATA_PATTERN = Pattern.compile(INLINE_INPUT_DATA_REGEX);

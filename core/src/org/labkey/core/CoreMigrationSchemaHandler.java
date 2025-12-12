@@ -1,11 +1,13 @@
 package org.labkey.core;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentCache;
+import org.labkey.api.attachments.AttachmentParentType;
+import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DatabaseMigrationConfiguration;
-import org.labkey.api.data.DatabaseMigrationService;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -19,15 +21,24 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TestSchema;
+import org.labkey.api.files.FileSystemAttachmentType;
+import org.labkey.api.migration.DatabaseMigrationConfiguration;
+import org.labkey.api.migration.DatabaseMigrationService;
+import org.labkey.api.migration.DefaultMigrationSchemaHandler;
+import org.labkey.api.migration.MigrationFilter;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.reports.report.ReportType;
+import org.labkey.api.security.AuthenticationLogoType;
+import org.labkey.api.security.AvatarType;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrationSchemaHandler implements DatabaseMigrationService.MigrationFilter
+class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implements MigrationFilter
 {
     static void register()
     {
@@ -35,7 +46,7 @@ class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrati
         DatabaseMigrationService.get().registerSchemaHandler(schemaHandler);
         DatabaseMigrationService.get().registerMigrationFilter(schemaHandler);
 
-        DatabaseMigrationService.get().registerSchemaHandler(new DatabaseMigrationService.DefaultMigrationSchemaHandler(PropertySchema.getInstance().getSchema()){
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(PropertySchema.getInstance().getSchema()){
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
             {
@@ -43,7 +54,7 @@ class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrati
             }
         });
 
-        DatabaseMigrationService.get().registerSchemaHandler(new DatabaseMigrationService.DefaultMigrationSchemaHandler(TestSchema.getInstance().getSchema()){
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(TestSchema.getInstance().getSchema()){
             @Override
             public List<TableInfo> getTablesToCopy()
             {
@@ -53,7 +64,7 @@ class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrati
 
         if (ModuleLoader.getInstance().getModule(DbScope.getLabKeyScope(), "vehicle") != null)
         {
-            DatabaseMigrationService.get().registerSchemaHandler(new DatabaseMigrationService.DefaultMigrationSchemaHandler(DbSchema.get("vehicle", DbSchemaType.Module))
+            DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(DbSchema.get("vehicle", DbSchemaType.Module))
             {
                 @Override
                 public List<TableInfo> getTablesToCopy()
@@ -95,6 +106,7 @@ class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrati
         tablesToCopy.remove(CoreSchema.getInstance().getTableInfoModules());
         tablesToCopy.remove(CoreSchema.getInstance().getTableInfoSqlScripts());
         tablesToCopy.remove(CoreSchema.getInstance().getTableInfoUpgradeSteps());
+        tablesToCopy.remove(CoreSchema.getInstance().getTableInfoDocuments());
 
         return tablesToCopy;
     }
@@ -178,6 +190,42 @@ class CoreMigrationSchemaHandler extends DatabaseMigrationService.DefaultMigrati
     {
         new SqlExecutor(getSchema()).execute("ALTER TABLE core.Containers ADD CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)");
         new SqlExecutor(getSchema()).execute("ALTER TABLE core.ViewCategory ADD CONSTRAINT FK_ViewCategory_Parent FOREIGN KEY (Parent) REFERENCES core.ViewCategory(RowId)");
+    }
+
+    @Override
+    public void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Set<GUID> copyContainers)
+    {
+        // Default handling for core's standard attachment types
+        super.copyAttachments(configuration, sourceSchema, targetSchema, copyContainers);
+
+        // Special handling for LookAndFeelResourceType, which must select from the source database. Keep in sync with
+        // LookAndFeelResourceType.addWhereSql().
+        SQLFragment sql = new SQLFragment()
+            .append("Parent").appendInClause(copyContainers, sourceSchema.getSqlDialect())
+            .append(" AND (DocumentName IN (?, ?) OR ")
+            .add(AttachmentCache.FAVICON_FILE_NAME)
+            .add(AttachmentCache.STYLESHEET_FILE_NAME)
+            .append("DocumentName LIKE '" + AttachmentCache.LOGO_FILE_NAME_PREFIX + "%' OR ")
+            .append("DocumentName LIKE '" + AttachmentCache.MOBILE_LOGO_FILE_NAME_PREFIX + "%')");
+        copyAttachments(configuration, sourceSchema, new SQLClause(sql), LookAndFeelResourceType.get());
+    }
+
+    @Override
+    public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
+    {
+        return List.of(
+            AuthenticationLogoType.get(),
+            AvatarType.get(),
+            FileSystemAttachmentType.get(),
+            ReportType.get()
+        );
+    }
+
+    @Override
+    public void afterMigration(DatabaseMigrationConfiguration configuration)
+    {
+        // Now that all schemas have copied their attachments into core.Documents, update that table's sequence
+        DatabaseMigrationService.get().updateSequences(configuration.getSourceScope().getSchema("core", DbSchemaType.Migration).getTable("Documents"), CoreSchema.getInstance().getTableInfoDocuments());
     }
 
     // MigrationFilter implementation below

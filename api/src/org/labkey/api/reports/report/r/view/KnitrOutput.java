@@ -49,7 +49,7 @@ public class KnitrOutput extends HtmlOutput
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput(File file) throws Exception
+    public ScriptOutput renderAsScriptOutput(FileLike file) throws Exception
     {
         KnitrOutputView view = new KnitrOutputView(this, getLabel());
         String html = view.renderInternalAsString(file);
@@ -61,7 +61,7 @@ public class KnitrOutput extends HtmlOutput
     }
 
     @Override
-    public HttpView getView(ViewContext context)
+    public HttpView<?> getView(ViewContext context)
     {
         return new KnitrOutputView(this, getLabel());
     }
@@ -69,7 +69,7 @@ public class KnitrOutput extends HtmlOutput
     @Override
     public @Nullable Thumbnail renderThumbnail(ViewContext context)
     {
-        for (File file : getFiles())
+        for (FileLike file : getFiles())
         {
             KnitrOutputView view = new KnitrOutputView(this, getLabel());
             Thumbnail thumb = null;
@@ -78,7 +78,7 @@ public class KnitrOutput extends HtmlOutput
             {
                 String html = view.renderInternalAsString(file);
                 URI baseURI = new URI(AppProps.getInstance().getBaseServerUrl());
-                if (html != null && baseURI != null)
+                if (html != null)
                     thumb = ImageUtil.webThumbnail(context, html, baseURI);
             }
             catch(Exception ignore){}// if we can't get a thumbnail then that is okay; LabKey should use a default
@@ -99,7 +99,7 @@ public class KnitrOutput extends HtmlOutput
         }
 
         @Override
-        protected String renderInternalAsString(File file) throws Exception
+        protected String renderInternalAsString(FileLike file) throws Exception
         {
             String htmlIn = super.renderInternalAsString(file);
 
@@ -107,8 +107,7 @@ public class KnitrOutput extends HtmlOutput
             if (null != htmlIn)
             {
                 // replace all ${hrefout:<filename>} with the appropriate url
-                FileLike reportDirFileLike = _report.getReportDirFileLike(this.getViewContext().getContainer().getId());
-                File reportDir = FileSystemLike.toFile(reportDirFileLike);
+                FileLike reportDir = _report.getReportDirFileLike(this.getViewContext().getContainer().getId());
                 String htmlOut = ParamReplacementSvc.get().processHrefParamReplacement(_report, htmlIn, reportDir);
                 htmlOut = ParamReplacementSvc.get().processRelativeHrefReplacement(
                         _report,
@@ -124,7 +123,7 @@ public class KnitrOutput extends HtmlOutput
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
             String delim = "";
-            for (File file : getFiles())
+            for (FileLike file : getFiles())
             {
                 String html = renderInternalAsString(file);
                 if (null != html)

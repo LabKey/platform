@@ -31,13 +31,19 @@ import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.MessageAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.migration.DatabaseMigrationConfiguration;
+import org.labkey.api.migration.DatabaseMigrationService;
+import org.labkey.api.migration.DefaultMigrationSchemaHandler;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.rss.RSSService;
@@ -53,6 +59,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.wiki.WikiService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -99,7 +106,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         EmailTemplateService.get().registerTemplate(AnnouncementManager.NotificationEmailTemplate.class);
         EmailTemplateService.get().registerTemplate(AnnouncementDigestProvider.DailyDigestEmailTemplate.class);
 
-        AttachmentService.get().registerAttachmentType(AnnouncementType.get());
+        AttachmentService.get().registerAttachmentParentType(AnnouncementType.get());
     }
 
     @Override
@@ -165,6 +172,42 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         {
             fsr.addFactories(new NotificationSettingsWriterFactory(), new NotificationSettingsImporterFactory());
         }
+
+        // AnnouncementModule owns the schema, so it registers the schema handler... even though it's mostly about wiki
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(CommSchema.getInstance().getSchema())
+        {
+            @Override
+            public void beforeSchema()
+            {
+                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_PageVersions");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_Parent");
+            }
+
+            @Override
+            public List<TableInfo> getTablesToCopy()
+            {
+                List<TableInfo> tablesToCopy = super.getTablesToCopy();
+                tablesToCopy.add(CommSchema.getInstance().getTableInfoPages());
+                tablesToCopy.add(CommSchema.getInstance().getTableInfoPageVersions());
+
+                return tablesToCopy;
+            }
+
+            @Override
+            public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
+            {
+                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId)");
+                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_Parent FOREIGN KEY (Parent) REFERENCES comm.Pages (RowId)");
+            }
+
+            @Override
+            public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
+            {
+                // It's theoretically possible to deploy Announcement without Wiki, so conditionalize
+                WikiService ws = WikiService.get();
+                return ws != null ? List.of(AnnouncementType.get(), ws.getAttachmentType()) : List.of(AnnouncementType.get());
+            }
+        });
     }
 
 

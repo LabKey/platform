@@ -3,6 +3,7 @@ package org.labkey.api.attachments;
 import org.apache.batik.anim.dom.SVGDOMImplementation;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NotFoundException;
 
@@ -19,6 +20,8 @@ public class SvgSource
 {
     private final String _filteredSvg;
 
+    private Float _height = null;
+
     public SvgSource(String svg)
     {
         if (StringUtils.isBlank(svg))
@@ -29,11 +32,19 @@ public class SvgSource
         if (!svg.contains("xmlns=\"" + SVGDOMImplementation.SVG_NAMESPACE_URI + "\"") && !svg.contains("xmlns='" + SVGDOMImplementation.SVG_NAMESPACE_URI + "'"))
             svg = svg.replace("<svg", "<svg xmlns='" + SVGDOMImplementation.SVG_NAMESPACE_URI + "'");
 
+        int idx = svg.indexOf("height=\"");
+        if (idx != -1)
+        {
+            int heightStart = idx + 8;
+            int end = svg.indexOf("\"",  heightStart);
+            _height = Float.parseFloat(svg.substring(heightStart, end));
+        }
+
         // remove xlink:title to prevent org.apache.batik.transcoder.TranscoderException (issue #16173)
         svg = svg.replaceAll("xlink:title", "title");
 
         // Reject hrefs. See #45819.
-        if (StringUtils.containsIgnoreCase(svg, "xlink:href"))
+        if (Strings.CI.contains(svg, "xlink:href"))
             throw new RuntimeException(new TranscoderException("The security settings do not allow any external resources to be referenced from the document"));
 
         _filteredSvg = svg;
@@ -55,5 +66,10 @@ public class SvgSource
     public Reader getReader()
     {
         return new StringReader(_filteredSvg);
+    }
+
+    public Float getHeight()
+    {
+        return _height;
     }
 }

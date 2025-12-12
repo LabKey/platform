@@ -22,13 +22,13 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DatabaseMigrationService;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.issues.IssueService;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.QueryService;
@@ -100,7 +100,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         IssuesListDefService.get().registerIssuesListDefProvider(new GeneralIssuesListDefProvider());
 
         NotificationService.get().registerNotificationType(IssueObject.class.getName(), "Issues", "fa-bug");
-        AttachmentService.get().registerAttachmentType(IssueCommentType.get());
+        AttachmentService.get().registerAttachmentParentType(IssueCommentType.get());
     }
 
     @Override

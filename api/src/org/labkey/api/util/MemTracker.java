@@ -138,7 +138,7 @@ public class MemTracker
         public String getObjectSummary()
         {
             String desc = getObjectDescription();
-            return desc.length() > 50 ? desc.substring(0, 50) + "..." : desc;
+            return desc.length() > 50 ? StringUtilsLabKey.leftSurrogatePairFriendly(desc, 50) + "..." : desc;
         }
 
         public boolean hasShortSummary()

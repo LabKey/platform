@@ -64,6 +64,7 @@ import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.CopyOption;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -304,6 +305,11 @@ public class FileUtil
         return true;
     }
 
+    public static void copyDirectory(FileLike src, FileLike dest) throws IOException
+    {
+        copyDirectory(src.toNioPathForRead(), dest.toNioPathForWrite());
+    }
+
 
     public static void copyDirectory(Path srcPath, Path destPath) throws IOException
     {
@@ -514,7 +520,6 @@ public class FileUtil
 
     public static boolean renameTo(FileLike from, FileLike to)
     {
-        // TODO FileLike.renameTo()
         return toFileForRead(from).renameTo(toFileForWrite(to));
     }
 
@@ -650,6 +655,16 @@ public class FileUtil
      */
     @Nullable
     public static String getExtension(File file)
+    {
+        return getExtension(file.getName());
+    }
+
+    /**
+     * Returns the file name extension without the dot, null if there
+     * isn't one.
+     */
+    @Nullable
+    public static String getExtension(FileLike file)
     {
         return getExtension(file.getName());
     }
@@ -852,11 +867,20 @@ public class FileUtil
     {
         org.labkey.api.util.Path path = originalPath.normalize();
         if (path == null || (!path.isEmpty() && "..".equals(path.get(0))))
-            throw new InvalidPathException(originalPath.toString(), "Path to parent not allowed");
+            throw new InvalidPathReferenceException(originalPath.toString(), "Path to parent not allowed");
         @SuppressWarnings("SSBasedInspection")
         var ret = new File(dir, path.toString());
-        if (!ret.toPath().normalize().startsWith(dir.toPath().normalize()))
-            throw new InvalidPathException(originalPath.toString(), "Path to parent not allowed");
+        boolean valid;
+        try
+        {
+            valid = ret.toPath().normalize().startsWith(dir.toPath().normalize());
+        }
+        catch (InvalidPathException e)
+        {
+            throw new InvalidPathReferenceException(originalPath.toString(), e.getMessage());
+        }
+        if (!valid)
+            throw new InvalidPathReferenceException(originalPath.toString(), "Path to parent not allowed");
         return ret;
     }
 
@@ -866,7 +890,7 @@ public class FileUtil
     {
         path = path.normalize();
         if (!path.isEmpty() && "..".equals(path.get(0)))
-            throw new InvalidPathException(path.toString(), "Path to parent not allowed");
+            throw new InvalidPathReferenceException(path.toString(), "Path to parent not allowed");
         return dir.resolveFile(path);
     }
 
@@ -897,7 +921,7 @@ public class FileUtil
         var ret = new File(dir, name);
 
         if (!ret.toPath().normalize().startsWith(dir.toPath().normalize()))
-            throw new InvalidPathException(name, "Path to parent not allowed");
+            throw new InvalidPathReferenceException(name, "Path to parent not allowed");
         return ret;
     }
 
@@ -908,7 +932,7 @@ public class FileUtil
         var ret = dir.resolve(name);
 
         if (!ret.normalize().startsWith(dir.normalize()))
-            throw new InvalidPathException(name, "Path to parent not allowed");
+            throw new InvalidPathReferenceException(name, "Path to parent not allowed");
         return ret;
     }
 
@@ -919,11 +943,24 @@ public class FileUtil
     {
         int invalidCharacterIndex = StringUtils.indexOfAny(name, '/', File.separatorChar);
         if (invalidCharacterIndex >= 0)
-            throw new InvalidPathException(name, "Invalid file or directory name", invalidCharacterIndex);
+            throw new InvalidPathReferenceException(name, "Invalid file or directory name", invalidCharacterIndex);
         if (".".equals(name) || "..".equals(name))
-            throw new InvalidPathException(name, "Invalid file or directory name");
+            throw new InvalidPathReferenceException(name, "Invalid file or directory name");
     }
 
+    /** Our own subclass for bogus paths that we can special-case in ExceptionUtil in terms of HTTP response codes and logging */
+    public static class InvalidPathReferenceException extends InvalidPathException
+    {
+        public InvalidPathReferenceException(String path, String reason)
+        {
+            super(path, reason);
+        }
+
+        public InvalidPathReferenceException(String name, String reason, int index)
+        {
+            super(name, reason, index);
+        }
+    }
 
     public static String decodeSpaces(@NotNull String str)
     {
@@ -996,6 +1033,11 @@ public class FileUtil
             return null;
     }
 
+
+    public static String relativize(FileLike home, FileLike file, boolean canonicalize) throws IOException
+    {
+        return relativize(home.toNioPathForRead().toFile(), file.toNioPathForRead().toFile(), canonicalize);
+    }
 
     /**
      * Get relative path of File 'file' with respect to 'home' directory
@@ -1121,15 +1163,10 @@ public class FileUtil
         return path.toString();
     }
 
-    public static void copyFile(FileLike src, FileLike dst) throws IOException
+    public static void copyFile(FileLike src, FileLike dst, CopyOption... options) throws IOException
     {
-        try (InputStream in = src.openInputStream();
-            OutputStream out = dst.openOutputStream())
-        {
-            copyData(in, out);
-        }
+        Files.copy(src.toNioPathForRead(), dst.toNioPathForWrite(), options);
     }
-
 
     public static void copyFile(File src, File dst) throws IOException
     {
@@ -1803,6 +1840,11 @@ quickScan:
         else
             createFile(file.toPath());
         return true;
+    }
+
+    public static boolean createTempFile(FileLike file) throws IOException
+    {
+        return createTempFile(file.toNioPathForWrite().toFile());
     }
 
 

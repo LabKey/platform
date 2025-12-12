@@ -36,6 +36,7 @@ import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.WorkbookUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.jetbrains.annotations.NotNull;
@@ -375,7 +376,7 @@ public class ExcelWriter implements ExportWriter
             sheetName = "Sheet";
 
         if (sheetName.length() > 31)
-            return cleanSheetName(sheetName.substring(0, 31));
+            return cleanSheetName(StringUtilsLabKey.leftSurrogatePairFriendly(sheetName, 31));
 
         return WorkbookUtil.createSafeSheetName(sheetName, '_');
     }

@@ -15,7 +15,6 @@
  */
 package org.labkey.pipeline.api;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.WorkDirFactory;
@@ -25,6 +24,8 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URIUtil;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.io.ByteArrayOutputStream;
@@ -35,6 +36,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -51,19 +53,19 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
     private static final int FILE_LOCKS_DEFAULT = 5;
 
-    private final File _lockDirectory;
-    private final File _folderToClean;
+    private final FileLike _lockDirectory;
+    private final FileLike _folderToClean;
 
     private static final Map<File, Lock> _locks = new HashMap<>();
 
     @Override
-    public File inputFile(File fileInput, boolean forceCopy) throws IOException
+    public FileLike inputFile(FileLike fileInput, boolean forceCopy) throws IOException
     {
         return inputFile(fileInput, newFile(fileInput.getName()), forceCopy);
     }
 
     @Override
-    public File inputFile(File fileInput, File fileWork, boolean forceCopy) throws IOException
+    public FileLike inputFile(FileLike fileInput, FileLike fileWork, boolean forceCopy) throws IOException
     {
         //can be used to prevent duplicate copy attempts
         if (fileWork.exists() && !forceCopy)
@@ -107,14 +109,14 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                 _deterministicWorkingDirName = true;
             }
 
-            File tempDir;
-            File tempDirBase = null;
+            FileLike tempDir;
+            FileLike tempDirBase = null;
             int attempt = 0;
             do
             {
                 // We've seen very intermittent problems failing to create temp files in the past during the DRTs,
                 // so try a few times before failing
-                File dirParent = (_tempDirectory == null ? null : new File(_tempDirectory));
+                FileLike dirParent = (_tempDirectory == null ? null : FileSystemLike.wrapFile(new File(_tempDirectory)));
 
                 // If the temp directory is shared, then create a jobId directory to be sure the
                 // work directory path is unique.
@@ -124,7 +126,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                     {
                         if (_deterministicWorkingDirName)
                         {
-                            dirParent = new File(dirParent, jobId);
+                            dirParent = dirParent.resolveChild(jobId);
                             tempDirBase = dirParent;
                         }
                         else
@@ -150,7 +152,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                         // Don't let the total path get too long - Windows doesn't like paths longer than 255 characters
                         // so if there's a ridiculously long file name, we don't want to duplicate its name in the
                         // directory too
-                        name = name.substring(0, 9);
+                        name = StringUtilsLabKey.leftSurrogatePairFriendly(name, 9);
                     }
                     else if (name.length() < 3)
                     {
@@ -160,7 +162,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
                     if (_deterministicWorkingDirName)
                     {
-                        tempDir = new File(dirParent, name + WORK_DIR_SUFFIX);
+                        tempDir = dirParent.resolveChild(name + WORK_DIR_SUFFIX);
                     }
                     else
                     {
@@ -193,8 +195,8 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                 throw new IOException("Failed to create local working directory " + tempDir);
             }
 
-            File lockDir = (_lockDirectory == null ? null : new File(_lockDirectory));
-            File transferToDirOnFailure = (_transferToDirOnFailure == null ? null : new File(_transferToDirOnFailure));
+            FileLike lockDir = (_lockDirectory == null ? null : FileSystemLike.wrapFile(new File(_lockDirectory)));
+            FileLike transferToDirOnFailure = (_transferToDirOnFailure == null ? null : FileSystemLike.wrapFile(new File(_transferToDirOnFailure)));
             return new WorkDirectoryRemote(support, this, log, lockDir, tempDir, transferToDirOnFailure, _allowReuseExistingTempDirectory, tempDirBase);
         }
 
@@ -327,7 +329,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         }
     }
 
-    public WorkDirectoryRemote(FileAnalysisJobSupport support, WorkDirFactory factory, Logger log, File lockDir, File tempDir, File transferToDirOnFailure, boolean reuseExistingDirectory, File folderToClean) throws IOException
+    public WorkDirectoryRemote(FileAnalysisJobSupport support, WorkDirFactory factory, Logger log, FileLike lockDir, FileLike tempDir, FileLike transferToDirOnFailure, boolean reuseExistingDirectory, FileLike folderToClean) throws IOException
     {
         super(support, factory, tempDir, reuseExistingDirectory, log);
 
@@ -414,7 +416,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         {
             _jobLog.debug("removing entire work dir through: " + _folderToClean.getPath());
             _jobLog.debug("starting with: " + _dir.getPath());
-            File toCheck = _dir;
+            FileLike toCheck = _dir;
 
             //debugging only:
             if (!URIUtil.isDescendant(_folderToClean.toURI(), toCheck.toURI()))
@@ -427,27 +429,22 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                 if (!toCheck.exists())
                 {
                     _jobLog.debug("directory does not exist: " + toCheck.getPath());
-                    toCheck = toCheck.getParentFile();
+                    toCheck = toCheck.getParent();
                     continue;
                 }
 
-                String[] children = toCheck.list();
-                if (children != null && children.length == 0)
+                List<FileLike> children = toCheck.getChildren();
+                if (children.isEmpty())
                 {
                     _jobLog.debug("removing directory: " + toCheck.getPath());
-                    FileUtils.deleteDirectory(toCheck);
-                    toCheck = toCheck.getParentFile();
-                }
-                else if (children == null)
-                {
-                    _jobLog.debug("unable to list children, will not delete: " + toCheck.getPath());
-                    continue;
+                    FileUtil.deleteDir(toCheck);
+                    toCheck = toCheck.getParent();
                 }
                 else
                 {
                     _jobLog.debug("work directory has children, will not delete: " + toCheck.getPath());
                     _jobLog.debug("files:");
-                    for (String fn : children)
+                    for (FileLike fn : children)
                     {
                         _jobLog.debug(fn);
                     }
@@ -477,7 +474,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
             try
             {
-                File masterLockFile = new File(_lockDirectory, "counter");
+                File masterLockFile = _lockDirectory.resolveChild("counter").toNioPathForWrite().toFile();
                 randomAccessFile = new RandomAccessFile(masterLockFile, "rw");
                 FileChannel masterChannel = randomAccessFile.getChannel();
                 masterLock = masterChannel.lock();
@@ -494,7 +491,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         }
 
         _jobLog.debug("Acquiring lock #" + lockInfo.getCurrentLock());
-        File f = new File(_lockDirectory, "lock" + lockInfo.getCurrentLock());
+        File f = _lockDirectory.resolveChild("lock" + lockInfo.getCurrentLock()).toNioPathForWrite().toFile();
         FileChannel lockChannel = new FileOutputStream(f, true).getChannel();
         FileLockCopyingResource result = new FileLockCopyingResource(lockChannel, lockInfo.getCurrentLock(), f);
         _jobLog.debug("Lock #" + lockInfo.getCurrentLock() + " acquired");
@@ -509,7 +506,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
         String output = Integer.toString(lockInfo.getCurrentLock());
         if (lockInfo.getTotalLocks() != FILE_LOCKS_DEFAULT)
-            output += " " + Integer.toString(lockInfo.getTotalLocks());
+            output += " " + lockInfo.getTotalLocks();
         byte[] outputBytes = output.getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
         masterFile.write(outputBytes);
         masterFile.setLength(outputBytes.length);

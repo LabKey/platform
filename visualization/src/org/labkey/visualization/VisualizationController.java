@@ -97,7 +97,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
@@ -140,7 +139,7 @@ public class VisualizationController extends SpringActionController
         private static final String VISUALIZATION_FILTER_URL = "filterUrl";
         private static final String VISUALIZATION_EDIT_PARAM = "edit";
         private static final String VISUALIZATION_ID_PARAM = "reportId";
-        private static final String VISUALIZATION_RENDERTYPE_PARAM = "renderType";
+        private static final String VISUALIZATION_RENDER_TYPE_PARAM = "renderType";
 
         private void addQueryParams(ActionURL url, Container container, User user, QuerySettings settings)
         {
@@ -184,7 +183,7 @@ public class VisualizationController extends SpringActionController
         {
             ActionURL url = getBaseGenericChartURL(container, true);
             url.addParameter(QueryParam.schemaName, "study");
-            url.addParameter(VISUALIZATION_RENDERTYPE_PARAM, "time_chart");
+            url.addParameter(VISUALIZATION_RENDER_TYPE_PARAM, "time_chart");
             return url;
         }
 
@@ -662,7 +661,6 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-
     @RequiresSiteAdmin
     public static class cdsTestGetDataAction extends SimpleViewAction<Object>
     {
@@ -740,8 +738,9 @@ public class VisualizationController extends SpringActionController
      * Content-type of request must be text/xml, not any kind of multipart
      * Returns a PNG image.
      */
+    @SuppressWarnings("unused")
     @RequiresPermission(ReadPermission.class)
-    public class ExportImageAction extends ExportSVGAction
+    public static class ExportImageAction extends ExportSVGAction
     {
         @Override
         public ModelAndView handleRequest() throws Exception
@@ -753,7 +752,14 @@ public class VisualizationController extends SpringActionController
             DocumentConversionService svc = DocumentConversionService.get();
 
             if (null != svc)
-                svc.svgToPng(getSVGSource(), response.getOutputStream());
+            {
+                // Ensure high resolution image even if browser submits a small SVG. See Issue 53390.
+                SvgSource svgSource = getSVGSource();
+                Float height = svgSource.getHeight();
+                if (height != null)
+                    height = Math.max(height * 2, 2000);
+                svc.svgToPng(svgSource, response.getOutputStream(), height);
+            }
 
             return null;
         }
@@ -764,8 +770,9 @@ public class VisualizationController extends SpringActionController
      * Content-type of request must be text/xml, not any kind of multipart
      * Returns a PDF document containing the visualization as a scalable vector graphic
      */
+    @SuppressWarnings("unused")
     @RequiresPermission(ReadPermission.class)
-    public class ExportPDFAction extends ExportSVGAction
+    public static class ExportPDFAction extends ExportSVGAction
     {
         @Override
         public ModelAndView handleRequest() throws Exception
@@ -1133,74 +1140,62 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class TimeChartWizardAction extends SimpleViewAction<ChartWizardReportForm>
+    private abstract class AbstractChartWizardAction extends SimpleViewAction<ChartWizardReportForm>
     {
-        String _navTitle = "Chart Wizard";
+        private String _navTitle = "Chart Wizard";
 
         @Override
         public ModelAndView getView(ChartWizardReportForm form, BindException errors) throws Exception
         {
             form.setAllowToggleMode(true);
-            form.setRenderType("time_chart");
 
             // issue 27439: allow chart wizard report lookup by name if reportId not provided
             Report report = getReport(form);
             if (form.getReportId() == null && report != null && report.getDescriptor() != null)
                 form.setReportId(report.getDescriptor().getReportId());
 
-            JspView timeChartWizard = new JspView<>("/org/labkey/visualization/views/chartWizard.jsp", form);
-            timeChartWizard.setTitle(_navTitle);
-            timeChartWizard.setFrame(WebPartView.FrameType.NONE);
-            VBox boxView = new VBox(timeChartWizard);
+            JspView<?> chartWizard = new JspView<>("/org/labkey/visualization/views/chartWizard.jsp", form);
+            chartWizard.setTitle(_navTitle);
+            chartWizard.setFrame(WebPartView.FrameType.NONE);
 
             if (report != null)
-            {
                 _navTitle = report.getDescriptor().getReportName();
-            }
 
-            return boxView;
+            return chartWizard;
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic("timeChart");
             root.addChild(_navTitle);
         }
     }
 
     @RequiresPermission(ReadPermission.class)
-    @Action(ActionType.SelectData.class) // TODO rename to just ChartWizardAction
-    public class GenericChartWizardAction extends SimpleViewAction<ChartWizardReportForm>
+    @Action(ActionType.SelectData.class)
+    public class TimeChartWizardAction extends AbstractChartWizardAction
     {
-        String _navTitle = "Chart Wizard";
-
         @Override
         public ModelAndView getView(ChartWizardReportForm form, BindException errors) throws Exception
         {
-            form.setAllowToggleMode(true);
+            form.setRenderType("time_chart");
+            setHelpTopic("timeChart");
 
-            // issue 27439: allow chart wizard report lookup by name if reportId not provided
-            Report report = getReport(form);
-            if (form.getReportId() == null && report != null && report.getDescriptor() != null)
-                form.setReportId(report.getDescriptor().getReportId());
-
-            JspView view = new JspView<>("/org/labkey/visualization/views/chartWizard.jsp", form);
-            view.setTitle(_navTitle);
-            view.setFrame(WebPartView.FrameType.NONE);
-
-            if (report != null)
-                _navTitle = report.getDescriptor().getReportName();
-
-            return view;
+            return super.getView(form, errors);
         }
+    }
 
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.SelectData.class)
+    // TODO rename to just ChartWizardAction
+    public class GenericChartWizardAction extends AbstractChartWizardAction
+    {
         @Override
-        public void addNavTrail(NavTree root)
+        public ModelAndView getView(ChartWizardReportForm form, BindException errors) throws Exception
         {
             setHelpTopic("reportsAndViews");
-            root.addChild(_navTitle);
+
+            return super.getView(form, errors);
         }
     }
 

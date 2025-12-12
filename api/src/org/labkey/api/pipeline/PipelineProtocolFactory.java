@@ -20,10 +20,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.NetworkDrive;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
@@ -48,16 +46,12 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
     public static FileLike getProtocolRootDir(PipeRoot root)
     {
         FileLike systemDir = root.ensureSystemDirectory();
-        return systemDir.resolveChild(_pipelineProtocolDir);
+        return getProtocolRootDir(systemDir);
     }
 
-    public static File locateProtocolRootDir(File rootDir, File systemDir)
+    public static FileLike getProtocolRootDir(FileLike systemDir)
     {
-        File protocolRootDir = FileUtil.appendName(systemDir, _pipelineProtocolDir);
-        File protocolRootDirLegacy = FileUtil.appendName(rootDir, _pipelineProtocolDir);
-        if (NetworkDrive.exists(protocolRootDirLegacy))
-            protocolRootDirLegacy.renameTo(protocolRootDir);
-        return protocolRootDir;
+        return systemDir.resolveChild(_pipelineProtocolDir);
     }
 
     public abstract String getName();

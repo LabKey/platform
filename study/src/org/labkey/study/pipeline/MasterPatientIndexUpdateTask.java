@@ -23,7 +23,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 
-import java.io.File;
 import java.io.IOException;
 
 public class MasterPatientIndexUpdateTask extends PipelineJob
@@ -39,8 +38,7 @@ public class MasterPatientIndexUpdateTask extends PipelineJob
         super(PIPELINE_PROVIDER, info, root);
 
         _svc = service;
-        File logFile = FileUtil.createTempFile("patientIndexUpdateJob", ".log", root.getRootPath());
-        setLogFile(logFile);
+        setLogFile(FileUtil.createTempFile("patientIndexUpdateJob", ".log", root.getRootFileLike()));
     }
 
     @Override

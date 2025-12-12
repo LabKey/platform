@@ -42,7 +42,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.OptionalFeatureService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,10 +50,7 @@ import java.util.Set;
 
 public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
 {
-    public static final String LEGACY_UNION_AUDIT_TABLE = "legacyUnionAuditTable";
-
     protected AuditTypeProvider _provider;
-    protected Map<FieldKey, String> _legacyNameMap;
     protected Map<String, String> _dbSchemaToColumnMap;
 
     public DefaultAuditTypeTable(AuditTypeProvider provider, TableInfo storage, UserSchema schema, ContainerFilter cf, List<FieldKey> defaultVisibleColumns)
@@ -67,16 +63,8 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         if (_provider.getDescription() != null)
             setDescription(_provider.getDescription());
 
-        _legacyNameMap = OptionalFeatureService.get().isFeatureEnabled(LEGACY_UNION_AUDIT_TABLE) ? provider.legacyNameMap() : Map.of();
-
         // Create a mapping from the real dbTable names to the legacy query table names for QueryUpdateService.
         _dbSchemaToColumnMap = new CaseInsensitiveHashMap<>();
-
-        for (FieldKey legacyName : _legacyNameMap.keySet())
-        {
-            String newName = _legacyNameMap.get(legacyName);
-            _dbSchemaToColumnMap.put(newName, legacyName.getName());
-        }
 
         setTitle(provider.getEventName());
 
@@ -171,17 +159,10 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
 
         String newName = null;
 
-        if (_legacyNameMap.isEmpty())
-        {
-            // Backward compatibility with widely used legacy name
-            if ("Date".equalsIgnoreCase(name))
-                newName = "Created";
-        }
-        else
-        {
-            // Handle the old style 'intKey1' and 'key1' columns
-            newName = _legacyNameMap.get(FieldKey.fromParts(name));
-        }
+        // Backward compatibility with widely-used legacy name
+        if ("Date".equalsIgnoreCase(name))
+            newName = "Created";
+
         col = super.resolveColumn(newName);
         if (col != null)
         {

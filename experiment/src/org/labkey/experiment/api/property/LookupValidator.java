@@ -16,6 +16,7 @@
 package org.labkey.experiment.api.property;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.Container;
@@ -226,7 +227,8 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
                             ColumnRenderProperties crpField,
                             @NotNull Object value,
                             List<ValidationError> errors,
-                            ValidatorContext validatorCache)
+                            ValidatorContext validatorCache,
+                            @Nullable Object providedValue)
     {
         //noinspection ConstantConditions
         assert value != null : "Shouldn't be validating a null value";

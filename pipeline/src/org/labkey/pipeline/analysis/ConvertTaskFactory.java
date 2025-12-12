@@ -27,8 +27,8 @@ import org.labkey.api.pipeline.cmd.ConvertTaskFactorySettings;
 import org.labkey.api.pipeline.cmd.ConvertTaskId;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileType;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,7 +85,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         types.add(_outputType);
         for (TaskId tid : _commands)
         {
-            TaskFactory factory = PipelineJobService.get().getTaskFactory(tid);
+            TaskFactory<?> factory = PipelineJobService.get().getTaskFactory(tid);
             types.addAll(factory.getInputTypes());
         }
         _initialTypes = types;
@@ -94,31 +94,31 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
     @Override
     public TaskId getActiveId(PipelineJob job)
     {
-        TaskFactory factory = findCommandFactory(job);
+        TaskFactory<?> factory = findCommandFactory(job);
         if (factory != null)
             return factory.getActiveId(job);
 
         return super.getActiveId(job);
     }
 
-    private File getInputFile(PipelineJob job)
+    private FileLike getInputFile(PipelineJob job)
     {
-        List<File> files = job.getJobSupport(FileAnalysisJobSupport.class).getInputFiles();
+        List<FileLike> files = job.getJobSupport(FileAnalysisJobSupport.class).getInputFiles();
         assert files != null && files.size() == 1 : "Conversion job must have one file.";
         return files.get(0);
     }
 
-    private TaskFactory findCommandFactory(PipelineJob job)
+    private TaskFactory<?> findCommandFactory(PipelineJob job)
     {
         // If this job is not actually running a conversion, then no
         // converter command can be determined.
-        List<File> files = job.getJobSupport(FileAnalysisJobSupport.class).getInputFiles();
+        List<FileLike> files = job.getJobSupport(FileAnalysisJobSupport.class).getInputFiles();
         LOG.debug("Checking " + files + " for possible converters");
         if (files == null || files.size() != 1)
             return null;
 
         // Otherwise, find the appropriate converter.
-        File fileInput = getInputFile(job);
+        FileLike fileInput = getInputFile(job);
         LOG.debug("Checking " + fileInput + " against up to " + _commands.length + " possible converters");
         for (TaskId tid : _commands)
         {
@@ -165,7 +165,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
     }
 
     @Override
-    public PipelineJob.Task createTask(PipelineJob job)
+    public PipelineJob.Task<?> createTask(PipelineJob job)
     {
         throw new UnsupportedOperationException("No task associated with " + getClass() + ".");
     }
@@ -196,7 +196,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
             return false;
         
         // Nothing to do, if the input is already the desired type.
-        File fileInput = getInputFile(job);
+        FileLike fileInput = getInputFile(job);
         if (_outputType.isType(fileInput))
             return false;
         if (findCommandFactory(job) == null)
@@ -207,7 +207,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
     @Override
     public boolean isJobComplete(PipelineJob job)
     {
-        TaskFactory factory = findCommandFactory(job);
+        TaskFactory<?> factory = findCommandFactory(job);
         if (factory == null)
         {
             job.warn("Unexpected missing converter for job. The pipeline configuration may have changed to remove a previously configured converter.");

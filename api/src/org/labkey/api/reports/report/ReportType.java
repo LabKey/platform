@@ -16,11 +16,11 @@
 package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 
-public class ReportType implements AttachmentType
+public class ReportType implements AttachmentParentType
 {
     private static final ReportType INSTANCE = new ReportType();
 
@@ -36,12 +36,12 @@ public class ReportType implements AttachmentType
     @Override
     public @NotNull String getUniqueName()
     {
-        return getClass().getName();
+        return "Report";
     }
 
     @Override
-    public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
+    public @NotNull SQLFragment getSelectParentEntityIdsSql()
     {
-        sql.append(parentColumn).append(" IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoReport(), "reports").append(")");
+        return new SQLFragment("SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoReport(), "reports");
     }
 }

@@ -25,11 +25,12 @@ import org.junit.Test;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.PropertySchema;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -41,9 +42,9 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
+import org.labkey.api.migration.DatabaseMigrationService;
+import org.labkey.api.migration.DefaultMigrationSchemaHandler;
 import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.FolderTypeManager;
@@ -81,6 +82,7 @@ import org.labkey.api.specimen.model.LocationDomainKind;
 import org.labkey.api.specimen.model.PrimaryTypeDomainKind;
 import org.labkey.api.specimen.model.SpecimenDomainKind;
 import org.labkey.api.specimen.model.SpecimenEventDomainKind;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.specimen.model.VialDomainKind;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.SpecimenService;
@@ -224,7 +226,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Double getSchemaVersion()
     {
-        return 25.003;
+        return 25.005;
     }
 
     @Override
@@ -281,7 +283,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         NotificationService.get().registerNotificationType(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, "Study", "fa-users");
 
-        AttachmentService.get().registerAttachmentType(ProtocolDocumentType.get());
+        AttachmentService.get().registerAttachmentParentType(ProtocolDocumentType.get());
 
         // Register so all administrators get this permission
         RoleManager.registerPermission(new ManageStudyPermission());
@@ -386,8 +388,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         {
             folderRegistry.addFactories(new StudyWriterFactory(), new StudyImporterFactory());
         }
-
-        FileContentService.get().addFileListener(new TableUpdaterFileListener(StudySchema.getInstance().getTableInfoUploadLog(), "FilePath", TableUpdaterFileListener.Type.filePath, "RowId"));
 
         DatasetDefinition.cleanupOrphanedDatasetDomains();
 
@@ -537,6 +537,19 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             {
                 return "StudySnapshot".equals(sourceTable.getName()) ? FieldKey.fromParts("Source") : super.getContainerFieldKey(sourceTable);
             }
+
+            @Override
+            public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
+            {
+                SpecimenService ss = SpecimenService.get();
+
+                return ss != null ?
+                    List.of(
+                        ProtocolDocumentType.get(),
+                        ss.getSpecimenRequestEventType()
+                    ) :
+                    List.of(ProtocolDocumentType.get());
+            }
         });
 
         DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(StudySchema.getInstance().getDatasetSchema())
@@ -546,6 +559,16 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             {
                 // Datasets don't have a Container column, so treat as site-wide. TODO: Treat shared datasets differently?
                 return SITE_WIDE_TABLE;
+            }
+        });
+
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(DbSchema.get(SpecimenTablesProvider.SCHEMA_NAME, DbSchemaType.Provisioned))
+        {
+            @Override
+            public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+            {
+                // The "_specimen" tables lack both a container column and an FK to a table that does, but they're single-container tables
+                return sourceTable.getName().endsWith("_specimen") ? SITE_WIDE_TABLE : super.getContainerFieldKey(sourceTable);
             }
         });
     }

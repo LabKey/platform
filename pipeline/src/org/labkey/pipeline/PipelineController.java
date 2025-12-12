@@ -1115,7 +1115,7 @@ public class PipelineController extends SpringActionController
             if (!pipeRoot.hasPermission(getUser(), ReadPermission.class))
                 throw new UnauthorizedException();
 
-            File file = pipeRoot.resolvePath(form.getPath());
+            FileLike file = pipeRoot.resolvePathToFileLike(form.getPath());
             if (!file.exists() || !file.isFile())
                 throw new NotFoundException();
 

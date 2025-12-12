@@ -71,6 +71,8 @@ public class StatsServiceImpl implements StatsService
                 return new ThreeParameterCurveFit(data, asymptoteMax);
             case FOUR_PARAMETER_SIMPLEX:
                 return new FourParameterSimplex(data);
+            case FIVE_PARAMETER_ALT:
+                return new FiveParameterCurveFit(data, asymptoteMin, asymptoteMax);
             case THREE_PARAMETER:
                 return new ParameterCurveFit(data, type, 0.0, asymptoteMax);
             case FOUR_PARAMETER:
@@ -133,6 +135,7 @@ public class StatsServiceImpl implements StatsService
             v1.setResults(CurveFitType.THREE_PARAMETER, new CurveResults(3.09, .065, .065));
             v1.setResults(CurveFitType.THREE_PARAMETER_ALT, new CurveResults(3.09, .065, .065));
             v1.setResults(CurveFitType.FOUR_PARAMETER, new CurveResults(2.5, .031, .045));
+            v1.setResults(CurveFitType.FIVE_PARAMETER_ALT, new CurveResults(2.08, .046, .054));
             v1.setResults(CurveFitType.FIVE_PARAMETER, new CurveResults(2.2, .046, .054));
             v1.setResults(CurveFitType.LINEAR, new CurveResults(6.8, .070, .070));
             validations.add(v1);
@@ -143,6 +146,7 @@ public class StatsServiceImpl implements StatsService
             v2.setResults(CurveFitType.THREE_PARAMETER, new CurveResults(2.93, .414, .414));
             v2.setResults(CurveFitType.THREE_PARAMETER_ALT, new CurveResults(2.93, .414, .414));
             v2.setResults(CurveFitType.FOUR_PARAMETER, new CurveResults(3.4, .403, .403));
+            v2.setResults(CurveFitType.FIVE_PARAMETER_ALT, new CurveResults(2.44, .420, .420));
             v2.setResults(CurveFitType.FIVE_PARAMETER, new CurveResults(3.1, .420, .420));
             v2.setResults(CurveFitType.LINEAR, new CurveResults(36.8, .553, .553));
             validations.add(v2);
@@ -153,6 +157,7 @@ public class StatsServiceImpl implements StatsService
             v3.setResults(CurveFitType.THREE_PARAMETER, new CurveResults(5.0, .078, .078));
             v3.setResults(CurveFitType.THREE_PARAMETER_ALT, new CurveResults(5.0, .078, .078));
             v3.setResults(CurveFitType.FOUR_PARAMETER, new CurveResults(4.7, .048, .049));
+            v3.setResults(CurveFitType.FIVE_PARAMETER_ALT, new CurveResults(4.6, .049, .051));
             v3.setResults(CurveFitType.FIVE_PARAMETER, new CurveResults(4.6, .080, .082));
             v3.setResults(CurveFitType.LINEAR, new CurveResults(5.9, .070, .070));
             validations.add(v3);
@@ -163,6 +168,7 @@ public class StatsServiceImpl implements StatsService
             v4.setResults(CurveFitType.THREE_PARAMETER, new CurveResults(4.05, .265, .265));
             v4.setResults(CurveFitType.THREE_PARAMETER_ALT, new CurveResults(4.05, .265, .265));
             v4.setResults(CurveFitType.FOUR_PARAMETER, new CurveResults(4.5, .226, .247));
+            v4.setResults(CurveFitType.FIVE_PARAMETER_ALT, new CurveResults(3.29, .245, .251));
             v4.setResults(CurveFitType.FIVE_PARAMETER, new CurveResults(3.7, .245, .262));
             v4.setResults(CurveFitType.LINEAR, new CurveResults(27.5, .374, .374));
             validations.add(v4);
@@ -173,6 +179,7 @@ public class StatsServiceImpl implements StatsService
             v5.setResults(CurveFitType.THREE_PARAMETER, new CurveResults(7.86, .281, .281));
             v5.setResults(CurveFitType.THREE_PARAMETER_ALT, new CurveResults(7.86, .281, .281));
             v5.setResults(CurveFitType.FOUR_PARAMETER, new CurveResults(5, .201, .263));
+            v5.setResults(CurveFitType.FIVE_PARAMETER_ALT, new CurveResults(4.105, .221, .277));
             v5.setResults(CurveFitType.FIVE_PARAMETER, new CurveResults(5.1, .221, .277));
             v5.setResults(CurveFitType.LINEAR, new CurveResults(38.0, .363, .363));
             validations.add(v5);
@@ -187,9 +194,9 @@ public class StatsServiceImpl implements StatsService
                         CurveResults results = validation.getResults(fitType);
 
                         // validate calculated and expected fit error and auc
-                        assertEquals(results.getFitError(), fit.getFitError(), 0.05);
-                        assertEquals(results.getAuc(), fit.calculateAUC(AUCType.NORMAL), 0.005);
-                        assertEquals(results.getPositiveAuc(), fit.calculateAUC(AUCType.POSITIVE), 0.005);
+                        assertEquals(fitType.getLabel(), results.getFitError(), fit.getFitError(), 0.05);
+                        assertEquals(fitType.getLabel(), results.getAuc(), fit.calculateAUC(AUCType.NORMAL), 0.005);
+                        assertEquals(fitType.getLabel(), results.getPositiveAuc(), fit.calculateAUC(AUCType.POSITIVE), 0.005);
                     }
                 }
             }
@@ -328,6 +335,15 @@ public class StatsServiceImpl implements StatsService
             fit.setLogXScale(true);
             verifySigmoidalParameters(fit, 0.67, 4.0, 2.246, 0.095, 1.466);
             assertEquals(0.997, fit.rSquared(fit.getParameters()), delta);
+
+            fit = service.getCurveFit(CurveFitType.FIVE_PARAMETER_ALT, data1);
+            fit.setLogXScale(false);
+            verifySigmoidalParameters(fit, 0.67, 3.17, 9.5144, 0.096, 0.2094);
+            assertEquals(0.9978, fit.rSquared(fit.getParameters()), delta);
+            fit = service.getCurveFit(CurveFitType.FIVE_PARAMETER_ALT, data1, null, 4.0);
+            fit.setLogXScale(true);
+            verifySigmoidalParameters(fit, 0.67, 4.0, 1.7321, 0.0946, 3.0369);
+            assertEquals(0.9207, fit.rSquared(fit.getParameters()), delta);
         }
 
         @Test
@@ -352,6 +368,12 @@ public class StatsServiceImpl implements StatsService
             verifySigmoidalParameters(fit, -2.0, 93.0, -0.445, 10.661, 0.838);
             assertEquals(3.493, fit.getFitError(), delta);
             assertEquals(0.990, fit.rSquared(fit.getParameters()), delta);
+
+            fit = service.getCurveFit(CurveFitType.FIVE_PARAMETER_ALT, data1);
+            fit.setLogXScale(true);
+            verifySigmoidalParameters(fit, -2.0, 93.0, -1.1106, 10.6605, 0.2094);
+            assertEquals(2.3816, fit.getFitError(), delta);
+            assertEquals(0.9954, fit.rSquared(fit.getParameters()), delta);
 
             fit = service.getCurveFit(CurveFitType.FOUR_PARAMETER, data1);
             fit.setLogXScale(true);

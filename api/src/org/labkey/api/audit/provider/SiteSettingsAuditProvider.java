@@ -150,14 +150,6 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
         }
     }
 
-    @Override
-    public Map<FieldKey, String> legacyNameMap()
-    {
-        Map<FieldKey, String> legacyNames = super.legacyNameMap();
-        legacyNames.put(FieldKey.fromParts("Property", AUDIT_PROP_DIFF), COLUMN_NAME_CHANGES);
-        return legacyNames;
-    }
-
     public static class SiteSettingsAuditDomainKind extends AbstractAuditDomainKind
     {
         public static final String NAME = "SiteSettingsAuditDomain";

@@ -34,8 +34,8 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -68,14 +68,14 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
     {
         PipelineJob job = getJob();
         FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
-        job.setLogFile(support.getDataDirectoryFileLike().resolveChild(FileUtil.makeFileNameWithTimestamp("triggered_sample_reload", "log")));
+        job.setLogFile(support.getDataDirectory().resolveChild(FileUtil.makeFileNameWithTimestamp("triggered_sample_reload", "log")));
         Map<String, String> params = support.getParameters();
 
         job.setStatus("RELOADING", "Job started at: " + DateUtil.nowISO());
 
         // guaranteed to only have a single file
         assert support.getInputFiles().size() == 1;
-        File dataFile = support.getInputFiles().get(0);
+        FileLike dataFile = support.getInputFiles().get(0);
         Logger log = job.getLogger();
 
         log.info("Loading " + dataFile.getName());
@@ -153,7 +153,7 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
 
                 try (DataLoader loader = DataLoader.get().createLoader(dataFile, null, true, job.getContainer(), null))
                 {
-                    DomainKind domainKind = PropertyService.get().getDomainKindByName(SampleTypeDomainKind.NAME);
+                    DomainKind<?> domainKind = PropertyService.get().getDomainKindByName(SampleTypeDomainKind.NAME);
                     Set<String> reservedProps = domainKind.getReservedPropertyNames(null, job.getUser());
                     reservedProps.remove("name");
                     List<GWTPropertyDescriptor> props = new ArrayList<>();
@@ -188,7 +188,7 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
         return new RecordedActionSet();
     }
 
-    private void importSamples(Container c, User user, @Nullable ExpSampleType sampleType, File dataFile, Logger log)
+    private void importSamples(Container c, User user, @Nullable ExpSampleType sampleType, FileLike dataFile, Logger log)
     {
         if (sampleType != null)
         {
@@ -262,7 +262,7 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
         }
 
         @Override
-        public PipelineJob.Task createTask(PipelineJob job)
+        public SampleReloadTask createTask(PipelineJob job)
         {
             return new SampleReloadTask(this, job);
         }

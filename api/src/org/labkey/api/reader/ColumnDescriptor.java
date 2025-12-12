@@ -37,13 +37,13 @@ public class ColumnDescriptor
         this.clazz = String.class;
     }
 
-    public ColumnDescriptor(String name, Class type)
+    public ColumnDescriptor(String name, Class<?> type)
     {
         this.name = name;
         this.clazz = type;
     }
 
-    public ColumnDescriptor(String name, Class type, Object defaultValue)
+    public ColumnDescriptor(String name, Class<?> type, Object defaultValue)
     {
         this.name = name;
         this.clazz = type;
@@ -82,6 +82,11 @@ public class ColumnDescriptor
             throw new IllegalArgumentException("Unknown class for column: " + clazz);
 
         return type.getXsdType();
+    }
+
+    public Class<?> getDataClass()
+    {
+        return clazz;
     }
 
     public boolean isMvEnabled()

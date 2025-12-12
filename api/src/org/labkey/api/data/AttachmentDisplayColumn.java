@@ -18,7 +18,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.query.FieldKey;
 
 import java.io.File;
@@ -105,9 +105,9 @@ public class AttachmentDisplayColumn extends AbstractFileDisplayColumn
         }
 
         @Override
-        public @NotNull AttachmentType getAttachmentType()
+        public @NotNull AttachmentParentType getAttachmentParentType()
         {
-            return AttachmentType.UNKNOWN;
+            return AttachmentParentType.UNKNOWN;
         }
     }
 }

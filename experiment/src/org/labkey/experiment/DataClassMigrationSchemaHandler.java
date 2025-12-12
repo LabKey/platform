@@ -1,12 +1,9 @@
 package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.DatabaseMigrationConfiguration;
-import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DataFilter;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
-import org.labkey.api.data.DatabaseMigrationService.ExperimentDeleteService;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -22,15 +19,22 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.migration.DatabaseMigrationConfiguration;
+import org.labkey.api.migration.DatabaseMigrationService;
+import org.labkey.api.migration.DatabaseMigrationService.DataFilter;
+import org.labkey.api.migration.DefaultMigrationSchemaHandler;
+import org.labkey.api.migration.ExperimentDeleteService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.DataClassDomainKind;
+import org.labkey.experiment.api.ExpDataClassType;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler implements ExperimentDeleteService
@@ -68,7 +72,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
     @Override
     public void addDomainDataFilterClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, Set<String> selectColumnNames)
     {
-        // Data classes have a built-in Flag field
+        // Data classes have an implicit Flag field
         if (filter.column().equalsIgnoreCase("Flag"))
         {
             addObjectPropertyClause(orClause, filter, sourceTable, getCommentPropertyId(sourceTable.getSchema().getScope()));
@@ -86,14 +90,18 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
     @Override
     public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
     {
-        // Select all ObjectIds associated with the not-copied rows from the source database. Our notCopiedFilter
-        // works on the data class provisioned table, so we need to use a sub-select (as opposed to a join) to avoid
-        // ambiguous column references.
-        SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM exp.Data WHERE LSID IN (SELECT LSID FROM ")
-            .appendIdentifier(sourceTable.getSelectName())
-            .append(" ")
-            .append(notCopiedFilter.getSQLFragment(sourceTable.getSqlDialect()))
-            .append(")");
+        // Select LSIDs from the just-copied rows in the target table
+        Collection<String> copiedLsids = new TableSelector(targetTable, Collections.singleton("LSID")).getCollection(String.class);
+
+        // Select all ObjectIds associated with the not-copied rows from the source database
+        SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM exp.Data d INNER JOIN ")
+                .appendIdentifier(sourceTable.getSelectName())
+                .append(" dc ON d.LSID = dc.LSID");
+
+        // Don't create an empty IN clause; need to work around issue where "NOT xxx IN (NULL)" evaluates to NULL.
+        if (!copiedLsids.isEmpty())
+            objectIdSql.append(" AND NOT dc.LSID").appendInClause(copiedLsids, sourceTable.getSqlDialect());
+
         Collection<Long> notCopiedObjectIds = new SqlSelector(sourceTable.getSchema(), objectIdSql).getCollection(Long.class);
 
         if (notCopiedObjectIds.isEmpty())
@@ -177,7 +185,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
             TableInfo sourceTable = biologicsSourceSchema.getTable("SequenceIdentity");
             TableInfo targetTable = biologicsTargetSchema.getTable("SequenceIdentity");
 
-            DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceTable, targetTable, DbSchemaType.Module, new DefaultMigrationSchemaHandler(biologicsTargetSchema)
+            DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceTable, targetTable, DbSchemaType.Module, true, null, new DefaultMigrationSchemaHandler(biologicsTargetSchema)
             {
                 @Override
                 public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
@@ -187,5 +195,11 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
                 }
             });
         }
+    }
+
+    @Override
+    public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
+    {
+        return List.of(ExpDataClassType.get());
     }
 }

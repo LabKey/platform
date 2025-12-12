@@ -591,7 +591,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
                             QueryImportPipelineJob.QueryImportAsyncContextBuilder importContextBuilder = new QueryImportPipelineJob.QueryImportAsyncContextBuilder();
                             importContextBuilder
-                                .setPrimaryFile(dataFile.toNioPathForRead().toFile())
+                                .setPrimaryFile(dataFile)
                                 .setHasColumnHeaders(_hasColumnHeaders)
                                 .setFileContentType(multipartfile.getContentType())
                                 .setSchemaName(schemaName)

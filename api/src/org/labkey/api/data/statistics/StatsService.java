@@ -18,8 +18,10 @@ package org.labkey.api.data.statistics;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Created by klum on 1/14/14.
@@ -38,22 +40,27 @@ public interface StatsService
 
     enum CurveFitType
     {
-        THREE_PARAMETER("Three Parameter", "3pl"),
-        FOUR_PARAMETER("Four Parameter", "4pl"),
-        FIVE_PARAMETER("Five Parameter", "5pl"),
-        THREE_PARAMETER_ALT("3 Parameter", "3param"),
-        FOUR_PARAMETER_SIMPLEX("4 Parameter", "4param"),
-        POLYNOMIAL("Polynomial", "poly"),
-        LINEAR("Linear", "linear"),
-        NONE("None", "none");
+        // TODO see updated labels for these equations in genericChartHelper.js TRENDLINE_OPTIONS
+        // we should update the labels here as well at some point (but this would like need to include an upgrade script for saved chart configs)
+        THREE_PARAMETER("Three Parameter", "3pl", Arrays.asList("min", "max", "inflection")),
+        FOUR_PARAMETER("Four Parameter", "4pl", Arrays.asList("min", "max", "slope", "inflection")),
+        FIVE_PARAMETER("Five Parameter", "5pl", Arrays.asList("min", "max", "slope", "inflection", "asymmetry")),
+        THREE_PARAMETER_ALT("3 Parameter", "3param", Arrays.asList("min", "max", "inflection")),
+        FOUR_PARAMETER_SIMPLEX("4 Parameter", "4param", Arrays.asList("min", "max", "slope", "inflection")),
+        FIVE_PARAMETER_ALT("5 Parameter", "5param", Arrays.asList("min", "max", "slope", "inflection", "asymmetry")),
+        POLYNOMIAL("Polynomial", "poly", Arrays.asList("coefficients")),
+        LINEAR("Linear", "linear", Arrays.asList("slope", "intercept")),
+        NONE("None", "none", Arrays.asList());
 
         private final String _label;
         private final String _colSuffix;
+        private final List<String> _parameterNames = new ArrayList<>();
 
-        CurveFitType(String label, String colSuffix)
+        CurveFitType(String label, String colSuffix, List<String> parameterNames)
         {
             _label = label;
             _colSuffix = colSuffix;
+            _parameterNames.addAll(parameterNames);
         }
 
         // Consider : moving the col suffix portion of this back into assays...
@@ -66,6 +73,11 @@ public interface StatsService
         public String getLabel()
         {
             return _label;
+        }
+
+        public List<String> getParameterNames()
+        {
+            return _parameterNames;
         }
 
         @Override

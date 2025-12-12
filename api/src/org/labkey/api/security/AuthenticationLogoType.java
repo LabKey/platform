@@ -16,11 +16,12 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.AttachmentType;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 
-public class AuthenticationLogoType implements AttachmentType
+public class AuthenticationLogoType implements AttachmentParentType
 {
     private static final AuthenticationLogoType INSTANCE = new AuthenticationLogoType();
 
@@ -36,12 +37,12 @@ public class AuthenticationLogoType implements AttachmentType
     @Override
     public @NotNull String getUniqueName()
     {
-        return getClass().getName();
+        return "AuthenticationLogo";
     }
 
     @Override
-    public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
+    public @Nullable SQLFragment getSelectParentEntityIdsSql()
     {
-        sql.append(parentColumn).append(" IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), "acs").append(")");
+        return new SQLFragment("SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), "acs");
     }
 }

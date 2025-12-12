@@ -17,13 +17,13 @@
 package org.labkey.api.reports.report.r.view;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
@@ -33,13 +33,10 @@ import java.io.PrintWriter;
 public abstract class DownloadOutputView extends ROutputView
 {
     private final String _fileType;
-    private final AttachmentParent _parent;
-    private String _lastError;
 
-    DownloadOutputView(ParamReplacement param, AttachmentParent parent, String fileType)
+    DownloadOutputView(ParamReplacement param, String fileType)
     {
         super(param);
-        _parent = parent;
         _fileType = fileType;
         setLabel("Attachment output");
     }
@@ -56,13 +53,13 @@ public abstract class DownloadOutputView extends ROutputView
     }
 
     @Override
-    protected String renderInternalAsString(File file)
+    protected String renderInternalAsString(FileLike file) throws IOException
     {
         String downloadUrl = null;
 
-        if (file != null && file.exists() && (file.length() > 0))
+        if (file != null && file.exists() && (file.getSize() > 0))
         {
-            File newFile = moveToTemp(file);
+            FileLike newFile = moveToTemp(file);
             // file hasn't been saved yet
             String key = ImageUtil.setFileInSession(getViewContext().getRequest(), newFile);
             downloadUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer()).
@@ -75,9 +72,9 @@ public abstract class DownloadOutputView extends ROutputView
     }
 
     @Override
-    protected void renderInternal(Object model, PrintWriter out)
+    protected void renderInternal(Object model, PrintWriter out) throws IOException
     {
-        for (File file : getFiles())
+        for (FileLike file : getFiles())
         {
 
             String downloadUrl = renderInternalAsString(file);
@@ -89,28 +86,25 @@ public abstract class DownloadOutputView extends ROutputView
                 return;
 
             out.write("<table class=\"labkey-output\">");
-            renderTitle(model, out);
+            renderTitle(out);
             if (isCollapse())
                 out.write("<tr style=\"display:none\"><td>");
             else
                 out.write("<tr><td>");
 
-            if (null != downloadUrl)
+            out.write("<a href=\"");
+            out.write(downloadUrl);
+            out.write("\">");
+            if (StringUtils.stripToNull(filename) == null)
             {
-                out.write("<a href=\"");
-                out.write(downloadUrl);
-                out.write("\">");
-                if (StringUtils.stripToNull(filename) == null)
-                {
-                    out.write(_fileType);
-                    out.write(" output file (click to download)");
-                }
-                else
-                {
-                    out.write(filename);
-                }
-                out.write("</a>");
+                out.write(_fileType);
+                out.write(" output file (click to download)");
             }
+            else
+            {
+                out.write(filename);
+            }
+            out.write("</a>");
 
             out.write("</td></tr>");
             out.write("</table>");

@@ -19,6 +19,7 @@ package org.labkey.list;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -30,6 +31,8 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.lists.permissions.ManagePicklistsPermission;
+import org.labkey.api.migration.DatabaseMigrationService;
+import org.labkey.api.migration.DefaultMigrationSchemaHandler;
 import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
@@ -118,7 +121,7 @@ public class ListModule extends SpringModule
         RoleManager.registerPermission(new DesignListPermission());
         RoleManager.registerPermission(new ManagePicklistsPermission());
 
-        AttachmentService.get().registerAttachmentType(ListItemType.get());
+        AttachmentService.get().registerAttachmentParentType(ListItemType.get());
         ExperimentService.get().addExperimentListener(new PicklistMaterialListener());
 
         QueryService.get().addCompareType(new PicklistSampleCompareType());
@@ -160,6 +163,14 @@ public class ListModule extends SpringModule
                 return metric;
             });
         }
+
+        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(ListSchema.getInstance().getSchema()){
+            @Override
+            public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
+            {
+                return Set.of(ListItemType.get());
+            }
+        });
     }
 
     @NotNull

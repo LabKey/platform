@@ -37,8 +37,6 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.Path;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HtmlView;
@@ -46,18 +44,19 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.PrintWriters;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 
 import javax.script.ScriptEngine;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -65,9 +64,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.util.DOM.DIV;
@@ -183,36 +181,28 @@ public class IpynbReport extends DockerScriptReport
         if (context.getRequest() == null)
             throw new IllegalStateException("Invalid report context");
         String apikey = SessionApiKeyManager.get().getApiKey(context.getRequest(), "ipynb report");
-        File workingDirectory = getReportDir(context.getContainer().getId());
+        FileLike workingDirectory = getReportDir(context.getContainer().getId());
 
-        assert workingDirectory.isAbsolute();
         if (!workingDirectory.isDirectory())
             throw new IOException("Could not create working directory");
-        FileUtils.cleanDirectory(workingDirectory);
+        FileUtil.deleteDirectoryContents(workingDirectory);
 
         // write the script out to the working directory
         var descriptor = getDescriptor();
         String script = descriptor.getProperty(ScriptReportDescriptor.Prop.script);
-        File scriptFile = FileUtil.appendName(workingDirectory, FileUtil.makeLegalName(descriptor.getReportName()) + ".ipynb");
+        FileLike scriptFile = workingDirectory.resolveChild(FileUtil.makeLegalName(descriptor.getReportName()) + ".ipynb");
         FileUtil.createTempFile(scriptFile);
-        IOUtil.copyCompletely(new StringReader(script), new FileWriter(scriptFile, StringUtilsLabKey.DEFAULT_CHARSET));
+        IOUtil.copyCompletely(new StringReader(script), PrintWriters.getPrintWriter(scriptFile.openOutputStream()));
 
-        Set<File> beforeExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
-        LOG.trace("BEFORE: " + workingDirectory.getPath() + "\n\t" +
-                StringUtils.join(beforeExecute.stream().map(f ->
-                        f.getPath().replace(workingDirectory.toString(), "") + " : " + f.length()).toArray(), "\n\t"));
+        logFiles(workingDirectory, "BEFORE");
 
         ExecuteStrategy ex = new WebServiceExecuteStrategy();
 
         int exitCode = ex.execute(context, apikey, workingDirectory, scriptFile);
         LOG.trace("EXIT: " + exitCode);
-        File outputFile = ex.getOutputDocument();
+        FileLike outputFile = ex.getOutputDocument();
         LOG.trace("OUTPUT: " + outputFile);
-
-        Set<File> afterExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
-        LOG.trace("AFTER: " + workingDirectory.getPath() + "\n\t" +
-                StringUtils.join(afterExecute.stream().map(f ->
-                        f.getPath().replace(workingDirectory.toString(), "") + " : " + f.length()).toArray(), "\n\t"));
+        logFiles(workingDirectory, "AFTER");
 
         try
         {
@@ -228,7 +218,7 @@ public class IpynbReport extends DockerScriptReport
             }
             else
             {
-                BasicFileAttributes outputFileAttributes = Files.readAttributes(outputFile.toPath(), BasicFileAttributes.class);
+                BasicFileAttributes outputFileAttributes = Files.readAttributes(outputFile.toNioPathForRead(), BasicFileAttributes.class);
                 if (outputFileAttributes.isRegularFile() && 0 < outputFileAttributes.size())
                 {
                     vbox.addView(new IpynbOutput(outputFile).getView(context));
@@ -240,12 +230,12 @@ public class IpynbReport extends DockerScriptReport
             }
 
             // if there is console.txt or errors.txt file render them
-            File console = FileUtil.appendName(workingDirectory, ScriptEngineReport.CONSOLE_OUTPUT);
-            if (console.isFile() && console.length() > 0)
+            FileLike console = workingDirectory.resolveChild(ScriptEngineReport.CONSOLE_OUTPUT);
+            if (console.isFile() && console.getSize() > 0)
                 vbox.addView(new ConsoleOutput(console).getView(context));
 
-            File error = FileUtil.appendName(workingDirectory, ERROR_OUTPUT);
-            if (error.isFile() && error.length() > 0)
+            FileLike error = workingDirectory.resolveChild(ERROR_OUTPUT);
+            if (error.isFile() && error.getSize() > 0)
                 vbox.addView(new ConsoleOutput(error).getView(context));
 
             LOG.trace("VIEWS: " + vbox.getViews().size());
@@ -258,9 +248,18 @@ public class IpynbReport extends DockerScriptReport
         }
     }
 
+    private static void logFiles(FileLike parentDir, String label)
+    {
+        File dir = parentDir.toNioPathForRead().toFile();
+        Collection<File> files = FileUtils.listFiles(dir, null, true);
+        LOG.trace(label + ": " + dir.getPath() + "\n\t" +
+                StringUtils.join(files.stream().map(f ->
+                        f.getPath().replace(dir.getPath(), "") + " : " + f.length()).toArray(), "\n\t"));
+    }
+
 
     @Override
-    protected JSONObject createReportConfig(ViewContext context, File scriptFile)
+    protected JSONObject createReportConfig(ViewContext context, FileLike scriptFile)
     {
         return super.createReportConfig(context, scriptFile);
     }
@@ -292,22 +291,22 @@ public class IpynbReport extends DockerScriptReport
     }
 
 
-    private static void extractTar(InputStream in, File targetDirectory) throws IOException
+    private static void extractTar(InputStream in, FileLike targetDirectory) throws IOException
     {
         try (TarArchiveInputStream tar = new TarArchiveInputStream(in))
         {
             TarArchiveEntry entry;
             while ((entry = tar.getNextEntry()) != null)
             {
-                File path = FileUtil.appendPath(targetDirectory, new Path(entry.getName()));
+                FileLike path = targetDirectory.resolveFile(org.labkey.api.util.Path.parse(entry.getName()));
                 if (entry.isDirectory())
                 {
-                    FileUtils.forceMkdir(path);
+                    FileUtil.mkdir(path);
                 }
                 else
                 {
                     FileUtil.createTempFile(path);
-                    try (FileOutputStream os = new FileOutputStream(path))
+                    try (OutputStream os = path.openOutputStream())
                     {
                         IOUtils.copy(tar, os);
                     }
@@ -325,10 +324,10 @@ public class IpynbReport extends DockerScriptReport
     private interface ExecuteStrategy
     {
         IpynbReport getReport();
-        int execute(ViewContext context, String apiKey, File working, File ipynb) throws IOException;
+        int execute(ViewContext context, String apiKey, FileLike working, FileLike ipynb) throws IOException;
 
         // document could be .html .ipynb or .md
-        @Nullable File getOutputDocument();
+        @Nullable FileLike getOutputDocument();
     }
 
 
@@ -337,8 +336,8 @@ public class IpynbReport extends DockerScriptReport
 
     class WebServiceExecuteStrategy implements ExecuteStrategy
     {
-        File inputScript;
-        File outputDocument;
+        FileLike inputScript;
+        FileLike outputDocument;
 
         @Override
         public IpynbReport getReport()
@@ -359,14 +358,18 @@ public class IpynbReport extends DockerScriptReport
 
 
         @Override
-        public int execute(ViewContext context, String apiKey, File working, File ipynb) throws IOException
+        public int execute(ViewContext context, String apiKey, FileLike working, FileLike ipynb) throws IOException
         {
             inputScript = ipynb;
 
             JSONObject reportConfig = createReportConfig(context, ipynb);
 
             // I tried "putting" a fake tar entry, but TarArchiveOutputStream seems to actually want the file to exist
-            FileUtils.write(FileUtil.appendName(working, CONFIG_FILE), reportConfig.toString(), StringUtilsLabKey.DEFAULT_CHARSET);
+            try (OutputStream configOut = working.resolveChild(CONFIG_FILE).openOutputStream();
+                PrintWriter writer = PrintWriters.getPrintWriter(configOut))
+            {
+                writer.print(reportConfig.toString());
+            }
 
             URL service = getServiceAddress(context.getContainer());
             // For testing, just return if the remoteURL host is "noop.test"
@@ -396,19 +399,16 @@ public class IpynbReport extends DockerScriptReport
 
                 final DbScope.RetryPassthroughException[] bgException = new DbScope.RetryPassthroughException[1];
                 final Thread t = new Thread(() -> {
-                    try (
-                            TarArchiveOutputStream tar = new TarArchiveOutputStream(pipeOutput)
-                    )
+                    try (TarArchiveOutputStream tar = new TarArchiveOutputStream(pipeOutput))
                     {
-                        File[] listFiles = working.listFiles();
-                        List<File> files = null == listFiles ? List.of() : Arrays.asList(listFiles);
+                        List<FileLike> files = working.getChildren();
                         for (var file : files)
                         {
-                            TarArchiveEntry entry = tar.createArchiveEntry(file, file.getName());
+                            TarArchiveEntry entry = tar.createArchiveEntry(file.toNioPathForRead(), file.getName());
                             tar.putArchiveEntry(entry);
-                            try(FileInputStream fis = new FileInputStream(file))
+                            try(InputStream is = file.openInputStream())
                             {
-                                IOUtils.copy(fis, tar);
+                                IOUtils.copy(is, tar);
                             }
                             tar.closeArchiveEntry();
                         }
@@ -435,7 +435,7 @@ public class IpynbReport extends DockerScriptReport
                         bgException[0].throwRuntimeException();
                     }
                     // delete script to avoid returning unprocessed ipynb in case of error
-                    FileUtils.delete(ipynb);
+                    ipynb.delete();
 
                     if (200 != response.getCode())
                         return response.getCode();
@@ -450,7 +450,7 @@ public class IpynbReport extends DockerScriptReport
         }
 
         @Override
-        public @Nullable File getOutputDocument()
+        public @Nullable FileLike getOutputDocument()
         {
             if (null != outputDocument && outputDocument.isFile())
                 return outputDocument;

@@ -21,7 +21,7 @@ import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -205,13 +205,13 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     }
 
     @Override
-    public HttpView renderDataView(ViewContext context) throws Exception
+    public HttpView<?> renderDataView(ViewContext context) throws Exception
     {
         return HtmlView.of("No Data view available for this report");
     }
 
     @Override
-    public HttpView getRunReportView(ViewContext context) throws Exception
+    public HttpView<?> getRunReportView(ViewContext context) throws Exception
     {
         return renderReport(context);
     }
@@ -323,7 +323,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
 
     @NotNull
     @Override
-    public AttachmentType getAttachmentType()
+    public AttachmentParentType getAttachmentParentType()
     {
         return ReportType.get();
     }

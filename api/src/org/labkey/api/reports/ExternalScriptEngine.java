@@ -28,6 +28,8 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.URIUtil;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import javax.script.AbstractScriptEngine;
 import javax.script.Bindings;
@@ -38,11 +40,12 @@ import javax.script.SimpleBindings;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +82,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     public static final String DEFAULT_WORKING_DIRECTORY = "ExternalScript";
     private static final Pattern scriptCmdPattern = Pattern.compile("'([^']+)'|\\\"([^\\\"]+)\\\"|(^[^\\s]+)|(\\s[^\\s^'^\\\"]+)");
 
-    private File _workingDirectory;
+    private FileLike _workingDirectory;
 
     protected ExternalScriptEngineDefinition _def;
     protected Writer _originalWriter;
@@ -98,15 +101,11 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         return new ExternalScriptEngineFactory(_def);
     }
 
-    public boolean isBinary(File file)
+    public boolean isBinary(FileLike file)
     {
         String ext = FileUtil.getExtension(file);
 
-        if ("jar".equalsIgnoreCase(ext)) return true;
-        if ("class".equalsIgnoreCase(ext)) return true;
-        if ("exe".equalsIgnoreCase(ext)) return true;
-
-        return false;
+        return "jar".equalsIgnoreCase(ext) || "class".equalsIgnoreCase(ext) || "exe".equalsIgnoreCase(ext);
     }
 
     @Override
@@ -117,18 +116,18 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         if (!extensions.isEmpty())
         {
             // write out the script file to disk using the first extension as the default
-            File scriptFile = writeScriptFile(script, context, extensions);
+            FileLike scriptFile = writeScriptFile(script, context, extensions);
             return eval(scriptFile, context);
         }
         else
             throw new ScriptException("There are no file name extensions registered for this ScriptEngine : " + getFactory().getLanguageName());
     }
 
-    protected Object eval(File scriptFile, ScriptContext context) throws ScriptException
+    protected Object eval(FileLike scriptFile, ScriptContext context) throws ScriptException
     {
         String[] params = formatCommand(scriptFile, context);
         ProcessBuilder pb = new ProcessBuilder(params);
-        pb = pb.directory(getWorkingDir(context));
+        pb = pb.directory(getWorkingDir(context).toNioPathForRead().toFile());
 
         final long timeout = getTimeout(context);
 
@@ -149,26 +148,26 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     @Override
     public Object eval(Reader reader, ScriptContext context) throws ScriptException
     {
-        BufferedReader br = new BufferedReader(reader);
 
-        try {
-            String l;
-            StringBuilder sb = new StringBuilder();
-            while ((l = br.readLine()) != null)
+        try (BufferedReader br = new BufferedReader(reader))
+        {
+            try
             {
-                sb.append(l);
-                sb.append('\n');
+                String l;
+                StringBuilder sb = new StringBuilder();
+                while ((l = br.readLine()) != null)
+                {
+                    sb.append(l);
+                    sb.append('\n');
+                }
+                return eval(sb.toString(), context);
             }
-            return eval(sb.toString(), context);
+            catch (IOException ioe)
+            {
+                ExceptionUtil.logExceptionToMothership(null, ioe);
+            }
         }
-        catch (IOException ioe)
-        {
-            ExceptionUtil.logExceptionToMothership(null, ioe);
-        }
-        finally
-        {
-            try {br.close();} catch(IOException ignored) {}
-        }
+        catch (IOException ignored) {}
         return null;
     }
 
@@ -178,7 +177,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         return new SimpleBindings();
     }
 
-    protected File getWorkingDir(ScriptContext context)
+    protected FileLike getWorkingDir(ScriptContext context)
     {
         if (_workingDirectory == null)
         {
@@ -186,12 +185,12 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             if (bindings.containsKey(WORKING_DIRECTORY))
             {
                 String dir = (String)bindings.get(WORKING_DIRECTORY);
-                _workingDirectory = new File(dir);
+                _workingDirectory = FileSystemLike.wrapFile(new File(dir));
             }
             else
             {
-                File tempDir = new File(System.getProperty("java.io.tmpdir"));
-                _workingDirectory = FileUtil.appendName(tempDir, DEFAULT_WORKING_DIRECTORY);
+                FileLike tempDir = FileUtil.getTempDirectoryFileLike();
+                _workingDirectory = tempDir.resolveChild(DEFAULT_WORKING_DIRECTORY);
             }
 
             if (!_workingDirectory.exists())
@@ -224,7 +223,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
      *
      * @return an array of command parameters
      */
-    protected String[] formatCommand(File scriptFile, ScriptContext context) throws ScriptException
+    protected String[] formatCommand(FileLike scriptFile, ScriptContext context) throws ScriptException
     {
         List<String> params = new ArrayList<>();
         String exe = _def.getExePath();
@@ -232,7 +231,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
 
         params.add(exe);
 
-        String scriptFilePath = scriptFile.getAbsolutePath();
+        String scriptFilePath = scriptFile.toNioPathForRead().toFile().getAbsolutePath();
 
         // Issue 19545: R pipeline scripts don't support spaces in directory names
         // The bash shell script wrappers around the R executable don't correctly handle spaces
@@ -240,7 +239,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         // To avoid issues with executing scripts from within directories that contain spaces,
         // try to get the file name relative to the working directory if possible.
         // This doesn't fix executing scripts that contains a space in the file name, but is better than failing completely.
-        File workingDir = getWorkingDir(context);
+        FileLike workingDir = getWorkingDir(context);
         if (workingDir != null && URIUtil.isDescendant(workingDir.toURI(), scriptFile.toURI()))
         {
             try
@@ -282,7 +281,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
 
                 if (cmd.contains("workingDir"))
                 {
-                    cmd = ParamReplacementSvc.get().processInputReplacement(cmd, "workingDir", workingDir.getAbsolutePath().replaceAll("\\\\", "/"));
+                    cmd = ParamReplacementSvc.get().processInputReplacement(cmd, "workingDir", workingDir.toNioPathForRead().toFile().getAbsolutePath().replaceAll("\\\\", "/"));
                 }
 
                 // finally clean up the script
@@ -422,17 +421,17 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         }
     }
 
-    protected File writeScriptFile(String script, ScriptContext context, List<String> extensions)
+    protected FileLike writeScriptFile(String script, ScriptContext context, List<String> extensions)
     {
         // write out the script file to disk using the first extension as the default
-        File scriptFile;
+        FileLike scriptFile;
         boolean isBinaryScript = false;
 
         Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
 
         if (bindings.containsKey(ExternalScriptEngine.SCRIPT_PATH))
         {
-            File path = new File((String)bindings.get(ExternalScriptEngine.SCRIPT_PATH));
+            FileLike path = FileSystemLike.wrapFile(new File((String)bindings.get(ExternalScriptEngine.SCRIPT_PATH)));
             isBinaryScript = isBinary(path);
 
             // if the script is a binary file, no parameter replacement can be performed on the script, so we
@@ -440,10 +439,10 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             if (isBinaryScript)
                 scriptFile = path;
             else
-                scriptFile = FileUtil.appendName(getWorkingDir(context), path.getName());
+                scriptFile = getWorkingDir(context).resolveChild(path.getName());
         }
         else
-            scriptFile = FileUtil.appendName(getWorkingDir(context), "script." + extensions.get(0));
+            scriptFile = getWorkingDir(context).resolveChild("script." + extensions.get(0));
 
         bindings.put(REWRITTEN_SCRIPT_FILE, scriptFile);
 
@@ -460,8 +459,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
                     }
                 }
 
-                FileUtil.createTempFile(scriptFile);
-                try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(scriptFile))))
+                try (PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(scriptFile.openOutputStream(), StandardCharsets.UTF_8))))
                 {
                     pw.write(script);
                 }
@@ -490,10 +488,10 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             String fileName = _def.getOutputFileName();
             if (fileName != null)
             {
-                File file = getConsoleOutputFile(context);
+                FileLike file = getConsoleOutputFile(context);
                 if (file != null)
                 {
-                    br = Readers.getReader(file);
+                    br = Readers.getReader(file.openInputStream());
                     String l;
                     while ((l = br.readLine()) != null)
                     {
@@ -524,12 +522,12 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
 
     /** Get the expected console out file or null if it doesn't exist. */
     @Nullable
-    public File getConsoleOutputFile(ScriptContext context)
+    public FileLike getConsoleOutputFile(ScriptContext context)
     {
         String fileName = _def.getOutputFileName();
         if (fileName != null)
         {
-            if (context.getAttribute(REWRITTEN_SCRIPT_FILE) instanceof File scriptFile)
+            if (context.getAttribute(REWRITTEN_SCRIPT_FILE) instanceof FileLike scriptFile)
             {
                 // Replace the ${scriptName} substitution with the actual name of the script file (minus extension)
                 // E.g., if "script.R" is the filename and "${scriptName}.Rout" is the replacement, try "script.Rout"
@@ -537,7 +535,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
                 if (index != -1)
                 {
                     String outFile = fileName.replace(SCRIPT_NAME_REPLACEMENT, scriptFile.getName().substring(0, index));
-                    File file = new File(getWorkingDir(context), outFile);
+                    FileLike file = getWorkingDir(context).resolveChild(outFile);
                     if (file.exists())
                         return file;
                 }
@@ -545,12 +543,12 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
                 // Replace the ${scriptName} substitution with the actual name of the script file (including extension)
                 // E.g., if "script.r" is the filename and "${scriptName}.Rout" is the replacement, try "script.r.Rout"
                 String outFile = fileName.replace(SCRIPT_NAME_REPLACEMENT, scriptFile.getName());
-                File file = new File(getWorkingDir(context), outFile);
+                FileLike file = getWorkingDir(context).resolveChild(outFile);
                 if (file.exists())
                     return file;
             }
 
-            File file = new File(getWorkingDir(context), fileName);
+            FileLike file = getWorkingDir(context).resolveChild(fileName);
             if (file.exists())
                 return file;
         }

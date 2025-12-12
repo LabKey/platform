@@ -1023,10 +1023,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             config.geomOptions.trendlineType = this.trendline.trendlineType;
             config.geomOptions.trendlineAsymptoteMin = this.trendline.trendlineAsymptoteMin;
             config.geomOptions.trendlineAsymptoteMax = this.trendline.trendlineAsymptoteMax;
+            config.geomOptions.trendlineParameters = this.trendline.trendlineParameters;
         }
 
         if (this.getCustomChartOptions)
             config.customOptions = this.getCustomChartOptions();
+
+        // Apps can set the legendPos to "bottom", so we use the legendPos if it's set on the original config
+        if (this.savedReportInfo?.visualizationConfig?.chartConfig?.legendPos)
+            config.legendPos = this.savedReportInfo.visualizationConfig.chartConfig.legendPos;
 
         return config;
     },
@@ -1325,6 +1330,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     trendlineType: chartConfig.geomOptions.trendlineType,
                     trendlineAsymptoteMin: chartConfig.geomOptions.trendlineAsymptoteMin,
                     trendlineAsymptoteMax: chartConfig.geomOptions.trendlineAsymptoteMax,
+                    trendlineParameters: chartConfig.geomOptions.trendlineParameters,
                 }
             }
         }

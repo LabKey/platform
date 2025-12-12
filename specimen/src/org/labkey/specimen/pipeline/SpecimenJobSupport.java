@@ -18,8 +18,7 @@ package org.labkey.specimen.pipeline;
 
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
-
-import java.nio.file.Path;
+import org.labkey.vfs.FileLike;
 
 /*
 * User: adam
@@ -28,7 +27,7 @@ import java.nio.file.Path;
 */
 public interface SpecimenJobSupport
 {
-    Path getSpecimenArchivePath() throws ImportException;
+    FileLike getSpecimenArchivePath() throws ImportException;
     boolean isMerge();
     SimpleStudyImportContext getImportContext();
 }

@@ -109,16 +109,6 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
     }
 
     @Override
-    public Map<FieldKey, String> legacyNameMap()
-    {
-        Map<FieldKey, String> legacyNames = super.legacyNameMap();
-        legacyNames.put(FieldKey.fromParts("EntityId"), COLUMN_NAME_RESOURCE_ENTITY_ID);
-        legacyNames.put(FieldKey.fromParts("intKey1"), COLUMN_NAME_USER);
-        legacyNames.put(FieldKey.fromParts("intKey2"), COLUMN_NAME_GROUP);
-        return legacyNames;
-    }
-
-    @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
         return (Class<K>)GroupAuditEvent.class;

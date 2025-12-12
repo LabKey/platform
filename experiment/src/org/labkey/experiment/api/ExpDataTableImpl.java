@@ -86,6 +86,8 @@ import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.lineage.LineageMethod;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.validation.BindException;
 
@@ -816,7 +818,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             private final ExpData _data;
             private final String _relativePath;
 
-            public WebDavTestCase(String name, File file, String relativePath)
+            public WebDavTestCase(String name, FileLike file, String relativePath)
             {
                 _data = ExperimentService.get().createData(getProject(), new DataType("TestData"));
                 _data.setDataFileURI(file.toURI());
@@ -857,14 +859,14 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             List<WebDavTestCase> testCases = new ArrayList<>();
 
             final String PATH1 = "webDavTest.txt";
-            testCases.add(new WebDavTestCase("TestData1", FileUtil.appendName(pr.getRootPath(), PATH1), PATH1));
-            testCases.add(new WebDavTestCase("TestData2", FileUtil.appendPath(pr.getRootPath(), org.labkey.api.util.Path.parse("subfolder/webDavTest.txt")), "subfolder/webDavTest.txt"));
-            testCases.add(new WebDavTestCase("TestData3", FileUtil.appendPath(pr.getRootPath(), org.labkey.api.util.Path.parse("subfolder/webD  avT est.txt")), "subfolder/webD%20%20avT%20est.txt"));
+            testCases.add(new WebDavTestCase("TestData1", pr.getRootFileLike().resolveChild(PATH1), PATH1));
+            testCases.add(new WebDavTestCase("TestData2", pr.getRootFileLike().resolveFile(org.labkey.api.util.Path.parse("subfolder/webDavTest.txt")), "subfolder/webDavTest.txt"));
+            testCases.add(new WebDavTestCase("TestData3", pr.getRootFileLike().resolveFile(org.labkey.api.util.Path.parse("subfolder/webD  avT est.txt")), "subfolder/webD%20%20avT%20est.txt"));
 
             PipeRoot prHome = PipelineService.get().getPipelineRootSetting(ContainerManager.getHomeContainer());
-            testCases.add(new WebDavTestCase("NotUnderFolderRoot", FileUtil.appendName(prHome.getRootPath(), PATH1), null));
+            testCases.add(new WebDavTestCase("NotUnderFolderRoot", prHome.getRootFileLike().resolveChild(PATH1), null));
 
-            testCases.add(new WebDavTestCase("NotUnderFileRoot", new File("/", PATH1), null));
+            testCases.add(new WebDavTestCase("NotUnderFileRoot", FileSystemLike.wrapFile(new File("/", PATH1)), null));
 
             UserSchema us = QueryService.get().getUserSchema(getUser(), getProject(), ExpSchema.SCHEMA_NAME);
 

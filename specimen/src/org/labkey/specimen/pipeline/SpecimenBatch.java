@@ -31,9 +31,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.Serializable;
-import java.nio.file.Path;
 
 /**
  * User: brittp
@@ -56,9 +54,9 @@ public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJ
     }
 
     @Override
-    protected File createLogFile()
+    protected FileLike createLogFile()
     {
-        return new File(getPipeRoot().getLogDirectory(), FileUtil.makeFileNameWithTimestamp(_definitionFile.getName(), "log"));
+        return getPipeRoot().getLogDirectory(true).resolveChild(FileUtil.makeFileNameWithTimestamp(_definitionFile.getName(), "log"));
     }
 
     @Override
@@ -77,9 +75,9 @@ public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJ
     }
 
     @Override
-    public Path getSpecimenArchivePath()
+    public FileLike getSpecimenArchivePath()
     {
-        return _definitionFile.toNioPathForRead();
+        return _definitionFile;
     }
 
     @Override

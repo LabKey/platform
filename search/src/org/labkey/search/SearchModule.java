@@ -23,14 +23,14 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mbean.SearchMXBean;
+import org.labkey.api.migration.DatabaseMigrationService;
+import org.labkey.api.migration.DefaultMigrationSchemaHandler;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -193,7 +193,7 @@ public class SearchModule extends DefaultModule
             @Override
             public List<TableInfo> getTablesToCopy()
             {
-                return List.of(); // Leave empty -- target server needs to index all documents
+                return List.of(); // Leave empty -- target server will re-index all documents
             }
         });
     }

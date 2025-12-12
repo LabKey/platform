@@ -29,7 +29,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.view.ViewContext;
 import org.labkey.audit.AuditSchema;
 import org.springframework.validation.BindException;
@@ -38,13 +37,10 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static org.labkey.api.audit.query.DefaultAuditTypeTable.LEGACY_UNION_AUDIT_TABLE;
-
 public class AuditQuerySchema extends UserSchema
 {
     public static final String SCHEMA_NAME = "auditLog";
     public static final String SCHEMA_DESCR = "Contains data about audit log events.";
-    public static final String AUDIT_TABLE_NAME = "audit";
 
     static public void register(Module module)
     {
@@ -89,9 +85,6 @@ public class AuditQuerySchema extends UserSchema
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(name);
         if (provider != null)
             return provider.createTableInfo(this, cf);
-
-        if (OptionalFeatureService.get().isFeatureEnabled(LEGACY_UNION_AUDIT_TABLE) && AUDIT_TABLE_NAME.equalsIgnoreCase(name))
-            return new AuditLogUnionTable(this, cf);
 
         return null;
     }

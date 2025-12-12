@@ -228,7 +228,7 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
         {
             case THREE_PARAMETER, THREE_PARAMETER_ALT -> adjustedRSquared(parameters, 3);
             case FOUR_PARAMETER -> adjustedRSquared(parameters, 4);
-            case FIVE_PARAMETER -> adjustedRSquared(parameters, 5);
+            case FIVE_PARAMETER, FIVE_PARAMETER_ALT -> adjustedRSquared(parameters, 5);
             default -> throw new IllegalStateException("Unsupported curve fit type: " + _fitType.name());
         };
     }
@@ -276,6 +276,7 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
                         switch (_fitType)
                         {
                             case FIVE_PARAMETER:
+                            case FIVE_PARAMETER_ALT:
                                 for (double asymmetryFactor = 0; asymmetryFactor < Math.PI; asymmetryFactor += Math.PI / 30)
                                 {
                                     parameters.asymmetry = asymmetryFactor;

@@ -17,6 +17,7 @@
 package org.labkey.core.dialect;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -65,7 +66,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
     {
-        if (!(StringUtils.startsWithIgnoreCase(md.getURL(), JDBC_PREFIX)))
+        if (!(Strings.CI.startsWith(md.getURL(), JDBC_PREFIX)))
             return null;
 
         String databaseProductVersion = md.getDatabaseProductVersion();
@@ -115,7 +116,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
 
     public static String getStandardWarningMessage(String warning, String databaseProductVersion)
     {
-        return "LabKey Server " + warning + " " + PostgreSql92Dialect.PRODUCT_NAME + " version " + databaseProductVersion + ". " + PostgreSql92Dialect.RECOMMENDED;
+        return "LabKey Server " + warning + " " + PostgreSql92Dialect.PRODUCT_NAME + " version " + databaseProductVersion + ". " + PostgreSqlVersion.RECOMMENDED;
     }
 
     @Override
@@ -174,7 +175,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 "SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +                       // Normal
                 "SELECT core.executeJavaInitializationCode('upgradeCode');\n" +                // executeJavaInitializationCode works as a synonym
                 "    SELECT     core.executeJavaUpgradeCode    ('upgradeCode')    ;     \n" +  // Lots of whitespace
-                "select CORE.EXECUTEJAVAUPGRADECODE('upgradeCode');\n" +                       // Case insensitive
+                "select CORE.EXECUTEJAVAUPGRADECODE('upgradeCode');\n" +                       // Case-insensitive
                 "SELECT core.executeJavaUpgradeCode('upgradeCode');";                          // No line ending
 
             String badSql =

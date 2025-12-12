@@ -29,7 +29,7 @@ public class PurgeParticipantsJob extends PipelineJob
     PurgeParticipantsJob(ViewBackgroundInfo info, PipeRoot pipeRoot)
     {
         super("StudyParticipantPurge", info, pipeRoot);
-        setLogFile(pipeRoot.getLogDirectoryFileLike(true).resolveChild(FileUtil.makeFileNameWithTimestamp("purge_participants", "log")));
+        setLogFile(pipeRoot.getLogDirectory(true).resolveChild(FileUtil.makeFileNameWithTimestamp("purge_participants", "log")));
     }
 
     @Override

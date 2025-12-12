@@ -54,6 +54,7 @@ import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -234,28 +235,15 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                     fileName = type.getDefaultName(baseName);
                 }
 
-                File result;
+                FileLike result = switch (tp.getOutputLocation())
+                {
+                    case ANALYSIS_DIR -> support.getAnalysisDirectory().resolveChild(fileName);
+                    case DATA_DIR -> support.getDataDirectory().resolveChild(fileName);
+                    case PATH -> support.findOutputFile(tp.getOutputDir(), fileName);
+                    default -> support.findOutputFile(fileName);
+                };
                 // Check if the output is specifically flagged to go into a special location so we check in the right
                 // place when deciding if the task has already been performed
-                switch (tp.getOutputLocation())
-                {
-                    case ANALYSIS_DIR:
-                        result = new File(support.getAnalysisDirectory(), fileName);
-                        break;
-
-                    case DATA_DIR:
-                        result = new File(support.getDataDirectory(), fileName);
-                        break;
-
-                    case PATH:
-                        result = support.findOutputFile(tp.getOutputDir(), fileName);
-                        break;
-
-                    case DEFAULT:
-                    default:
-                        result = support.findOutputFile(fileName);
-                        break;
-                }
 
                 if (tp.isOptional())
                 {
@@ -447,13 +435,13 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
      * The task info file will be written into the analysis directory, similar to the .log file.
      * Since it will remain in the pipeline root after the job is complete, it shouldn't contain sensitive information.
      */
-    public File getTaskInfoFile()
+    public FileLike getTaskInfoFile()
     {
         if (!isWriteTaskInfoFile())
             return null;
 
         String infoFileName = getJobSupport().getBaseName() + "-taskInfo.tsv";
-        return new File(getJobSupport().getAnalysisDirectory(), infoFileName);
+        return getJobSupport().getAnalysisDirectory().resolveChild(infoFileName);
     }
 
     /**
@@ -466,10 +454,10 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             return null;
 
         Resource dir = module.getModuleResource(path);
-        if (dir == null || !(dir instanceof FileResource))
+        if (!(dir instanceof FileResource fr))
             return null;
 
-        File f = ((FileResource)dir).getFile();
+        File f = fr.getFile();
         return f.getPath();
     }
 
@@ -486,27 +474,27 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             TaskPath tp = (WorkDirectory.Function.input.equals(f) ?
                     _factory.getInputPaths().get(key) : _factory.getOutputPaths().get(key));
 
-            ArrayList<String> paths = new ArrayList<>();
-            for (File file : _wd.getWorkFiles(f, tp))
+            List<String> paths = new ArrayList<>();
+            for (FileLike file : _wd.getWorkFiles(f, tp))
                 paths.add(_wd.getRelativePath(file));
             return paths.toArray(new String[0]);
         }
     }
 
-    private String[] getOriginalFiles(String key)
+    private List<String> getOriginalFiles(String key)
     {
         TaskPath tp = _factory.getInputPaths().get(key);
 
-        ArrayList<String> paths = new ArrayList<>();
-        for (File file : _wd.getWorkFiles(WorkDirectory.Function.input, tp))
-            paths.add(file.getAbsolutePath());
-        return paths.toArray(new String[0]);
+        List<String> paths = new ArrayList<>();
+        for (FileLike file : _wd.getWorkFiles(WorkDirectory.Function.input, tp))
+            paths.add(file.toNioPathForRead().toFile().getAbsolutePath());
+        return paths;
     }
 
     private void inputFile(TaskPath tp, String role, RecordedAction action) throws IOException
     {
-        List<File> filesInput = _wd.getWorkFiles(WorkDirectory.Function.input, tp);
-        for (File fileInput : filesInput)
+        List<FileLike> filesInput = _wd.getWorkFiles(WorkDirectory.Function.input, tp);
+        for (FileLike fileInput : filesInput)
         {
             // Nothing to do, if this file is optional and does not exist.
             if (tp.isOptional() && !NetworkDrive.exists(fileInput))
@@ -548,10 +536,10 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 // NOTE: The script parser matches ${input1.txt} to the first input file which isn't the same as ${input1[1].txt} which may be the 2nd file in the set of files represented by "input1.txt"
             }
 
-            String[] originalFiles = getOriginalFiles(key);
-            if (originalFiles.length == 1)
+            List<String> originalFiles = getOriginalFiles(key);
+            if (originalFiles.size() == 1)
             {
-                replacements.put(DataTransformService.ORIGINAL_SOURCE_PATH, Matcher.quoteReplacement(originalFiles[0].replaceAll("\\\\", "/")));
+                replacements.put(DataTransformService.ORIGINAL_SOURCE_PATH, Matcher.quoteReplacement(originalFiles.get(0).replaceAll("\\\\", "/")));
             }
         }
 
@@ -587,7 +575,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         }
 
         // Task info replacement
-        File taskInfoFile = getTaskInfoFile();
+        FileLike taskInfoFile = getTaskInfoFile();
         if (taskInfoFile != null)
         {
             String taskInfoRelativePath = _wd.getRelativePath(taskInfoFile);
@@ -597,7 +585,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         // Task output parameters file replacement
         if (_wd != null)
         {
-            File taskOutputParamsFile = _wd.newFile(CommandTaskImpl.OUTPUT_PARAMS);
+            FileLike taskOutputParamsFile = _wd.newFile(CommandTaskImpl.OUTPUT_PARAMS);
             String taskOutputParamsRelativePath = _wd.getRelativePath(taskOutputParamsFile);
             replacements.put(PipelineJob.PIPELINE_TASK_OUTPUT_PARAMS_PARAM, taskOutputParamsRelativePath);
         }
@@ -671,7 +659,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             if (_factory.isRemoveInput())
             {
                 TaskPath tpInput = _factory.getInputPaths().get(WorkDirectory.Function.input.toString());
-                for (File fileInput : _wd.getWorkFiles(WorkDirectory.Function.input, tpInput))
+                for (FileLike fileInput : _wd.getWorkFiles(WorkDirectory.Function.input, tpInput))
                     fileInput.delete();
             }
 
@@ -730,7 +718,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
         // Check if output file is to be generated from the stdout
         // stream of the process.
-        File fileOutput = null;
+        FileLike fileOutput = null;
         int lineInterval = 0;
         if (_factory.isPipeToOutput())
         {
@@ -753,7 +741,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
     public String variableSubstitution(String src, Map<String, String> map)
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         Matcher matcher = pat.matcher(src);
         while (matcher.find())
         {
@@ -800,32 +788,34 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
     protected void readOutputParameters(RecordedAction action) throws IOException
     {
-        File file = _wd.newFile(CommandTaskImpl.OUTPUT_PARAMS);
+        FileLike file = _wd.newFile(CommandTaskImpl.OUTPUT_PARAMS);
         if (file.exists())
         {
             getJob().header("Output parameters");
             Map<String, String> currParams = new HashMap<>(getJob().getParameters());
 
-            TabLoader loader = new TabLoader(file, true, null);
-            loader.setInferTypes(false);
-            for (Map<String, Object> row : loader.load())
+            try (InputStream in = file.openInputStream();
+                 TabLoader loader = new TabLoader(in, true, null))
             {
-                String name = Objects.toString(row.get("Name"), null);
-                String value = Objects.toString(row.get("Value"), null);
-                String type = Objects.toString(row.get("Type"), null);
-                if (name == null || value == null)
-                    continue;
-
-                // Skip null values and parameters that haven't changed
-                String prevValue = currParams.get(name);
-                if (prevValue == null || !prevValue.equals(value))
+                loader.setInferTypes(false);
+                for (Map<String, Object> row : loader.load())
                 {
-                    // Record the new parameter -- it will be merged into the job's parameters automatically
-                    getJob().info(name + ": " + value);
-                    action.addOutputParameter(new RecordedAction.ParameterType(name, PropertyType.STRING), value);
+                    String name = Objects.toString(row.get("Name"), null);
+                    String value = Objects.toString(row.get("Value"), null);
+                    String type = Objects.toString(row.get("Type"), null);
+                    if (name == null || value == null)
+                        continue;
+
+                    // Skip null values and parameters that haven't changed
+                    String prevValue = currParams.get(name);
+                    if (prevValue == null || !prevValue.equals(value))
+                    {
+                        // Record the new parameter -- it will be merged into the job's parameters automatically
+                        getJob().info(name + ": " + value);
+                        action.addOutputParameter(new RecordedAction.ParameterType(name, PropertyType.STRING), value);
+                    }
                 }
             }
-
             _wd.discardFile(file);
         }
     }

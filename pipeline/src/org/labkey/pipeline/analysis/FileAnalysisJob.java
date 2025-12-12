@@ -28,7 +28,6 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -117,13 +116,13 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
     }
 
     @Override
-    public File findInputFile(String name)
+    public FileLike findInputFile(String name)
     {
         return findFile(name);
     }
 
     @Override
-    public File findOutputFile(String name)
+    public FileLike findOutputFile(String name)
     {
         return findFile(name);
     }
@@ -135,9 +134,9 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
      * @param name The name of the file to be located
      * @return The file location outside the analysis directory, or null, if no such match is found.
      */
-    public File findFile(String name)
+    public FileLike findFile(String name)
     {
-        File dirAnalysis = getAnalysisDirectory();
+        FileLike dirAnalysis = getAnalysisDirectory();
 
         for (Map.Entry<FileType, List<FileType>> entry : getTaskPipeline().getTypeHierarchy().entrySet())
         {
@@ -147,10 +146,10 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
                 //       in order to find files.
 
                 // First try to go two directories up
-                File dir = dirAnalysis.getParentFile();
+                FileLike dir = dirAnalysis.getParent();
                 if (dir != null)
                 {
-                    dir = dir.getParentFile();
+                    dir = dir.getParent();
                 }
 
                 List<FileType> derivedTypes = entry.getValue();
@@ -159,21 +158,21 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
                     // Go two directories up for each level of derivation
                     if (dir != null)
                     {
-                        dir = dir.getParentFile();
+                        dir = dir.getParent();
                     }
                     if (dir != null)
                     {
-                        dir = dir.getParentFile();
+                        dir = dir.getParent();
                     }
                 }
 
                 String relativePath = getPipeRoot().relativePath(dir);
-                File expectedFile = getPipeRoot().resolvePath(relativePath + "/" + name);
+                FileLike expectedFile = getPipeRoot().resolvePathToFileLike(relativePath + "/" + name);
 
                 if (!NetworkDrive.exists(expectedFile))
                 {
                     // If the file isn't where we would expect it, check other directories in the same hierarchy
-                    File alternateFile = findFileInAlternateDirectory(expectedFile.getParentFile(), dirAnalysis, name);
+                    FileLike alternateFile = findFileInAlternateDirectory(expectedFile.getParent(), dirAnalysis, name);
                     if (alternateFile != null)
                     {
                         // If we found a file that matches, use it
@@ -185,7 +184,7 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
         }
 
         // Path of last resort is always to look in the current directory.
-        return new File(dirAnalysis, name);
+        return dirAnalysis.resolveChild(name);
     }
 
     /**
@@ -196,7 +195,7 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
      * @param name name of the file to look for
      * @return matching file, or null if nothing was found
      */
-    private File findFileInAlternateDirectory(File expectedDir, File dir, String name)
+    private FileLike findFileInAlternateDirectory(FileLike expectedDir, FileLike dir, String name)
     {
         // Bail out if we've gotten all the way down to the originally expected file location
         if (dir == null || dir.equals(expectedDir))
@@ -204,14 +203,14 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
             return null;
         }
         // Recurse through the parent directories to find it in the place closest to the expected directory
-        File result = findFileInAlternateDirectory(expectedDir, dir.getParentFile(), name);
+        FileLike result = findFileInAlternateDirectory(expectedDir, dir.getParent(), name);
         if (result != null)
         {
             // If we found a match, use it
             return result;
         }
 
-        result = new File(dir, name);
+        result = dir.resolveChild(name);
         if (NetworkDrive.exists(result))
         {
             return result;

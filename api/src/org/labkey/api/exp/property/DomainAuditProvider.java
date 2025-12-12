@@ -119,15 +119,6 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
     }
 
     @Override
-    public Map<FieldKey, String> legacyNameMap()
-    {
-        Map<FieldKey, String> legacyNames = super.legacyNameMap();
-        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_DOMAIN_URI);
-        legacyNames.put(FieldKey.fromParts("key3"), COLUMN_NAME_DOMAIN_NAME);
-        return legacyNames;
-    }
-
-    @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
         return (Class<K>)DomainAuditEvent.class;

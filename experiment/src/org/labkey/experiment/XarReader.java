@@ -29,6 +29,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.exp.xml.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.collections.LongHashMap;
@@ -138,7 +139,8 @@ public class XarReader extends AbstractXarImporter
 
     private final Set<String> _experimentLSIDs = new HashSet<>();
     private final Map<String, Integer> _propertyIdMap = new HashMap<>();
-    private final Map<Long, String> _runWorkflowTaskMap = new LongHashMap<>();
+    private final Map<Long, Long> _runWorkflowTaskMap = new LongHashMap<>();
+    private final FolderImportContext _folderImportContext;
     /** Retain replacement info so we can wire them up after all runs have been imported */
     private final Map<Long, String> _runReplacedByMap = new LongHashMap<>();
 
@@ -169,8 +171,14 @@ public class XarReader extends AbstractXarImporter
 
     public XarReader(XarSource source, PipelineJob job)
     {
+        this(source, job, null);
+    }
+
+    public XarReader(XarSource source, PipelineJob job, FolderImportContext ctx)
+    {
         super(source, job);
         _fileRootPath = getContainerFileRootPath(job.getContainer());
+        _folderImportContext = ctx;
     }
 
     public void setReloadExistingRuns(boolean reloadExistingRuns)
@@ -429,10 +437,8 @@ public class XarReader extends AbstractXarImporter
                 }
             }
 
-            if (!_runWorkflowTaskMap.isEmpty())
-            {
-                saveRunWorkflowTaskIds();
-            }
+            if (_folderImportContext != null)
+                _folderImportContext.setAssayRunWorkflowTaskMap(_runWorkflowTaskMap);
 
             resolveReplacedByRunLSIDs();
 
@@ -1100,55 +1106,44 @@ public class XarReader extends AbstractXarImporter
             }
         }
 
-        if (run == null)
+
+        ExperimentRun vals = new ExperimentRun();
+        // todo not sure about having roots stored in database
+        // todo support substitutions here?
+
+        vals.setLSID(pRunLSID.toString());
+
+        vals.setName(trimString(a.getName()));
+        vals.setProtocolLSID(protocol.getLSID());
+        vals.setComments(trimString(a.getComments()));
+
+        vals.setFilePathRoot(FileUtil.getAbsolutePath(_xarSource.getJobRootPath()));
+        vals.setContainer(getContainer());
+
+        if (_job != null)
         {
-            ExperimentRun vals = new ExperimentRun();
-            // todo not sure about having roots stored in database
-            // todo support substitutions here?
+            // remember which job created the run so we can show this run on the job details page
+            vals.setJobId(PipelineService.get().getJobId(_job.getUser(), _job.getContainer(), _job.getJobGUID()));
+        }
 
-            vals.setLSID(pRunLSID.toString());
-
-            vals.setName(trimString(a.getName()));
-            vals.setProtocolLSID(protocol.getLSID());
-            vals.setComments(trimString(a.getComments()));
-
-            vals.setFilePathRoot(FileUtil.getAbsolutePath(_xarSource.getJobRootPath()));
-            vals.setContainer(getContainer());
-            String workflowTaskLSID = a.getWorkflowTaskLSID();
-
-            if (workflowTaskLSID != null)
+        ExpRunImpl impl = new ExpRunImpl(vals);
+        try
+        {
+            impl.save(getUser());
+            run = impl.getDataObject();
+            String taskIdStr = a.getWorkflowTaskId();
+            if (taskIdStr != null)
+                _runWorkflowTaskMap.put(run.getRowId(), Long.valueOf(taskIdStr));
+            String replacedByLSID = a.getReplacedByRunLSID();
+            if (replacedByLSID != null)
+                // Save for later so that we can resolve after everything's been imported
             {
-                if (!workflowTaskLSID.startsWith("${WorkflowTaskReference}:"))
-                    throw new XarFormatException("Invalid WorkflowTaskLSID encountered: " + workflowTaskLSID);
-
-                workflowTaskLSID = workflowTaskLSID.split(":")[1];
+                _runReplacedByMap.put(impl.getRowId(), replacedByLSID);
             }
-            if (_job != null)
-            {
-                // remember which job created the run so we can show this run on the job details page
-                vals.setJobId(PipelineService.get().getJobId(_job.getUser(), _job.getContainer(), _job.getJobGUID()));
-            }
-
-            ExpRunImpl impl = new ExpRunImpl(vals);
-            try
-            {
-                impl.save(getUser());
-                run = impl.getDataObject();
-
-                if (workflowTaskLSID != null)
-                    _runWorkflowTaskMap.put(run.getRowId(), workflowTaskLSID);
-
-                String replacedByLSID = a.getReplacedByRunLSID();
-                if (replacedByLSID != null)
-                    // Save for later so that we can resolve after everything's been imported
-                {
-                    _runReplacedByMap.put(impl.getRowId(), replacedByLSID);
-                }
-            }
-            catch (BatchValidationException x)
-            {
-                throw new ExperimentException(x);
-            }
+        }
+        catch (BatchValidationException x)
+        {
+            throw new ExperimentException(x);
         }
 
         if (experimentLSID != null)
@@ -1206,45 +1201,6 @@ public class XarReader extends AbstractXarImporter
         XarReaderRegistry.get().postProcessImportedRun(getContainer(), getUser(), loadedRun, getLog());
         _loadedRuns.add(loadedRun);
         getLog().debug("Finished loading ExperimentRun with LSID '" + runLSID + "'");
-    }
-
-    /**
-     * This method runs last, and is used to wire up the Workflow Task FK relationship between Exp Runs and
-     * Exp ProtocolApplications. This needs to run last because we have no good way to guarantee import order and ensure
-     * all the appropriate ProtocolApplications are imported before the Exp Runs.
-     */
-    private void saveRunWorkflowTaskIds() throws ExperimentException
-    {
-        for (ExpRun run : _loadedRuns)
-        {
-            String objectId = _runWorkflowTaskMap.get(run.getRowId());
-
-            if (objectId != null)
-            {
-                List<? extends ExpProtocolApplication> protocolApplications = ExperimentService.get().getExpProtocolApplicationsByObjectId(getContainer(), objectId);
-
-                if (protocolApplications.size() > 1)
-                {
-                    throw new ExperimentException("Multiple ProtocolApplications found with object id: " + objectId);
-                }
-                else if (protocolApplications.isEmpty())
-                {
-                    getLog().warn("Could not find ProtocolApplication with LSID containing object id: " + objectId);
-                }
-                else
-                {
-                    run.setWorkflowTaskId(protocolApplications.get(0).getRowId());
-
-                    try {
-                        run.save(getUser());
-                    }
-                    catch (BatchValidationException e)
-                    {
-                        throw new ExperimentException(e);
-                    }
-                }
-            }
-        }
     }
 
     public List<String> getProcessedRunsLSIDs()
@@ -1448,9 +1404,7 @@ public class XarReader extends AbstractXarImporter
         if ((protocolLSID.equals(SAMPLE_ALIQUOT_PROTOCOL_LSID) || protocolLSID.equals(SAMPLE_DERIVATION_PROTOCOL_LSID)) &&
                 !material.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
             return SampleTypeService.get().getOperationNotPermittedMessage(Collections.singleton(material), SampleTypeService.SampleOperations.EditLineage);
-        if ((ExpProtocol.isSampleWorkflowProtocol(protocolLSID))
-                && !material.isOperationPermitted(SampleTypeService.SampleOperations.AddToWorkflow))
-            return SampleTypeService.get().getOperationNotPermittedMessage(Collections.singleton(material), SampleTypeService.SampleOperations.AddToWorkflow);
+
         return null;
     }
 

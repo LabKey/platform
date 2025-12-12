@@ -25,6 +25,8 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.Serializable;
@@ -52,10 +54,10 @@ public class DatasetBatch extends StudyBatch implements Serializable, DatasetJob
     }
 
     @Override
-    protected File createLogFile()
+    protected FileLike createLogFile()
     {
-        Path logFilePath = Path.parse(_datasetsDirectory.getLocation()).append(_datasetsFileName);
-        return new File(logFilePath.getParent().toString(), FileUtil.makeFileNameWithTimestamp(logFilePath.getName(), "log"));
+        FileLike datasetDir = FileSystemLike.wrapFile(new File(Path.parse(_datasetsDirectory.getLocation()).toString()));
+        return datasetDir.resolveChild(FileUtil.makeFileNameWithTimestamp(_datasetsFileName, "log"));
     }
 
     @Override
@@ -80,7 +82,7 @@ public class DatasetBatch extends StudyBatch implements Serializable, DatasetJob
     }
 
     @Override
-    public TaskPipeline getTaskPipeline()
+    public TaskPipeline<?> getTaskPipeline()
     {
         return PipelineJobService.get().getTaskPipeline(new TaskId(DatasetBatch.class));
     }

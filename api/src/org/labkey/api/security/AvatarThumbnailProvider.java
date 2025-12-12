@@ -17,7 +17,7 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.settings.AppProps;
@@ -57,7 +57,7 @@ public class AvatarThumbnailProvider implements ThumbnailProvider
     }
 
     @Override
-    public @NotNull AttachmentType getAttachmentType()
+    public @NotNull AttachmentParentType getAttachmentParentType()
     {
         return AvatarType.get();
     }

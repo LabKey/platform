@@ -24,8 +24,8 @@ import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 
 /**
@@ -57,11 +57,11 @@ public class SvgOutput extends HtmlOutput
         {
             ThumbnailOutputStream os = new ThumbnailOutputStream();
 
-            for (File file : getFiles())
+            for (FileLike file : getFiles())
             {
                 try
                 {
-                    svc.svgToPng(SvgSource.of(Readers.getXmlReader(file)), os, ImageType.Large.getHeight());
+                    svc.svgToPng(SvgSource.of(Readers.getXmlReader(file.openInputStream())), os, ImageType.Large.getHeight());
 
                     return os.getThumbnail("image/png");
                 }

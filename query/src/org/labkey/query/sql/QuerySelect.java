@@ -45,6 +45,7 @@ import org.labkey.api.query.QueryParseExceptionUnresolvedField;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
@@ -67,6 +68,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static org.labkey.api.exp.api.ExperimentService.EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS;
 
 
 public class QuerySelect extends AbstractQueryRelation implements Cloneable
@@ -647,8 +649,16 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         {
             if (r.getTokenType() == SqlBaseParser.RANGE)
             {
-                if (r.getFirstChild().getTokenType() == SqlBaseParser.VALUES)
+                var table = r.getFirstChild();
+                var childType = table.getTokenType();
+                if (childType == SqlBaseParser.VALUES)
+                {
                     return parseValues(r);
+                }
+                if (childType == SqlBaseParser.METHOD_CALL)
+                {
+                    return parseLineage(r);
+                }
                 return parseRange(r);
             }
             else if (r.getTokenType() == SqlBaseParser.JOIN)
@@ -658,6 +668,32 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 parseError("Error in FROM clause", r);
                 return null;
             }
+        }
+
+        private QTable parseLineage(final QNode range)
+        {
+            QMethodCall methodCall = (QMethodCall)range.childList().get(0);
+            var methodIdentifier = methodCall.childList().get(0);
+            int methodType = methodIdentifier.getTokenType();
+            QQuery subQuery = (QQuery)methodCall.childList().get(1);
+            QIdentifier alias = (QIdentifier)range.childList().get(1);
+            QuerySelect sourceQuery = new QuerySelect(_query, subQuery, true);
+            QueryLineage lineageQuery = new QueryLineage(_query, methodIdentifier, sourceQuery, alias.getIdentifier(), methodType==SqlBaseParser.EXPANCESTORSOF);
+            QTable methodTable = new QTable(lineageQuery, lineageQuery.getAlias());
+            FieldKey aliasKey = methodTable.getAlias();
+            if (!OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS))
+            {
+                parseError("Syntax error in FROM clause", range);
+            }
+            else if (_tables.containsKey(aliasKey))
+            {
+                parseError(aliasKey + " was specified more than once", alias);
+            }
+            else
+            {
+                _tables.put(aliasKey, methodTable);
+            }
+            return methodTable;
         }
 
         private QTable parseValues(QNode node)

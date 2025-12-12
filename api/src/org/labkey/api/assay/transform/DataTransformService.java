@@ -23,13 +23,11 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -158,13 +156,9 @@ public class DataTransformService
                         Object output = engine.eval(script);
 
                         FileLike rewrittenScriptFile;
-                        if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof File)
+                        if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof FileLike file)
                         {
-                            var rewrittenScriptFileObject = bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE);
-                            if (rewrittenScriptFileObject instanceof FileLike fo)
-                                rewrittenScriptFile = fo;
-                            else
-                                rewrittenScriptFile = FileSystemLike.wrapFile((File)rewrittenScriptFileObject);
+                                rewrittenScriptFile = file;
                         }
                         else
                         {

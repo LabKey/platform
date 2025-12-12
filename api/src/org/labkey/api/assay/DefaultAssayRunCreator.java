@@ -169,9 +169,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
                 if (primaryFile != null)
                     auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.ImportFileName, primaryFile.getName());
-                run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, null == primaryFile ? null : primaryFile.toNioPathForRead().toFile());
+                run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, primaryFile);
                 run.setComments(context.getComments());
-                run.setWorkflowTaskId(context.getWorkflowTask());
+                run.setWorkflowTaskId(context.getWorkflowTaskId());
 
                 exp = saveExperimentRun(context, exp, run, false, transactionDetails);
 
@@ -229,7 +229,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 batch,
                 forceSaveBatchProps,
                 PipelineService.get().getPipelineRootSetting(context.getContainer()),
-                primaryFile.toNioPathForRead().toFile()
+                primaryFile
             );
 
             context.setPipelineJobGUID(pipelineJob.getJobGUID());
@@ -1229,7 +1229,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 ValidatorContext validatorContext = new ValidatorContext(context.getContainer(), context.getUser());
                 for (ColumnValidator validator : validators)
                 {
-                    String msg = validator.validate(rowNum, o, validatorContext);
+                    String msg = validator.validate(rowNum, o, validatorContext, null);
                     if (msg != null)
                         errors.add(new PropertyValidationError(msg, label));
                 }

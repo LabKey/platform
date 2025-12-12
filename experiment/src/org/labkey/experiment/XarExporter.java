@@ -330,15 +330,8 @@ public class XarExporter
             addProtocolApplication(application, run, xApplications);
         }
 
-        ExpProtocolApplication workflowTask = run.getWorkflowTask();
-
-        if (workflowTask != null)
-        {
-            // Due to the way ProtocolApplication LSIDs are generated we can't actually round trip them the normal way
-            // via the LSIDRelativizer. Instead we construct an LSID out of the object ID with a custom prefix.
-            String workflowObjectId = Lsid.parse(workflowTask.getLSID()).getObjectId();
-            xRun.setWorkflowTaskLSID("${WorkflowTaskReference}:" + workflowObjectId);
-        }
+        if (run.getWorkflowTaskId() != null)
+            xRun.setWorkflowTaskId(run.getWorkflowTaskId().toString());
 
         // get AssayService.get().getProvider(run).getXarCallbacks().beforeXarExportRun() with simple attempt at caching for common case
         if (null != AssayService.get())
@@ -1406,38 +1399,6 @@ public class XarExporter
                             }
                             catch (URISyntaxException ignored) {}
                             simpleValue.setStringValue(link);
-                        }
-                        // This property stores rowIds of assay designs; we need to translate them to LSIDs for export
-                        // TODO perhaps this property should hold protocol strings instead of rowIds
-                        else if (value.getPropertyURI().endsWith(":WorkflowTask#AssayTypes"))
-                        {
-                            String assayIdsString = value.getStringValue();
-                            if (!StringUtils.isEmpty(assayIdsString))
-                            {
-                                String[] assayIds = assayIdsString.split(",");
-                                List<String> protocolStrings = new ArrayList<>();
-                                List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(value.getContainer());
-                                for (String assayId : assayIds)
-                                {
-                                    try
-                                    {
-                                        int assayRowId = Integer.parseInt(assayId);
-                                        Optional<ExpProtocol> protocol = protocols.stream().filter(p -> p.getRowId() == assayRowId).findFirst();
-                                        if (protocol.isPresent())
-                                            protocolStrings.add(relativizeLSIDPropertyValue(protocol.get().getLSID(), SimpleTypeNames.STRING));
-                                        else
-                                            logProgress("Unable to find protocol for assay id " + assayRowId + ".  Not included in values for " + value.getName() + ".");
-                                    }
-                                    catch (NumberFormatException ignore)
-                                    {
-                                        // assume it's an LSID and try to relativize it
-                                        protocolStrings.add(relativizeLSIDPropertyValue(assayId, SimpleTypeNames.STRING));
-                                    }
-                                }
-                                simpleValue.setStringValue(StringUtils.join(protocolStrings, ","));
-                            }
-                            else
-                                simpleValue.setStringValue(assayIdsString);
                         }
                         else
                         {

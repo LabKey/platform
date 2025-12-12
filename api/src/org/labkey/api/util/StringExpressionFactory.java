@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
@@ -636,6 +637,31 @@ public class StringExpressionFactory
                         {
                             return context.getSelectionKey();
                         }
+                    },
+            containerFilterName
+                    {
+                        @Override
+                        public String getValue(RenderContext context)
+                        {
+                            DataRegion region = context.getCurrentRegion();
+                            if (region != null)
+                            {
+                                TableInfo table = region.getTable();
+                                if (table != null)
+                                {
+                                    ContainerFilter filter = table.getContainerFilter();
+                                    if (filter != null)
+                                    {
+                                        ContainerFilter.Type type = filter.getType();
+                                        if (type != null)
+                                        {
+                                            return type.name();
+                                        }
+                                    }
+                                }
+                            }
+                            return "";
+                        }
                     };
 
             public abstract String getValue(RenderContext context);
@@ -683,7 +709,7 @@ public class StringExpressionFactory
     public static abstract class AbstractStringExpression implements StringExpression, Cloneable
     {
         // Ideally, we'd be able to distinguish between null values and missing fields... this would let us output
-        // the field part as part of eval (instead of blank) to signal the user that the template is broken.  But only
+        // the field part as part of eval (instead of blank) to signal the user that the template is broken. But only
         // FieldParts know the field, so this is hard.
         public enum NullValueBehavior
         {

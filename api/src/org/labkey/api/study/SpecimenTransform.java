@@ -25,9 +25,6 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.view.ActionURL;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
-import java.nio.file.Path;
-
 /**
  * User: klum
  * Date: 11/12/13
@@ -54,12 +51,12 @@ public interface SpecimenTransform
      */
     FileType getFileType();
 
-    void transform(@Nullable PipelineJob job, Path input, Path outputArchive) throws PipelineJobException;
+    void transform(@Nullable PipelineJob job, FileLike input, FileLike outputArchive) throws PipelineJobException;
 
     /**
      * An optional post transform step.
      */
-    void postTransform(@Nullable PipelineJob job, File input, File outputArchive) throws PipelineJobException;
+    void postTransform(@Nullable PipelineJob job, FileLike input, FileLike outputArchive) throws PipelineJobException;
 
     @Nullable
     ActionURL getManageAction(Container c, User user);

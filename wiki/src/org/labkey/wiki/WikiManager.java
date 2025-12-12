@@ -29,6 +29,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentService.DuplicateFilenameException;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.CoreSchema;
@@ -70,6 +71,7 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService.SubstitutionMode;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.wiki.model.Wiki;
+import org.labkey.wiki.model.WikiType;
 import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.model.WikiVersionsGrid;
 import org.labkey.wiki.model.WikiView;
@@ -1056,6 +1058,12 @@ public class WikiManager implements WikiService
         return null;
     }
 
+    @Override
+    public AttachmentParentType getAttachmentType()
+    {
+        return WikiType.get();
+    }
+
     public static class TestCase extends Assert
     {
         WikiManager _m = null;
@@ -1073,7 +1081,6 @@ public class WikiManager implements WikiService
             assertNotNull(_m.comm.getTableInfoPages().getColumn("Container"));
             assertNotNull(_m.comm.getTableInfoPages().getColumn("EntityId"));
             assertNotNull(_m.comm.getTableInfoPages().getColumn("Name"));
-
 
             assertNotNull("couldn't find table PageVersions", _m.comm.getTableInfoPageVersions());
             assertNotNull(_m.comm.getTableInfoPageVersions().getColumn("PageEntityId"));

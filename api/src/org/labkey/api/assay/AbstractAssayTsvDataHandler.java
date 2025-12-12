@@ -706,7 +706,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty wellLocationPropFinder = null;
         DomainProperty wellLsidPropFinder = null;
 
-        RemapCache cache = new RemapCache();
+        RemapCache cacheWithoutPkLookup = new RemapCache();
+        RemapCache cacheWithPkLookup = new RemapCache();
         Map<DomainProperty, TableInfo> remappableLookup = new HashMap<>();
         Map<Long, ExpMaterial> materialCache = new LongHashMap<>();
         Map<Long, Map<String, Long>> plateWellCache = new LongHashMap<>();
@@ -879,7 +880,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     {
                         String s = o instanceof String ? (String) o : o.toString();
                         TableInfo lookupTable = remappableLookup.get(pd);
-                        Object remapped = cache.remap(lookupTable, s, true);
+
+                        // GitHub Issue #443: similar to LookupResolutionType.alternateThenPrimaryKey, we want to check if the string value remaps using alternate keys (titleColumn) first
+                        Object remapped = cacheWithoutPkLookup.remap(lookupTable, s, false);
+                        if (remapped == null)
+                            remapped = cacheWithPkLookup.remap(lookupTable, s, true);
+
                         if (remapped == null)
                         {
                             if (SAMPLE_CONCEPT_URI.equals(pd.getConceptURI()))
@@ -902,7 +908,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         {
                             try
                             {
-                                String error = validator.validate(rowNum, o, validatorContext);
+                                String error = validator.validate(rowNum, o, validatorContext, null);
                                 if (error != null)
                                     errors.add(new PropertyValidationError(error, pd.getName()));
                             }
@@ -1026,7 +1032,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             try
                             {
                                 if (material == null)
-                                    material = exp.findExpMaterial(lookupContainer, user, materialName, byNameSS, cache, materialCache);
+                                    material = exp.findExpMaterial(lookupContainer, user, materialName, byNameSS, cacheWithoutPkLookup, materialCache);
                             }
                             catch (ValidationException ve)
                             {
@@ -1060,7 +1066,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         {
                             for (ColumnValidator validator : validatorMap.get(pd))
                             {
-                                String error = validator.validate(rowNum, o, validatorContext);
+                                String error = validator.validate(rowNum, o, validatorContext, null);
                                 if (error != null)
                                     errors.add(new PropertyValidationError(error, pd.getName()));
                             }

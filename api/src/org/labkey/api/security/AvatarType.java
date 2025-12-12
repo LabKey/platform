@@ -16,14 +16,15 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.AttachmentType;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 
 /**
- * Identifies avatar files (user-account associated image/icon
+ * Identifies avatar (user-account associated image/icon) attachments
  */
-public class AvatarType implements AttachmentType
+public class AvatarType implements AttachmentParentType
 {
     private static final AvatarType INSTANCE = new AvatarType();
 
@@ -39,12 +40,12 @@ public class AvatarType implements AttachmentType
     @Override
     public @NotNull String getUniqueName()
     {
-        return getClass().getName();
+        return "UserAvatar";
     }
 
     @Override
-    public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
+    public @Nullable SQLFragment getSelectParentEntityIdsSql()
     {
-        sql.append(parentColumn).append(" IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoUsers(), "users").append(")");
+        return new SQLFragment("SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoUsers(), "users");
     }
 }

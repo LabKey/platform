@@ -34,8 +34,8 @@ import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.util.List;
@@ -57,14 +57,14 @@ public class IpynbOutput extends HtmlOutput
     }
 
     /* create an output for a known file */
-    public IpynbOutput(File output)
+    public IpynbOutput(FileLike output)
     {
         super(ID);
         addFile(output);
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput(File file) throws Exception
+    public ScriptOutput renderAsScriptOutput(FileLike file) throws Exception
     {
         IpynbOutputView view = new IpynbOutputView(this, getLabel());
         String html = view.renderInternalAsString(file);
@@ -84,7 +84,7 @@ public class IpynbOutput extends HtmlOutput
     @Override
     public @Nullable Thumbnail renderThumbnail(ViewContext context)
     {
-        for (File file : getFiles())
+        for (FileLike file : getFiles())
         {
             IpynbOutputView view = new IpynbOutputView(this, getLabel());
             Thumbnail thumb = null;
@@ -148,10 +148,10 @@ public class IpynbOutput extends HtmlOutput
 
 
         @Override
-        protected String renderInternalAsString(File file) throws Exception
+        protected String renderInternalAsString(FileLike file) throws Exception
         {
             // Don't call super.renderInternalAsString(file) since we expect JSON
-            String result = file.exists() ? StringUtils.trimToEmpty(PageFlowUtil.getFileContentsAsString(file)) : "";
+            String result = file.exists() ? StringUtils.trimToEmpty(PageFlowUtil.getStreamContentsAsString(file.openInputStream())) : "";
             try
             {
                 final JSONObject obj = new JSONObject(result);
@@ -410,7 +410,7 @@ public class IpynbOutput extends HtmlOutput
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
             String delim = "";
-            for (File file : getFiles())
+            for (FileLike file : getFiles())
             {
                 String html = renderInternalAsString(file);
                 if (null != html)

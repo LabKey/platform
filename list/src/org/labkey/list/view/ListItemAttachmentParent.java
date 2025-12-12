@@ -18,7 +18,7 @@ package org.labkey.list.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListItem;
 
@@ -57,7 +57,7 @@ public class ListItemAttachmentParent implements AttachmentParent
 
     @NotNull
     @Override
-    public AttachmentType getAttachmentType()
+    public AttachmentParentType getAttachmentParentType()
     {
         return ListItemType.get();
     }

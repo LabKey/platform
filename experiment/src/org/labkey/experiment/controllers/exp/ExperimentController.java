@@ -330,7 +330,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -1884,7 +1883,7 @@ public class ExperimentController extends SpringActionController
 
             try
             {
-                PageFlowUtil.streamFile(getViewContext().getResponse(), new File(files.getImageFile().getAbsolutePath()), false);
+                PageFlowUtil.streamFile(getViewContext().getResponse(), files.getImageFile().toPath(), false);
             }
             catch (FileNotFoundException e)
             {
@@ -2491,7 +2490,7 @@ public class ExperimentController extends SpringActionController
             }
 
             PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-            if (root != null && !root.isUnderRoot(_data.getFilePath()))
+            if (root != null && !root.isUnderRoot(_data.getFileLike()))
             {
                 // Issue 35649: ImmPort module "publish" creates exp.data object in this container for paths that originate in a different container
                 FileContentService fileSvc = FileContentService.get();
@@ -3395,9 +3394,8 @@ public class ExperimentController extends SpringActionController
                 if (run != null)
                 {
                     if (!run.canDelete(getUser()))
-                        throw new UnauthorizedException("You do not have permission to delete " +
-                                (ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID()) ? "jobs" : "runs")
-                                + " in " + run.getContainer());
+                        throw new UnauthorizedException("You do not have permission to delete runs in "
+                                 + run.getContainer());
 
                     runs.add(run);
                     idToRunMap.put(run.getRowId(), run);
@@ -3465,7 +3463,7 @@ public class ExperimentController extends SpringActionController
         @Override
         protected void deleteObjects(DeleteForm deleteForm)
         {
-            ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), deleteForm.getUserComment(), deleteForm.getIds(false));
+            ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), deleteForm.getUserComment(), deleteForm.getIds(false), getTransactionAuditDetails());
         }
     }
 
@@ -3499,8 +3497,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("Could not find run with ID " + form.getRunId());
             }
             if (!run.canDelete(getUser()))
-                throw new UnauthorizedException("You do not have permission to delete "
-                        + (ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID()) ? "jobs" : "runs") + " in this container.");
+                throw new UnauthorizedException("You do not have permission to delete runs in this container.");
 
             run.delete(getUser());
             return new ApiSimpleResponse("success", true);
@@ -3530,7 +3527,12 @@ public class ExperimentController extends SpringActionController
                     runIdsToDelete.addAll(runIdsCascadeDeleted);
             }
 
-            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), form.getUserComment(), runIdsToDelete);
+            Map<TransactionAuditProvider.TransactionDetail, Object> transactionAuditDetails = getTransactionAuditDetails();
+            if (form.getRequestSource() != null)
+                transactionAuditDetails.put(TransactionAuditProvider.TransactionDetail.RequestSource, form.getRequestSource());
+            if (form.getEditMethod() != null)
+                transactionAuditDetails.put(TransactionAuditProvider.TransactionDetail.EditMethod, form.getEditMethod());
+            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), form.getUserComment(), runIdsToDelete, transactionAuditDetails);
 
             ApiSimpleResponse response = new ApiSimpleResponse("success", true);
             response.put("runIdsDeleted", runIdsToDelete);
@@ -6635,7 +6637,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException();
             }
 
-            PageFlowUtil.streamFile(getViewContext().getResponse(), new File(f.getAbsolutePath()), false);
+            PageFlowUtil.streamFile(getViewContext().getResponse(), f.toPath(), false);
             return null;
         }
 
@@ -6781,7 +6783,7 @@ public class ExperimentController extends SpringActionController
                     // TODO: Configure module resources with the appropriate log location per container
                     if (form.getModule() != null)
                     {
-                        FileLike logFile = form.getPipeRoot(getContainer()).getLogDirectoryFileLike(true).resolveChild("module-resource-xar.log");
+                        FileLike logFile = form.getPipeRoot(getContainer()).getLogDirectory(true).resolveChild("module-resource-xar.log");
                         job.setLogFile(logFile);
                     }
 
@@ -6821,7 +6823,7 @@ public class ExperimentController extends SpringActionController
                 // TODO: Configure module resources with the appropriate log location per container
                 if (form.getModule() != null)
                 {
-                    FileLike logFile = form.getPipeRoot(getContainer()).getLogDirectoryFileLike(true).resolveChild("module-resource-xar.log");
+                    FileLike logFile = form.getPipeRoot(getContainer()).getLogDirectory(true).resolveChild("module-resource-xar.log");
                     job.setLogFile(logFile);
                 }
 

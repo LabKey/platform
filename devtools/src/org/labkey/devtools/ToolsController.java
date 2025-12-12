@@ -10,11 +10,16 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.ArrayListValuedTreeMap;
+import org.labkey.api.collections.LabKeyCollectors;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.TableInfo.IndexType;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -60,8 +65,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -76,6 +83,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.BR;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 public class ToolsController extends SpringActionController
@@ -732,12 +742,12 @@ public class ToolsController extends SpringActionController
                 new HtmlView(DOM.createHtmlFragment(
                     Arrays.stream(OverlapType.values()).flatMap(type ->
                         Stream.of(
-                            type != OverlapType.UniqueOverlappingNonUnique ? DOM.BR() : null,
-                            DOM.STRONG(StringUtilsLabKey.pluralize(multiMap.get(type).size(), "index has ", "indices have ") + type.getDescription() + ":", DOM.BR()),
+                            type != OverlapType.UniqueOverlappingNonUnique ? BR() : null,
+                            DOM.STRONG(StringUtilsLabKey.pluralize(multiMap.get(type).size(), "index has ", "indices have ") + type.getDescription() + ":", BR()),
                             DOM.TABLE(
                                 multiMap.get(type).stream()
                                     .map(overlap -> DOM.TR(
-                                        DOM.TD(DOM.at(style, "width:120px;"), overlap.schemaName()),
+                                        DOM.TD(at(style, "width:120px;"), overlap.schemaName()),
                                         DOM.TD(type.getMessage(overlap)),
                                         "\n"
                                     ))
@@ -746,7 +756,7 @@ public class ToolsController extends SpringActionController
                     )
                 )),
                 new HtmlView(DOM.createHtmlFragment(
-                    DOM.BR(),
+                    BR(),
                     new ButtonBuilder("Create SQL Scripts That Drop Overlapping Indices").href(OverlappingIndicesAction.class, getContainer()).usePost())
                 )
             );
@@ -1090,6 +1100,72 @@ public class ToolsController extends SpringActionController
                 writer.write("DROP INDEX " + schemaName + "." + dropIndex + ";\n");
             else
                 writer.write("DROP INDEX " + dropIndex + " ON " + schemaName + "." + tableName + ";\n");
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class ForeignKeysAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            DbScope scope = DbScope.getLabKeyScope();
+            MultiValuedMap<TableInfo, ColumnInfo> map = scope.getSchemaNames().stream()
+                .map(name -> scope.getSchema(name, DbSchemaType.Bare))
+                .flatMap(schema -> schema.getTableNames().stream().map(schema::getTable))
+                .flatMap(table -> {
+                    try
+                    {
+                        // We're querying the metadata directly (not using cached FK information) because we want to
+                        // capture every FK in the database (not just those owned by the currently deployed modules) and
+                        // we want to ignore "virtual" FKs.
+                        return BaseColumnInfo.createFromDatabaseMetaData(table.getSchema().getName(), (SchemaTableInfo) table, null).stream();
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .filter(col -> col.getFk() != null)
+                .collect(LabKeyCollectors.toMultiValuedMap(
+                    BaseColumnInfo::getFkTableInfo,
+                    col -> col,
+                    () -> new ArrayListValuedTreeMap<>(Comparator.comparing(TableInfo::getSelectName))
+                ));
+
+            HtmlString delim = HtmlStringBuilder.of(HtmlString.BR).append("\n").append(HtmlString.NBSP).append(HtmlString.NBSP).getHtmlString();
+            HtmlStringBuilder builder = HtmlStringBuilder.of();
+            map.asMap().forEach((targetTable, columns) -> builder.append(targetTable.getSchema().getName() + "." + targetTable.getName() + "\n")
+                .append(delim)
+                .append(columns.stream().map(column -> {
+                    TableInfo sourceTable = column.getParentTable();
+                    return HtmlString.of(sourceTable.getSchema().getName() + "." + sourceTable.getName() + "." + column.getName() + "\n");
+                }).collect(LabKeyCollectors.joining(delim)))
+                .append(HtmlString.BR)
+                .append(HtmlString.BR)
+            );
+
+
+            return new VBox(
+                new HtmlView(DOM.createHtmlFragment(
+                    DIV(at(style, "width: 1200px;"), """
+                        A simple report that shows the incoming foreign keys that target each table in the database. This report is most useful
+                        when attempting to optimize the performance of deletes from a particular target table (and potentially updates to its
+                        PK, though that's not a common operation). Note that all tables and foreign keys in the database are shown here since
+                        they all can affect performance, regardless of whether their owning modules are deployed currently. This report will
+                        be improved in the future by adding index information.
+                        """),
+                    BR()
+                )),
+                new HtmlView(builder)
+            );
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addBeginNavTrail(root);
+            root.addChild("Foreign Keys");
         }
     }
 }

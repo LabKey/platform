@@ -74,7 +74,7 @@ public class DummyPipelineJob extends PipelineJob
         _worker = worker;
         try
         {
-            setLogFile(FileUtil.createTempFile("DummyPipelineJob", ".tmp"));
+            setLogFile(FileUtil.createTempFileLike("DummyPipelineJob", ".tmp"));
         }
         catch (IOException e)
         {

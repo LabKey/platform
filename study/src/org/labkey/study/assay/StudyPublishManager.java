@@ -18,13 +18,11 @@ package org.labkey.study.assay;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
@@ -113,9 +111,7 @@ import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.publish.StudyDatasetLinkedColumn;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.query.PublishResultsQueryView;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileStream;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
@@ -140,10 +136,7 @@ import org.springframework.beans.MutablePropertyValues;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -579,7 +572,7 @@ public class StudyPublishManager implements StudyPublishService
             run.setProtocol(studyPublishProtocol);
             ViewBackgroundInfo info = new ViewBackgroundInfo(targetContainer, user, null);
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
-            run.setFilePathRoot(pipeRoot.getRootPath());
+            run.setFilePathRoot(pipeRoot.getRootFileLike());
 
             run = ExperimentService.get().saveSimpleExperimentRun(run,
                     Collections.emptyMap(),
@@ -932,60 +925,10 @@ public class StudyPublishManager implements StudyPublishService
         return name;
     }
 
-    public UploadLog saveUploadData(User user, Dataset dsd, FileStream tsv, String filename) throws IOException
-    {
-        PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(dsd.getContainer());
-        if (null == pipelineRoot || !pipelineRoot.isValid())
-            throw new IOException("Please have your administrator set up a pipeline root for this folder.");
-
-        Path dir = pipelineRoot.resolveToNioPath(AssayFileWriter.DIR_NAME);
-        if (null == dir)
-            throw new IOException("Cannot create directory uploaded data: " + AssayFileWriter.DIR_NAME);
-
-        if (!Files.exists(dir))
-        {
-            FileUtil.createDirectory(dir);
-        }
-
-        //File name is studyname_datasetname_date_hhmm.ss
-        Date dateCreated = new Date();
-        String dateString = DateUtil.formatDateTime(dateCreated, "yyy-MM-dd-HHmm");
-        int id = 0;
-        Path file;
-        do
-        {
-            String extension = Objects.toString(filename == null ? "tsv" : FileUtil.getExtension(filename), "tsv");
-            String extra = id++ == 0 ? "" : String.valueOf(id);
-            String fileName = dsd.getStudy().getLabel() + "-" + dsd.getLabel() + "-" + dateString + extra + "." + extension;
-            fileName = fileName.replace('\\', '_').replace('/', '_').replace(':', '_');
-            file = FileUtil.appendName(dir, fileName);
-        }
-        while (Files.exists(file));
-
-        try (OutputStream out = Files.newOutputStream(file))
-        {
-            IOUtils.copy(tsv.openInputStream(), out);
-            tsv.closeInputStream();
-        }
-
-        UploadLog ul = new UploadLog();
-        ul.setContainer(dsd.getContainer());
-        ul.setDatasetId(dsd.getDatasetId());
-        ul.setCreated(dateCreated);
-        ul.setUserId(user.getUserId());
-        ul.setStatus("Initializing");
-        String filePath = FileUtil.hasCloudScheme(file) ? FileUtil.pathToString(file) : file.toFile().getPath();
-        ul.setFilePath(filePath);
-
-        return Table.insert(user, getTinfoUpdateLog(), ul);
-    }
-
-
     /**
-     * Return an array of LSIDs from the newly created dataset entries,
-     * along with the upload log.
+     * Return an array of LSIDs from the newly created dataset entries.
      */
-    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DatasetDefinition dsd, DataLoader dl, LookupResolutionType lookupResolutionType, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors, QueryUpdateService.InsertOption insertOption, @Nullable AuditBehaviorType auditBehaviorType)
+    public List<String> importDatasetTSV(User user, StudyImpl study, DatasetDefinition dsd, DataLoader dl, LookupResolutionType lookupResolutionType, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors, QueryUpdateService.InsertOption insertOption, @Nullable AuditBehaviorType auditBehaviorType)
     {
         DbScope scope = StudySchema.getInstance().getScope();
 
@@ -995,7 +938,13 @@ public class StudyPublishManager implements StudyPublishService
         try
         {
             if (null != fileIn)
-                ul = saveUploadData(user, dsd, fileIn, originalFileName);
+            {
+                ul = new UploadLog();
+                ul.setContainer(dsd.getContainer());
+                ul.setDatasetId(dsd.getDatasetId());
+                ul.setUserId(user.getUserId());
+                ul.setStatus("Initializing");
+            }
 
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
@@ -1025,8 +974,9 @@ public class StudyPublishManager implements StudyPublishService
                 ul.setStatus("ERROR");
                 String description = ul.getDescription();
                 ul.setDescription(description == null ? "" : description + "\n" + new Date() + ":" + x.getMessage());
-                ul = Table.update(user, StudySchema.getInstance().getTableInfoUploadLog(), ul, ul.getRowId());
-                return Pair.of(lsids, ul);
+                Table.insert(user, getTinfoUpdateLog(), ul);
+
+                return lsids;
             }
         }
 
@@ -1035,7 +985,7 @@ public class StudyPublishManager implements StudyPublishService
             //Update the status
             assert ul != null : "Upload log should always exist if no errors have occurred.";
             ul.setStatus("SUCCESS");
-            ul = Table.update(user, getTinfoUpdateLog(), ul, ul.getRowId());
+            Table.insert(user, getTinfoUpdateLog(), ul);
         }
         else if (ul != null)
         {
@@ -1048,17 +998,9 @@ public class StudyPublishManager implements StudyPublishService
                 sep = "\n";
             }
             ul.setDescription(sb.toString());
-            ul = Table.update(user, getTinfoUpdateLog(), ul, ul.getRowId());
+            Table.insert(user, getTinfoUpdateLog(), ul);
         }
-        return Pair.of(lsids, ul);
-    }
-
-    public UploadLog getUploadLog(Container c, int id)
-    {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("rowId"), id);
-
-        return new TableSelector(getTinfoUpdateLog(), filter, null).getObject(UploadLog.class);
+        return lsids;
     }
 
     @Override

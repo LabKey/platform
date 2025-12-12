@@ -16,19 +16,20 @@
 package org.labkey.wiki.model;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.SQLFragment;
 
-public class WikiType implements AttachmentType
+public class WikiType implements AttachmentParentType
 {
-    private static final AttachmentType INSTANCE = new WikiType();
+    private static final AttachmentParentType INSTANCE = new WikiType();
 
     private WikiType()
     {
     }
 
-    public static AttachmentType get()
+    public static AttachmentParentType get()
     {
         return INSTANCE;
     }
@@ -36,12 +37,12 @@ public class WikiType implements AttachmentType
     @Override
     public @NotNull String getUniqueName()
     {
-        return getClass().getName();
+        return "Wiki";
     }
 
     @Override
-    public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
+    public @Nullable SQLFragment getSelectParentEntityIdsSql()
     {
-        sql.append(parentColumn).append(" IN (SELECT EntityId FROM ").append(CommSchema.getInstance().getTableInfoPages(), "pages").append(")");
+        return new SQLFragment("SELECT EntityId FROM ").append(CommSchema.getInstance().getTableInfoPages(), "pages");
     }
 }

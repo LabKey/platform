@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
@@ -24,8 +25,9 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
@@ -47,13 +49,13 @@ public class HtmlOutput extends AbstractParamReplacement
     }
 
     @Override
-    protected File getSubstitution(File directory) throws Exception
+    protected @Nullable FileLike getSubstitution(FileLike directory) throws IOException
     {
-        File file;
+        FileLike file;
         if (directory != null)
             file = FileUtil.createTempFile(RReport.FILE_PREFIX, "Result.html", directory);
         else
-            file = FileUtil.createTempFile(RReport.FILE_PREFIX, "Result.html");
+            file = FileUtil.createTempFileLike(RReport.FILE_PREFIX, "Result.html");
 
         addFile(file);
         return file;
@@ -65,7 +67,7 @@ public class HtmlOutput extends AbstractParamReplacement
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput(File file) throws Exception
+    public ScriptOutput renderAsScriptOutput(FileLike file) throws Exception
     {
         HtmlOutputView view = new HtmlOutputView(this, getLabel());
         String html = view.renderInternalAsString(file);
@@ -94,10 +96,10 @@ public class HtmlOutput extends AbstractParamReplacement
          * Loads an HTML file and adds nonces to any embedded &lt;script> tags. Don't call this with files that aren't HTML.
          */
         @Override
-        protected String renderInternalAsString(File file) throws Exception
+        protected String renderInternalAsString(FileLike file) throws Exception
         {
-            if (exists(file))
-                return PageFlowUtil.addScriptNonces(PageFlowUtil.getFileContentsAsString(file));
+            if (existsWithContent(file))
+                return PageFlowUtil.addScriptNonces(PageFlowUtil.getStreamContentsAsString(file.openInputStream()));
 
             return null;
         }
@@ -105,13 +107,13 @@ public class HtmlOutput extends AbstractParamReplacement
         @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            for (File file : getFiles())
+            for (FileLike file : getFiles())
             {
                 String html = renderInternalAsString(file);
                 if (null != html)
                 {
                     out.write("<table class=\"labkey-output\">");
-                    renderTitle(model, out);
+                    renderTitle(out);
                     if (isCollapse())
                         out.write("<tr style=\"display:none\"><td>");
                     else

@@ -17,7 +17,7 @@ package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 
 public class ExpRunAttachmentParent implements AttachmentParent
 {
@@ -41,7 +41,7 @@ public class ExpRunAttachmentParent implements AttachmentParent
     }
 
     @Override
-    public @NotNull AttachmentType getAttachmentType()
+    public @NotNull AttachmentParentType getAttachmentParentType()
     {
         return ExpRunAttachmentType.get();
     }

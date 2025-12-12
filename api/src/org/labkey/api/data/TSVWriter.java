@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -109,7 +110,7 @@ public abstract class TSVWriter extends TextWriter
         _filenamePrefix = badChars.matcher(filenamePrefix).replaceAll("_");
 
         if (_filenamePrefix.length() > 30)
-            _filenamePrefix = _filenamePrefix.substring(0, 30);
+            _filenamePrefix = StringUtilsLabKey.leftSurrogatePairFriendly(_filenamePrefix, 30);
     }
 
     public void setDelimiterCharacter(char delimiter)

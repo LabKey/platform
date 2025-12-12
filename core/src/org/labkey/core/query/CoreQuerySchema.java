@@ -83,6 +83,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
     public static final String VIEW_CATEGORY_TABLE_NAME = "ViewCategory";
     public static final String SHORT_URL_TABLE_NAME = "ShortURL";
+    public static final String DOCUMENTS_TABLE_NAME = "Documents";
 
     public CoreQuerySchema(User user, Container c)
     {
@@ -117,6 +118,9 @@ public class CoreQuerySchema extends UserSchema
             USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME, MODULES_TABLE_NAME, MEMBERS_TABLE_NAME,
             CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, DATA_STATES_TABLE_NAME,
             VIEW_CATEGORY_TABLE_NAME, MISSING_VALUE_INDICATOR_TABLE_NAME);
+
+        if (getUser().hasRootPermission(ApplicationAdminPermission.class))
+            names.add(DOCUMENTS_TABLE_NAME);
 
         if (getUser().hasRootPermission(UserManagementPermission.class))
             names.add(API_KEYS_TABLE_NAME);
@@ -176,6 +180,8 @@ public class CoreQuerySchema extends UserSchema
             return getMVIndicatorTable(cf);
         if (SHORT_URL_TABLE_NAME.equalsIgnoreCase(name) && ShortUrlTableInfo.canDisplayTable(getUser(), getContainer()))
             return new ShortUrlTableInfo(this);
+        if (DOCUMENTS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(ApplicationAdminPermission.class))
+            return new DocumentsTable(this, cf);
 
         return null;
     }

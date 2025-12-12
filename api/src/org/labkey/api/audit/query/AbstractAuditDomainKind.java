@@ -22,7 +22,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -49,7 +48,6 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -65,8 +63,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static org.labkey.api.audit.query.DefaultAuditTypeTable.LEGACY_UNION_AUDIT_TABLE;
 
 public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
 {
@@ -398,14 +394,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     @Override
     public Set<String> getNonProvisionedTableNames()
     {
-        // omit the legacy auditlog table, this can be removed once the
-        // table is dropped after migration
-        Set<String> tables = new CaseInsensitiveHashSet();
-
-        if (OptionalFeatureService.get().isFeatureEnabled(LEGACY_UNION_AUDIT_TABLE))
-            tables.add("auditlog");
-
-        return tables;
+        return Collections.emptySet();
     }
 
     @Nullable

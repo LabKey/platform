@@ -117,7 +117,14 @@ public class TransactionFilter implements Filter
                             {
                                 RequestTracker tracker = entry.getValue();
                                 Thread thread = entry.getKey();
-                                Object readOnly = tracker.request.getAttribute(READ_ONLY_ATTRIBUTE_NAME);
+                                
+                                Object readOnly = Boolean.FALSE;
+                                try
+                                {
+                                    readOnly = tracker.request.getAttribute(READ_ONLY_ATTRIBUTE_NAME);
+                                }
+                                catch (IllegalStateException ignored) {} // Ignore when the request has already been recycled
+
                                 if (Boolean.TRUE.equals(readOnly) && tracker.startTime < cutoff)
                                 {
                                     try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(thread, Thread.currentThread()))

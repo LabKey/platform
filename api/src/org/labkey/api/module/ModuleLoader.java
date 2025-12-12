@@ -39,8 +39,6 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DatabaseMigrationConfiguration;
-import org.labkey.api.data.DatabaseMigrationService;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -61,6 +59,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.migration.DatabaseMigrationConfiguration;
+import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.module.ModuleUpgrader.Execution;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityManager;
@@ -1387,7 +1387,14 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         _javaVersion = JavaVersion.get();
 
         if (!_javaVersion.isTested())
-            _log.warn("LabKey Server has not been tested against Java runtime version {}.", JavaVersion.getJavaVersionDescription());
+            logJavaWarning("has not been tested with LabKey Server");
+        else if (_javaVersion.isDeprecated())
+            logJavaWarning("is no longer supported");
+    }
+
+    private void logJavaWarning(String message)
+    {
+        _log.warn("The deployed version of Java, {}, {}. We recommend installing {}.", JavaVersion.getJavaVersionDescription(), message, JavaVersion.getRecommendedJavaVersion());
     }
 
     public JavaVersion getJavaVersion()

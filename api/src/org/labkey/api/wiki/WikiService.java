@@ -19,6 +19,7 @@ package org.labkey.api.wiki;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
@@ -94,4 +95,6 @@ public interface WikiService
      */
     @Nullable
     String updateAttachments(Container c, User user, String wikiName, @Nullable List<AttachmentFile> attachmentFiles, @Nullable List<String> deleteAttachmentNames);
+
+    AttachmentParentType getAttachmentType();
 }

@@ -664,9 +664,17 @@ public class SimpleFilter implements Filter
 
     public static class InClause extends MultiValuedFilterClause
     {
+        private InClauseGenerator _tempTableGenerator = null;
+
         public InClause(FieldKey fieldKey, Collection<?> params)
         {
             this(fieldKey, params, false, false);
+        }
+
+        public InClause(FieldKey fieldKey, Collection<?> params, InClauseGenerator tempTableGenerator)
+        {
+            this(fieldKey, params, false, false);
+            _tempTableGenerator = tempTableGenerator;
         }
 
         public InClause(FieldKey fieldKey, Collection<?> params, boolean urlClause)
@@ -837,7 +845,10 @@ public class SimpleFilter implements Filter
             in.appendIdentifier(alias);
 
             // Dialect may want to generate database-specific SQL, especially for very large IN clauses
-            dialect.appendInClauseSql(in, convertedParams);
+            if (null == _tempTableGenerator)
+                dialect.appendInClauseSql(in, convertedParams);
+            else
+                dialect.appendInClauseSqlWithCustomInClauseGenerator(in, convertedParams, _tempTableGenerator);
 
             if (isIncludeNull())
             {
@@ -1853,6 +1864,41 @@ public class SimpleFilter implements Filter
                 howMany -= 1;
             }
             return howMany;
+        }
+
+        /**
+         * This used to be a PostgreSQL-specific test, but it should run and pass on SQL Server as well. It's largely
+         * redundant with testLargeInClause() above, but causes no harm.
+         */
+        @Test
+        public void testTempTableInClause()
+        {
+            DbSchema core = CoreSchema.getInstance().getSchema();
+            SqlDialect d = core.getSqlDialect();
+
+            Collection<Integer> allUserIds = new TableSelector(CoreSchema.getInstance().getTableInfoUsersData(), Collections.singleton("UserId")).getCollection(Integer.class);
+            SQLFragment shortSql = new SQLFragment("SELECT * FROM core.UsersData WHERE UserId");
+            d.appendInClauseSql(shortSql, allUserIds);
+            assertEquals(allUserIds.size(), new SqlSelector(core, shortSql).getRowCount());
+
+            ArrayList<Object> l = new ArrayList<>(allUserIds);
+            while (l.size() < SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE)
+                l.addAll(allUserIds);
+            SQLFragment longSql = new SQLFragment("SELECT * FROM core.UsersData WHERE UserId");
+            d.appendInClauseSql(longSql, l);
+            assertEquals(allUserIds.size(), new SqlSelector(core, longSql).getRowCount());
+
+            Collection<String> allDisplayNames = new TableSelector(CoreSchema.getInstance().getTableInfoUsersData(), Collections.singleton("DisplayName")).getCollection(String.class);
+            SQLFragment shortSqlStr = new SQLFragment("SELECT * FROM core.UsersData WHERE DisplayName");
+            d.appendInClauseSql(shortSqlStr, allDisplayNames);
+            assertEquals(allDisplayNames.size(), new SqlSelector(core, shortSqlStr).getRowCount());
+
+            l = new ArrayList<>(allDisplayNames);
+            while (l.size() < SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE)
+                l.addAll(allDisplayNames);
+            SQLFragment longSqlStr = new SQLFragment("SELECT * FROM core.UsersData WHERE DisplayName");
+            d.appendInClauseSql(longSqlStr, l);
+            assertEquals(allDisplayNames.size(), new SqlSelector(core, longSqlStr).getRowCount());
         }
     }
 

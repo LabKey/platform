@@ -181,14 +181,14 @@ public class MothershipHelper extends LabKeySiteWrapper
         updateStackTrace(exceptionStackTraceId, "", "", "");
     }
 
-    public void updateStackTrace(int exceptionStackTraceId, String bugNumber, String comments, String assignedToEmail)
+    public void updateStackTrace(int exceptionStackTraceId, String githubIssue, String comments, String assignedToEmail)
     {
         Connection connection = createDefaultConnection();
         SimplePostCommand command = new SimplePostCommand("mothership", "updateStackTrace");
         Map<String, Object> params = new HashMap<>();
         params.put(ID_COLUMN, exceptionStackTraceId);
-        if (bugNumber != null)
-            params.put("BugNumber", bugNumber);
+        if (githubIssue != null)
+            params.put("GitHubIssue", githubIssue);
         if (comments != null)
             params.put("Comments", comments);
         if (assignedToEmail != null)

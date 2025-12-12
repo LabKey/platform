@@ -16,7 +16,7 @@
 package org.labkey.issue.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.EntityAttachmentParent;
 import org.labkey.issue.model.IssueObject.CommentObject;
 
@@ -33,7 +33,7 @@ public class CommentAttachmentParent extends EntityAttachmentParent
     }
 
     @Override
-    public @NotNull AttachmentType getAttachmentType()
+    public @NotNull AttachmentParentType getAttachmentParentType()
     {
         return IssueCommentType.get();
     }

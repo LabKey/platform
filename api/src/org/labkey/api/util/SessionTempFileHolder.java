@@ -17,7 +17,9 @@ package org.labkey.api.util;
 
 import jakarta.servlet.http.HttpSessionBindingEvent;
 import jakarta.servlet.http.HttpSessionBindingListener;
-import java.io.File;
+import org.labkey.vfs.FileLike;
+
+import java.io.IOException;
 
 /**
  * A session holder for temporary files. This will hold a file in the session,
@@ -28,20 +30,20 @@ import java.io.File;
  */
 public class SessionTempFileHolder implements HttpSessionBindingListener
 {
-    private final File file;
+    private final FileLike file;
     private boolean deleted = false;
 
-    public SessionTempFileHolder(File file)
+    public SessionTempFileHolder(FileLike file)
     {
         this.file = file;
     }
 
-    public File getFile()
+    public FileLike getFile()
     {
         return file;
     }
 
-    public boolean delete()
+    public boolean delete() throws IOException
     {
         deleted = true;
         return this.file.delete();
@@ -57,6 +59,15 @@ public class SessionTempFileHolder implements HttpSessionBindingListener
     public void valueUnbound(HttpSessionBindingEvent event)
     {
         if (!deleted)
-            file.delete();
+        {
+            try
+            {
+                file.delete();
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

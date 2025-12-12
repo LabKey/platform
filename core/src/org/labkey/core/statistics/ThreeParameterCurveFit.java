@@ -43,10 +43,4 @@ public class ThreeParameterCurveFit extends ParameterCurveFit
         }
         throw new IllegalArgumentException("No curve fit parameters for " + _fitType.name());
     }
-
-    @Override
-    public double adjustedRSquared(SigmoidalParameters parameters)
-    {
-        return adjustedRSquared(parameters, 3);
-    }
 }

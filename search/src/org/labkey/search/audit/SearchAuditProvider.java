@@ -78,14 +78,6 @@ public class SearchAuditProvider extends AbstractAuditTypeProvider implements Au
     }
 
     @Override
-    public Map<FieldKey, String> legacyNameMap()
-    {
-        Map<FieldKey, String> legacyNames = super.legacyNameMap();
-        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_QUERY);
-        return legacyNames;
-    }
-
-    @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
         return (Class<K>)SearchAuditEvent.class;

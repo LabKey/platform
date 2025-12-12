@@ -57,6 +57,8 @@ import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.notification.NotificationMenuView;
+import org.labkey.api.products.ProductMenuProvider;
+import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.AuthenticationManager;
@@ -80,6 +82,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.vfs.FileLike;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.web.util.WebUtils;
@@ -986,29 +989,6 @@ public class PageFlowUtil
             response.setHeader(entry.getKey(), entry.getValue());
     }
 
-    /**
-     * Read the file and stream it to the browser through the response.
-     *
-     * @param detectContentType If set to true, then the content type is detected, else it is inferred from the extension
-     * of the file name.
-     */
-    public static void streamFile(HttpServletResponse response, File file, boolean asAttachment, boolean detectContentType) throws IOException
-    {
-        if (detectContentType)
-            streamFile(response, Collections.emptyMap(), file, asAttachment);
-        else
-        {
-            try
-            {
-                streamFile(response, Collections.emptyMap(), file.getName(), new FileInputStream(file), asAttachment);
-            }
-            catch (FileNotFoundException e)
-            {
-                throw new NotFoundException(file.getName());
-            }
-        }
-    }
-
     public static void streamFile(HttpServletResponse response, Path file, boolean asAttachment, boolean detectContentType) throws IOException
     {
         String filename = file.getFileName().toString();
@@ -1027,10 +1007,9 @@ public class PageFlowUtil
         }
     }
 
-    @Deprecated // Prefer the Path version
-    public static void streamFile(HttpServletResponse response, File file, boolean asAttachment) throws IOException
+    public static void streamFile(HttpServletResponse response, FileLike file, boolean asAttachment) throws IOException
     {
-        streamFile(response, file.toPath(), asAttachment, false);
+        streamFile(response, file.toNioPathForRead(), asAttachment, false);
     }
 
     public static void streamFile(HttpServletResponse response, Path file, boolean asAttachment) throws IOException
@@ -1038,15 +1017,9 @@ public class PageFlowUtil
         streamFile(response, file, asAttachment, false);
     }
 
-
-    /**
-     * Read the file and stream it to the browser through the response. The content type of the file is detected
-     * from the contents of the file.
-     */
-    @Deprecated //Prefer the Path version
-    public static void streamFile(@NotNull HttpServletResponse response, @NotNull Map<String, String> responseHeaders, File file, boolean asAttachment) throws IOException
+    public static void streamFile(@NotNull HttpServletResponse response, @NotNull Map<String, String> responseHeaders, FileLike file, boolean asAttachment) throws IOException
     {
-        streamFile(response,responseHeaders, file.toPath(), asAttachment);
+        streamFile(response, responseHeaders, file.toNioPathForRead(), asAttachment);
     }
 
     public static void streamFile(@NotNull HttpServletResponse response, @NotNull Map<String, String> responseHeaders, Path file, boolean asAttachment) throws IOException
@@ -3394,5 +3367,41 @@ public class PageFlowUtil
         }
 
         return nl.getLength();
+    }
+
+    public static class AppUrls
+    {
+        protected static ActionURL appendFrag(ActionURL url, String... appURLParts)
+        {
+            if (url == null)
+                return null;
+
+            String s = url.getFragment();
+            String fragment = (s == null ? "" : s) + "/" + String.join("/", appURLParts);
+            return (ActionURL) url.setFragment(fragment);
+        }
+
+        protected static ActionURL app(Container container, boolean includeDefault)
+        {
+            return getAppURL(container, includeDefault);
+        }
+
+        public static ActionURL getAppURL(Container container, boolean includeDefault)
+        {
+            ProductMenuProvider menuProvider = ProductRegistry.get().getPrimaryProductMenuForContainer(container);
+            if (menuProvider != null)
+                return menuProvider.getAppURL(container);
+
+            return includeDefault ? new ActionURL() : null;
+        }
+
+        public static String getAppName(Container container)
+        {
+            ProductMenuProvider product = ProductRegistry.get().getPrimaryProductMenuForContainer(container);
+            if (product != null)
+                return product.getProductName();
+
+            return "";
+        }
     }
 }

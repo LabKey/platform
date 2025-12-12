@@ -167,7 +167,7 @@ public class PipeRootImpl implements PipeRoot
                 }
 
                 for (PipelineProvider provider : PipelineService.get().getPipelineProviders())
-                    provider.initSystemDirectory(root.toNioPathForWrite(), systemDir.toNioPathForWrite());
+                    provider.initSystemDirectory(root, systemDir);
             }
             catch (IOException e)
             {
@@ -226,20 +226,11 @@ public class PipeRootImpl implements PipeRoot
 
     @Override
     @NotNull
-    public File getLogDirectory()
+    public FileLike getLogDirectory(boolean forWrite)
     {
         // If pipeline root is in File system, return that; otherwise return temp directory
-        if (isCloudRoot())
-            return FileUtil.getTempDirectory();
-        else
-            return getRootPath();
-    }
-
-    @Override
-    @NotNull
-    public FileLike getLogDirectoryFileLike(boolean forWrite)
-    {
-        var b = new FileSystemLike.Builder(getLogDirectory()).readonly();
+        File dir = isCloudRoot() ? FileUtil.getTempDirectory() : getRootPath();
+        var b = new FileSystemLike.Builder(dir).readonly();
         if (forWrite)
             b.readwrite();
         return b.root();
@@ -353,7 +344,6 @@ public class PipeRootImpl implements PipeRoot
 
 
     @Override
-    @Nullable
     public File resolvePath(String pathStr)
     {
         if (null == pathStr)
@@ -364,7 +354,7 @@ public class PipeRootImpl implements PipeRoot
 
 
     @Nullable
-    public File resolvePath(org.labkey.api.util.Path path)
+    private File resolvePath(org.labkey.api.util.Path path)
     {
         var pair = _resolveRoot(path);
         if (null == pair)
@@ -374,8 +364,11 @@ public class PipeRootImpl implements PipeRoot
 
 
     @Override
-    public @Nullable FileLike resolvePathToFileLike(String relativePath)
+    public FileLike resolvePathToFileLike(String relativePath)
     {
+        if (null == relativePath)
+            throw new FileUtil.InvalidPathReferenceException(null, "Must specify a file path");
+
         var parsedPath = org.labkey.api.util.Path.parse(relativePath);
 
         if (ROOT_BASE.cloud.equals(_defaultRoot))
@@ -456,6 +449,17 @@ public class PipeRootImpl implements PipeRoot
         {
             throw new NotFoundException("Must specify a valid file path", e);
         }
+    }
+
+    @Override
+    public FileLike resolveToFileLikeFromUrl(String url) throws IOException
+    {
+        Path path = resolveToNioPathFromUrl(url);
+        if (path != null)
+        {
+            return FileSystemLike.wrapFile(getRootNioPath(), path);
+        }
+        return null;
     }
 
     @Override

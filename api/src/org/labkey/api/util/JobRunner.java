@@ -16,11 +16,14 @@
 
 package org.labkey.api.util;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
@@ -28,6 +31,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 /**
  * This is a simple Executor, that can be used to implement more advanced services
@@ -46,24 +50,28 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class JobRunner implements Executor
 {
-    static final Logger _log = LogManager.getLogger(JobRunner.class);
+    static final Logger _log = LogHelper.getLogger(JobRunner.class, "JobRunner status and errors");
 
     private static final JobRunner _defaultJobRunner = new JobRunner("Default", 1);
 
     private final ScheduledThreadPoolExecutor _executor;
-    private final HashMap<Future, Job> _jobs = new HashMap<>();
+    private final Map<Future<?>, Job> _jobs = new HashMap<>();
 
 
     public JobRunner(String name, int max)
     {
-        this(name, max, Thread.MIN_PRIORITY);
+        this(name, max, null);
     }
 
+    public JobRunner(String name, int max, @Nullable Supplier<String> threadNameFactory)
+    {
+        this(name, max, threadNameFactory, Thread.MIN_PRIORITY);
+    }
 
-    private JobRunner(String name, int max, int priority)
+    private JobRunner(String name, int max, @Nullable Supplier<String> threadNameFactory, int priority)
     {
         _executor = new JobThreadPoolExecutor(max);
-        _executor.setThreadFactory(new JobThreadFactory(priority));
+        _executor.setThreadFactory(new JobThreadFactory(threadNameFactory, priority));
         ContextListener.addShutdownListener(new ShutdownListener()
         {
             @Override
@@ -76,11 +84,6 @@ public class JobRunner implements Executor
             public void shutdownPre()
             {
                 _executor.shutdown();
-            }
-
-            @Override
-            public void shutdownStarted()
-            {
             }
         });
     }
@@ -111,11 +114,16 @@ public class JobRunner implements Executor
         _executor.shutdown();
     }
 
+    public boolean awaitTermination(long timeout, @NotNull TimeUnit unit) throws InterruptedException
+    {
+        return _executor.awaitTermination(timeout, unit);
+    }
+
     /**
      * This will schedule the runnable to execute immediately, with no delay
      */
     @Override
-    public void execute(Runnable command)
+    public void execute(@NotNull Runnable command)
     {
         execute(command, 0);
     }
@@ -132,7 +140,7 @@ public class JobRunner implements Executor
     {
         synchronized (_jobs)
         {
-            Future task = _executor.schedule(command, delay, TimeUnit.MILLISECONDS);
+            Future<?> task = _executor.schedule(command, delay, TimeUnit.MILLISECONDS);
             if (command instanceof Job job)
             {
                 job._task = task;
@@ -141,7 +149,7 @@ public class JobRunner implements Executor
         }
     }
 
-    public Future submit(Runnable run)
+    public Future<?> submit(Runnable run)
     {
         if (run instanceof Job)
         {
@@ -221,13 +229,13 @@ public class JobRunner implements Executor
                 }
                 else
                 {
-                    if (r instanceof Future)
+                    if (r instanceof Future<?> f)
                     {
                         if (null == t)
                         {
                             try
                             {
-                                ((Future)r).get();
+                                f.get();
                             }
                             catch (ExecutionException x)
                             {
@@ -261,25 +269,26 @@ public class JobRunner implements Executor
     }
 
 
-    static class JobThreadFactory implements ThreadFactory
+    private static class JobThreadFactory implements ThreadFactory
     {
-        static final AtomicInteger poolNumber = new AtomicInteger(1);
-        final ThreadGroup group;
-        final AtomicInteger threadNumber = new AtomicInteger(1);
-        final String namePrefix;
-        final int priority;
+        private static final AtomicInteger POOL_NUMBER = new AtomicInteger(1);
 
-        JobThreadFactory(int priority)
+        private final ThreadGroup _group;
+        private final AtomicInteger _threadNumber = new AtomicInteger(1);
+        private final Supplier<String> _threadNameFactory;
+        private final int priority;
+
+        JobThreadFactory(@Nullable Supplier<String> threadNameFactory, int priority)
         {
-            group = Thread.currentThread().getThreadGroup();
-            namePrefix = "JobThread-" + poolNumber.getAndIncrement() + ".";
+            _group = Thread.currentThread().getThreadGroup();
+            _threadNameFactory = threadNameFactory != null ? threadNameFactory : () -> "JobThread-" + POOL_NUMBER.getAndIncrement() + "." + _threadNumber.getAndIncrement();
             this.priority = priority;
         }
 
         @Override
-        public Thread newThread(Runnable r)
+        public Thread newThread(@NotNull Runnable r)
         {
-            Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
+            Thread t = new Thread(_group, r, _threadNameFactory.get(), 0);
             if (t.isDaemon())
                 t.setDaemon(false);
             if (t.getPriority() != priority)

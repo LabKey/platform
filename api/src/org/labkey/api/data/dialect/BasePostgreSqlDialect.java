@@ -34,7 +34,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.LabKeyDataSource;
-import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MetadataSqlSelector;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -49,7 +48,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TempTableInClauseGenerator;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.dialect.LimitRowsSqlGenerator.LimitRowsCustomizer;
 import org.labkey.api.data.dialect.LimitRowsSqlGenerator.StandardLimitRowsCustomizer;
@@ -92,18 +90,14 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 {
     // Issue 52190: Expose troubleshooting data that supports postgreSQL-specific analysis
     public static final String POSTGRES_SCHEMA_NAME = "postgres";
-    public static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
 
     private final Map<String, Integer> _domainScaleMap = new CopyOnWriteHashMap<>();
     private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
-    private final InClauseGenerator _tempTableInClauseGenerator = new TempTableInClauseGenerator();
 
     private HtmlString _adminWarning = null;
 
     // Default to 9 and let newer versions be refreshed later
     private int _majorVersion = 9;
-
-    protected InClauseGenerator _inClauseGenerator = null;
 
     // Specifies if this PostgreSQL server treats backslashes in string literals as normal characters (as per the SQL
     // standard) or as escape characters (old, non-standard behavior). As of PostgreSQL 9.1, the setting
@@ -287,18 +281,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             sql.append(" INTO ").appendIdentifier(proposedVariable);
 
         return proposedVariable;
-    }
-
-    @Override
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
-    {
-        if (params.size() >= TEMPTABLE_GENERATOR_MINSIZE)
-        {
-            SQLFragment ret = _tempTableInClauseGenerator.appendInClauseSql(sql, params);
-            if (null != ret)
-                return ret;
-        }
-        return _inClauseGenerator.appendInClauseSql(sql, params);
     }
 
     @Override
@@ -558,12 +540,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public String getAnalyzeCommandForTable(String tableName)
-    {
-        return "ANALYZE " + tableName;
-    }
-
-    @Override
     protected String getSIDQuery()
     {
         return "SELECT pg_backend_pid();";
@@ -797,7 +773,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public String prepare(DbScope scope)
     {
         initializeUserDefinedTypes(scope);
-        initializeInClauseGenerator(scope);
         determineSettings(scope);
         determineIfArraySortFunctionExists(scope);
         return super.prepare(scope);
@@ -848,10 +823,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         // Domain names are returned from column metadata fully qualified and quoted, so save them that way. See #26149.
         return ("public".equals(schemaName) ? domainName : "\"" + schemaName + "\".\"" + domainName + "\"");
     }
-
-
-    abstract protected void initializeInClauseGenerator(DbScope scope);
-
 
     // Query any settings that may affect dialect behavior. Right now, only "standard_conforming_strings".
     protected void determineSettings(DbScope scope)

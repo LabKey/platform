@@ -39,8 +39,9 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
-import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter.FilterClause;
+import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.generator.DataGeneratorRegistry;
@@ -48,6 +49,9 @@ import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.migration.AssaySkipContainers;
+import org.labkey.api.migration.DatabaseMigrationService;
+import org.labkey.api.migration.DefaultMigrationSchemaHandler;
 import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -66,6 +70,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StartupListener;
@@ -296,15 +301,26 @@ public class AssayModule extends SpringModule
             {
                 return PlateTypeTable.NAME.equals(sourceTable.getName()) ? SITE_WIDE_TABLE : super.getContainerFieldKey(sourceTable);
             }
+
+            @Override
+            // Override to filter the container set
+            public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
+            {
+                return super.getContainerClause(sourceTable, AssaySkipContainers.getFilteredContainers(containers));
+            }
         });
 
-        // Tables in the "assaywell" provisioned schema are all single-container, so no filtering is needed
+        // Tables in the "assaywell" provisioned schema join to assay.Well to find their container
         DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(PlateMetadataDomainKind.getSchema())
         {
             @Override
-            public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
+            public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
             {
-                return SITE_WIDE_TABLE;
+                return new SQLClause(
+                    new SQLFragment("LSID IN (SELECT LSID FROM assay.Well WHERE Container")
+                        .appendInClause(AssaySkipContainers.getFilteredContainers(containers), sourceTable.getSqlDialect())
+                        .append(")")
+                );
             }
         });
 

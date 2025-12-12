@@ -236,7 +236,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -244,7 +243,6 @@ import org.labkey.experiment.ExperimentAuditProvider;
 import org.labkey.experiment.FileLinkFileListener;
 import org.labkey.experiment.MissingFilesCheckInfo;
 import org.labkey.experiment.XarExportType;
-import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.api.property.DomainPropertyManager;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -253,13 +251,11 @@ import org.labkey.experiment.pipeline.ExpGeneratorHelper;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
-import org.labkey.experiment.xar.XarExportSelection;
 import org.labkey.vfs.FileLike;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
@@ -857,6 +853,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             .stream()
             .filter(m -> m.getContainer().hasPermission(user, ReadPermission.class) && m.getSampleType() != null)
             .toList();
+    }
+
+    @NotNull
+    @Override
+    public List<ExpMaterialImpl> getExpMaterialsByName(@NotNull Collection<String> names, @NotNull String sampleTypeName, @NotNull Container container, User user)
+    {
+        ExpSampleType sampleType = SampleTypeService.get().getSampleType(container, user, sampleTypeName);
+        if (sampleType == null)
+            return Collections.emptyList();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.Name.name()), names, IN);
+        filter.addCondition(FieldKey.fromParts("Container"), container);
+        filter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
+
+        return getExpMaterials(filter)
+                .stream()
+                .filter(m -> m.getContainer().hasPermission(user, ReadPermission.class) && m.getSampleType() != null)
+                .toList();
     }
 
     public @Nullable ExpMaterialImpl getExpMaterial(SimpleFilter filter)
@@ -3615,9 +3628,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         boolean isSample = runItem instanceof ExpMaterial;
         if (isSample)
-            ClosureQueryHelper.clearAncestorsForMaterial(runItem.getRowId());
+            clearMaterialAncestors(List.of(runItem.getRowId()));
         else
-            ClosureQueryHelper.clearAncestorsForDataObject(runItem.getRowId());
+            clearDataAncestors(List.of(runItem.getRowId()));
+    }
+
+    public void repopulateAncestors()
+    {
+        ClosureQueryHelper.truncateAndRecreate();
+    }
+
+    public void clearDataAncestors(Collection<Long> dataRowIds)
+    {
+        ClosureQueryHelper.clearAncestorsForDataObjects(dataRowIds);
+    }
+
+    public void clearMaterialAncestors(Collection<Long> materialRowIds)
+    {
+        ClosureQueryHelper.clearAncestorsForMaterials(materialRowIds);
     }
 
     public List<ProtocolApplication> getProtocolApplicationsForRun(long runId)
@@ -4201,22 +4229,28 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void deleteExperimentRunsByRowIds(Container container, final User user, long... runRowIds)
     {
-        deleteExperimentRunsByRowIds(container, user, null, Arrays.stream(runRowIds).boxed().toList());
+        deleteExperimentRunsByRowIds(container, user, null, Arrays.stream(runRowIds).boxed().toList(), null);
     }
 
     @Override
-    public void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable final String userComment, @NotNull Collection<Long> runRowIds)
+    public void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable final String userComment, @NotNull Collection<Long> runRowIds, @Nullable Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails)
     {
-        deleteExperimentRuns(container, user, userComment, getExpRuns(runRowIds));
+        deleteExperimentRuns(container, user, userComment, getExpRuns(runRowIds), transactionDetails);
     }
 
-    public void deleteExperimentRuns(Container container, final User user, @Nullable final String userComment, @NotNull Collection<ExpRunImpl> runs)
+    public void deleteExperimentRuns(Container container, final User user, @Nullable final String userComment, @NotNull Collection<ExpRunImpl> runs, @Nullable Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails)
     {
         if (runs.isEmpty())
             return;
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            if (transaction.getAuditEvent() == null)
+            {
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, QueryService.AuditAction.DELETE, transactionDetails);
+                AbstractQueryUpdateService.addTransactionAuditEvent(transaction,  user, auditEvent);
+            }
+
             AssayService assayService = AssayService.get();
             // This can be slightly expensive to fetch, so don't do it multiple times if runs share protocols
             Map<ExpProtocol, ProtocolImplementation> protocolImpls = new HashMap<>();
@@ -4233,9 +4267,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     protocolImpl = protocolImpls.computeIfAbsent(protocol, ExpProtocol::getImplementation);
 
                     if (!run.canDelete(user))
-                        throw new UnauthorizedException("You do not have permission to delete " +
-                                (ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID()) ? "jobs" : "runs")
-                                + " in " + run.getContainer());
+                        throw new UnauthorizedException("You do not have permission to delete runs in " + run.getContainer());
                     StudyPublishService publishService = StudyPublishService.get();
                     if (publishService != null)
                     {
@@ -5096,13 +5128,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (containers.size() == 1)
         {
             Container runContainer = containers.iterator().next();
-            deleteExperimentRuns(runContainer, user, null, runsToDelete);
+            deleteExperimentRuns(runContainer, user, null, runsToDelete, null);
         }
         else
         {
             // the slow way
             for (ExpRunImpl run : runsToDelete)
-                deleteExperimentRuns(run.getContainer(), user, null, Collections.singleton(run));
+                deleteExperimentRuns(run.getContainer(), user, null, Collections.singleton(run), null);
         }
     }
 
@@ -7544,7 +7576,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         ExpProtocol protocol = ensureSampleDerivationProtocol(info.getUser());
         ExpRunImpl run = createExperimentRun(info.getContainer(), getDerivationRunName(inputMaterials, inputDatas, outputMaterials.size(), outputDatas.size()));
         run.setProtocol(protocol);
-        run.setFilePathRoot(pipeRoot.getRootPath());
+        run.setFilePathRoot(pipeRoot.getRootFileLike());
 
         return run;
     }
@@ -7604,7 +7636,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         ExpProtocol protocol = ensureSampleAliquotProtocol(info.getUser());
         ExpRunImpl run = createExperimentRun(info.getContainer(), getAliquotRunName(parent, aliquots.size()));
         run.setProtocol(protocol);
-        run.setFilePathRoot(pipeRoot.getRootPath());
+        run.setFilePathRoot(pipeRoot.getRootFileLike());
 
         return run;
     }

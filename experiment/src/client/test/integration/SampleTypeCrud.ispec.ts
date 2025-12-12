@@ -103,7 +103,7 @@ beforeAll(async () => {
             name: SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME,
             aliquotNameExpression: "",
             nameExpression: "",
-            metricUnit: 'mL'
+            metricUnit: 'g'
         }
     };
     await server.post('property', 'createDomain', createPayload, {...topFolderOptions, ...designerReaderOptions}).expect((result) => {
@@ -955,6 +955,371 @@ describe('Aliquot crud', () => {
             await verifyRequiredLineageInsertUpdate(server, true, true, topFolderOptions, subfolder1Options, designerReaderOptions, readerUserOptions, editorUserOptions, adminOptions);
         });
     });
+
+});
+
+describe('Amount/Unit CRUD', () => {
+    it ("Test Amounts/Units validation on insert/import/update/merge", async () => {
+        const dataType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
+        const NO_UNIT_ERROR = 'A Units value must be provided when Amounts are provided.';
+        const NO_AMOUNT_ERROR = 'An Amount value must be provided when Units are provided.';
+        const INCOMPATIBLE_ERROR = 'Units value (L) is not compatible with the ' + dataType + ' display units (g).';
+        const NEGATIVE_ERROR = "Value '-1.1' for field 'Amount' is invalid. Amounts must be non-negative.";
+
+        const dataName = "S-amountCrud";
+
+         let errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\nData1\t1", dataType, "INSERT", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NO_UNIT_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tUnits\nData1\tkg", dataType, "INSERT", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NO_AMOUNT_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\nData1\t1.1\tL", dataType, "INSERT", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(INCOMPATIBLE_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\nData1\t1.1\tunit", dataType, "INSERT", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain('Units value (unit) is not compatible with the ' + dataType + ' display units (g).');
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\nData1\t1.1\tcells", dataType, "INSERT", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain('Units value (cells) is not compatible with the ' + dataType + ' display units (g).');
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\nData1\t1.1\tbogus", dataType, "INSERT", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain('Unsupported Units value (bogus). Supported values are: kg, g, mg, ug, ng.');
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\nData1\t-1.1\tkg", dataType, "INSERT", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importCrossTypeData(server, "Name\tStoredAmount\tUnits\tSampleType\nData1\t-1.1\tkg\t" + dataType ,'IMPORT', topFolderOptions, adminOptions, true);
+        expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+
+        await server.post('query', 'insertRows', {
+            schemaName: 'samples',
+            queryName: dataType,
+            rows: [{
+                name: dataName,
+                amount: -1.1,
+                units: 'kg',
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toContain(NEGATIVE_ERROR);
+        });
+        const sampleRows = await ExperimentCRUDUtils.insertRows(server, [{
+            name: dataName,
+            amount: 123,
+            units: 'kg',
+        }], 'samples', dataType, topFolderOptions, editorUserOptions);
+
+        const sampleRowId = caseInsensitive(sampleRows[0], 'rowId');
+
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tAmount\n" + dataName + "\t321", dataType, "UPDATE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NO_UNIT_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\n" + dataName + "\t321", dataType, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NO_UNIT_ERROR);
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: dataType,
+            rows: [{
+                Amount: 321,
+                rowId: sampleRowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toContain(NO_UNIT_ERROR);
+        });
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: dataType,
+            rows: [{
+                StoredAmount: 321,
+                rowId: sampleRowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toContain(NO_UNIT_ERROR);
+        });
+
+
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tUnits\n" + dataName + "\tg", dataType, "UPDATE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NO_AMOUNT_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tUnits\n" + dataName + "\tg", dataType, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NO_AMOUNT_ERROR);
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: dataType,
+            rows: [{
+                Units: 'kg',
+                rowId: sampleRowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toContain(NO_AMOUNT_ERROR);
+        });
+
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tAmount\tUnits\n" + dataName + "\t321\tL", dataType, "UPDATE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(INCOMPATIBLE_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\n" + dataName + "\t321\tL", dataType, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(INCOMPATIBLE_ERROR);
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: dataType,
+            rows: [{
+                Amount: 321,
+                Units: 'L',
+                rowId: sampleRowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toContain(INCOMPATIBLE_ERROR);
+        });
+
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tAmount\tUnits\n" + dataName + "\t-1.1\tkg", dataType, "UPDATE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\n" + dataName + "\t-1.1\tkg", dataType, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: dataType,
+            rows: [{
+                Amount: -1,
+                Units: 'kg',
+                rowId: sampleRowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            // Note that the row by row update error is different from DIB. This is OK for now since we are planning to deprecate row by row updates.
+            expect(errorResp['exception']).toContain("Value '-1000.0 (g)' for field 'Amount' is invalid. Amounts must be non-negative.");
+        });
+
+        errorMsg = await ExperimentCRUDUtils.importCrossTypeData(server, "Name\tStoredAmount\tUnits\tSampleType\nData1\t-1.1\tkg\t" + dataType ,'UPDATE', topFolderOptions, adminOptions, true);
+        expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+        errorMsg = await ExperimentCRUDUtils.importCrossTypeData(server, "Name\tStoredAmount\tUnits\tSampleType\nData1\t-1.1\tkg\t" + dataType ,'MERGE', topFolderOptions, adminOptions, true);
+        expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+
+    });
+
+    it ("Test units conversion on insert/update", async () => {
+        const sampleTypeMass = 'SampleTypeWithMassUnits';
+        const sampleTypeVolume = 'SampleTypeWithVolumeUnits';
+        const sampleTypeCount = 'SampleTypeWithCountUnits';
+
+        const sampleTypeUnits = {
+            [sampleTypeMass]: 'ug',
+            [sampleTypeVolume]: 'L',
+            [sampleTypeCount]: 'unit'
+        };
+
+        for (const [dataType, unit] of Object.entries(sampleTypeUnits)) {
+            const createPayload = {
+                kind: 'SampleSet',
+                domainDesign: { name: dataType, fields: [{ name: 'Name' }] },
+                options: {
+                    name: dataType,
+                    metricUnit: unit
+                }
+            };
+            await server.post('property', 'createDomain', createPayload, {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+        }
+
+        let sampleRowsWithUnits = await ExperimentCRUDUtils.insertRows(server, [
+            {name: 'S-ng', amount: 4.56, units: 'ng'},
+            {name: 'S-ug', amount: 4.56, units: 'ug'},
+            {name: 'S-mg', amount: 4.56, units: 'mg'},
+            {name: 'S-g', amount: 4.56, units: 'g'},
+            {name: 'S-kg', amount: 4.56, units: 'kg'},
+        ], 'samples', sampleTypeMass, topFolderOptions, editorUserOptions);
+
+        // check for raw amount in g and display amount in ug
+        let expectedRawAmounts : {} = {
+            'S-ng': 4.56e-9,
+            'S-ug': 4.56e-6,
+            'S-mg': 0.00456,
+            'S-g': 4.56,
+            'S-kg': 4560,
+        };
+        let expectedStoredAmounts : {} = {
+            'S-ng': 4.56e-3,
+            'S-ug': 4.56,
+            'S-mg': 4560,
+            'S-g': 4.56e6,
+            'S-kg': 4.56e9,
+        };
+
+        for (const sampleRow of sampleRowsWithUnits) {
+            const sampleName = caseInsensitive(sampleRow, 'name');
+            let sampleData = await ExperimentCRUDUtils.getSampleDataByName(server, sampleName, sampleTypeMass, 'StoredAmount,Units,RawAmount,RawUnits', topFolderOptions, readerUserOptions);
+            expect(caseInsensitive(sampleData, 'RawAmount')).toBeCloseTo(expectedRawAmounts[sampleName]);
+            expect(caseInsensitive(sampleData, 'StoredAmount')).toBeCloseTo(expectedStoredAmounts[sampleName]);
+            expect(caseInsensitive(sampleData, 'RawUnits')).toEqual('g');
+            expect(caseInsensitive(sampleData, 'Units')).toEqual('ug');
+            await server.post('query', 'updateRows', {
+                schemaName: 'samples',
+                queryName: sampleTypeMass,
+                rows: [{
+                    amount: 6.54,
+                    units: sampleName.substring(2),
+                    rowId: caseInsensitive(sampleRow, 'rowId')
+                }]
+            }, { ...topFolderOptions, ...editorUserOptions }).expect(successfulResponse);
+        }
+
+        expectedRawAmounts = {
+            'S-ng': 6.54e-9,
+            'S-ug': 6.54e-6,
+            'S-mg': 0.00654,
+            'S-g': 6.54,
+            'S-kg': 6540,
+        };
+        expectedStoredAmounts = {
+            'S-ng': 6.54e-3,
+            'S-ug': 6.54,
+            'S-mg': 6540,
+            'S-g': 6.54e6,
+            'S-kg': 6.54e9,
+        };
+        for (const sampleRow of sampleRowsWithUnits) {
+            const sampleName = caseInsensitive(sampleRow, 'name');
+            let sampleData = await ExperimentCRUDUtils.getSampleDataByName(server, sampleName, sampleTypeMass, 'StoredAmount,Units,RawAmount,RawUnits', topFolderOptions, readerUserOptions);
+            expect(caseInsensitive(sampleData, 'RawAmount')).toBeCloseTo(expectedRawAmounts[sampleName]);
+            expect(caseInsensitive(sampleData, 'StoredAmount')).toBeCloseTo(expectedStoredAmounts[sampleName]);
+            expect(caseInsensitive(sampleData, 'RawUnits')).toEqual('g');
+            expect(caseInsensitive(sampleData, 'Units')).toEqual('ug');
+        }
+
+        sampleRowsWithUnits = await ExperimentCRUDUtils.insertRows(server, [
+            {name: 'S-L', amount: 4.56, units: 'L'},
+            {name: 'S-mL', amount: 4.56, units: 'mL'},
+            {name: 'S-uL', amount: 4.56, units: 'uL'},
+        ], 'samples', sampleTypeVolume, topFolderOptions, editorUserOptions);
+
+        // check for storedamount in mL
+        expectedRawAmounts = {
+            'S-L': 4560,
+            'S-mL': 4.56,
+            'S-uL': 0.00456,
+        };
+        // stored amount is in L
+        expectedStoredAmounts = {
+            'S-L': 4.56,
+            'S-mL': 0.00456,
+            'S-uL': 4.56e-6,
+        }
+        for (const sampleRow of sampleRowsWithUnits) {
+            const sampleName = caseInsensitive(sampleRow, 'name');
+            const sampleData = await ExperimentCRUDUtils.getSampleDataByName(server, sampleName, sampleTypeVolume, 'StoredAmount,Units,RawAmount,RawUnits', topFolderOptions, readerUserOptions);
+            expect(caseInsensitive(sampleData, 'RawAmount')).toBeCloseTo(expectedRawAmounts[sampleName]);
+            expect(caseInsensitive(sampleData, 'StoredAmount')).toBeCloseTo(expectedStoredAmounts[sampleName]);
+            expect(caseInsensitive(sampleData, 'RawUnits')).toEqual('mL');
+            expect(caseInsensitive(sampleData, 'Units')).toEqual('L');
+        }
+
+        const countRows = [
+            {name: 'S-unit', amount: 4.56, units: 'unit'},
+            {name: 'S-pieces', amount: 4.56, units: 'pieces'},
+            {name: 'S-kits', amount: 4.56, units: 'kits'},
+            {name: 'S-cells', amount: 4.56, units: 'cells'}
+        ]
+        sampleRowsWithUnits = await ExperimentCRUDUtils.insertRows(server, countRows, 'samples', sampleTypeCount, topFolderOptions, editorUserOptions);
+
+        for (const sampleRow of sampleRowsWithUnits) {
+            const sampleName = caseInsensitive(sampleRow, 'name');
+            const usedUnit = sampleName.substring(2);
+            const sampleData = await ExperimentCRUDUtils.getSampleDataByName(server, sampleName, sampleTypeCount, 'StoredAmount,Units,RawAmount,RawUnits', topFolderOptions, readerUserOptions);
+            expect(caseInsensitive(sampleData, 'RawAmount')).toBeCloseTo(4.56);
+            expect(caseInsensitive(sampleData, 'StoredAmount')).toBeCloseTo(4.56);
+            expect(caseInsensitive(sampleData, 'RawUnits')).toEqual(usedUnit);
+            expect(caseInsensitive(sampleData, 'Units')).toEqual(usedUnit);
+
+            await server.post('query', 'updateRows', {
+                schemaName: 'samples',
+                queryName: sampleTypeCount,
+                rows: [{
+                    amount: 6.54,
+                    units: usedUnit,
+                    rowId: caseInsensitive(sampleRow, 'rowId')
+                }]
+            }, { ...topFolderOptions, ...editorUserOptions }).expect(successfulResponse);
+        }
+
+        for (const sampleRow of sampleRowsWithUnits) {
+            const sampleName = caseInsensitive(sampleRow, 'name');
+            const usedUnit = sampleName.substring(2);
+            const sampleData = await ExperimentCRUDUtils.getSampleDataByName(server, sampleName, sampleTypeCount, 'StoredAmount,Units,RawAmount,RawUnits', topFolderOptions, readerUserOptions);
+            expect(caseInsensitive(sampleData, 'RawAmount')).toBeCloseTo(6.54);
+            expect(caseInsensitive(sampleData, 'StoredAmount')).toBeCloseTo(6.54);
+            expect(caseInsensitive(sampleData, 'RawUnits')).toEqual(usedUnit);
+            expect(caseInsensitive(sampleData, 'Units')).toEqual(usedUnit);
+        }
+
+    })
+
+    async function verifyCountTypeAliquotRollup(sampleTypeName: string, hasSampleTypeDisplayUnit: boolean) {
+        const dataRows = [
+            {name: 'S-no-amount'},
+            {AliquotedFrom: 'S-no-amount', name: 'S-no-pcs1', amount: 2, units: 'pieces'},
+            {AliquotedFrom: 'S-no-amount', name: 'S-no-pcs2', amount: 2, units: 'pieces'},
+            {name: 'S-unit', amount: 1, units: 'unit'},
+            {AliquotedFrom: 'S-unit', name: 'S-unit-unit1', amount: 2, units: 'unit'},
+            {AliquotedFrom: 'S-unit', name: 'S-unit-unit2', amount: 2, units: 'unit'},
+            {name: 'S-pieces', amount: 1, units: 'pieces'},
+            {AliquotedFrom: 'S-pieces', name: 'S-pcs-pcs1', amount: 2, units: 'pieces'},
+            {AliquotedFrom: 'S-pieces', name: 'S-pcs-pcs2', amount: 2, units: 'pieces'},
+            {name: 'S-kits', amount: 1, units: 'kits'},
+            {AliquotedFrom: 'S-kits', name: 'S-kit-pcs1', amount: 2, units: 'pieces'},
+            {AliquotedFrom: 'S-kits', name: 'S-kit-pcs2', amount: 2, units: 'pieces'},
+            {name: 'S-cells', amount: 1, units: 'cells'},
+            {AliquotedFrom: 'S-cells', name: 'S-cells-pcs1', amount: 2, units: 'pieces'},
+            {AliquotedFrom: 'S-cells', name: 'S-cells-cells2', amount: 2, units: 'cells'},
+        ]
+
+        const insertedResults = await ExperimentCRUDUtils.insertRows(server, dataRows, 'samples', sampleTypeName, topFolderOptions, editorUserOptions);
+        const insertedMap = {};
+        for (const row of insertedResults) {
+            insertedMap[caseInsensitive(row, 'name')] = row;
+        }
+
+        let expectedAliquotUnit = {
+            'S-no-amount': 'pieces',
+            'S-unit': 'unit',
+            'S-pieces': 'pieces',
+            'S-kits': 'pieces',
+            'S-cells': hasSampleTypeDisplayUnit ? 'unit' : 'cells',
+        };
+
+        // for each expectedRollupAmounts
+        for (const [sampleName, expectedAliquotUnitValue] of Object.entries(expectedAliquotUnit)) {
+            let parentUnit = sampleName.substring(2);
+            if (parentUnit === 'no-amount') {
+                parentUnit = null;
+            }
+            const sampleData = await ExperimentCRUDUtils.getSampleDataByName(server, sampleName, sampleTypeName, 'Units,RawUnits,AliquotVolume,AliquotCount,AliquotUnit', topFolderOptions, readerUserOptions);
+            expect(caseInsensitive(sampleData, 'RawUnits')).toEqual(parentUnit);
+            expect(caseInsensitive(sampleData, 'Units')).toEqual(parentUnit);
+            expect(caseInsensitive(sampleData, 'AliquotVolume')).toEqual(4);
+            expect(caseInsensitive(sampleData, 'AliquotCount')).toEqual(2);
+            expect(caseInsensitive(sampleData, 'AliquotUnit')).toEqual(expectedAliquotUnitValue);
+
+        }
+    }
+
+    it ("Test aliquot rollup for count display unit", async () => {
+        let dataType = 'SampleTypeAliquotWithCountUnit';
+        let createPayload : {} = {
+            kind: 'SampleSet',
+            domainDesign: { name: dataType, fields: [{ name: 'Name' }] },
+            options: {
+                name: dataType,
+                metricUnit: 'unit'
+            }
+        };
+        await server.post('property', 'createDomain', createPayload, {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+        await verifyCountTypeAliquotRollup(dataType, true);
+
+        dataType = 'SampleTypeAliquoNoDisplayUnit';
+        createPayload = {
+            kind: 'SampleSet',
+            domainDesign: { name: dataType, fields: [{ name: 'Name' }] },
+            options: {
+                name: dataType,
+            }
+        };
+        await server.post('property', 'createDomain', createPayload, {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+        await verifyCountTypeAliquotRollup(dataType, false);
+
+    })
 
 });
 

@@ -16,10 +16,11 @@
 package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.AttachmentType;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.SQLFragment;
 
-public class ExpProtocolAttachmentType implements AttachmentType
+public class ExpProtocolAttachmentType implements AttachmentParentType
 {
     private static final ExpProtocolAttachmentType INSTANCE = new ExpProtocolAttachmentType();
 
@@ -35,12 +36,12 @@ public class ExpProtocolAttachmentType implements AttachmentType
     @Override
     public @NotNull String getUniqueName()
     {
-        return getClass().getName();
+        return "ExpProtocol";
     }
 
     @Override
-    public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
+    public @Nullable SQLFragment getSelectParentEntityIdsSql()
     {
-        sql.append(parentColumn).append(" IN (SELECT EntityId FROM ").append(ExperimentService.get().getTinfoProtocol(), "ep").append(")");
+        return new SQLFragment("SELECT EntityId FROM ").append(ExperimentService.get().getTinfoProtocol(), "ep");
     }
 }

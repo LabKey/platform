@@ -26,6 +26,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.Rserve.RConnection;
@@ -35,7 +36,6 @@ import javax.script.ScriptContext;
 import javax.script.ScriptException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -126,17 +126,17 @@ public class RserveScriptEngine extends RScriptEngine
 
 
     @Override
-    protected String getInputFilename(File inputScript)
+    protected String getInputFilename(FileLike inputScript)
     {
         return getRemotePath(inputScript);
     }
 
 
     // clean absolute path
-    File workingDirectory;
+    FileLike workingDirectory;
 
     @Override
-    public File getWorkingDir(ScriptContext context)
+    public FileLike getWorkingDir(ScriptContext context)
     {
         if (null == workingDirectory)
             workingDirectory = FileUtil.getAbsoluteCaseSensitiveFile(super.getWorkingDir(getContext()));
@@ -147,7 +147,7 @@ public class RserveScriptEngine extends RScriptEngine
     @Override
     protected String getRWorkingDir(ScriptContext context)
     {
-        File workingDir = getWorkingDir(context);
+        FileLike workingDir = getWorkingDir(context);
         if (!mo.requiresFileRemap())
             return workingDir.toString();
         else
@@ -163,7 +163,7 @@ public class RserveScriptEngine extends RScriptEngine
     {
         if (!mo.requiresCopyFiles())    // requiresCopyFiles implies there is no shared file-system
         {
-            File pipelineRoot = RReport.getPipelineRoot(context);
+            FileLike pipelineRoot = RReport.getPipelineRoot(context);
             String localPath = getLocalPath(pipelineRoot);
             labkey.append("labkey.pipeline.root <- \"").append(localPath).append("\"\n");
 
@@ -230,7 +230,7 @@ public class RserveScriptEngine extends RScriptEngine
             return;
 
         LOG.debug("Copy files in working directory to remote server");
-        final Path localWorkingDirectoryPath = getWorkingDir(getContext()).toPath();
+        final Path localWorkingDirectoryPath = getWorkingDir(getContext()).toNioPathForRead();
         try (Stream<Path> pathStream = Files.find(localWorkingDirectoryPath, Integer.MAX_VALUE, (filePath, fileAttr) -> fileAttr.isRegularFile()))
         {
             List<Pair<File, File>> listing = pathStream
@@ -260,7 +260,7 @@ public class RserveScriptEngine extends RScriptEngine
             return;
 
         LOG.debug("Copy files from remote server to local working directory");
-        File wd = getWorkingDir(getContext());
+        FileLike wd = getWorkingDir(getContext());
         try
         {
             String[] paths = rconn.eval("dir("+ toR(defaultIfBlank(rserveWorkingDirectory, ".")) +", all.files = TRUE, full.names = TRUE, recursive = TRUE, include.dirs = FALSE, no.. = FALSE)").asStrings();
@@ -270,10 +270,13 @@ public class RserveScriptEngine extends RScriptEngine
                     continue;
                 if ("script.R".equalsIgnoreCase(remotePath))
                     continue;
-                File file = new File(wd,remotePath);
-                FileUtil.createTempFile(file);
+                FileLike file = wd.resolveFile(org.labkey.api.util.Path.parse(remotePath));
+                if (!file.getParent().exists())
+                {
+                    FileUtil.mkdirs(file.getParent());
+                }
                 try (InputStream is = rconn.openFile(remotePath);
-                     FileOutputStream fos = new FileOutputStream(file))
+                     OutputStream fos = file.openOutputStream())
                 {
                     IOUtil.copyCompletely(is, fos);
                 }
@@ -311,7 +314,7 @@ public class RserveScriptEngine extends RScriptEngine
             LOG.info("Reusing RServe connection in use: " + rh.isInUse());
         }
 
-        File scriptFile = prepareScriptFile(script, context, extensions, true);
+        FileLike scriptFile = prepareScriptFile(script, context, extensions);
 
         try
         {
@@ -435,7 +438,7 @@ public class RserveScriptEngine extends RScriptEngine
 
 
     @Override
-    public String getRemotePath(File localFile)
+    public String getRemotePath(FileLike localFile)
     {
         // get absolute path to make sure the paths are consistent
         localFile = FileUtil.getAbsoluteCaseSensitiveFile(localFile);
@@ -460,14 +463,14 @@ public class RserveScriptEngine extends RScriptEngine
     }
 
     // generate path relative to the working directory, return null for paths outside directory
-    static String relativizeWorkingDirectory(File workingDirectory, String strPath)
+    static String relativizeWorkingDirectory(FileLike workingDirectory, String strPath)
     {
         Path path = new File(strPath).toPath().normalize();
         if (path.equals(path.getRoot()) || path.startsWith(".."))
             return null;
         if (!path.isAbsolute())
             return path.toString();
-        Path wd = workingDirectory.toPath();
+        Path wd = workingDirectory.toNioPathForRead();
         Path relative = wd.relativize(path);
         if (relative.startsWith("../") || relative.startsWith("/"))
             return null;
@@ -477,7 +480,7 @@ public class RserveScriptEngine extends RScriptEngine
 
     // It's confusing to have methods that take URI and return path (or vice versa)
     // Let's stick to methods that take/return the same type (using URI here since pathMap.localToRemote() wants URI)
-    static public URI makeLocalToRemotePath(ExternalScriptEngineDefinition def, File workingDirectory, URI localURI)
+    static public URI makeLocalToRemotePath(ExternalScriptEngineDefinition def, FileLike workingDirectory, URI localURI)
     {
         // let's first try to relative relative to the working directory
         // We could do this in the other order.  However, since pathMap.localToRemote() doesn't tell us when it did not do anything,

@@ -32,6 +32,8 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -127,7 +129,7 @@ public class StudyImportContext extends SimpleStudyImportContext
 
     // TODO: this should go away once study import fully supports using VirtualFile -  HMMM.  Why doesn't it?
     @Deprecated
-    private Path getStudyFile(VirtualFile root, VirtualFile dir, String name) throws ImportException
+    private FileLike getStudyFile(VirtualFile root, VirtualFile dir, String name) throws ImportException
     {
         Path rootFile = FileUtil.stringToPath(getContainer(), root.getLocation());
         Path dirFile = FileUtil.stringToPath(getContainer(), dir.getLocation());
@@ -140,7 +142,7 @@ public class StudyImportContext extends SimpleStudyImportContext
         if (!Files.isRegularFile(file))
             throw new ImportException(source + " refers to " + ImportException.getRelativePath(rootFile, file) + ": expected a file but found a directory");
 
-        return file;
+        return FileSystemLike.wrapFile(file);
     }
 
     private StudyDocument readStudyDocument(Path studyXml) throws ImportException, IOException
@@ -163,7 +165,7 @@ public class StudyImportContext extends SimpleStudyImportContext
         return studyDoc;
     }
 
-    public Path getSpecimenArchive(VirtualFile root) throws ImportException
+    public FileLike getSpecimenArchive(VirtualFile root) throws ImportException
     {
         StudyDocument.Study.Specimens specimens = getXml().getSpecimens();
 

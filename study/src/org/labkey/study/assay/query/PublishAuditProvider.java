@@ -181,19 +181,6 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
     }
 
     @Override
-    public Map<FieldKey, String> legacyNameMap()
-    {
-        Map<FieldKey, String> legacyMap =  super.legacyNameMap();
-        legacyMap.put(FieldKey.fromParts("intKey1"), COLUMN_NAME_PROTOCOL);
-        legacyMap.put(FieldKey.fromParts("key1"), COLUMN_NAME_TARGET_STUDY);
-
-        legacyMap.put(FieldKey.fromParts("Property", "sourceLsid"), COLUMN_NAME_SOURCE_LSID);
-        legacyMap.put(FieldKey.fromParts("Property", "datasetId"), COLUMN_NAME_DATASET_ID);
-        legacyMap.put(FieldKey.fromParts("Property", "recordCount"), COLUMN_NAME_RECORD_COUNT);
-        return legacyMap;
-    }
-
-    @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
         return (Class<K>) AuditEvent.class;

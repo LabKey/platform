@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report.r.view;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
@@ -32,9 +33,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
 import javax.imageio.ImageIO;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -62,26 +63,26 @@ public class ImageOutput extends AbstractParamReplacement
     }
 
     @Override
-    protected File getSubstitution(File directory) throws Exception
+    protected @Nullable FileLike getSubstitution(FileLike directory) throws IOException
     {
-        File file;
+        FileLike file;
         if (directory != null)
             file = FileUtil.createTempFile(RReport.FILE_PREFIX, "Result." + getExtension(), directory);
         else
-            file = FileUtil.createTempFile(RReport.FILE_PREFIX, "Result." + getExtension());
+            file = FileUtil.createTempFileLike(RReport.FILE_PREFIX, "Result." + getExtension());
 
         addFile(file);
         return file;
     }
 
     @Override
-    public HttpView getView(ViewContext context)
+    public HttpView<?> getView(ViewContext context)
     {
         return new ImgReportView(this, canDeleteFile());
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput(File file)
+    public ScriptOutput renderAsScriptOutput(FileLike file) throws IOException
     {
         ImgReportView view = new ImgReportView(this, canDeleteFile());
         String image = view.renderInternalAsString(file);
@@ -118,13 +119,13 @@ public class ImageOutput extends AbstractParamReplacement
         }
 
         @Override
-        protected String renderInternalAsString(File file)
+        protected String renderInternalAsString(FileLike file) throws IOException
         {
             String imgUrl = null;
 
-            if (exists(file))
+            if (existsWithContent(file))
             {
-                File imgFile;
+                FileLike imgFile;
                 if (!_deleteFile)
                     imgFile = file;
                 else
@@ -147,16 +148,16 @@ public class ImageOutput extends AbstractParamReplacement
         }
 
         @Override
-        protected void renderInternal(Object model, PrintWriter out)
+        protected void renderInternal(Object model, PrintWriter out) throws IOException
         {
-            for (File file : getFiles())
+            for (FileLike file : getFiles())
             {
                 String imgUrl = renderInternalAsString(file);
 
                 if (null != imgUrl)
                 {
                     out.write("<table class=\"labkey-output\">");
-                    renderTitle(model, out);
+                    renderTitle(out);
                     if (isCollapse())
                         out.write("<tr style=\"display:none\"><td>");
                     else
@@ -174,11 +175,11 @@ public class ImageOutput extends AbstractParamReplacement
     @Override
     public Thumbnail renderThumbnail(ViewContext context) throws IOException
     {
-        for (File file : getFiles())
+        for (FileLike file : getFiles())
         {
             // just render the first file, in most cases this is appropriate
             if (file.exists())
-                return ImageUtil.renderThumbnail(ImageIO.read(file));
+                return ImageUtil.renderThumbnail(ImageIO.read(file.openInputStream()));
         }
         return null;
     }

@@ -1053,6 +1053,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             layers = [], clipRect,
             emptyTextFn = function(){return '';},
             plotConfig = {
+                legendPos: chartConfig.legendPos,
                 renderTo: renderTo,
                 rendererType: 'd3',
                 width: chartConfig.width,
@@ -1097,17 +1098,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 // if user has set a max but not a min, default to 0 for bar chart
                 scales.y.domain[0] = min;
             }
-        }
-        else if (renderType === 'box_plot' && chartConfig.pointType === 'all')
-        {
-            layers.push(
-                new LABKEY.vis.Layer({
-                    geom: LABKEY.vis.GenericChartHelper.generatePointGeom(chartConfig.geomOptions),
-                    aes: {hoverText: LABKEY.vis.GenericChartHelper.generatePointHover(chartConfig.measures)}
-                })
-            );
-        }
-        else if (renderType === 'line_plot') {
+        } else if (renderType === 'line_plot') {
             var xName = chartConfig.measures.x.name,
                 isDate = isDateType(getMeasureType(chartConfig.measures.x));
 
@@ -1194,16 +1185,45 @@ LABKEY.vis.GenericChartHelper = new function(){
             scales.x.tickLabelMax = Math.floor((plotConfig.width - 300) / 30);
         }
 
-        var margins = _getPlotMargins(renderType, scales, aes, data, plotConfig, chartConfig);
+        var wrapLines = _wrapXAxisTickTextLines(plotConfig, chartConfig, aes, scales, data);
+        var margins = _getPlotMargins(renderType, data, chartConfig, wrapLines);
+
+        if (wrapLines > 1) {
+            labels = {
+                ...labels,
+                // x-axis position defaults to 50 (see D3Renderer.renderLabel) but if we're wrapping our tick labels
+                // then they will probably collide with the label, so we add 20 to hopefully not collide.
+                x: { value: labels.x.value, position: 70 }
+            }
+        }
+
         if (LABKEY.Utils.isObject(margins)) {
             plotConfig.margins = margins;
         }
 
-        if (chartConfig.measures.color)
+        if (chartConfig.measures.color || chartConfig.geomOptions.colorPaletteScale)
         {
             scales.color = {
                 colorType: chartConfig.geomOptions.colorPaletteScale,
                 scaleType: 'discrete'
+            }
+        }
+
+        if (!LABKEY.Utils.isEmptyObj(chartConfig.measuresOptions?.series)) {
+            const colorValueMap = {};
+            const shapeValueMap = {};
+            Object.entries(chartConfig.measuresOptions.series).forEach(([key, val]) => {
+                if (val.color) colorValueMap[key] = val.color;
+                if (val.shape) shapeValueMap[key] = LABKEY.vis.Scale.ShapeMap[val.shape];
+            });
+
+            if (!LABKEY.Utils.isEmptyObj(colorValueMap)) {
+                if (!scales.color) scales.color = { scaleType: 'discrete' };
+                scales.color.scale = LABKEY.vis.Scale.ValueMapDiscrete(colorValueMap);
+            }
+            if (!LABKEY.Utils.isEmptyObj(shapeValueMap)) {
+                if (!scales.shape) scales.shape = { scaleType: 'discrete' };
+                scales.shape.scale = LABKEY.vis.Scale.ValueMapDiscrete(shapeValueMap);
             }
         }
 
@@ -1243,6 +1263,17 @@ LABKEY.vis.GenericChartHelper = new function(){
             );
         }
 
+        // render box plot points after box layer so they are not obscured
+        if (renderType === 'box_plot' && chartConfig.pointType === 'all')
+        {
+            layers.push(
+                new LABKEY.vis.Layer({
+                    geom: LABKEY.vis.GenericChartHelper.generatePointGeom(chartConfig.geomOptions),
+                    aes: {hoverText: LABKEY.vis.GenericChartHelper.generatePointHover(chartConfig.measures)}
+                })
+            );
+        }
+
         plotConfig = $.extend(plotConfig, {
             clipRect: clipRect,
             data: data,
@@ -1263,11 +1294,12 @@ LABKEY.vis.GenericChartHelper = new function(){
         '': { label: 'Point-to-Point', value: '' },
         'Linear': { label: 'Linear Regression', value: 'Linear', equation: 'y = x * slope + intercept' },
         'Polynomial': { label: 'Polynomial', value: 'Polynomial', equation: 'y = a0 + a1 * x + a2 * x^2' },
-        '3 Parameter': { label: 'Nonlinear 3PL', value: '3 Parameter', showMax: true, schemaPrefix: 'assay', equation: 'y = max * abs(x/inflection)^abs(slope) / [1 + abs(x/inflection)^abs(slope)]' },
+        '3 Parameter': { label: 'Nonlinear 3PL (Hill)', value: '3 Parameter', showMax: true, schemaPrefix: 'assay', equation: 'y = max * abs(x/inflection)^abs(slope) / [1 + abs(x/inflection)^abs(slope)]' },
         'Three Parameter': { label: 'Nonlinear 3PL (Alternate)', value: 'Three Parameter', showMax: true, schemaPrefix: 'assay', equation: 'y = max / [1 + (inflection - x) * slope]' },
-        '4 Parameter': { label: 'Nonlinear 4PL', value: '4 Parameter', schemaPrefix: 'assay', equation: 'y = max + (min - max) / [1 + (x/inflection)^slope]' },
+        '4 Parameter': { label: 'Nonlinear 4PL (Hill)', value: '4 Parameter', schemaPrefix: 'assay', equation: 'y = max + (min - max) / [1 + (x/inflection)^slope]' },
         'Four Parameter': { label: 'Nonlinear 4PL (Alternate)', value: 'Four Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [1 + (inflection - x) * slope]' },
-        'Five Parameter': { label: 'Nonlinear 5PL', value: 'Five Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [[1 + (inflection - x) * slope]^asymmetry]' },
+        '5 Parameter': { label: 'Nonlinear 5PL (Hill/Richards)', value: '5 Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / (1 + (2^(1/asymmetry) - 1) * ((inflection / x)^hillSlope))^asymmetry' },
+        'Five Parameter': { label: 'Nonlinear 5PL (Alternate)', value: 'Five Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [[1 + (inflection - x) * slope]^asymmetry]' },
     }
 
     const generateTrendlinePathHover = function(trendline) {
@@ -1319,6 +1351,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             logXScale: chartConfig.scales.x && chartConfig.scales.x.trans === 'log',
             asymptoteMin: chartConfig.geomOptions.trendlineAsymptoteMin,
             asymptoteMax: chartConfig.geomOptions.trendlineAsymptoteMax,
+            parameters: chartConfig.geomOptions.trendlineParameters,
             data: chartConfig.measures.series
                     ? LABKEY.vis.groupCountData(data, generateGroupingAcc(chartConfig.measures.series.name))
                     : [{name: 'All', rawData: data}],
@@ -1338,8 +1371,11 @@ LABKEY.vis.GenericChartHelper = new function(){
                 // we need at least 2 data points for curve fitting
                 if (series.rawData.length > 1) {
                     series.data = await _querySeriesTrendlineData(trendlineConfig, series, xName, yName);
+                } else {
+                    series.error = 'Series ' + series.name + ': Not enough data points for trendline calculation.';
                 }
             } catch (e) {
+                series.error = e;
                 console.error(e);
             }
         }
@@ -1358,9 +1394,39 @@ LABKEY.vis.GenericChartHelper = new function(){
                     y: _getRowValue(row, yName, 'value'),
                 };
             });
-            const xAcc = function(row) { return row.x };
+            const xAcc = function(row) {
+                // if log scale, filter out non-positive x values for min/max calculation used for generated points
+                if (trendlineConfig.logXScale && row.x <= 0) {
+                    return undefined;
+                }
+                return row.x;
+            };
             const xMin = d3.min(points, xAcc);
             const xMax = d3.max(points, xAcc);
+
+            // Get the first non-null value for curveFitName in the seriesData.rawData.
+            // Also make sure that if we have > 1 non-null value, they are all the same.
+            const curveFitName = trendlineConfig.parameters;
+            let providedParams;
+            if (curveFitName) {
+                for (let i = 0; i < seriesData.rawData.length; i++) {
+                    const row = seriesData.rawData[i];
+                    const curveFitValue = _getRowValue(row, curveFitName, 'value');
+                    if (curveFitValue !== null && curveFitValue !== undefined) {
+                        if (providedParams === undefined) {
+                            providedParams = curveFitValue;
+                        } else if (providedParams !== curveFitValue) {
+                            reject('Series "' + seriesData.name + '" - Inconsistent curve fit parameters in "' + curveFitName + '" variable.');
+                            return;
+                        }
+                    }
+                }
+
+                if (!providedParams) {
+                    reject('Series "' + seriesData.name + '" - No curve fit parameters found in "' + curveFitName + '" variable.');
+                    return;
+                }
+            }
 
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('premium', 'calculateCurveFit.api'),
@@ -1368,6 +1434,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 jsonData: {
                     curveFitType: trendlineConfig.type,
                     points: points,
+                    parametersStr: providedParams,
                     logXScale: trendlineConfig.logXScale,
                     asymptoteMin: trendlineConfig.asymptoteMin,
                     asymptoteMax: trendlineConfig.asymptoteMax,
@@ -1379,43 +1446,53 @@ LABKEY.vis.GenericChartHelper = new function(){
                     resolve(response);
                 }),
                 failure : LABKEY.Utils.getCallbackWrapper(function(reason) {
-                    reject(reason);
+                    reject('Series "' + seriesData.name + '" - ' + reason.exception);
                 }, this, true),
             });
         });
     };
 
-    var _wrapXAxisTickTextLines = function(scales, plotConfig, maxTickLength, data) {
-        if (scales.x && scales.x.scaleType === 'discrete') {
-            var tickCount = scales.x && scales.x.tickLabelMax ? Math.min(scales.x.tickLabelMax, data.length) : data.length;
+    var _wrapXAxisTickTextLines = function(plotConfig, chartConfig, aes, scales, data) {
+        if (LABKEY.Utils.isArray(data) && scales.x && scales.x.scaleType === 'discrete') {
+            let maxTickLength = 0;
+            $.each(data, function(idx, d) {
+                const val = LABKEY.Utils.isFunction(aes.x) ? aes.x(d) : d[aes.x];
+                const subVal = LABKEY.Utils.isFunction(aes.xSub) ? aes.xSub(d) : d[aes.xSub];
+                if (LABKEY.Utils.isString(subVal)) {
+                    maxTickLength = Math.max(maxTickLength, subVal.length);
+                } else if (LABKEY.Utils.isString(val)) {
+                    maxTickLength = Math.max(maxTickLength, val.length);
+                }
+            });
+
+            let tickCount = scales.x && scales.x.tickLabelMax ? Math.min(scales.x.tickLabelMax, data.length) : data.length;
             // after 10 tick labels, we switch to rotating the label, so use that as the max here
             tickCount = Math.min(tickCount, 10);
-            var approxTickLabelWidth = plotConfig.width / tickCount;
-            return Math.max(1, Math.floor((maxTickLength * 8) / approxTickLabelWidth));
+            const approxTickLabelWidth = plotConfig.width / tickCount;
+            return Math.max(1, Math.floor((maxTickLength * 12) / approxTickLabelWidth));
         }
 
         return 1;
     };
 
-    var _getPlotMargins = function(renderType, scales, aes, data, plotConfig, chartConfig) {
-        var margins = {};
+    const chartConfigHasLegend = (chartConfig) => {
+        const { color, series, shape, xSub } = chartConfig.measures;
+        return !!(color || series || shape || xSub);
+    }
+
+    const _getPlotMargins = function(renderType, data, chartConfig, wrapLines) {
+        const margins = {};
+        const hasLegend = chartConfigHasLegend(chartConfig);
 
         // issue 29690: for bar and box plots, set default bottom margin based on the number of labels and the max label length
         if (LABKEY.Utils.isArray(data)) {
-            var maxLen = 0;
-            $.each(data, function(idx, d) {
-                var val = LABKEY.Utils.isFunction(aes.x) ? aes.x(d) : d[aes.x];
-                var subVal = LABKEY.Utils.isFunction(aes.xSub) ? aes.xSub(d) : d[aes.xSub];
-                if (LABKEY.Utils.isString(subVal)) {
-                    maxLen = Math.max(maxLen, subVal.length);
-                } else if (LABKEY.Utils.isString(val)) {
-                    maxLen = Math.max(maxLen, val.length);
-                }
-            });
-
-            var wrapLines = _wrapXAxisTickTextLines(scales, plotConfig, maxLen, data);
-            // min bottom margin: 50, max bottom margin: 150
-            margins.bottom = Math.min(150, 60 + ((wrapLines - 1) * 25));
+            if (chartConfig.legendPos === 'bottom' && hasLegend) {
+                // min bottom margin: 170, max bottom margin: 360
+                margins.bottom = Math.min(360, 170 + ((wrapLines - 1) * 25));
+            } else {
+                // min bottom margin: 80, max bottom margin: 150
+                margins.bottom = Math.min(150, 80 + ((wrapLines - 1) * 25));
+            }
         }
 
         // issue 31857: allow custom margins to be set in Chart Layout dialog
@@ -1572,9 +1649,14 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
             else if (hasZeroes)
             {
-                message = "Some " + measureName + "-axis values are 0. Plotting all " + measureName + "-axis values as value+1.";
+                message = "Some " + measureName + "-axis values are 0. Plotting all " + measureName + "-axis zero values as Number.EPSILON.";
                 var accFn = aes[measureName];
-                aes[measureName] = function(row){return accFn(row) + 1};
+                aes[measureName] = function(row){
+                    if (accFn(row) === 0) {
+                        return Number.EPSILON;
+                    }
+                    return accFn(row);
+                };
             }
         }
 
@@ -1613,7 +1695,8 @@ LABKEY.vis.GenericChartHelper = new function(){
     var getAllowableTypes = function(field) {
         var numericTypes = ['int', 'float', 'double', 'INTEGER', 'DOUBLE'],
                 nonNumericTypes = ['string', 'date', 'boolean', 'STRING', 'TEXT', 'DATE', 'BOOLEAN'],
-                numericAndDateTypes = numericTypes.concat(['date','DATE']);
+                numericAndDateTypes = numericTypes.concat(['date','DATE']),
+                textTypes = ['string', 'STRING', 'TEXT'];
 
         if (field.altSelectionOnly)
             return [];
@@ -1623,6 +1706,8 @@ LABKEY.vis.GenericChartHelper = new function(){
             return nonNumericTypes;
         else if (field.numericOrDateOnly)
             return numericAndDateTypes;
+        else if (field.textOnly)
+            return textTypes;
         else
             return numericTypes.concat(nonNumericTypes);
     }
@@ -1943,7 +2028,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             data = generateDataForChartType(chartConfig, chartType, geom, data);
         }
 
-        var validation = _validateChartConfig(chartConfig, aes, scales, measureStore);
+        var validation = _validateChartConfig(chartConfig, aes, scales, measureStore, trendlineData);
         _renderMessages(renderTo, validation.messages);
         if (!validation.success)
             return;
@@ -1967,12 +2052,14 @@ LABKEY.vis.GenericChartHelper = new function(){
     var _renderMessages = function(divId, messages) {
         if (messages && messages.length > 0) {
             var errorDiv = document.createElement('div');
-            errorDiv.innerHTML = '<h3 style="color:red;">Error rendering chart:</h3><div>' + messages.join('<br/>') + '</div>';
+            for (var i = 0; i < messages.length; i++) {
+                errorDiv.innerHTML += '<div style="color:red;">Error: ' + messages[i] + '</div>';
+            }
             document.getElementById(divId).appendChild(errorDiv);
         }
     };
 
-    var _validateChartConfig = function(chartConfig, aes, scales, measureStore) {
+    var _validateChartConfig = function(chartConfig, aes, scales, measureStore, trendlineData) {
         var hasNoDataMsg = validateResponseHasData(measureStore, false);
         if (hasNoDataMsg != null)
             return {success: false, messages: [hasNoDataMsg]};
@@ -2002,6 +2089,14 @@ LABKEY.vis.GenericChartHelper = new function(){
                         if (!validation.success)
                             return {success: false, messages: messages};
                     }
+                }
+            }
+        }
+
+        if (trendlineData) {
+            for (var i = 0; i < trendlineData.length; i++) {
+                if (trendlineData[i].error) {
+                    messages.push(trendlineData[i].error);
                 }
             }
         }

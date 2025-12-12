@@ -26,13 +26,11 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,14 +39,14 @@ import java.util.Map;
  * User: Karl Lum
  * Date: May 5, 2008
  */
-public class ROutputView extends HttpView
+public class ROutputView extends HttpView<Object>
 {
     private String _label;
     private final String _name;
     private boolean _collapse;
     private boolean _showHeader;
-    private boolean _isRemote;
-    private List<File> _files;
+    private final boolean _isRemote;
+    private final List<FileLike> _files;
     private Map<String, String> _properties;
     protected static Logger LOG = LogManager.getLogger(ROutputView.class);
     private static final boolean ALLOW_REMOTE_FILESIZE_BYPASS = false;
@@ -97,12 +95,12 @@ public class ROutputView extends HttpView
         _showHeader = showHeader;
     }
 
-    public List<File> getFiles()
+    public List<FileLike> getFiles()
     {
         return _files;
     }
 
-    public void addFile(File file)
+    public void addFile(FileLike file)
     {
         _files.add(file);
     }
@@ -122,12 +120,12 @@ public class ROutputView extends HttpView
         return id.concat(String.valueOf(UniqueID.getServerSessionScopedUID()));
     }
 
-    protected String renderInternalAsString(File file) throws Exception
+    protected String renderInternalAsString(FileLike file) throws Exception
     {
         return null;
     }
 
-    protected void renderTitle(Object model, PrintWriter out)
+    protected void renderTitle(PrintWriter out)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -148,22 +146,22 @@ public class ROutputView extends HttpView
         out.write(sb.toString());
     }
 
-    protected File moveToTemp(File file)
+    protected FileLike moveToTemp(FileLike file) throws IOException
     {
-        File root = ScriptEngineReport.getTempRoot(ReportService.get().createDescriptorInstance(RReportDescriptor.TYPE));
+        FileLike root = ScriptEngineReport.getTempRootFileLike(ReportService.get().createDescriptorInstance(RReportDescriptor.TYPE));
 
-        File newFile = FileUtil.appendName(root, FileUtil.makeFileNameWithTimestamp(FileUtil.getBaseName(file.getName()), FileUtil.getExtension(file)));
+        FileLike newFile = root.resolveChild(FileUtil.makeFileNameWithTimestamp(FileUtil.getBaseName(file.getName()), FileUtil.getExtension(file)));
         newFile.delete();
 
-        LOG.debug("Moving '" + file.getAbsolutePath() + "' to '" + newFile.getAbsolutePath() + "'");
+        LOG.debug("Moving '" + file + "' to '" + newFile + "'");
         if (file.renameTo(newFile))
             return newFile;
 
-        LOG.debug("Failed to move " + file.getAbsolutePath() + "' to '" + newFile.getAbsolutePath() + "'");
+        LOG.debug("Failed to move " + file + "' to '" + newFile + "'");
         return null;
     }
 
-    protected boolean exists(File file)
+    protected boolean existsWithContent(FileLike file)
     {
         long size = 0;
 
@@ -180,11 +178,7 @@ public class ROutputView extends HttpView
             if (ALLOW_REMOTE_FILESIZE_BYPASS && _isRemote)
                 return true;
 
-            try
-            {
-                size = Files.size(Paths.get(file.getAbsolutePath()));
-            }
-            catch(IOException ignore){}
+            size = file.getSize();
         }
 
         return (size > 0);
@@ -198,16 +192,12 @@ public class ROutputView extends HttpView
 
         if (tempDir.exists())
         {
-            File[] filesToDelete = tempDir.listFiles(new FileFilter(){
-                @Override
-                public boolean accept(File file)
+            File[] filesToDelete = tempDir.listFiles(file -> {
+                if (!file.isDirectory() && file.getName().startsWith(PREFIX))
                 {
-                    if (!file.isDirectory() && file.getName().startsWith(PREFIX))
-                    {
-                        return file.lastModified() < cutoff;
-                    }
-                    return false;
+                    return file.lastModified() < cutoff;
                 }
+                return false;
             });
             
             for (File file : filesToDelete)

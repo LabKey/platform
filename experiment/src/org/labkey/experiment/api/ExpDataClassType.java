@@ -17,7 +17,8 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.AttachmentType;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
@@ -34,15 +35,15 @@ import org.labkey.api.util.Pair;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ExpDataClassType implements AttachmentType
+public class ExpDataClassType implements AttachmentParentType
 {
-    private static final AttachmentType INSTANCE = new ExpDataClassType();
+    private static final AttachmentParentType INSTANCE = new ExpDataClassType();
 
     private ExpDataClassType()
     {
     }
 
-    public static AttachmentType get()
+    public static AttachmentParentType get()
     {
         return INSTANCE;
     }
@@ -50,11 +51,11 @@ public class ExpDataClassType implements AttachmentType
     @Override
     public @NotNull String getUniqueName()
     {
-        return getClass().getName();
+        return "DataClass";
     }
 
     @Override
-    public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
+    public @Nullable SQLFragment getSelectParentEntityIdsSql()
     {
         TableInfo tableInfo = ExperimentService.get().getTinfoDataClass();
 
@@ -79,10 +80,9 @@ public class ExpDataClassType implements AttachmentType
                 selectStatements.add("\n    SELECT " + expressionToExtractObjectId + " AS ID FROM expdataclass." + domain.getStorageTableName() + " WHERE " + where);
         });
 
-        if (selectStatements.isEmpty())
-            sql.append("1 = 0");  // No ExpDataClasses with attachment columns
-        else
-            sql.append(parentColumn).append(" IN (").append(StringUtils.join(selectStatements, "\n    UNION")).append(")");
+        return selectStatements.isEmpty() ?
+            NO_ENTITY_IDS : // No ExpDataClasses with attachment columns
+            new SQLFragment(StringUtils.join(selectStatements, "\n    UNION"));
     }
 }
 

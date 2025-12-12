@@ -16,7 +16,6 @@
 package org.labkey.experiment;
 
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
@@ -30,11 +29,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DatabaseMigrationService;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -73,6 +74,9 @@ import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
+import org.labkey.api.migration.DatabaseMigrationService;
+import org.labkey.api.migration.ExperimentDeleteService;
+import org.labkey.api.migration.MigrationTableHandler;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
@@ -81,6 +85,7 @@ import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -90,11 +95,11 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
-import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
@@ -178,7 +183,6 @@ import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
 
 public class ExperimentModule extends SpringModule
 {
-    private static final Logger LOG = LogHelper.getLogger(ExperimentModule.class, "Database migration status");
     private static final String SAMPLE_TYPE_WEB_PART_NAME = "Sample Types";
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
 
@@ -196,7 +200,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 25.013;
+        return 25.014;
     }
 
     @Nullable
@@ -266,13 +270,15 @@ public class ExperimentModule extends SpringModule
         }
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.QUANTITY_COLUMN_SUFFIX_TESTING, "Quantity column suffix testing",
                 "If a column name contains a \"__<unit>\" suffix, this feature allows for testing it as a Quantity display column", false);
+        OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS, "SQL syntax: 'FROM EXPANCESTORS()'",
+                "Support for querying lineage of experiment objects", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
         RoleManager.registerRole(new SampleTypeDesignerRole());
         RoleManager.registerRole(new DataClassDesignerRole());
 
-        AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
-        AttachmentService.get().registerAttachmentType(ExpProtocolAttachmentType.get());
+        AttachmentService.get().registerAttachmentParentType(ExpRunAttachmentType.get());
+        AttachmentService.get().registerAttachmentParentType(ExpProtocolAttachmentType.get());
 
         WebdavService.get().addExpDataProvider((path, container) -> ExperimentService.get().getAllExpDataByURL(path, container));
         ExperimentService.get().registerObjectReferencer(ExperimentServiceImpl.get());
@@ -568,7 +574,7 @@ public class ExperimentModule extends SpringModule
             folderRegistry.addImportFactory(new SampleStatusFolderImporter.Factory());
         }
 
-        AttachmentService.get().registerAttachmentType(ExpDataClassType.get());
+        AttachmentService.get().registerAttachmentParentType(ExpDataClassType.get());
 
         WebdavService.get().addProvider(new ScriptsResourceProvider());
 
@@ -734,6 +740,9 @@ public class ExperimentModule extends SpringModule
                 results.put("sampleNegativeAmountCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE storedamount < 0").getObject(Long.class));
                 results.put("sampleUnitsDifferCount", new SqlSelector(schema, "SELECT COUNT(*) from exp.material m JOIN exp.materialSource s ON m.materialsourceid = s.rowid WHERE m.units != s.metricunit").getObject(Long.class));
                 results.put("sampleTypesWithoutUnitsCount", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit IS NULL").getObject(Long.class));
+                results.put("sampleTypesWithMassTypeUnit", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit IN ('kg', 'g', 'mg', 'ug', 'ng')").getObject(Long.class));
+                results.put("sampleTypesWithVolumeTypeUnit", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit IN ('L', 'mL', 'uL')").getObject(Long.class));
+                results.put("sampleTypesWithCountTypeUnit", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit = ?", "unit").getObject(Long.class));
 
                 results.put("duplicateSampleMaterialNameCount", new SqlSelector(schema, "SELECT COUNT(*) as duplicateCount FROM " +
                         "(SELECT name, cpastype FROM exp.material WHERE cpastype <> 'Material' GROUP BY name, cpastype HAVING COUNT(*) > 1) d").getObject(Long.class));
@@ -873,11 +882,63 @@ public class ExperimentModule extends SpringModule
             });
         }
 
-        DatabaseMigrationService.get().registerSchemaHandler(new ExperimentMigrationSchemaHandler());
+        ExperimentMigrationSchemaHandler handler = new ExperimentMigrationSchemaHandler();
+        DatabaseMigrationService.get().registerSchemaHandler(handler);
+        DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
+        {
+            @Override
+            public TableInfo getTableInfo()
+            {
+                return DbSchema.get("premium", DbSchemaType.Bare).getTable("Exclusions");
+            }
+
+            @Override
+            public void adjustFilter(TableInfo sourceTable, SimpleFilter filter, Set<GUID> containers)
+            {
+                // Include experiment runs that were copied
+                FilterClause includedClause = handler.getIncludedRowIdClause(sourceTable, FieldKey.fromParts("RunId"));
+                if (includedClause != null)
+                    filter.addClause(includedClause);
+            }
+        });
+        DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
+        {
+            @Override
+            public TableInfo getTableInfo()
+            {
+                return DbSchema.get("premium", DbSchemaType.Bare).getTable("ExclusionMaps");
+            }
+
+            @Override
+            public void adjustFilter(TableInfo sourceTable, SimpleFilter filter, Set<GUID> containers)
+            {
+                // Include experiment runs that were copied
+                FilterClause includedClause = handler.getIncludedRowIdClause(sourceTable, FieldKey.fromParts("ExclusionId", "RunId"));
+                if (includedClause != null)
+                    filter.addClause(includedClause);
+            }
+        });
+        DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
+        {
+            @Override
+            public TableInfo getTableInfo()
+            {
+                return DbSchema.get("assayrequest", DbSchemaType.Bare).getTable("RequestRunsJunction");
+            }
+
+            @Override
+            public void adjustFilter(TableInfo sourceTable, SimpleFilter filter, Set<GUID> containers)
+            {
+                // Include experiment runs that were copied
+                FilterClause includedClause = handler.getIncludedRowIdClause(sourceTable, FieldKey.fromParts("RunId"));
+                if (includedClause != null)
+                    filter.addClause(includedClause);
+            }
+        });
         DatabaseMigrationService.get().registerSchemaHandler(new SampleTypeMigrationSchemaHandler());
         DataClassMigrationSchemaHandler dcHandler = new DataClassMigrationSchemaHandler();
         DatabaseMigrationService.get().registerSchemaHandler(dcHandler);
-        DatabaseMigrationService.ExperimentDeleteService.setInstance(dcHandler);
+        ExperimentDeleteService.setInstance(dcHandler);
     }
 
     @Override

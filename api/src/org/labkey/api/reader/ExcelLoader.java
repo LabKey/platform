@@ -46,6 +46,7 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -54,6 +55,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -109,6 +111,21 @@ public class ExcelLoader extends DataLoader
         public FileType getFileType() { return FILE_TYPE; }
     }
 
+    public static boolean isExcel(final FileLike dataFile)
+    {
+        try
+        {
+            try (InputStream inputStream = new BufferedInputStream(dataFile.openInputStream()))
+            {
+                return ExcelLoader.FILE_TYPE.isType(dataFile.toNioPathForRead(), null, FileUtil.readHeader(inputStream, 8 * 1024));
+            }
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static boolean isExcel(final File dataFile)
     {
         try
@@ -136,8 +153,7 @@ public class ExcelLoader extends DataLoader
     private boolean shouldDeleteFile = false;
 
 
-    private ExcelLoader()
-    {}
+    private ExcelLoader() {}
 
     public static ExcelLoader create(Path path, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
     {
@@ -878,6 +894,7 @@ public class ExcelLoader extends DataLoader
                         int rowCount = 0;
                         while (iter.hasNext())
                         {
+                            //noinspection ConstantValue
                             assertTrue(iter.hasNext());
                             iter.next();
                             rowCount++;

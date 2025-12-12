@@ -87,6 +87,7 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ReportManager;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -149,10 +150,10 @@ public class ReportsController extends BaseStudyController
                 return null;
             }
 
-            File file = ImageUtil.getFileFromSession(getViewContext().getRequest(), sessionKey);
+            FileLike file = ImageUtil.getFileFromSession(getViewContext().getRequest(), sessionKey);
             if (file != null)
             {
-                PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), false);
+                PageFlowUtil.streamFile(getViewContext().getResponse(), file, false);
                 file.delete();
             }
             return null;

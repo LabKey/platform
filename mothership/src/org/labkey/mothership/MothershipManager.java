@@ -41,6 +41,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.ReentrantLockWithName;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
@@ -61,8 +62,8 @@ public class MothershipManager
     private static final String MOTHERSHIP_SECURE_CATEGORY = "mothershipSecure";
     private static final String CURRENT_BUILD_DATE_PROP = "currentBuildDate";
     private static final String UPGRADE_MESSAGE_PROP = "upgradeMessage";
-    private static final String CREATE_ISSUE_URL_PROP = "createIssueURL";
     private static final String ISSUES_CONTAINER_PROP = "issuesContainer";
+    private static final String GITHUB_REPO = "githubRepo";
     private static final String MARKETING_MESSAGE_PROP = "marketingMessage";
     private static final String UPTIME_CONTAINER_PROP = "uptimeContainer";
     private static final String STATUS_CAKE_API_KEY_PROP = "statusCakeApiKey";
@@ -109,11 +110,11 @@ public class MothershipManager
 
             String url = report.getUrl();
             if (null != url && url.length() > 512)
-                report.setURL(url.substring(0, 506) + "...");
+                report.setURL(StringUtilsLabKey.leftSurrogatePairFriendly(url, 506) + "...");
 
             String referrerURL = report.getReferrerURL();
             if (null != referrerURL && referrerURL.length() > 512)
-                report.setReferrerURL(referrerURL.substring(0, 506) + "...");
+                report.setReferrerURL(StringUtilsLabKey.leftSurrogatePairFriendly(referrerURL, 506) + "...");
 
             String browser = report.getBrowser();
             if (null != browser && browser.length() > 100)
@@ -121,7 +122,7 @@ public class MothershipManager
 
             String exceptionMessage = report.getExceptionMessage();
             if (null != exceptionMessage && exceptionMessage.length() > 1000)
-                report.setExceptionMessage(exceptionMessage.substring(0,990) + "...");
+                report.setExceptionMessage(StringUtilsLabKey.leftSurrogatePairFriendly(exceptionMessage, 990) + "...");
 
             String actionName = report.getPageflowAction();
             if (null != actionName && actionName.length() > 40)
@@ -550,14 +551,14 @@ public class MothershipManager
         saveProperty(MARKETING_MESSAGE_PROP, message);
     }
 
-    public String getCreateIssueURL()
+    public String getGitHubRepo()
     {
-        return getStringProperty(CREATE_ISSUE_URL_PROP);
+        return getStringProperty(GITHUB_REPO);
     }
 
-    public void setCreateIssueURL(String url)
+    public void setGitHubRepo(String repo)
     {
-        saveProperty(CREATE_ISSUE_URL_PROP, url);
+        saveProperty(GITHUB_REPO, repo);
     }
 
     public void updateExceptionStackTrace(ExceptionStackTrace stackTrace, User user)

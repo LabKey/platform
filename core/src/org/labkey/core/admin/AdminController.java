@@ -171,9 +171,11 @@ import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.SchemaKey;
@@ -475,7 +477,9 @@ public class AdminController extends SpringActionController
 
         // Diagnostics
         AdminConsole.addLink(Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
-        AdminConsole.addLink(Diagnostics, "attachments", new ActionURL(AttachmentsAction.class, root));
+        AdminConsole.addLink(Diagnostics, "attachments", PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(root, "core", "DocumentsGroupedByParentType")
+            .addParameter("query." + QueryParam.containerFilterName, "AllFolders"), ApplicationAdminPermission.class);
+        AdminConsole.addLink(Diagnostics, "attachments - old", new ActionURL(AttachmentsAction.class, root));
         AdminConsole.addLink(Diagnostics, "caches", new ActionURL(CachesAction.class, root));
         AdminConsole.addLink(Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Diagnostics, "credits", new ActionURL(CreditsAction.class, root));
@@ -9796,7 +9800,7 @@ public class AdminController extends SpringActionController
                 }
 
                 if (name.length() > 50)
-                    name = name.substring(0, 50).trim();
+                    name = StringUtilsLabKey.leftSurrogatePairFriendly(name, 50).trim();
 
                 CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(tabContainer, true));
                 CaseInsensitiveHashMap<FolderTab> folderTabMap = new CaseInsensitiveHashMap<>();
@@ -9850,7 +9854,7 @@ public class AdminController extends SpringActionController
             // The name, which shows up on the url, is trimmed to 50 characters. The caption, which is derived from the
             // name, and is editable, is allowed to be 64 characters.
             if (name.length() > 50)
-                name = name.substring(0, 50).trim();
+                name = StringUtilsLabKey.leftSurrogatePairFriendly(name, 50).trim();
 
             Portal.saveParts(container, name);
             Portal.addProperty(container, name, Portal.PROP_CUSTOMTAB);
@@ -11970,8 +11974,12 @@ public class AdminController extends SpringActionController
                     String urlString = cspReport.optString("document-uri", null);
                     if (urlString != null)
                     {
-                        String path = new URLHelper(urlString).deleteParameters().getURIString();
-                        if (null == reports.put(path, Boolean.TRUE) || _log.isDebugEnabled())
+                        URLHelper urlHelper = new URLHelper(urlString);
+                        // URL parameter that tells us to bypass suppression of redundant logging
+                        // Used to make sure that tests of CSP logging are deterministic and convenient
+                        boolean bypassCspDedupe = "true".equals(urlHelper.getParameter("bypassCspDedupe"));
+                        String path = urlHelper.deleteParameters().getURIString();
+                        if (null == reports.put(path, Boolean.TRUE) || _log.isDebugEnabled() || bypassCspDedupe)
                         {
                             // Don't modify forwarded reports; they already have user, ip, user-agent, etc. from the forwarding server.
                             boolean forwarded = jsonObj.optBoolean("forwarded", false);

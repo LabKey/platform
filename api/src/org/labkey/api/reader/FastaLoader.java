@@ -15,10 +15,10 @@
  */
 package org.labkey.api.reader;
 
+import org.labkey.vfs.FileLike;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.zip.GZIPInputStream;
@@ -29,11 +29,11 @@ import java.util.zip.GZIPInputStream;
  */
 public abstract class FastaLoader<T> implements Iterable<T>
 {
-    private final File _fastaFile;
+    private final FileLike _fastaFile;
     private final FastaIteratorElementFactory<T> _factory;
     private CharacterFilter _characterFilter = new UppercaseCharacterFilter();
 
-    protected FastaLoader(File fastaFile, FastaIteratorElementFactory<T> factory)
+    protected FastaLoader(FileLike fastaFile, FastaIteratorElementFactory<T> factory)
     {
         _fastaFile = fastaFile;
         _factory = factory;
@@ -72,7 +72,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
             try
             {
                 // Detect Charset encoding based on BOM
-                _reader = Readers.getBOMDetectingReader(_fastaFile.getName().toLowerCase().endsWith(".gz") ? new GZIPInputStream(new FileInputStream(_fastaFile)): new FileInputStream(_fastaFile));
+                _reader = Readers.getBOMDetectingReader(_fastaFile.getName().toLowerCase().endsWith(".gz") ? new GZIPInputStream(_fastaFile.openInputStream()): _fastaFile.openInputStream());
 
                 String line = getLine();
 
@@ -98,12 +98,12 @@ public abstract class FastaLoader<T> implements Iterable<T>
                     {
                         _reader.close();
                     }
-                    catch (IOException x2) {}
+                    catch (IOException ignored) {}
                 }
             }
 
             _beforeFirst = false;
-            _fileLength = _fastaFile.length();
+            _fileLength = _fastaFile.getSize();
         }
 
         private String getLine() throws IOException
@@ -224,7 +224,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
                 {
                     _reader.close();
                 }
-                catch (IOException x) {}
+                catch (IOException ignored) {}
 
             _reader = null;
             _header = null;

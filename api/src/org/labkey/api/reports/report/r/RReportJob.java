@@ -16,7 +16,6 @@
 
 package org.labkey.api.reports.report.r;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
@@ -40,18 +39,17 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.Serializable;
+import java.nio.file.CopyOption;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-
-import static org.labkey.api.util.StringUtilsLabKey.DEFAULT_CHARSET;
 
 /**
  * User: Karl Lum
@@ -182,9 +180,9 @@ public class RReportJob extends PipelineJob implements Serializable
     public Task createPipelineTask(PipelineJob job, Report report, Map<String,String> params)
     {
         // overrride to support different kind of report
-        if (!(report instanceof RReport))
+        if (!(report instanceof RReport rReport))
             throw new UnsupportedOperationException("Expected R report");
-        return new RunRReportTask(job, ((RReport)report), params);
+        return new RunRReportTask(job, rReport, params);
     }
 
 
@@ -246,7 +244,7 @@ public class RReportJob extends PipelineJob implements Serializable
             try
             {
                 // get the input file which should have been previously created
-                File inputFile = inputFile(_report, context);
+                FileLike inputFile = inputFile(_report, context);
                 List<ParamReplacement> outputSubst = new ArrayList<>();
 
                 ActionURL url = context.cloneActionURL();
@@ -266,10 +264,9 @@ public class RReportJob extends PipelineJob implements Serializable
             }
         }
 
-        protected File inputFile(RReport report, @NotNull ViewContext context) throws Exception
+        protected FileLike inputFile(RReport report, @NotNull ViewContext context) throws Exception
         {
-            FileLike inputFile = report.getReportDirFileLike(context.getContainer().getId()).resolveChild(RReport.DATA_INPUT);
-            return FileSystemLike.toFile(inputFile);
+            return report.getReportDirFileLike(context.getContainer().getId()).resolveChild(RReport.DATA_INPUT);
         }
 
         protected void processOutputs(RReport report, List<ParamReplacement> outputSubst) throws Exception
@@ -277,15 +274,14 @@ public class RReportJob extends PipelineJob implements Serializable
             if (!outputSubst.isEmpty())
             {
                 // write the output substitution map to disk so we can render the view later
-                FileLike reportDirFileLike = report.getReportDirFileLike(getJob().getContainerId());
-                File reportDir = FileSystemLike.toFile(reportDirFileLike);
-                File substitutionMap;
+                FileLike reportDir = report.getReportDirFileLike(getJob().getContainerId());
+                FileLike substitutionMap;
 
                 if (reportDir.getName().equals(getJobIdentifier()))
                 {
-                    File parentDir = reportDir.getParentFile();
+                    FileLike parentDir = reportDir.getParent();
                     // clean up the destination folder
-                    for (File file : parentDir.listFiles())
+                    for (FileLike file : parentDir.getChildren())
                     {
                         if (!file.isDirectory() && !"log".equalsIgnoreCase(FileUtil.getExtension(file)))
                             file.delete();
@@ -294,25 +290,25 @@ public class RReportJob extends PipelineJob implements Serializable
                     // rewrite the parameter replacement files to point to the destination folder
                     for (ParamReplacement replacement : outputSubst)
                     {
-                        List<File> newFiles = new ArrayList<>();
-                        for (File file : replacement.getFiles())
+                        List<FileLike> newFiles = new ArrayList<>();
+                        for (FileLike file : replacement.getFiles())
                         {
-                            File newFile = FileUtil.appendName(parentDir, file.getName());
-                            FileUtils.moveFile(file, newFile);
+                            FileLike newFile = parentDir.resolveChild(file.getName());
+                            file.move(newFile);
                             newFiles.add(newFile);
                         }
 
                         replacement.clearFiles();
-                        for (File file : newFiles)
+                        for (FileLike file : newFiles)
                         {
                             replacement.addFile(file);
                         }
                     }
 
                     // move the remaining files and delete the pipeline specific directory
-                    for (File file : reportDir.listFiles())
+                    for (FileLike file : reportDir.getChildren())
                     {
-                        File newFile = FileUtil.appendName(parentDir, file.getName());
+                        FileLike newFile = parentDir.resolveChild(file.getName());
                         // special handling for log file
                         if (LOG_FILE_NAME.equalsIgnoreCase(file.getName()))
                         {
@@ -321,27 +317,27 @@ public class RReportJob extends PipelineJob implements Serializable
                             {
                                 newFile = FileUtil.createTempFile(LOG_FILE_PREFIX, ".log", parentDir);
                                 getJob().setLogFile(newFile);
-                                FileUtils.copyFile(file, newFile);
+                                FileUtil.copyFile(file, newFile, StandardCopyOption.REPLACE_EXISTING);
                             }
                             // report.log != getLogFile(), just regular file
                             else
                             {
-                                String logFileContenxt = FileUtils.readFileToString(file, DEFAULT_CHARSET);
-                                if (!StringUtils.isEmpty(logFileContenxt))
-                                    getJob().info("REPORT.LOG CONTENTS:\n" + logFileContenxt);
-                                FileUtils.moveFile(file, newFile);
+                                String logFileContent = PageFlowUtil.getStreamContentsAsString(file.openInputStream());
+                                if (!StringUtils.isEmpty(logFileContent))
+                                    getJob().info("REPORT.LOG CONTENTS:\n" + logFileContent);
+                                file.move(newFile);
                             }
                         }
                         else
                         {
-                            FileUtils.moveFile(file, newFile);
+                            file.move(newFile);
                         }
                     }
-                    FileUtils.deleteDirectory(reportDir);
-                    substitutionMap = FileUtil.appendName(reportDir.getParentFile(), RReport.SUBSTITUTION_MAP);
+                    FileUtil.deleteDir(reportDir);
+                    substitutionMap = reportDir.getParent().resolveChild(RReport.SUBSTITUTION_MAP);
                 }
                 else
-                    substitutionMap = FileUtil.appendName(reportDir, RReport.SUBSTITUTION_MAP);
+                    substitutionMap = reportDir.resolveChild(RReport.SUBSTITUTION_MAP);
                 ParamReplacementSvc.get().toFile(outputSubst, substitutionMap);
             }
         }

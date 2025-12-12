@@ -54,10 +54,10 @@
         </tr>
         <tr>
             <td>
-                <label for="createIssueURLInput">Create issue URL:</label>
+                <label for="githubRepoInput">GitHub issues repo:</label>
             </td>
             <td>
-                <input type="text" size="50" id="createIssueURLInput" name="createIssueURL" value="<%=h(form.getCreateIssueURL())%>"/>
+                <input type="text" size="50" id="githubRepoInput" name="githubRepo" value="<%=h(form.getGithubRepo())%>"/>
             </td>
         </tr>
         <tr>

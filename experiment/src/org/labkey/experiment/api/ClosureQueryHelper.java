@@ -17,6 +17,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.VirtualTable;
@@ -349,26 +350,26 @@ public class ClosureQueryHelper
         }
     }
 
-    public static void clearAncestorsForMaterial(long rowId)
+    public static void clearAncestorsForMaterials(Collection<Long> materialRowIds)
     {
         var tx = getScope().getCurrentTransaction();
         if (null != tx)
         {
-            tx.addCommitTask(() -> clearAncestorsForMaterial(rowId), DbScope.CommitTaskOption.POSTCOMMIT);
+            tx.addCommitTask(() -> clearAncestorsForMaterials(materialRowIds), DbScope.CommitTaskOption.POSTCOMMIT);
             return;
         }
-        recomputeMaterialAncestors(rowId);
+        recomputeMaterialAncestors(materialRowIds);
     }
 
-    public static void clearAncestorsForDataObject(long rowId)
+    public static void clearAncestorsForDataObjects(Collection<Long> dataRowIds)
     {
         var tx = getScope().getCurrentTransaction();
         if (null != tx)
         {
-            tx.addCommitTask(() -> clearAncestorsForDataObject(rowId), DbScope.CommitTaskOption.POSTCOMMIT);
+            tx.addCommitTask(() -> clearAncestorsForDataObjects(dataRowIds), DbScope.CommitTaskOption.POSTCOMMIT);
             return;
         }
-        recomputeDataObjectAncestors(rowId);
+        recomputeDataObjectAncestors(dataRowIds);
     }
 
     public static void populateMaterialAncestors(Logger logger)
@@ -425,14 +426,12 @@ public class ClosureQueryHelper
 
     public static void truncateAndRecreate(Logger logger)
     {
-        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            TableInfo tInfo = ExperimentServiceImpl.get().getTinfoMaterialAncestors();
-            new SqlExecutor(tInfo.getSchema()).execute("TRUNCATE TABLE " + tInfo);
+            Table.truncate(ExperimentServiceImpl.get().getTinfoMaterialAncestors());
             ClosureQueryHelper.populateMaterialAncestors(logger);
 
-            tInfo = ExperimentServiceImpl.get().getTinfoDataAncestors();
-            new SqlExecutor(tInfo.getSchema()).execute("TRUNCATE TABLE " + tInfo);
+            Table.truncate(ExperimentServiceImpl.get().getTinfoDataAncestors());
             ClosureQueryHelper.populateDataAncestors(logger);
 
             transaction.commit();
@@ -485,11 +484,11 @@ public class ClosureQueryHelper
         }
     }
 
-    private static void recomputeMaterialAncestors(long rowId)
+    private static void recomputeMaterialAncestors(Collection<Long> rowIds)
     {
         SQLFragment selectSeedsSql = new SQLFragment()
                 .append("SELECT m.RowId, m.ObjectId, 'm' AS ObjectType FROM exp.material m\n")
-                .append("WHERE m.RowId = ").appendValue(rowId);
+                .append("WHERE m.RowId ").appendInClause(rowIds, getScope().getSqlDialect());
         recomputeFromSeeds(selectSeedsSql, true);
     }
 
@@ -525,18 +524,16 @@ public class ClosureQueryHelper
                 .append("SELECT m.RowId, m.ObjectId, 'm' AS ObjectType FROM exp.material m\n")
                 .append("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
                 .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
-                .append("WHERE pa.RunId ");
-        getScope().getSqlDialect().appendInClauseSql(selectSeedsSql, runIds);
-        selectSeedsSql
+                .append("WHERE pa.RunId ").appendInClause(runIds, getScope().getSqlDialect())
                 .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput);
         recomputeFromSeeds(selectSeedsSql, true);
     }
 
-    private static void recomputeDataObjectAncestors(long rowId)
+    private static void recomputeDataObjectAncestors(Collection<Long> rowIds)
     {
         SQLFragment selectSeedsSql = new SQLFragment()
                 .append("SELECT d.RowId, d.ObjectId, 'd' AS ObjectType FROM exp.data d\n")
-                .append("WHERE d.RowId = ").appendValue(rowId);
+                .append("WHERE d.RowId ").appendInClause(rowIds, getScope().getSqlDialect());
         recomputeFromSeeds(selectSeedsSql, false);
     }
 
@@ -572,9 +569,7 @@ public class ClosureQueryHelper
                 .append("SELECT d.RowId, d.ObjectId, 'd' AS ObjectType FROM exp.data d\n")
                 .append("INNER JOIN exp.DataInput di ON d.rowId = di.dataId\n")
                 .append("INNER JOIN exp.ProtocolApplication pa ON di.TargetApplicationId = pa.RowId\n")
-                .append("WHERE pa.RunId ");
-        getScope().getSqlDialect().appendInClauseSql(selectSeedsSql, runIds);
-        selectSeedsSql
+                .append("WHERE pa.RunId ").appendInClause(runIds, getScope().getSqlDialect())
                 .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput);
         recomputeFromSeeds(selectSeedsSql, false);
     }

@@ -48,9 +48,9 @@ public class StackTraceDetailsPage extends LabKeyPage<StackTraceDetailsPage.Elem
         return new StackTraceDetailsPage(driver.getDriver());
     }
 
-    public Input bugNumber()
+    public Input githubIssue()
     {
-        return elementCache().bugNumberInput;
+        return elementCache().githubIssueInput;
     }
 
     public Input comments()
@@ -94,7 +94,7 @@ public class StackTraceDetailsPage extends LabKeyPage<StackTraceDetailsPage.Elem
 
     protected class ElementCache extends LabKeyPage.ElementCache
     {
-        Input bugNumberInput = new Input(Locator.name("BugNumber").findWhenNeeded(this), getDriver());
+        Input githubIssueInput = new Input(Locator.name("GitHubIssue").findWhenNeeded(this), getDriver());
         Input commentsTextArea = new Input(Locator.name("Comments").findWhenNeeded(this), getDriver());
         OptionSelect assignedToSelect = OptionSelect(Locator.name("AssignedTo")).findWhenNeeded(this);
         WebElement saveButton = Locator.lkButton("Save").findWhenNeeded(this);

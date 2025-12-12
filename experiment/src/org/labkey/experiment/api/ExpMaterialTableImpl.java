@@ -56,6 +56,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
@@ -66,15 +67,19 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
@@ -136,15 +141,21 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
+import static org.labkey.api.data.ColumnRenderPropertiesImpl.NON_NEGATIVE_NUMBER_CONCEPT_URI;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_COUNT_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_VOLUME_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_COUNT_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_VOLUME_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.SAMPLETYPE_FILE_DIRECTORY;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotUnit;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotCount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAliquotUnit;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAvailableAliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
@@ -158,9 +169,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     public static final Set<String> MATERIAL_ALT_MERGE_KEYS;
     public static final Set<String> MATERIAL_ALT_UPDATE_KEYS;
+    public static final List<IPropertyValidator> AMOUNT_RANGE_VALIDATORS = new ArrayList<>();
     static {
         MATERIAL_ALT_MERGE_KEYS = Set.of(Column.MaterialSourceId.name(), Column.Name.name());
         MATERIAL_ALT_UPDATE_KEYS = Set.of(Column.LSID.name());
+
+        Lsid rangeValidatorLsid = DefaultPropertyValidator.createValidatorURI(PropertyValidatorType.Range);
+        IPropertyValidator amountValidator = PropertyService.get().createValidator(rangeValidatorLsid.toString());
+        amountValidator.setName("SampleAmountNonNegative");
+        amountValidator.setExpressionValue("~gte=0");
+        amountValidator.setErrorMessage("Amounts must be non-negative.");
+        amountValidator.setColumnNameProvidedData(PROVIDED_DATA_PREFIX + Column.StoredAmount.name());
+        AMOUNT_RANGE_VALIDATORS.add(amountValidator);
     }
 
     public ExpMaterialTableImpl(UserSchema schema, ContainerFilter cf, @Nullable ExpSampleType sampleType)
@@ -314,6 +334,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 columnInfo.setDescription("The amount of this sample, in the base unit for the sample type's display unit (if defined), currently on hand.");
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
+                columnInfo.setConceptURI(NON_NEGATIVE_NUMBER_CONCEPT_URI);
+                columnInfo.setValidators(AMOUNT_RANGE_VALIDATORS);
                 return columnInfo;
             }
             case StoredAmount ->
@@ -330,6 +352,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     columnInfo.setShownInInsertView(true);
                     columnInfo.setUserEditable(true);
                     columnInfo.setCalculated(false);
+                    columnInfo.setConceptURI(NON_NEGATIVE_NUMBER_CONCEPT_URI);
+                    columnInfo.setValidators(AMOUNT_RANGE_VALIDATORS);
                     return columnInfo;
                 }
                 else
@@ -339,6 +363,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     columnInfo.setLabel(label);
                     columnInfo.setImportAliasesSet(importAliases);
                     columnInfo.setDescription("The amount of this sample currently on hand.");
+                    columnInfo.setConceptURI(NON_NEGATIVE_NUMBER_CONCEPT_URI);
+                    columnInfo.setValidators(AMOUNT_RANGE_VALIDATORS);
                     return columnInfo;
                 }
             }
@@ -544,17 +570,53 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 ret.setLabel(ALIQUOT_COUNT_LABEL);
                 return ret;
             }
-            case AliquotVolume ->
+            case RawAliquotVolume ->
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn(AliquotVolume.name()));
-                ret.setLabel(ALIQUOT_VOLUME_LABEL);
+                ret.setLabel(RawAliquotVolume.label());
+                ret.setShownInDetailsView(false);
+                return ret;
+            }
+            case AliquotVolume ->
+            {
+                Unit typeUnit = getSampleTypeUnit();
+                if (typeUnit != null)
+                {
+                    SampleTypeAmountDisplayColumn columnInfo = new SampleTypeAmountDisplayColumn(this, Column.AliquotVolume.name(), AliquotUnit.name(), ALIQUOT_VOLUME_LABEL, Collections.emptySet(), typeUnit);
+                    columnInfo.setDisplayColumnFactory(colInfo -> new SampleTypeAmountPrecisionDisplayColumn(colInfo, typeUnit));
+                    columnInfo.setDescription("The total amount of this sample's aliquots, in the display unit for the sample type, currently on hand.");
+                    return columnInfo;
+                }
+                else
+                {
+                    var ret = wrapColumn(alias, _rootTable.getColumn(AliquotVolume.name()));
+                    ret.setLabel(ALIQUOT_VOLUME_LABEL);
+                    return ret;
+                }
+            }
+            case RawAvailableAliquotVolume ->
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn(AvailableAliquotVolume.name()));
+                ret.setLabel(RawAvailableAliquotVolume.label());
+                ret.setShownInDetailsView(false);
                 return ret;
             }
             case AvailableAliquotVolume ->
             {
-                var ret = wrapColumn(alias, _rootTable.getColumn(AvailableAliquotVolume.name()));
-                ret.setLabel(AVAILABLE_ALIQUOT_VOLUME_LABEL);
-                return ret;
+                Unit typeUnit = getSampleTypeUnit();
+                if (typeUnit != null)
+                {
+                    SampleTypeAmountDisplayColumn columnInfo = new SampleTypeAmountDisplayColumn(this, Column.AvailableAliquotVolume.name(), AliquotUnit.name(), AVAILABLE_ALIQUOT_VOLUME_LABEL, Collections.emptySet(), typeUnit);
+                    columnInfo.setDisplayColumnFactory(colInfo -> new SampleTypeAmountPrecisionDisplayColumn(colInfo, typeUnit));
+                    columnInfo.setDescription("The total amount of this sample's available aliquots currently on hand, in the display unit for the sample type.");
+                    return columnInfo;
+                }
+                else
+                {
+                    var ret = wrapColumn(alias, _rootTable.getColumn(AvailableAliquotVolume.name()));
+                    ret.setLabel(AVAILABLE_ALIQUOT_VOLUME_LABEL);
+                    return ret;
+                }
             }
             case AvailableAliquotCount ->
             {
@@ -562,11 +624,38 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 ret.setLabel(AVAILABLE_ALIQUOT_COUNT_LABEL);
                 return ret;
             }
-            case AliquotUnit ->
+            case RawAliquotUnit ->
             {
                 var ret =  wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
                 ret.setShownInDetailsView(false);
+                ret.setLabel(RawAliquotUnit.label());
                 return ret;
+            }
+            case AliquotUnit ->
+            {
+                ForeignKey fk = new LookupForeignKey("Value", "Value")
+                {
+                    @Override
+                    public @Nullable TableInfo getLookupTableInfo()
+                    {
+                        return getExpSchema().getTable(ExpSchema.MEASUREMENT_UNITS_TABLE);
+                    }
+                };
+
+                Unit typeUnit = getSampleTypeUnit();
+                if (typeUnit != null)
+                {
+                    SampleTypeUnitDisplayColumn columnInfo = new SampleTypeUnitDisplayColumn(this, AliquotUnit.name(), typeUnit);
+                    columnInfo.setFk(fk);
+                    columnInfo.setDescription("The sample type display units associated with the AliquotAmount for this sample.");
+                    return columnInfo;
+                }
+                else
+                {
+                    var ret =  wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
+                    ret.setShownInDetailsView(false);
+                    return ret;
+                }
             }
             case MaterialExpDate ->
             {
@@ -803,7 +892,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         addColumn(Column.AliquotCount);
         addColumn(Column.AliquotVolume);
-        addColumn(Column.AliquotUnit);
+        addColumn(AliquotUnit);
         addColumn(Column.AvailableAliquotCount);
         addColumn(Column.AvailableAliquotVolume);
 
@@ -858,6 +947,75 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         rawUnitsColumn.setShownInDetailsView(false);
         rawUnitsColumn.setShownInInsertView(false);
         rawUnitsColumn.setShownInUpdateView(false);
+
+        var rawAliquotVolumeColumn = addColumn(RawAliquotVolume);
+        rawAliquotVolumeColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new DataColumn(colInfo)
+                {
+                    @Override
+                    public void addQueryFieldKeys(Set<FieldKey> keys)
+                    {
+                        super.addQueryFieldKeys(keys);
+                        keys.add(AliquotVolume.fieldKey());
+
+                    }
+                };
+            }
+        });
+        rawAliquotVolumeColumn.setHidden(true);
+        rawAliquotVolumeColumn.setShownInDetailsView(false);
+        rawAliquotVolumeColumn.setShownInInsertView(false);
+        rawAliquotVolumeColumn.setShownInUpdateView(false);
+
+        var rawAvailableAliquotVolumeColumn = addColumn(RawAvailableAliquotVolume);
+        rawAvailableAliquotVolumeColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new DataColumn(colInfo)
+                {
+                    @Override
+                    public void addQueryFieldKeys(Set<FieldKey> keys)
+                    {
+                        super.addQueryFieldKeys(keys);
+                        keys.add(AvailableAliquotVolume.fieldKey());
+
+                    }
+                };
+            }
+        });
+        rawAvailableAliquotVolumeColumn.setHidden(true);
+        rawAvailableAliquotVolumeColumn.setShownInDetailsView(false);
+        rawAvailableAliquotVolumeColumn.setShownInInsertView(false);
+        rawAvailableAliquotVolumeColumn.setShownInUpdateView(false);
+
+        var rawAliquotUnitColumn = addColumn(RawAliquotUnit);
+        rawAliquotUnitColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new DataColumn(colInfo)
+                {
+                    @Override
+                    public void addQueryFieldKeys(Set<FieldKey> keys)
+                    {
+                        super.addQueryFieldKeys(keys);
+                        keys.add(AliquotUnit.fieldKey());
+
+                    }
+                };
+            }
+        });
+        rawAliquotUnitColumn.setHidden(true);
+        rawAliquotUnitColumn.setShownInDetailsView(false);
+        rawAliquotUnitColumn.setShownInInsertView(false);
+        rawAliquotUnitColumn.setShownInUpdateView(false);
 
         if (InventoryService.get() != null && (st == null || !st.isMedia()))
             defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
@@ -1110,6 +1268,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             selectedColumns.add(new FieldKey(null, Column.AliquotedFromLSID.name()));
         if (selectedColumns.contains(new FieldKey(null, Column.IsAliquot.name())))
             selectedColumns.add(new FieldKey(null, Column.RootMaterialRowId.name()));
+        if (selectedColumns.contains(new FieldKey(null, AliquotVolume.name())) || selectedColumns.contains(new FieldKey(null, AvailableAliquotVolume.name())))
+            selectedColumns.add(new FieldKey(null, AliquotUnit.name()));
         selectedColumns.addAll(wrappedFieldKeys);
         if (null != getFilter())
             selectedColumns.addAll(getFilter().getAllFieldKeys());
@@ -1594,7 +1754,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         public SampleTypeUnitDisplayColumn(TableInfo parent, String unitFieldName, Unit typeUnit)
         {
-            super(parent, FieldKey.fromParts(Column.Units.name()), new SQLFragment(
+            super(parent, FieldKey.fromParts(unitFieldName), new SQLFragment(
                             "(CASE WHEN ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
                             .append(" = ? THEN ? ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
                             .append(" END)")

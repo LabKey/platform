@@ -16,7 +16,7 @@
 package org.labkey.announcements.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.EntityAttachmentParent;
 
 public class AnnouncementAttachmentParent extends EntityAttachmentParent
@@ -28,7 +28,7 @@ public class AnnouncementAttachmentParent extends EntityAttachmentParent
 
     @NotNull
     @Override
-    public AttachmentType getAttachmentType()
+    public AttachmentParentType getAttachmentParentType()
     {
         return AnnouncementType.get();
     }

@@ -33,16 +33,31 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 
 /**
- * Created by davebradlee on 6/5/15.
- *
  * Generator for very long in-clauses
  */
 public class TempTableInClauseGenerator implements InClauseGenerator
 {
     private static final Cache<String, TempTableInfo> _tempTableCache =
             CacheManager.getStringKeyCache(200, CacheManager.MINUTE * 5, "IN clause temp tables");
+
+    // Need to set a supplier instead of setting the default temp schema directly because this class is constructed at
+    // dialect init time, before schemas can be referenced.
+    private final Supplier<DbSchema> _tempSchemaSupplier;
+
+    // By default, use the primary database temp schema
+    public TempTableInClauseGenerator()
+    {
+        this(DbSchema::getTemp);
+    }
+
+    // Use in cases where the default temp schema won't do, e.g., you need to apply a large IN clause in an external data source
+    public TempTableInClauseGenerator(Supplier<DbSchema> tempSchemaSupplier)
+    {
+        _tempSchemaSupplier = tempSchemaSupplier;
+    }
 
     /**
      * @param sql    fragment to append to
@@ -87,19 +102,20 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         TempTableInfo tempTableInfo = _tempTableCache.get(cacheKey);
         if (tempTableInfo == null)
         {
-            tempTableInfo = new TempTableInfo("InClause", Collections.singletonList(new BaseColumnInfo("Id", jdbcType, 0, false)), null);
+            DbSchema tempSchema = _tempSchemaSupplier.get();
+            tempTableInfo = new TempTableInfo(tempSchema, "InClause", Collections.singletonList(new BaseColumnInfo("Id", jdbcType, 0, false)), null);
             SQLFragment sqlCreate = new SQLFragment("CREATE TABLE ");
             sqlCreate.append(tempTableInfo)
-                    .append("\n(Id ")
-                    .append(DbSchema.getTemp().getSqlDialect().getSqlTypeName(jdbcType))
-                    .append(jdbcType == JdbcType.VARCHAR ? "(450)" : "")
-                    .append(")");
+                .append("\n(Id ")
+                .append(tempSchema.getSqlDialect().getSqlTypeName(jdbcType))
+                .append(jdbcType == JdbcType.VARCHAR ? "(450)" : "")
+                .append(")");
 
             // When the in clause receives more parameters than it is set to handle, a temporary table is created to handle the overflow.
             // While the associated mutating operations are necessary, they are not a viable CSRF attack vector.
             try (var ignored = SpringActionController.ignoreSqlUpdates())
             {
-                new SqlExecutor(DbSchema.getTemp()).execute(sqlCreate);
+                new SqlExecutor(tempSchema).execute(sqlCreate);
             }
             tempTableInfo.track();
             String tableName = tempTableInfo.getSelectName();
@@ -110,11 +126,11 @@ public class TempTableInClauseGenerator implements InClauseGenerator
                 try (var ignored = SpringActionController.ignoreSqlUpdates())
                 {
                     if (jdbcType == JdbcType.VARCHAR)
-                        Table.batchExecute1String(DbSchema.getTemp(), sql1, (ArrayList<String>) sortedParameters);
+                        Table.batchExecute1String(tempSchema, sql1, (ArrayList<String>) sortedParameters);
                     else if (jdbcType == JdbcType.INTEGER)
-                        Table.batchExecute1Integer(DbSchema.getTemp(), sql1, sql100, (ArrayList<Integer>) sortedParameters);
+                        Table.batchExecute1Integer(tempSchema, sql1, sql100, (ArrayList<Integer>) sortedParameters);
                     else
-                        Table.batchExecute1Long(DbSchema.getTemp(), sql1, sql100, (ArrayList<Long>) sortedParameters);
+                        Table.batchExecute1Long(tempSchema, sql1, sql100, (ArrayList<Long>) sortedParameters);
                 }
             }
             catch (SQLException e)
@@ -125,14 +141,16 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             String indexSql = "CREATE INDEX IX_Id" + new GUID().toStringNoDashes() + " ON " + tableName + "(Id)";
             try (var ignored = SpringActionController.ignoreSqlUpdates())
             {
-                new SqlExecutor(DbSchema.getTemp()).execute(indexSql);
+                new SqlExecutor(tempSchema).execute(indexSql);
+                tempSchema.getSqlDialect().updateStatistics(tempTableInfo); // Immediately analyze the newly populated & indexed table
             }
+
             TempTableInfo cacheEntry = tempTableInfo;
 
             // Don't bother caching if we're in a transaction
             // a) The table won't be visible to other connections until we commit
             // b) It is more likely that this temptable is only used once anyway (e.g. used by a data iterator)
-            if (!DbSchema.getTemp().getScope().isTransactionActive())
+            if (!tempSchema.getScope().isTransactionActive())
                 _tempTableCache.put(cacheKey, cacheEntry);
         }
 

@@ -27,7 +27,7 @@ public class LookAndFeelResourceAttachmentParent extends ContainerParent
     }
 
     @Override
-    public @NotNull AttachmentType getAttachmentType()
+    public @NotNull AttachmentParentType getAttachmentParentType()
     {
         return LookAndFeelResourceType.get();
     }

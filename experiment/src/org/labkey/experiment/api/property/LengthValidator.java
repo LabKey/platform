@@ -16,6 +16,7 @@
 package org.labkey.experiment.api.property;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -68,7 +69,7 @@ public class LengthValidator extends DefaultPropertyValidator implements Validat
 
     @Override
     public boolean validate(IPropertyValidator validator, ColumnRenderProperties field, @NotNull Object value,
-                            List<ValidationError> errors, ValidatorContext validatorCache)
+                            List<ValidationError> errors, ValidatorContext validatorCache, @Nullable Object providedValue)
     {
         assert value != null : "Shouldn't be validating a null value";
         String[] parts = validator.getExpressionValue().split("=");

@@ -50,7 +50,6 @@ public class ApiKeysTableInfo extends FilteredTable<CoreQuerySchema>
             setTitle("User API Keys");
             createdBy.setHidden(true);
             addCondition(new SimpleFilter(createdBy.getFieldKey(), schema.getUser().getUserId(), CompareType.EQUAL));
-
         }
     }
 

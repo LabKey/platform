@@ -27,6 +27,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.vfs.FileLike;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
@@ -56,36 +57,33 @@ public interface PipeRoot extends SecurableResource
     @NotNull
     FileLike getRootFileLike();
 
-    @Deprecated // prefer getRootFileLike()
     @NotNull
-    File getLogDirectory();
-
-    @NotNull
-    FileLike getLogDirectoryFileLike(boolean forWrite);
+    FileLike getLogDirectory(boolean forWrite);
 
     @Nullable
     Path resolveToNioPath(String path);
 
     @Nullable
     Path resolveToNioPathFromUrl(String url);
+    FileLike resolveToFileLikeFromUrl(String url) throws IOException;
 
     /**
-     * @return the file that's at the given relativePath from the pipeline root. Will be null if the relative path
-     * attempts to reference something that's not under the root (such as "../../etc/passwd". When the root
+     * @return the file that's at the given relativePath from the pipeline root. When the root
      * is configured with an alternative file path, we'll check to see if the file exists there. If not, we'll return
      * a path relative to the root's primary path.
+     * @throws org.labkey.api.util.FileUtil.InvalidPathReferenceException if the relative path
+     * attempts to reference something not under the root (such as "../../etc/passwd")
      */
     @Deprecated // prefer resolvePathToFileLike()
-    @Nullable
     File resolvePath(String relativePath);
 
     /**
-     * @return the file that's at the given relativePath from the pipeline root. Will be null if the relative path
-     * attempts to reference something that's not under the root (such as "../../etc/passwd". When the root
+     * @return the file that's at the given relativePath from the pipeline root. When the root
      * is configured with an alternative file path, we'll check to see if the file exists there. If not, we'll return
      * a path relative to the root's primary path.
+     * @throws org.labkey.api.util.FileUtil.InvalidPathReferenceException if the relative path
+     * attempts to reference something not under the root (such as "../../etc/passwd")
      */
-    @Nullable
     FileLike resolvePathToFileLike(String relativePath);
 
     @NotNull

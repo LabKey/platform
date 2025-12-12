@@ -261,10 +261,12 @@ public class FileSystemVFS extends AbstractFileSystemLike
         }
 
         @Override
-        public OutputStream openOutputStream() throws IOException
+        public OutputStream openOutputStream(boolean append) throws IOException
         {
             if (!canWriteFiles())
                 throw new UnauthorizedException();
+            if (append)
+                throw new UnsupportedOperationException("Append not supported");
             return getContent().getOutputStream();
         }
 

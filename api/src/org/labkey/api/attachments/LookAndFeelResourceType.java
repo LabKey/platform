@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 
-public class LookAndFeelResourceType implements AttachmentType
+public class LookAndFeelResourceType implements AttachmentParentType
 {
     private static final LookAndFeelResourceType INSTANCE = new LookAndFeelResourceType();
 
@@ -35,12 +35,13 @@ public class LookAndFeelResourceType implements AttachmentType
     @Override
     public @NotNull String getUniqueName()
     {
-        return getClass().getName();
+        return "LookAndFeelResource";
     }
 
     @Override
     public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
     {
+        // Keep in sync with CoreMigrationSchemaHandler.copyAttachments()
         sql.append(parentColumn).append(" IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").append(") AND (");
         sql.append(documentNameColumn).append(" IN (?, ?) OR ");
         sql.add(AttachmentCache.FAVICON_FILE_NAME);

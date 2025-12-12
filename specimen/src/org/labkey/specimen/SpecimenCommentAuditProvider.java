@@ -37,7 +37,6 @@ import org.labkey.api.writer.HtmlWriter;
 import org.labkey.specimen.actions.SpecimenController;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.specimen.SpecimenCommentAuditDomainKind.COLUMN_NAME_VIAL_ID;
@@ -76,14 +75,6 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
     public String getDescription()
     {
         return "Specimen Comments and QC";
-    }
-
-    @Override
-    public Map<FieldKey, String> legacyNameMap()
-    {
-        Map<FieldKey, String> legacyNames = super.legacyNameMap();
-        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_VIAL_ID);
-        return legacyNames;
     }
 
     @Override

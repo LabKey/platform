@@ -17,7 +17,6 @@
 package org.labkey.api.reports.report.r.view;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.ParamReplacement;
@@ -26,9 +25,9 @@ import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 
 public class PdfOutput extends DownloadParamReplacement
@@ -41,25 +40,25 @@ public class PdfOutput extends DownloadParamReplacement
     }
 
     @Override
-    protected File getSubstitution(File directory)
+    protected @Nullable FileLike getSubstitution(FileLike directory)
     {
         return getSubstitution(directory, ".pdf");
     }
 
     @Override
-    public HttpView getView(ViewContext context)
+    public HttpView<?> getView(ViewContext context)
     {
-        if (getReport() instanceof AttachmentParent)
-            return new PdfReportView(this, getReport());
+        if (getReport() != null)
+            return new PdfReportView(this);
         else
             return HtmlView.of(DownloadParamReplacement.UNABLE_TO_RENDER);
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput(File file)
+    public ScriptOutput renderAsScriptOutput(FileLike file) throws IOException
     {
-        if (getReport() instanceof AttachmentParent)
-            return renderAsScriptOutput(file, new PdfReportView(this, getReport()),
+        if (getReport() != null)
+            return renderAsScriptOutput(file, new PdfReportView(this),
                     ScriptOutput.ScriptOutputType.pdf);
         else
             return renderAsScriptOutputError();
@@ -67,9 +66,9 @@ public class PdfOutput extends DownloadParamReplacement
 
     public static class PdfReportView extends DownloadOutputView
     {
-        PdfReportView(ParamReplacement param, AttachmentParent parent)
+        PdfReportView(ParamReplacement param)
         {
-            super(param, parent, "PDF");
+            super(param, "PDF");
         }
     }
 
@@ -81,13 +80,12 @@ public class PdfOutput extends DownloadParamReplacement
         if (null == svc)
             return null;
 
-        for (File file : getFiles())
+        for (FileLike file : getFiles())
         {
             // just render the first file, in most cases this is appropriate
             if (file.exists())
             {
-                BufferedImage image = svc.pdfToImage(file, 0);
-
+                BufferedImage image = svc.pdfToImage(file.toNioPathForRead().toFile(), 0);
                 return ImageUtil.renderThumbnail(image);
             }
         }

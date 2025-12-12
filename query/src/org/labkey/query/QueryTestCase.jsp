@@ -79,6 +79,8 @@
 <%@ page import="static java.util.Objects.requireNonNull" %>
 <%@ page import="static java.util.Objects.requireNonNull" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
+<%@ page import="org.labkey.api.data.SqlSelector" %>
+<%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%!
 
@@ -1134,6 +1136,7 @@ d,seven,twelve,day,month,date,duration,guid
     private final String hash = GUID.makeHash();
 
     private QuerySchema lists;
+    private SqlDialect dialect;
 
     @Before
     public void setUp()
@@ -1142,6 +1145,7 @@ d,seven,twelve,day,month,date,duration,guid
         assertNotNull(QueryService.get().getEnvironment(QueryService.Environment.USER));
         assertNotNull(QueryService.get().getEnvironment(QueryService.Environment.CONTAINER));
         Assume.assumeTrue(getClass().getSimpleName() + " requires list module", ListService.get() != null);
+        dialect = CoreSchema.getInstance().getSqlDialect();
     }
 
 
@@ -1858,6 +1862,112 @@ d,seven,twelve,day,month,date,duration,guid
         {
             if (!involvedColumnMap.containsKey(expectedColumn))
                 Assert.fail("Involved column '" + expectedColumn + "' not found for sql:\n" + sql);
+        }
+    }
+
+    Boolean booleanSelect(SQLFragment s)
+    {
+        SQLFragment select = new SQLFragment("SELECT ").append(s);
+        return new SqlSelector(DbScope.getLabKeyScope(), select).getObject(Boolean.class);
+    }
+
+    SQLFragment array(String... strings)
+    {
+        var args = Arrays.stream(strings).map(SQLFragment::unsafe).toList().toArray(new SQLFragment[0]);
+        return dialect.array_construct(args);
+    }
+
+    @Test
+    public void testDialectArrayMethods()
+    {
+        if (!dialect.supportsArrays())
+            return;
+
+        var elNull = new SQLFragment("NULL");
+        var elA = new SQLFragment("'A'");
+        var elB = new SQLFragment("'B'");
+
+        assertTrue(  booleanSelect(dialect.element_in_array( elA,    array("'A'", "'B'")  )));
+        assertTrue(  booleanSelect(dialect.element_in_array( elA,    array("'A'", "NULL") )));
+        assertFalse( booleanSelect(dialect.element_in_array( elA,    array("'B'")         )));
+        // this returns NULL, unfortunately using "=" semantics rather than "IS NOT DISTINCT FROM"
+        assertNull(  booleanSelect(dialect.element_in_array( elA,    array("'B'", "NULL") )));
+        assertNull( booleanSelect(dialect.element_in_array( elNull, array("'A'", "'B'")  )));
+        assertNull(  booleanSelect(dialect.element_in_array( elNull, array("'A'", "NULL") )));
+        assertNull(  booleanSelect(dialect.element_in_array( elA,    elNull)));
+
+        assertFalse( booleanSelect(dialect.element_not_in_array( elA,    array("'A'", "'B'")  )));
+        assertFalse( booleanSelect(dialect.element_not_in_array( elA,    array("'A'", "NULL") )));
+        assertTrue(  booleanSelect(dialect.element_not_in_array( elA,    array("'B'")         )));
+        assertNull(  booleanSelect(dialect.element_not_in_array( elA,    array("'B'", "NULL") )));
+        assertNull(  booleanSelect(dialect.element_not_in_array( elNull, array("'A'", "'B'")  )));
+        assertNull(  booleanSelect(dialect.element_not_in_array( elNull, array("'A'", "NULL") )));
+        assertNull(  booleanSelect(dialect.element_not_in_array( elA,    elNull)));
+
+        assertTrue(  booleanSelect(dialect.array_all_in_array( array("'A'"), array("'A'") )));
+        assertTrue(  booleanSelect(dialect.array_all_in_array( array("'A'","'A'"), array("'A'") )));
+        assertTrue(  booleanSelect(dialect.array_all_in_array( array("'A'", "'B'", "'B'"), array("'A'","'B'","'C'") )));
+        assertFalse( booleanSelect(dialect.array_all_in_array( array("'A'"), array("NULL")  )));
+        assertFalse( booleanSelect(dialect.array_all_in_array( array("NULL"), array("'A'")  )));
+        assertFalse( booleanSelect(dialect.array_all_in_array( array("NULL"), array("NULL")  )));
+        assertNull(  booleanSelect(dialect.array_all_in_array( elNull, array("NULL") )));
+        assertNull(  booleanSelect(dialect.array_all_in_array( array("NULL"), elNull )));
+
+        assertTrue(  booleanSelect(dialect.array_some_in_array( array("'A'", "'B'", "'C'"), array("'A'") )));
+        assertTrue(  booleanSelect(dialect.array_some_in_array( array("'A'"), array("'A'", "'B'", "'C'") )));
+        assertTrue(  booleanSelect(dialect.array_some_in_array( array("'A'","'X'"), array("'A'", "'Y'") )));
+        assertFalse( booleanSelect(dialect.array_some_in_array( array("'A'","'B'"), array("'X'", "'Y'") )));
+        assertFalse( booleanSelect(dialect.array_some_in_array( array("'A'"), array("NULL")  )));
+        assertFalse( booleanSelect(dialect.array_some_in_array( array("NULL"), array("'A'")  )));
+        assertFalse( booleanSelect(dialect.array_some_in_array( array("NULL"), array("NULL")  )));
+        assertNull(  booleanSelect(dialect.array_some_in_array( elNull, array("NULL") )));
+        assertNull(  booleanSelect(dialect.array_some_in_array( array("NULL"), elNull )));
+
+        assertFalse( booleanSelect(dialect.array_none_in_array( array("'A'", "'B'", "'C'"), array("'A'") )));
+        assertFalse( booleanSelect(dialect.array_none_in_array( array("'A'"), array("'A'", "'B'", "'C'") )));
+        assertFalse( booleanSelect(dialect.array_none_in_array( array("'A'","'X'"), array("'A'", "'Y'") )));
+        assertTrue(  booleanSelect(dialect.array_none_in_array( array("'A'","'B'"), array("'X'", "'Y'") )));
+        assertTrue(  booleanSelect(dialect.array_none_in_array( array("'A'"), array("NULL")  )));
+        assertTrue(  booleanSelect(dialect.array_none_in_array( array("NULL"), array("'A'")  )));
+        assertTrue(  booleanSelect(dialect.array_none_in_array( array("NULL"), array("NULL")  )));
+        assertNull(  booleanSelect(dialect.array_none_in_array( elNull, array("NULL") )));
+        assertNull(  booleanSelect(dialect.array_none_in_array( array("NULL"), elNull )));
+    }
+
+    @Test
+    public void testArraySql() throws SQLException
+    {
+        if (!dialect.supportsArrays())
+            return;
+
+        var testSql = """
+                SELECT 'a' as test, false as expected, array_contains_all(     ARRAY['A','X'], ARRAY['A','B'] ) as result
+                UNION ALL
+                SELECT 'b' as test, true as expected,  array_contains_any(     ARRAY['A','X'], ARRAY['A','B'] ) as result
+                UNION ALL
+                SELECT 'c' as test, false as expected, array_contains_none(    ARRAY['A','X'], ARRAY['A','B'] ) as result
+                UNION ALL
+                SELECT 'd' as test, false as expected, array_is_same(          ARRAY['A','X'], ARRAY['A','B'] ) as result
+                UNION ALL
+                SELECT 'e' as test, true as expected,  array_is_same(          ARRAY['A','B'], ARRAY['A','B'] ) as result
+                UNION ALL
+                SELECT 'f' as test, true as expected,  array_contains_element( ARRAY['A','B'], 'B') as result
+                UNION ALL
+                SELECT 'g' as test, false as expected, array_contains_element( ARRAY['A','B'], 'X') as result
+                """;
+
+        Container container = JunitUtil.getTestContainer();
+        User user = TestContext.get().getUser();
+        var schema = DefaultSchema.get(user, container).getSchema("core");
+        try (var rs =QueryService.get().select(schema, testSql))
+        {
+            while (rs.next())
+            {
+                var test = rs.getString(1);
+                var expected = rs.getBoolean(2);
+                var result = rs.getBoolean(3);
+                assertEquals("test " + test + " failed", expected, result);
+            }
         }
     }
 %>

@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.security.User;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -52,7 +54,15 @@ public interface ExpRun extends ExpObject, Identifiable
     List<? extends ExpData> getInputDatas(@Nullable String inputRole, @Nullable ExpProtocol.ApplicationType appType);
     File getFilePathRoot();
     void setFilePathRoot(File filePathRoot);
+    default void setFilePathRoot(FileLike f)
+    {
+        setFilePathRoot(FileSystemLike.toFile(f));
+    }
     Path getFilePathRootPath();
+    default FileLike getFilePathFileLike()
+    {
+        return FileSystemLike.wrapFile(getFilePathRoot());
+    };
     void setFilePathRootPath(Path filePathRoot);
     void setProtocol(ExpProtocol protocol);
     void setJobId(Long jobId);
@@ -133,9 +143,7 @@ public interface ExpRun extends ExpObject, Identifiable
 
     void setWorkflowTaskId(@Nullable Long workflowTaskId);
 
-    void setWorkflowTask(@Nullable ExpProtocolApplication workflowTask);
-
-    @Nullable ExpProtocolApplication getWorkflowTask();
+    @Nullable Long getWorkflowTaskId();
 
     boolean canDelete(User user);
 }

@@ -155,6 +155,7 @@ tokens
 ALL : 'all';
 ANY : 'any';
 AND : 'and';
+ARRAY : 'array[';   // kinda a hack to avoid making "ARRAY" a new keyword (alternate would be to use { identifier '[' } and sort it out in SqlParser.java
 ARRAY_AGG : 'array_agg';
 AS : 'as';
 AVG : 'avg';
@@ -227,6 +228,7 @@ STDDEV_POP : 'stddev_pop';
 STDDEV_SAMP : 'stddev_samp';
 STDERR : 'stderr';
 SUM : 'sum';
+TEXTARRAY : 'textarray[';
 THEN : 'then';
 TRUE : 'true';
 UNION : 'union';
@@ -416,7 +418,13 @@ fromRange
 	    ( (subQuery) => subQuery CLOSE (AS? identifier)? -> ^(RANGE subQuery identifier?)
 	    | joinExpression CLOSE -> joinExpression
 	    )
-	;
+    | tableMethod (AS? identifier)? -> ^(RANGE tableMethod identifier?)
+    ;
+
+
+tableMethod
+    : (EXPANCESTORSOF | EXPDESCENDANTSOF) op=OPEN^ {$op.setType(METHOD_CALL);} subQuery CLOSE!
+    ;
 
 
 tableSpecificationWithAnnotation
@@ -671,7 +679,7 @@ likeEscape
 
 
 inList
-	: (EXPDESCENDANTSOF|EXPANCESTORSOF)^ OPEN! subQuery CLOSE!
+	: (EXPANCESTORSOF | EXPDESCENDANTSOF) op=OPEN^ {$op.setType(METHOD_CALL);} subQuery CLOSE!
 	| compoundExpr -> ^(IN_LIST compoundExpr)
 	;
 
@@ -750,7 +758,9 @@ starAtom
 
 // level 0 - the basic element of an expression
 primaryExpression
-	:   id=identPrimary
+	:   ARRAY exprList ']' -> ^(METHOD_CALL IDENT["ARRAY_CONSTRUCT"] exprList)
+	|   TEXTARRAY exprList ']' -> ^(METHOD_CALL IDENT["TEXTARRAY_CONSTRUCT"] exprList)
+	|   id=identPrimary
 	|   constant
 	|   OPEN! ( expression | subQuery) CLOSE!
 	|   PARAM^ (NUM_INT)?

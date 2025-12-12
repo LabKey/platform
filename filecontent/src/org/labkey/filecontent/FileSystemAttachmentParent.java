@@ -23,9 +23,10 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.FileSystemAttachmentType;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 
@@ -247,7 +248,6 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
                                     LOG.warn(e.getMessage());
                                 }
                             }
-
                         });
                     }
                 }
@@ -260,7 +260,7 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
     }
 
     @Override
-    public @NotNull AttachmentType getAttachmentType()
+    public @NotNull AttachmentParentType getAttachmentParentType()
     {
         return FileSystemAttachmentType.get();
     }

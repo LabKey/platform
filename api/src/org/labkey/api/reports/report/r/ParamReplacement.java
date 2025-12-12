@@ -22,8 +22,8 @@ import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -60,16 +60,16 @@ public interface ParamReplacement
 
     /**
      * Convert the substitution to its eventual generated file.
+     *
      * @param directory - the parent directory to create the generated file (if any, can be null)
      */
-    @Nullable
-    File convertSubstitution(File directory) throws Exception;
+    @Nullable FileLike convertSubstitution(FileLike directory) throws Exception;
 
     /**
      * Get and set files associated with the replacement
      */
-    void addFile(File file);
-    List<File> getFiles();
+    void addFile(FileLike file);
+    List<FileLike> getFiles();
     void clearFiles();
 
     String toString();
@@ -80,8 +80,8 @@ public interface ParamReplacement
     void setHeaderVisible(boolean visible);
     boolean getHeaderVisible();
 
-    HttpView getView(ViewContext context);
+    HttpView<?> getView(ViewContext context);
     @Nullable Thumbnail renderThumbnail(ViewContext context) throws IOException;
 
-    ScriptOutput renderAsScriptOutput(File file) throws Exception;
+    ScriptOutput renderAsScriptOutput(FileLike file) throws Exception;
 }

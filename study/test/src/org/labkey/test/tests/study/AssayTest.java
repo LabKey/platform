@@ -1036,7 +1036,10 @@ public class AssayTest extends AbstractAssayTest
         _listHelper.bulkImportData(TestDataUtils.tsvStringFromRowMaps(List.of(
                 Map.of(valueField.getName(), "One"),
                 Map.of(valueField.getName(), "Two"),
-                Map.of(valueField.getName(), "123")
+                Map.of(valueField.getName(), "123"),
+                // GitHub Issue #443: value is the primary key for another row
+                Map.of(valueField.getName(), "5"), // pk = 4
+                Map.of(valueField.getName(), "6") // pk = 5
         ), List.of(valueField.getName()), true));
 
         log("Create an assay with a results lookup field to the list, with lookup validator set");
@@ -1060,6 +1063,24 @@ public class AssayTest extends AbstractAssayTest
                 .setLookupValidatorEnabled(false);
         designerPage.clickFinish();
         verifyAssayImportForLookupValidator(ISSUE_53625_ASSAY, lookupField, "RunWithoutLookupValidator", false);
+
+        log("GitHub Issue #443: Verify that importing a value that is also a primary key maps to the titleColumn value");
+        verifyAssayImportForPKValueThatIsTitleColumn(ISSUE_53625_ASSAY, lookupField, "RunWithPKandTitleColumn");
+    }
+
+    private void verifyAssayImportForPKValueThatIsTitleColumn(String assayName, FieldInfo lookupField, String runName)
+    {
+        String runDataStr = TestDataUtils.tsvStringFromRowMaps(List.of(
+                        Map.of(lookupField.getName(), "4"), // pk 4, value 5
+                        Map.of(lookupField.getName(), "5"), // pk 4, value 5
+                        Map.of(lookupField.getName(), "6")), // pk 5, value 6
+                List.of(lookupField.getName()), true
+        );
+        importAssayData(assayName, runName, runDataStr);
+        clickAndWait(Locator.linkWithText(runName));
+        DataRegionTable dataTable = new DataRegionTable("Data", getDriver());
+        checker().verifyEquals("Incorrect number of results shown.", 3, dataTable.getDataRowCount());
+        checker().fatal().verifyEquals("Lookup values not as expected.", List.of("5", "5", "6"), dataTable.getColumnDataAsText(lookupField.getLabel()));
     }
 
     private void verifyAssayImportForLookupValidator(String assayName, FieldInfo lookupField, String runName, boolean validatorOn)

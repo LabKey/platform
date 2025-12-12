@@ -19,16 +19,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.util.FileType;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * <code>FileAnalysisJobSupport</code>
@@ -67,84 +61,34 @@ public interface FileAnalysisJobSupport
     /**
      * @return the directory in which the original input file resides.
      */
-    @Deprecated //Prefer the getDataDirectoryFileLike version as File return type doesn't support full URIs very well
-    default File getDataDirectory()
-    {
-        return getDataDirectoryFileLike().toNioPathForWrite().toFile();
-    }
-
-    FileLike getDataDirectoryFileLike();
+    FileLike getDataDirectory();
 
     /**
      * @return the directory where the input files reside, and where the
      *      final analysis should end up.
      */
-    @Deprecated // Please use getAnalysisDirectoryFileLike
-    File getAnalysisDirectory();
-
-    default FileLike getAnalysisDirectoryFileLike()
-    {
-        // TODO This needs implementation in derived classes...
-        // This is typically safe but may cause an error if FileSystem provider isn't configured
-        return FileSystemLike.wrapFile(getAnalysisDirectory());
-    }
+    FileLike getAnalysisDirectory();
 
     /**
      * Returns a file for use as input in the pipeline, given its name.
      * This allows the task definitions to name files they require as input,
      * and the pipeline definition to specify where those files should come from.
      */
-    @Deprecated // Please use findInputFileLike instead, as File objects may have issues with full URIs
-    File findInputFile(String name);
-    @Deprecated // Please use findInputFileLike instead, as File objects may have issues with full URIs
-    default Path findInputPath(String filepath)
-    {
-        // TODO This needs implementation in derived classes...
-        // This is typically safe but may cause an error if FileSystem provider isn't configured
-        return findInputFile(filepath).toPath();
-    }
-    default FileLike findInputFileLike(String filepath)
-    {
-        File file = findInputFile(filepath);
-        if (file != null)
-        {
-            try
-            {
-                return FileSystemLike.wrapFile(getDataDirectory(), file);
-            }
-            catch (IOException e)
-            {
-                throw UnexpectedException.wrap(e);
-            }
-        }
-        return null;
-    }
+    FileLike findInputFile(String name);
 
     /**
      * Returns a file for use as output in the pipeline, given its name. 
      * This allows the task definitions to name files they create as output,
      * and the pipeline definition to specify where those files should end up.
      */
-    @Deprecated //Please switch to use findOutputPath
-    File findOutputFile(String name); //TODO update implementations to return nio.Path directly
-    default Path findOutputPath(String name)
-    {
-        //This is generally safe, but may fail if the appropriate filesystem providers are not registered.
-        return findOutputFile(name).toPath();
-    }
+    FileLike findOutputFile(String name);
 
     /**
      * Returns a file for the output dir and file name.
      * The output dir is a directory path relative to the analysis directory,
      * or, if the path starts with "/", relative to the pipeline root.
      */
-    @Deprecated //Please switch to use findOutputPath
-    File findOutputFile(@NotNull String outputDir, @NotNull String fileName);
-    default Path findOutputPath(@NotNull String outputDir, @NotNull String filename)
-    {
-        //This is generally safe, but may fail if the appropriate filesystem providers are not registered.
-        return findOutputFile(outputDir, filename).toPath();
-    }
+    FileLike findOutputFile(@NotNull String outputDir, @NotNull String fileName);
 
     /**
      * @return a parameter parser object for writing parameters to a file.
@@ -160,20 +104,12 @@ public interface FileAnalysisJobSupport
      * @return the parameters input file used to drive the pipeline.
      */
     @Nullable
-    @Deprecated //Use Path based versions
-    File getParametersFile();
+    FileLike getParametersFile();
 
     /**
      * @return a list of all input files analyzed.
      */
-    @Deprecated
-    List<File> getInputFiles();
-
-    default List<Path> getInputFilePaths()
-    {
-        //Implemented as such for backwards compatibility
-        return getInputFiles().stream().map(File::toPath).collect(Collectors.toList());
-    }
+    List<FileLike> getInputFiles();
 
     /**
      * returns support level for .xml.gz handling:

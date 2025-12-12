@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.exp.api.ProvisionedDbSchema;
+import org.labkey.api.migration.MigrationDbSchema;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 

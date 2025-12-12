@@ -37,8 +37,8 @@ import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,7 +51,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
     private long _batchId;
     private AssayRunAsyncContext<ProviderType> _context;
 
-    private File _primaryFile;
+    private FileLike _primaryFile;
     private boolean _forceSaveBatchProps;
     private ExpRun _run;
 
@@ -62,7 +62,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
     /**
      * @param forceSaveBatchProps whether we need to save the batch properties, or if it's already been handled
      */
-    public AssayUploadPipelineJob(AssayRunAsyncContext<ProviderType> context, ViewBackgroundInfo info, @NotNull ExpExperiment batch, boolean forceSaveBatchProps, PipeRoot root, File primaryFile)
+    public AssayUploadPipelineJob(AssayRunAsyncContext<ProviderType> context, ViewBackgroundInfo info, @NotNull ExpExperiment batch, boolean forceSaveBatchProps, PipeRoot root, FileLike primaryFile)
     {
         super(context.getProvider().getName(), info, root);
         String baseName = primaryFile.getName();
@@ -140,7 +140,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
             // Create the basic run
             _run = AssayService.get().createExperimentRun(_context.getName(), getContainer(), _context.getProtocol(), _primaryFile);
             _run.setComments(_context.getComments());
-            _run.setWorkflowTaskId(_context.getWorkflowTask());
+            _run.setWorkflowTaskId(_context.getWorkflowTaskId());
             // remember which job created the run so we can show this run on the job details page
             _run.setJobId(PipelineService.get().getJobId(getUser(), getContainer(), getJobGUID()));
 
@@ -224,7 +224,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
         return _context._jobNotificationProvider;
     }
 
-    public File getPrimaryFile()
+    public FileLike getPrimaryFile()
     {
         return _primaryFile;
     }

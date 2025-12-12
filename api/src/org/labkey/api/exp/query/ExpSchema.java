@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.query;
 
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -502,11 +503,10 @@ public class ExpSchema extends AbstractExpSchema
         if (_restricted)
             return null;
 
-        // CONSIDER: also support hidden "samples" schema ?
-        if (name.equals(NestedSchemas.materials.name()))
+        if (Strings.CI.equals(name, NestedSchemas.materials.name()))
             return new SamplesSchema(SchemaKey.fromParts(getName(), NestedSchemas.materials.name()), getUser(), getContainer());
 
-        if (name.equals(NestedSchemas.data.name()))
+        if (Strings.CI.equals(name, NestedSchemas.data.name()))
             return new DataClassUserSchema(getContainer(), getUser());
 
         return super.getSchema(name);

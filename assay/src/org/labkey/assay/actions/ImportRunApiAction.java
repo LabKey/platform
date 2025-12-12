@@ -36,17 +36,13 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.DefaultAssayRunCreator;
-import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
-import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.AssayJSONConverter;
-import org.labkey.api.exp.api.DataType;
-import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -66,7 +62,6 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -74,7 +69,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.assay.FileBasedModuleDataHandler;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.MutablePropertyValues;
@@ -84,19 +78,16 @@ import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.IOException;
+import java.nio.file.InvalidPathException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static org.labkey.api.assay.AssayDataCollector.PRIMARY_FILE;
 import static org.labkey.api.assay.AssayFileWriter.createFile;
-import static org.labkey.api.util.FileUtil.toFileForWrite;
 
 @ActionNames("importRun")
 @RequiresPermission(InsertPermission.class)
@@ -113,7 +104,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
         Long batchId;
         String name;
-        Long workflowTask;
+        Long workflowTaskId;
         String comments;
         CaseInsensitiveHashMap<Object> runProperties = null;
         CaseInsensitiveHashMap<Object> batchProperties = null;
@@ -148,9 +139,9 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
             batchId = json.optLong(AssayJSONConverter.BATCH_ID);
             name = json.optString(ExperimentJSONConverter.NAME, null);
-            workflowTask = json.optLong(ExperimentJSONConverter.WORKFLOW_TASK);
-            if (workflowTask == 0)
-                workflowTask = null;
+            workflowTaskId = json.optLong(ExperimentJSONConverter.WORKFLOW_TASK);
+            if (workflowTaskId == 0)
+                workflowTaskId = null;
             comments = json.optString(ExperimentJSONConverter.COMMENT, null);
             forceAsync = json.optBoolean("forceAsync");
             jobDescription = json.optString("jobDescription", null);
@@ -187,7 +178,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
             batchId = form.getBatchId();
             name = form.getName();
-            workflowTask = form.getWorkflowTask();
+            workflowTaskId = form.getWorkflowTask();
             comments = form.getComment();
             runProperties = new CaseInsensitiveHashMap<>(form.getProperties());
             batchProperties = new CaseInsensitiveHashMap<>(form.getBatchProperties());
@@ -236,23 +227,31 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             }
             else
             {
-                // Resolve file under pipeline root
-                PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                if (root == null)
-                    throw new NotFoundException("Pipeline root not configured");
+                try
+                {
+                    // Resolve file under pipeline root
+                    PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                    if (root == null)
+                        throw new NotFoundException("Pipeline root not configured");
 
-                if (!root.hasPermission(getContainer(), getUser(), ReadPermission.class))
-                    throw new UnauthorizedException();
+                    if (!root.hasPermission(getContainer(), getUser(), ReadPermission.class))
+                        throw new UnauthorizedException();
 
-                // Attempt absolute path first, then relative path from pipeline root
-                File f = new File(runFilePath);
-                if (!root.isUnderRoot(f))
-                    f = root.resolvePath(runFilePath);
+                    // Attempt absolute path first, then relative path from pipeline root
+                    File f = new File(runFilePath);
+                    if (!root.isUnderRoot(f))
+                        f = root.resolvePath(runFilePath);
 
-                if (!NetworkDrive.exists(f) || !root.isUnderRoot(f))
+                    if (!NetworkDrive.exists(f) || !root.isUnderRoot(f))
+                        throw new NotFoundException("File not found: " + runFilePath);
+
+                    file = f;
+                }
+                catch (InvalidPathException e)
+                {
+                    LOG.info("Invalid path: " + runFilePath, e);
                     throw new NotFoundException("File not found: " + runFilePath);
-
-                file = f;
+                }
             }
         }
 
@@ -261,7 +260,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
         AssayRunUploadContext.Factory<?, ?> factory = provider.createRunUploadFactory(protocol, getViewContext())
                 .setName(name)
-                .setWorkflowTask(workflowTask)
+                .setWorkflowTaskId(workflowTaskId)
                 .setComments(comments)
                 .setTargetStudy(targetStudy)
                 .setReRunId(reRunId)

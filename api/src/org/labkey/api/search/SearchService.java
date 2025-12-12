@@ -394,7 +394,7 @@ public interface SearchService extends SearchMXBean
 
     DbSchema getSchema();
 
-    WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart);
+    WebPartView<?> getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart);
 
     SearchResult search(SearchOptions options) throws IOException;
 
@@ -462,7 +462,7 @@ public interface SearchService extends SearchMXBean
     void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);
 
     WebdavResource resolveResource(@NotNull String resourceIdentifier);
-    HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier);
+    HttpView<?> getCustomSearchResult(User user, @NotNull String resourceIdentifier);
     Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier);
     Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers);
 

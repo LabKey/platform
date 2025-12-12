@@ -98,9 +98,9 @@ import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.assay.ModuleAssayCache.ModuleAssayCollections;
 import org.labkey.assay.query.AssaySchemaImpl;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -421,7 +421,7 @@ public class AssayManager implements AssayService
             List<ExpProtocol> allProtocols = getAssayProtocols(container);
             for (ExpProtocol protocol : allProtocols)
             {
-                if (name.equalsIgnoreCase(protocol.getName())) // GitHub Issue 763: case-insensitive name check
+                if (name.equalsIgnoreCase(protocol.getName())) // GitHub Issue #649: case-insensitive name check
                     return protocol;
             }
         }
@@ -802,7 +802,7 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public ExpRun createExperimentRun(@Nullable String name, Container container, ExpProtocol protocol, @Nullable File file)
+    public ExpRun createExperimentRun(@Nullable String name, Container container, ExpProtocol protocol, @Nullable FileLike file)
     {
         if (name == null)
         {
@@ -824,7 +824,7 @@ public class AssayManager implements AssayService
         run.setProtocol(ExperimentService.get().getExpProtocol(protocol.getRowId()));
         run.setEntityId(entityId);
 
-        File runRoot;
+        FileLike runRoot;
         if (file == null)
         {
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(container);
@@ -832,11 +832,11 @@ public class AssayManager implements AssayService
             {
                 throw new NotFoundException("Pipeline root is not configured for folder " + container);
             }
-            runRoot = pipeRoot.getRootPath();
+            runRoot = pipeRoot.getRootFileLike();
         }
         else if (file.isFile())
         {
-            runRoot = file.getParentFile();
+            runRoot = file.getParent();
         }
         else
         {

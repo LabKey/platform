@@ -90,17 +90,6 @@ public class QueryExportAuditProvider extends AbstractAuditTypeProvider implemen
     }
 
     @Override
-    public Map<FieldKey, String> legacyNameMap()
-    {
-        Map<FieldKey, String> legacyMap =  super.legacyNameMap();
-        legacyMap.put(FieldKey.fromParts("key1"), COLUMN_NAME_SCHEMA_NAME);
-        legacyMap.put(FieldKey.fromParts("key2"), COLUMN_NAME_QUERY_NAME);
-        legacyMap.put(FieldKey.fromParts("key3"), COLUMN_NAME_DETAILS_URL);
-        legacyMap.put(FieldKey.fromParts("intKey1"), COLUMN_NAME_DATA_ROW_COUNT);
-        return legacyMap;
-    }
-
-    @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
         return (Class<K>)QueryExportAuditEvent.class;

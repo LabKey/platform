@@ -61,7 +61,7 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
         return "Import files";
     }
 
-    protected abstract File createLogFile();
+    protected abstract FileLike createLogFile();
 
     public void submit() throws IOException
     {

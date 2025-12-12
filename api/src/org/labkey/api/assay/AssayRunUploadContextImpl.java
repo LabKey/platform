@@ -69,7 +69,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final ViewContext _context;
     private final String _comments;
     private final String _name;
-    private final Long _workflowTask;
+    private final Long _workflowTaskId;
     private final String _targetStudy;
     private final Long _reRunId;
     private final ReImportOption _reImportOption;
@@ -114,7 +114,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         _logger = factory._logger;
 
         _name = factory._name;
-        _workflowTask = factory._workflowTask;
+        _workflowTaskId = factory._workflowTaskId;
         _comments = factory._comments;
 
         _rawRunProperties = factory._rawRunProperties == null ? emptyMap() : unmodifiableMap(factory._rawRunProperties);
@@ -279,9 +279,9 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     }
 
     @Override
-    public @Nullable Long getWorkflowTask()
+    public @Nullable Long getWorkflowTaskId()
     {
-        return _workflowTask;
+        return _workflowTaskId;
     }
 
     @Override

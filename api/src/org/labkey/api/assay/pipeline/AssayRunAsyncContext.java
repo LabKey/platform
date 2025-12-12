@@ -63,7 +63,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private String _containerId;
     private String _runName;
     private String _runComments;
-    private Long _runWorkflowTask;
+    private Long _runWorkflowTaskId;
     private ActionURL _actionURL;
     private Map<String, FileLike> _uploadedData;
     private Set<FileLike> _uploadedPropertyFiles;
@@ -111,7 +111,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         _targetStudy = originalContext.getTargetStudy();
         _runName = originalContext.getName();
         _runComments = originalContext.getComments();
-        _runWorkflowTask = originalContext.getWorkflowTask();
+        _runWorkflowTaskId = originalContext.getWorkflowTaskId();
         _container = originalContext.getContainer();
         if (_container != null)
             _containerId = _container.getId();
@@ -298,9 +298,9 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     }
 
     @Override
-    public @Nullable Long getWorkflowTask()
+    public @Nullable Long getWorkflowTaskId()
     {
-        return _runWorkflowTask;
+        return _runWorkflowTaskId;
     }
 
     @Override

@@ -249,6 +249,7 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
@@ -2158,7 +2159,7 @@ public class QueryController extends SpringActionController
                         throw new IllegalArgumentException("Cannot create sheet names from overlapping query names.");
                     for (int i = 0; i < queryForms.size(); i++)
                     {
-                        sheetNames.put(entry.getValue().get(i), name.substring(0, name.length() - countLength) + "(" + i + ")");
+                        sheetNames.put(entry.getValue().get(i), StringUtilsLabKey.leftSurrogatePairFriendly(name, name.length() - countLength) + "(" + i + ")");
                     }
                 }
                 else

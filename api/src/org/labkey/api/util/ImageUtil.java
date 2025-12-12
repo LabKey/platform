@@ -27,6 +27,7 @@ import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 import org.w3c.dom.Document;
 import org.xhtmlrenderer.resource.ImageResource;
 import org.xhtmlrenderer.swing.Java2DRenderer;
@@ -36,8 +37,8 @@ import org.xhtmlrenderer.util.XRLogger;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -257,10 +258,10 @@ public class ImageUtil
      * Retrieves a file cached in the session
      */
     @Nullable
-    public static File getFileFromSession(HttpServletRequest request, String key)
+    public static FileLike getFileFromSession(HttpServletRequest request, String key)
     {
         Object o = request.getSession().getAttribute(key);
-        if (o instanceof File file && file.exists())
+        if (o instanceof FileLike file && file.exists())
             return file;
 
         return null;
@@ -270,7 +271,7 @@ public class ImageUtil
      * Adds a file to the request session and returns the generated session attribute key.
      */
     @Nullable
-    public static String setFileInSession(HttpServletRequest request, File file)
+    public static String setFileInSession(HttpServletRequest request, FileLike file)
     {
         if (file != null && file.exists())
         {
@@ -313,26 +314,22 @@ public class ImageUtil
                     String sessionKey = helper.getParameter(FILE_SESSION_PARAM);
                     String deleteFile = helper.getParameter(DELETE_FILE_PARAM);
 
-                    File file = getFileFromSession(_context.getRequest(), sessionKey);
+                    FileLike file = getFileFromSession(_context.getRequest(), sessionKey);
                     if (file != null)
                     {
-                        try
+                        try (InputStream in = file.openInputStream())
                         {
-                            BufferedImage img = ImageIO.read(file);
+                            BufferedImage img = ImageIO.read(in);
                             ir = createImageResource(uri, img);
                             _imageCache.put(uri, ir);
 
                             if (BooleanUtils.toBoolean(deleteFile))
                                 file.delete();
                         }
-                        catch(IOException e)
-                        {
-                        }
+                        catch (IOException ignored) {}
                     }
                 }
-                catch(URISyntaxException e)
-                {
-                }
+                catch (URISyntaxException ignored) {}
             }
 
             if (ir != null)

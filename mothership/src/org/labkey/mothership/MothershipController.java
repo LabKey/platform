@@ -40,7 +40,6 @@ import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
-import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
@@ -89,7 +88,6 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.mothership.query.MothershipSchema;
 import org.labkey.mothership.view.ExceptionListWebPart;
 import org.labkey.mothership.view.LinkBar;
@@ -97,9 +95,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
@@ -107,7 +103,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -267,32 +262,6 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public static class CreateIssueFinishedAction extends FormHandlerAction<CreateIssueFinishedForm>
-    {
-        @Override
-        public void validateCommand(CreateIssueFinishedForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(CreateIssueFinishedForm form, BindException errors)
-        {
-            ExceptionStackTrace stackTrace = MothershipManager.get().getExceptionStackTrace(form.getExceptionStackTraceId(), getContainer());
-            stackTrace.setBugNumber(form.getIssueId());
-            stackTrace.setAssignedTo(form.getAssignedTo());
-            MothershipManager.get().updateExceptionStackTrace(stackTrace, getUser());
-
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(CreateIssueFinishedForm createIssueFinishedForm)
-        {
-            return new ActionURL(BeginAction.class, getContainer());
-        }
-    }
-
-    @RequiresPermission(UpdatePermission.class)
     public static class EditUpgradeMessageAction extends SimpleViewAction<Object>
     {
         @Override
@@ -302,7 +271,7 @@ public class MothershipController extends SpringActionController
 
             form.setCurrentBuildDate(MothershipManager.get().getCurrentBuildDate());
             form.setMessage(MothershipManager.get().getUpgradeMessage());
-            form.setCreateIssueURL(MothershipManager.get().getCreateIssueURL());
+            form.setGithubRepo(MothershipManager.get().getGitHubRepo());
             form.setIssuesContainer(MothershipManager.get().getIssuesContainer());
             form.setMarketingMessage(MothershipManager.get().getMarketingMessage());
             form.setStatusCakeApiKey(StringUtils.trimToNull(MothershipManager.get().getStatusCakeApiKey()));
@@ -332,7 +301,7 @@ public class MothershipController extends SpringActionController
         {
             MothershipManager.get().setCurrentBuildDate(form.getCurrentBuildDate());
             MothershipManager.get().setUpgradeMessage(form.getMessage());
-            MothershipManager.get().setCreateIssueURL(form.getCreateIssueURL());
+            MothershipManager.get().setGitHubRepo(form.getGithubRepo());
             MothershipManager.get().setIssuesContainer(form.getIssuesContainer());
             MothershipManager.get().setMarketingMessage(form.getMarketingMessage());
             MothershipManager.get().setUptimeContainer(form.getUptimeContainer());
@@ -432,7 +401,7 @@ public class MothershipController extends SpringActionController
     public static class ShowStackTraceDetailAction extends SimpleViewAction<ExceptionStackTraceForm>
     {
         @Override
-        public ModelAndView getView(ExceptionStackTraceForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExceptionStackTraceForm form, BindException errors)
         {
             ExceptionStackTrace stackTrace;
             try
@@ -459,67 +428,7 @@ public class MothershipController extends SpringActionController
             summaryGridView.setShowBorders(true);
             summaryGridView.setShadeAlternatingRows(true);
             summaryGridView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
-            return new VBox(updateView, summaryGridView, constructCreateIssueForm(stackTrace));
-        }
-
-        private JspView<Map<String, String>> constructCreateIssueForm(ExceptionStackTrace stackTrace) throws IOException
-        {
-            // Moved from CreateIssueDisplayColumn. Instead of piggybacking off the ExceptionStackTraceForm,
-            // we now have a separate hidden form on the page to have control over exactly which fields
-            // are submitted.
-            ActionURL callbackURL = getViewContext().getActionURL().clone();
-            callbackURL.setAction(MothershipController.CreateIssueFinishedAction.class);
-            Map<String, String> cifModel = new HashMap<>();
-            cifModel.put("callbackURL", callbackURL.toString());
-            String originalURL = (String)getViewContext().getRequest().getAttribute(ViewServlet.ORIGINAL_URL_STRING);
-            StringBuilder body = new StringBuilder();
-            body.append("Created from crash report: ");
-            body.append(originalURL);
-            body.append("\n\n");
-            String stackTraceString = stackTrace.getStackTrace();
-            body.append(stackTraceString);
-
-            StringBuilder title = new StringBuilder();
-            BufferedReader reader = new BufferedReader(new StringReader(stackTraceString));
-            // Grab the exception class
-            String className = reader.readLine().split(":")[0];
-            if (className.lastIndexOf('.') != -1)
-            {
-                // Strip off the package name to make the title a little shorter
-                className = className.substring(className.lastIndexOf('.') + 1);
-            }
-            title.append(className);
-            String firstLocation = reader.readLine();
-            String location = firstLocation;
-            String separator = " in ";
-            while (location != null &&
-                    (!location.contains("org.labkey") || location.contains(ConnectionWrapper.class.getPackage().getName())) &&
-                    !location.contains("org.fhcrc"))
-            {
-                location = reader.readLine();
-                separator = " from ";
-            }
-
-            if (location == null)
-            {
-                location = firstLocation;
-            }
-            if (location != null)
-            {
-                location = location.trim();
-                if (location.startsWith("at "))
-                {
-                    location = location.substring("at ".length());
-                }
-                title.append(separator);
-                title.append(location.split("\\(")[0]);
-                title.append("()");
-            }
-            cifModel.put("body", body.toString());
-            cifModel.put("title", title.toString());
-            cifModel.put("action", MothershipManager.get().getCreateIssueURL());
-
-            return new JspView<>("/org/labkey/mothership/view/createIssue.jsp", cifModel);
+            return new VBox(updateView, summaryGridView);
         }
 
         @Override
@@ -1584,7 +1493,7 @@ public class MothershipController extends SpringActionController
                         }
                         else
                         {
-                            exceptionStackTrace.setBugNumber(-1);
+                            exceptionStackTrace.setGithubIssue(-1);
                         }
                     }
                     MothershipManager.get().updateExceptionStackTrace(exceptionStackTrace, getUser());
@@ -1734,7 +1643,7 @@ public class MothershipController extends SpringActionController
 
             TableInfo exceptionStackTraceTable = new MothershipSchema(getViewContext().getUser(), c).getTable("ExceptionStackTrace");
             getDataRegion().setTable(exceptionStackTraceTable);
-            getDataRegion().addColumns(exceptionStackTraceTable, "ExceptionStackTraceId,StackTrace,BugNumber,Comments");
+            getDataRegion().addColumns(exceptionStackTraceTable, "ExceptionStackTraceId,StackTrace,GitHubIssue,LabKeyIssue,Comments");
             getDataRegion().addHiddenFormField("exceptionStackTraceId", Integer.toString(form.getBean().getExceptionStackTraceId()));
             getDataRegion().addDisplayColumn(new AssignedToDisplayColumn(exceptionStackTraceTable.getColumn("AssignedTo"), c));
             getDataRegion().getDisplayColumn(1).setVisible(false);
@@ -1843,43 +1752,6 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    public static class CreateIssueFinishedForm
-    {
-        private int _exceptionStackTraceId;
-        private int _issueId;
-        private Integer _assignedTo;
-
-        public int getExceptionStackTraceId()
-        {
-            return _exceptionStackTraceId;
-        }
-
-        public void setExceptionStackTraceId(int exceptionStackTraceId)
-        {
-            _exceptionStackTraceId = exceptionStackTraceId;
-        }
-
-        public int getIssueId()
-        {
-            return _issueId;
-        }
-
-        public void setIssueId(int issueId)
-        {
-            _issueId = issueId;
-        }
-
-        public Integer getAssignedTo()
-        {
-            return _assignedTo;
-        }
-
-        public void setAssignedTo(Integer assignedTo)
-        {
-            _assignedTo = assignedTo;
-        }
-    }
-
     public static class SoftwareReleaseForm extends BeanViewForm<SoftwareRelease>
     {
         public SoftwareReleaseForm(SoftwareRelease release)
@@ -1899,7 +1771,7 @@ public class MothershipController extends SpringActionController
     {
         private Date _currentBuildDate;
         private String _message;
-        private String _createIssueURL;
+        private String _githubRepo;
         private String _issuesContainer;
         private String _marketingMessage;
         private String _statusCakeApiKey;
@@ -1925,14 +1797,14 @@ public class MothershipController extends SpringActionController
             _message = message;
         }
 
-        public void setCreateIssueURL(String createIssueURL)
+        public void setGithubRepo(String githubRepo)
         {
-            _createIssueURL = createIssueURL;
+            _githubRepo = githubRepo;
         }
 
-        public String getCreateIssueURL()
+        public String getGithubRepo()
         {
-            return _createIssueURL;
+            return _githubRepo;
         }
 
         public void setIssuesContainer(String issuesContainer)

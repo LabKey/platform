@@ -17,10 +17,13 @@ package org.labkey.core;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -30,7 +33,6 @@ import org.labkey.api.data.dialect.TestUpgradeCodeCounter;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.Directive;
-import org.labkey.api.security.Encryption;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.security.AllowedExternalResourceHosts;
@@ -127,6 +129,7 @@ public class CoreUpgradeCode implements UpgradeCode
      * - For existing duplicate, only the one with the largest 'Value' is retained, to minimize naming conflict.
      * - All withCounter sequence name is then updated to lower case
      */
+    @SuppressWarnings("unused")
     public static void makeWithCounterCaseInsensitive(ModuleContext context)
     {
         if (context.isNewInstall())
@@ -178,5 +181,30 @@ public class CoreUpgradeCode implements UpgradeCode
 
         // No need to synchronize since upgrade is single-threaded
         AllowedExternalResourceHosts.saveAllowedHosts(allowedHosts, context.getUpgradeUser());
+    }
+
+    /**
+     * Called from core-25.008-25.009.sql
+     */
+    @SuppressWarnings("unused")
+    @DeferredUpgrade
+    public static void populateAttachmentParentTypeColumn(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        for (AttachmentParentType type : AttachmentService.get().getAttachmentParentTypes())
+        {
+            LOG.info("Populating attachment parent type for {}", type.getUniqueName());
+
+            SQLFragment updateSql = new SQLFragment("UPDATE ")
+                .append(CoreSchema.getInstance().getTableInfoDocuments())
+                .append(" SET ParentType = ?")
+                .add(type.getUniqueName())
+                .append(" WHERE ");
+            type.addWhereSql(updateSql, "Parent", "DocumentName");
+
+            new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(updateSql);
+        }
     }
 }

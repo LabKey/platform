@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.Module;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 
@@ -63,6 +64,6 @@ public interface ModuleEditorService
         File resources = getUpdatableResourcesRoot(module, null);
         if (null == resources)
             return null;
-        return new File(resources, path.toString("",""));
+        return FileUtil.appendPath(resources, path);
     }
 }

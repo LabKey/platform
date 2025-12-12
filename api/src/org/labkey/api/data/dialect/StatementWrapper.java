@@ -34,6 +34,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ViewServlet;
 
 import java.io.InputStream;
@@ -2876,7 +2877,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
                     else
                         value = String.valueOf(o);
                     if (value.length() > 100)
-                        value = value.substring(0, 100) + ". . .";
+                        value = StringUtilsLabKey.leftSurrogatePairFriendly(value, 100) + ". . .";
                     logEntry.append("\n    --[").append(i).append("] ");
                     logEntry.append(value);
                     Class<?> c = null==o ? null : o.getClass();

@@ -16,8 +16,8 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.core.admin.AdminController.SiteValidationForm;
 import org.labkey.core.admin.AdminController.ViewValidationResultsAction;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.PrintWriter;
 
 public class SiteValidationJob extends PipelineJob
@@ -33,7 +33,7 @@ public class SiteValidationJob extends PipelineJob
     public SiteValidationJob(ViewBackgroundInfo info, PipeRoot pipeRoot, SiteValidationForm form)
     {
         super("SiteValidation", info, pipeRoot);
-        setLogFile(FileUtil.appendName(pipeRoot.getLogDirectory(), FileUtil.makeFileNameWithTimestamp("site_validation", "log")).toPath());
+        setLogFile(pipeRoot.getLogDirectory(true).resolveChild(FileUtil.makeFileNameWithTimestamp("site_validation", "log")));
         _form = form;
     }
 
@@ -67,9 +67,9 @@ public class SiteValidationJob extends PipelineJob
                 getInfo().getURL() == null ? AppProps.getInstance().getHomePageActionURL() : getInfo().getURL());
         ViewContext context = new ViewContext(info);
         template.setViewContext(context);
-        File results = FileUtil.appendName(getPipeRoot().getLogDirectory(), getResultsFileName());
+        FileLike results = getPipeRoot().getLogDirectory(true).resolveChild(getResultsFileName());
 
-        try (PrintWriter out = new PrintWriter(results, StringUtilsLabKey.DEFAULT_CHARSET))
+        try (PrintWriter out = new PrintWriter(results.openOutputStream(), false, StringUtilsLabKey.DEFAULT_CHARSET))
         {
             out.println(template.render());
         }

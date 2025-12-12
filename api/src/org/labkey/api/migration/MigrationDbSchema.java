@@ -1,5 +1,9 @@
-package org.labkey.api.data;
+package org.labkey.api.migration;
 
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.module.Module;
 
 import java.util.Map;

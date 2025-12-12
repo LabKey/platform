@@ -19,15 +19,8 @@ import org.labkey.api.util.GUID;
 
 import java.util.List;
 
-/**
-* User: matt
-* Date: Oct 23, 2010
-* Time: 3:08:13 PM
-*/
 public class TempTableInfo extends SchemaTableInfo
 {
-    private final String _tempTableName;
-
     private TempTableTracker _ttt;
 
     public TempTableInfo(String name, List<ColumnInfo> cols, List<String> pk)
@@ -35,16 +28,13 @@ public class TempTableInfo extends SchemaTableInfo
         this(DbSchema.getTemp(), name, cols, pk);
     }
 
-    private TempTableInfo(DbSchema schema, String name, List<ColumnInfo> cols, List<String> pk)
+    public TempTableInfo(DbSchema schema, String name, List<ColumnInfo> cols, List<String> pk)
     {
         super(schema, DatabaseTableType.TABLE, name, name,
                 new SQLFragment().appendIdentifier(schema.getName()).append(".").appendIdentifier(name + "$" + new GUID().toStringNoDashes()));
 
         // make sure TempTableTracker is initialized _before_ caller executes CREATE TABLE
         TempTableTracker.init();
-
-        // TODO: Do away with _tempTableName?  getSelectName() is synonymous.
-        _tempTableName = getSelectName();
 
         for (var col : cols)
         {
@@ -58,15 +48,14 @@ public class TempTableInfo extends SchemaTableInfo
 
     public String getTempTableName()
     {
-        return _tempTableName;
+        return getSelectName();
     }
-
 
     /** Call this method when table is physically created */
     public void track()
     {
         // Remove the schema name and dot
-        String tableName = _tempTableName.substring(getSchema().getName().length() + 1);
+        String tableName = getTempTableName().substring(getSchema().getName().length() + 1);
         _ttt = TempTableTracker.track(tableName, this);
     }
 

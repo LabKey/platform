@@ -337,7 +337,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         {
             throw new UnauthorizedException();
         }
-        ExperimentServiceImpl.get().deleteExperimentRuns(getContainer(), user, auditUserComment, Arrays.asList(this));
+        ExperimentServiceImpl.get().deleteExperimentRuns(getContainer(), user, auditUserComment, Arrays.asList(this), null);
     }
 
     @Override
@@ -571,15 +571,12 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public boolean canDelete(User user)
     {
         ExpProtocolImpl protocol = getProtocol();
-        boolean isWorkflow = ExpProtocol.isSampleWorkflowProtocol(protocol.getLSID());
-        if (isWorkflow && getContainer().hasPermission(user, SampleWorkflowDeletePermission.class))
-            return true;
 
         // Issue 50776: To update lineage we need to delete existing runs
         if ((ExperimentServiceImpl.get().isSampleAliquot(protocol) || ExperimentServiceImpl.get().isSampleDerivation(protocol)) && getContainer().hasPermission(user, UpdatePermission.class))
             return true;
 
-        return !isWorkflow && getContainer().hasPermission(user, DeletePermission.class);
+        return getContainer().hasPermission(user, DeletePermission.class);
     }
 
     // Clean up DataInput and MaterialInput exp.object and properties
@@ -1047,30 +1044,8 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public ExpProtocolApplication getWorkflowTask()
+    public Long getWorkflowTaskId()
     {
-        Long id = _object.getWorkflowTask();
-
-        if (id == null) {
-            return null;
-        }
-
-        if (_workflowTask == null || _workflowTask.getRowId() != id.intValue())
-        {
-            _workflowTask = ExperimentServiceImpl.get().getExpProtocolApplication(id);
-        }
-
-        return _workflowTask;
-    }
-
-    @Override
-    public void setWorkflowTask(ExpProtocolApplication workflowTask)
-    {
-        ensureUnlocked();
-
-        if (workflowTask == null)
-            _object.setWorkflowTask(null);
-        else
-            _object.setWorkflowTask(workflowTask.getRowId());
+        return _object.getWorkflowTask();
     }
 }

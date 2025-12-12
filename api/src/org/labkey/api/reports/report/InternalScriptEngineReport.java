@@ -15,14 +15,17 @@
  */
 package org.labkey.api.reports.report;
 
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.ApiModule;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
@@ -30,27 +33,26 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/*
-* User: Karl Lum
-* Date: Jan 19, 2009
-* Time: 4:11:54 PM
-*/
+/**
+ * Executes scripts, such as R, and renders the results.
+ */
 public class InternalScriptEngineReport extends ScriptEngineReport
 {
     public static final String TYPE = "ReportService.internalScriptEngineReport";
+    private static final Logger LOG = LogHelper.getLogger(InternalScriptEngineReport.class, "Executes scripts, such as R, and renders the results.");
 
     @Override
     public String getType()
@@ -59,7 +61,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
     }
 
     @Override
-    public HttpView renderReport(ViewContext context) throws Exception
+    public HttpView<?> renderReport(ViewContext context) throws ValidationException, SQLException, IOException
     {
         VBox view = new VBox();
         String script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
@@ -82,6 +84,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
         }
         catch (ScriptException e)
         {
+            LOG.error("Error executing script", e);
             final String error1 = "Error executing command";
             final String error2 = PageFlowUtil.filter(e.getMessage());
 
@@ -89,17 +92,17 @@ public class InternalScriptEngineReport extends ScriptEngineReport
             errors.add(error2);
 
             String err = "<font class=\"labkey-error\">" + error1 + "</font><pre>" + error2 + "</pre>";
-            HttpView errView = HtmlView.unsafe(err);
+            HttpView<?> errView = HtmlView.unsafe(err);
             view.addView(errView);
         }
 
-        renderViews(this, view, outputSubst, false);
+        renderViews(this, view, outputSubst);
 
         return view;
     }
 
     @Override
-    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
+    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, FileLike inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
         ScriptEngine engine = getScriptEngine(context.getContainer());
         if (engine != null)
@@ -140,16 +143,16 @@ public class InternalScriptEngineReport extends ScriptEngineReport
 
                     ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(ConsoleOutput.ID);
                     param.setName("console");
-                    param.addFile(FileSystemLike.toFile(console));
+                    param.addFile(console);
 
                     outputSubst.add(param);
                 }
                 return output != null ? output.toString() : "";
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 if (!errors.getBuffer().isEmpty())
-                    throw new ScriptException(e.getMessage() + errors.getBuffer().toString());
+                    throw new ScriptException(e.getMessage() + errors.getBuffer());
                 else
                     throw new ScriptException(e);
             }
@@ -165,11 +168,5 @@ public class InternalScriptEngineReport extends ScriptEngineReport
     {
         deleteReportDir(context);
         super.beforeDelete(context);
-    }
-
-    @Override
-    public boolean isSandboxed()
-    {
-        return false;
     }
 }

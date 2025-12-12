@@ -19,6 +19,7 @@ package org.labkey.specimen;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PropertyManager;
@@ -52,6 +53,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.specimen.importer.SpecimenColumn;
+import org.labkey.specimen.model.SpecimenRequestEventType;
 import org.labkey.specimen.pipeline.SpecimenReloadJob;
 import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
 
@@ -364,6 +366,12 @@ public class SpecimenServiceImpl implements SpecimenService
     public void registerRequestCustomizer(SpecimenRequestCustomizer customizer)
     {
         _specimenRequestCustomizer = customizer;
+    }
+
+    @Override
+    public AttachmentParentType getSpecimenRequestEventType()
+    {
+        return SpecimenRequestEventType.get();
     }
 
     @Override

@@ -28,20 +28,15 @@ import org.labkey.test.Locator;
 import org.labkey.test.Locators;
 import org.labkey.test.SortDirection;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.issues.InsertPage;
 import org.labkey.test.pages.mothership.ClientExceptionPage;
-import org.labkey.test.pages.mothership.EditUpgradeMessagePage;
 import org.labkey.test.pages.mothership.ShowExceptionsPage;
 import org.labkey.test.pages.mothership.ShowExceptionsPage.ExceptionSummaryDataRegion;
 import org.labkey.test.pages.mothership.StackTraceDetailsPage;
 import org.labkey.test.util.ApiPermissionsHelper;
-import org.labkey.test.util.IssuesHelper;
-import org.labkey.test.util.Maps;
 import org.labkey.test.util.PermissionsHelper.MemberType;
 import org.labkey.test.util.PostgresOnlyTest;
-import org.labkey.test.util.TextSearcher;
 import org.labkey.test.util.mothership.MothershipHelper;
 
 import java.util.ArrayList;
@@ -68,9 +63,6 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     private static final String ASSIGNEE2 = "assignee2@mothership.test";
     private static final String NON_ASSIGNEE = "non_assignee@mothership.test";
     private static final String MOTHERSHIP_GROUP = "Mothership Test Group";
-    private static final String ISSUES_PROJECT = "MothershipTest Issues";
-    private static final String ISSUES_GROUP = "Issues Group";
-    public static final String ISSUES_LIST = "mothershipissues";
 
     private static MothershipHelper _mothershipHelper; // Static to remember site settings between tests
     private final ApiPermissionsHelper permissionsHelper = new ApiPermissionsHelper(this);
@@ -78,7 +70,6 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
-        _containerHelper.deleteProject(ISSUES_PROJECT, false);
         // Don't delete mothership project
         _userHelper.deleteUsers(afterTest, ASSIGNEE, ASSIGNEE2, NON_ASSIGNEE);
         permissionsHelper.deleteGroup(MOTHERSHIP_GROUP, MOTHERSHIP_PROJECT, false);
@@ -105,25 +96,6 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         permissionsHelper.addUserToProjGroup(ASSIGNEE, MOTHERSHIP_PROJECT, MOTHERSHIP_GROUP);
         permissionsHelper.addUserToProjGroup(ASSIGNEE2, MOTHERSHIP_PROJECT, MOTHERSHIP_GROUP);
         permissionsHelper.addMemberToRole(NON_ASSIGNEE, "Project Admin", MemberType.user, MOTHERSHIP_PROJECT);
-
-        EditUpgradeMessagePage configurePage = EditUpgradeMessagePage.beginAt(this);
-        configurePage.setCreateIssueURL(WebTestHelper.getContextPath() +
-                WebTestHelper.buildRelativeUrl("issues", ISSUES_PROJECT, "insert", Maps.of("issueDefName", ISSUES_LIST)));
-        configurePage.setIssuesContainer("/" + ISSUES_PROJECT);
-        configurePage.save();
-
-        _containerHelper.createProject(ISSUES_PROJECT, null);
-        IssuesHelper helper = new IssuesHelper(this);
-        helper.createNewIssuesList(ISSUES_LIST, _containerHelper);
-        goToModule("Issues");
-        helper.goToAdmin();
-        helper.setIssueAssignmentList(null);
-        clickButton("Save");
-
-        ApiPermissionsHelper permHelper = new ApiPermissionsHelper(this);
-        permHelper.createProjectGroup(ISSUES_GROUP, ISSUES_PROJECT);
-        permHelper.addUserToProjGroup(ASSIGNEE, ISSUES_PROJECT, ISSUES_GROUP);
-        permHelper.addMemberToRole(ISSUES_GROUP, EDITOR_ROLE, MemberType.group, ISSUES_PROJECT);
     }
 
     @Before
@@ -132,37 +104,6 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         _mothershipHelper.ensureSelfReportingEnabled();
         // In case the testIgnoreInstallationExceptions() test case didn't reset this flag after itself.
         _mothershipHelper.setIgnoreExceptions(false);
-    }
-
-    @Test
-    public void testCreateIssue()
-    {
-        IssuesHelper issuesHelper = new IssuesHelper(this);
-        Integer highestIssueId = issuesHelper.getHighestIssueId(ISSUES_PROJECT, ISSUES_LIST);
-        int stackTraceId = ensureUnassignedException();
-
-        ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
-        ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
-        StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
-        String stackDetailsUrl = getDriver().getCurrentUrl();
-        InsertPage insertPage = detailsPage.clickCreateIssue();
-        String expectedTitle = "NullPointerException in org.labkey.devtools.TestController$NpeAction.getView()";
-        String issueTitle = insertPage.title().get();
-        assertEquals("Wrong issue title", expectedTitle, issueTitle);
-        String[] expectedComments = new String[] {
-                "Created from crash report: " + stackDetailsUrl,
-                "java.lang.NullPointerException",
-                "TestController.java"};
-        assertTextPresentInThisOrder(new TextSearcher(insertPage.comment().get()), expectedComments);
-        assertEquals("New issue shouldn't be assigned by default", "", insertPage.assignedTo().get().trim());
-        insertPage.assignedTo().set(_userHelper.getDisplayNameForEmail(ASSIGNEE));
-        insertPage.save();
-        Integer newIssueId = issuesHelper.getHighestIssueId(ISSUES_PROJECT, ISSUES_LIST);
-        assertNotEquals("Didn't create a new issue.", highestIssueId, newIssueId);
-        detailsPage = ShowExceptionsPage.beginAt(this)
-                .exceptionSummary()
-                .clickStackTrace(stackTraceId);
-        assertEquals("Exception's related issue not set", newIssueId.toString(), detailsPage.bugNumber().get());
     }
 
     @Test
@@ -201,24 +142,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         exceptionSummary.ignoreSelected();
 
         StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
-        assertEquals("Ignoring exception should set bugNumber", "-1", detailsPage.bugNumber().get());
-    }
-
-    @Test
-    public void testCreateIssueForAssignedException()
-    {
-        int stackTraceId = ensureUnassignedException();
-
-        ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
-        ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
-        exceptionSummary.uncheckAllOnPage();
-        exceptionSummary.checkCheckboxByPrimaryKey(stackTraceId);
-        exceptionSummary.assignSelectedTo(_userHelper.getDisplayNameForEmail(ASSIGNEE));
-
-        StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
-        InsertPage insertPage = detailsPage.clickCreateIssue();
-        assertEquals("Exception assignment != New issue assignment",
-                _userHelper.getDisplayNameForEmail(ASSIGNEE), insertPage.assignedTo().get());
+        assertEquals("Ignoring exception should set GitHub Issue", "-1", detailsPage.githubIssue().get());
     }
 
     @Test
@@ -229,7 +153,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         assertEquals("Should group identical exceptions", exceptionIds.get(0), exceptionIds.get(1));
     }
 
-    @Test @Ignore("These don't actually get grouped")
+    @Test
     public void testCombiningSimilarExceptions()
     {
         List<Pair<ExceptionActions, String>> actions = new ArrayList<>();
@@ -238,7 +162,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
 
         List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(actions);
         goToMothership(); // Make sure failure screenshot shows new exceptions
-        assertEquals("Should group same exception type from same action", exceptionIds.get(0), exceptionIds.get(1));
+        assertNotEquals("Shouldn't group same exception type from same action with different line numbers", exceptionIds.get(0), exceptionIds.get(1));
     }
 
     @Test

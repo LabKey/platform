@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
@@ -24,8 +25,9 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
@@ -42,26 +44,26 @@ public class TextOutput extends AbstractParamReplacement
     }
 
     @Override
-    protected File getSubstitution(File directory) throws Exception
+    protected @Nullable FileLike getSubstitution(FileLike directory) throws IOException
     {
-        File file;
+        FileLike file;
         if (directory != null)
             file = FileUtil.createTempFile(RReport.FILE_PREFIX, "Result.txt", directory);
         else
-            file = FileUtil.createTempFile(RReport.FILE_PREFIX, "Result.txt");
+            file = FileUtil.createTempFileLike(RReport.FILE_PREFIX, "Result.txt");
 
         addFile(file);
         return file;
     }
 
     @Override
-    public HttpView getView(ViewContext context)
+    public HttpView<?> getView(ViewContext context)
     {
         return new TextOutputView(this);
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput(File file)
+    public ScriptOutput renderAsScriptOutput(FileLike file) throws IOException
     {
         TextOutputView view = new TextOutputView(this);
         String text = view.renderInternalAsString(file);
@@ -81,25 +83,25 @@ public class TextOutput extends AbstractParamReplacement
         }
 
         @Override
-        protected String renderInternalAsString(File file)
+        protected String renderInternalAsString(FileLike file) throws IOException
         {
-            if (exists(file))
-                return PageFlowUtil.getFileContentsAsString(file);
+            if (existsWithContent(file))
+                return PageFlowUtil.getStreamContentsAsString(file.openInputStream());
 
             return null;
         }
 
         @Override
-        protected void renderInternal(Object model, PrintWriter out)
+        protected void renderInternal(Object model, PrintWriter out) throws IOException
         {
-            for (File file : getFiles())
+            for (FileLike file : getFiles())
             {
                 String rawValue = renderInternalAsString(file);
 
                 if (null != rawValue)
                 {
                     out.write("<table class=\"labkey-output\">");
-                    renderTitle(model, out);
+                    renderTitle(out);
                     if (isCollapse())
                         out.write("<tr style=\"display:none\"><td><pre>");
                     else

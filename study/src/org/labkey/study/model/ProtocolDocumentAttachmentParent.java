@@ -17,7 +17,7 @@ package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.study.Study;
 
 public class ProtocolDocumentAttachmentParent implements AttachmentParent
@@ -42,7 +42,7 @@ public class ProtocolDocumentAttachmentParent implements AttachmentParent
     }
 
     @Override
-    public @NotNull AttachmentType getAttachmentType()
+    public @NotNull AttachmentParentType getAttachmentParentType()
     {
         return ProtocolDocumentType.get();
     }

@@ -161,20 +161,6 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         return ArrayUtils.removeElement(protocolNames, DEFAULT_PARAMETERS_NAME);
     }
 
-    public void initSystemDirectory(File rootDir, File systemDir)
-    {
-        // Make sure the root protocol directory is in the right place.
-        File protocolRootDir = locateProtocolRootDir(rootDir, systemDir);
-
-        // Make sure the defaults for this particular protocol are in the right place.
-        File fileLegacyDefaults = FileUtil.appendName(rootDir, getLegacyDefaultParametersFileName());
-        if (NetworkDrive.exists(fileLegacyDefaults))
-        {
-            File protocolDir = FileUtil.appendName(protocolRootDir, getName());
-            fileLegacyDefaults.renameTo(FileUtil.appendName(protocolDir, getDefaultParametersFileName()));
-        }
-    }
-
     /**
      * Override to set a custom validator.
      *

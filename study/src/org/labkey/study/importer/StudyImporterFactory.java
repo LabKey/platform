@@ -44,6 +44,7 @@ import org.labkey.study.pipeline.AbstractDatasetImportTask;
 import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.writer.StudySerializationRegistry;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
@@ -151,11 +152,11 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 // import specimens, if the module is present
                 if (null != SpecimenService.get())
                 {
-                    Path specimenFile = studyImportContext.getSpecimenArchive(studyDir);
+                    FileLike specimenFile = studyImportContext.getSpecimenArchive(studyDir);
                     if (useLocalImportDir)
                     {   //TODO this should be done from the import context getSpecimenArchive
-                        specimenFile = job.getPipeRoot().getRootNioPath().relativize(specimenFile);
-                        specimenFile = job.getPipeRoot().getImportDirectory().toNioPathForRead().resolve(specimenFile);
+                        String path = job.getPipeRoot().relativePath(specimenFile);
+                        specimenFile = job.getPipeRoot().getImportDirectory().resolveFile(org.labkey.api.util.Path.parse(path));
                     }
 
                     SpecimenMigrationService.get().importSpecimenArchive(specimenFile, job, studyImportContext, false, false);

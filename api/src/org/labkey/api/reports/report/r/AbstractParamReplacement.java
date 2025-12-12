@@ -20,8 +20,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.Report;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,7 +41,7 @@ public abstract class AbstractParamReplacement implements ParamReplacement
     protected Map<String, String> _properties = Collections.emptyMap();
     protected boolean _isRemote = false;
     protected String _regex;
-    protected List<File> _files = new ArrayList<>();
+    protected List<FileLike> _files = new ArrayList<>();
 
     public AbstractParamReplacement(String id)
     {
@@ -126,13 +126,13 @@ public abstract class AbstractParamReplacement implements ParamReplacement
     }
 
     @Override
-    public List<File> getFiles()
+    public List<FileLike> getFiles()
     {
         return _files;
     }
 
     @Override
-    public void addFile(File file)
+    public void addFile(FileLike file)
     {
         _files.add(file);
     }
@@ -156,9 +156,8 @@ public abstract class AbstractParamReplacement implements ParamReplacement
         _regex = regex;
     }
 
-    @Nullable
     @Override
-    public final File convertSubstitution(File directory) throws Exception
+    public final @Nullable FileLike convertSubstitution(FileLike directory) throws IOException
     {
         // if there isn't a token specified, the substitution may be using a regex substitution,
         // regardless we can't explicitly map a file without a valid token identifier
@@ -166,6 +165,5 @@ public abstract class AbstractParamReplacement implements ParamReplacement
         return (token != null) ? getSubstitution(directory) : null;
     }
 
-    @Nullable
-    protected abstract File getSubstitution(File directory) throws Exception;
+    protected abstract @Nullable FileLike getSubstitution(FileLike directory) throws IOException;
 }

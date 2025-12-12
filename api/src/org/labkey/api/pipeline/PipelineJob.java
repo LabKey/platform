@@ -72,7 +72,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -481,22 +480,22 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         if (dir == null)
             return getLogFilePath();
 
-        return dir.getRemoteLogFilePath();
+        return dir.getRemoteLogFile().toNioPathForRead();
     }
 
     /** Finds a file name that hasn't been used yet, appending ".2", ".3", etc as needed */
-    public static File findUniqueLogFile(File primaryFile, String baseName)
+    public static FileLike findUniqueLogFile(FileLike primaryFile, String baseName)
     {
         String validBaseName = FileUtil.makeLegalName(baseName);
         // need to look in current and archived dirs for any unused log file names (issue 20987)
-        File fileLog = FT_LOG.newFile(primaryFile.getParentFile(), validBaseName);
-        File archivedDir = FileUtil.appendName(primaryFile.getParentFile(), AssayFileWriter.ARCHIVED_DIR_NAME);
-        File fileLogArchived = FT_LOG.newFile(archivedDir, validBaseName);
+        FileLike fileLog = FT_LOG.newFile(primaryFile.getParent(), validBaseName);
+        FileLike archivedDir = primaryFile.getParent().resolveChild(AssayFileWriter.ARCHIVED_DIR_NAME);
+        FileLike fileLogArchived = FT_LOG.newFile(archivedDir, validBaseName);
 
         int index = 1;
         while (NetworkDrive.exists(fileLog) || NetworkDrive.exists(fileLogArchived))
         {
-            fileLog = FT_LOG.newFile(primaryFile.getParentFile(), validBaseName + "." + (index));
+            fileLog = FT_LOG.newFile(primaryFile.getParent(), validBaseName + "." + (index));
             fileLogArchived = FT_LOG.newFile(archivedDir, validBaseName + "." + (index++));
         }
 
@@ -1131,7 +1130,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         {
             try
             {
-                Path remoteLogFilePath = _localDirectory.cleanUpLocalDirectory();
+                FileLike remoteLogFilePath = _localDirectory.cleanUpLocalDirectory();
 
                 //Update job log entry's log location to remote path
                 if (null != remoteLogFilePath)
@@ -1246,14 +1245,14 @@ abstract public class PipelineJob extends Job implements Serializable, Container
     // Support for running processes
 
     @Nullable
-    private PrintWriter createPrintWriter(@Nullable File outputFile, boolean append) throws PipelineJobException
+    private PrintWriter createPrintWriter(@Nullable FileLike outputFile, boolean append) throws PipelineJobException
     {
         if (outputFile == null)
             return null;
 
         try
         {
-            return new PrintWriter(new BufferedWriter(new FileWriter(outputFile, append)));
+            return new PrintWriter(new BufferedWriter(PrintWriters.getPrintWriter(outputFile.openOutputStream())));
         }
         catch (IOException e)
         {
@@ -1261,7 +1260,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         }
     }
 
-    public void runSubProcess(ProcessBuilder pb, File dirWork) throws PipelineJobException
+    public void runSubProcess(ProcessBuilder pb, FileLike dirWork) throws PipelineJobException
     {
         runSubProcess(pb, dirWork, null, 0, false);
     }
@@ -1270,13 +1269,13 @@ abstract public class PipelineJob extends Job implements Serializable, Container
      * If logLineInterval is greater than 1, the first logLineInterval lines of output will be written to the
      * job's main log file.
      */
-    public void runSubProcess(ProcessBuilder pb, File dirWork, File outputFile, int logLineInterval, boolean append)
+    public void runSubProcess(ProcessBuilder pb, FileLike dirWork, FileLike outputFile, int logLineInterval, boolean append)
             throws PipelineJobException
     {
         runSubProcess(pb, dirWork, outputFile, logLineInterval, append, 0, null);
     }
 
-    public void runSubProcess(ProcessBuilder pb, File dirWork, File outputFile, int logLineInterval, boolean append, long timeout, TimeUnit timeoutUnit)
+    public void runSubProcess(ProcessBuilder pb, FileLike dirWork, FileLike outputFile, int logLineInterval, boolean append, long timeout, TimeUnit timeoutUnit)
             throws PipelineJobException
     {
         Process proc;
@@ -1333,12 +1332,12 @@ abstract public class PipelineJob extends Job implements Serializable, Container
 
         try
         {
-            pb.directory(dirWork);
+            pb.directory(dirWork.toNioPathForRead().toFile());
 
             // TODO: Errors should go to log even when output is redirected to a file.
             pb.redirectErrorStream(true);
 
-            info("Working directory is " + dirWork.getAbsolutePath());
+            info("Working directory is " + dirWork);
             info("running: " + StringUtils.join(pb.command().iterator(), " "));
 
             proc = pb.start();
@@ -2010,9 +2009,9 @@ abstract public class PipelineJob extends Job implements Serializable, Container
     /**
      * @return Path String for a local working directory, temporary if root is cloud based
      */
-    protected Path getWorkingDirectoryString()
+    protected FileLike getWorkingDirectoryString()
     {
-        return !getPipeRoot().isCloudRoot() ? getPipeRoot().getRootNioPath() : FileUtil.getTempDirectory().toPath();
+        return !getPipeRoot().isCloudRoot() ? getPipeRoot().getRootFileLike() : FileUtil.getTempDirectoryFileLike();
     }
 
     /**

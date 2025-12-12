@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.SafeToRender;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import jakarta.servlet.jsp.JspWriter;
 import java.io.IOException;
@@ -44,7 +45,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
         {
             return null;
         }
-        return "'" + (s.length() < 50 ? s : (s.substring(0, 50) + "...")) + "'";
+        return "'" + (s.length() < 50 ? s : (StringUtilsLabKey.leftSurrogatePairFriendly(s, 50) + "...")) + "'";
     }
 
     @Override

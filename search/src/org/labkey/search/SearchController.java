@@ -58,6 +58,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -1126,7 +1127,7 @@ public class SearchController extends SpringActionController
             c = ContainerManager.getRoot();
 
         if (query.length() > 200)
-            query = query.substring(0, 197) + "...";
+            query = StringUtilsLabKey.leftSurrogatePairFriendly(query, 197) + "...";
 
         SearchAuditProvider.SearchAuditEvent event = new SearchAuditProvider.SearchAuditEvent(c, comment);
         event.setQuery(query);

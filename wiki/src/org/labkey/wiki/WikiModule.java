@@ -25,12 +25,7 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DatabaseMigrationConfiguration;
-import org.labkey.api.data.DatabaseMigrationService;
-import org.labkey.api.data.DatabaseMigrationService.DefaultMigrationSchemaHandler;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -83,7 +78,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         WikiService.setInstance(WikiManager.get());
 
-        AttachmentService.get().registerAttachmentType(WikiType.get());
+        AttachmentService.get().registerAttachmentParentType(WikiType.get());
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
@@ -122,32 +117,6 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         WikiSchema.register(this);
         WikiController.registerAdminConsoleLinks();
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(CommSchema.getInstance().getSchema())
-        {
-            @Override
-            public void beforeSchema()
-            {
-                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_PageVersions");
-                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_Parent");
-            }
-
-            @Override
-            public List<TableInfo> getTablesToCopy()
-            {
-                List<TableInfo> tablesToCopy = super.getTablesToCopy();
-                tablesToCopy.add(CommSchema.getInstance().getTableInfoPages());
-                tablesToCopy.add(CommSchema.getInstance().getTableInfoPageVersions());
-
-                return tablesToCopy;
-            }
-
-            @Override
-            public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
-            {
-                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId)");
-                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_Parent FOREIGN KEY (Parent) REFERENCES comm.Pages (RowId)");
-            }
-        });
     }
 
     private void bootstrap(ModuleContext moduleContext)

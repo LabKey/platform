@@ -108,7 +108,7 @@ public class SystemMaintenanceJob implements org.quartz.Job, Callable<String>
             throw new ConfigurationException("Invalid pipeline configuration at the root container");
 
         if (!root.isValid())
-            throw new ConfigurationException("Invalid pipeline configuration at the root container: " + root.getRootPath().getPath());
+            throw new ConfigurationException("Invalid pipeline configuration at the root container: " + root.getRootFileLike());
 
         final String jobGuid;
 

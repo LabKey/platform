@@ -21,13 +21,12 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
@@ -42,20 +41,14 @@ public class ExperimentPipelineProvider extends PipelineProvider
     private static final String DIR_NAME_UPLOAD = "UploadedXARs";
     private static final String DIR_NAME_MOVE = "moveRunLogs";
 
-    public static Path getMoveDirectory(PipeRoot pr)
+    public static FileLike getMoveDirectory(PipeRoot pr)
     {
-        return getExperimentDirectory(pr, DIR_NAME_MOVE);
+        return getExperimentDirectory(pr.ensureSystemDirectory(), DIR_NAME_MOVE);
     }
 
-    private static Path getExperimentDirectory(PipeRoot pr, String name)
+    private static FileLike getExperimentDirectory(FileLike systemDir, String name)
     {
-        Path systemDir = pr.ensureSystemDirectory().toNioPathForRead();
-        return systemDir.resolve(DIR_NAME_EXPERIMENT).resolve(name);
-    }
-
-    private static Path getExperimentDirectory(Path systemDir, String name)
-    {
-        return systemDir.resolve(DIR_NAME_EXPERIMENT).resolve(name);
+        return systemDir.resolveChild(DIR_NAME_EXPERIMENT).resolveChild(name);
     }
 
     public ExperimentPipelineProvider(Module owningModule)
@@ -65,21 +58,21 @@ public class ExperimentPipelineProvider extends PipelineProvider
     }
 
     @Override
-    public void initSystemDirectory(Path rootDir, Path systemDir)
+    public void initSystemDirectory(FileLike rootDir, FileLike systemDir)
     {
         locateSystemDir(systemDir, DIR_NAME_MOVE);
         locateSystemDir(systemDir, DIR_NAME_UPLOAD);
     }
 
-    public void locateSystemDir(Path systemDir, String name)
+    public void locateSystemDir(FileLike systemDir, String name)
     {
-        Path path = FileUtil.appendName(systemDir, name);
-        if (Files.exists(path))
+        FileLike path = systemDir.resolveChild(name);
+        if (path.exists())
         {
             try
             {
-                Path dest = FileUtil.appendName(getExperimentDirectory(systemDir, name), FileUtil.getFileName(path));
-                Files.move(path, dest);
+                FileLike dest = getExperimentDirectory(systemDir, name).resolveChild(path.getName());
+                path.move(dest);
             }
             catch (IOException e)
             {

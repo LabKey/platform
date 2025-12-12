@@ -20,6 +20,8 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.writer.PrintWriters;
+import org.labkey.vfs.FileLike;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -36,8 +38,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -91,11 +91,6 @@ public class ParamParserImpl implements ParamParser
             _message = message;
             _line = line;
             _column = column;
-        }
-
-        public ErrorImpl(SAXParseException spe)
-        {
-            this(spe.getLocalizedMessage(), spe.getLineNumber(), spe.getColumnNumber());
         }
 
         @Override
@@ -230,7 +225,7 @@ public class ParamParserImpl implements ParamParser
             }
 
             String type = elNote.getAttribute(ATTR_TYPE);
-            if (type == null || type.isEmpty() || "description".equals(type))
+            if (type.isEmpty() || "description".equals(type))
                 continue;
 
             if (!VAL_INPUT.equals(type))
@@ -367,9 +362,10 @@ public class ParamParserImpl implements ParamParser
     @Override
     public String getXMLFromMap(Map<String, String> params)
     {
-        String xmlEmpty = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
-                "<bioml>\n" +
-                "</bioml>";
+        String xmlEmpty = """
+                <?xml version="1.0" encoding="UTF-8" ?>
+                <bioml>
+                </bioml>""";
         parse(new ByteArrayInputStream(xmlEmpty.getBytes(StringUtilsLabKey.DEFAULT_CHARSET)));
         String[] keys = params.keySet().toArray(new String[0]);
         Arrays.sort(keys);
@@ -380,9 +376,9 @@ public class ParamParserImpl implements ParamParser
     }
 
     @Override
-    public void writeFromMap(Map<String, String> params, File fileDest) throws IOException
+    public void writeFromMap(Map<String, String> params, FileLike fileDest) throws IOException
     {
-        try (BufferedWriter inputWriter = new BufferedWriter(new FileWriter(fileDest)))
+        try (BufferedWriter inputWriter = new BufferedWriter(PrintWriters.getPrintWriter(fileDest.openOutputStream())))
         {
             String xml = getXMLFromMap(params);
             _log.debug("Writing " + params.size() + " parameters (" + fileDest + "):");

@@ -102,6 +102,7 @@ public abstract class SqlDialect
 {
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     public static final String CUSTOM_UNIQUE_ERROR_MESSAGE = "Constraint violation: cannot insert duplicate value for column";
+    public static final int TEMP_TABLE_GENERATOR_MIN_SIZE = 1000;
 
     protected static final Logger LOG = LogHelper.getLogger(SqlDialect.class, "Database warnings and errors");
     protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
@@ -516,7 +517,7 @@ public abstract class SqlDialect
      * @param sql And INSERT or UPDATE statement that needs re-selecting
      * @param column Column from which to reselect
      * @param proposedVariable Null to return a result set via code; Not null to select the value into a SQL variable
-     * @return If proposedVariable is not null then actual variable used in the SQL. Otherwise null. Callers using
+     * @return If proposedVariable is not null then actual variable used in the SQL. Otherwise, null. Callers using
      * proposedVariable must use the returned variable name in subsequent code, since it may differ from what was
      * proposed.
      */
@@ -527,9 +528,33 @@ public abstract class SqlDialect
 
     private static final InClauseGenerator DEFAULT_GENERATOR = new ParameterMarkerInClauseGenerator();
 
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
+    public InClauseGenerator getDefaultInClauseGenerator()
     {
-        return DEFAULT_GENERATOR.appendInClauseSql(sql, params);
+        return DEFAULT_GENERATOR;
+    }
+
+    // Dialects that support temp-table IN clauses must override this method
+    public InClauseGenerator getTempTableInClauseGenerator()
+    {
+        return null;
+    }
+
+    // Most callers should use this method
+    public final SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
+    {
+        return appendInClauseSqlWithCustomInClauseGenerator(sql, params, getTempTableInClauseGenerator());
+    }
+
+    // Call directly only in cases where the default temp-table generator won't do, e.g., you need to apply a large IN clause in an external data source
+    public final SQLFragment appendInClauseSqlWithCustomInClauseGenerator(SQLFragment sql, @NotNull Collection<?> params, @Nullable InClauseGenerator largeInClauseGenerator)
+    {
+        if (params.size() >= TEMP_TABLE_GENERATOR_MIN_SIZE && largeInClauseGenerator != null)
+        {
+            SQLFragment ret = largeInClauseGenerator.appendInClauseSql(sql, params);
+            if (null != ret)
+                return ret;
+        }
+        return getDefaultInClauseGenerator().appendInClauseSql(sql, params);
     }
 
     public SQLFragment appendCaseInsensitiveLikeClause(SQLFragment sql, @NotNull String matchStr, @Nullable String wildcardPrefix, @Nullable String wildcardSuffix, char escapeChar)
@@ -539,10 +564,10 @@ public abstract class SqlDialect
         String prefixLike = prefix + CompareType.escapeLikePattern(matchStr, escapeChar) + suffix;
         String escapeToken = " ESCAPE '" + escapeChar + "'";
         sql.append(" ")
-                .append(getCaseInsensitiveLikeOperator())
-                .append(" ")
-                .appendValue(prefixLike)
-                .append(escapeToken);
+            .append(getCaseInsensitiveLikeOperator())
+            .append(" ")
+            .appendValue(prefixLike)
+            .append(escapeToken);
         return sql;
     }
 
@@ -1345,7 +1370,7 @@ public abstract class SqlDialect
         }
     }
 
-    public abstract String getAnalyzeCommandForTable(String tableName);
+    public abstract SQLFragment getAnalyzeCommandForTable(String tableName);
 
     protected abstract String getSIDQuery();
 
@@ -1363,7 +1388,7 @@ public abstract class SqlDialect
 
     public boolean updateStatistics(TableInfo table)
     {
-        String sql = getAnalyzeCommandForTable(table.getSelectName());
+        SQLFragment sql = getAnalyzeCommandForTable(table.getSelectName());
         if (sql != null)
         {
             new SqlExecutor(table.getSchema()).execute(sql);
@@ -2107,6 +2132,80 @@ public abstract class SqlDialect
         // Most dialects return filter conditions in the ResultSet returned by getIndexInfo()
         return rs.getString("FILTER_CONDITION");
     }
+
+
+
+    //
+    // ARRAY SUPPORT
+    //
+
+    public boolean supportsArrays()
+    {
+        return false;
+    }
+
+    // construct a sql array from SQLFragment elements
+    public SQLFragment array_construct(SQLFragment[] elements)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    // element a is in array b
+    public SQLFragment element_in_array(SQLFragment a, SQLFragment b)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    // element a is not in array b
+    public SQLFragment element_not_in_array(SQLFragment a, SQLFragment b)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    // SET OPERATORS FOR ARRAY TYPE
+
+    // all elements of array a are contained in array b
+    public SQLFragment array_all_in_array(SQLFragment a, SQLFragment b)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    // some elements of array a are contained in array b
+    public SQLFragment array_some_in_array(SQLFragment a, SQLFragment b)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    // no elements of array a are contained in array b
+    public SQLFragment array_none_in_array(SQLFragment a, SQLFragment b)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    // arrays a and b contain the same elements equivalent to (A all in B) AND (B all in A)
+    public SQLFragment array_same_array(SQLFragment a, SQLFragment b)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    // array a and array b do not contain the same elements
+    public SQLFragment array_not_same_array(SQLFragment a, SQLFragment b)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+
+    //
+    // TESTS
+    //
 
     public static class DialectTestCase
     {

@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.data.ConnectionWrapper.Closer;
@@ -2166,8 +2167,7 @@ public class DbScope
                 }
                 try
                 {
-                    LOG.warn("Forcing close of still-pending transaction object. Current stack is ", new Throwable());
-                    LOG.warn("Forcing close of still-pending transaction object started at ", t._creation);
+                    LOG.warn("Forcing close of still-pending transaction object started at {}. Current stack is ", t._creation, new Throwable());
                     t.close();
                 }
                 catch (ConnectionAlreadyReleasedException ignored)
@@ -2385,12 +2385,17 @@ public class DbScope
             // Copy to avoid ConcurrentModificationExceptions, need to retain original order from LinkedHashMap
             List<Runnable> tasks = new ArrayList<>(getRunnables(transaction).keySet());
 
-            for (Runnable task : tasks)
+            try
             {
-                task.run();
+                for (Runnable task : tasks)
+                {
+                    task.run();
+                }
             }
-
-            transaction.closeCaches();
+            finally
+            {
+                transaction.closeCaches();
+            }
         }
 
         public <T extends Runnable> T add(TransactionImpl transaction, T task)
@@ -2715,16 +2720,17 @@ public class DbScope
                             conn.commit();
                             conn.setAutoCommit(true);
                             LOG.debug("setAutoCommit(true)");
-                            if (null != _closeOnClose)
-                                try { _closeOnClose.close(); } catch (Exception ignore) {}
                         }
                         finally
                         {
+                            if (null != _closeOnClose)
+                                try { _closeOnClose.close(); } catch (Exception ignore) {}
                             if (null != conn)
                                 conn.internalClose();
-                        }
 
-                        popCurrentTransaction();
+                            // Make sure to pop whether we successfully committed or not
+                            popCurrentTransaction();
+                        }
 
                         CommitTaskOption.POSTCOMMIT.run(this);
                     }
@@ -3159,6 +3165,24 @@ public class DbScope
             catch (RuntimeSQLException e)
             {
                 assertTrue("Bad message: " + e.getMessage(), e.getMessage().contains("simulated"));
+            }
+            assertFalse(getLabKeyScope().isTransactionActive());
+            closeAllConnectionsForCurrentThread();
+        }
+
+        @Test
+        public void tesCommitTaskFailure()
+        {
+            String message = "Expected failure";
+            try (Transaction t = getLabKeyScope().ensureTransaction())
+            {
+                t.addCommitTask(() -> { throw new ApiUsageException("Expected failure"); }, CommitTaskOption.PRECOMMIT);
+                t.commit();
+                fail("Shouldn't have gotten here, expected ApiUsageException");
+            }
+            catch (ApiUsageException e)
+            {
+                assertEquals("Bad message", message, e.getMessage());
             }
             assertFalse(getLabKeyScope().isTransactionActive());
             closeAllConnectionsForCurrentThread();

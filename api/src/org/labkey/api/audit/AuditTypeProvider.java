@@ -50,9 +50,7 @@ public interface AuditTypeProvider
 
     <K extends AuditTypeEvent> Class<K> getEventClass();
 
-    /**
-     * Mapping from old audit table names ("intKey1", "key1", and "Property/Foo" to the new column names.)
-     */
+    @Deprecated // Not used anymore - remove
     Map<FieldKey, String> legacyNameMap();
 
     ActionURL getAuditUrl();
