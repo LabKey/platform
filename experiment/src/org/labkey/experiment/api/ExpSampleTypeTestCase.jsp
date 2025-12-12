@@ -782,6 +782,28 @@ public void testUpdateSomeParents() throws Exception
     opts.setParents(true);
     opts.setDepth(2);
 
+    // Attempt to merge using rowIds
+    {
+        rows.clear();
+        rows.add(CaseInsensitiveHashMap.of("rowId", C1.getRowId(), "name", "C1", "MaterialInputs/Parent1Samples", "P1-1"));
+        rows.add(CaseInsensitiveHashMap.of("rowId", C4.getRowId(), "name", "C5", "MaterialInputs/Parent1Samples", null)); // intentionally mix up name
+
+        updateService.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
+        assertThat(errors.getMessage(), containsString("RowId is not accepted when merging samples. Specify only the sample name instead."));
+        errors = new BatchValidationException();
+    }
+
+    // Attempt to merge using "Row Id" label
+    {
+        rows.clear();
+        rows.add(CaseInsensitiveHashMap.of("Row Id", C1.getRowId(), "name", "C1", "MaterialInputs/Parent1Samples", "P1-1"));
+        rows.add(CaseInsensitiveHashMap.of("Row Id", C4.getRowId(), "name", "C5", "MaterialInputs/Parent1Samples", null)); // intentionally mix up name
+
+        updateService.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
+        assertThat(errors.getMessage(), containsString("RowId is not accepted when merging samples. Specify only the sample name instead."));
+        errors = new BatchValidationException();
+    }
+
     // Attempt to update using outdated "LSID" and do not specify any other keys
     // Note: using try/catch here as updateRows() executes with retry which throws
     // if validation exceptions are encountered.

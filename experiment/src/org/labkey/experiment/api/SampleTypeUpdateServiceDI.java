@@ -99,6 +99,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.GUID;
@@ -159,6 +160,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public static final String PARENT_RECOMPUTE_NAME_COL = "ParentNameToRecompute";
     public static final String ROOT_RECOMPUTE_ROWID_SET = "RootIdToRecomputeSet";
     public static final String PARENT_RECOMPUTE_NAME_SET = "ParentNameToRecomputeSet";
+
+    public static final String EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_SAMPLE_MERGE = "org.labkey.experiment.api.SampleTypeUpdateServiceDI#ALLOW_ROW_ID_SAMPLE_MERGE";
 
     public static final Map<String, String> SAMPLE_ALT_IMPORT_NAME_COLS;
 
@@ -535,6 +538,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 int numPartitions = 0;
                 List<Map<String, Object>> ret = new ArrayList<>();
 
+                Set<Long> observedRowIds = new HashSet<>();
+                Set<String> observedNames = new CaseInsensitiveHashSet();
+
                 while (index < rows.size())
                 {
                     CaseInsensitiveHashSet rowKeys = new CaseInsensitiveHashSet(rows.get(index).keySet());
@@ -560,7 +566,20 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         throw new DbScope.RetryPassthroughException(context.getErrors());
 
                     if (subRet != null)
+                    {
                         ret.addAll(subRet);
+
+                        // Check if duplicate rows have been processed across the partitions
+                        // Only start checking for duplicates after the first partition has been processed.
+                        if (numPartitions > 1)
+                        {
+                            // If we are on the second partition, then lazily check all previous rows, otherwise check only the current partition
+                            checkPartitionForDuplicates(numPartitions == 2 ? ret : subRet, observedRowIds, observedNames, errors);
+                        }
+
+                        if (errors.hasErrors())
+                            throw new DbScope.RetryPassthroughException(errors);
+                    }
                 }
 
                 if (numPartitions > 1)
@@ -588,6 +607,26 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         return results;
+    }
+
+    private void checkPartitionForDuplicates(List<Map<String, Object>> partitionRows, Set<Long> globalRowIds, Set<String> globalNames, BatchValidationException errors)
+    {
+        for (Map<String, Object> row : partitionRows)
+        {
+            Long rowId = MapUtils.getLong(row, RowId.name());
+            if (rowId != null && !globalRowIds.add(rowId))
+            {
+                errors.addRowError(new ValidationException("Duplicate key provided: " + rowId));
+                return;
+            }
+
+            Object nameObj = row.get(Name.name());
+            if (nameObj != null && !globalNames.add(nameObj.toString()))
+            {
+                errors.addRowError(new ValidationException("Duplicate key provided: " + nameObj));
+                return;
+            }
+        }
     }
 
     /**
@@ -1464,6 +1503,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         keysCheck.add(RowId.name());
                         if (isUpdate)
                             continue;
+
+                        // While accepting RowId during merge is not our preferred behavior, we want to give users a way
+                        // to opt-in to the old behavior where RowId is accepted and ignored.
+                        if (isMerge && !OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_SAMPLE_MERGE))
+                        {
+                            context.getErrors().addRowError(new ValidationException("RowId is not accepted when merging samples. Specify only the sample name instead.", RowId.name()));
+                            return null;
+                        }
                     }
                     if (isExpMaterialColumn(LSID, name))
                         keysCheck.add(LSID.name());
