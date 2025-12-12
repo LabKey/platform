@@ -66,7 +66,7 @@ public class JspLoader
      * Create a new JSP page.
      *
      * @param jspFile Full path to the JSP page, starting with "/"
-     * @return inited page
+     * @return initialized page
      */
     public static HttpJspPage createPage(String jspFile)
     {
@@ -84,7 +84,7 @@ public class JspLoader
         }
     }
 
-    public static Class loadClass(String jspFile)
+    public static Class<?> loadClass(String jspFile)
     {
         try
         {
