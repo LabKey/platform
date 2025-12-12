@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LongHashSet;
@@ -124,7 +125,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
 import static org.labkey.api.audit.AuditHandler.DELTA_PROVIDED_DATA_PREFIX;
@@ -532,6 +532,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             results = getSchema().getDbSchema().getScope().executeWithRetry(tx ->
             {
                 int index = 0;
+                int numPartitions = 0;
                 List<Map<String, Object>> ret = new ArrayList<>();
 
                 while (index < rows.size())
@@ -545,8 +546,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                     List<Map<String, Object>> rowsToProcess = rows.subList(index, nextIndex);
                     index = nextIndex;
+                    numPartitions++;
 
                     DataIteratorContext context = getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters);
+
+                    // skip audit summary for the partitions, we will perform it once at the end
+                    context.putConfigParameter(ConfigParameters.SkipAuditSummary, true);
 
                     List<Map<String, Object>> subRet = super._updateRowsUsingDIB(user, container, rowsToProcess, context, extraScriptContext);
 
@@ -557,6 +562,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     if (subRet != null)
                         ret.addAll(subRet);
                 }
+
+                if (numPartitions > 1)
+                {
+                    var auditEvent = tx.getAuditEvent();
+                    if (auditEvent != null)
+                        auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.DataIteratorPartitions, numPartitions);
+                }
+
+                _addSummaryAuditEvent(container, user, getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters), ret.size());
 
                 return ret;
             });

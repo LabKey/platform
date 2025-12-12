@@ -114,7 +114,8 @@ public interface QueryUpdateService extends HasPermission
         PreferPKOverObjectUriAsKey,    // (Bool) Prefer getPkColumnNames instead of getObjectURIColumnName to use as keys
         SkipReselectRows, // (Bool) If true, skip qus.getRows and use raw returned rows. Applicable for CommandType.insert/insertWithKeys/update/updateChangingKeys
         TargetContainer,
-        ByPassAudit // (Bool) If true, skip DetailedAuditLogDataIterator. For internal use only, don't expose for API.
+        ByPassAudit, // (Bool) If true, skip DetailedAuditLogDataIterator. For internal use only, don't expose for API.
+        SkipAuditSummary, // (Bool) If true, skip audit summary logging. For internal use only, don't expose for API.'
     }
 
 
