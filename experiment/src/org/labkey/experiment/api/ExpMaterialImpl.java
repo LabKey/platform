@@ -343,6 +343,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             setRowId((int) longId);
             if (null == getRootMaterialRowId())
                 setRootMaterialRowId(getRowId());
+
+            // If a MaterialSourceId is not yet specified and the material is associated with a sample type,
+            // then set the MaterialSourceId to the sample type
+            if (null == _object.getMaterialSourceId())
+            {
+                ExpSampleType st = getSampleType();
+                if (st != null)
+                {
+                    assert st.getLSID().equals(getCpasType());
+                    _object.setMaterialSourceId(st.getRowId());
+                }
+            }
         }
         super.save(user, table, true, isInsert);
     }
