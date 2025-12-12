@@ -16,6 +16,7 @@
 package org.labkey.api.collections;
 
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.Pair;
@@ -267,6 +268,11 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
         return ret;
     }
 
+    @Override
+    public @NonNull Set<K> keySet()
+    {
+        return _findMap.keySet();
+    }
 
     /** use getFindMap().remove(key) */
     @Override
