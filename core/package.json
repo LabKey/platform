@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.3.1-fb-remove-sample-lsid.0",
+    "@labkey/components": "7.3.1",
     "@labkey/themes": "1.5.0"
   },
   "devDependencies": {
