@@ -50,14 +50,11 @@
 <%@ page import="org.labkey.api.gwt.client.AuditBehaviorType" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTPropertyDescriptor" %>
 <%@ page import="org.labkey.api.query.BatchValidationException" %>
-<%@ page import="org.labkey.api.query.DefaultSchema" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
-<%@ page import="org.labkey.api.query.QuerySchema" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.QueryUpdateService" %>
 <%@ page import="static org.hamcrest.CoreMatchers.hasItems" %>
 <%@ page import="static org.junit.Assert.*" %>
-<%@ page import="org.labkey.api.query.SchemaKey" %>
 <%@ page import="org.labkey.api.query.UserSchema" %>
 <%@ page import="org.labkey.api.reader.DataLoader" %>
 <%@ page import="org.labkey.api.reader.TabLoader" %>
@@ -73,7 +70,6 @@
 <%@ page import="java.io.StringBufferInputStream" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.Collection" %>
 <%@ page import="static org.hamcrest.CoreMatchers.containsString" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.HashMap" %>
@@ -308,7 +304,7 @@ public void idColsSet_nameExpressionNull_hasUnusedNameProperty() throws Exceptio
         props.add(new GWTPropertyDescriptor("name", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
 
-        final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
+        SampleTypeService.get().createSampleType(c, user,
                 "Samples", null, props, Collections.emptyList(),
                 1, -1, -1, -1, null, null);
         fail("Expected exception");
@@ -340,7 +336,7 @@ public void idColsSet_nameExpressionNull_hasNameProperty() throws Exception
     rows.add(CaseInsensitiveHashMap.of("name", "bob", "prop", "blue", "age", 10));
 
     BatchValidationException errors = new BatchValidationException();
-    QueryUpdateService svc = getSampleTypeUpdateService("Samples");
+    QueryUpdateService svc = getSampleTypeUpdateService(st.getName());
     svc.insertRows(user, c, rows, errors, null, null);
     if (errors.hasErrors())
         throw errors;
@@ -369,7 +365,7 @@ public void idColsSet_nameExpression_hasUnusedNameProperty() throws Exception
         props.add(new GWTPropertyDescriptor("name", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
 
-        final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
+        SampleTypeService.get().createSampleType(c, user,
                 "Samples", null, props, Collections.emptyList(),
                 1, -1, -1, -1, "S-${name}.${age}", null);
         fail("Expected exception");
@@ -507,27 +503,109 @@ public void testNameExpression() throws Exception
 @Test
 public void testAliases() throws Exception
 {
-    // setup
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("name", "string"));
     props.add(new GWTPropertyDescriptor("age", "int"));
-
     final ExpSampleType st = createSampleType("Samples", props, null);
 
-    List<Map<String, Object>> rows = new ArrayList<>();
-    Map<String, Object> row = new CaseInsensitiveHashMap<>();
-    row.put("name", "boo");
-    row.put("age", 20);
-    row.put("alias", "a,b,c");
-    rows.add(row);
+    ExpMaterial fooSample;
+    ExpMaterial booSample;
+    List<Map<String, Object>> rows;
 
-    insertSampleRows("Samples", rows);
+    // Insert
+    {
+        rows = new ArrayList<>();
+        rows.add(CaseInsensitiveHashMap.of("name", "foo", "age", 19, "alias", "youth, teen, minor", "flag", "new zealand"));
+        rows.add(CaseInsensitiveHashMap.of("name", "boo", "age", 21, "alias", "elder, adult, major?", "flag", "australia"));
 
-    ExpMaterial m = st.getSample(c, "boo");
-    Collection<String> aliases = m.getAliases();
-    assertThat(aliases, hasItems("a", "b", "c"));
+        insertSampleRows(st.getName(), rows);
+
+        fooSample = st.getSample(c, "foo");
+        assertThat(fooSample.getAliases(), hasItems("youth", "teen", "minor"));
+        assertEquals("new zealand", fooSample.getComment());
+
+        booSample = st.getSample(c, "boo");
+        assertThat(booSample.getAliases(), hasItems("elder", "adult", "major?"));
+        assertEquals("australia", booSample.getComment());
+    }
+
+    // Update, keyed by name
+    {
+        rows = new ArrayList<>();
+        rows.add(CaseInsensitiveHashMap.of("name", fooSample.getName(), "alias", "gerald, r, ford", "flag", "kenya"));
+        rows.add(CaseInsensitiveHashMap.of("name", booSample.getName(), "alias", "dwight, d, eisenhower", "flag", "uganda"));
+
+        updateSampleRows(st.getName(), rows);
+
+        fooSample = st.getSample(c, fooSample.getName());
+        assertThat(fooSample.getAliases(), hasItems("gerald", "r", "ford"));
+        assertEquals("kenya", fooSample.getComment());
+
+        booSample = st.getSample(c, "boo");
+        assertThat(booSample.getAliases(), hasItems("dwight", "d", "eisenhower"));
+        assertEquals("uganda", booSample.getComment());
+    }
+
+    // Update, keyed by rowId
+    {
+        rows = new ArrayList<>();
+        rows.add(CaseInsensitiveHashMap.of("Row Id", fooSample.getRowId(), "alias", "ken, griffey", "flag", "norway"));
+        rows.add(CaseInsensitiveHashMap.of("Row Id", booSample.getRowId(), "alias", "edgar, martinez", "flag", "sweden"));
+
+        updateSampleRows(st.getName(), rows);
+
+        fooSample = st.getSample(c, fooSample.getName());
+        assertThat(fooSample.getAliases(), hasItems("ken", "griffey"));
+        assertEquals("norway", fooSample.getComment());
+
+        booSample = st.getSample(c, booSample.getName());
+        assertThat(booSample.getAliases(), hasItems("edgar", "martinez"));
+        assertEquals("sweden", booSample.getComment());
+    }
+
+    // Update with different row shapes
+    {
+        rows = new ArrayList<>();
+        rows.add(CaseInsensitiveHashMap.of("rowId", fooSample.getRowId(), "description", "east coast destination", "alias", "martha's, vineyard", "flag", "japan"));
+        rows.add(CaseInsensitiveHashMap.of("name", booSample.getName(), "age", 1_000_000, "alias", "cannon, beach", "flag", "fiji"));
+
+        updateSampleRows(st.getName(), rows);
+
+        fooSample = st.getSample(c, fooSample.getName());
+        assertThat(fooSample.getAliases(), hasItems("martha's", "vineyard"));
+        assertEquals("japan", fooSample.getComment());
+
+        booSample = st.getSample(c, booSample.getName());
+        assertThat(booSample.getAliases(), hasItems("cannon", "beach"));
+        assertEquals("fiji", booSample.getComment());
+    }
+
+    // Merge
+    {
+        rows = new ArrayList<>();
+        rows.add(CaseInsensitiveHashMap.of("name", fooSample.getName(), "age", 40, "alias", "son, family, father", "flag", "canada"));
+        rows.add(CaseInsensitiveHashMap.of("name", booSample.getName(), "age", 80, "alias", "grandma, family, mother", "flag", "america"));
+        rows.add(CaseInsensitiveHashMap.of("name", "moo", "age", 12, "alias", "cow, bovine", "flag", "mexico"));
+
+        mergeSampleRows(st.getName(), rows);
+
+        var expectedRowId = fooSample.getRowId();
+        fooSample = st.getSample(c, fooSample.getName());
+        assertEquals(expectedRowId, fooSample.getRowId());
+        assertThat(fooSample.getAliases(), hasItems("son", "family", "father"));
+        assertEquals("canada", fooSample.getComment());
+
+        expectedRowId = booSample.getRowId();
+        booSample = st.getSample(c, booSample.getName());
+        assertEquals(expectedRowId, booSample.getRowId());
+        assertThat(booSample.getAliases(), hasItems("grandma", "family", "mother"));
+        assertEquals("america", booSample.getComment());
+
+        ExpMaterial mooSample = st.getSample(c, "moo");
+        assertThat(mooSample.getAliases(), hasItems("cow", "bovine"));
+        assertEquals("mexico", mooSample.getComment());
+    }
 }
-
 
 // Issue 33682: Calling insertRows on SampleType with empty values will not insert new samples
 @Test
@@ -545,14 +623,8 @@ public void testBlankRows() throws Exception
     List<? extends ExpMaterial> allSamples = st.getSamples(c);
     assertTrue("Expected no samples", allSamples.isEmpty());
 
-    //
     // insert via insertRows -- blank rows should be preserved
-    //
-
-    UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-    TableInfo table = schema.getTable("Samples");
-    QueryUpdateService svc = table.getUpdateService();
-    assertNotNull(svc);
+    QueryUpdateService svc = getSampleTypeUpdateService(st.getName());
 
     // insert 3 rows with no values
     List<Map<String, Object>> rows = new ArrayList<>();
@@ -574,10 +646,7 @@ public void testBlankRows() throws Exception
     assertEquals("Expected 3 total samples", 3, allSamples.size());
     assertEquals(0, allSamples.get(0).getAliquotCount());
 
-    //
     // insert as if we pasted a tsv in the "upload samples" page -- blank rows should be skipped
-    //
-
     // data has three lines, one blank.  expect to insert only two samples
     String dataTxt =
             "age\n" +
@@ -596,14 +665,16 @@ public void testBlankRows() throws Exception
     assertEquals(0, insertedRows.get(0).get("AliquotCount"));
 
     ExpMaterial material1 = ExperimentService.get().getExpMaterial(asLong(insertedRows.get(0).get("rowid")));
+    assertNotNull(material1);
     Map<PropertyDescriptor, Object> map = material1.getPropertyValues();
     assertEquals("Expected to only have 'age' property, got: " + map, 1, map.size());
 
-    Integer age1 = (Integer)material1.getPropertyValues().values().iterator().next();
+    Integer age1 = asInteger(material1.getPropertyValues().values().iterator().next());
     assertNotNull(age1);
     assertEquals("Expected to insert age of 20, got: " + age1, 20, age1.intValue());
 
-    ExpMaterial material2 = ExperimentService.get().getExpMaterial((Integer)insertedRows.get(1).get("rowid"));
+    ExpMaterial material2 = ExperimentService.get().getExpMaterial(asLong(insertedRows.get(1).get("rowid")));
+    assertNotNull(material2);
     Integer age2 = asInteger(material2.getPropertyValues().values().iterator().next());
     assertNotNull(age2);
     assertEquals("Expected to insert age of 30, got: " + age2, 30, age2.intValue());
@@ -618,7 +689,8 @@ public void testBlankRows() throws Exception
     updated.put("age", age1 + 1);
     svc.updateRows(user, c, Collections.singletonList(updated), null, errors, null, null);
     assertFalse(errors.hasErrors());
-    var result = new TableSelector(table, TableSelector.ALL_COLUMNS, new SimpleFilter("lsid", material1.getLSID()), null).getMap();
+    TableInfo table = getSampleTypeTable(st.getName());
+    var result = new TableSelector(table, new SimpleFilter("lsid", material1.getLSID()), null).getMap();
     assertEquals(21, asInteger(result.get("age")).intValue());
 
     // and a delete
@@ -641,39 +713,33 @@ public void testUpdateSomeParents() throws Exception
     final ExpSampleType parent1Type = createSampleType("Parent1Samples", props, null);
     final ExpSampleType parent2Type = createSampleType("Parent2Samples", props, null);
 
-    UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-    List<Map<String, Object>> rows = new ArrayList<>();
-
-
     // add first parents
-    TableInfo table = schema.getTable("Parent1Samples", null, true, false);
-    QueryUpdateService svcParent = table.getUpdateService();
+    QueryUpdateService updateService = getSampleTypeUpdateService(parent1Type.getName());
 
     BatchValidationException errors = new BatchValidationException();
+    List<Map<String, Object>> rows = new ArrayList<>();
     rows.add(CaseInsensitiveHashMap.of("name", "P1-1"));
     rows.add(CaseInsensitiveHashMap.of("name", "P1-2"));
     rows.add(CaseInsensitiveHashMap.of("name", "P1-3"));
     rows.add(CaseInsensitiveHashMap.of("name", "P1-4,test"));
 
-    List<Map<String, Object>> inserted = svcParent.insertRows(user, c, rows, errors, null, null);
+    List<Map<String, Object>> inserted = updateService.insertRows(user, c, rows, errors, null, null);
     assertFalse(errors.hasErrors());
     assertEquals("Number of parent1 samples inserted not as expected", 4, inserted.size());
 
     // add second parents
-    table = schema.getTable("Parent2Samples", null, true, false);
-    QueryUpdateService svcParent2 = table.getUpdateService();
+    updateService = getSampleTypeUpdateService(parent2Type.getName());
 
     rows.clear();
     rows.add(CaseInsensitiveHashMap.of("name", "P2-1"));
     rows.add(CaseInsensitiveHashMap.of("name", "P2-2"));
     rows.add(CaseInsensitiveHashMap.of("name", "P2-3"));
-    inserted = svcParent2.insertRows(user, c, rows, errors, null, null);
+    inserted = updateService.insertRows(user, c, rows, errors, null, null);
     assertFalse(errors.hasErrors());
     assertEquals("Number of parent2 samples inserted not as expected", 3, inserted.size());
 
     // add child samples
-    table = schema.getTable("ChildSamples", null, true, false);
-    QueryUpdateService svcChild = table.getUpdateService();
+    updateService = getSampleTypeUpdateService(childType.getName());
 
     rows.clear();
     rows.add(CaseInsensitiveHashMap.of("name", "C1",  "MaterialInputs/Parent1Samples", "P1-1,P1-2", "MaterialInputs/Parent2Samples", "P2-1"));
@@ -682,7 +748,7 @@ public void testUpdateSomeParents() throws Exception
     rows.add(CaseInsensitiveHashMap.of("name", "C4", "MaterialInputs/Parent1Samples", "P1-2", "MaterialInputs/Parent2Samples", "P2-2"));
     rows.add(CaseInsensitiveHashMap.of("name", "C5", "MaterialInputs/Parent1Samples", "P1-1, \"P1-4,test\", P1-2"));
 
-    inserted = svcChild.insertRows(user, c, rows, errors, null, null);
+    inserted = updateService.insertRows(user, c, rows, errors, null, null);
     assertFalse(errors.hasErrors());
     assertEquals("Number of child samples inserted not as expected", 5, inserted.size());
 
@@ -691,7 +757,7 @@ public void testUpdateSomeParents() throws Exception
     rows.add(CaseInsensitiveHashMap.of("rowId", parent2Type.getSample(c, "P2-1").getRowId(), "MaterialInputs/ChildSamples", "C1"));
     try
     {
-        svcParent2.updateRows(user, c, rows, null, errors, null, null);
+        getSampleTypeUpdateService(parent2Type.getName()).updateRows(user, c, rows, null, errors, null, null);
         fail("Expected to throw exception");
     }
     catch (Exception e)
@@ -700,13 +766,11 @@ public void testUpdateSomeParents() throws Exception
     }
 
     errors = new BatchValidationException();
-
     ExpMaterial P11 = parent1Type.getSample(c, "P1-1");
     ExpMaterial P12 = parent1Type.getSample(c, "P1-2");
     ExpMaterial P14 = parent1Type.getSample(c, "P1-4,test");
     ExpMaterial P21 = parent2Type.getSample(c, "P2-1");
     ExpMaterial P22 = parent2Type.getSample(c, "P2-2");
-
 
     ExpMaterial C1 = childType.getSample(c, "C1");
     ExpMaterial C2 = childType.getSample(c, "C2");
@@ -718,12 +782,62 @@ public void testUpdateSomeParents() throws Exception
     opts.setParents(true);
     opts.setDepth(2);
 
+    // Attempt to merge using rowIds
+    {
+        rows.clear();
+        rows.add(CaseInsensitiveHashMap.of("rowId", C1.getRowId(), "name", "C1", "MaterialInputs/Parent1Samples", "P1-1"));
+        rows.add(CaseInsensitiveHashMap.of("rowId", C4.getRowId(), "name", "C5", "MaterialInputs/Parent1Samples", null)); // intentionally mix up name
+
+        updateService.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
+        assertThat(errors.getMessage(), containsString("RowId is not accepted when merging samples. Specify only the sample name instead."));
+        errors = new BatchValidationException();
+    }
+
+    // Attempt to merge using "Row Id" label
+    {
+        rows.clear();
+        rows.add(CaseInsensitiveHashMap.of("Row Id", C1.getRowId(), "name", "C1", "MaterialInputs/Parent1Samples", "P1-1"));
+        rows.add(CaseInsensitiveHashMap.of("Row Id", C4.getRowId(), "name", "C5", "MaterialInputs/Parent1Samples", null)); // intentionally mix up name
+
+        updateService.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
+        assertThat(errors.getMessage(), containsString("RowId is not accepted when merging samples. Specify only the sample name instead."));
+        errors = new BatchValidationException();
+    }
+
+    // Attempt to update using outdated "LSID" and do not specify any other keys
+    // Note: using try/catch here as updateRows() executes with retry which throws
+    // if validation exceptions are encountered.
+    try
+    {
+        rows.clear();
+        rows.add(CaseInsensitiveHashMap.of("LSID", C1.getLSID(), "MaterialInputs/Parent1Samples", "P1-1"));
+        rows.add(CaseInsensitiveHashMap.of("LSID", C4.getLSID(), "MaterialInputs/Parent1Samples", null));
+
+        updateService.updateRows(user, c, rows, null, errors, null, null);
+        fail("Expected to throw exception");
+    }
+    catch (Exception e)
+    {
+        assertThat(e.getMessage(), containsString("LSID is no longer accepted as a key for sample update"));
+    }
+
+    // Attempt to merge using outdated "LSID" and do not specify any other keys
+    {
+        rows.clear();
+        rows.add(CaseInsensitiveHashMap.of("LSID", C1.getLSID(), "MaterialInputs/Parent1Samples", "P1-1"));
+        rows.add(CaseInsensitiveHashMap.of("LSID", C4.getLSID(), "MaterialInputs/Parent1Samples", null));
+
+        updateService.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
+        assertThat(errors.getMessage(), containsString("LSID is no longer accepted as a key for sample merge"));
+        errors = new BatchValidationException();
+    }
+
     // now update the children with various types of modifications to the parentage
     rows.clear();
     rows.add(CaseInsensitiveHashMap.of("name", "C1", "MaterialInputs/Parent1Samples", "P1-1")); // change one parent but not the other
     rows.add(CaseInsensitiveHashMap.of("name", "C4", "MaterialInputs/Parent1Samples", null)); // remove one parent but not the other
 
-    svcChild.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
+    updateService.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
     assertFalse(errors.hasErrors());
 
     ExpLineage lineage = ExpLineageService.get().getLineage(c, user, C1, opts);
@@ -735,12 +849,11 @@ public void testUpdateSomeParents() throws Exception
     assertFalse("Expected 'C4' to not be derived from 'P1-2'", lineage.getMaterials().contains(P12));
     assertTrue("Expected 'C4' to still be derived from 'P2-2'", lineage.getMaterials().contains(P22));
 
-
     rows.clear();
     rows.add(CaseInsensitiveHashMap.of("name", "C4", "MaterialInputs/Parent1Samples", "P1-1", "MaterialInputs/Parent2Samples", "P2-1")); // change both parents
     rows.add(CaseInsensitiveHashMap.of("name", "C2", "MaterialInputs/Parent1Samples", "", "MaterialInputs/Parent2Samples", null)); // remove both parents
 
-    svcChild.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
+    updateService.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
     assertFalse(errors.hasErrors());
 
     lineage = ExpLineageService.get().getLineage(c, user, C2, opts);
@@ -774,9 +887,6 @@ public void testParentColAndDataInputDerivation() throws Exception
     final ExpSampleType st = createSampleType(sampleTypeName, props, null);
 
     // insert and derive with both 'parent' column and 'DataInputs/Samples'
-    UserSchema schema = QueryService.get().getUserSchema(user, c, SamplesSchema.SCHEMA_SAMPLES);
-    TableInfo table = schema.getTable(sampleTypeName);
-    QueryUpdateService svc = table.getUpdateService();
 
     List<Map<String, Object>> rows = new ArrayList<>();
     rows.add(CaseInsensitiveHashMap.of("name", "A", "data", 10, "parent", null));
@@ -795,6 +905,7 @@ public void testParentColAndDataInputDerivation() throws Exception
     // F
 
     BatchValidationException errors = new BatchValidationException();
+    QueryUpdateService svc = getSampleTypeUpdateService(st.getName());
     List<Map<String, Object>> inserted = svc.insertRows(user, c, rows, errors, null, null);
     assertFalse(errors.hasErrors());
     assertEquals(6, inserted.size());
@@ -847,6 +958,7 @@ public void testParentColAndDataInputDerivation() throws Exception
     assertEquals("Expected 'E' and 'D' to be derived in the same run since they share 'B' and 'C' as parents",
             E.getRowId(), E.getRowId());
     ExpRun derivationRun = E.getRun();
+    assertNotNull(derivationRun);
 
     assertTrue(derivationRun.getMaterialInputs().containsKey(B));
     assertTrue(derivationRun.getMaterialInputs().containsKey(C));
@@ -890,6 +1002,7 @@ public void testParentColAndDataInputDerivation() throws Exception
     assertFalse(derivationRun2.getMaterialOutputs().contains(E));
 
     ExpRun oldDerivationRun = ExperimentService.get().getExpRun(derivationRun.getRowId());
+    assertNotNull(oldDerivationRun);
     assertEquals(oldDerivationRun.getRowId(), derivationRun.getRowId());
 
     assertTrue(oldDerivationRun.getMaterialInputs().containsKey(B));
@@ -906,7 +1019,7 @@ public void testParentColAndDataInputDerivation() throws Exception
 
         var multiValueColumn = "Outputs/Materials/" + sampleTypeName + "/Created";
         var url = new ActionURL("query", "selectRows", c);
-        url.addParameter(QueryParam.schemaName, schema.getName());
+        url.addParameter(QueryParam.schemaName, getSampleSchema().getName());
         url.addParameter("query." + QueryParam.queryName, sampleTypeName);
         url.addParameter("query." + QueryParam.columns, "Name, " + multiValueColumn);
         url.addFilter("query", FieldKey.fromParts("Name"), CompareType.EQUAL, "A");
@@ -946,7 +1059,7 @@ public void testSampleTypeWithVocabularyProperties() throws Exception
 {
     User user = TestContext.get().getUser();
 
-    String sampleName = "SamplesWithVocabularyProperties";
+    String sampleTypeName = "SamplesWithVocabularyProperties";
     String sampleType = "TypeA";
     String updatedSampleType = "TypeB";
     String sampleColor = "Blue";
@@ -956,30 +1069,32 @@ public void testSampleTypeWithVocabularyProperties() throws Exception
     Map<String, String> vocabularyPropertyURIs = helper.getVocabularyPropertyURIS(mockDomain);
 
     // create a sample type
-    createSampleType(sampleName, List.of(new GWTPropertyDescriptor("name", "string")), null);
-
-    UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+    createSampleType(sampleTypeName, List.of(new GWTPropertyDescriptor("name", "string")), null);
 
     // insert a sample
+    var sampleName = "TestSample";
     ArrayListMap<String, Object> row = new ArrayListMap<>();
-    row.put("name", "TestSample");
+    row.put("name", sampleName);
     row.put(vocabularyPropertyURIs.get(helper.typePropertyName), sampleType);
     row.put(vocabularyPropertyURIs.get(helper.colorPropertyName), sampleColor);
     row.put(vocabularyPropertyURIs.get(helper.agePropertyName), null); // inserting a property with null value
     List<Map<String, Object>> rows = helper.buildRows(row);
 
-    var insertedSample = helper.insertRows(c, rows ,sampleName, schema);
+    UserSchema schema = getSampleSchema();
+    var insertedSample = helper.insertRows(c, rows, sampleTypeName, schema).get(0);
+    var sampleLsid = insertedSample.get("LSID").toString();
+    var sampleRowId = insertedSample.get("RowId");
 
     assertEquals("Custom Property is not inserted", sampleType,
-            OntologyManager.getPropertyObjects(c, insertedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(helper.typePropertyName)).getStringValue());
+            OntologyManager.getPropertyObjects(c, sampleLsid).get(vocabularyPropertyURIs.get(helper.typePropertyName)).getStringValue());
 
-    //Verifying property with null value is not inserted
+    // Verifying property with null value is not inserted
     assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(helper.agePropertyName)).size());
 
-    //update inserted sample
+    // update inserted sample
     ArrayListMap<String, Object> rowToUpdate = new ArrayListMap<>();
-    rowToUpdate.put("name", "TestSample");
-    rowToUpdate.put("RowId", insertedSample.get(0).get("RowId"));
+    rowToUpdate.put("name", sampleName);
+    rowToUpdate.put("RowId", sampleRowId);
     rowToUpdate.put(vocabularyPropertyURIs.get(helper.typePropertyName), updatedSampleType);
     rowToUpdate.put(vocabularyPropertyURIs.get(helper.colorPropertyName), null); // nulling out existing property
     rowToUpdate.put(vocabularyPropertyURIs.get(helper.agePropertyName), sampleAge); //inserting a new property in update rows
@@ -987,27 +1102,26 @@ public void testSampleTypeWithVocabularyProperties() throws Exception
 
     List<Map<String, Object>> oldKeys = new ArrayList<>();
     ArrayListMap<String, Object> oldKey = new ArrayListMap<>();
-    oldKey.put("name", "TestSample");
-    oldKey.put("RowId", insertedSample.get(0).get("RowId"));
+    oldKey.put("name", sampleName);
+    oldKey.put("RowId", sampleRowId);
     oldKeys.add(oldKey);
 
-    var updatedSample = helper.updateRows(c, rowsToUpdate, oldKeys, sampleName, schema);
+    helper.updateRows(c, rowsToUpdate, oldKeys, sampleTypeName, schema);
     assertEquals("Custom Property is not updated", updatedSampleType,
-            OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(helper.typePropertyName)).getStringValue());
+            OntologyManager.getPropertyObjects(c, sampleLsid).get(vocabularyPropertyURIs.get(helper.typePropertyName)).getStringValue());
 
-    //Verify property updated to a null value gets deleted
+    // Verify property updated to a null value gets deleted
     assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(helper.colorPropertyName)).size());
 
-    //Verify property inserted during update rows in inserted
+    // Verify property inserted during update rows in inserted
     assertEquals("New Property is not inserted with update rows", sampleAge,
-            OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(helper.agePropertyName)).getFloatValue().intValue());
+            OntologyManager.getPropertyObjects(c, sampleLsid).get(vocabularyPropertyURIs.get(helper.agePropertyName)).getFloatValue().intValue());
 }
 
 @Test
 public void testDetailedAuditLog() throws Exception
 {
     User user = TestContext.get().getUser();
-
     UserSchema auditSchema = AuditLogService.get().createSchema(user, c);
     TableInfo auditTable = auditSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE);
     Integer RowId = new SqlSelector(auditSchema.getDbSchema(), new SQLFragment("select max(rowid) FROM ").append(auditTable.getFromSQL("_")))
@@ -1020,27 +1134,17 @@ public void testDetailedAuditLog() throws Exception
     props.add(new GWTPropertyDescriptor("Value", "float"));
     final ExpSampleType st = createSampleType("SamplesDAL", props, null);
 
-    QuerySchema samplesSchema = DefaultSchema.get(user, c, "samples");
-    assertNotNull(samplesSchema);
-    TableInfo samplesTable = samplesSchema.getTable("SamplesDAL");
-    assertNotNull(samplesTable);
-    QueryUpdateService qus = samplesTable.getUpdateService();
-    assertNotNull(qus);
     BatchValidationException errors = new BatchValidationException();
-    Map<Enum,Object> config = Map.of(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
 
     // insert a sample
-    List<Map<String, Object>> rows = new ArrayList<>();
-    rows.add(PageFlowUtil.mapInsensitive("Name", "A1", "Measure", "Initial", "Value", 1.0));
-    List<Map<String,Object>> ret = qus.insertRows(user, c, rows, errors, config, null);
-    String msg = !errors.getRowErrors().isEmpty() ? errors.getRowErrors().get(0).toString() : "no message";
-    assertFalse(msg, errors.hasErrors());
-    assertEquals(1,ret.size());
+    List<Map<String,Object>> ret = insertSampleRows(st.getName(), List.of(CaseInsensitiveHashMap.of("Name", "A1", "Measure", "Initial", "Value", 1.0)));
+    assertEquals(1, ret.size());
     assertNotNull(ret.get(0).get("rowid"));
     int rowid = (int) JdbcType.INTEGER.convert(ret.get(0).get("rowid"));
+
     // check audit log
-    SimpleFilter f = new SimpleFilter(new FieldKey(null,"RowId"),auditMaxRowid, CompareType.GT);
-    List<SampleTimelineAuditEvent> events = AuditLogService.get().getAuditEvents(c,user,SampleTimelineAuditEvent.EVENT_TYPE,f,new Sort("-RowId"));
+    SimpleFilter f = new SimpleFilter(new FieldKey(null, "RowId"), auditMaxRowid, CompareType.GT);
+    List<SampleTimelineAuditEvent> events = AuditLogService.get().getAuditEvents(c, user, SampleTimelineAuditEvent.EVENT_TYPE, f, new Sort("-RowId"));
     assertFalse(events.isEmpty());
     assertNull(events.get(0).getOldRecordMap());
     assertNotNull(events.get(0).getNewRecordMap());
@@ -1054,12 +1158,10 @@ public void testDetailedAuditLog() throws Exception
     assertNull(newRecordMap.get("AliquotUnit"));
 
     // UPDATE
-    rows.clear(); errors.clear();
-    rows.add(PageFlowUtil.mapInsensitive("RowId", rowid, "Measure", "Updated", "Value", 2.0));
-    qus.updateRows(user, c, rows, null, errors, config, null);
-    assertFalse(errors.hasErrors());
+    updateSampleRows(st.getName(), List.of(CaseInsensitiveHashMap.of("RowId", rowid, "Measure", "Updated", "Value", 2.0)));
+
     // check audit log
-    events = AuditLogService.get().getAuditEvents(c,user,SampleTimelineAuditEvent.EVENT_TYPE,f,new Sort("-RowId"));
+    events = AuditLogService.get().getAuditEvents(c, user, SampleTimelineAuditEvent.EVENT_TYPE, f, new Sort("-RowId"));
     assertFalse(events.isEmpty());
     assertNotNull(events.get(0).getOldRecordMap());
     Map<String,String> oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getOldRecordMap()));
@@ -1076,12 +1178,11 @@ public void testDetailedAuditLog() throws Exception
 
     // MERGE
     // and since merge is a different code path...
-    rows.clear(); errors.clear();
-    rows.add(PageFlowUtil.mapInsensitive("Name", "A1", "Measure", "Merged", "Value", 3.0));
-    int count = qus.mergeRows(user, c, MapDataIterator.of(rows), errors, config, null);
+    int count = mergeSampleRows(st.getName(), List.of(CaseInsensitiveHashMap.of("Name", "A1", "Measure", "Merged", "Value", 3.0)));
     assertEquals(1, count);
+
     // check audit log
-    events = AuditLogService.get().getAuditEvents(c,user,SampleTimelineAuditEvent.EVENT_TYPE,f,new Sort("-RowId"));
+    events = AuditLogService.get().getAuditEvents(c, user, SampleTimelineAuditEvent.EVENT_TYPE, f, new Sort("-RowId"));
     assertFalse(events.isEmpty());
     assertNotNull(events.get(0).getOldRecordMap());
     oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getOldRecordMap()));
@@ -1105,26 +1206,19 @@ public void testDetailedAuditLog() throws Exception
 @Test
 public void testExpMaterialPermissions() throws Exception
 {
-    User user = TestContext.get().getUser();
-    var schema = QueryService.get().getUserSchema(user, c, ExpSchema.SCHEMA_EXP);
-
     // create a sample type
     ExpSampleType st = createSampleType("MySamples", List.of(new GWTPropertyDescriptor("name", "string")), null);
 
     // insert a sample
-    var errors = new BatchValidationException();
-    List<Map<String,Object>> ret = QueryService.get().getUserSchema(user, c, SamplesSchema.SCHEMA_SAMPLES)
-            .getTable("MySamples")
-            .getUpdateService()
-            .insertRows(user, c, List.of(CaseInsensitiveHashMap.of("name", "SampleInSampleType")), errors, null, null);
-    String msg = !errors.getRowErrors().isEmpty() ? errors.getRowErrors().get(0).toString() : "no message";
-    assertFalse(msg, errors.hasErrors());
-    assertEquals(1,ret.size());
+    List<Map<String,Object>> ret = insertSampleRows(st.getName(), List.of(CaseInsensitiveHashMap.of("name", "SampleInSampleType")));
+    assertEquals(1, ret.size());
     assertNotNull(ret.get(0).get("rowid"));
     long stSampleId = (long) JdbcType.BIGINT.convert(ret.get(0).get("rowid"));
 
     // verify insert, update aren't allowed, but read and delete are allowed
-    var materialsTable = schema.getTable(ExpSchema.TableType.Materials.name());
+    User user = TestContext.get().getUser();
+    var schema = QueryService.get().getUserSchema(user, c, ExpSchema.SCHEMA_EXP);
+    var materialsTable = schema.getTableOrThrow(ExpSchema.TableType.Materials.name());
     var qus = materialsTable.getUpdateService();
     assertNotNull(qus);
     assertTrue(qus.hasPermission(user, ReadPermission.class));
@@ -1132,7 +1226,7 @@ public void testExpMaterialPermissions() throws Exception
     assertFalse(qus.hasPermission(user, InsertPermission.class));
     assertFalse(qus.hasPermission(user, UpdatePermission.class));
 
-    // create a sample outside of a SampleType
+    // create a sample outside a SampleType
     var lsid = ExperimentService.get().generateLSID(c, ExpMaterial.class, "SampleNotInSampleType");
     ExpMaterial m = ExperimentService.get().createExpMaterial(c, Lsid.parse(lsid));
     m.save(user);
@@ -1191,10 +1285,8 @@ public void testInsertOptionUpdate() throws Exception
 
     final String sampleTypeName = "TestSamplesWithRequired";
     ExpSampleType sampleType = createSampleType(sampleTypeName, props, null);
-
     TableInfo table = getSampleTypeTable(sampleTypeName);
-    QueryUpdateService qus = table.getUpdateService();
-    assertNotNull(qus);
+    QueryUpdateService qus = getSampleTypeUpdateService(sampleTypeName);
 
     String longFieldAlias = table.getColumn(longFieldName).getAlias().getId();
     assertFalse("Unexpected long field alias", longFieldName.equalsIgnoreCase(longFieldAlias));
@@ -1212,7 +1304,7 @@ public void testInsertOptionUpdate() throws Exception
     assertFalse(context.getErrors().hasErrors());
     assertEquals("Unexpected count from IMPORT on loadRows()", 3, count);
 
-    // Issue 53168: aliquot cannot be parent to its aliquot parent
+    // Issue 53168: aliquot cannot be a parent to its aliquot parent
     BatchValidationException errors = new BatchValidationException();
     List<Map<String, Object>> rows = new ArrayList<>();
     rows.add(CaseInsensitiveHashMap.of("rowId", sampleType.getSample(c, "S-1").getRowId(), "MaterialInputs/" + sampleTypeName, "S-1-1"));
@@ -1334,10 +1426,16 @@ private ExpSampleType createSampleType(String sampleTypeName, List<GWTPropertyDe
     return SampleTypeService.get().createSampleType(c, TestContext.get().getUser(), sampleTypeName, null, props, emptyList(), -1, -1, -1, -1, nameExpression, null);
 }
 
-private @NotNull TableInfo getSampleTypeTable(String sampleType)
+private @NotNull UserSchema getSampleSchema()
 {
     UserSchema schema = QueryService.get().getUserSchema(TestContext.get().getUser(), c, SamplesSchema.SCHEMA_SAMPLES);
-    return schema.getTableOrThrow(sampleType);
+    assertNotNull(schema);
+    return schema;
+}
+
+private @NotNull TableInfo getSampleTypeTable(String sampleType)
+{
+    return getSampleSchema().getTableOrThrow(sampleType);
 }
 
 private @NotNull QueryUpdateService getSampleTypeUpdateService(String sampleType)
@@ -1359,6 +1457,28 @@ private List<Map<String, Object>> insertSampleRows(String sampleType, List<Map<S
     BatchValidationException errors = new BatchValidationException();
     QueryUpdateService svc = getSampleTypeUpdateService(sampleType);
     List<Map<String, Object>> ret = svc.insertRows(TestContext.get().getUser(), c, rows, errors, null, null);
+    if (errors.hasErrors())
+        throw errors;
+    return ret;
+}
+
+private int mergeSampleRows(String sampleType, List<Map<String, Object>> rows) throws Exception
+{
+    BatchValidationException errors = new BatchValidationException();
+    QueryUpdateService svc = getSampleTypeUpdateService(sampleType);
+    Map<Enum, Object> config = Map.of(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
+    int count = svc.mergeRows(TestContext.get().getUser(), c, MapDataIterator.of(rows), errors, config, null);
+    if (errors.hasErrors())
+        throw errors;
+    return count;
+}
+
+private List<Map<String, Object>> updateSampleRows(String sampleType, List<Map<String, Object>> rows) throws Exception
+{
+    BatchValidationException errors = new BatchValidationException();
+    QueryUpdateService svc = getSampleTypeUpdateService(sampleType);
+    Map<Enum, Object> config = Map.of(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
+    List<Map<String, Object>> ret = svc.updateRows(TestContext.get().getUser(), c, rows, null, errors, config, null);
     if (errors.hasErrors())
         throw errors;
     return ret;

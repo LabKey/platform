@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data.validator;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.MvFieldWrapper;
 
 /**
@@ -26,12 +27,19 @@ public class RequiredValidator extends AbstractColumnValidator implements Unders
 {
     final boolean allowMV;
     final boolean allowES;
+    final String _message;
 
     public RequiredValidator(String columnName, boolean allowMissingValueIndicators, boolean allowEmptyString)
+    {
+        this(columnName, allowMissingValueIndicators, allowEmptyString, null);
+    }
+
+    public RequiredValidator(String columnName, boolean allowMissingValueIndicators, boolean allowEmptyString, @Nullable String message)
     {
         super(columnName);
         allowMV = allowMissingValueIndicators;
         allowES = allowEmptyString;
+        _message = message;
     }
 
     @Override
@@ -58,6 +66,9 @@ public class RequiredValidator extends AbstractColumnValidator implements Unders
             if (!mv.isEmpty() && allowMV)
                 return null;
         }
+
+        if (_message != null)
+            return _message;
 
         // DatasetDefinition.importDatasetData:: errors.add("Row " + rowNumber + " does not contain required field " + col.getName() + ".");
         // OntologyManager.insertTabDelimited::  throw new ValidationException("Missing value for required property " + col.getName());

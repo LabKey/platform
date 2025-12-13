@@ -32,11 +32,6 @@ import java.util.Set;
 import static org.labkey.api.admin.FolderImportContext.IS_NEW_FOLDER_IMPORT_KEY;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
-/**
- * User: matthewb
- * Date: 2011-09-07
- * Time: 5:14 PM
- */
 public class TriggerDataBuilderHelper
 {
     final Container _c;
@@ -129,14 +124,21 @@ public class TriggerDataBuilderHelper
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator pre = _pre.getDataIterator(context);
+            DataIterator di = _pre.getDataIterator(context);
             if (!_target.hasTriggers(_c))
-                return pre;
-            pre = LoggingDataIterator.wrap(pre);
+                return di;
+            di = LoggingDataIterator.wrap(di);
 
-            Set<String> mergeKeys = null;
-            if (_target instanceof ExpTable)
-                mergeKeys = ((ExpTable<?>)_target).getAltMergeKeys(context);
+            Set<String> existingRecordKeyColumnNames = null;
+            Set<String> sharedKeys = null;
+            boolean isMergeOrUpdate = context.getInsertOption().allowUpdate;
+
+            if (isMergeOrUpdate && _target instanceof ExpTable<?> expTable)
+            {
+                Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(di);
+                existingRecordKeyColumnNames = expTable.getExistingRecordKeyColumnNames(context, colNameMap);
+                sharedKeys = expTable.getExistingRecordSharedKeyColumnNames();
+            }
 
             boolean isNewFolderImport = false;
             if (_extraContext != null && _extraContext.get(IS_NEW_FOLDER_IMPORT_KEY) != null)
@@ -144,18 +146,19 @@ public class TriggerDataBuilderHelper
                 isNewFolderImport = (boolean) _extraContext.get(IS_NEW_FOLDER_IMPORT_KEY);
             }
 
-            boolean skipExistingRecord = !context.getInsertOption().allowUpdate || mergeKeys == null || isNewFolderImport;
-            DataIterator coerce = new CoerceDataIterator(pre, context, _target, !context.getInsertOption().updateOnly);
+            di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, _target, !context.getInsertOption().updateOnly));
             context.setWithLookupRemapping(false);
-            coerce = LoggingDataIterator.wrap(coerce);
 
-            if (skipExistingRecord)
-                return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(coerce), context));
-            else if (context.getInsertOption().mergeRows && !_target.supportsInsertOption(QueryUpdateService.InsertOption.MERGE))
-                return LoggingDataIterator.wrap(new BeforeIterator(coerce, context));
+            // Skip existing records
+            if (!context.getInsertOption().allowUpdate || existingRecordKeyColumnNames == null || isNewFolderImport)
+                return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(di), context));
 
-            coerce = ExistingRecordDataIterator.createBuilder(coerce, _target, mergeKeys, null, true).getDataIterator(context);
-            return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(coerce), context));
+            // Merge request but merge is not supported
+            if (context.getInsertOption().mergeRows && !_target.supportsInsertOption(QueryUpdateService.InsertOption.MERGE))
+                return LoggingDataIterator.wrap(new BeforeIterator(di, context));
+
+            di = ExistingRecordDataIterator.createBuilder(di, _target, existingRecordKeyColumnNames, sharedKeys, true).getDataIterator(context);
+            return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(di), context));
         }
     }
 

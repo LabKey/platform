@@ -133,6 +133,7 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
         Action(false, "The controller-action for this request"),
         AuditEvents(true, "The types of audit events generated during the transaction"),
         ClientLibrary(false, "The client library (R, Python, etc) used to perform the action"),
+        DataIteratorPartitions(false, "The number of partitions rows were processed in via data iterator"),
         DataIteratorUsed(false, "If data iterator was used for insert/update"),
         EditMethod(false, "The method used to insert/update data from the app (e.g., 'DetailEdit', 'GridEdit', etc)"),
         ETL(true, "The ETL process name involved in the transaction"),
@@ -159,7 +160,7 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
             return null;
         }
 
-        public static void addAuditDetails(@NotNull Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails,  @NotNull Map<String, Object> auditDetails)
+        public static void addAuditDetails(@NotNull Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails, @NotNull Map<String, Object> auditDetails)
         {
             if (!auditDetails.isEmpty())
             {
@@ -172,7 +173,7 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
             }
         }
 
-        public static void addAuditDetails(@NotNull Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails,  @NotNull String auditDetailsJson)
+        public static void addAuditDetails(@NotNull Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails, @NotNull String auditDetailsJson)
         {
             if (StringUtils.isEmpty(auditDetailsJson))
                 return;
