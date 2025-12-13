@@ -19,6 +19,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnDecorator;
@@ -38,7 +40,12 @@ import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.writer.HtmlWriter;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: kevink
@@ -97,6 +104,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         licenseCol.setURL(StringExpressionFactory.createURL("${LicenseURL}"));
         licenseCol.setURLTargetWindow("_blank");
         addTextColumn("Folder").setDisplayColumnFactory(new ExpandableTextDisplayColumnFactory());
+        addTextColumn("ActiveContainers").setDisplayColumnFactory(new ExpandableTextDisplayColumnFactory());
         addTextColumn("LicenseURL").setHidden(true);
         addTextColumn("VcsRevision");
         addTextColumn("VcsURL");
@@ -186,6 +194,8 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         cte.append("SELECT * FROM (\n");
         cte.append("VALUES ");
         String sep = "";
+
+        Map<Module, List<String>> moduleContainers = getContainersForModule();
         for (Module module : ModuleLoader.getInstance().getModules())
         {
             cte.append(sep);
@@ -207,6 +217,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
             appendStringLiteral(h, cte,",",module.getSourcePath());
             appendStringLiteral(h, cte,",",StringUtils.join(module.getModuleDependenciesAsSet(), ", "));
             appendStringLiteral(h, cte,",",module.getSupportedDatabasesSet().toString());
+            appendStringLiteral(h, cte,",", StringUtils.join(moduleContainers.getOrDefault(module, Collections.emptyList()), "\n"));
             cte.append(")");
         }
         cte.append(") AS T (");
@@ -223,6 +234,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         cte.append(",VcsRevision, VcsURL");
         cte.append(",SourcePath");
         cte.append(",Dependencies, SupportedDatabases");
+        cte.append(",ActiveContainers");
         cte.append(")\n");
 
         String tableName = getSqlDialect().truncate(alias + "$m", 0);
@@ -256,6 +268,22 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         ret.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
 
         return ret;
+    }
+
+    private Map<Module, List<String>> getContainersForModule()
+    {
+        Map<Module, List<String>> moduleFolders = new HashMap<>();
+
+        for (Container container : ContainerManager.getAllChildren(ContainerManager.getRoot()))
+        {
+            if (container != null)
+                container.getActiveModules().forEach(m -> moduleFolders.computeIfAbsent(m, k -> new ArrayList<>()).add(container.getPath()));
+        }
+
+        for (List<String> folders : moduleFolders.values())
+            Collections.sort(folders);
+
+        return moduleFolders;
     }
 
     // Format SchemaVersion column using the standard ModuleContext formatting rules: force three-decimal places for >= 20.000,
