@@ -230,13 +230,13 @@ import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SubstitutionFormat;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -244,7 +244,6 @@ import org.labkey.experiment.ExperimentAuditProvider;
 import org.labkey.experiment.FileLinkFileListener;
 import org.labkey.experiment.MissingFilesCheckInfo;
 import org.labkey.experiment.XarExportType;
-import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.api.property.DomainPropertyManager;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -253,13 +252,11 @@ import org.labkey.experiment.pipeline.ExpGeneratorHelper;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
-import org.labkey.experiment.xar.XarExportSelection;
 import org.labkey.vfs.FileLike;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
@@ -778,7 +775,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     path = FileUtil.stringToPath(source.getXarContext().getContainer(),
                             source.getCanonicalDataFileURL(FileUtil.pathToString(path)));
-                    pathStr = FileUtil.relativizeUnix(source.getRootPath(), path, false);
+
+                    // Only convert to a relative path if this is a descendant of the root:
+                    path = path.normalize();
+                    if (URIUtil.isDescendant(source.getRootPath().toUri(), path.toUri()))
+                    {
+                        pathStr = FileUtil.relativizeUnix(source.getRootPath(), path, false);
+                    }
+                    else
+                    {
+                        pathStr = FileUtil.pathToString(path);
+                    }
                 }
                 catch (IOException e)
                 {
