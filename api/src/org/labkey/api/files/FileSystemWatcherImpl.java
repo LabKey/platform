@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.annotations.JavaRuntimeVersion;
 import org.labkey.api.cloud.CloudWatchService;
 import org.labkey.api.cloud.CloudWatcherConfig;
 import org.labkey.api.collections.ConcurrentHashSet;
@@ -61,16 +62,20 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
 /**
- * Wraps the low-level Java WatchService API with a simple listener-based interface. Unlike WatchService, which is limited to one
- * registration per file system directory, a single instance of this class should be sufficient to handle all file system listener
- * needs of the entire server.
- *
- * Callers register a FileSystemDirectoryListener on a directory Path, specifying the desired WatchEvent.Kinds (CREATE, DELETE,
- * and/or MODIFY); whenever an event occurs on any file or child directory in that directory, the appropriate method is invoked
- * on all listeners registered on that directory that have requested notification of that event.
- *
- * This class is thread-safe, for both listener registration and event invocation. Implementations of FileSystemDirectoryListener
- * must be thread-safe. Listener methods must return quickly since they are all invoked by a single thread.
+ * <p>Wraps the low-level Java WatchService API with a simple listener-based interface. Unlike WatchService, which is
+ * limited to one registration per file system directory, a single instance of this class should be sufficient to handle
+ * all file system listener needs of the entire server.
+ * </p>
+ * <p>
+ * Callers register a FileSystemDirectoryListener on a directory Path, specifying the desired WatchEvent.Kinds (CREATE,
+ * DELETE, and/or MODIFY); whenever an event occurs on any file or child directory in that directory, the appropriate
+ * method is invoked on all listeners registered on that directory that have requested notification of that event.
+ * </p>
+ * <p>
+ * This class is thread-safe, for both listener registration and event invocation. Implementations of
+ * FileSystemDirectoryListener must be thread-safe. Listener methods must return quickly since they are all invoked by a
+ * single thread.
+ * </p>
  */
 public class FileSystemWatcherImpl implements FileSystemWatcher
 {
@@ -586,8 +591,10 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
             assertEquals(3, created.size());
             assertTrue(created.containsAll(Set.of("a", "b", "c")));
-            // Note: Modified events occur on delete on Windows, but not Linux
-            Set<String> expectedModified = SystemUtils.IS_OS_WINDOWS ? Set.of("a", "b", "c") : Set.of("a", "c");
+            // Note: In Java 17 on Windows, modified events occur on delete. This has never been the case on Linux and
+            // is no longer the case in Java 25. TODO: Delete this check once we require Java 25
+            @JavaRuntimeVersion
+            Set<String> expectedModified = SystemUtils.IS_OS_WINDOWS && SystemUtils.IS_JAVA_17 ? Set.of("a", "b", "c") : Set.of("a", "c");
             assertEquals(expectedModified.size(), modified.size());
             assertTrue(created.containsAll(expectedModified));
             int deletedCount = deleted.size();
@@ -613,9 +620,9 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
                 i++;
             }
 
-            LOG.info("Waiting for file watcher events took " + StringUtilsLabKey.pluralize(i, "second"));
+            LOG.info("Waiting for file watcher events took {}", StringUtilsLabKey.pluralize(i, "second"));
 
-            LOG.info("Actual event count: " + events.get() + " vs. target: " + targetCount);
+            LOG.info("Actual event count: {} vs. target: {}", events.get(), targetCount);
             //assertEquals(expectedEventCount, events.get());
         }
     }

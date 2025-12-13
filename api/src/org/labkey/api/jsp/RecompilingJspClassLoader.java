@@ -63,7 +63,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
     private static final String DB_SCRIPT_PATH = "/schemas/dbscripts";
 
     @Override
-    public Class loadClass(ServletContext context, String jspFilename) throws ClassNotFoundException
+    public Class<?> loadClass(ServletContext context, String jspFilename) throws ClassNotFoundException
     {
         String compiledJspPath = getCompiledJspPath(jspFilename);
         Collection<ResourceFinder> finders = ModuleLoader.getInstance().getResourceFindersForPath(compiledJspPath);
@@ -86,7 +86,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
 
     @JavaRuntimeVersion  // Change CompilerTargetVM and CompilerSourceVM settings below
-    private Class getCompiledClassFile(File classFile, File jspJavaFileBuildDirectory, File jspClassesFileBuildDir, ResourceFinder finder, String jspFileName)
+    private Class<?> getCompiledClassFile(File classFile, File jspJavaFileBuildDirectory, File jspClassesFileBuildDir, ResourceFinder finder, String jspFileName)
     {
         String relativePath = getSourceJspPath(jspFileName);
         // Create File object for JSP source
