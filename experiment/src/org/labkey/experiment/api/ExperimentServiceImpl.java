@@ -768,33 +768,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             String[] parts = pathStr.split("/");
             String name = FileUtil.decodeSpaces(parts[parts.length - 1]);
             Path path = FileUtil.getPath(source.getXarContext().getContainer(), uri);
-
             if (path != null)
             {
-                try
-                {
-                    path = FileUtil.stringToPath(source.getXarContext().getContainer(),
-                            source.getCanonicalDataFileURL(FileUtil.pathToString(path)));
-
-                    // Only convert to a relative path if this is a descendant of the root:
-                    path = path.normalize();
-                    if (URIUtil.isDescendant(source.getRootPath().toUri(), path.toUri()))
-                    {
-                        pathStr = FileUtil.relativizeUnix(source.getRootPath(), path, false);
-                    }
-                    else
-                    {
-                        pathStr = FileUtil.pathToString(path);
-                    }
-                }
-                catch (IOException e)
-                {
-                    pathStr = FileUtil.pathToString(path);
-                }
-            }
-            else
-            {
-                pathStr = FileUtil.uriToString(uri);
+                path = FileUtil.stringToPath(source.getXarContext().getContainer(), source.getCanonicalDataFileURL(FileUtil.pathToString(path)));
+                pathStr = generatePathStringRelativeToRootIfUnderRoot(path, source.getRootPath());
             }
 
             Lsid.LsidBuilder lsid = new Lsid.LsidBuilder(LsidUtils.resolveLsidFromTemplate(AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION, source.getXarContext(), "Data", new AutoFileLSIDReplacer(pathStr, source.getXarContext().getContainer(), source)));
@@ -814,6 +791,30 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             data.save(source.getXarContext().getUser());
         }
         return data;
+    }
+
+    public String generatePathStringRelativeToRootIfUnderRoot(@NotNull Path path, @Nullable Path pipeRootPath)
+    {
+        String pathStr;
+        try
+        {
+            // Only convert to a relative path if this is a descendant of the root:
+            path = path.normalize();
+            if (pipeRootPath != null && URIUtil.isDescendant(pipeRootPath.toUri(), path.toUri()))
+            {
+                pathStr = FileUtil.relativizeUnix(pipeRootPath, path, false);
+            }
+            else
+            {
+                pathStr = FileUtil.pathToString(path);
+            }
+        }
+        catch (IOException e)
+        {
+            pathStr = FileUtil.pathToString(path);
+        }
+
+        return pathStr;
     }
 
     @Override
