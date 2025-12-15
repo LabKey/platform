@@ -57,7 +57,7 @@ import static org.labkey.api.util.HttpUtil.Method;
 
 public abstract class PermissionCheckableAction implements Controller, PermissionCheckable, HasViewContext
 {
-    private static final Logger LOG = LogHelper.getLogger(PermissionCheckableAction.class, "Permission checks ");
+    private static final Logger LOG = LogHelper.getLogger(PermissionCheckableAction.class, "Permission checks for actions");
     private static final HttpUtil.Method[] arrayGetPost = new HttpUtil.Method[] {Method.GET, Method.POST};
     private ViewContext _context = null;
     UnauthorizedException.Type _unauthorizedType = UnauthorizedException.Type.redirectToLogin;
