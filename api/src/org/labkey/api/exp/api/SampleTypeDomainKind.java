@@ -85,7 +85,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     private static final Logger logger = LogHelper.getLogger(SampleTypeDomainKind.class, "Sample type domain kind");
     public static final String NAME = "SampleSet";
     public static final String PROVISIONED_SCHEMA_NAME = "expsampleset";
-    public static final String SAMPLETYPE_FILE_DIRECTORY = "sampletype";
+    public static final String SAMPLE_TYPE_FILE_DIRECTORY_NAME = "sampletype";
 
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
     private static final Set<PropertyStorageSpec.Index> INDEXES;
@@ -105,7 +105,6 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
             new PropertyStorageSpec("genId", JdbcType.INTEGER),
             new PropertyStorageSpec("rowId", JdbcType.INTEGER).setNullable(false),
-            new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false),
             new PropertyStorageSpec("name", JdbcType.VARCHAR, 200)
         )));
 
@@ -135,19 +134,16 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES = DomainUtil.getNamesAndLabels(names);
         RESERVED_NAMES.addAll(InventoryService.InventoryStatusColumn.namesAndLabels());
 
-        FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-            // NOTE: We generate the LSID once on the server and insert into exp.object, exp.material, and the provisioned table at the same time.
-            new PropertyStorageSpec.ForeignKey("lsid", "exp", "Material", "LSID", null, false),
+        FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(List.of(
             new PropertyStorageSpec.ForeignKey("rowId", "exp", "Material", "RowId", null, false)
         )));
 
-        INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
+        INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(List.of(
             new PropertyStorageSpec.Index(true, "rowId"),
-            new PropertyStorageSpec.Index(true, "lsid"),
             new PropertyStorageSpec.Index(true, "name")
         )));
 
-        FORCE_ENABLED_SYSTEM_FIELDS = Collections.unmodifiableSet(Sets.newHashSet(Arrays.asList("Name", "SampleState")));
+        FORCE_ENABLED_SYSTEM_FIELDS = Collections.unmodifiableSet(Sets.newHashSet(List.of("Name", "SampleState")));
     }
 
     public SampleTypeDomainKind()
@@ -659,6 +655,6 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     public String getDomainFileDirectory()
     {
-        return SAMPLETYPE_FILE_DIRECTORY;
+        return SAMPLE_TYPE_FILE_DIRECTORY_NAME;
     }
 }

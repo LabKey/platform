@@ -59,7 +59,7 @@
 
     String uniqueId = "" + UniqueID.getServerSessionScopedUID();
     String appId = "create-pipeline-trigger-" + uniqueId;
-    FormSchema detailsFormSchema = PipelineJobService.get().getFormSchema(getContainer());
+    FormSchema detailsFormSchema = PipelineJobService.get().getFormSchema(getContainer(), getUser());
     Map<String, FormSchema> taskFormSchemas = new HashMap<>();
     Map<String, FormSchema> customFieldFormSchemas = new HashMap<>();
     Map<String, String> tasksHelpText = new HashMap<>();

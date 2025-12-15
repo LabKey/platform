@@ -75,71 +75,72 @@ public abstract class Method
         labkeyMethod.put("abs", new JdbcMethod("abs", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("acos", new JdbcMethod("acos", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("age", new Method(JdbcType.INTEGER, 2, 3)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
             {
-                @Override
-                public MethodInfo getMethodInfo()
-                {
-                    return new AgeMethodInfo();
-                }
+                return new AgeMethodInfo();
+            }
 
-                @Override
-                public void validate(CommonTree fn, List<QNode> args, List<Exception> parseErrors, List<QueryParseException> parseWarnings)
+            @Override
+            public void validate(CommonTree fn, List<QNode> args, List<Exception> parseErrors, List<QueryParseException> parseWarnings)
+            {
+                super.validate(fn, args, parseErrors, parseWarnings);
+                // only YEAR, MONTH supported
+                if (args.size() == 3)
                 {
-                    super.validate(fn, args, parseErrors, parseWarnings);
-                    // only YEAR, MONTH supported
-                    if (args.size() == 3)
+                    QNode nodeInterval = args.get(2);
+                    String text = nodeInterval.getTokenText();
+                    if (text.length() >= 2 && text.startsWith("'") && text.endsWith("'"))
+                        text = text.substring(1, text.length() - 1);
+                    TimestampDiffInterval i = TimestampDiffInterval.parse(text);
+                    if (!(i == TimestampDiffInterval.SQL_TSI_MONTH || i == TimestampDiffInterval.SQL_TSI_YEAR))
                     {
-                        QNode nodeInterval = args.get(2);
-                        String text = nodeInterval.getTokenText();
-                        if (text.length() >= 2 && text.startsWith("'") && text.endsWith("'"))
-                            text = text.substring(1,text.length()-1);
-                        TimestampDiffInterval i = TimestampDiffInterval.parse(text);
-                        if (!(i == TimestampDiffInterval.SQL_TSI_MONTH || i == TimestampDiffInterval.SQL_TSI_YEAR))
-                        {
-                            parseErrors.add(new QueryParseException("AGE function supports SQL_TSI_YEAR or SQL_TSI_MONTH", null,
-                                    nodeInterval.getLine(), nodeInterval.getColumn()));
-                        }
+                        parseErrors.add(new QueryParseException("AGE function supports SQL_TSI_YEAR or SQL_TSI_MONTH", null,
+                                nodeInterval.getLine(), nodeInterval.getColumn()));
                     }
                 }
-            });
+            }
+        });
         labkeyMethod.put("age_in_months", new Method(JdbcType.INTEGER, 2, 2)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
             {
-                @Override
-                public MethodInfo getMethodInfo()
-                {
-                    return new AgeInMonthsMethodInfo();
-                }
-            });
+                return new AgeInMonthsMethodInfo();
+            }
+        });
         labkeyMethod.put("age_in_years", new Method(JdbcType.INTEGER, 2, 2)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
             {
-                @Override
-                public MethodInfo getMethodInfo()
-                {
-                    return new AgeInYearsMethodInfo();
-                }
-            });
+                return new AgeInYearsMethodInfo();
+            }
+        });
         labkeyMethod.put("asin", new JdbcMethod("asin", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("atan", new JdbcMethod("atan", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("atan2", new JdbcMethod("atan2", JdbcType.DOUBLE, 2, 2));
         labkeyMethod.put("cast", new Method("convert", JdbcType.OTHER, 2, 3)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
             {
-                @Override
-                public MethodInfo getMethodInfo()
-                {
-                    return new ConvertInfo();
-                }
-            });
+                return new ConvertInfo();
+            }
+        });
         labkeyMethod.put("ceiling", new JdbcMethod("ceiling", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("coalesce", new Method("coalesce", JdbcType.OTHER, 0, Integer.MAX_VALUE)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
             {
-                @Override
-                public MethodInfo getMethodInfo()
-                {
-                    return new PassthroughInfo("coalesce", null, JdbcType.OTHER);
-                }
-            });
+                return new PassthroughInfo("coalesce", null, JdbcType.OTHER);
+            }
+        });
         labkeyMethod.put("concat", new JdbcMethod("concat", JdbcType.VARCHAR, 2, 2));
-        labkeyMethod.put("contextpath", new Method("contextPath", JdbcType.VARCHAR, 0, 0) {
+        labkeyMethod.put("contextpath", new Method("contextPath", JdbcType.VARCHAR, 0, 0)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
@@ -147,13 +148,13 @@ public abstract class Method
             }
         });
         labkeyMethod.put("convert", new Method("convert", JdbcType.OTHER, 2, 2)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
             {
-                @Override
-                public MethodInfo getMethodInfo()
-                {
-                    return new ConvertInfo();
-                }
-            });
+                return new ConvertInfo();
+            }
+        });
         labkeyMethod.put("cos", new JdbcMethod("cos", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("cot", new JdbcMethod("cot", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("curdate", new JdbcMethod("curdate", JdbcType.DATE, 0, 0));
@@ -164,14 +165,16 @@ public abstract class Method
         labkeyMethod.put("degrees", new JdbcMethod("degrees", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("exp", new JdbcMethod("exp", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("floor", new JdbcMethod("floor", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("foldername", new Method("folderName", JdbcType.VARCHAR, 0, 0) {
+        labkeyMethod.put("foldername", new Method("folderName", JdbcType.VARCHAR, 0, 0)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
                 return new FolderInfo(false);
             }
         });
-        labkeyMethod.put("folderpath", new Method("folderPath", JdbcType.VARCHAR, 0, 0) {
+        labkeyMethod.put("folderpath", new Method("folderPath", JdbcType.VARCHAR, 0, 0)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
@@ -187,34 +190,39 @@ public abstract class Method
             }
         });
         labkeyMethod.put("hour", new JdbcMethod("hour", JdbcType.INTEGER, 1, 1));
-        labkeyMethod.put("ifnull", new JdbcMethod("ifnull", JdbcType.OTHER, 2, 2){
+        labkeyMethod.put("ifnull", new JdbcMethod("ifnull", JdbcType.OTHER, 2, 2)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
-                return new JdbcMethodInfoImpl(_name, _jdbcType){
+                return new JdbcMethodInfoImpl(_name, _jdbcType)
+                {
                     @Override
                     public JdbcType getJdbcType(JdbcType[] args)
                     {
-                        return JdbcType.promote(args[0],args[1]);
+                        return JdbcType.promote(args[0], args[1]);
                     }
                 };
             }
-        }) ;
-        labkeyMethod.put("isequal", new Method("isequal", JdbcType.BOOLEAN, 2, 2){
+        });
+        labkeyMethod.put("isequal", new Method("isequal", JdbcType.BOOLEAN, 2, 2)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
                 return new IsEqualInfo();
             }
         });
-        labkeyMethod.put("ismemberof", new Method("ismemberof", JdbcType.BOOLEAN, 1, 2) {
+        labkeyMethod.put("ismemberof", new Method("ismemberof", JdbcType.BOOLEAN, 1, 2)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
                 return new IsMemberInfo();
             }
         });
-        labkeyMethod.put("javaconstant", new Method("javaconstant", JdbcType.VARBINARY, 1, 1){
+        labkeyMethod.put("javaconstant", new Method("javaconstant", JdbcType.VARBINARY, 1, 1)
+        {
             @Override
             public void validate(CommonTree fn, List<QNode> args, List<Exception> parseErrors, List<QueryParseException> parseWarnings)
             {
@@ -240,7 +248,7 @@ public abstract class Method
                         parseErrors.add(new QueryParseException(_name.toUpperCase() + "() parameter should be valid class name '.' field: " + param, null, line, column));
                         return;
                     }
-                    className = param.substring(0,dot);
+                    className = param.substring(0, dot);
                     propertyName = param.substring(dot + 1);
                     Class<?> cls = Class.forName(className);
                     Field f = cls.getField(propertyName);
@@ -292,7 +300,7 @@ public abstract class Method
                     {
                         assert arguments.length == 2 || arguments.length == 3;
                         if (arguments.length == 2)
-                            return  dialect.sqlLocate(arguments[0], arguments[1]);
+                            return dialect.sqlLocate(arguments[0], arguments[1]);
                         else
                             return dialect.sqlLocate(arguments[0], arguments[1], arguments[2]);
                     }
@@ -303,11 +311,12 @@ public abstract class Method
         labkeyMethod.put("ltrim", new JdbcMethod("ltrim", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("minute", new JdbcMethod("minute", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("mod", new JdbcMethod("mod", JdbcType.DOUBLE, 2, 2));
-        labkeyMethod.put("moduleproperty", new Method("moduleproperty", JdbcType.VARCHAR, 2, 2){
+        labkeyMethod.put("moduleproperty", new Method("moduleproperty", JdbcType.VARCHAR, 2, 2)
+        {
             @Override
             public void validate(CommonTree fn, List<QNode> args, List<Exception> parseErrors, List<QueryParseException> parseWarnings)
             {
-                super.validate(fn,args,parseErrors,parseWarnings);
+                super.validate(fn, args, parseErrors, parseWarnings);
                 if (args.size() != 2)
                     return;
                 if (args.get(0).getTokenType() != SqlBaseLexer.QUOTED_STRING)
@@ -358,27 +367,28 @@ public abstract class Method
         labkeyMethod.put("rand", new JdbcMethod("rand", JdbcType.DOUBLE, 0, 1));
         labkeyMethod.put("repeat", new JdbcMethod("repeat", JdbcType.VARCHAR, 2, 2));
         labkeyMethod.put("round", new Method("round", JdbcType.DOUBLE, 1, 2)
-			{
-				@Override
-				public MethodInfo getMethodInfo()
-				{
-					return new RoundInfo();
-				}
-			});
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new RoundInfo();
+            }
+        });
         labkeyMethod.put("rtrim", new JdbcMethod("rtrim", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("second", new JdbcMethod("second", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("sign", new JdbcMethod("sign", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("sin", new JdbcMethod("sin", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("sqrt", new JdbcMethod("sqrt", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("startswith", new Method("startswith", JdbcType.BOOLEAN, 2, 2)
-            {
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
                 return new StartsWithInfo();
             }
         });
-        labkeyMethod.put("substring", new JdbcMethod("substring", JdbcType.VARCHAR, 2, 3){
+        labkeyMethod.put("substring", new JdbcMethod("substring", JdbcType.VARCHAR, 2, 3)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
@@ -393,7 +403,7 @@ public abstract class Method
                             argumentsThree[0] = arguments[0];
                             argumentsThree[1] = arguments[1];
                             // 19187: Query error when using substring without 3rd parameter in LabKey SQL
-                            argumentsThree[2] = new SQLFragment(String.valueOf(Integer.MAX_VALUE/2));
+                            argumentsThree[2] = new SQLFragment(String.valueOf(Integer.MAX_VALUE / 2));
                             arguments = argumentsThree;
                         }
                         return super.getSQL(dialect, arguments);
@@ -403,21 +413,21 @@ public abstract class Method
         });
         labkeyMethod.put("tan", new JdbcMethod("tan", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("timestampadd", new Method("timestampadd", JdbcType.TIMESTAMP, 3, 3)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
             {
-                @Override
-                public MethodInfo getMethodInfo()
-                {
-                    return new TimestampInfo(this);
-                }
-            });
+                return new TimestampInfo(this);
+            }
+        });
         labkeyMethod.put("timestampdiff", new Method("timestampdiff", JdbcType.INTEGER, 3, 3)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
             {
-                @Override
-                public MethodInfo getMethodInfo()
-                {
-                    return new TimestampInfo(this);
-                }
-            });
+                return new TimestampInfo(this);
+            }
+        });
         labkeyMethod.put("truncate", new JdbcMethod("truncate", JdbcType.DOUBLE, 2, 2));
         labkeyMethod.put("ucase", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("upper", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
@@ -429,18 +439,22 @@ public abstract class Method
                 return new UserIdInfo();
             }
         });
-        labkeyMethod.put("username", new Method("username", JdbcType.VARCHAR, 0, 0) {
+        labkeyMethod.put("username", new Method("username", JdbcType.VARCHAR, 0, 0)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
                 return new UserNameInfo();
             }
         });
-        labkeyMethod.put("version", new Method("version", JdbcType.DECIMAL, 0, 0){
+        labkeyMethod.put("version", new Method("version", JdbcType.DECIMAL, 0, 0)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
-                return new VersionMethodInfo(){};
+                return new VersionMethodInfo()
+                {
+                };
             }
         });
         labkeyMethod.put("week", new JdbcMethod("week", JdbcType.INTEGER, 1, 1));
@@ -452,7 +466,8 @@ public abstract class Method
 
 
         // ========== Don't document these ==========
-        labkeyMethod.put("__cte_two__", new Method(JdbcType.INTEGER, 0, 0) {
+        labkeyMethod.put("__cte_two__", new Method(JdbcType.INTEGER, 0, 0)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
@@ -470,7 +485,8 @@ public abstract class Method
                 };
             }
         });
-        labkeyMethod.put("__cte_three__", new Method(JdbcType.INTEGER, 0, 0) {
+        labkeyMethod.put("__cte_three__", new Method(JdbcType.INTEGER, 0, 0)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
@@ -488,7 +504,8 @@ public abstract class Method
                 };
             }
         });
-        labkeyMethod.put("__cte_times__", new Method(JdbcType.INTEGER, 2, 2) {
+        labkeyMethod.put("__cte_times__", new Method(JdbcType.INTEGER, 2, 2)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
@@ -537,7 +554,7 @@ public abstract class Method
         if (count < _minArgs || count > _maxArgs)
         {
             if (_minArgs == _maxArgs)
-                parseErrors.add(new QueryParseException(_name.toUpperCase() + " function expects " + _minArgs + " argument" + (_minArgs==1?"":"s"), null, fn.getLine(), fn.getCharPositionInLine()));
+                parseErrors.add(new QueryParseException(_name.toUpperCase() + " function expects " + _minArgs + " argument" + (_minArgs == 1 ? "" : "s"), null, fn.getLine(), fn.getCharPositionInLine()));
             else
                 parseErrors.add(new QueryParseException(_name.toUpperCase() + " function expects " + _minArgs + " to " + _maxArgs + " arguments", null, fn.getLine(), fn.getCharPositionInLine()));
         }
@@ -545,7 +562,8 @@ public abstract class Method
 
     public static void addMethod(String name, MethodInfo info, JdbcType returnType, int minArgs, int maxArgs)
     {
-        Method m = new Method(name, returnType, minArgs, maxArgs) {
+        Method m = new Method(name, returnType, minArgs, maxArgs)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
@@ -679,16 +697,16 @@ public abstract class Method
                 try
                 {
                     String dialectTypeName = getTypeArgument(fragments[1]);
-                    JdbcType jdbcType = dialect.getJdbcType(dialect.sqlTypeIntFromSqlTypeName(dialectTypeName),dialectTypeName);
+                    JdbcType jdbcType = dialect.getJdbcType(dialect.sqlTypeIntFromSqlTypeName(dialectTypeName), dialectTypeName);
                     if ((jdbcType == JdbcType.DOUBLE || jdbcType == JdbcType.REAL) && isSimpleString(fragments[0]))
                     {
                         String s = toSimpleString(fragments[0]).toLowerCase();
                         if ("infinity".equals(s) || "+infinity".equals(s))
-                            fragments[0] = new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.POSITIVE_INFINITY : Float.POSITIVE_INFINITY);
+                            fragments[0] = new SQLFragment("?", jdbcType == JdbcType.DOUBLE ? Double.POSITIVE_INFINITY : Float.POSITIVE_INFINITY);
                         else if ("-infinity".equals(s))
-                            fragments[0] = new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NEGATIVE_INFINITY : Float.NEGATIVE_INFINITY);
+                            fragments[0] = new SQLFragment("?", jdbcType == JdbcType.DOUBLE ? Double.NEGATIVE_INFINITY : Float.NEGATIVE_INFINITY);
                         else if ("nan".equals(s))
-                            fragments[0] = new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NaN : Float.NaN);
+                            fragments[0] = new SQLFragment("?", jdbcType == JdbcType.DOUBLE ? Double.NaN : Float.NaN);
                     }
                 }
                 catch (IllegalArgumentException x)
@@ -710,7 +728,9 @@ public abstract class Method
             return ret;
         }
 
-        /** This code could be avoided by making our parser a little smarter to handle the valid convert constants */
+        /**
+         * This code could be avoided by making our parser a little smarter to handle the valid convert constants
+         */
         String getTypeArgument(SQLFragment typeSqlFragment) throws IllegalArgumentException
         {
             String typeName = typeSqlFragment.getRawSQL();
@@ -733,7 +753,7 @@ public abstract class Method
             if (children.size() < 2)
                 return JdbcType.VARCHAR;
 
-            QType type = (QType)children.get(1);
+            QType type = (QType) children.get(1);
             return type.getJdbcType();
         }
     }
@@ -804,13 +824,13 @@ public abstract class Method
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             boolean supportsRoundDouble = dialect.supportsRoundDouble();
-            boolean unitRound = arguments.length == 1 || (arguments.length==2 && arguments[1].getSQL().equals("0"));
+            boolean unitRound = arguments.length == 1 || (arguments.length == 2 && arguments[1].getSQL().equals("0"));
             if (unitRound)
             {
                 if (supportsRoundDouble)
-                    return super.getSQL(dialect, new SQLFragment[] {arguments[0], new SQLFragment("0")});
+                    return super.getSQL(dialect, new SQLFragment[]{arguments[0], new SQLFragment("0")});
                 else
-                    return super.getSQL(dialect, new SQLFragment[] {arguments[0]});
+                    return super.getSQL(dialect, new SQLFragment[]{arguments[0]});
             }
 
             if (supportsRoundDouble)
@@ -824,7 +844,7 @@ public abstract class Method
                 // This is not SQL standard behavior
                 SQLFragment numeric = new SQLFragment();
                 numeric.append("CAST((").append(arguments[0]).append(") AS NUMERIC)");
-                return super.getSQL(dialect, new SQLFragment[] {numeric, arguments[1]});
+                return super.getSQL(dialect, new SQLFragment[]{numeric, arguments[1]});
             }
             else
             {
@@ -842,14 +862,14 @@ public abstract class Method
                 // If 2nd argument isn't a constant, just do the default thing.  This may work or it may cause a server parse error.
                 if (n == Integer.MIN_VALUE)
                     return super.getSQL(dialect, arguments);
-                var scale = Math.pow(10,n);
+                var scale = Math.pow(10, n);
                 SQLFragment scaled = new SQLFragment().append("(").append(arguments[0]).append(")*").appendValue(scale);
                 SQLFragment ret = super.getSQL(dialect, new SQLFragment[]{scaled});
                 ret.append("/").appendValue(scale);
                 return ret;
             }
-		}
-	}
+        }
+    }
 
 
     static class AgeMethodInfo extends AbstractMethodInfo
@@ -892,12 +912,12 @@ public abstract class Method
             MethodInfo dayofmonth = labkeyMethod.get("dayofmonth").getMethodInfo();
 
             SQLFragment ret = new SQLFragment();
-            SQLFragment yearA = year.getSQL(dialect, new SQLFragment[] {arguments[0]});
-            SQLFragment monthA = month.getSQL(dialect, new SQLFragment[] {arguments[0]});
-            SQLFragment dayA = dayofmonth.getSQL(dialect, new SQLFragment[] {arguments[0]});
-            SQLFragment yearB = year.getSQL(dialect, new SQLFragment[] {arguments[1]});
-            SQLFragment monthB = month.getSQL(dialect, new SQLFragment[] {arguments[1]});
-            SQLFragment dayB = dayofmonth.getSQL(dialect, new SQLFragment[] {arguments[1]});
+            SQLFragment yearA = year.getSQL(dialect, new SQLFragment[]{arguments[0]});
+            SQLFragment monthA = month.getSQL(dialect, new SQLFragment[]{arguments[0]});
+            SQLFragment dayA = dayofmonth.getSQL(dialect, new SQLFragment[]{arguments[0]});
+            SQLFragment yearB = year.getSQL(dialect, new SQLFragment[]{arguments[1]});
+            SQLFragment monthB = month.getSQL(dialect, new SQLFragment[]{arguments[1]});
+            SQLFragment dayB = dayofmonth.getSQL(dialect, new SQLFragment[]{arguments[1]});
 
             ret.append("(CASE WHEN (")
                     .append(monthA).append(">").append(monthB).append(" OR ")
@@ -929,12 +949,12 @@ public abstract class Method
             MethodInfo dayofmonth = labkeyMethod.get("dayofmonth").getMethodInfo();
 
             SQLFragment ret = new SQLFragment();
-            SQLFragment yearA = year.getSQL(dialect, new SQLFragment[] {arguments[0]});
-            SQLFragment monthA = month.getSQL(dialect, new SQLFragment[] {arguments[0]});
-            SQLFragment dayA = dayofmonth.getSQL(dialect, new SQLFragment[] {arguments[0]});
-            SQLFragment yearB = year.getSQL(dialect, new SQLFragment[] {arguments[1]});
-            SQLFragment monthB = month.getSQL(dialect, new SQLFragment[] {arguments[1]});
-            SQLFragment dayB = dayofmonth.getSQL(dialect, new SQLFragment[] {arguments[1]});
+            SQLFragment yearA = year.getSQL(dialect, new SQLFragment[]{arguments[0]});
+            SQLFragment monthA = month.getSQL(dialect, new SQLFragment[]{arguments[0]});
+            SQLFragment dayA = dayofmonth.getSQL(dialect, new SQLFragment[]{arguments[0]});
+            SQLFragment yearB = year.getSQL(dialect, new SQLFragment[]{arguments[1]});
+            SQLFragment monthB = month.getSQL(dialect, new SQLFragment[]{arguments[1]});
+            SQLFragment dayB = dayofmonth.getSQL(dialect, new SQLFragment[]{arguments[1]});
 
             ret.append("(CASE WHEN (")
                     .append(dayA).append(">").append(dayB)
@@ -989,8 +1009,6 @@ public abstract class Method
     }
 
 
-
-
     static class IsEqualInfo extends AbstractMethodInfo
     {
         IsEqualInfo()
@@ -1041,7 +1059,7 @@ public abstract class Method
         {
             SQLFragment ret = new SQLFragment("?");
             ret.add((Callable<Integer>) () -> {
-                User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
+                User user = (User) QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
                 return null == user ? null : user.getUserId();
             });
             return ret;
@@ -1072,7 +1090,7 @@ public abstract class Method
         {
             SQLFragment ret = new SQLFragment("?");
             ret.add((Callable<String>) () -> {
-                User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
+                User user = (User) QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
                 if (null == user)
                     return null;
                 return user.getDisplayName(user);
@@ -1099,7 +1117,7 @@ public abstract class Method
             // NOTE we resolve CONTAINER at compile time because we don't have a good place to set this variable at runtime
             // use of SqlSelector and async complicate that
             Container cCompile = getCompileTimeContainer(query);
-            v = null==cCompile ? null : path ? cCompile.getPath() : cCompile.getName();
+            v = null == cCompile ? null : path ? cCompile.getPath() : cCompile.getName();
 
             if (null == v)
                 return new SQLFragment("CAST(NULL AS VARCHAR)");
@@ -1145,6 +1163,7 @@ public abstract class Method
             return new SQLFragment("CAST(NULL AS VARCHAR)");
         }
     }
+
     static class JavaConstantInfo extends AbstractMethodInfo
     {
         JavaConstantInfo()
@@ -1161,8 +1180,8 @@ public abstract class Method
                 int dot = param.lastIndexOf('.');
                 if (dot < 0)
                     break getProperty;
-                String className = param.substring(0,dot);
-                String propertyName = param.substring(dot+1);
+                String className = param.substring(0, dot);
+                String propertyName = param.substring(dot + 1);
 
                 Class<?> cls;
                 try
@@ -1249,12 +1268,12 @@ public abstract class Method
                 //Current UserID gets put in QueryService.getEnvironment() by AuthFilter
                 // NOTE: ideally this should be calculated at RUN time not compile time. (see UserIdInfo)
                 // However, we are generating an IN () clause here, and it's easier to do this way
-                User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
+                User user = (User) QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
                 if (null == user)
                     throw new IllegalStateException("Query environment has not been set");
                 SQLFragment ret = new SQLFragment();
                 ret.append("(").append(groupArg).append(") IN (").append(
-                    user.getGroups().stream().map(i -> Integer.toString(i)).collect(Collectors.joining(","))
+                        user.getGroups().stream().map(i -> Integer.toString(i)).collect(Collectors.joining(","))
                 ).append(")");
                 return ret;
             }
@@ -1263,7 +1282,7 @@ public abstract class Method
             // NOTE: we are not verifying principals.container in (project,site)
 
             return CompareType.getMemberOfSQL(dialect, userArg, groupArg);
-         }
+        }
     }
 
 
@@ -1313,7 +1332,7 @@ public abstract class Method
     {
         Method m = null;
         name = name.toLowerCase();
-        if (null != d )
+        if (null != d)
         {
             if (d.isPostgreSQL())
                 m = postgresMethods.get(name);
@@ -1418,7 +1437,8 @@ public abstract class Method
     }
 
 
-    /** NOTE: because of how our parser works, a bunch of random SQL keywords end up as strings.
+    /**
+     * NOTE: because of how our parser works, a bunch of random SQL keywords end up as strings.
      * isSimpleString() and toSimpleString() can be used to "extract" those sequences.
      * For instance "SQL_TSI_DAY"
      * It would be better to parse these into QSqlKeyword or something like that, but we'd still have the
@@ -1428,44 +1448,46 @@ public abstract class Method
     {
         String s = f.getSQL();
         // am I a simple bound parameter?
-        if ("?".equals(s) && f.getParams().size()==1)
+        if ("?".equals(s) && f.getParams().size() == 1)
             return f.getParams().get(0) instanceof String;
         if (!f.getParams().isEmpty())
             return false;
         if (s.endsWith("::VARCHAR"))
-            s = s.substring(0, s.length()-"::VARCHAR".length());
+            s = s.substring(0, s.length() - "::VARCHAR".length());
         // am I 'normal' SQL String with no embedded single-quotes?
         if (s.length() >= 2 && s.startsWith("'"))
-            return s.length()-1 == s.indexOf('\'',1);
+            return s.length() - 1 == s.indexOf('\'', 1);
         // am I a sqlserver N' string with no embedded single-quotes?
         if (s.length() >= 3 && s.startsWith("N'"))
-            return s.length()-1 == s.indexOf('\'',2);
+            return s.length() - 1 == s.indexOf('\'', 2);
         return false;
     }
 
-    /** see {@link #isSimpleString(SQLFragment)} */
+    /**
+     * see {@link #isSimpleString(SQLFragment)}
+     */
     public static String toSimpleString(SQLFragment f)
     {
         if (!isSimpleString(f))
             throw new IllegalArgumentException(f.toDebugString());
         String s = f.getSQL();
-        if ("?".equals(s) && f.getParams().size()==1)
-            return (String)f.getParams().get(0);
-        assert(s.startsWith("'") || s.startsWith("N'"));
-        assert(s.endsWith("'") || s.endsWith("'::VARCHAR"));
+        if ("?".equals(s) && f.getParams().size() == 1)
+            return (String) f.getParams().get(0);
+        assert (s.startsWith("'") || s.startsWith("N'"));
+        assert (s.endsWith("'") || s.endsWith("'::VARCHAR"));
         if (s.endsWith("::VARCHAR"))
-            s = s.substring(0, s.length()-"::VARCHAR".length());
+            s = s.substring(0, s.length() - "::VARCHAR".length());
         if (s.startsWith("'"))
-            return s.substring(1,s.length()-1);
+            return s.substring(1, s.length() - 1);
         if (s.startsWith("N'"))
-            return s.substring(2,s.length()-1);
+            return s.substring(2, s.length() - 1);
         throw new IllegalArgumentException(f.toDebugString());
     }
 
 
     static Container getCompileTimeContainer(Query query)
     {
-        Container cCompile = (Container)QueryServiceImpl.get().getEnvironment(QueryService.Environment.CONTAINER);
+        Container cCompile = (Container) QueryServiceImpl.get().getEnvironment(QueryService.Environment.CONTAINER);
         if (null == cCompile && null != query)
         {
             // Issue 53355: A column may be erroneously constructed (e.g. invalid calculated column) which can result in the schema being null
@@ -1477,54 +1499,159 @@ public abstract class Method
     }
 
 
+    // ARRAY methods
+
+    private interface BinarySqlGenerator
+    {
+        SQLFragment apply(SqlDialect d, SQLFragment a, SQLFragment b);
+    }
+
+
+    static class ArrayOperatorMethod extends Method
+    {
+        final BinarySqlGenerator sqlGenerator;
+        ArrayOperatorMethod(String name, BinarySqlGenerator sqlGenerator)
+        {
+            super(name, JdbcType.BOOLEAN, 2, 2);
+            this.sqlGenerator = sqlGenerator;
+        }
+
+        @Override
+        public MethodInfo getMethodInfo()
+        {
+            return new AbstractMethodInfo(JdbcType.BOOLEAN)
+            {
+                @Override
+                public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+                {
+                    return sqlGenerator.apply(dialect, arguments[0], arguments[1]);
+                }
+            };
+        }
+    }
+
+
+    static class ArrayConstructMethod extends Method
+    {
+        ArrayConstructMethod(String name)
+        {
+            super(name, JdbcType.ARRAY, 0, Integer.MAX_VALUE);
+        }
+
+        @Override
+        public MethodInfo getMethodInfo()
+        {
+            return new AbstractMethodInfo(JdbcType.ARRAY)
+            {
+                @Override
+                public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+                {
+                    return dialect.array_construct(arguments);
+                }
+            };
+        }
+    }
+
+    static class TextArrayConstructMethod extends Method
+    {
+        TextArrayConstructMethod(String name)
+        {
+            super(name, JdbcType.ARRAY, 0, Integer.MAX_VALUE);
+        }
+
+        @Override
+        public MethodInfo getMethodInfo()
+        {
+            return new AbstractMethodInfo(JdbcType.ARRAY)
+            {
+                @Override
+                public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+                {
+                    return new SQLFragment("CAST(").append(dialect.array_construct(arguments)).append(" AS TEXT[])");
+                }
+            };
+        }
+    }
+
+
     final static Map<String, Method> postgresMethods = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
+
     static
     {
-        postgresMethods.put("ascii",new PassthroughMethod("ascii",JdbcType.INTEGER,1,1));
-        postgresMethods.put("btrim",new PassthroughMethod("btrim",JdbcType.VARCHAR,1,2));
-        postgresMethods.put("char_length",new PassthroughMethod("char_length",JdbcType.INTEGER,1,1));
-        postgresMethods.put("character_length",new PassthroughMethod("character_length",JdbcType.INTEGER,1,1));
-        postgresMethods.put("chr",new PassthroughMethod("chr",JdbcType.VARCHAR,1,1));
+        postgresMethods.put("ascii", new PassthroughMethod("ascii", JdbcType.INTEGER, 1, 1));
+        postgresMethods.put("btrim", new PassthroughMethod("btrim", JdbcType.VARCHAR, 1, 2));
+        postgresMethods.put("char_length", new PassthroughMethod("char_length", JdbcType.INTEGER, 1, 1));
+        postgresMethods.put("character_length", new PassthroughMethod("character_length", JdbcType.INTEGER, 1, 1));
+        postgresMethods.put("chr", new PassthroughMethod("chr", JdbcType.VARCHAR, 1, 1));
         postgresMethods.put("concat_ws", new PassthroughMethod("concat_ws", JdbcType.VARCHAR, 1, Integer.MAX_VALUE));
-        postgresMethods.put("decode",new PassthroughMethod("decode",JdbcType.VARCHAR,2,2));
-        postgresMethods.put("encode",new PassthroughMethod("encode",JdbcType.VARCHAR,2,2));
-        postgresMethods.put("initcap",new PassthroughMethod("initcap",JdbcType.VARCHAR,1,1));
-        postgresMethods.put("lpad",new PassthroughMethod("lpad",JdbcType.VARCHAR,2,3));
-        postgresMethods.put("md5",new PassthroughMethod("md5",JdbcType.VARCHAR,1,1));
-        postgresMethods.put("octet_length",new PassthroughMethod("octet_length",JdbcType.INTEGER,1,1));
-        postgresMethods.put("overlaps",new PassthroughMethod("overlaps",JdbcType.BOOLEAN,4,4) {
+        postgresMethods.put("decode", new PassthroughMethod("decode", JdbcType.VARCHAR, 2, 2));
+        postgresMethods.put("encode", new PassthroughMethod("encode", JdbcType.VARCHAR, 2, 2));
+        postgresMethods.put("initcap", new PassthroughMethod("initcap", JdbcType.VARCHAR, 1, 1));
+        postgresMethods.put("lpad", new PassthroughMethod("lpad", JdbcType.VARCHAR, 2, 3));
+        postgresMethods.put("md5", new PassthroughMethod("md5", JdbcType.VARCHAR, 1, 1));
+        postgresMethods.put("octet_length", new PassthroughMethod("octet_length", JdbcType.INTEGER, 1, 1));
+        postgresMethods.put("overlaps", new PassthroughMethod("overlaps", JdbcType.BOOLEAN, 4, 4)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
                 return new OverlapsMethodInfo();
             }
         });
-        postgresMethods.put("quote_ident",new PassthroughMethod("quote_ident",JdbcType.VARCHAR,1,1));
-        postgresMethods.put("quote_literal",new PassthroughMethod("quote_literal",JdbcType.VARCHAR,1,1));
-        postgresMethods.put("regexp_replace",new PassthroughMethod("regexp_replace",JdbcType.VARCHAR,3,4));
-        postgresMethods.put("repeat",new PassthroughMethod("repeat",JdbcType.VARCHAR,2,2));
-        postgresMethods.put("replace",new PassthroughMethod("replace",JdbcType.VARCHAR,3,3));
-        postgresMethods.put("rpad",new PassthroughMethod("rpad",JdbcType.VARCHAR,2,3));
-        postgresMethods.put("similar_to", new PassthroughMethod("similar_to", JdbcType.BOOLEAN, 2, 3) {
+        postgresMethods.put("quote_ident", new PassthroughMethod("quote_ident", JdbcType.VARCHAR, 1, 1));
+        postgresMethods.put("quote_literal", new PassthroughMethod("quote_literal", JdbcType.VARCHAR, 1, 1));
+        postgresMethods.put("regexp_replace", new PassthroughMethod("regexp_replace", JdbcType.VARCHAR, 3, 4));
+        postgresMethods.put("repeat", new PassthroughMethod("repeat", JdbcType.VARCHAR, 2, 2));
+        postgresMethods.put("replace", new PassthroughMethod("replace", JdbcType.VARCHAR, 3, 3));
+        postgresMethods.put("rpad", new PassthroughMethod("rpad", JdbcType.VARCHAR, 2, 3));
+        postgresMethods.put("similar_to", new PassthroughMethod("similar_to", JdbcType.BOOLEAN, 2, 3)
+        {
             @Override
-            public MethodInfo getMethodInfo() { return new SimilarToMethodInfo(); }
+            public MethodInfo getMethodInfo()
+            {
+                return new SimilarToMethodInfo();
+            }
         });
-        postgresMethods.put("split_part",new PassthroughMethod("split_part",JdbcType.VARCHAR,3,3));
-        postgresMethods.put("strpos",new PassthroughMethod("strpos",JdbcType.VARCHAR,2,2));
-        postgresMethods.put("substr",new PassthroughMethod("substr",JdbcType.VARCHAR,2,3));
-        postgresMethods.put("to_ascii",new PassthroughMethod("to_ascii",JdbcType.VARCHAR,1,2));
-        postgresMethods.put("to_hex",new PassthroughMethod("to_hex",JdbcType.VARCHAR,1,1));
-        postgresMethods.put("translate",new PassthroughMethod("translate",JdbcType.VARCHAR,3,3));
-        postgresMethods.put("to_char",new PassthroughMethod("to_char",JdbcType.VARCHAR,2,2));
-        postgresMethods.put("to_date",new PassthroughMethod("to_date",JdbcType.DATE,2,2));
-        postgresMethods.put("to_timestamp",new PassthroughMethod("to_timestamp",JdbcType.TIMESTAMP,2,2));
-        postgresMethods.put("to_number",new PassthroughMethod("to_number",JdbcType.DECIMAL,2,2));
-        postgresMethods.put("string_to_array",new PassthroughMethod("string_to_array",JdbcType.VARCHAR,2,3));
-        postgresMethods.put("unnest",new PassthroughMethod("unnest",JdbcType.VARCHAR,1,1));
-        postgresMethods.put("row",new PassthroughMethod("row",JdbcType.VARCHAR,1, Integer.MAX_VALUE));
+        postgresMethods.put("split_part", new PassthroughMethod("split_part", JdbcType.VARCHAR, 3, 3));
+        postgresMethods.put("strpos", new PassthroughMethod("strpos", JdbcType.VARCHAR, 2, 2));
+        postgresMethods.put("substr", new PassthroughMethod("substr", JdbcType.VARCHAR, 2, 3));
+        postgresMethods.put("to_ascii", new PassthroughMethod("to_ascii", JdbcType.VARCHAR, 1, 2));
+        postgresMethods.put("to_hex", new PassthroughMethod("to_hex", JdbcType.VARCHAR, 1, 1));
+        postgresMethods.put("translate", new PassthroughMethod("translate", JdbcType.VARCHAR, 3, 3));
+        postgresMethods.put("to_char", new PassthroughMethod("to_char", JdbcType.VARCHAR, 2, 2));
+        postgresMethods.put("to_date", new PassthroughMethod("to_date", JdbcType.DATE, 2, 2));
+        postgresMethods.put("to_timestamp", new PassthroughMethod("to_timestamp", JdbcType.TIMESTAMP, 2, 2));
+        postgresMethods.put("to_number", new PassthroughMethod("to_number", JdbcType.DECIMAL, 2, 2));
+        postgresMethods.put("string_to_array", new PassthroughMethod("string_to_array", JdbcType.VARCHAR, 2, 3));
+        postgresMethods.put("unnest", new PassthroughMethod("unnest", JdbcType.VARCHAR, 1, 1));
+        postgresMethods.put("row", new PassthroughMethod("row", JdbcType.VARCHAR, 1, Integer.MAX_VALUE));
+
+        addPostgresArrayMethods();
 
         addPostgresJsonMethods();
     }
+
+
+    private static void addPostgresArrayMethods()
+    {
+        // (ELEMENT...)
+        postgresMethods.put("array_construct", new ArrayConstructMethod("array_construct"));
+        postgresMethods.put("textarray_construct", new TextArrayConstructMethod("textarray_construct"));
+
+        // (ARRAY, ELEMENT)
+        postgresMethods.put("array_contains_element", new ArrayOperatorMethod("array_contains_element",  (d,a,b) -> d.element_in_array(b,a)));
+        // Use "NOT array_contains_element()" instead of something clumsy like "array_does_not_contain()"
+
+        // (ARRAY, ARRAY)
+        postgresMethods.put("array_contains_all", new ArrayOperatorMethod("array_contains_all", (d,a,b) -> d.array_all_in_array(b,a)));
+        postgresMethods.put("array_contains_any", new ArrayOperatorMethod("array_contains_any",  SqlDialect::array_some_in_array));
+        postgresMethods.put("array_contains_none", new ArrayOperatorMethod("array_contains_none", SqlDialect::array_none_in_array));
+
+        // not array_equals() because arrays are ordered, this is an unordered comparison
+        postgresMethods.put("array_is_same", new ArrayOperatorMethod("array_is_same", SqlDialect::array_same_array));
+        // Use "NOT array_is_same()" instead of something clumsy like "array_is_not_same()"
+    }
+
 
     /**
      * Wire up JSON and JSONB data type support for Postgres, as described here:
@@ -1624,14 +1751,16 @@ public abstract class Method
         postgresMethods.put("jsonb_path_query_first_tz", new PassthroughMethod("jsonb_path_query_first_tz", JdbcType.VARCHAR, 2, 4));
 
         // "is distinct from" and "is not distinct from" operators in method form
-        labkeyMethod.put("is_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2) {
+        labkeyMethod.put("is_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
                 return new IsDistinctFromMethodInfo(IS);
             }
         });
-        labkeyMethod.put("is_not_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2) {
+        labkeyMethod.put("is_not_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2)
+        {
             @Override
             public MethodInfo getMethodInfo()
             {
@@ -1649,6 +1778,7 @@ public abstract class Method
             super(JdbcType.BOOLEAN);
             this.token = token;
         }
+
         @Override
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
@@ -1670,32 +1800,34 @@ public abstract class Method
     }
 
     final static Map<String, Method> mssqlMethods = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
+
     static
     {
-        mssqlMethods.put("ascii",new PassthroughMethod("ascii",JdbcType.INTEGER,1,1));
-        Method chr = new PassthroughMethod("char",JdbcType.VARCHAR,1,1);
+        mssqlMethods.put("ascii", new PassthroughMethod("ascii", JdbcType.INTEGER, 1, 1));
+        Method chr = new PassthroughMethod("char", JdbcType.VARCHAR, 1, 1);
         mssqlMethods.put("char", chr);
         mssqlMethods.put("chr", chr);   // postgres and oracle use 'chr' (see 15473)
-        mssqlMethods.put("charindex",new PassthroughMethod("charindex",JdbcType.INTEGER,2,3));
+        mssqlMethods.put("charindex", new PassthroughMethod("charindex", JdbcType.INTEGER, 2, 3));
         mssqlMethods.put("concat_ws", new PassthroughMethod("concat_ws", JdbcType.VARCHAR, 1, Integer.MAX_VALUE));
-        mssqlMethods.put("difference",new PassthroughMethod("difference",JdbcType.INTEGER,2,2));
-        mssqlMethods.put("isnumeric",new PassthroughMethod("isnumeric",JdbcType.BOOLEAN,1,1));
-        mssqlMethods.put("len",new PassthroughMethod("len",JdbcType.INTEGER,1,1));
-        mssqlMethods.put("patindex",new PassthroughMethod("patindex",JdbcType.INTEGER,2,2));
-        mssqlMethods.put("quotename",new PassthroughMethod("quotename",JdbcType.VARCHAR,1,2));
-        mssqlMethods.put("replace",new PassthroughMethod("replace",JdbcType.VARCHAR,3,3));
-        mssqlMethods.put("replicate",new PassthroughMethod("replicate",JdbcType.VARCHAR,2,2));
-        mssqlMethods.put("reverse",new PassthroughMethod("reverse",JdbcType.VARCHAR,1,1));
-        mssqlMethods.put("right",new PassthroughMethod("right",JdbcType.VARCHAR,2,2));
-        mssqlMethods.put("soundex",new PassthroughMethod("soundex",JdbcType.VARCHAR,1,1));
-        mssqlMethods.put("space",new PassthroughMethod("space",JdbcType.VARCHAR,1,1));
-        mssqlMethods.put("str",new PassthroughMethod("str",JdbcType.VARCHAR,1,3));
-        mssqlMethods.put("stuff",new PassthroughMethod("stuff",JdbcType.VARCHAR,4,4));
+        mssqlMethods.put("difference", new PassthroughMethod("difference", JdbcType.INTEGER, 2, 2));
+        mssqlMethods.put("isnumeric", new PassthroughMethod("isnumeric", JdbcType.BOOLEAN, 1, 1));
+        mssqlMethods.put("len", new PassthroughMethod("len", JdbcType.INTEGER, 1, 1));
+        mssqlMethods.put("patindex", new PassthroughMethod("patindex", JdbcType.INTEGER, 2, 2));
+        mssqlMethods.put("quotename", new PassthroughMethod("quotename", JdbcType.VARCHAR, 1, 2));
+        mssqlMethods.put("replace", new PassthroughMethod("replace", JdbcType.VARCHAR, 3, 3));
+        mssqlMethods.put("replicate", new PassthroughMethod("replicate", JdbcType.VARCHAR, 2, 2));
+        mssqlMethods.put("reverse", new PassthroughMethod("reverse", JdbcType.VARCHAR, 1, 1));
+        mssqlMethods.put("right", new PassthroughMethod("right", JdbcType.VARCHAR, 2, 2));
+        mssqlMethods.put("soundex", new PassthroughMethod("soundex", JdbcType.VARCHAR, 1, 1));
+        mssqlMethods.put("space", new PassthroughMethod("space", JdbcType.VARCHAR, 1, 1));
+        mssqlMethods.put("str", new PassthroughMethod("str", JdbcType.VARCHAR, 1, 3));
+        mssqlMethods.put("stuff", new PassthroughMethod("stuff", JdbcType.VARCHAR, 4, 4));
         mssqlMethods.put("ucase", new PassthroughMethod("upper", JdbcType.VARCHAR, 1, 1));
         mssqlMethods.put("upper", new PassthroughMethod("upper", JdbcType.VARCHAR, 1, 1));
     }
 
     final static Map<String, Method> oracleMethods = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
+
     static
     {
 /*  Standard Oracle Functions
@@ -1703,27 +1835,27 @@ public abstract class Method
 
         // Numeric Functions - Haven't put advanced mathematical functions in. Can add in later if the demand is there.
 
-        oracleMethods.put("to_number", new PassthroughMethod("to_number", JdbcType.DECIMAL, 1,3));
+        oracleMethods.put("to_number", new PassthroughMethod("to_number", JdbcType.DECIMAL, 1, 3));
 
         // Character Functions returning Character Values
 
-        oracleMethods.put("to_char", new PassthroughMethod("to_char", JdbcType.VARCHAR, 1,3));
-        oracleMethods.put("substr", new PassthroughMethod("substr", JdbcType.VARCHAR, 2,3));
-        oracleMethods.put("trim", new PassthroughMethod("trim", JdbcType.VARCHAR, 1,1));
-        oracleMethods.put("instr", new PassthroughMethod("instr", JdbcType.VARCHAR, 2,4));
-        oracleMethods.put("replace", new PassthroughMethod("replace", JdbcType.VARCHAR, 2,3));
-        oracleMethods.put("translate", new PassthroughMethod("translate", JdbcType.VARCHAR, 3,3));
-        oracleMethods.put("rpad", new PassthroughMethod("rpad", JdbcType.VARCHAR, 2,3));
-        oracleMethods.put("lpad", new PassthroughMethod("lpad", JdbcType.VARCHAR, 2,3));
-        oracleMethods.put("ascii", new PassthroughMethod("ascii", JdbcType.INTEGER, 1,1));
-        oracleMethods.put("initcap", new PassthroughMethod("initcap", JdbcType.VARCHAR, 1,1));
-        oracleMethods.put("chr", new PassthroughMethod("chr", JdbcType.VARCHAR, 1,1));
-        oracleMethods.put("regexp_like", new PassthroughMethod("regexp_like", JdbcType.VARCHAR, 2,2));
+        oracleMethods.put("to_char", new PassthroughMethod("to_char", JdbcType.VARCHAR, 1, 3));
+        oracleMethods.put("substr", new PassthroughMethod("substr", JdbcType.VARCHAR, 2, 3));
+        oracleMethods.put("trim", new PassthroughMethod("trim", JdbcType.VARCHAR, 1, 1));
+        oracleMethods.put("instr", new PassthroughMethod("instr", JdbcType.VARCHAR, 2, 4));
+        oracleMethods.put("replace", new PassthroughMethod("replace", JdbcType.VARCHAR, 2, 3));
+        oracleMethods.put("translate", new PassthroughMethod("translate", JdbcType.VARCHAR, 3, 3));
+        oracleMethods.put("rpad", new PassthroughMethod("rpad", JdbcType.VARCHAR, 2, 3));
+        oracleMethods.put("lpad", new PassthroughMethod("lpad", JdbcType.VARCHAR, 2, 3));
+        oracleMethods.put("ascii", new PassthroughMethod("ascii", JdbcType.INTEGER, 1, 1));
+        oracleMethods.put("initcap", new PassthroughMethod("initcap", JdbcType.VARCHAR, 1, 1));
+        oracleMethods.put("chr", new PassthroughMethod("chr", JdbcType.VARCHAR, 1, 1));
+        oracleMethods.put("regexp_like", new PassthroughMethod("regexp_like", JdbcType.VARCHAR, 2, 2));
 
-            // Date Functions
+        // Date Functions
 
-        oracleMethods.put("to_date", new PassthroughMethod("to_date", JdbcType.DATE, 1,3));
-        oracleMethods.put("sysdate", new PassthroughMethod("sysdate", JdbcType.DATE, 0,0));
+        oracleMethods.put("to_date", new PassthroughMethod("to_date", JdbcType.DATE, 1, 3));
+        oracleMethods.put("sysdate", new PassthroughMethod("sysdate", JdbcType.DATE, 0, 0));
     }
 
     private static class ParseJSONMethod extends Method
@@ -1750,7 +1882,6 @@ public abstract class Method
         }
     }
 
-
     public static class TestCase extends Assert
     {
         void assertIsSimpleString(String expected, SQLFragment s)
@@ -1758,6 +1889,7 @@ public abstract class Method
             assertTrue(expected + " should be a simple string", isSimpleString(s));
             assertEquals(expected, toSimpleString(s));
         }
+
         void assertNotSimpleString(SQLFragment s)
         {
             assertFalse(s.toDebugString() + " should not be a simple string", isSimpleString(s));
@@ -1772,7 +1904,7 @@ public abstract class Method
             // e.g SQL keywords and oeprators
             for (var s : List.of("->", "->>", "#>", "#>>", "@>", "<@", "?", "?|", "?&", "||", "-", "#-", SQL_TSI_FRAC_SECOND.name()))
             {
-                assertIsSimpleString(s, new SQLFragment().appendStringLiteral(s,d));
+                assertIsSimpleString(s, new SQLFragment().appendStringLiteral(s, d));
                 assertIsSimpleString(s, new SQLFragment("'" + s + "'"));
                 assertIsSimpleString(s, new SQLFragment("N'" + s + "'"));
                 assertIsSimpleString(s, new SQLFragment("'" + s + "'::VARCHAR"));

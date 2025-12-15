@@ -58,7 +58,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.Format;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -283,23 +282,14 @@ public abstract class DisplayColumn extends RenderColumn
         else if (null != _url)
             se = StringExpressionFactory.createURL(_url);
 
-        if (se instanceof StringExpressionFactory.FieldKeyStringExpression)
-        {
-            Set<FieldKey> fields = ((StringExpressionFactory.FieldKeyStringExpression)se).getFieldKeys();
-            keys.addAll(fields);
-        }
+        if (se instanceof StringExpressionFactory.FieldKeyStringExpression expression)
+            keys.addAll(expression.getFieldKeys());
 
-        if (_urlTitle instanceof StringExpressionFactory.FieldKeyStringExpression)
-        {
-            Set<FieldKey> fields = ((StringExpressionFactory.FieldKeyStringExpression) _urlTitle).getFieldKeys();
-            keys.addAll(fields);
-        }
+        if (_urlTitle instanceof StringExpressionFactory.FieldKeyStringExpression expression)
+            keys.addAll(expression.getFieldKeys());
 
-        if (_textExpression instanceof StringExpressionFactory.FieldKeyStringExpression)
-        {
-            Set<FieldKey> fields = ((StringExpressionFactory.FieldKeyStringExpression) _textExpression).getFieldKeys();
-            keys.addAll(fields);
-        }
+        if (_textExpression instanceof StringExpressionFactory.FieldKeyStringExpression expression)
+            keys.addAll(expression.getFieldKeys());
 
         _rowSpanner.addQueryColumns(keys);
     }
@@ -351,12 +341,10 @@ public abstract class DisplayColumn extends RenderColumn
         return _width;
     }
 
-
     public void setNoWrap(boolean nowrap)
     {
         _nowrap = nowrap;
     }
-
 
     // Ideally, this would just set the string... and defer creation of the Format object until render time, when we would
     // have a Container and other context. That would avoid creating multiple Formats per DisplayColumn.
@@ -368,7 +356,6 @@ public abstract class DisplayColumn extends RenderColumn
         if (null == getTsvFormatString() && null == getTsvFormat())
             _tsvFormat = createFormat(formatString, tsvFormatSymbols);
     }
-
 
     // java 7 changed to using infinity symbols for formatting, which is challenging for tsv import/export
     // use old school "Infinity" for now
@@ -811,7 +798,7 @@ public abstract class DisplayColumn extends RenderColumn
         if (style == null)
             style = "";
 
-        // 34871: Support for column display width
+        // Issue 34871: Support for column display width
         if (!isBlank(getWidth()))
             style += "; width:" + getWidth() + "px;";
 

@@ -4976,9 +4976,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     // NOTE: study specimens don't have a domain for their samples, so no table
                     if (null != dbTinfo)
                     {
-                        SQLFragment sampleTypeSQL = new SQLFragment("DELETE FROM " + dbTinfo + " WHERE lsid IN (SELECT lsid FROM exp.Material WHERE ");
-                        sampleTypeSQL.append(materialFilterSQL);
-                        sampleTypeSQL.append(")");
+                        SQLFragment sampleTypeSQL = new SQLFragment("DELETE FROM ").append(dbTinfo)
+                            .append(" WHERE RowId IN ").append(materialIdSql);
                         executor.execute(sampleTypeSQL);
                     }
                 }
@@ -9939,10 +9938,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         continue;
                 }
                 query.append(unionAll);
-                query.append("SELECT LSID, ")
-                        .append("CAST (").appendIdentifier(col.getSelectIdentifier()).append(" AS VARCHAR)")
+                query.append("SELECT M.LSID, ")
+                        .append("CAST (ST.").appendIdentifier(col.getSelectIdentifier()).append(" AS VARCHAR)")
                         .append(" AS ").append(UNIQUE_ID_COL_NAME);
-                query.append(" FROM expsampleset.").append(dialect.quoteIdentifier(provisioned.getName()));
+                query.append(" FROM ").append(provisioned, "ST");
+                query.append(" INNER JOIN ").append(ExperimentService.get().getTinfoMaterial(), "M").append(" ON M.RowId = ST.RowId");
                 query.append(" WHERE ").appendIdentifier(col.getSelectIdentifier()).appendInClause(isIntegerField ? intIds : uniqueIds, dialect);
                 unionAll = "\n UNION ALL\n";
             }

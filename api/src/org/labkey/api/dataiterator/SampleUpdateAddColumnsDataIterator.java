@@ -5,28 +5,25 @@ import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.StringUtilsLabKey;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
 public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
 {
-    public static final String ALIQUOTED_FROM_LSID_COLUMN_NAME = "AliquotedFromLSID";
-    public static final String ROOT_ROW_ID_COLUMN_NAME = "RootMaterialRowId";
     public static final String CURRENT_SAMPLE_STATUS_COLUMN_NAME = "_CurrentSampleState_";
-    static final String KEY_COLUMN_NAME = "Name";
-    static final String KEY_COLUMN_LSID = "LSID";
 
     final CachingDataIterator _unwrapped;
     final TableInfo target;
@@ -36,7 +33,6 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
     final int _aliquotedFromColIndex;
     final int _rootMaterialRowIdColIndex;
     final int _currentSampleStateColIndex;
-    final boolean _useLsid;
 
     // prefetch of existing records
     int lastPrefetchRowNumber = -1;
@@ -44,27 +40,22 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
     final IntHashMap<Integer> aliquotRoots = new IntHashMap<>();
     final IntHashMap<Integer> sampleState = new IntHashMap<>();
 
-    public SampleUpdateAddColumnsDataIterator(DataIterator in, TableInfo target, long sampleTypeId, boolean useLsid)
+    public SampleUpdateAddColumnsDataIterator(DataIterator in, TableInfo target, long sampleTypeId, String keyColumnName)
     {
         super(in);
-
         this._unwrapped = (CachingDataIterator)in;
-
         this.target = target;
-
         this._sampleTypeId = sampleTypeId;
-        this._useLsid = useLsid;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
-        this._aliquotedFromColIndex = map.get(ALIQUOTED_FROM_LSID_COLUMN_NAME);
-        this._rootMaterialRowIdColIndex = map.get(ROOT_ROW_ID_COLUMN_NAME);
+        this._aliquotedFromColIndex = map.get(AliquotedFromLSID.name());
+        this._rootMaterialRowIdColIndex = map.get(RootMaterialRowId.name());
         this._currentSampleStateColIndex = map.get(CURRENT_SAMPLE_STATUS_COLUMN_NAME);
 
-        String keyCol = useLsid ? KEY_COLUMN_LSID : KEY_COLUMN_NAME;
-        Integer index = map.get(keyCol);
-        ColumnInfo col = target.getColumn(keyCol);
+        Integer index = map.get(keyColumnName);
+        ColumnInfo col = target.getColumn(keyColumnName);
         if (null == index || null == col)
-            throw new IllegalArgumentException("Key column not found: " + keyCol);
+            throw new IllegalArgumentException("Key column not found: " + keyColumnName);
         pkSupplier = in.getSupplier(index);
         pkColumn = col;
     }
@@ -119,20 +110,24 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
         sampleState.clear();
 
         int rowsToFetch = 50;
-        Map<Integer, String> rowKeyMap = new LinkedHashMap<>();
-        Map<String, Integer> keyRowMap = new LinkedHashMap<>();
+        String keyFieldName = pkColumn.getName();
+        boolean numericKey = pkColumn.isNumericType();
+        JdbcType jdbcType = pkColumn.getJdbcType();
+        Map<Integer, Object> rowKeyMap = new LinkedHashMap<>();
+        Map<Object, Integer> keyRowMap = new LinkedHashMap<>();
         do
         {
             lastPrefetchRowNumber = asInteger(_delegate.get(0));
             Object keyObj = pkSupplier.get();
+            Object key = jdbcType.convert(keyObj);
 
-            String key = null;
-            if (keyObj instanceof String)
-                key = StringUtilsLabKey.unquoteString((String) keyObj);
-            else if (keyObj instanceof Number)
-                key = keyObj.toString();
-            if (StringUtils.isEmpty(key))
-                throw new IllegalArgumentException(KEY_COLUMN_NAME + " value not provided on row " + lastPrefetchRowNumber);
+            if (numericKey)
+            {
+                if (null == key)
+                    throw new IllegalArgumentException(keyFieldName + " value not provided on row " + lastPrefetchRowNumber);
+            }
+            else if (StringUtils.isEmpty((String) key))
+                throw new IllegalArgumentException(keyFieldName + " value not provided on row " + lastPrefetchRowNumber);
 
             rowKeyMap.put(lastPrefetchRowNumber, key);
             keyRowMap.put(key, lastPrefetchRowNumber);
@@ -142,20 +137,19 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
         }
         while (--rowsToFetch > 0 && _delegate.next());
 
-        String keyCol = _useLsid ? KEY_COLUMN_LSID : KEY_COLUMN_NAME;
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), _sampleTypeId);
-        FieldKey keyField = FieldKey.fromParts(keyCol);
-        filter.addCondition(keyField, rowKeyMap.values(), CompareType.IN);
+        SimpleFilter filter = new SimpleFilter(MaterialSourceId.fieldKey(), _sampleTypeId);
+        filter.addCondition(pkColumn.getFieldKey(), rowKeyMap.values(), CompareType.IN);
         filter.addCondition(FieldKey.fromParts("Container"), target.getUserSchema().getContainer());
 
-        Map<String, Object>[] results = new TableSelector(ExperimentService.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet(keyCol, "aliquotedfromlsid", "rootMaterialRowId", "sampleState"), filter, null).getMapArray();
+        Set<String> columns = Sets.newCaseInsensitiveHashSet(keyFieldName, AliquotedFromLSID.name(), RootMaterialRowId.name(), SampleState.name());
+        Map<String, Object>[] results = new TableSelector(ExperimentService.get().getTinfoMaterial(), columns, filter, null).getMapArray();
 
         for (Map<String, Object> result : results)
         {
-            String key = (String) result.get(keyCol);
-            Object aliquotedFromLSIDObj = result.get("aliquotedFromLSID");
-            Object rootMaterialRowIdObj = result.get("rootMaterialRowId");
-            Object sampleStateObj = result.get("sampleState");
+            Object key = result.get(keyFieldName);
+            Object aliquotedFromLSIDObj = result.get(AliquotedFromLSID.name());
+            Object rootMaterialRowIdObj = result.get(RootMaterialRowId.name());
+            Object sampleStateObj = result.get(SampleState.name());
             Integer rowInd = keyRowMap.get(key);
             if (aliquotedFromLSIDObj != null)
                 aliquotParents.put(rowInd, (String) aliquotedFromLSIDObj);
@@ -180,5 +174,4 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
             prefetchExisting();
         return ret;
     }
-
 }
