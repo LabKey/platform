@@ -12,10 +12,11 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.pipeline.XarGeneratorFactorySettings;
+import org.labkey.api.exp.pipeline.XarGeneratorId;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.AbstractTaskFactory;
@@ -174,7 +175,7 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
         return new TaskId(XarTestTaskFactory.class, location);
     }
 
-    public static TaskId registerTaskPipeline(String location) throws CloneNotSupportedException
+    public static void registerTaskPipeline(String location) throws CloneNotSupportedException
     {
         //first register TaskFactory
         TaskId taskFactoryId = getTaskFactoryId(location);
@@ -182,12 +183,16 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
 
         //then TaskPipeline
         TaskId taskPipelineId = getTaskIdForEngine(location);
+        TaskFactory<?> xarFact = PipelineJobService.get().getTaskFactory(new TaskId(XarGeneratorId.class));
+        if (xarFact == null)
+        {
+            throw new IllegalStateException("Unable to find TaskFactory for XarGeneratorId.class");
+        }
+
         TaskPipelineSettings settings = new TaskPipelineSettings(taskPipelineId);
-        settings.setTaskProgressionSpec(new Object[]{taskFactoryId, getXarGenerator().getId()});
+        settings.setTaskProgressionSpec(new Object[]{taskFactoryId, xarFact.getId()});
         settings.setDeclaringModule(ModuleLoader.getInstance().getModule(ExperimentModule.class));
         PipelineJobService.get().addTaskPipeline(settings);
-
-        return taskPipelineId;
     }
 
     @Override
@@ -271,20 +276,6 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
         {
             return false;
         }
-    }
-
-    protected static XarGeneratorFactorySettings getXarGenerator() throws CloneNotSupportedException
-    {
-        XarGeneratorFactorySettings settings = new XarGeneratorFactorySettings("xarGeneratorJoin");
-        settings.setJoin(true);
-
-        TaskFactory<?> factory = PipelineJobService.get().getTaskFactory(settings.getCloneId());
-        if (factory == null)
-        {
-            PipelineJobService.get().addTaskFactory(settings);
-        }
-
-        return settings;
     }
 
     @Override
@@ -428,22 +419,76 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
                     Arrays.asList(new File("/arbitrary/path/outside/lkRoot/myFile.txt")),
                     Arrays.asList(new File("/another/arbitrary/path/outside/lkRoot/myFile.txt"))
             );
+
+            Container project = ContainerManager.getForPath(PROJECT_NAME);
+            PipeRoot projectRoot = PipelineService.get().getPipelineRootSetting(project);
+            Assert.assertNotNull(PROJECT_NAME + " pipeline root is null", projectRoot);
+
+            // We expect /Shared to be an allowable output location:
+            PipeRoot sharedRoot = PipelineService.get().getPipelineRootSetting(ContainerManager.getSharedContainer());
+            Assert.assertNotNull("Shared pipeline root is null", sharedRoot);
+
+            // A pipeline job submitted to a project/folder should be able to access files in /Shared
+            doXarTest(
+                    "XarTestJob_UsingShared",
+                    Arrays.asList(
+                            FileUtil.appendPath(projectRoot.getRootFileLike(), org.labkey.api.util.Path.parse("myFileInJobFolder.txt")).toNioPathForWrite().toFile(),
+                            FileUtil.appendPath(sharedRoot.getRootFileLike(), org.labkey.api.util.Path.parse("myFileInSharedFolder.txt")).toNioPathForWrite().toFile()
+                    ),
+                    Arrays.asList(
+                            FileUtil.appendPath(projectRoot.getRootFileLike(), org.labkey.api.util.Path.parse("myOutputFileInJobFolder.txt")).toNioPathForWrite().toFile(),
+                            FileUtil.appendPath(sharedRoot.getRootFileLike(), org.labkey.api.util.Path.parse("myOutputFileInSharedFolder.txt")).toNioPathForWrite().toFile()
+                    )
+            );
+
+            // Now create workbooks in this folder:
+            Container wb1 = ContainerManager.createContainer(project, null, "WB1", null, WorkbookContainerType.NAME, TestContext.get().getUser());
+            Container wb2 = ContainerManager.createContainer(project, null, "WB2", null, WorkbookContainerType.NAME, TestContext.get().getUser());
+
+            PipeRoot wb1Root = PipelineService.get().getPipelineRootSetting(wb1);
+            Assert.assertNotNull("wb1Root is null", wb1Root);
+            PipeRoot wb2Root = PipelineService.get().getPipelineRootSetting(wb2);
+            Assert.assertNotNull("wb2Root is null", wb2Root);
+
+            // A pipeline job submitted to a workbook should be able to reference files in /Shared, the parent folder, or sibling workbooks:
+            doXarTest(
+                    "XarTestJob_AcrossWorkbooks",
+                    Arrays.asList(
+                            FileUtil.appendPath(projectRoot.getRootFileLike(), org.labkey.api.util.Path.parse("myFileInJobFolder.txt")).toNioPathForWrite().toFile(),
+                            FileUtil.appendPath(sharedRoot.getRootFileLike(), org.labkey.api.util.Path.parse("myFileInSharedFolder.txt")).toNioPathForWrite().toFile(),
+                            FileUtil.appendPath(wb1Root.getRootFileLike(), org.labkey.api.util.Path.parse("myFileInWB1Folder.txt")).toNioPathForWrite().toFile(),
+                            FileUtil.appendPath(wb2Root.getRootFileLike(), org.labkey.api.util.Path.parse("myFileInWB2Folder.txt")).toNioPathForWrite().toFile()
+                    ),
+                    Arrays.asList(
+                            FileUtil.appendPath(projectRoot.getRootFileLike(), org.labkey.api.util.Path.parse("myOutputFileInJobFolder.txt")).toNioPathForWrite().toFile(),
+                            FileUtil.appendPath(sharedRoot.getRootFileLike(), org.labkey.api.util.Path.parse("myOutputFileInSharedFolder.txt")).toNioPathForWrite().toFile(),
+                            FileUtil.appendPath(wb1Root.getRootFileLike(), org.labkey.api.util.Path.parse("myOutputFileInWB1Folder.txt")).toNioPathForWrite().toFile(),
+                            FileUtil.appendPath(wb2Root.getRootFileLike(), org.labkey.api.util.Path.parse("myOutputFileInWB2Folder.txt")).toNioPathForWrite().toFile()
+                    ),
+                    wb2
+            );
         }
 
         @Test
         public void xarTestRelativePaths() throws Exception
         {
-            // NOTE: these will get converted to absolute paths by the pipeline code when they are saved:
-            doXarTest(
-                    "XarTestJob_QuestionablePaths",
-                    Arrays.asList(new File("../../../root/myFile.txt")),
-                    Arrays.asList(new File("../../../users/root/anotherFile.txt"))
-            );
+            // NOTE: these will get converted to absolute paths by the pipeline code when they are saved, so this passes right now:
+            //Assert.assertThrows("Maybe LabKey shouldn't allow this", Exception.class, () -> {
+                doXarTest(
+                        "XarTestJob_QuestionablePaths",
+                        Arrays.asList(new File("../../../root/myFile.txt")),
+                        Arrays.asList(new File("../../../users/root/anotherFile.txt"))
+                );
+            //});
         }
 
         private void doXarTest(String jobName, List<File> inputFiles, List<File> outputFiles) throws Exception
         {
-            Container c = ContainerManager.getForPath(PROJECT_NAME);
+            doXarTest(jobName, inputFiles, outputFiles, ContainerManager.getForPath(PROJECT_NAME));
+        }
+
+        private void doXarTest(String jobName, List<File> inputFiles, List<File> outputFiles, Container c) throws Exception
+        {
             PipelineJob job1 = XarTestPipelineJob.createJob(c, TestContext.get().getUser(), jobName, inputFiles, outputFiles);
             PipelineService.get().queueJob(job1);
             long start = System.currentTimeMillis();
