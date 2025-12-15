@@ -69,7 +69,8 @@ public class InternalViewForm extends ViewForm
         }
         else
         {
-            if (view.getCustomViewOwner().intValue() != context.getUser().getUserId())
+            // must be owner or site admin
+            if (!context.getUser().hasSiteAdminPermission() && view.getCustomViewOwner().intValue() != context.getUser().getUserId())
             {
                 throw new UnauthorizedException();
             }
