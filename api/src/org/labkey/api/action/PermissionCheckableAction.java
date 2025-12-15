@@ -151,6 +151,8 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         Container c = context.getContainer();
         User user = context.getUser();
         Class<? extends Controller> actionClass = getClass();
+        if (LOG.isDebugEnabled())
+            LOG.debug(actionClass.getName() + ": checking permissions for user " + (user == null ? "<null>" : user.getName() + " (impersonated=" + user.isImpersonated() + ")"));
 
         if (!actionClass.isAnnotationPresent(IgnoresForbiddenProjectCheck.class))
             c.throwIfForbiddenProject(user);
