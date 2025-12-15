@@ -879,7 +879,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                     _log.debug("indexing docid: " + r.getDocumentId());
             }
 
-            return index(r.getDocumentId(), doc);
+            boolean result = index(r.getDocumentId(), doc);
+
+            if (_log.isDebugEnabled())
+            {
+                if (_log.isTraceEnabled())
+                    _log.trace("finished indexing " + dump(r, doc));
+                else
+                    _log.debug("finished indexing docid: " + r.getDocumentId());
+            }
+
+            return result;
         }
         catch (NoClassDefFoundError err)
         {

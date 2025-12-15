@@ -47,7 +47,6 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -125,9 +124,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     {
         ExpSampleType st = getSampleType();
         if (st != null)
-            return new QueryRowReference(getContainer(), SamplesSchema.SCHEMA_SAMPLES, st.getName(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
+            return new QueryRowReference(getContainer(), SamplesSchema.SCHEMA_SAMPLES, st.getName(), ExpMaterialTable.Column.RowId.fieldKey(), getRowId());
         else
-            return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
+            return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), ExpMaterialTable.Column.RowId.fieldKey(), getRowId());
     }
 
     @Override
@@ -246,7 +245,10 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
-    public Double getAvailableAliquotVolume() { return _object.getAvailableAliquotVolume(); }
+    public Double getAvailableAliquotVolume()
+    {
+        return _object.getAvailableAliquotVolume();
+    }
 
     @Override
     public String getAliquotUnit()
@@ -319,7 +321,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             TableInfo ti = st.getTinfo();
             if (null != ti)
             {
-                new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (rowId, lsid, name) SELECT ?, ?, ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getRowId(), getLSID(), getName(), getLSID());
+                new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (rowId, name) SELECT ?, ? WHERE NOT EXISTS (SELECT rowId FROM " + ti + " WHERE rowId = ?)", getRowId(), getName(), getRowId());
                 SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, SampleTypeServiceImpl.SampleChangeType.insert);
             }
         }
@@ -335,12 +337,24 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         if (getRowId() == 0)
         {
             isInsert = true;
-            long longId = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), ExperimentService.get().getTinfoMaterial().getDbSequenceName("RowId")).next();
+            long longId = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), ExperimentService.get().getTinfoMaterial().getDbSequenceName(ExpMaterialTable.Column.RowId.name())).next();
             if (longId > Integer.MAX_VALUE)
                 throw new OutOfRangeException(longId, 0, Integer.MAX_VALUE);
             setRowId((int) longId);
             if (null == getRootMaterialRowId())
                 setRootMaterialRowId(getRowId());
+
+            // If a MaterialSourceId is not yet specified and the material is associated with a sample type,
+            // then set the MaterialSourceId to the sample type
+            if (null == _object.getMaterialSourceId())
+            {
+                ExpSampleType st = getSampleType();
+                if (st != null)
+                {
+                    assert st.getLSID().equals(getCpasType());
+                    _object.setMaterialSourceId(st.getRowId());
+                }
+            }
         }
         super.save(user, table, true, isInsert);
     }
@@ -507,8 +521,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         var ti = null == st ? null : st.getTinfo();
         if (null != ti)
         {
-            var selector = new TableSelector(ti, TableSelector.ALL_COLUMNS, new SimpleFilter(FieldKey.fromParts("lsid"), getLSID()), null);
-            selector.forEach(rs ->
+            getObjectPropertiesSelector(ti).forEach(rs ->
             {
                 for (ColumnInfo c : ti.getColumns())
                 {
@@ -556,9 +569,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
-    public Object getProperty(DomainProperty prop)
+    protected TableSelector getObjectPropertiesSelector(@NotNull TableInfo table)
     {
-        return super.getProperty(prop);
+        return new TableSelector(table, new SimpleFilter(ExpMaterialTable.Column.RowId.fieldKey(), getRowId()), null);
     }
 
     @Override
@@ -629,8 +642,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 values.remove(key);
             }
             TableInfo tableInfo = st.getTinfo();
-            ColumnInfo lsidCol = tableInfo.getColumn(ExpMaterialTable.Column.LSID.name());
-            Table.update(user, st.getTinfo(), converted, lsidCol, getLSID(), null, Level.WARN);
+            ColumnInfo rowIdCol = tableInfo.getColumn(ExpMaterialTable.Column.RowId.fieldKey());
+            Table.update(user, tableInfo, converted, rowIdCol, getRowId(), null, Level.WARN);
         }
         for (var entry : values.entrySet())
         {

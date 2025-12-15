@@ -10,8 +10,8 @@ import {
     verifyRequiredLineageInsertUpdate
 } from './utils';
 import { caseInsensitive, SAMPLE_TYPE_DESIGNER_ROLE } from '@labkey/components';
+const { importSample, insertRows } = ExperimentCRUDUtils;
 
-// @ts-expect-error process is not available in a browser environment
 const server = hookServer(process.env);
 const PROJECT_NAME = 'SampleTypeCrudJestProject';
 
@@ -314,7 +314,6 @@ describe('Sample Type Designer', () => {
 
 });
 
-
 describe('Import with update / merge', () => {
     it ("Issue 52922: Blank sample id in the file are getting ignored in update from file", async () => {
         const BLANK_KEY_UPDATE_ERROR = 'Name value not provided';
@@ -387,9 +386,110 @@ describe('Import with update / merge', () => {
         expect(successResp.text.indexOf('"success" : true') > -1).toBeTruthy();
 
     });
+    it('Support RowId lookup and renaming', async () => {
+        const dataType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
+        const initialName = 'RowIdLookupTest';
+        const newName = 'RenamedViaRowId';
 
+        const rows = await insertRows(server, [{
+            name: initialName,
+            description: 'Original Description'
+        }], 'samples', dataType, topFolderOptions, editorUserOptions);
+
+        // Capture the generated RowId from the insert response
+        // Note: Assuming standard response structure where 'rows' array contains the returned data
+        const rowId = caseInsensitive(rows[0], 'rowId');
+        expect(rowId).toBeDefined();
+
+        // Test: Update Description using ONLY RowId (Name column omitted)
+        // This validates that the importer can lookup by RowId alone
+        let updateTsv = `RowId\tDescription\n${rowId}\tUpdated Description via RowId`;
+        let resp = await importSample(server, updateTsv, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
+        expect(resp.text.indexOf('"success" : true') > -1).toBeTruthy();
+
+        // Test: Update Name using RowId + Name (Renaming)
+        // This validates that providing both keys looks up by RowId and updates the Name
+        updateTsv = `RowId\tName\n${rowId}\t${newName}`;
+        resp = await importSample(server, updateTsv, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
+        expect(resp.text.indexOf('"success" : true') > -1).toBeTruthy();
+
+        // Verify Rename: Attempt to update using the NEW Name
+        // If the rename worked, looking up by the new Name should succeed
+        updateTsv = `Name\tDescription\n${newName}\tDescription after rename`;
+        resp = await importSample(server, updateTsv, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
+        expect(resp.text.indexOf('"success" : true') > -1).toBeTruthy();
+
+        // Verify Rename: Attempt to update using the OLD Name
+        // This should now fail because the record was renamed, proving the old key is gone
+        updateTsv = `Name\tDescription\n${initialName}\tShould fail`;
+        resp = await importSample(server, updateTsv, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
+        expect(resp.text.indexOf('Sample does not exist') > -1).toBeTruthy();
+    });
+    it('Error when supplying RowId during MERGE', async () => {
+        const dataType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
+        const sampleName = 'MergeRowIdErrorTest';
+
+        const rows = await insertRows(server, [{
+            name: sampleName,
+            description: 'created'
+        }], 'samples', dataType, topFolderOptions, editorUserOptions);
+
+        const rowId = caseInsensitive(rows[0], 'rowId');
+        expect(rowId).toBeDefined();
+
+        // MERGE with RowId should fail
+        // Even if the name matches and rowId is correct, the presence of the column should trigger the error
+        const mergeTsv = `RowId\tName\tDescription\n${rowId}\t${sampleName}\tShould fail`;
+        const resp = await importSample(server, mergeTsv, dataType, 'MERGE', topFolderOptions, editorUserOptions);
+
+        // Check for the specific error message
+        expect(resp.text.indexOf('RowId is not accepted when merging samples. Specify only the sample name instead.') > -1).toBeTruthy();
+    });
+    it('Error when supplying LSID without RowId or Name', async () => {
+        const dataType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
+        const sampleName = 'LsidKeyErrorTest';
+        const LSID_UPDATE_ERROR = "LSID is no longer accepted as a key for sample update. Specify a RowId or Name instead.";
+        const LSID_MERGE_ERROR = "LSID is no longer accepted as a key for sample merge. Specify a RowId or Name instead.";
+
+        const rows = await insertRows(server, [{
+            name: sampleName,
+            description: 'created'
+        }], 'samples', dataType, topFolderOptions, editorUserOptions);
+
+        const lsid = caseInsensitive(rows[0], 'lsid');
+        expect(lsid).toBeDefined();
+
+        // UPDATE: LSID provided as key (Name/RowId missing)
+        const tsv = `LSID\tDescription\n${lsid}\tShould fail`;
+        let resp = await importSample(server, tsv, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
+        expect(resp.text.indexOf(LSID_UPDATE_ERROR) > -1).toBeTruthy();
+
+        // MERGE: LSID provided as key (Name/RowId missing)
+        resp = await importSample(server, tsv, dataType, 'MERGE', topFolderOptions, editorUserOptions);
+        expect(resp.text.indexOf(LSID_MERGE_ERROR) > -1).toBeTruthy();
+    });
+    it('Cross-type update should not be accepted', async () => {
+        // Arrange
+        const firstSampleType = SAMPLE_ALIQUOT_IMPORT_TYPE_NAME;
+        const secondSampleType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
+        const [firstSample] = await insertRows(server, [{ name: 'FL-1', description: 'Yolo' }], 'samples', firstSampleType, topFolderOptions, editorUserOptions);
+        const [secondSample] = await insertRows(server, [{ name: 'SP-10', description: 'Hello' }], 'samples', secondSampleType, topFolderOptions, editorUserOptions);
+        const firstRowId = caseInsensitive(firstSample, 'rowId');
+        const secondRowId = caseInsensitive(secondSample, 'rowId');
+
+        let tsv = 'RowId\tSampleType\tDescription\n';
+        tsv += `${firstRowId}\t${firstSampleType}\tShould be FL-1\n`;
+        tsv += `${secondRowId}\t${secondSampleType}\tShould be SP-10\n`;
+
+        // Act
+        const resp = await importSample(server, tsv, firstSampleType, 'UPDATE', topFolderOptions, editorUserOptions);
+
+        // Assert
+        // Verify that these rows are not updated
+        expect(resp.body.success).toEqual(false);
+        expect(resp.body.exception).toContain('Sample does not exist: (RowId)');
+    })
 });
-
 
 describe('Aliquot crud', () => {
     describe("SMAliquotImportExportTest", () => {
@@ -1070,25 +1170,41 @@ describe('Amount/Unit CRUD', () => {
         expect(errorMsg.text).toContain(NEGATIVE_ERROR);
         errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\n" + dataName + "\t-1.1\tkg", dataType, "MERGE", topFolderOptions, editorUserOptions);
         expect(errorMsg.text).toContain(NEGATIVE_ERROR);
+
+        // Using row-by-row
         await server.post('query', 'updateRows', {
             schemaName: 'samples',
             queryName: dataType,
             rows: [{
                 Amount: -1,
                 Units: 'kg',
-                rowId: sampleRowId
+                rowId: sampleRowId,
+            },{
+                rowId: sampleRowId,
             }]
         }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
             const errorResp = JSON.parse(result.text);
-            // Note that the row by row update error is different from DIB. This is OK for now since we are planning to deprecate row by row updates.
-            expect(errorResp['exception']).toContain("Value '-1000.0 (g)' for field 'Amount' is invalid. Amounts must be non-negative.");
+            expect(errorResp['exception']).toContain("Value '-1' for field 'Amount' is invalid. Amounts must be non-negative.");
+        });
+
+        // Using data iterator
+        await server.post('query', 'updateRows', {
+            schemaName: 'samples',
+            queryName: dataType,
+            rows: [{
+                Amount: -1,
+                Units: 'kg',
+                rowId: sampleRowId,
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toContain("Value '-1' for field 'Amount' is invalid. Amounts must be non-negative.");
         });
 
         errorMsg = await ExperimentCRUDUtils.importCrossTypeData(server, "Name\tStoredAmount\tUnits\tSampleType\nData1\t-1.1\tkg\t" + dataType ,'UPDATE', topFolderOptions, adminOptions, true);
         expect(errorMsg.text).toContain(NEGATIVE_ERROR);
         errorMsg = await ExperimentCRUDUtils.importCrossTypeData(server, "Name\tStoredAmount\tUnits\tSampleType\nData1\t-1.1\tkg\t" + dataType ,'MERGE', topFolderOptions, adminOptions, true);
         expect(errorMsg.text).toContain(NEGATIVE_ERROR);
-
     });
 
     it ("Test units conversion on insert/update", async () => {

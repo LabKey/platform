@@ -269,17 +269,24 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         context.setInsertOption(forImport);
         context.setConfigParameters(configParameters);
         configureDataIteratorContext(context);
-        if (configParameters != null)
-        {
-            try
-            {
-                configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
-            } catch (UnsupportedOperationException ignore)
-            {
-                // configParameters is immutable, likely originated from a junit test
-            }
-        }
+        recordDataIteratorUsed(configParameters);
+
         return context;
+    }
+
+    protected void recordDataIteratorUsed(@Nullable Map<Enum, Object> configParameters)
+    {
+        if (configParameters == null)
+            return;
+
+        try
+        {
+            configParameters.put(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
+        }
+        catch (UnsupportedOperationException ignore)
+        {
+            // configParameters is immutable, likely originated from a junit test
+        }
     }
 
     /**
@@ -424,22 +431,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         if (context.getErrors().hasErrors())
             return 0;
-        else
-        {
-            if (!context.isCrossTypeImport() && !context.isCrossFolderImport()) // audit handled at table level
-            {
-                AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
-                String auditUserComment = (String) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment);
-                boolean skipAuditLevelCheck = false;
-                if (context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.BulkLoad))
-                {
-                    if (getQueryTable().getEffectiveAuditBehavior(auditType) == AuditBehaviorType.DETAILED) // allow ETL to demote audit level for bulkLoad
-                        skipAuditLevelCheck = true;
-                }
-                getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), context.getInsertOption().auditAction, count, auditType, auditUserComment, skipAuditLevelCheck);
-            }
-            return count;
-        }
+
+        if (!context.getConfigParameterBoolean(ConfigParameters.SkipAuditSummary))
+            _addSummaryAuditEvent(container, user, context, count);
+
+        return count;
     }
 
     protected DataIteratorBuilder preTriggerDataIterator(DataIteratorBuilder in, DataIteratorContext context)
@@ -451,7 +447,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         return out;
     }
-
 
     /** this is extracted so subclasses can add wrap */
     protected int _pump(DataIteratorBuilder etl, final @Nullable ArrayList<Map<String, Object>> rows,  DataIteratorContext context)
@@ -808,7 +803,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     // used by updateRows to check if all rows have the same set of keys
     // prepared statement can only be used to updateRows if all rows have the same set of keys
-    protected boolean hasUniformKeys(List<Map<String, Object>> rowsToUpdate)
+    protected static boolean hasUniformKeys(List<Map<String, Object>> rowsToUpdate)
     {
         if (rowsToUpdate == null || rowsToUpdate.isEmpty())
             return false;
@@ -1155,6 +1150,22 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         return file;
+    }
+
+    protected void _addSummaryAuditEvent(Container container, User user, DataIteratorContext context, int count)
+    {
+        if (!context.isCrossTypeImport() && !context.isCrossFolderImport()) // audit handled at table level
+        {
+            AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
+            String auditUserComment = (String) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment);
+            boolean skipAuditLevelCheck = false;
+            if (context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.BulkLoad))
+            {
+                if (getQueryTable().getEffectiveAuditBehavior(auditType) == AuditBehaviorType.DETAILED) // allow ETL to demote audit level for bulkLoad
+                    skipAuditLevelCheck = true;
+            }
+            getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), context.getInsertOption().auditAction, count, auditType, auditUserComment, skipAuditLevelCheck);
+        }
     }
 
     /**

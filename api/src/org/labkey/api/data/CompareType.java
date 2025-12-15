@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -984,7 +985,8 @@ public abstract class CompareType
                     JSONArray array = new JSONArray(value);
                     for (int i = 0; i < array.length(); i++)
                     {
-                        collection.add(Objects.toString(array.get(i), null));
+                        Object jsonVal = array.get(i);
+                        collection.add(JSONObject.NULL.equals(jsonVal) ? null : Objects.toString(jsonVal));
                     }
                 }
                 catch (JSONException ex)

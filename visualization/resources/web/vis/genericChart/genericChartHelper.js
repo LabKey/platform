@@ -1053,6 +1053,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             layers = [], clipRect,
             emptyTextFn = function(){return '';},
             plotConfig = {
+                legendPos: chartConfig.legendPos,
                 renderTo: renderTo,
                 rendererType: 'd3',
                 width: chartConfig.width,
@@ -1184,7 +1185,18 @@ LABKEY.vis.GenericChartHelper = new function(){
             scales.x.tickLabelMax = Math.floor((plotConfig.width - 300) / 30);
         }
 
-        var margins = _getPlotMargins(renderType, scales, aes, data, plotConfig, chartConfig);
+        var wrapLines = _wrapXAxisTickTextLines(plotConfig, chartConfig, aes, scales, data);
+        var margins = _getPlotMargins(renderType, data, chartConfig, wrapLines);
+
+        if (wrapLines > 1) {
+            labels = {
+                ...labels,
+                // x-axis position defaults to 50 (see D3Renderer.renderLabel) but if we're wrapping our tick labels
+                // then they will probably collide with the label, so we add 20 to hopefully not collide.
+                x: { value: labels.x.value, position: 70 }
+            }
+        }
+
         if (LABKEY.Utils.isObject(margins)) {
             plotConfig.margins = margins;
         }
@@ -1440,37 +1452,47 @@ LABKEY.vis.GenericChartHelper = new function(){
         });
     };
 
-    var _wrapXAxisTickTextLines = function(scales, plotConfig, maxTickLength, data) {
-        if (scales.x && scales.x.scaleType === 'discrete') {
-            var tickCount = scales.x && scales.x.tickLabelMax ? Math.min(scales.x.tickLabelMax, data.length) : data.length;
+    var _wrapXAxisTickTextLines = function(plotConfig, chartConfig, aes, scales, data) {
+        if (LABKEY.Utils.isArray(data) && scales.x && scales.x.scaleType === 'discrete') {
+            let maxTickLength = 0;
+            $.each(data, function(idx, d) {
+                const val = LABKEY.Utils.isFunction(aes.x) ? aes.x(d) : d[aes.x];
+                const subVal = LABKEY.Utils.isFunction(aes.xSub) ? aes.xSub(d) : d[aes.xSub];
+                if (LABKEY.Utils.isString(subVal)) {
+                    maxTickLength = Math.max(maxTickLength, subVal.length);
+                } else if (LABKEY.Utils.isString(val)) {
+                    maxTickLength = Math.max(maxTickLength, val.length);
+                }
+            });
+
+            let tickCount = scales.x && scales.x.tickLabelMax ? Math.min(scales.x.tickLabelMax, data.length) : data.length;
             // after 10 tick labels, we switch to rotating the label, so use that as the max here
             tickCount = Math.min(tickCount, 10);
-            var approxTickLabelWidth = plotConfig.width / tickCount;
-            return Math.max(1, Math.floor((maxTickLength * 8) / approxTickLabelWidth));
+            const approxTickLabelWidth = plotConfig.width / tickCount;
+            return Math.max(1, Math.floor((maxTickLength * 12) / approxTickLabelWidth));
         }
 
         return 1;
     };
 
-    var _getPlotMargins = function(renderType, scales, aes, data, plotConfig, chartConfig) {
-        var margins = {};
+    const chartConfigHasLegend = (chartConfig) => {
+        const { color, series, shape, xSub } = chartConfig.measures;
+        return !!(color || series || shape || xSub);
+    }
+
+    const _getPlotMargins = function(renderType, data, chartConfig, wrapLines) {
+        const margins = {};
+        const hasLegend = chartConfigHasLegend(chartConfig);
 
         // issue 29690: for bar and box plots, set default bottom margin based on the number of labels and the max label length
         if (LABKEY.Utils.isArray(data)) {
-            var maxLen = 0;
-            $.each(data, function(idx, d) {
-                var val = LABKEY.Utils.isFunction(aes.x) ? aes.x(d) : d[aes.x];
-                var subVal = LABKEY.Utils.isFunction(aes.xSub) ? aes.xSub(d) : d[aes.xSub];
-                if (LABKEY.Utils.isString(subVal)) {
-                    maxLen = Math.max(maxLen, subVal.length);
-                } else if (LABKEY.Utils.isString(val)) {
-                    maxLen = Math.max(maxLen, val.length);
-                }
-            });
-
-            var wrapLines = _wrapXAxisTickTextLines(scales, plotConfig, maxLen, data);
-            // min bottom margin: 50, max bottom margin: 150
-            margins.bottom = Math.min(150, 60 + ((wrapLines - 1) * 25));
+            if (chartConfig.legendPos === 'bottom' && hasLegend) {
+                // min bottom margin: 170, max bottom margin: 360
+                margins.bottom = Math.min(360, 170 + ((wrapLines - 1) * 25));
+            } else {
+                // min bottom margin: 80, max bottom margin: 150
+                margins.bottom = Math.min(150, 80 + ((wrapLines - 1) * 25));
+            }
         }
 
         // issue 31857: allow custom margins to be set in Chart Layout dialog

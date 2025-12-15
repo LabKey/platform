@@ -892,7 +892,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         return scope;
     }
 
-    private void dropTableIndices(Domain domain, Set<String> indexNames)
+    public void dropTableIndices(Domain domain, Set<String> indexNames)
     {
         DbScope scope = validateDomain(domain);
 
