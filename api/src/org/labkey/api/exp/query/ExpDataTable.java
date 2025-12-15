@@ -21,6 +21,7 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.query.FieldKey;
 
 public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
 {
@@ -60,7 +61,12 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
         LastIndexed,
         Inputs,
         Outputs,
-        Properties
+        Properties;
+
+        public FieldKey fieldKey()
+        {
+            return FieldKey.fromParts(name());
+        }
     }
 
     void setExperiment(ExpExperiment experiment);

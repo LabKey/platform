@@ -881,7 +881,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     }
 
     @Override
-    public Set<String> getAltMergeKeys(DataIteratorContext context)
+    public @Nullable Set<String> getAltMergeKeys(DataIteratorContext context)
     {
         if (context.getInsertOption().updateOnly && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
             return getAltKeysForUpdate();
@@ -893,6 +893,38 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public Set<String> getAltKeysForUpdate()
     {
         return DATA_CLASS_ALT_UPDATE_KEYS;
+    }
+
+    @Override
+    public @Nullable Set<String> getExistingRecordKeyColumnNames(DataIteratorContext context, Map<String, Integer> colNameMap)
+    {
+        Set<String> keyColumnNames = new CaseInsensitiveHashSet();
+
+        if (context.getInsertOption().allowUpdate)
+        {
+            boolean isUpdateUsingLsid = context.getInsertOption().updateOnly &&
+                    colNameMap.containsKey(ExpDataTable.Column.LSID.name()) &&
+                    context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
+
+            if (isUpdateUsingLsid)
+                keyColumnNames.add(Column.LSID.name());
+            else
+            {
+                Set<String> altMergeKeys = getAltMergeKeys(context);
+                if (altMergeKeys != null)
+                    keyColumnNames.addAll(altMergeKeys);
+            }
+        }
+        else
+            keyColumnNames.add(Column.LSID.name());
+
+        return keyColumnNames.isEmpty() ? null : keyColumnNames;
+    }
+
+    @Override
+    public @Nullable Set<String> getExistingRecordSharedKeyColumnNames()
+    {
+        return CaseInsensitiveHashSet.of(Column.ClassId.name());
     }
 
     @Override
@@ -918,7 +950,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         TableInfo propertiesTable = _dataClassDataTableSupplier.get();
         try
         {
-            PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _dataClass, getUserSchema().getContainer(), getUserSchema().getUser(), _dataClass.getImportAliases(), null);
+            PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _dataClass, getUserSchema().getContainer(), getUserSchema().getUser(), _dataClass.getImportAliases());
             ExperimentServiceImpl experimentServiceImpl = ExperimentServiceImpl.get();
             final var scope = propertiesTable.getSchema().getScope();
             SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(getContainer(), SearchService.PRIORITY.modified);
