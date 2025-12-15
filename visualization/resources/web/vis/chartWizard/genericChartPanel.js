@@ -1033,6 +1033,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (this.savedReportInfo?.visualizationConfig?.chartConfig?.legendPos)
             config.legendPos = this.savedReportInfo.visualizationConfig.chartConfig.legendPos;
 
+        // Apps can set series specific measuresOptions, so we use the measuresOptions if it's set on the original config
+        if (this.savedReportInfo?.visualizationConfig?.chartConfig?.measuresOptions)
+            config.measuresOptions = this.savedReportInfo.visualizationConfig.chartConfig.measuresOptions;
+
         return config;
     },
 
