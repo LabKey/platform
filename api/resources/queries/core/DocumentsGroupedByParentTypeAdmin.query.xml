@@ -1,0 +1,14 @@
+<query xmlns="http://labkey.org/data/xml/query" hidden="true">
+    <metadata>
+        <tables xmlns="http://labkey.org/data/xml">
+            <table tableName="DocumentsGroupedByParentType" tableDbType="NOT_IN_DB">
+                <columns>
+                    <column columnName="Count">
+                        <url replaceMissing="blankValue">admin-attachmentsForType.view?core.ParentType~eq=${ParentType}&amp;core.containerFilterName=${containerFilterName}</url>
+                        <formatString>#,##0</formatString>
+                    </column>
+                </columns>
+            </table>
+        </tables>
+    </metadata>
+</query>

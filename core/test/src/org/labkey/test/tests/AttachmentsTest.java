@@ -27,6 +27,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.test.util.PermissionsHelper.READER_ROLE;
+
 /**
  * Regression coverage for attachment parent types in audit log and attachment queries. <a href="https://github.com/LabKey/platform/pull/7231">Related PR</a>
  * Create a few issues, wiki pages, and messages with attachments. Verify that rows containing the expected parent
@@ -108,9 +110,17 @@ public class AttachmentsTest extends BaseWebDriverTest
     @Test
     public void testParentTypesInAttachmentQueries() throws ParseException
     {
+        testQueries();
+        impersonateRole("Troubleshooter");
+        testQueries();
+        stopImpersonating();
+    }
+
+    private void testQueries() throws ParseException
+    {
         ShowAdminPage.beginAt(this);
         clickAndWait(Locator.linkWithText("Attachments"));
-        DataRegionTable table = DataRegionTable.DataRegion(getDriver()).withName("query").waitFor();
+        DataRegionTable table = DataRegionTable.DataRegion(getDriver()).withName("core").waitFor();
         assertTextPresent("DocumentsGroupedByParentType");
         verifyRow(table, "IssueComment", ISSUE_ATTACHMENTS);
         int wikiCount = verifyRow(table, "Wiki", WIKI_ATTACHMENTS);
@@ -118,7 +128,7 @@ public class AttachmentsTest extends BaseWebDriverTest
 
         int wikiRowIndex = table.getRowIndex("ParentType", "Wiki");
         clickAndWait(table.link(wikiRowIndex, "Count"));
-        table = DataRegionTable.DataRegion(getDriver()).withName("query").waitFor();
+        table = DataRegionTable.DataRegion(getDriver()).withName("core").waitFor();
         assertTextPresent("Documents");
         if (wikiCount > 100)
             table.assertPaginationText(1, 100, wikiCount);
@@ -135,5 +145,17 @@ public class AttachmentsTest extends BaseWebDriverTest
         int count = df.parse(countString).intValue();
         Assert.assertTrue("Count for " + parentType + " was less than expected: " + count + " vs. " + minimum, count >= minimum);
         return count;
+    }
+
+    @Test
+    public void testNoDocumentsTableForReaders()
+    {
+        goToProjectHome();
+        goToSchemaBrowser();
+        // Admins should have access to core.Documents
+        viewQueryData("core", "Documents");
+        // Readers should have no access
+        impersonateRole(READER_ROLE);
+        assertTextPresent("The specified query 'Documents' does not exist in schema 'core'");
     }
 }

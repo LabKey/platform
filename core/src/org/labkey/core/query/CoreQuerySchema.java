@@ -17,7 +17,30 @@ package org.labkey.core.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerTable;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.MultiValuedLookupColumn;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.NullColumnInfo;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -119,6 +142,7 @@ public class CoreQuerySchema extends UserSchema
             CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, DATA_STATES_TABLE_NAME,
             VIEW_CATEGORY_TABLE_NAME, MISSING_VALUE_INDICATOR_TABLE_NAME);
 
+        // Don't show troubleshooters the query in the schema browser since query-execute.view requires read permissions
         if (getUser().hasRootPermission(ApplicationAdminPermission.class))
             names.add(DOCUMENTS_TABLE_NAME);
 
@@ -180,7 +204,8 @@ public class CoreQuerySchema extends UserSchema
             return getMVIndicatorTable(cf);
         if (SHORT_URL_TABLE_NAME.equalsIgnoreCase(name) && ShortUrlTableInfo.canDisplayTable(getUser(), getContainer()))
             return new ShortUrlTableInfo(this);
-        if (DOCUMENTS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(ApplicationAdminPermission.class))
+        // Allow troubleshooters to view this query from the admin console
+        if (DOCUMENTS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(TroubleshooterPermission.class))
             return new DocumentsTable(this, cf);
 
         return null;
