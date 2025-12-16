@@ -2562,17 +2562,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             pathSel.append('title').text(geom.hoverTextAes.getValue);
         }
 
-        const dashedVal = "12, 3";
-        const dottedVal = "2, 2";
         if (geom.lineTypeAes && geom.lineTypeScale) {
             pathSel.style("stroke-dasharray", function(d) {
-                const lineType = geom.lineTypeScale.scale(geom.lineTypeAes.getValue(d.data) + geom.layerName);
-                return lineType === 'dashed' ? dashedVal : (lineType === 'dotted' ? dottedVal : undefined);
+                return geom.lineTypeScale.scale(geom.lineTypeAes.getValue(d.data) + geom.layerName);
             });
         } else if (geom.dashed) {
-            layer.selectAll('path').style("stroke-dasharray", dashedVal);
+            layer.selectAll('path').style("stroke-dasharray", "12, 3");
         } else if (geom.dotted) {
-            layer.selectAll('path').style("stroke-dasharray", dottedVal);
+            layer.selectAll('path').style("stroke-dasharray", "2, 2");
         }
 
         bindMouseEvents(pathSel, geom, layer);
