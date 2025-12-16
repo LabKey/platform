@@ -35,6 +35,7 @@ public interface AntiVirusService
 {
     // NOTE purposefully this is not the same as the standard test file: ...EICAR-STANDARD-ANTIVIRUS-TEST-FILE...
     String TEST_VIRUS_CONTENT="X5O!P%@AP[4\\PZX54(P^)7CC)7}$LABKEY-ANTIVIRUS-TEST-FILE!$H+H*";
+    String MALICIOUS_FILE_ERROR_MESSAGE = "For security reasons, we did not upload this file. Please contact your internal IT or Information Security department for assistance in dealing with this potentially harmful file.";
 
     static @Nullable AntiVirusService get()
     {

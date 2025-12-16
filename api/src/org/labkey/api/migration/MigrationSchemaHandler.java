@@ -12,6 +12,7 @@ import org.labkey.api.migration.DatabaseMigrationService.DataFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
 
+import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -57,4 +58,6 @@ public interface MigrationSchemaHandler
     @NotNull Collection<AttachmentType> getAttachmentTypes();
 
     void afterMigration(DatabaseMigrationConfiguration configuration);
+
+    void writeFilePaths(FilePathWriter writer, Set<GUID> guids);
 }

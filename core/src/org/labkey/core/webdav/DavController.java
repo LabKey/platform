@@ -3002,7 +3002,7 @@ public class DavController extends SpringActionController
                 if (result.result == AntiVirusService.Result.CONFIGURATION_ERROR)
                     throw new ConfigurationException(result.message);
                 else
-                    throw new DavException(WebdavStatus.SC_BAD_REQUEST, result.message);
+                    throw new DavException(WebdavStatus.SC_BAD_REQUEST, result.message + ". " + AntiVirusService.MALICIOUS_FILE_ERROR_MESSAGE);
             }
         }
 

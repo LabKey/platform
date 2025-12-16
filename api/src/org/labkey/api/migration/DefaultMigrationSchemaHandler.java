@@ -306,15 +306,15 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         if (unseen.isEmpty())
             LOG.info("All AttachmentTypes have been seen");
         else
-            throw new ConfigurationException("These AttachmentTypes have not been seen: " + unseen.stream().map(type -> type.getClass().getSimpleName()).collect(Collectors.joining(", ")));
+            LOG.error("These AttachmentTypes have not been seen: {}", unseen.stream().map(type -> type.getClass().getSimpleName()).collect(Collectors.joining(", ")));
 
         // Shut down the attachment JobRunner
         LOG.info("Waiting for attachments background transfer to complete");
         ATTACHMENT_JOB_RUNNER.shutdown();
-        if (ATTACHMENT_JOB_RUNNER.awaitTermination(1, TimeUnit.HOURS))
+        if (ATTACHMENT_JOB_RUNNER.awaitTermination(2, TimeUnit.HOURS))
             LOG.info("Attachments background transfer is complete");
         else
-            LOG.error("Attachments background transfer did not complete after one hour! Giving up.");
+            LOG.error("Attachments background transfer did not complete after two hours! Giving up.");
     }
 
     @Override
@@ -330,6 +330,11 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
 
     @Override
     public void afterMigration(DatabaseMigrationConfiguration configuration)
+    {
+    }
+
+    @Override
+    public void writeFilePaths(FilePathWriter writer, Set<GUID> guids)
     {
     }
 }
