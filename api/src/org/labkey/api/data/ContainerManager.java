@@ -2627,8 +2627,7 @@ public class ContainerManager
         if (!_targetContainer.hasPermission(user, permClass))
         {
             String _queryName = queryName == null ? "this table" : "'" + queryName + "'";
-            errors.reject(ERROR_GENERIC, "You do not have permission to move rows from " + _queryName + " to the target container: " + targetIdOrPath + ".");
-            return null;
+            throw new UnauthorizedException("You do not have permission to move rows from " + _queryName + " to the target container: " + targetIdOrPath + ".");
         }
 
         if (!isValidTargetContainer(sourceContainer, _targetContainer))
