@@ -1147,6 +1147,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                             const layerAes = { x: 'x', y: 'y' };
                             if (hasSeries) {
                                 layerAes.pathColor = function () { return trendline.name };
+                                layerAes.lineType = function () { return trendline.name };
                             }
 
                             layerAes.hoverText = generateTrendlinePathHover(trendline);
