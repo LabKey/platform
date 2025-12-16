@@ -24,11 +24,9 @@ import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
@@ -47,6 +45,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.ExperimentModule;
 import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -76,15 +75,15 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
 
     private String _jobName;
     private FileLike _webserverJobDir;
-    private List<File> _inputFiles;
-    private List<File> _outputFiles;
+    private List<FileLike> _inputFiles;
+    private List<FileLike> _outputFiles;
 
     // Default constructor for serialization
     protected XarTestPipelineJob()
     {
     }
 
-    private XarTestPipelineJob(Container c, User user, PipeRoot pipeRoot, String jobName, List<File> inputFiles, List<File> outputFiles)
+    private XarTestPipelineJob(Container c, User user, PipeRoot pipeRoot, String jobName, List<FileLike> inputFiles, List<FileLike> outputFiles)
     {
         super(PROVIDER_NAME, new ViewBackgroundInfo(c, user, null), pipeRoot);
 
@@ -99,8 +98,7 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
 
     private static Path getOrCreateLogFile(Container c, String jobName)
     {
-        // TODO: There must be a more convenient way to work with FileLike...
-        return(FileUtil.appendPath(getOrCreateBaseDir(c, jobName), new org.labkey.api.util.Path(FileUtil.makeLegalName(jobName) + ".log")).toNioPathForWrite());
+        return getOrCreateBaseDir(c, jobName).resolveChild(FileUtil.makeLegalName(jobName) + ".log").toNioPathForWrite();
     }
 
     private static FileLike getOrCreateBaseDir(Container c, String jobName)
@@ -111,7 +109,7 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
             throw new IllegalStateException("Pipeline root not found for: " + c.getPath());
         }
 
-        FileLike baseDir = FileUtil.appendPath(pipeRoot.getRootFileLike(), new org.labkey.api.util.Path(FileUtil.makeLegalName(jobName)));
+        FileLike baseDir = pipeRoot.resolvePathToFileLike(FileUtil.makeLegalName(jobName));
         if (!baseDir.exists())
         {
             try
@@ -127,7 +125,7 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
         return baseDir;
     }
 
-    public static XarTestPipelineJob createJob(Container c, User user, String jobName, List<File> inputFiles, List<File> outputFiles) throws PipelineValidationException
+    public static XarTestPipelineJob createJob(Container c, User user, String jobName, List<FileLike> inputFiles, List<FileLike> outputFiles)
     {
         PipeRoot pipelineRoot = PipelineService.get().getPipelineRootSetting(c);
 
@@ -231,20 +229,16 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
             {
                 @NotNull
                 @Override
-                public RecordedActionSet run() throws PipelineJobException
+                public RecordedActionSet run()
                 {
                     // The purpose of this is to specify files outside the LK folder root:
                     RecordedAction action = new RecordedAction(XarTestTaskFactory.class.getName());
 
                     if (getJob() instanceof XarTestPipelineJob xj)
                     {
-                        xj._inputFiles.forEach(x -> {
-                            action.addInput(x.toURI(), INPUT_ROLE);
-                        });
+                        xj._inputFiles.forEach(x -> action.addInput(x.toURI(), INPUT_ROLE));
 
-                        xj._outputFiles.forEach(x -> {
-                            action.addOutput(x.toURI(), OUTPUT_ROLE, false);
-                        });
+                        xj._outputFiles.forEach(x -> action.addOutput(x.toURI(), OUTPUT_ROLE, false));
                     }
 
                     return new RecordedActionSet(action);
@@ -352,13 +346,13 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
     @Override
     public @Nullable File getJobInfoFile()
     {
-        return FileUtil.appendName(_webserverJobDir.toNioPathForWrite().toFile(), FileUtil.makeLegalName(_jobName) + ".job.json");
+        return _webserverJobDir.resolveChild(FileUtil.makeLegalName(_jobName) + ".job.json").toNioPathForWrite().toFile();
     }
 
     @Override
     public List<File> getInputFiles()
     {
-        return _inputFiles;
+        return _inputFiles.stream().map(FileLike::toNioPathForRead).map(Path::toFile).toList();
     }
 
     @Override
@@ -372,7 +366,7 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
         private static final String PROJECT_NAME = "XarPipelineTestProject";
 
         @BeforeClass
-        public static void initialSetUp() throws Exception
+        public static void initialSetUp()
         {
             //pre-clean
             cleanup();
@@ -413,10 +407,60 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
         @Test
         public void xarTest() throws Exception
         {
+            // For testing, intentionally use the real file system room to test relative paths
+            File root = new File("/");
             doXarTest(
                     "XarTestJob1",
-                    Arrays.asList(new File("/arbitrary/path/outside/lkRoot/myFile.txt")),
-                    Arrays.asList(new File("/another/arbitrary/path/outside/lkRoot/myFile.txt"))
+                    Arrays.asList(FileSystemLike.wrapFile(root, new File("/arbitrary/path/outside/lkRoot/myFile.txt"))),
+                    Arrays.asList(FileSystemLike.wrapFile(root, new File("/another/arbitrary/path/outside/lkRoot/myFile.txt")))
+            );
+
+            Container project = ContainerManager.getForPath(PROJECT_NAME);
+            PipeRoot projectRoot = PipelineService.get().getPipelineRootSetting(project);
+            Assert.assertNotNull(PROJECT_NAME + " pipeline root is null", projectRoot);
+
+            // We expect /Shared to be an allowable output location:
+            PipeRoot sharedRoot = PipelineService.get().getPipelineRootSetting(ContainerManager.getSharedContainer());
+            Assert.assertNotNull("Shared pipeline root is null", sharedRoot);
+
+            // A pipeline job submitted to a project/folder should be able to access files in /Shared
+            doXarTest(
+                    "XarTestJob_UsingShared",
+                    Arrays.asList(
+                            projectRoot.resolvePathToFileLike("myFileInJobFolder.txt"),
+                            sharedRoot.resolvePathToFileLike("myFileInSharedFolder.txt")
+                    ),
+                    Arrays.asList(
+                            projectRoot.resolvePathToFileLike("myOutputFileInJobFolder.txt"),
+                            sharedRoot.resolvePathToFileLike("myOutputFileInSharedFolder.txt")
+                    )
+            );
+
+            // Now create workbooks in this folder:
+            Container wb1 = ContainerManager.createContainer(project, null, "WB1", null, WorkbookContainerType.NAME, TestContext.get().getUser());
+            Container wb2 = ContainerManager.createContainer(project, null, "WB2", null, WorkbookContainerType.NAME, TestContext.get().getUser());
+
+            PipeRoot wb1Root = PipelineService.get().getPipelineRootSetting(wb1);
+            Assert.assertNotNull("wb1Root is null", wb1Root);
+            PipeRoot wb2Root = PipelineService.get().getPipelineRootSetting(wb2);
+            Assert.assertNotNull("wb2Root is null", wb2Root);
+
+            // A pipeline job submitted to a workbook should be able to reference files in /Shared, the parent folder, or sibling workbooks:
+            doXarTest(
+                    "XarTestJob_AcrossWorkbooks",
+                    Arrays.asList(
+                            projectRoot.resolvePathToFileLike("myFileInJobFolder.txt"),
+                            sharedRoot.resolvePathToFileLike("myFileInSharedFolder.txt"),
+                            wb1Root.resolvePathToFileLike("myFileInWB1Folder.txt"),
+                            wb2Root.resolvePathToFileLike("myFileInWB2Folder.txt")
+                    ),
+                    Arrays.asList(
+                            projectRoot.resolvePathToFileLike("myOutputFileInJobFolder.txt"),
+                            sharedRoot.resolvePathToFileLike("myOutputFileInSharedFolder.txt"),
+                            wb1Root.resolvePathToFileLike("myOutputFileInWB1Folder.txt"),
+                            wb2Root.resolvePathToFileLike("myOutputFileInWB2Folder.txt")
+                    ),
+                    wb2
             );
 
             Container project = ContainerManager.getForPath(PROJECT_NAME);
@@ -481,7 +525,7 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
             //});
         }
 
-        private void doXarTest(String jobName, List<File> inputFiles, List<File> outputFiles) throws Exception
+        private void doXarTest(String jobName, List<FileLike> inputFiles, List<FileLike> outputFiles, Container c) throws Exception
         {
             doXarTest(jobName, inputFiles, outputFiles, ContainerManager.getForPath(PROJECT_NAME));
         }
