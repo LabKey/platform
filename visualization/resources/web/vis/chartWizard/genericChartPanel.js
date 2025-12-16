@@ -899,7 +899,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             // If we're not in edit mode or if this is the first load we need to only load the minimum amount of data.
             columns = [];
-            var measures = this.getChartConfig().measures;
+            var config = this.getChartConfig();
+            var measures = config.measures;
 
             if (measures.x)
             {
@@ -929,6 +930,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             if (this.autoColumnName) {
                 columns.push(this.autoColumnName.toString());
+            }
+
+            if (config.geomOptions.trendlineParameters) {
+                columns.push(config.geomOptions.trendlineParameters);
             }
 
             Ext4.each(['ySub', 'xSub', 'color', 'shape', 'series'], function(name) {
