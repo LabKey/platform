@@ -150,18 +150,12 @@ public class AttachmentsTest extends BaseWebDriverTest
     @Test
     public void testNoDocumentsTableForReaders()
     {
-        try
-        {
-            goToProjectHome();
-            goToSchemaBrowser();
-            // Admins should have access to core.Documents
-            viewQueryData("core", "Documents");
-            // Readers should have no access
-            impersonateRole(READER_ROLE);
-        }
-        finally
-        {
-            stopImpersonating();
-        }
+        goToProjectHome();
+        goToSchemaBrowser();
+        // Admins should have access to core.Documents
+        viewQueryData("core", "Documents");
+        // Readers should have no access
+        impersonateRole(READER_ROLE);
+        assertTextPresent("The specified query 'Documents' does not exist in schema 'core'");
     }
 }
