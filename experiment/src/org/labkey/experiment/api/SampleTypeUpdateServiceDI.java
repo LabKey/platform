@@ -1254,12 +1254,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!hasPermission(user, ReadPermission.class))
             throw new UnauthorizedException("You do not have permission to read data from this table.");
 
-        // Determine if there is a filter we can use to get all the rows in a single query
-        SimpleFilter filter = getRowsFilter(keys);
-        if (filter != null)
-            return new TableSelector(getQueryTable(), filter, null).getMapCollection().stream().toList();
-
-        // Otherwise, fallback to querying for each row individually
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (Map<String, Object> k : keys)
         {
@@ -1268,59 +1262,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 result.add(materialMap);
         }
         return result;
-    }
-
-    private @Nullable SimpleFilter getRowsFilter(List<Map<String, Object>> keys) throws QueryUpdateServiceException
-    {
-        List<Long> rowIds = new ArrayList<>();
-        List<String> lsids = new ArrayList<>();
-        Map<Long, List<String>> namesBySourceId = new HashMap<>();
-        int nameCount = 0;
-
-        // Each row could be keyed differently
-        for (Map<String, Object> row : keys)
-        {
-            Long rowId = getMaterialRowId(row);
-            if (rowId != null)
-            {
-                rowIds.add(rowId);
-                continue;
-            }
-
-            String lsid = getMaterialLsid(row);
-            if (lsid != null)
-            {
-                lsids.add(lsid);
-                continue;
-            }
-
-            String name = getMaterialName(row);
-            Long materialSourceId = getMaterialSourceId(row);
-            if (name != null && materialSourceId != null)
-            {
-                namesBySourceId.computeIfAbsent(materialSourceId, k -> new ArrayList<>()).add(name);
-                nameCount++;
-                continue;
-            }
-
-            throw new QueryUpdateServiceException("Either RowId, LSID, or Name and MaterialSourceId is required to get Sample Type Material.");
-        }
-
-        // But we can optimize if they all share the same filter
-        SimpleFilter filter = null;
-        if (rowIds.size() == keys.size())
-            filter = new SimpleFilter(RowId.fieldKey(), rowIds, CompareType.IN);
-        else if (lsids.size() == keys.size())
-            filter = new SimpleFilter(LSID.fieldKey(), lsids, CompareType.IN);
-        else if (nameCount == keys.size() && namesBySourceId.size() == 1)
-        {
-            // If all rows are being queried by name and share the same material source id, use a single filter
-            Map.Entry<Long, List<String>> entry = namesBySourceId.entrySet().iterator().next();
-            filter = new SimpleFilter(MaterialSourceId.fieldKey(), entry.getKey());
-            filter.addCondition(Name.fieldKey(), entry.getValue(), CompareType.IN);
-        }
-
-        return filter;
     }
 
     @Override

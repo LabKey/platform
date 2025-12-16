@@ -29,8 +29,8 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentParentType;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentWriter;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -93,10 +93,8 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.AbstractDocumentResource;
@@ -104,7 +102,6 @@ import org.labkey.api.webdav.AbstractWebdavResourceCollection;
 import org.labkey.api.webdav.DavException;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.core.admin.AdminController;
 import org.labkey.core.query.AttachmentAuditProvider;
 import org.springframework.http.ContentDisposition;
 import org.springframework.mock.web.MockMultipartFile;
@@ -762,129 +759,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
-    public HttpView<?> getAdminView(ActionURL currentUrl)
-    {
-        String requestedType = currentUrl.getParameter("type");
-        AttachmentParentType attachmentParentType = null != requestedType ? ATTACHMENT_TYPE_MAP.get(requestedType) : null;
-
-        if (null == attachmentParentType)
-        {
-            boolean findAttachmentParents = "1".equals(currentUrl.getParameter("find"));
-
-            // The first query lists all the attachment types and the attachment counts for each. A separate select from
-            // core.Documents for each type is needed to associate the Type values with the associated rows.
-            List<SQLFragment> selectStatements = new LinkedList<>();
-
-            for (AttachmentParentType type : getAttachmentParentTypes())
-            {
-                SQLFragment selectStatement = new SQLFragment();
-
-                // Adding unique column RowId ensures we get the proper count
-                selectStatement.append("SELECT RowId, CAST(").appendValue(type.getUniqueName()).append(" AS VARCHAR(500)) AS Type FROM ")
-                    .append(CoreSchema.getInstance().getTableInfoDocuments(), "d")
-                    .append(" WHERE ");
-                addAndVerifyWhereSql(type, selectStatement);
-                selectStatement.append("\n");
-
-                selectStatements.add(selectStatement);
-            }
-
-            SQLFragment allSql = new SQLFragment("SELECT Type, COUNT(*) AS Count FROM (\n");
-            allSql.append(SQLFragment.join(selectStatements, "UNION\n"));
-            allSql.append(") u\nGROUP BY Type\nORDER BY Type");
-            ActionURL linkUrl = currentUrl.clone().deleteParameters().addParameter("type", null);
-
-            // The second query shows all attachments that we can't associate with a type. We just need to assemble a big
-            // WHERE NOT clause that ORs the conditions from every registered type.
-            SQLFragment whereSql = new SQLFragment();
-            String sep = "";
-
-            for (AttachmentParentType type : getAttachmentParentTypes())
-            {
-                whereSql.append(sep);
-                sep = " OR";
-                whereSql.append("\n(");
-                addAndVerifyWhereSql(type, whereSql);
-                whereSql.append(")");
-            }
-
-            SQLFragment unknownSql = new SQLFragment("SELECT d.Container, c.Name, d.Parent, d.DocumentName");
-
-            if (findAttachmentParents)
-                unknownSql.append(", e.TableName");
-
-            unknownSql.append(" FROM core.Documents d\n");
-            unknownSql.append("INNER JOIN core.Containers c ON c.EntityId = d.Container\n");
-
-            Set<String> schemasToIgnore = Sets.newCaseInsensitiveHashSet(currentUrl.getParameterValues("ignore"));
-
-            if (findAttachmentParents)
-            {
-                unknownSql.append("LEFT OUTER JOIN (\n");
-                addSelectAllEntityIdsSql(unknownSql, schemasToIgnore);
-                unknownSql.append(") e ON e.EntityId = d.Parent\n");
-            }
-
-            unknownSql.append("WHERE NOT (");
-            unknownSql.append(whereSql);
-            unknownSql.append(")\n");
-            unknownSql.append("ORDER BY Container, Parent, DocumentName");
-
-            WebPartView<?> unknownView = getResultSetView(unknownSql, "Unknown Attachments", null);
-            NavTree navMenu = new NavTree();
-
-            if (!findAttachmentParents)
-            {
-                navMenu.addChild(new NavTree("Search for Attachment Parents (Be Patient)",
-                    new ActionURL(AdminController.AttachmentsAction.class, ContainerManager.getRoot()).addParameter("find", 1).addParameter("ignore", "Audit"))
-                );
-            }
-            else
-            {
-                navMenu.addChild(new NavTree("Remove TableName Column",
-                    new ActionURL(AdminController.AttachmentsAction.class, ContainerManager.getRoot()))
-                );
-
-                if (schemasToIgnore.isEmpty())
-                {
-                    navMenu.addChild(new NavTree("Ignore Audit Schema",
-                        new ActionURL(AdminController.AttachmentsAction.class, ContainerManager.getRoot()).addParameter("find", 1).addParameter("ignore", "Audit"))
-                    );
-                }
-                else
-                {
-                    navMenu.addChild(new NavTree("Include All Schemas",
-                        new ActionURL(AdminController.AttachmentsAction.class, ContainerManager.getRoot()).addParameter("find", 1))
-                    );
-                }
-            }
-            unknownView.setNavMenu(navMenu);
-
-            return new VBox(getResultSetView(allSql, "Attachment Types and Counts", linkUrl), unknownView);
-        }
-        else
-        {
-            // This query lists all the documents associated with a single type.
-            SQLFragment oneTypeSql = new SQLFragment("SELECT d.Container, c.Name, d.Parent, d.DocumentName FROM core.Documents d\n" +
-                "INNER JOIN core.Containers c ON c.EntityId = d.Container\n" +
-                "WHERE ");
-            addAndVerifyWhereSql(attachmentParentType, oneTypeSql);
-            oneTypeSql.append("\nORDER BY Container, Parent, DocumentName");
-
-            return getResultSetView(oneTypeSql, attachmentParentType.getUniqueName() + " Attachments", null);
-        }
-    }
-
-    private void addAndVerifyWhereSql(AttachmentParentType attachmentType, SQLFragment sql)
-    {
-        int initialLength = sql.length();
-        attachmentType.addWhereSql(sql, "d.Parent", "d.DocumentName");
-        if (initialLength == sql.length())
-            throw new UnsupportedOperationException("AttachmentType: '" + attachmentType.getUniqueName() + "' did not update attachment WHERE clause.");
-    }
-
-    @Override
-    // Joins each row of core.Documents to the table(s) (if any) that contain an entityid matching the document's parent
+    // Joins each row of core.Documents to the table(s) (if any) that contain an EntityId matching the document's parent
     public WebPartView<?> getFindAttachmentParentsView()
     {
         SQLFragment sql = new SQLFragment("SELECT RowId, CreatedBy, Created, ModifiedBy, Modified, Container, DocumentName, TableName FROM core.Documents LEFT OUTER JOIN (\n");
