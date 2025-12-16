@@ -859,7 +859,7 @@ public class NameGenerator
                 return false;
         }
 
-        return ExperimentService.get().getDataClass(container, user, dataType) != null;
+        return ExperimentService.get().getDataClass(container, dataType, true) != null;
     }
 
     private Object getParentLookupTokenPreview(String currentDataType, FieldKey fkTok, String inputPrefix, @Nullable String inputDataType, @Nullable NameExpressionAncestorPartOption ancestorPartOption, String lookupField, User user, Map<String, String> dataClassNames, Map<String, String> sampleTypeNames)
@@ -924,12 +924,12 @@ public class NameGenerator
         {
             if (!StringUtils.isEmpty(inputDataType))
             {
-                ExpDataClass dataClass = ExperimentService.get().getDataClass(_container, user, inputDataType);
+                ExpDataClass dataClass = ExperimentService.get().getDataClass(_container, inputDataType, true);
                 if (dataClass != null)
                     dataTypes.add(dataClass);
             }
             else
-                dataTypes.addAll(ExperimentService.get().getDataClasses(_container, user, true));
+                dataTypes.addAll(ExperimentService.get().getDataClasses(_container, true));
         }
 
         boolean isCurrentDataType = inputDataType != null && inputDataType.equals(currentDataType);
@@ -1114,7 +1114,7 @@ public class NameGenerator
 
         if (_container != null)
         {
-            for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(_container, user, true))
+            for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(_container, true))
             {
                 dataClassLSIDs.put(dataClass.getName(), dataClass.getLSID());
                 dataClassNames.put(dataClass.getLSID(), dataClass.getName());

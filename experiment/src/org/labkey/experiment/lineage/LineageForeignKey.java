@@ -110,7 +110,7 @@ public class LineageForeignKey extends AbstractForeignKey
             @Override
             List<? extends ExpObject> getItems(UserSchema s)
             {
-                return ExperimentService.get().getDataClasses(s.getContainer(), s.getUser(), true);
+                return ExperimentService.get().getDataClasses(s.getContainer(), true);
             }
         },
         Material("Materials", ExpLineageOptions.LineageExpType.Material)

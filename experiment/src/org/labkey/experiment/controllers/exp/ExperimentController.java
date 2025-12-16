@@ -1320,13 +1320,13 @@ public class ExperimentController extends SpringActionController
 
             if (getName() != null)
             {
-                dataClass = ExperimentServiceImpl.get().getDataClass(getContainer(), getUser(), getName());
+                dataClass = ExperimentServiceImpl.get().getDataClass(getContainer(), getName(), true);
                 if (dataClass == null)
                     throw new NotFoundException("No data class found for name '" + getName() + "'.");
             }
             else if (getRowId() > 0)
             {
-                dataClass = ExperimentServiceImpl.get().getDataClass(getContainer(), getUser(), getRowId());
+                dataClass = ExperimentServiceImpl.get().getDataClass(getContainer(), getRowId(), true);
             }
 
             if (dataClass == null)
@@ -1517,7 +1517,7 @@ public class ExperimentController extends SpringActionController
             List<ExpDataClass> dataClasses = new ArrayList<>();
             for (long rowId : deleteForm.getIds(false))
             {
-                ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(getContainer(), getUser(), rowId);
+                ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(getContainer(), rowId, true);
                 if (dataClass != null)
                 {
                     dataClasses.add(dataClass);
@@ -1634,7 +1634,7 @@ public class ExperimentController extends SpringActionController
 
             if (StringUtils.isBlank(name))
                 errors.reject(ERROR_MSG, "DataClass template selection is required.");
-            else if (ExperimentService.get().getDataClass(getContainer(), getUser(), name) != null)
+            else if (ExperimentService.get().getDataClass(getContainer(), name, true) != null)
                 errors.reject(ERROR_MSG, "DataClass '" + name + "' already exists.");
 
         }
@@ -4555,7 +4555,7 @@ public class ExperimentController extends SpringActionController
         @Override
         protected Set<String> getLineageImportAliases() throws IOException
         {
-            ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(getContainer(), getUser(), _form.getQueryName());
+            ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(getContainer(), _form.getQueryName(), true);
             return new CaseInsensitiveHashSet(dataClass.getImportAliases().keySet());
         }
 
@@ -4623,7 +4623,7 @@ public class ExperimentController extends SpringActionController
                 errors.reject(ERROR_REQUIRED, "Data class name is required");
             else
             {
-                ExpDataClass dataClass = ExperimentService.get().getDataClass(getContainer(), getUser(), queryForm.getQueryName());
+                ExpDataClass dataClass = ExperimentService.get().getDataClass(getContainer(), queryForm.getQueryName(), true);
                 if (dataClass == null)
                 {
                     errors.reject(ERROR_GENERIC, "Data class '" + queryForm.getQueryName() + " not found.");
@@ -7400,7 +7400,7 @@ public class ExperimentController extends SpringActionController
         {
             List<Map<String, Object>> notInIndex = new ArrayList<>(100);
 
-            List<? extends ExpDataClass> list = ExperimentService.get().getDataClasses(getContainer(), getUser(), false);
+            List<? extends ExpDataClass> list = ExperimentService.get().getDataClasses(getContainer(), false);
             for (ExpDataClass dc : list)
             {
                 for (ExpData d : dc.getDatas())

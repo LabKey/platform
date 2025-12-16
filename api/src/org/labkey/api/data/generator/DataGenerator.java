@@ -349,7 +349,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         List<String> dataClassParents = new ArrayList<>(config.getDataClassParents());
         // Default to using all types in the container
         if (dataClassParents.isEmpty())
-            dataClassParents.addAll(ExperimentService.get().getDataClasses(getContainer(), getUser(), false).stream().map(ExpDataClass::getName).toList());
+            dataClassParents.addAll(ExperimentService.get().getDataClasses(getContainer(), false).stream().map(ExpDataClass::getName).toList());
         for (ExpSampleType sampleType : getSampleTypes(_config.getSampleTypeNames()))
         {
             _log.info(String.format("Generating %d samples for sample type '%s'.", numSamples, sampleType.getName()));
@@ -702,7 +702,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         {
             parentInput = "DataInputs";
             parentQueryNames.forEach(parentQueryName -> {
-                ExpObject parentObject = ExperimentService.get().getDataClass(_container, _user, parentQueryName);
+                ExpObject parentObject = ExperimentService.get().getDataClass(_container, parentQueryName, true);
                 if (parentObject != null)
                     parentObjects.add(parentObject);
             });

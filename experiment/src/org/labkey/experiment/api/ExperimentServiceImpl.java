@@ -1713,7 +1713,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public List<ExpDataClassImpl> getDataClasses(@NotNull Container container, User user, boolean includeProjectAndShared)
+    public List<ExpDataClassImpl> getDataClasses(@NotNull Container container, boolean includeProjectAndShared)
     {
         SortedSet<DataClass> classes = new TreeSet<>();
         List<String> containerIds = createContainerList(container, includeProjectAndShared);
@@ -1730,7 +1730,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public ExpDataClassImpl getDataClass(@NotNull Container c, @NotNull String dataClassName)
     {
-        return getDataClass(c, false, dataClassName);
+        return getDataClass(c, dataClassName, false);
     }
 
     public ExpDataClassImpl getDataClassByObjectId(Long objectId)
@@ -1743,24 +1743,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpProtocol getEffectiveProtocol(Container definitionContainer, User user, String schemaName, Date effectiveDate, ContainerFilter cf)
-    {
-        Long legacyObjectId = getObjectIdWithLegacyName(schemaName, ExperimentServiceImpl.getNamespacePrefix(ExpProtocol.class), effectiveDate, definitionContainer, cf);
-        if (legacyObjectId != null)
-            return getExpProtocol(legacyObjectId);
-
-        ExpProtocol protocol = getExpProtocol(definitionContainer, schemaName, cf);
-
-        if (protocol != null && protocol.getCreated().compareTo(effectiveDate) <= 0)
-            return protocol;
-
-        return null;
-    }
-
-    @Override
     public @Nullable ExpDataClass getEffectiveDataClass(
         @NotNull Container definitionContainer,
-        @NotNull User user,
         @NotNull String dataClassName,
         @NotNull Date effectiveDate,
         @Nullable ContainerFilter cf
@@ -1771,7 +1755,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return getDataClassByObjectId(legacyObjectId);
 
         boolean includeProjectAndShared = cf != null && cf.getType() != ContainerFilter.Type.Current;
-        ExpDataClassImpl dataClass = getDataClass(definitionContainer, includeProjectAndShared, dataClassName);
+        ExpDataClassImpl dataClass = getDataClass(definitionContainer, dataClassName, includeProjectAndShared);
         if (dataClass != null && dataClass.getCreated().compareTo(effectiveDate) <= 0)
             return dataClass;
 
@@ -1779,12 +1763,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpDataClassImpl getDataClass(@NotNull Container c, @NotNull User user, @NotNull String dataClassName)
-    {
-        return getDataClass(c, true, dataClassName);
-    }
-
-    private ExpDataClassImpl getDataClass(@NotNull Container c, boolean includeProjectAndShared, String dataClassName)
+    public ExpDataClassImpl getDataClass(@NotNull Container c, @NotNull String dataClassName, boolean includeProjectAndShared)
     {
         return getDataClass(c, includeProjectAndShared, (dataClass -> dataClass.getName().equalsIgnoreCase(dataClassName)));
     }
@@ -1796,12 +1775,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpDataClassImpl getDataClass(@NotNull Container c, @NotNull User user, long rowId)
-    {
-        return getDataClass(c, rowId, true);
-    }
-
-    private ExpDataClassImpl getDataClass(@NotNull Container c, long rowId, boolean includeProjectAndShared)
+    public ExpDataClassImpl getDataClass(@NotNull Container c, long rowId, boolean includeProjectAndShared)
     {
         return getDataClass(c, includeProjectAndShared, (dataClass -> dataClass.getRowId() == rowId));
     }
@@ -5486,7 +5460,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         List<ExpExperimentImpl> exps = getExperiments(c, false, true, true);
         List<ExpSampleTypeImpl> sampleTypes = ((SampleTypeServiceImpl) SampleTypeService.get()).getSampleTypes(c, false);
-        List<ExpDataClassImpl> dataClasses = getDataClasses(c, user, false);
+        List<ExpDataClassImpl> dataClasses = getDataClasses(c, false);
 
         sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ?";
         long[] protIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Long.class));
@@ -7872,9 +7846,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             domain.setDisabledSystemFields(kind.getDisabledSystemFields(disabledSystemField));
             lowerReservedNames = kind.getReservedPropertyNames(domain, u)
-                    .stream()
-                    .map(String::toLowerCase)
-                    .collect(toSet());
+                .stream()
+                .map(String::toLowerCase)
+                .collect(toSet());
         }
         else
             lowerReservedNames = emptySet();
@@ -8082,7 +8056,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         if (!skipExisting)
         {
-            ExpDataClass existing = getDataClass(c, u, name);
+            ExpDataClass existing = getDataClass(c, name, true);
             if (existing != null)
                 throw new ApiUsageException("DataClass '" + existing.getName() + "' already exists.");
         }
@@ -9212,12 +9186,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private Pair<Long, Long> getParentAliasMetrics(TableInfo tableInfo, String aliasField)
     {
         SQLFragment sql = new SQLFragment("SELECT ")
-                .append(aliasField)
-                .append(" FROM ")
-                .append(tableInfo)
-                .append(" WHERE ")
-                .append(aliasField)
-                .append(" IS NOT NULL");
+            .append(aliasField)
+            .append(" FROM ")
+            .append(tableInfo)
+            .append(" WHERE ")
+            .append(aliasField)
+            .append(" IS NOT NULL");
         List<String> aliases = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(String.class);
 
         Long requiredSampleParentCount = 0L;
@@ -9370,7 +9344,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
             }
         }
-        for (ExpDataClassImpl dataClass : getDataClasses(container, user, true))
+        for (ExpDataClassImpl dataClass : getDataClasses(container, true))
         {
             try
             {
@@ -9395,8 +9369,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         SQLFragment totalSql = new SQLFragment("SELECT COUNT(cur.rowId) FROM ");
         totalSql.append(dataTableInfo, "cur")
-                .append("\nWHERE cpastype = ? ")
-                .add(childCpasType);
+            .append("\nWHERE cpastype = ? ")
+            .add(childCpasType);
 
         if (isSampleChild)
         {
@@ -9410,20 +9384,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT cur.rowId) FROM ");
         sql.append(dataTableInfo, "cur")
-                .append(" LEFT OUTER JOIN ")
-                .append(protocolAppTableInfo, "pa")
-                .append(" ON cur.sourceapplicationid = pa.rowId\n")
-                .append("JOIN ")
-                .append(parentInputTableInfo, "ip")
-                .append(" ON pa.rowId = ip.targetapplicationid\n")
-                .append("JOIN ")
-                .append(parentDataTableInfo, "p")
-                .append(" ON p.rowId = ip.")
-                .append(inputFieldName)
-                .append("\nWHERE cur.cpastype = ? ")
-                .add(childCpasType)
-                .append(" AND p.cpastype = ? ")
-                .add(parentCpasType);
+            .append(" LEFT OUTER JOIN ")
+            .append(protocolAppTableInfo, "pa")
+            .append(" ON cur.sourceapplicationid = pa.rowId\n")
+            .append("JOIN ")
+            .append(parentInputTableInfo, "ip")
+            .append(" ON pa.rowId = ip.targetapplicationid\n")
+            .append("JOIN ")
+            .append(parentDataTableInfo, "p")
+            .append(" ON p.rowId = ip.")
+            .append(inputFieldName)
+            .append("\nWHERE cur.cpastype = ? ")
+            .add(childCpasType)
+            .append(" AND p.cpastype = ? ")
+            .add(parentCpasType);
         if (isSampleChild)
         {
             sql.append(" AND cur.rowId = cur.rootmaterialrowid"); // exclude aliquots
@@ -9488,20 +9462,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return null;
 
         SQLFragment currentFolderCountSql = new SQLFragment()
-                .append(" SELECT COUNT(*) FROM ")
-                .append(tableInfo, "t")
-                .append("\nWHERE Container = ? ")
-                .add(container.getId())
-                .append("\nAND RowId ");
+            .append(" SELECT COUNT(*) FROM ")
+            .append(tableInfo, "t")
+            .append("\nWHERE Container = ? ")
+            .add(container.getId())
+            .append("\nAND RowId ");
         dialect.appendInClauseSql(currentFolderCountSql, rowIds);
         int currentFolderSelectionCount = new SqlSelector(expSchema, currentFolderCountSql).getArrayList(Integer.class).get(0);
 
         SQLFragment crossFolderCountSql = new SQLFragment()
-                .append(" SELECT COUNT(*) FROM ")
-                .append(tableInfo, "t")
-                .append("\nWHERE Container <> ? ")
-                .add(container.getId())
-                .append("\nAND RowId ");
+            .append(" SELECT COUNT(*) FROM ")
+            .append(tableInfo, "t")
+            .append("\nWHERE Container <> ? ")
+            .add(container.getId())
+            .append("\nAND RowId ");
         dialect.appendInClauseSql(crossFolderCountSql, rowIds);
         int crossFolderSelectionCount = new SqlSelector(expSchema, crossFolderCountSql).getArrayList(Integer.class).get(0);
 
@@ -9516,7 +9490,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         TableInfo objectTable = OntologyManager.getTinfoObject();
         SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE objectid IN (SELECT objectid FROM ").append(tableInfo).append(" WHERE rowid ");
+            .append(" WHERE objectid IN (SELECT objectid FROM ").append(tableInfo).append(" WHERE rowid ");
         objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, rowIds);
         objectUpdate.append(")");
         return new SqlExecutor(objectTable.getSchema()).execute(objectUpdate);
@@ -9870,15 +9844,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!targetFile.getParentFile().mkdirs())
             {
                 LOG.warn(String.format("Creation of target directory '%s' to move file '%s' to, for '%s' assay run '%s' (field: '%s') failed.",
-                        targetFile.getParent(),
-                        sourceFile.getAbsolutePath(),
-                        assayName,
-                        runName,
-                        fieldName));
+                    targetFile.getParent(),
+                    sourceFile.getAbsolutePath(),
+                    assayName,
+                    runName,
+                    fieldName
+                ));
                 return false;
             }
         }
-
 
         String changeDetail = String.format("assay '%s' run '%s'", assayName, runName);
         return moveFileLinkFile(sourceFile, targetFile, sourceContainer, user, changeDetail, txAuditEvent, fieldName);

@@ -1976,7 +1976,7 @@ public class ExpDataIterators
                         if (skipExistingAliquotParents)
                             continue;
 
-                        ExpDataClass dataClass = dataClasses.computeIfAbsent(namePart, (name) -> ExperimentService.get().getDataClass(c, user, name));
+                        ExpDataClass dataClass = dataClasses.computeIfAbsent(namePart, (name) -> ExperimentService.get().getDataClass(c, name, true));
                         if (dataClass == null)
                             throw new ValidationException(String.format("Invalid import alias: parent DataClass [%1$s] does not exist or may have been deleted", namePart));
 
@@ -2008,7 +2008,7 @@ public class ExpDataIterators
                 }
                 else if (ExpData.DATA_OUTPUT_CHILD.equalsIgnoreCase(aliasPrefix))
                 {
-                    ExpDataClass dataClass = dataClasses.computeIfAbsent(namePart, (name) -> ExperimentService.get().getDataClass(c, user, name));
+                    ExpDataClass dataClass = dataClasses.computeIfAbsent(namePart, (name) -> ExperimentService.get().getDataClass(c, name, true));
                     if (dataClass == null)
                         throw new ValidationException(String.format("Invalid import alias: child DataClass [%1$s] does not exist or may have been deleted", namePart));
 

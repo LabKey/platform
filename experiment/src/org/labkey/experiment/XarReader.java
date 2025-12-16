@@ -2409,7 +2409,7 @@ public class XarReader extends AbstractXarImporter
         ExpDataClass dc = null;
         if (dataClassName != null)
         {
-            dc = ExperimentService.get().getDataClass(getContainer(), getUser(), dataClassName);
+            dc = ExperimentService.get().getDataClass(getContainer(), dataClassName, true);
             if (dc == null)
                 logErrorAndThrow("DataClass '" + dataClassName + "' not found for protocol input '" + name + "'");
         }

@@ -540,7 +540,7 @@ public class NameGeneratorState implements AutoCloseable
         Map<String, ExpDataClass> dataClasses = getDataClasses();
         ExpObject parentObjectType = isMaterialParent ?
                 sampleTypes.computeIfAbsent(parentTypeName, (name) -> SampleTypeService.get().getSampleType(_container, _user, name))
-                : dataClasses.computeIfAbsent(parentTypeName, (name) -> ExperimentService.get().getDataClass(_container, _user, name));
+                : dataClasses.computeIfAbsent(parentTypeName, (name) -> ExperimentService.get().getDataClass(_container, name, true));
         if (parentObjectType == null)
             throw new RuntimeValidationException("Invalid parent type: " + parentTypeName);
 
