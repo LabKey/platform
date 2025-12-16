@@ -153,6 +153,7 @@ public class AttachmentsTest extends BaseWebDriverTest
         try
         {
             // Readers should have no access to core.Documents
+            goToProjectHome();
             impersonateRole(READER_ROLE);
             viewQueryData("core", "Documents");
         }
