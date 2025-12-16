@@ -41,6 +41,7 @@ import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -549,7 +550,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
             if (null != impersonationProject && !impersonationProject.equals(currentProject))
             {
                 if (shouldThrow)
-                    throw new ForbiddenProjectException("You are not allowed to access this folder while impersonating within a different project.");
+                {
+                    String msg = "You are not allowed to access this folder while impersonating within a different project.";
+                    SecurityLogger.log(msg, user, null, null);
+                    throw new ForbiddenProjectException(msg);
+                }
 
                 return true;
             }
@@ -562,7 +567,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 if (lockState.isLocked() && ContainerManager.LOCKED_PROJECT_HANDLER.isForbidden(currentProject, user, contextualRoles, lockState))
                 {
                     if (shouldThrow)
-                        throw new ForbiddenProjectException("You are not allowed to access this folder; it is " + lockState.getDescription() + ".");
+                    {
+                        String msg = "You are not allowed to access this folder; it is " + lockState.getDescription() + ".";
+                        SecurityLogger.log(msg, user, null, null);
+                        throw new ForbiddenProjectException(msg);
+                    }
 
                     return true;
                 }
