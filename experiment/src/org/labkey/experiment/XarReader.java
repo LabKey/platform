@@ -696,7 +696,7 @@ public class XarReader extends AbstractXarImporter
 
         if (dataClassType.getSampleType() != null)
         {
-            ExpSampleType sampleType = SampleTypeService.get().getSampleType(getContainer(), getUser(), dataClassType.getSampleType());
+            ExpSampleType sampleType = SampleTypeService.get().getSampleType(getContainer(), dataClassType.getSampleType(), true);
             if (sampleType != null)
                 dataClass.setSampleType(sampleType.getRowId());
             else
@@ -2444,7 +2444,7 @@ public class XarReader extends AbstractXarImporter
         ExpSampleType sampleType = null;
         if (sampleTypeName != null)
         {
-            sampleType = SampleTypeService.get().getSampleType(getContainer(), getUser(), sampleTypeName);
+            sampleType = SampleTypeService.get().getSampleType(getContainer(), sampleTypeName, true);
             if (sampleType == null)
                 logErrorAndThrow("SampleSet '" + sampleTypeName + "' not found for protocol input '" + name + "'");
         }

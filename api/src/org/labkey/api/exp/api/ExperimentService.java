@@ -303,7 +303,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpDataClass getDataClass(@NotNull Container definitionContainer, @NotNull String dataClassName);
 
     /**
-     * Get a DataClass by name within scope -- current plus (if <code>includeOtherContainers</code> is true), project and shared
+     * Get a DataClass by name within scope -- current plus, if <code>includeOtherContainers</code> is true, project and shared
      */
     ExpDataClass getDataClass(@NotNull Container scope, @NotNull String dataClassName, boolean includeProjectAndShared);
 
@@ -313,7 +313,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpDataClass getDataClass(@NotNull Container definitionContainer, long rowId);
 
     /**
-     * Get a DataClass by rowId within scope -- current plus (if <code>includeOtherContainers</code> is true), project and shared
+     * Get a DataClass by rowId within scope -- current plus, if <code>includeOtherContainers</code> is true, project and shared
      */
     ExpDataClass getDataClass(@NotNull Container scope, long rowId, boolean includeProjectAndShared);
 

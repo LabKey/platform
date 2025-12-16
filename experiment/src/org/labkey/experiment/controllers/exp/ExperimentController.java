@@ -892,7 +892,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public ModelAndView getView(ExpObjectForm form, BindException errors)
         {
-            _sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getRowId());
+            _sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), form.getRowId(), true);
             if (_sampleType == null && form.getLsid() != null)
             {
                 if (form.getLsid().equalsIgnoreCase("Material") || form.getLsid().equalsIgnoreCase("Sample"))
@@ -909,7 +909,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("No matching sample type found");
             }
 
-            List<ExpSampleTypeImpl> allScopedSampleTypes = (List<ExpSampleTypeImpl>) SampleTypeService.get().getSampleTypes(getContainer(), getUser(), true);
+            List<ExpSampleTypeImpl> allScopedSampleTypes = (List<ExpSampleTypeImpl>) SampleTypeService.get().getSampleTypes(getContainer(), true);
             if (!allScopedSampleTypes.contains(_sampleType))
             {
                 ensureCorrectContainer(getContainer(), _sampleType, getViewContext());
@@ -1626,7 +1626,7 @@ public class ExperimentController extends SpringActionController
                 if (template.getOptions().containsKey("sampleSet"))
                 {
                     String sampleTypeName = template.getOptions().get("sampleSet").toString();
-                    ExpSampleType sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), sampleTypeName);
+                    ExpSampleType sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), sampleTypeName, true);
                     if (sampleType == null)
                         errors.reject(ERROR_MSG, "Unable to find a sample type in this container with name: " + sampleTypeName + ".");
                 }
@@ -4116,7 +4116,7 @@ public class ExperimentController extends SpringActionController
             List<ExpSampleType> sources = new ArrayList<>();
             for (long rowId : deleteForm.getIds(false))
             {
-                ExpSampleType sampleType = SampleTypeService.get().getSampleType(getContainer(), getUser(), rowId);
+                ExpSampleType sampleType = SampleTypeService.get().getSampleType(getContainer(), rowId, true);
                 if (sampleType != null)
                 {
                     sources.add(sampleType);
@@ -4368,7 +4368,7 @@ public class ExperimentController extends SpringActionController
             {
                 if (!_isCrossTypeImport)
                 {
-                    _sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), queryForm.getQueryName());
+                    _sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), queryForm.getQueryName(), true);
                     if (_sampleType == null)
                     {
                         errors.reject(ERROR_GENERIC, "Sample type '" + queryForm.getQueryName() + " not found.");
@@ -4422,7 +4422,7 @@ public class ExperimentController extends SpringActionController
             }
             else
             {
-                ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), _form.getQueryName());
+                ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), _form.getQueryName(), true);
                 aliases.addAll(sampleType.getImportAliases().keySet());
             }
             return aliases;
@@ -5112,7 +5112,7 @@ public class ExperimentController extends SpringActionController
             {
                 throw new NotFoundException("No sampleTypeId parameter specified");
             }
-            ExpSampleType sampleType = SampleTypeService.get().getSampleType(getContainer(), getUser(), rowId.intValue());
+            ExpSampleType sampleType = SampleTypeService.get().getSampleType(getContainer(), rowId.intValue(), true);
             if (sampleType == null)
             {
                 throw new NotFoundException("No such sample type with RowId " + rowId);
@@ -5587,7 +5587,7 @@ public class ExperimentController extends SpringActionController
     private List<ExpSampleType> getUploadableSampleTypes()
     {
         // Make a copy so we can modify it
-        List<ExpSampleType> sampleTypes = new ArrayList<>(SampleTypeService.get().getSampleTypes(getContainer(), getUser(), true));
+        List<ExpSampleType> sampleTypes = new ArrayList<>(SampleTypeService.get().getSampleTypes(getContainer(), true));
         sampleTypes.removeIf(sampleType -> !sampleType.canImportMoreSamples());
         return sampleTypes;
     }
@@ -5618,7 +5618,7 @@ public class ExperimentController extends SpringActionController
             if (form.getTargetSampleTypeId() == 0)
                 throw new NotFoundException("Target sample type required for the derived samples");
 
-            ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleTypeId());
+            ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), form.getTargetSampleTypeId(), true);
             if (sampleType == null)
                 throw new NotFoundException("Could not find sample type with rowId " + form.getTargetSampleTypeId());
 
@@ -5707,7 +5707,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(DeriveMaterialForm form, BindException errors)
         {
-            ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleTypeId());
+            ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), form.getTargetSampleTypeId(), true);
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleType, form.getOutputCount(), getContainer(), getUser());
 
@@ -8206,10 +8206,9 @@ public class ExperimentController extends SpringActionController
             try (var ignore = SpringActionController.ignoreSqlUpdates())
             {
                 Container container = getContainer();
-                User user = getUser();
 
                 List<? extends ExpSampleType> sampleTypes = SampleTypeService.get()
-                        .getSampleTypes(container, user, true);
+                    .getSampleTypes(container, true);
 
                 HtmlStringBuilder builder = HtmlStringBuilder.of();
                 builder.unsafeAppend("<table class=\"DataRegion\"><tr><th>Sample Type</th><th>#Recomputed</th></tr>");
@@ -8222,10 +8221,10 @@ public class ExperimentController extends SpringActionController
                     // we could check "if (0 < updatedCount) refresh(rollup)", but since this is a "manual" usage lets just always refresh
                     SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, update);
                     builder.unsafeAppend("<tr><td>")
-                            .append(sampleType.getName())
-                            .unsafeAppend("</td><td>")
-                            .append(updatedCount)
-                            .unsafeAppend("</td></tr>");
+                        .append(sampleType.getName())
+                        .unsafeAppend("</td><td>")
+                        .append(updatedCount)
+                        .unsafeAppend("</td></tr>");
                 }
 
                 builder.unsafeAppend("</table>");

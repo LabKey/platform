@@ -859,7 +859,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<ExpMaterialImpl> getExpMaterialsByName(@NotNull Collection<String> names, @NotNull String sampleTypeName, @NotNull Container container, User user)
     {
-        ExpSampleType sampleType = SampleTypeService.get().getSampleType(container, user, sampleTypeName);
+        ExpSampleType sampleType = SampleTypeService.get().getSampleType(container, sampleTypeName, true);
         if (sampleType == null)
             return Collections.emptyList();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.Name.name()), names, IN);
@@ -8083,7 +8083,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         if (options.getSampleType() != null)
         {
-            ExpSampleType st = SampleTypeService.get().getSampleType(c, u, options.getSampleType());
+            ExpSampleType st = SampleTypeService.get().getSampleType(c, options.getSampleType(), true);
             if (st == null)
                 throw new ApiUsageException("SampleType '" + options.getSampleType() + "' not found.");
 
@@ -9421,7 +9421,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 String parentCpas = null;
                 if (isParentSamples)
                 {
-                    ExpSampleType sampleTypeParent = SampleTypeService.get().getSampleType(c, u, dataTypeName);
+                    ExpSampleType sampleTypeParent = SampleTypeService.get().getSampleType(c, dataTypeName, true);
                     if (sampleTypeParent != null)
                         parentCpas = sampleTypeParent.getLSID();
                 }
@@ -10012,7 +10012,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return null;
 
         Container c = lookup.getContainer() != null ? lookup.getContainer() : container;
-        return SampleTypeService.get().getSampleType(c, user, lookup.getQueryName());
+        return SampleTypeService.get().getSampleType(c, lookup.getQueryName(), true);
     }
 
     @Override

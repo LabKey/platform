@@ -380,7 +380,7 @@ public class ClosureQueryHelper
             container -> {
                 int totalRows = 0;
                 logger.info("Adding rows to exp.materialAncestors from sample types in container " + container.getPath());
-                for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, null, false))
+                for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, false))
                 {
                     logger.debug("   Adding rows from samples in sampleType " + sampleType.getName());
                     SQLFragment from = new SQLFragment(" FROM exp.material WHERE materialSourceId = ?").add(sampleType.getRowId());
@@ -653,15 +653,15 @@ public class ClosureQueryHelper
                     Collection<? extends ExpObject> getInstances(Container c, User u)
                     {
                         return SampleTypeServiceImpl.get()
-                                .getSampleTypes(c, u,true)
-                                .stream()
-                                .filter(this::isInstance)
-                                .collect(Collectors.toList());
+                            .getSampleTypes(c,true)
+                            .stream()
+                            .filter(this::isInstance)
+                            .collect(Collectors.toList());
                     }
                     @Override
                     ExpObject getInstance(Container c, User u, String name)
                     {
-                        return SampleTypeServiceImpl.get().getSampleType(c, u, name);
+                        return SampleTypeServiceImpl.get().getSampleType(c, name, true);
                     }
                     @Override
                     boolean isInstance(ExpObject expObject)
@@ -718,15 +718,15 @@ public class ClosureQueryHelper
                     Collection<? extends ExpObject> getInstances(Container c, User u)
                     {
                         return SampleTypeServiceImpl.get()
-                                .getSampleTypes(c, u,true)
-                                .stream()
-                                .filter(this::isInstance)
-                                .collect(Collectors.toList());
+                            .getSampleTypes(c,true)
+                            .stream()
+                            .filter(this::isInstance)
+                            .collect(Collectors.toList());
                     }
                     @Override
                     ExpObject getInstance(Container c, User u, String name)
                     {
-                        return SampleTypeServiceImpl.get().getSampleType(c, u, name);
+                        return SampleTypeServiceImpl.get().getSampleType(c, name, true);
                     }
                     @Override
                     boolean isInstance(ExpObject expObject)

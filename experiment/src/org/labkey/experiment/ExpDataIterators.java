@@ -1835,7 +1835,7 @@ public class ExpDataIterators
 
         if (isAliquot && !updateOnly)
         {
-            ExpSampleType sampleType = sampleTypes.computeIfAbsent(dataType, (name) -> SampleTypeService.get().getSampleType(c, user, name));
+            ExpSampleType sampleType = sampleTypes.computeIfAbsent(dataType, (name) -> SampleTypeService.get().getSampleType(c, name, true));
             if (sampleType == null)
                 throw new ValidationException("Invalid sample type: " + dataType);
 
@@ -1910,7 +1910,7 @@ public class ExpDataIterators
                         if (skipExistingAliquotParents)
                             continue;
 
-                        ExpSampleType sampleType = sampleTypes.computeIfAbsent(namePart, (name) -> SampleTypeService.get().getSampleType(c, user, name));
+                        ExpSampleType sampleType = sampleTypes.computeIfAbsent(namePart, (name) -> SampleTypeService.get().getSampleType(c, name, true));
                         if (sampleType == null)
                             throw new ValidationException(String.format("Invalid import alias: parent SampleType [%1$s] does not exist or may have been deleted", namePart));
 
@@ -1937,7 +1937,7 @@ public class ExpDataIterators
                 }
                 else if (ExpMaterial.MATERIAL_OUTPUT_CHILD.equalsIgnoreCase(aliasPrefix))
                 {
-                    ExpSampleType sampleType = sampleTypes.computeIfAbsent(namePart, (name) -> SampleTypeService.get().getSampleType(c, user, name));
+                    ExpSampleType sampleType = sampleTypes.computeIfAbsent(namePart, (name) -> SampleTypeService.get().getSampleType(c, name, true));
                     if (sampleType == null)
                         throw new ValidationException(String.format("Invalid import alias: child SampleType [%1$s] does not exist or may have been deleted", namePart));
 
@@ -2954,7 +2954,7 @@ public class ExpDataIterators
                     {
                         if (_isSamples)
                         {
-                            ExpSampleTypeImpl sampleType = _typeColIndex != null ? (ExpSampleTypeImpl) SampleTypeService.get().getSampleType(targetContainer, _user, typeName) : (ExpSampleTypeImpl) _dataType;
+                            ExpSampleTypeImpl sampleType = _typeColIndex != null ? (ExpSampleTypeImpl) SampleTypeService.get().getSampleType(targetContainer, typeName, true) : (ExpSampleTypeImpl) _dataType;
                             if (sampleType == null)
                                 _context.getErrors().addRowError(new ValidationException(_typeColName + " '" + typeName + "' not found.") );
                             else

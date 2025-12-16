@@ -119,7 +119,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
         if (_ids.isEmpty() && !form.isSampleTypeIds() && null != form.getRowId())
         {
             _ids = getCheckboxIds(getViewContext());
-            _sampleType = SampleTypeService.get().getSampleType(form.getContainer(), form.getUser(), form.getRowId());
+            _sampleType = SampleTypeService.get().getSampleType(form.getContainer(), form.getRowId(), true);
             form.setAutoLinkEnabled(_sampleType != null && _sampleType.getAutoLinkCategory() != null);
         }
         return _ids;

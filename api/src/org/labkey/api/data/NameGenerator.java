@@ -852,7 +852,7 @@ public class NameGenerator
 
         if (isMaterial || isInput)
         {
-            if (SampleTypeService.get().getSampleType(container, user, dataType) != null)
+            if (SampleTypeService.get().getSampleType(container, dataType, true) != null)
                 return true;
 
             if (isMaterial)
@@ -913,7 +913,7 @@ public class NameGenerator
         {
             if (!StringUtils.isEmpty(inputDataType))
             {
-                ExpSampleType sampleType = SampleTypeService.get().getSampleType(_container, user, inputDataType);
+                ExpSampleType sampleType = SampleTypeService.get().getSampleType(_container, inputDataType, true);
                 if (sampleType != null)
                     dataTypes.add(sampleType);
             }

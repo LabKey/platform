@@ -88,7 +88,7 @@ public class SampleStatusFolderImporter extends SampleTypeFolderImporter
                     XarReader typesReader = getXarReader(job, ctx, root, typesXarFile);
                     XarContext xarContext = typesReader.getXarSource().getXarContext();
                     List<String> sampleTypeNames = typesReader.getSampleTypeNames();
-                    List<ExpSampleType> sampleTypes = SampleTypeService.get().getSampleTypes(ctx.getContainer(), ctx.getUser(), false)
+                    List<ExpSampleType> sampleTypes = SampleTypeService.get().getSampleTypes(ctx.getContainer(), false)
                             .stream().filter(sampleType -> sampleTypeNames.contains(sampleType.getName())).collect(Collectors.toList());
 
                     // process any sample status data files
