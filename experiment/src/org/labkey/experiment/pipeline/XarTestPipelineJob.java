@@ -71,7 +71,6 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
 {
     public static final String PROVIDER_NAME = "XarTestPipelineJob Provider";
 
-    private final String _location = PipelineJobService.LocationType.WebServer.name();
     private TaskId _taskPipelineId;
 
     private String _jobName;
@@ -88,7 +87,7 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
     {
         super(PROVIDER_NAME, new ViewBackgroundInfo(c, user, null), pipeRoot);
 
-        _taskPipelineId = getTaskIdForEngine(PipelineJobService.LocationType.WebServer.name());
+        _taskPipelineId = getTaskIdForEngine();
         _webserverJobDir = getOrCreateBaseDir(c, jobName);
         setLogFile(getOrCreateLogFile(c, jobName));
 
@@ -140,19 +139,19 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
         //ensure this TaskFactory is registered:
         try
         {
-            TaskId taskFactoryId = getTaskFactoryId(_location);
+            TaskId taskFactoryId = getTaskFactoryId();
             try
             {
                 if (PipelineJobService.get().getTaskFactory(taskFactoryId) == null)
                 {
-                    registerTaskPipeline(_location);
+                    registerTaskPipeline();
                 }
             }
             catch (NullPointerException e)
             {
                 //this indicates the TaskFactory has not been registered yet
                 getLogger().error("A NullPointerException was thrown in XarTestPipelineJob", e);
-                registerTaskPipeline(_location);
+                registerTaskPipeline();
             }
         }
         catch (CloneNotSupportedException e)
@@ -163,24 +162,24 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
         return super.getActiveTaskId();
     }
 
-    private static TaskId getTaskIdForEngine(String location)
+    private static TaskId getTaskIdForEngine()
     {
-        return new TaskId(XarTestPipelineJob.class, location);
+        return new TaskId(XarTestPipelineJob.class, PipelineJobService.LocationType.WebServer.name());
     }
 
-    private static TaskId getTaskFactoryId(String location)
+    private static TaskId getTaskFactoryId()
     {
-        return new TaskId(XarTestTaskFactory.class, location);
+        return new TaskId(XarTestTaskFactory.class, PipelineJobService.LocationType.WebServer.name());
     }
 
-    public static void registerTaskPipeline(String location) throws CloneNotSupportedException
+    public static void registerTaskPipeline() throws CloneNotSupportedException
     {
         //first register TaskFactory
-        TaskId taskFactoryId = getTaskFactoryId(location);
-        PipelineJobService.get().addTaskFactory(new XarTestTaskFactory(taskFactoryId, location));
+        TaskId taskFactoryId = getTaskFactoryId();
+        PipelineJobService.get().addTaskFactory(new XarTestTaskFactory(taskFactoryId));
 
         //then TaskPipeline
-        TaskId taskPipelineId = getTaskIdForEngine(location);
+        TaskId taskPipelineId = getTaskIdForEngine();
         TaskFactory<?> xarFact = PipelineJobService.get().getTaskFactory(new TaskId(XarGeneratorId.class));
         if (xarFact == null)
         {
@@ -216,11 +215,11 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
 
     private static class XarTestTaskFactory extends AbstractTaskFactory<AbstractTaskFactorySettings, XarTestTaskFactory>
     {
-        public XarTestTaskFactory(TaskId id, String location)
+        public XarTestTaskFactory(TaskId id)
         {
             super(id);
 
-            setLocation(location);
+            setLocation(PipelineJobService.LocationType.WebServer.name());
         }
 
         @Override
