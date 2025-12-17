@@ -230,6 +230,7 @@ import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SubstitutionFormat;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -774,7 +775,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     path = FileUtil.stringToPath(source.getXarContext().getContainer(),
                             source.getCanonicalDataFileURL(FileUtil.pathToString(path)));
-                    pathStr = FileUtil.relativizeUnix(source.getRootPath(), path, false);
+
+                    // Only convert to a relative path if this is a descendant of the root:
+                    path = path.normalize();
+                    if (URIUtil.isDescendant(source.getRootPath().toUri(), path.toUri()))
+                    {
+                        pathStr = FileUtil.relativizeUnix(source.getRootPath(), path, false);
+                    }
+                    else
+                    {
+                        pathStr = FileUtil.pathToString(path);
+                    }
                 }
                 catch (IOException e)
                 {

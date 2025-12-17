@@ -17,7 +17,6 @@ package org.labkey.api.dataiterator;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.query.BatchValidationException;
 
 import java.io.IOException;
@@ -34,7 +33,7 @@ public class Pump implements Runnable
     final BatchValidationException _errors;
     int _errorLimit = Integer.MAX_VALUE;
     long _rowCount = 0;
-    ListImportProgress _progress = null;
+    ImportProgress _progress = null;
 
     public Pump(DataIterator it, DataIteratorContext context)
     {
@@ -50,7 +49,7 @@ public class Pump implements Runnable
         _errors = context.getErrors();
     }
 
-    public void setProgress(ListImportProgress progress)
+    public void setProgress(ImportProgress progress)
     {
         _progress = progress;
     }
