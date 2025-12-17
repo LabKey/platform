@@ -258,6 +258,15 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                     .appendInClause(containers, sourceTable.getSqlDialect())
                     .append(")")
             );
+            case "MaterialAliasMap" -> new AndClause(
+                new InClause(FieldKey.fromParts("Container"), containers),
+                // The below effectively matches the "Material" conditions above, since MaterialAliasMap has an FK to Material
+                new InClause(FieldKey.fromParts("LSID", "Container"), containers),
+                new OrClause(
+                    new CompareClause(FieldKey.fromParts("LSID", "RunId"), CompareType.ISBLANK, null),
+                    new InClause(FieldKey.fromParts("LSID", "RunId", "Container"), containers)
+                )
+            );
             case "ObjectLegacyNames" -> new SQLClause(
                 new SQLFragment("ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container")
                     .appendInClause(containers, sourceTable.getSqlDialect())
