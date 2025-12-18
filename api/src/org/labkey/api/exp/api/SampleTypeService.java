@@ -172,23 +172,15 @@ public interface SampleTypeService
      */
     List<? extends ExpSampleType> getSampleTypes(@NotNull Container container, boolean includeOtherContainers);
 
-    @Deprecated // Temporary just to keep code compiling during migration to new method
-    default List<? extends ExpSampleType> getSampleTypes(@NotNull Container container, User user, boolean includeOtherContainers)
-    {
-        return getSampleTypes(container, includeOtherContainers);
-    }
-
     /**
      * Get a SampleType by name within the definition container.
      */
     ExpSampleType getSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName);
 
     /**
-     * Get a SampleType by name within scope -- current, project, and shared.
-     * Requires a user to check for container read permission.
+     * Get a SampleType by name within scope -- current plus, if <code>includeOtherContainers</code> is true, project and shared
      */
-    // TODO: Remove user parameter (not used)
-    ExpSampleType getSampleType(@NotNull Container scope, @NotNull User user, @NotNull String sampleTypeName);
+    ExpSampleType getSampleType(@NotNull Container scope, @NotNull String sampleTypeName, boolean includeOtherContainers);
 
     /** Get the sample type with name at a specific time */
     @Nullable
@@ -205,11 +197,9 @@ public interface SampleTypeService
     ExpSampleType getSampleType(@NotNull Container definitionContainer, long rowId);
 
     /**
-     * Get a SampleType by rowId within scope -- current, project, and shared.
-     * Requires a user to check for container read permission.
+     * Get a SampleType by rowId within scope -- current plus, if <code>includeOtherContainers</code> is true, project and shared
      */
-    // TODO: Remove user parameter (not used)
-    ExpSampleType getSampleType(@NotNull Container scope, @NotNull User user, long rowId);
+    ExpSampleType getSampleType(@NotNull Container scope, long rowId, boolean includeOtherContainers);
 
     Lsid getSampleTypeLsid(String name, Container container);
 

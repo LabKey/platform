@@ -28,16 +28,14 @@ import java.util.Map;
 public interface AuditTypeProvider
 {
     /**
-     * The audit event name associated with this audit provider. Must be
-     * unique within the system.
+     * The audit event name associated with this audit provider. Must be unique within the system.
      */
     String getEventName();
     String getLabel();
     String getDescription();
 
     /**
-     * Perform any initialization of the provider at registration time such as
-     * domain creation.
+     * Perform any initialization of the provider at registration time such as domain creation.
      * @param user User used when saving the backing Domain.
      */
     void initializeProvider(User user);

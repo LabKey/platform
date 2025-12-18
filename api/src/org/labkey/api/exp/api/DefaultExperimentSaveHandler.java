@@ -505,7 +505,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 else if (sampleTypeJson.has(ExperimentJSONConverter.NAME))
                 {
                     String sampleTypeName = sampleTypeJson.getString(ExperimentJSONConverter.NAME);
-                    sampleType = SampleTypeService.get().getSampleType(context.getContainer(), context.getUser(), sampleTypeName);
+                    sampleType = SampleTypeService.get().getSampleType(context.getContainer(), sampleTypeName, true);
                     if (sampleType == null)
                         throw new NotFoundException("A sample type named '" + sampleTypeName + "' doesn't exist.");
                 }

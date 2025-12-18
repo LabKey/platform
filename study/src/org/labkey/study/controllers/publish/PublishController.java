@@ -170,7 +170,7 @@ public class PublishController extends SpringActionController
             if (rowId == -1)
                 throw new NotFoundException("rowId required");
 
-            ExpSampleType st = SampleTypeService.get().getSampleType(scope, user, rowId);
+            ExpSampleType st = SampleTypeService.get().getSampleType(scope, rowId, true);
             if (st == null)
                 throw new NotFoundException("SampleType not found: " + rowId);
 
