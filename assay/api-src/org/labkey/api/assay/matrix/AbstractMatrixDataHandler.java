@@ -259,7 +259,7 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
     // If none exist, a new SampleType named "Samples" is created.
     private static @NotNull ExpSampleType ensureSampleType(Container c, User user) throws ExperimentException
     {
-        List<? extends ExpSampleType> sampleTypes = SampleTypeService.get().getSampleTypes(c, user, true);
+        List<? extends ExpSampleType> sampleTypes = SampleTypeService.get().getSampleTypes(c, true);
         if (sampleTypes.isEmpty())
         {
             return createSampleType(c, user);

@@ -7,7 +7,10 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.Pair;
 
+import java.io.PrintWriter;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -21,5 +24,8 @@ public interface DatabaseMigrationConfiguration
     Predicate<String> getColumnNameFilter();
     @Nullable TableSelector getTableSelector(DbSchemaType schemaType, TableInfo sourceTable, TableInfo targetTable, Set<String> selectColumnNames, MigrationSchemaHandler schemaHandler, @Nullable MigrationTableHandler tableHandler);
     default void copyAttachments(DbSchema sourceSchema, DbSchema targetSchema, MigrationSchemaHandler schemaHandler){}
-    default void afterMigration(){}
+    default @Nullable Pair<FilePathWriter, Set<GUID>> initializeFilePathWriter()
+    {
+        return null;
+    }
 }

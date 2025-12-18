@@ -34,6 +34,7 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         AliquotedFromLSID,
         AvailableAliquotCount,
         AvailableAliquotVolume(true),
+        CpasType, // database table only
         Created,
         CreatedBy,
         Description,
@@ -48,6 +49,7 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         Modified,
         ModifiedBy,
         Name,
+        ObjectId, // database table only
         Outputs,
         Properties,
         Property,
@@ -60,10 +62,12 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         RootMaterialRowId,
         RowId,
         Run,
+        RunId, // database table only
         RunApplication,
         RunApplicationOutput,
         SampleSet,
         SampleState,
+        SourceApplicationId, // database table only
         SourceApplicationInput,
         SourceProtocolApplication,
         SourceProtocolLSID,
@@ -72,7 +76,9 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
 
         private boolean _hasUnit = false;
         private final String _label;
-        Column() {
+
+        Column()
+        {
             _label = ColumnInfo.labelFromName(name());
         }
 

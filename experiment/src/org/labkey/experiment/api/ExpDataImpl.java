@@ -432,7 +432,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             if (user == null)
                 return ExperimentServiceImpl.get().getDataClass(getContainer(), _object.getClassId());
             else
-                return ExperimentServiceImpl.get().getDataClass(getContainer(), user, _object.getClassId());
+                return ExperimentServiceImpl.get().getDataClass(getContainer(), _object.getClassId(), true);
         }
 
         return null;
@@ -836,7 +836,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                 ViewContext ctx = HttpView.currentContext();
                 String dataclass = ctx.getActionURL().getParameter(PROPERTY);
                 if (dataclass != null)
-                    return ExperimentService.get().getDataClass(ctx.getContainer(), ctx.getUser(), dataclass);
+                    return ExperimentService.get().getDataClass(ctx.getContainer(), dataclass, true);
             }
             return null;
         }
@@ -905,7 +905,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                 html.append("<div class=\"labkey-search-filter\">");
 
                 appendParam(html, null, dataclass, "All", false, url);
-                for (ExpDataClass dc : ExperimentService.get().getDataClasses(ctx.getContainer(), ctx.getUser(), true))
+                for (ExpDataClass dc : ExperimentService.get().getDataClasses(ctx.getContainer(), true))
                 {
                     appendParam(html, dc.getName(), dataclass, dc.getName(), true, url);
                 }

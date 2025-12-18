@@ -251,7 +251,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpData getEffectiveData(@NotNull ExpDataClass dataClass, String name, @NotNull Date effectiveDate, @NotNull Container container, @Nullable ContainerFilter cf);
 
     /**
-     * Create a data object.  The object will be unsaved, and will have a name which is a GUID.
+     * Create a data object. The object will be unsaved, and will have a name which is a GUID.
      */
     ExpData createData(Container container, @NotNull DataType type);
 
@@ -293,65 +293,51 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void validateDataClassName(@NotNull Container c, @NotNull User u, String name, boolean skipExisting);
 
     /**
-     * Get all DataClass definitions in the container.  If <code>includeOtherContainers</code> is true,
-     * a user must be provided to check for read permission of the containers in scope.
+     * Get all DataClass definitions in the container
      */
-    // TODO: Remove user parameter (not used)
-    List<? extends ExpDataClass> getDataClasses(@NotNull Container container, @Nullable User user, boolean includeOtherContainers);
+    List<? extends ExpDataClass> getDataClasses(@NotNull Container container, boolean includeOtherContainers);
 
     /**
-     * Get a DataClass by name within the definition container.
+     * Get a DataClass by name within the definition container
      */
     ExpDataClass getDataClass(@NotNull Container definitionContainer, @NotNull String dataClassName);
 
     /**
-     * Get a DataClass by name within scope -- current, project, and shared.
-     * Requires a user to check for container read permission.
+     * Get a DataClass by name within scope -- current plus, if <code>includeOtherContainers</code> is true, project and shared
      */
-    // TODO: Remove user parameter (not used)
-    ExpDataClass getDataClass(@NotNull Container scope, @NotNull User user, @NotNull String dataClassName);
+    ExpDataClass getDataClass(@NotNull Container scope, @NotNull String dataClassName, boolean includeProjectAndShared);
 
     /**
-     * Get a DataClass by rowId within the definition container.
+     * Get a DataClass by rowId within the definition container
      */
     ExpDataClass getDataClass(@NotNull Container definitionContainer, long rowId);
 
     /**
-     * Get a DataClass by rowId within scope -- current, project, and shared.
-     * Requires a user to check for container read permission.
+     * Get a DataClass by rowId within scope -- current plus, if <code>includeOtherContainers</code> is true, project and shared
      */
-    // TODO: Remove user parameter (not used)
-    ExpDataClass getDataClass(@NotNull Container scope, @NotNull User user, long rowId);
+    ExpDataClass getDataClass(@NotNull Container scope, long rowId, boolean includeProjectAndShared);
 
     /**
      * Get a DataClass by LSID.
-     * NOTE: Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
+     * NOTE: Prefer using one of the getDataClass methods that accept a Container
      */
     @Nullable ExpDataClass getDataClass(@NotNull String lsid);
 
     /**
      * Get a DataClass by RowId
-     * NOTE: Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
+     * NOTE: Prefer using one of the getDataClass methods that accept a Container
      */
     ExpDataClass getDataClass(long rowId);
 
     /**
      * Get a DataClass with name at a specific time.
      */
-    // TODO: Remove user parameter (not used)
     @Nullable ExpDataClass getEffectiveDataClass(
         @NotNull Container definitionContainer,
-        @NotNull User user,
         @NotNull String dataClassName,
         @NotNull Date effectiveDate,
         @Nullable ContainerFilter cf
     );
-
-    /**
-     * Get a ExpProtocol with name at a specific time.
-     */
-    // TODO: Delete?
-    ExpProtocol getEffectiveProtocol(Container container, User user, String schemaName, Date effectiveDate, ContainerFilter dataTypeCF);
 
     /**
      * Get materials by rowId in this, project, or shared container and within the provided sample type.
@@ -622,9 +608,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * ignoring any sample children derived from ExpData children.
      */
     Set<ExpMaterial> getRelatedChildSamples(Container c, User user, ExpData start);
+
     /**
-     * Get the lineage for the seed Identifiable object.  Typically, the seed object is a ExpMaterial,
-     * a ExpData (in a DataClass), or an ExpRun.
+     * Get the lineage for the seed Identifiable object. Typically, the seed object is an ExpMaterial,
+     * an ExpData (in a DataClass), or an ExpRun.
      */
     @NotNull
     ExpLineage getLineage(Container c, User user, @NotNull Identifiable start, @NotNull ExpLineageOptions options);

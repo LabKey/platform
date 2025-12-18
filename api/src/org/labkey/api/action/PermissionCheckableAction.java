@@ -16,6 +16,7 @@
 package org.labkey.api.action;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.IgnoresForbiddenProjectCheck;
@@ -39,6 +40,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HttpUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
@@ -55,6 +57,7 @@ import static org.labkey.api.util.HttpUtil.Method;
 
 public abstract class PermissionCheckableAction implements Controller, PermissionCheckable, HasViewContext
 {
+    private static final Logger LOG = LogHelper.getLogger(PermissionCheckableAction.class, "Permission checks for actions");
     private static final HttpUtil.Method[] arrayGetPost = new HttpUtil.Method[] {Method.GET, Method.POST};
     private ViewContext _context = null;
     UnauthorizedException.Type _unauthorizedType = UnauthorizedException.Type.redirectToLogin;
@@ -148,6 +151,8 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         Container c = context.getContainer();
         User user = context.getUser();
         Class<? extends Controller> actionClass = getClass();
+        if (LOG.isDebugEnabled())
+            LOG.debug(actionClass.getName() + ": checking permissions for user " + (user == null ? "<null>" : user.getName() + " (impersonated=" + user.isImpersonated() + ")"));
 
         if (!actionClass.isAnnotationPresent(IgnoresForbiddenProjectCheck.class))
             c.throwIfForbiddenProject(user);
@@ -159,18 +164,22 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             methodsAllowed = methodsAllowedAnnotation.value();
         if (Arrays.stream(methodsAllowed).noneMatch(s -> s.equals(method)))
         {
-            throw new BadRequestException("Method Not Allowed: " + method, null, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+            String msg = "Method Not Allowed: " + method;
+            LOG.debug(msg);
+            throw new BadRequestException(msg, null, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
 
         boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);
         if (requiresSiteAdmin && !user.hasSiteAdminPermission())
         {
+            LOG.debug(actionClass.getName() + ": action requires site admin permissions");
             throw new UnauthorizedException();
         }
 
         boolean requiresLogin = actionClass.isAnnotationPresent(RequiresLogin.class);
         if (requiresLogin && user.isGuest())
         {
+            LOG.debug(actionClass.getName() + ": action requires login (non-guest)");
             throw new UnauthorizedException();
         }
 
@@ -214,7 +223,10 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         // Must have all permissions in permissionsRequired
         if (!SecurityManager.hasAllPermissions(this.getClass().getName()+"_checkActionPermissions",
                 c, user, permissionsRequired, contextualRoles))
+        {
+            LOG.debug(actionClass.getName() + ": action requires all permissions: " + permissionsRequired);
             throw new UnauthorizedException();
+        }
 
         CSRF.Method csrfCheck = actionClass.isAnnotationPresent(CSRF.class) ? actionClass.getAnnotation(CSRF.class).value() : CSRF.Method.POST;
         csrfCheck.validate(context);
@@ -228,7 +240,10 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             Collections.addAll(permissionsAnyOf, requiresAnyOf.value());
             if (!SecurityManager.hasAnyPermissions(this.getClass().getName() + "_checkActionPermissions",
                     c, user, permissionsAnyOf, contextualRoles))
+            {
+                LOG.debug(actionClass.getName() + ": action requires any permissions: " + permissionsAnyOf);
                 throw new UnauthorizedException();
+            }
         }
 
         boolean requiresNoPermission = actionClass.isAnnotationPresent(RequiresNoPermission.class);

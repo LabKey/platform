@@ -172,7 +172,6 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawUnits;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
-import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
 public class SampleTypeServiceImpl extends AbstractAuditHandler implements SampleTypeService
@@ -454,7 +453,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             return getSampleTypeByObjectId(legacyObjectId);
 
         boolean includeOtherContainers = cf != null && cf.getType() != ContainerFilter.Type.Current;
-        ExpSampleTypeImpl sampleType = getSampleType(definitionContainer, includeOtherContainers, sampleTypeName);
+        ExpSampleTypeImpl sampleType = getSampleType(definitionContainer, sampleTypeName, includeOtherContainers);
         if (sampleType != null && sampleType.getCreated().compareTo(effectiveDate) <= 0)
             return sampleType;
 
@@ -482,17 +481,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public ExpSampleTypeImpl getSampleType(@NotNull Container c, @NotNull String sampleTypeName)
     {
-        return getSampleType(c, false, sampleTypeName);
+        return getSampleType(c, sampleTypeName, false);
     }
 
-    // NOTE: This method used to not take a user or check permissions
     @Override
-    public ExpSampleTypeImpl getSampleType(@NotNull Container c, @NotNull User user, @NotNull String sampleTypeName)
-    {
-        return getSampleType(c, true, sampleTypeName);
-    }
-
-    private ExpSampleTypeImpl getSampleType(@NotNull Container c, boolean includeOtherContainers, String sampleTypeName)
+    public ExpSampleTypeImpl getSampleType(@NotNull Container c, @NotNull String sampleTypeName, boolean includeOtherContainers)
     {
         return getSampleType(c, includeOtherContainers, (materialSource -> materialSource.getName().equalsIgnoreCase(sampleTypeName)));
     }
@@ -504,29 +497,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public ExpSampleTypeImpl getSampleType(@NotNull Container c, @NotNull User user, long rowId)
-    {
-        return getSampleType(c, rowId, true);
-    }
-
-    @Override
-    public ExpSampleTypeImpl getSampleTypeByType(@NotNull String lsid, Container hint)
-    {
-        Container c = hint;
-        String id = sampleTypeCache.get(lsid);
-        if (null != id && (null == hint || !id.equals(hint.getId())))
-            c = ContainerManager.getForId(id);
-        ExpSampleTypeImpl st = null;
-        if (null != c)
-            st = getSampleType(c, false, ms -> lsid.equals(ms.getLSID()) );
-        if (null == st)
-            st = _getSampleType(lsid);
-        if (null != st && null==id)
-            sampleTypeCache.put(lsid,st.getContainer().getId());
-        return st;
-    }
-
-    private ExpSampleTypeImpl getSampleType(@NotNull Container c, long rowId, boolean includeOtherContainers)
+    public ExpSampleTypeImpl getSampleType(@NotNull Container c, long rowId, boolean includeOtherContainers)
     {
         return getSampleType(c, includeOtherContainers, (materialSource -> materialSource.getRowId() == rowId));
     }
@@ -564,6 +535,23 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl getSampleType(String lsid)
     {
         return getSampleTypeByType(lsid, null);
+    }
+
+    @Override
+    public ExpSampleTypeImpl getSampleTypeByType(@NotNull String lsid, Container hint)
+    {
+        Container c = hint;
+        String id = sampleTypeCache.get(lsid);
+        if (null != id && (null == hint || !id.equals(hint.getId())))
+            c = ContainerManager.getForId(id);
+        ExpSampleTypeImpl st = null;
+        if (null != c)
+            st = getSampleType(c, false, ms -> lsid.equals(ms.getLSID()) );
+        if (null == st)
+            st = _getSampleType(lsid);
+        if (null != st && null==id)
+            sampleTypeCache.put(lsid,st.getContainer().getId());
+        return st;
     }
 
     @Nullable
@@ -651,7 +639,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         CPUTimer timer = new CPUTimer("delete sample type");
         timer.start();
 
-        ExpSampleTypeImpl source = getSampleType(c, user, rowId);
+        ExpSampleTypeImpl source = getSampleType(c, rowId, true);
         if (null == source)
             throw new IllegalArgumentException("Can't find SampleType with rowId " + rowId);
         if (!source.getContainer().equals(c))
@@ -698,11 +686,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         // Delete sequences (genId and the unique counters)
         DbSequenceManager.deleteLike(c, ExpSampleType.SEQUENCE_PREFIX, (int)source.getRowId(), getExpSchema().getSqlDialect());
 
-        SchemaKey samplesSchema = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
-        QueryService.get().fireQueryDeleted(user, c, null, samplesSchema, singleton(source.getName()));
-
-        SchemaKey expMaterialsSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, materials.toString());
-        QueryService.get().fireQueryDeleted(user, c, null, expMaterialsSchema, singleton(source.getName()));
+        QueryService.get().fireQueryDeleted(user, c, null, SamplesSchema.SCHEMA_SAMPLES, singleton(source.getName()));
+        QueryService.get().fireQueryDeleted(user, c, null, ExpSchema.SCHEMA_EXP_MATERIALS, singleton(source.getName()));
 
         // Remove SampleType from search index
         try (Timing ignored = MiniProfiler.step("search docs"))
@@ -1052,7 +1037,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         if (!skipExistingCheck)
         {
-            if (getSampleType(container, user, name) != null)
+            if (getSampleType(container, name, true) != null)
                 throw new ApiUsageException("A Sample Type with name '" + name + "' already exists.");
         }
 
@@ -1309,7 +1294,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             UserSchema schema = tInfo.getUserSchema();
             if (schema != null)
             {
-                ExpSampleType sampleType = getSampleType(c, schema.getUser(), tInfo.getName());
+                ExpSampleType sampleType = getSampleType(c, tInfo.getName(), true);
                 if (sampleType != null)
                 {
                     event.setSampleType(sampleType.getName());
