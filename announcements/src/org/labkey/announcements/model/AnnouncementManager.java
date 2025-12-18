@@ -685,14 +685,15 @@ public class AnnouncementManager
         return result;
     }
 
-    public static Pair<Integer, Integer> updateContainer(List<String> discussionSrcIds, Container targetContainer, User user)
+    public static Map<String, Integer> updateContainer(List<String> discussionSrcIds, Container targetContainer, User user)
     {
         // move the attachments associated with the comments
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("discussionSrcIdentifier"), discussionSrcIds, CompareType.IN);
         TableSelector selector = new TableSelector(_comm.getTableInfoAnnouncements(), Collections.singleton("entityId"), filter, null);
-        int numAttachments = Table.updateContainer(_core.getTableInfoDocuments(), "parent", selector.getArrayList(String.class), targetContainer, user, false);
-        int announcementsCount = Table.updateContainer(_comm.getTableInfoAnnouncements(), "discussionSrcIdentifier", discussionSrcIds, targetContainer, user, false);
-        return Pair.of(announcementsCount, numAttachments);
+        Map<String, Integer> updateCounts = new HashMap<>();
+        updateCounts.put("attachments", Table.updateContainer(_core.getTableInfoDocuments(), "parent", selector.getArrayList(String.class), targetContainer, user, false));
+        updateCounts.put("announcements", Table.updateContainer(_comm.getTableInfoAnnouncements(), "discussionSrcIdentifier", discussionSrcIds, targetContainer, user, false));
+        return updateCounts;
     }
 
 

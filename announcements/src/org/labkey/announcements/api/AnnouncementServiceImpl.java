@@ -214,7 +214,7 @@ public class AnnouncementServiceImpl implements AnnouncementService
     }
 
     @Override
-    public Pair<Integer, Integer> updateContainer(List<String> discussionSrcIds, Container targetContainer, User u)
+    public Map<String, Integer> updateContainer(List<String> discussionSrcIds, Container targetContainer, User u)
     {
         return AnnouncementManager.updateContainer(discussionSrcIds, targetContainer, u);
     }
