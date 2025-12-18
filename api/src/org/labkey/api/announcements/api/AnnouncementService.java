@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.Pair;
 
 import java.util.Collection;
 import java.util.List;
@@ -61,8 +62,8 @@ public interface AnnouncementService
     // Update
     Announcement updateAnnouncement(int RowId, Container c, User u, String title, String body);
 
-    // move announcements to the given target container
-    int updateContainer(List<String> discussionSrcIds, Container targetContainer, User u);
+    // move announcements and their attachments to the given target container
+    Pair<Integer, Integer> updateContainer(List<String> discussionSrcIds, Container targetContainer, User u);
 
     // Delete
     void deleteAnnouncement(Announcement announcement);

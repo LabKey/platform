@@ -32,6 +32,7 @@ import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -213,7 +214,7 @@ public class AnnouncementServiceImpl implements AnnouncementService
     }
 
     @Override
-    public int updateContainer(List<String> discussionSrcIds, Container targetContainer, User u)
+    public Pair<Integer, Integer> updateContainer(List<String> discussionSrcIds, Container targetContainer, User u)
     {
         return AnnouncementManager.updateContainer(discussionSrcIds, targetContainer, u);
     }
