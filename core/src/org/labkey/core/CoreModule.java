@@ -535,11 +535,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "Short-circuit robots",
             "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
             false);
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(TabLoader.FEATUREFLAG_UNESCAPE_BACKSLASH,
-            "Unescape backslash character on import",
-            "Treat backslash '\\' character as an escape character when loading data from file. This option will be removed in LabKey Server v26.3.",
-            false, false, OptionalFeatureService.FeatureType.Deprecated
-        ));
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(AppProps.GENERATE_CONTROLLER_FIRST_URLS,
             "Restore controller-first URLs",
             "Generate URLs in a legacy format that puts the controller name before the folder path. This option will be removed in LabKey Server 26.3.",
