@@ -2562,14 +2562,25 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             pathSel.append('title').text(geom.hoverTextAes.getValue);
         }
 
+        // these are our default values that can be referenced by name (dashed, dotted) but we allow for custom
+        // dash arrays as well via lineTypeScale
+        const dashed = "6,6";
+        const dotted = "0.1,6";
+
         if (geom.lineTypeAes && geom.lineTypeScale) {
             pathSel.style("stroke-dasharray", function(d) {
-                return geom.lineTypeScale.scale(geom.lineTypeAes.getValue(d.data) + geom.layerName);
+                const val = geom.lineTypeScale.scale(geom.lineTypeAes.getValue(d.data) + geom.layerName);
+                return val === 'dashed' ? dashed : val === 'dotted' ? dotted : val;
+            });
+            pathSel.style("stroke-linecap", function(d) {
+                const val = geom.lineTypeScale.scale(geom.lineTypeAes.getValue(d.data) + geom.layerName);
+                return val === 'dotted' ? "round" : null;
             });
         } else if (geom.dashed) {
-            layer.selectAll('path').style("stroke-dasharray", "12, 3");
+            layer.selectAll('path').style("stroke-dasharray", dashed);
         } else if (geom.dotted) {
-            layer.selectAll('path').style("stroke-dasharray", "2, 2");
+            layer.selectAll('path').style("stroke-dasharray", dotted);
+            layer.selectAll('path').style("stroke-linecap", "round");
         }
 
         bindMouseEvents(pathSel, geom, layer);

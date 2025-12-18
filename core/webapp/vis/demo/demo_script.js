@@ -127,7 +127,7 @@ var coffeePlot = new LABKEY.vis.Plot({
         yLeft: 'efficiency'
     },
     legendData: [
-        {text: 'LabKey Dev 1', color: '#0000A0'},
+        {text: 'LabKey Dev 1', color: '#0000A0', lineType: 'dotted'},
         {text: 'LabKey Dev 2', color: '#ADD8E6'},
         {text: 'No Coffee Consumed', shape: LABKEY.vis.Scale.Shape()[0]},
         {text: 'Coffee Consumed', shape: LABKEY.vis.Scale.Shape()[1]}
@@ -142,7 +142,7 @@ var coffeePlot = new LABKEY.vis.Plot({
         lineType: {
             scaleType: 'discrete',
             scale: function(group) {
-                return group == 'LabKey Dev 1 Efficiency' ? 'dashed' : 'solid';
+                return group == 'LabKey Dev 1 Efficiency' ? 'dotted' : undefined;
             }
         },
         xTop: {
