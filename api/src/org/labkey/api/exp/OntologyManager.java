@@ -928,7 +928,12 @@ public class OntologyManager
      */
     public static int updateContainer(Container targetContainer, User user, @NotNull String objectLSID)
     {
-        return Table.updateContainer(getTinfoObject(), "objectURI", List.of(objectLSID), targetContainer, user, false);
+        return updateContainer(targetContainer, user, List.of(objectLSID));
+    }
+
+    public static int updateContainer(Container targetContainer, User user, @NotNull List<String> objectLSIDs)
+    {
+        return Table.updateContainer(getTinfoObject(), "objectURI", objectLSIDs, targetContainer, user, false);
     }
 
     /**
