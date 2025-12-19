@@ -138,8 +138,6 @@ public interface AttachmentService
      **/
     Collection<AttachmentParentType> getAttachmentParentTypes();
 
-    HttpView<?> getAdminView(ActionURL currentUrl);
-
     HttpView<?> getFindAttachmentParentsView();
 
     class DuplicateFilenameException extends IOException implements SkipMothershipLogging

@@ -129,6 +129,7 @@ import org.labkey.experiment.api.LineageTest;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.Protocol;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
+import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.api.UniqueValueCounterTestCase;
 import org.labkey.experiment.api.VocabularyDomainKind;
 import org.labkey.experiment.api.data.ChildOfCompareType;
@@ -200,7 +201,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 25.014;
+        return 25.015;
     }
 
     @Nullable
@@ -272,6 +273,8 @@ public class ExperimentModule extends SpringModule
                 "If a column name contains a \"__<unit>\" suffix, this feature allows for testing it as a Quantity display column", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS, "SQL syntax: 'FROM EXPANCESTORS()'",
                 "Support for querying lineage of experiment objects", false);
+        OptionalFeatureService.get().addExperimentalFeatureFlag(SampleTypeUpdateServiceDI.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_SAMPLE_MERGE, "Allow RowId to be accepted when merging samples",
+                "If the incoming data includes a RowId column we will allow the column but ignore it's values.", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
         RoleManager.registerRole(new SampleTypeDesignerRole());
@@ -963,7 +966,7 @@ public class ExperimentModule extends SpringModule
                 list.add(runCount + " runs of type " + runType.getDescription());
         }
 
-        int dataClassCount = ExperimentService.get().getDataClasses(c, null, false).size();
+        int dataClassCount = ExperimentService.get().getDataClasses(c, false).size();
         if (dataClassCount > 0)
             list.add(dataClassCount + " Data Class" + (dataClassCount > 1 ? "es" : ""));
 
@@ -990,7 +993,7 @@ public class ExperimentModule extends SpringModule
             summaries.add(new Summary(runGroupCount, "Assay run"));
 
         // Number of Data Classes
-        List<? extends ExpDataClass> dataClasses = ExperimentService.get().getDataClasses(c, user, false);
+        List<? extends ExpDataClass> dataClasses = ExperimentService.get().getDataClasses(c, false);
         int dataClassCount = dataClasses.size();
         if (dataClassCount > 0)
             summaries.add(new Summary(dataClassCount, "Data Class"));

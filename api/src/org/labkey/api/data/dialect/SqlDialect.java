@@ -2133,6 +2133,80 @@ public abstract class SqlDialect
         return rs.getString("FILTER_CONDITION");
     }
 
+
+
+    //
+    // ARRAY SUPPORT
+    //
+
+    public boolean supportsArrays()
+    {
+        return false;
+    }
+
+    // construct a sql array from SQLFragment elements
+    public SQLFragment array_construct(SQLFragment[] elements)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    // element a is in array b
+    public SQLFragment element_in_array(SQLFragment a, SQLFragment b)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    // element a is not in array b
+    public SQLFragment element_not_in_array(SQLFragment a, SQLFragment b)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    // SET OPERATORS FOR ARRAY TYPE
+
+    // all elements of array a are contained in array b
+    public SQLFragment array_all_in_array(SQLFragment a, SQLFragment b)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    // some elements of array a are contained in array b
+    public SQLFragment array_some_in_array(SQLFragment a, SQLFragment b)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    // no elements of array a are contained in array b
+    public SQLFragment array_none_in_array(SQLFragment a, SQLFragment b)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    // arrays a and b contain the same elements equivalent to (A all in B) AND (B all in A)
+    public SQLFragment array_same_array(SQLFragment a, SQLFragment b)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    // array a and array b do not contain the same elements
+    public SQLFragment array_not_same_array(SQLFragment a, SQLFragment b)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+
+    //
+    // TESTS
+    //
+
     public static class DialectTestCase
     {
         DbScope s;

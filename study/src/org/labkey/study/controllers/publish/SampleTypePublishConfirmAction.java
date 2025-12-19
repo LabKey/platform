@@ -55,7 +55,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
             if (_sampleType == null)
             {
                 if (getRowId() != null)
-                    _sampleType = SampleTypeService.get().getSampleType(getContainer(), getUser(), getRowId());
+                    _sampleType = SampleTypeService.get().getSampleType(getContainer(), getRowId(), true);
                 else
                     throw new NotFoundException("Sample Type ID not specified.");
 

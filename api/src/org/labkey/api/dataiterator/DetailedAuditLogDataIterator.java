@@ -139,6 +139,10 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
     {
         return context ->
         {
+            DataIterator it = builder.getDataIterator(context);
+            if (it == null)
+                return null; // can happen if context has errors
+
             AuditBehaviorType auditType = AuditBehaviorType.NONE;
             if (queryTable.supportsAuditTracking())
                 auditType = queryTable.getEffectiveAuditBehavior((AuditBehaviorType) context.getConfigParameter(AuditConfigs.AuditBehavior));
@@ -146,12 +150,12 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
             // Detailed auditing and not set to bulk load in ETL
             if (auditType == DETAILED && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.BulkLoad) && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.ByPassAudit))
             {
-                DataIterator it = builder.getDataIterator(context);
                 DataIterator in = DataIteratorUtil.wrapMap(it, true);
                 return new DetailedAuditLogDataIterator(in, context, queryTable, insertOption.auditAction, user, container, extractProvidedValues);
             }
+
             // Nothing to do, so just return input DataIterator
-            return builder.getDataIterator(context);
+            return it;
         };
     }
 
@@ -168,5 +172,4 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
     {
         return _data.supportsGetExistingRecord();
     }
-
 }

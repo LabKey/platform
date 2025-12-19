@@ -15,8 +15,7 @@ import java.util.Set;
 
 import static org.labkey.api.audit.AuditHandler.DELTA_PROVIDED_DATA_PREFIX;
 import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
 
 public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
 {
@@ -26,7 +25,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     public static final String AMOUNT_AND_UNIT_UPGRADE_COMMENT = "Storage amount unit conversion to base unit during upgrade script.";
 
     public static final Set<String> EXCLUDED_DETAIL_FIELDS = Set.of(
-            "AvailableAliquotVolume", "AvailableAliquotCount", "AliquotCount", "AliquotVolume", "AliquotUnit",
+            AvailableAliquotVolume.name(), AvailableAliquotCount.name(), AliquotCount.name(), AliquotVolume.name(), AliquotUnit.name(),
             PROVIDED_DATA_PREFIX + StoredAmount.name(), PROVIDED_DATA_PREFIX + Units.name(),
             DELTA_PROVIDED_DATA_PREFIX + StoredAmount.name() + DELTA_PROVIDED_DATA_PREFIX + Units.name());
 

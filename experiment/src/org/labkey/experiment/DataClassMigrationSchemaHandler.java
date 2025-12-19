@@ -24,6 +24,7 @@ import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.migration.DatabaseMigrationService.DataFilter;
 import org.labkey.api.migration.DefaultMigrationSchemaHandler;
 import org.labkey.api.migration.ExperimentDeleteService;
+import org.labkey.api.migration.FilePathWriter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -95,8 +96,8 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
 
         // Select all ObjectIds associated with the not-copied rows from the source database
         SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM exp.Data d INNER JOIN ")
-                .appendIdentifier(sourceTable.getSelectName())
-                .append(" dc ON d.LSID = dc.LSID");
+            .appendIdentifier(sourceTable.getSelectName())
+            .append(" dc ON d.LSID = dc.LSID");
 
         // Don't create an empty IN clause; need to work around issue where "NOT xxx IN (NULL)" evaluates to NULL.
         if (!copiedLsids.isEmpty())
@@ -134,7 +135,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
                     }
                 })
                 .forEach(SEQUENCE_IDS::add);
-            LOG.info("{} added to the SequenceIdentity set",
+            LOG.info("   {} added to the SequenceIdentity set",
                 StringUtilsLabKey.pluralize(SEQUENCE_IDS.size() - startSize, "unique SequenceId was", "unique SequenceIds were"));
         }
     }
@@ -201,5 +202,12 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
     public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
     {
         return List.of(ExpDataClassType.get());
+    }
+
+    @Override
+    public void writeFilePaths(FilePathWriter writer, Set<GUID> guids)
+    {
+        // TODO: Enumerate FileLink fields in data classes in the filtered containers (guids) and write out those file
+        // paths. Current client has none.
     }
 }

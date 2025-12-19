@@ -244,6 +244,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             for (FieldKey calculatedFieldKey : calculatedFieldKeys)
                 visibleColumns.add(FieldKey.fromParts("Run", calculatedFieldKey.getName()));
         }
+        visibleColumns.add(FieldKey.fromParts("Run", "Name"));
 
         for (DomainProperty prop : _provider.getBatchDomain(_protocol).getProperties())
         {

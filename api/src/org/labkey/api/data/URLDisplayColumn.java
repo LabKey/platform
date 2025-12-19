@@ -182,7 +182,7 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
                 String thumbnailUrl = _fileIconUrl != null ? ensureAbsoluteUrl(_ctx, _fileIconUrl) : ensureAbsoluteUrl(_ctx, _url);
 
                 return IMG(at(
-                    style, "display:block; vertical-align:middle;" + (renderSize ? (_thumbnailWidth != null ? " width:" + _thumbnailWidth : " max-width:32px" + "; ") + (_thumbnailHeight != null ? " height:" + _thumbnailHeight : " height:auto" + ";") : ""),
+                    style, "display:block; vertical-align:middle;" + (renderSize ? (_thumbnailWidth != null ? " width:" + _thumbnailWidth : " max-width:32px") + "; " + (_thumbnailHeight != null ? " height:" + _thumbnailHeight : " height:auto") + ";" : ""),
                     src, thumbnailUrl, title, _displayName
                 ));
             }

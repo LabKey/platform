@@ -65,6 +65,9 @@ import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.reports.report.r.RReport;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
@@ -672,7 +675,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
     }
 
     @Override
-    public FormSchema getFormSchema(Container container)
+    public FormSchema getFormSchema(Container container, User user)
     {
         List<Option<String>> typeOptions = new ArrayList<>();
         for (PipelineTriggerType<?> pipelineTriggerType : PipelineTriggerRegistry.get().getTypes())
@@ -696,7 +699,11 @@ public class PipelineJobServiceImpl implements PipelineJobService
         for (FileAnalysisTaskPipeline task : tasks)
             taskOptions.add(new Option<>(task.getId().toString(), task.getDescription()));
 
-        String usernameHelpText = "The file watcher will run as this user in the pipeline. Some tasks may require this user to have admin permissions.";
+        List<Option<String>> userOptions = new ArrayList<>(SecurityManager.getUsersWithPermissions(container, Set.of(InsertPermission.class)).stream()
+                .map(u -> new Option<>(u.getDisplayName(user), u.getDisplayName(user)))
+                .toList());
+
+        String usernameHelpText = "The file watcher will run as this user in the pipeline. Users in this list have insert permissions for the folder. Some tasks may require this user to have admin permissions.";
         String assayProviderHelpText = "Use this provider for running assay import runs. This will be the name of the assay type eg : General or " +
                 "the name of a module based assay.";
         String baseHref = "https://www.labkey.org/Documentation/wiki-page.view?name=fileWatchCreate#";
@@ -708,7 +715,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
                 new TextareaField("description", "Description", null, false, ""),
                 new SelectField<>("type", "Type", null, true, typeDefaultValue, typeOptions),
                 new SelectField<>("pipelineId", "Pipeline Task", "Select a Pipeline Task", true, null, taskOptions),
-                new TextField("username", "Run as Username", null, false, null, usernameHelpText, usernameHref),
+                new SelectField("username", "Run as Username", null, true, null, userOptions, usernameHelpText, usernameHref),
                 new TextField("assay provider", "Assay Provider", "General", false, null, assayProviderHelpText, assayProviderHref),
                 new CheckboxField("enabled", "Enable this Trigger", false, true)
         );
