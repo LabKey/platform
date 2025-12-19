@@ -36,7 +36,6 @@ import org.apache.logging.log4j.simple.SimpleLogger;
 import org.apache.logging.log4j.util.PropertiesUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jspecify.annotations.NonNull;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.data.Container;
@@ -1794,7 +1793,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
     }
 
     @Override
-    public Object get(long timeout, @NonNull TimeUnit unit) throws InterruptedException, ExecutionException
+    public Object get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException
     {
         return get();
     }

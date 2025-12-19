@@ -16,7 +16,7 @@
 
 package org.labkey.api.util;
 
-import org.jspecify.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipelineService;
 
 import java.util.concurrent.ExecutionException;
@@ -89,7 +89,7 @@ public abstract class Job implements Future<Object>, Runnable
     }
 
     @Override
-    public Object get(long timeout, @NonNull TimeUnit unit) throws InterruptedException, ExecutionException
+    public Object get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException
     {
         if (_task == null) throw new IllegalStateException("job has not been submitted");
         return _task.get();

@@ -177,12 +177,15 @@ public class JobRunner implements Executor
             {
                 throw new IllegalArgumentException("Runnable must also be a Future");
             }
-            Job job = remove ? _jobs.remove(f) : _jobs.get(f);
-            if (null == job)
+            synchronized (_jobs)
             {
-                throw new IllegalArgumentException("Future is not associated with a Job");
+                Job job = remove ? _jobs.remove(f) : _jobs.get(f);
+                if (null == job)
+                {
+                    throw new IllegalArgumentException("Future is not associated with a Job");
+                }
+                return job;
             }
-            return job;
         }
 
         @Override
