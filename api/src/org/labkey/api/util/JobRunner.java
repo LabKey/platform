@@ -21,30 +21,34 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.util.logging.LogHelper;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 /**
- * This is a simple Executor, that can be used to implement more advanced services
+ * This is a simple Executor that can be used to implement more advanced services
  * like PipelineQueue, or to simply run background tasks.
  * <p/>
  * ScheduledThreadPoolExecutor could, of course, be used directly.  One annoyance is
  * that it is hard to track when tasks start (except by wrapping the run method).
  * Another annoyance is that the object you use to track the task (Future
- * returned by submit()) is different than the object you submit.
+ * returned by submit()) is different from the object you submit.
  * <p/>
- * In short this is a ScheduledThreadPoolExecutor that lets you submit a Job,
+ * In short, this is a ScheduledThreadPoolExecutor that lets you submit a Job,
  * in addition to a Runnable or Callable.  If you submit a Job, you can use
- * it to track you task status.
+ * it to track your task's status.
  * <p/>
  * CONSIDER: handle Callable
  */
@@ -56,7 +60,6 @@ public class JobRunner implements Executor
 
     private final ScheduledThreadPoolExecutor _executor;
     private final Map<Future<?>, Job> _jobs = new HashMap<>();
-
 
     public JobRunner(String name, int max)
     {
@@ -131,34 +134,25 @@ public class JobRunner implements Executor
     /**
      * This will schedule the runnable using the provided delay
      */
-    public void execute(long delay, Runnable command)
+    public Future<?> execute(long delay, Runnable command)
     {
-        execute(command, delay);
+        return execute(command, delay);
     }
 
-    public void execute(Runnable command, long delay)
+    public Future<?> execute(Runnable command, long delay)
     {
+        Job job = command instanceof Job j ? j :  new RunnableJob(command);
+
         synchronized (_jobs)
         {
             Future<?> task = _executor.schedule(command, delay, TimeUnit.MILLISECONDS);
-            if (command instanceof Job job)
-            {
-                job._task = task;
-                _jobs.put(task, job);
-            }
+
+            job._task = task;
+            _jobs.put(task, job);
+
+            return task;
         }
     }
-
-    public Future<?> submit(Runnable run)
-    {
-        if (run instanceof Job)
-        {
-            execute(run);
-            return (Job) run;
-        }
-        return _executor.schedule(run, 0, TimeUnit.MILLISECONDS);
-    }
-
 
     public int getJobCount()
     {
@@ -177,22 +171,29 @@ public class JobRunner implements Executor
             setMaximumPoolSize(max);
         }
 
+        private Job toJob(Runnable r, boolean remove)
+        {
+            if (!(r instanceof Future<?> f))
+            {
+                throw new IllegalArgumentException("Runnable must also be a Future");
+            }
+            Job job = remove ? _jobs.remove(f) : _jobs.get(f);
+            if (null == job)
+            {
+                throw new IllegalArgumentException("Future is not associated with a Job");
+            }
+            return job;
+        }
+
         @Override
         protected void beforeExecute(Thread t, Runnable r)
         {
             super.beforeExecute(t, r);
 
-            Job job;
-            synchronized (_jobs)
-            {
-                job = _jobs.get(r);
-            }
-            if (null != job)
-            {
-                _logDebug("beforeExecute: " + job);
-                job.starting(t);
-                job._startTime = System.currentTimeMillis();
-            }
+            Job job = toJob(r, false);
+            _logDebug("beforeExecute: " + job);
+            job.starting(t);
+            job._startTime = System.currentTimeMillis();
         }
 
 
@@ -201,53 +202,26 @@ public class JobRunner implements Executor
         {
             try
             {
-                Job job;
-                synchronized (_jobs)
+                Job job = toJob(r, true);
+
+                job._finishTime = System.currentTimeMillis();
+                _logDebug("afterExecute: " + job);
+                if (null == t)
                 {
-                    job = _jobs.remove(r);
-                }
-                if (null != job)
-                {
-                    job._finishTime = System.currentTimeMillis();
-                    _logDebug("afterExecute: " + job);
-                    if (null == t)
+                    try
                     {
-                        try
-                        {
-                            job._task.get();
-                        }
-                        catch (ExecutionException x)
-                        {
-                            t = x.getCause();
-                        }
-                        catch (Throwable x)
-                        {
-                            t = x;
-                        }
+                        job._task.get();
                     }
-                    job.done(t);
-                }
-                else
-                {
-                    if (r instanceof Future<?> f)
+                    catch (ExecutionException x)
                     {
-                        if (null == t)
-                        {
-                            try
-                            {
-                                f.get();
-                            }
-                            catch (ExecutionException x)
-                            {
-                                t = x.getCause();
-                            }
-                            catch (Throwable x)
-                            {
-                                t = x;
-                            }
-                        }
+                        t = x.getCause();
+                    }
+                    catch (Throwable x)
+                    {
+                        t = x;
                     }
                 }
+                job.done(t);
 
                 if (t != null)
                 {
@@ -302,4 +276,116 @@ public class JobRunner implements Executor
     {
         _log.debug(s);
     }
+
+    private static class RunnableJob extends Job
+    {
+        private final Runnable _runnable;
+
+        private RunnableJob(Runnable runnable)
+        {
+            _runnable = runnable;
+        }
+
+        @Override
+        public void run()
+        {
+            _runnable.run();
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testJobCallbacks() throws Exception
+        {
+            JobRunner runner = new JobRunner("testJobCallbacks", 1);
+            AtomicBoolean startingCalled = new AtomicBoolean(false);
+            AtomicBoolean doneCalled = new AtomicBoolean(false);
+            CountDownLatch latch = new CountDownLatch(1);
+
+            Job job = new Job()
+            {
+                @Override
+                protected void starting(Thread t)
+                {
+                    startingCalled.set(true);
+                }
+
+                @Override
+                protected void done(Throwable t)
+                {
+                    doneCalled.set(true);
+                    latch.countDown();
+                }
+
+                @Override
+                public void run()
+                {
+                }
+            };
+
+            runner.execute(job);
+            assertTrue("Timed out waiting for job to complete", latch.await(5, TimeUnit.SECONDS));
+            assertTrue("starting() should have been called", startingCalled.get());
+            assertTrue("done() should have been called", doneCalled.get());
+        }
+
+        @Test
+        public void testRunnableCallbacks() throws Exception
+        {
+            JobRunner runner = new JobRunner("testRunnableCallbacks", 1);
+            AtomicBoolean startingCalled = new AtomicBoolean(false);
+            AtomicBoolean doneCalled = new AtomicBoolean(false);
+            CountDownLatch latch = new CountDownLatch(1);
+
+            runner.execute(new RunnableJob(() -> {})
+                           {
+                               @Override
+                               protected void starting(Thread t)
+                               {
+                                   startingCalled.set(true);
+                               }
+
+                               @Override
+                               protected void done(Throwable t)
+                               {
+                                   doneCalled.set(true);
+                                   latch.countDown();
+                               }
+                           }, 0);
+            assertTrue("Timed out waiting for runnable to complete", latch.await(5, TimeUnit.SECONDS));
+            assertTrue("starting() should have been called", startingCalled.get());
+            assertTrue("done() should have been called", doneCalled.get());
+        }
+
+        @Test
+        public void testWaitForCompletion()
+        {
+            JobRunner runner = new JobRunner("testWaitForCompletion", 2);
+            int jobCount = 5;
+            CountDownLatch startLatch = new CountDownLatch(1);
+            AtomicInteger completedCount = new AtomicInteger(0);
+
+            for (int i = 0; i < jobCount; i++)
+            {
+                runner.execute(() -> {
+                    try
+                    {
+                        startLatch.await();
+                        completedCount.incrementAndGet();
+                    }
+                    catch (InterruptedException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+
+            assertEquals("Jobs should not be completed yet", 0, completedCount.get());
+            startLatch.countDown();
+            runner.waitForCompletion();
+            assertEquals("All jobs should be completed", jobCount, completedCount.get());
+        }
+    }
+
 }

@@ -16,6 +16,7 @@
 
 package org.labkey.api.util;
 
+import org.jspecify.annotations.NonNull;
 import org.labkey.api.pipeline.PipelineService;
 
 import java.util.concurrent.ExecutionException;
@@ -26,9 +27,9 @@ import java.util.concurrent.TimeUnit;
  * User: jeckels
 * Date: Apr 16, 2008
 */
-public abstract class Job implements Future, Runnable
+public abstract class Job implements Future<Object>, Runnable
 {
-    transient Future _task = null;
+    transient Future<?> _task = null;
     transient long _startTime = 0;
     transient long _finishTime = 0;
 
@@ -88,7 +89,7 @@ public abstract class Job implements Future, Runnable
     }
 
     @Override
-    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException
+    public Object get(long timeout, @NonNull TimeUnit unit) throws InterruptedException, ExecutionException
     {
         if (_task == null) throw new IllegalStateException("job has not been submitted");
         return _task.get();
