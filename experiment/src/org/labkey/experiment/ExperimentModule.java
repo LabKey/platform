@@ -966,7 +966,7 @@ public class ExperimentModule extends SpringModule
                 list.add(runCount + " runs of type " + runType.getDescription());
         }
 
-        int dataClassCount = ExperimentService.get().getDataClasses(c, null, false).size();
+        int dataClassCount = ExperimentService.get().getDataClasses(c, false).size();
         if (dataClassCount > 0)
             list.add(dataClassCount + " Data Class" + (dataClassCount > 1 ? "es" : ""));
 
@@ -993,7 +993,7 @@ public class ExperimentModule extends SpringModule
             summaries.add(new Summary(runGroupCount, "Assay run"));
 
         // Number of Data Classes
-        List<? extends ExpDataClass> dataClasses = ExperimentService.get().getDataClasses(c, user, false);
+        List<? extends ExpDataClass> dataClasses = ExperimentService.get().getDataClasses(c, false);
         int dataClassCount = dataClasses.size();
         if (dataClassCount > 0)
             summaries.add(new Summary(dataClassCount, "Data Class"));

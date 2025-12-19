@@ -117,7 +117,7 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
         if (params.containsKey(SAMPLE_NAME_KEY))
         {
             sampleName = params.get(SAMPLE_NAME_KEY);
-            sampleType = SampleTypeService.get().getSampleType(job.getContainer(), job.getUser(), sampleName);
+            sampleType = SampleTypeService.get().getSampleType(job.getContainer(), sampleName, true);
             if (sampleType != null)
                 log.info("Sample Type matching the 'name' capture group was resolved : " + sampleName);
             else
@@ -144,7 +144,7 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
             // if we aren't trying a named capture group resolution, see if there is a match of an existing sample type
             // by file name
             if (!params.containsKey(SAMPLE_NAME_KEY))
-                sampleType = SampleTypeService.get().getSampleType(job.getContainer(), job.getUser(), sampleName);
+                sampleType = SampleTypeService.get().getSampleType(job.getContainer(), sampleName, true);
 
             // still no resolution to an existing sample type, create a new one inferring the schema from the data file
             if (sampleType == null)

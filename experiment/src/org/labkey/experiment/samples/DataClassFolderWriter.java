@@ -68,7 +68,7 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
         if (exportContext.isDataClassXarCreated())
             return;
 
-        for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(c, ctx.getUser(), false))
+        for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(c, false))
         {
             // ignore data classes that are filtered out
             if (EXCLUDED_TYPES.contains(dataClass.getName()))

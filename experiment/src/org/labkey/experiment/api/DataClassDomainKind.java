@@ -146,7 +146,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         // if "sampleSet" is the Name string, look it up and switch the argument map to use the RowId
         if (arguments.containsKey("sampleSet") && !StringUtils.isNumeric(arguments.get("sampleSet").toString()))
         {
-            ExpSampleType sampleType = SampleTypeService.get().getSampleType(container, user, (String)arguments.get("sampleSet"));
+            ExpSampleType sampleType = SampleTypeService.get().getSampleType(container, (String)arguments.get("sampleSet"), true);
             if (sampleType != null)
                 updatedArguments.put("sampleSet", sampleType.getRowId());
         }
