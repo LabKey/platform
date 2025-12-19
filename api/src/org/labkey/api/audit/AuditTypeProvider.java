@@ -48,9 +48,6 @@ public interface AuditTypeProvider
 
     <K extends AuditTypeEvent> Class<K> getEventClass();
 
-    @Deprecated // Not used anymore - remove
-    Map<FieldKey, String> legacyNameMap();
-
     ActionURL getAuditUrl();
 
     /**
