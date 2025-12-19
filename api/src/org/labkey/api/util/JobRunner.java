@@ -97,26 +97,17 @@ public class JobRunner implements Executor
         return _defaultJobRunner;
     }
 
-    public void waitForCompletion()
-    {
-        synchronized (_jobs)
-        {
-            while (!_jobs.isEmpty())
-            {
-                try
-                {
-                    _jobs.wait();
-                }
-                catch (InterruptedException ignored) {}
-            }
-        }
-    }
-
+    /**
+     * @see java.util.concurrent.ExecutorService#shutdown()
+     */
     public void shutdown()
     {
         _executor.shutdown();
     }
 
+    /**
+     * @see java.util.concurrent.ExecutorService#awaitTermination(long, TimeUnit)
+     */
     public boolean awaitTermination(long timeout, @NotNull TimeUnit unit) throws InterruptedException
     {
         return _executor.awaitTermination(timeout, unit);
@@ -134,11 +125,6 @@ public class JobRunner implements Executor
     /**
      * This will schedule the runnable using the provided delay
      */
-    public Future<?> execute(long delay, Runnable command)
-    {
-        return execute(command, delay);
-    }
-
     public Future<?> execute(Runnable command, long delay)
     {
         Job job = command instanceof Job j ? j :  new RunnableJob(command);
@@ -362,7 +348,7 @@ public class JobRunner implements Executor
         }
 
         @Test
-        public void testWaitForCompletion()
+        public void testWaitForCompletion() throws InterruptedException
         {
             JobRunner runner = new JobRunner("testWaitForCompletion", 2);
             int jobCount = 5;
@@ -386,7 +372,8 @@ public class JobRunner implements Executor
 
             assertEquals("Jobs should not be completed yet", 0, completedCount.get());
             startLatch.countDown();
-            runner.waitForCompletion();
+            runner.shutdown();
+            runner.awaitTermination(10, TimeUnit.SECONDS);
             assertEquals("All jobs should be completed", jobCount, completedCount.get());
         }
     }

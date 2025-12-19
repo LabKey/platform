@@ -468,7 +468,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                     updateLastIndexedList.add(new Pair<>(getRowId(), ms));
                     if (wasEmpty)
                     {
-                        JobRunner.getDefault().execute(1000, () ->
+                        JobRunner.getDefault().execute(() ->
                         {
                             List<Pair<Long, Long>> copy;
                             synchronized (updateLastIndexedList)
@@ -477,7 +477,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                                 updateLastIndexedList.clear();
                             }
                             ExperimentServiceImpl.get().setMaterialLastIndexed(copy);
-                        });
+                        }, 1000);
                     }
                 }
             }
