@@ -48,11 +48,11 @@ public class DataClassUserSchema extends AbstractExpSchema
 
     private Map<String, ExpDataClass> _map;
 
-    static private Map<String, ExpDataClass> getDataClassMap(Container container, User user)
+    static private Map<String, ExpDataClass> getDataClassMap(Container container)
     {
         Map<String, ExpDataClass> map = new CaseInsensitiveTreeMap<>();
         // User can be null if we're running in a background thread, such as doing a study export.
-        for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(container, user, true))
+        for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(container, true))
         {
             map.put(dataClass.getName(), dataClass);
         }
@@ -73,7 +73,7 @@ public class DataClassUserSchema extends AbstractExpSchema
     private Map<String, ExpDataClass> getDataClasses()
     {
         if (_map == null)
-            _map = getDataClassMap(getContainer(), getUser());
+            _map = getDataClassMap(getContainer());
         return _map;
     }
 

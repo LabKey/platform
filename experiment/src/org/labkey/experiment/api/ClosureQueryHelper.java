@@ -380,7 +380,7 @@ public class ClosureQueryHelper
             container -> {
                 int totalRows = 0;
                 logger.info("Adding rows to exp.materialAncestors from sample types in container " + container.getPath());
-                for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, null, false))
+                for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, false))
                 {
                     logger.debug("   Adding rows from samples in sampleType " + sampleType.getName());
                     SQLFragment from = new SQLFragment(" FROM exp.material WHERE materialSourceId = ?").add(sampleType.getRowId());
@@ -403,7 +403,7 @@ public class ClosureQueryHelper
             container -> {
                 int totalRows = 0;
                 logger.info("Adding rows to exp.dataAncestors from data classes in container " + container.getPath());
-                for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(container, null, false))
+                for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(container, false))
                 {
                     logger.debug("   Adding rows to exp.dataAncestors from data class " + dataClass.getName());
                     SQLFragment from = new SQLFragment(" FROM exp.data WHERE classId = ?").add(dataClass.getRowId());
@@ -653,15 +653,15 @@ public class ClosureQueryHelper
                     Collection<? extends ExpObject> getInstances(Container c, User u)
                     {
                         return SampleTypeServiceImpl.get()
-                                .getSampleTypes(c, u,true)
-                                .stream()
-                                .filter(this::isInstance)
-                                .collect(Collectors.toList());
+                            .getSampleTypes(c,true)
+                            .stream()
+                            .filter(this::isInstance)
+                            .collect(Collectors.toList());
                     }
                     @Override
                     ExpObject getInstance(Container c, User u, String name)
                     {
-                        return SampleTypeServiceImpl.get().getSampleType(c, u, name);
+                        return SampleTypeServiceImpl.get().getSampleType(c, name, true);
                     }
                     @Override
                     boolean isInstance(ExpObject expObject)
@@ -674,7 +674,7 @@ public class ClosureQueryHelper
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
                     {
-                        return ExperimentServiceImpl.get().getDataClasses(c, u,true)
+                        return ExperimentServiceImpl.get().getDataClasses(c, true)
                                 .stream()
                                 .filter(this::isInstance)
                                 .collect(Collectors.toList());
@@ -682,7 +682,7 @@ public class ClosureQueryHelper
                     @Override
                     ExpObject getInstance(Container c, User u, String name)
                     {
-                        return ExperimentServiceImpl.get().getDataClass(c, u, name);
+                        return ExperimentServiceImpl.get().getDataClass(c, name, true);
                     }
                     @Override
                     boolean isInstance(ExpObject expObject)
@@ -696,7 +696,7 @@ public class ClosureQueryHelper
                     Collection<? extends ExpObject> getInstances(Container c, User u)
                     {
                         return ExperimentServiceImpl.get()
-                                .getDataClasses(c, u,true)
+                                .getDataClasses(c, true)
                                 .stream()
                                 .filter(this::isInstance)
                                 .collect(Collectors.toList());
@@ -704,7 +704,7 @@ public class ClosureQueryHelper
                     @Override
                     ExpObject getInstance(Container c, User u, String name)
                     {
-                        return ExperimentServiceImpl.get().getDataClass(c, u, name);
+                        return ExperimentServiceImpl.get().getDataClass(c, name, true);
                     }
                     @Override
                     boolean isInstance(ExpObject expObject)
@@ -718,15 +718,15 @@ public class ClosureQueryHelper
                     Collection<? extends ExpObject> getInstances(Container c, User u)
                     {
                         return SampleTypeServiceImpl.get()
-                                .getSampleTypes(c, u,true)
-                                .stream()
-                                .filter(this::isInstance)
-                                .collect(Collectors.toList());
+                            .getSampleTypes(c,true)
+                            .stream()
+                            .filter(this::isInstance)
+                            .collect(Collectors.toList());
                     }
                     @Override
                     ExpObject getInstance(Container c, User u, String name)
                     {
-                        return SampleTypeServiceImpl.get().getSampleType(c, u, name);
+                        return SampleTypeServiceImpl.get().getSampleType(c, name, true);
                     }
                     @Override
                     boolean isInstance(ExpObject expObject)
@@ -740,7 +740,7 @@ public class ClosureQueryHelper
                     Collection<? extends ExpObject> getInstances(Container c, User u)
                     {
                         return ExperimentServiceImpl.get()
-                                .getDataClasses(c, u,true)
+                                .getDataClasses(c, true)
                                 .stream()
                                 .filter(this::isInstance)
                                 .collect(Collectors.toList());
@@ -748,7 +748,7 @@ public class ClosureQueryHelper
                     @Override
                     ExpObject getInstance(Container c, User u, String name)
                     {
-                        return ExperimentServiceImpl.get().getDataClass(c, u, name);
+                        return ExperimentServiceImpl.get().getDataClass(c, name, true);
                     }
                     @Override
                     boolean isInstance(ExpObject expObject)
