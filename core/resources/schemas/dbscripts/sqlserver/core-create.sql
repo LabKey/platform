@@ -28,29 +28,3 @@ CREATE VIEW core.ActiveUsers AS
     WHERE Active=1;
 
 GO
-
-CREATE VIEW core.ContainerPath AS
-    WITH container_hierarchy AS (
-            SELECT
-                EntityId,
-                Name,
-                Parent,
-                Type,
-                1 as Level,
-                CAST('' AS NVARCHAR(MAX)) AS Path
-            FROM core.Containers
-            WHERE Parent IS NULL AND Type = 'normal'
-
-            UNION ALL
-
-            SELECT
-                c.EntityId,
-                c.Name,
-                c.Parent,
-                c.Type,
-                ch.Level + 1,
-                CAST(ch.Path + '/' + c.Name AS NVARCHAR(MAX)) AS Path
-            FROM core.Containers c JOIN container_hierarchy ch ON c.Parent = ch.EntityId
-    ) SELECT * from container_hierarchy
-
-GO
