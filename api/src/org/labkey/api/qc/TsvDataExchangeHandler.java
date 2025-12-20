@@ -513,12 +513,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         {
             try (TabLoader loader = new TabLoader(runInfoFile.toNioPathForRead().toFile(), false))
             {
-                // Don't unescape file path names on windows (C:\foo\bar.tsv)
-                loader.setUnescapeBackslashes(false);
                 loader.setColumns(new ColumnDescriptor[]{
-                        new ColumnDescriptor("name", String.class),
-                        new ColumnDescriptor("value", String.class),
-                        new ColumnDescriptor("type", String.class)
+                    new ColumnDescriptor("name", String.class),
+                    new ColumnDescriptor("value", String.class),
+                    new ColumnDescriptor("type", String.class)
                 });
 
                 for (Map<String, Object> row : loader)
@@ -790,13 +788,11 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     {
         try (TabLoader loader = new TabLoader(runInfo, false))
         {
-            // Don't unescape file path names on windows (C:\foo\bar.tsv)
-            loader.setUnescapeBackslashes(false);
             loader.setColumns(new ColumnDescriptor[]{
-                    new ColumnDescriptor("name", String.class),
-                    new ColumnDescriptor("value", String.class),
-                    new ColumnDescriptor("type", String.class),
-                    new ColumnDescriptor("transformedData", String.class)
+                new ColumnDescriptor("name", String.class),
+                new ColumnDescriptor("value", String.class),
+                new ColumnDescriptor("type", String.class),
+                new ColumnDescriptor("transformedData", String.class)
             });
             return loader.load();
         }

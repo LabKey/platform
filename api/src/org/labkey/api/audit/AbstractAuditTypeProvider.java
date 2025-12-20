@@ -276,12 +276,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         return null;
     }
 
-    @Override
-    public Map<FieldKey, String> legacyNameMap()
-    {
-        return new LinkedHashMap<>();
-    }
-
     public static Container getDomainContainer()
     {
         return ContainerManager.getSharedContainer();
