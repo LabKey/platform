@@ -98,6 +98,24 @@ public class JobRunner implements Executor
     }
 
     /**
+     * Waits for all submitted jobs to complete. Does not require shutdown.
+     */
+    public void waitForCompletion()
+    {
+        synchronized (_jobs)
+        {
+            while (!_jobs.isEmpty())
+            {
+                try
+                {
+                    _jobs.wait();
+                }
+                catch (InterruptedException ignored) {}
+            }
+        }
+    }
+
+    /**
      * @see java.util.concurrent.ExecutorService#shutdown()
      */
     public void shutdown()
@@ -288,93 +306,114 @@ public class JobRunner implements Executor
         public void testJobCallbacks() throws Exception
         {
             JobRunner runner = new JobRunner("testJobCallbacks", 1);
-            AtomicBoolean startingCalled = new AtomicBoolean(false);
-            AtomicBoolean doneCalled = new AtomicBoolean(false);
-            CountDownLatch latch = new CountDownLatch(1);
-
-            Job job = new Job()
+            try
             {
-                @Override
-                protected void starting(Thread t)
-                {
-                    startingCalled.set(true);
-                }
+                AtomicBoolean startingCalled = new AtomicBoolean(false);
+                AtomicBoolean doneCalled = new AtomicBoolean(false);
+                CountDownLatch latch = new CountDownLatch(1);
 
-                @Override
-                protected void done(Throwable t)
+                Job job = new Job()
                 {
-                    doneCalled.set(true);
-                    latch.countDown();
-                }
+                    @Override
+                    protected void starting(Thread t)
+                    {
+                        startingCalled.set(true);
+                    }
 
-                @Override
-                public void run()
-                {
-                }
-            };
+                    @Override
+                    protected void done(Throwable t)
+                    {
+                        doneCalled.set(true);
+                        latch.countDown();
+                    }
 
-            runner.execute(job);
-            assertTrue("Timed out waiting for job to complete", latch.await(5, TimeUnit.SECONDS));
-            assertTrue("starting() should have been called", startingCalled.get());
-            assertTrue("done() should have been called", doneCalled.get());
+                    @Override
+                    public void run()
+                    {
+                    }
+                };
+
+                runner.execute(job);
+                assertTrue("Timed out waiting for job to complete", latch.await(5, TimeUnit.SECONDS));
+                assertTrue("starting() should have been called", startingCalled.get());
+                assertTrue("done() should have been called", doneCalled.get());
+            }
+            finally
+            {
+                runner.shutdown();
+            }
         }
 
         @Test
         public void testRunnableCallbacks() throws Exception
         {
             JobRunner runner = new JobRunner("testRunnableCallbacks", 1);
-            AtomicBoolean startingCalled = new AtomicBoolean(false);
-            AtomicBoolean doneCalled = new AtomicBoolean(false);
-            CountDownLatch latch = new CountDownLatch(1);
+            try
+            {
+                AtomicBoolean startingCalled = new AtomicBoolean(false);
+                AtomicBoolean doneCalled = new AtomicBoolean(false);
+                CountDownLatch latch = new CountDownLatch(1);
 
-            runner.execute(new RunnableJob(() -> {})
-                           {
-                               @Override
-                               protected void starting(Thread t)
-                               {
-                                   startingCalled.set(true);
-                               }
+                runner.execute(new RunnableJob(() -> {
+                })
+                {
+                    @Override
+                    protected void starting(Thread t)
+                    {
+                        startingCalled.set(true);
+                    }
 
-                               @Override
-                               protected void done(Throwable t)
-                               {
-                                   doneCalled.set(true);
-                                   latch.countDown();
-                               }
-                           }, 0);
-            assertTrue("Timed out waiting for runnable to complete", latch.await(5, TimeUnit.SECONDS));
-            assertTrue("starting() should have been called", startingCalled.get());
-            assertTrue("done() should have been called", doneCalled.get());
+                    @Override
+                    protected void done(Throwable t)
+                    {
+                        doneCalled.set(true);
+                        latch.countDown();
+                    }
+                }, 0);
+                assertTrue("Timed out waiting for runnable to complete", latch.await(5, TimeUnit.SECONDS));
+                assertTrue("starting() should have been called", startingCalled.get());
+                assertTrue("done() should have been called", doneCalled.get());
+            }
+            finally
+            {
+                runner.shutdown();
+            }
         }
 
         @Test
         public void testWaitForCompletion() throws InterruptedException
         {
             JobRunner runner = new JobRunner("testWaitForCompletion", 2);
-            int jobCount = 5;
-            CountDownLatch startLatch = new CountDownLatch(1);
-            AtomicInteger completedCount = new AtomicInteger(0);
-
-            for (int i = 0; i < jobCount; i++)
+            try
             {
-                runner.execute(() -> {
-                    try
-                    {
-                        startLatch.await();
-                        completedCount.incrementAndGet();
-                    }
-                    catch (InterruptedException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
+                int jobCount = 5;
+                CountDownLatch startLatch = new CountDownLatch(1);
+                AtomicInteger completedCount = new AtomicInteger(0);
 
-            assertEquals("Jobs should not be completed yet", 0, completedCount.get());
-            startLatch.countDown();
-            runner.shutdown();
-            runner.awaitTermination(10, TimeUnit.SECONDS);
-            assertEquals("All jobs should be completed", jobCount, completedCount.get());
+                for (int i = 0; i < jobCount; i++)
+                {
+                    runner.execute(() -> {
+                        try
+                        {
+                            startLatch.await();
+                            completedCount.incrementAndGet();
+                        }
+                        catch (InterruptedException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
+
+                assertEquals("Jobs should not be completed yet", 0, completedCount.get());
+                startLatch.countDown();
+                runner.waitForCompletion();
+                assertEquals("All jobs should be completed", jobCount, completedCount.get());
+            }
+            finally
+            {
+                runner.shutdown();
+            }
         }
     }
 
