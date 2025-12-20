@@ -78,7 +78,7 @@ public abstract class MessageDigest
         AtomicReference<Exception> ref = new AtomicReference<>();
 
         // Issue 45978: Run in a background thread to better simulate being triggered by a timer
-        Future<?> future = JobRunner.getDefault().execute(() -> {
+        JobRunner.getDefault().execute(() -> {
             try
             {
                 for (Provider provider : _providers)
@@ -92,7 +92,8 @@ public abstract class MessageDigest
             }
         }, 0);
 
-        future.get();
+        JobRunner.getDefault().waitForCompletion();
+
         if (ref.get() != null)
         {
             throw ref.get();
