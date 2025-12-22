@@ -1847,6 +1847,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     var queryChartData = function(renderTo, queryConfig, chartConfig, callback) {
         queryConfig.containerPath = LABKEY.container.path;
+        queryConfig.method = 'POST'; // GitHub Issue 731
 
         if (queryConfig.filterArray && queryConfig.filterArray.length > 0) {
             var filters = [];
