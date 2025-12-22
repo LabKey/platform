@@ -35,6 +35,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -89,9 +90,10 @@ public abstract class MessageDigest
             {
                 ref.set(e);
             }
-        });
+        }, 0);
 
         JobRunner.getDefault().waitForCompletion();
+
         if (ref.get() != null)
         {
             throw ref.get();

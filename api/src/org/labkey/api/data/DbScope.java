@@ -2196,7 +2196,10 @@ public class DbScope
     {
         ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
         closeAllConnectionsForCurrentThread();
-        QueryService.get().clearEnvironment();
+        if (QueryService.get() != null)  // Check enables calling during a unit test
+        {
+            QueryService.get().clearEnvironment();
+        }
         BANNED_THREADS.remove(Thread.currentThread());
     }
 

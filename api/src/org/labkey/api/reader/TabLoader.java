@@ -20,7 +20,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +29,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.HashDataIterator;
 import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableIterator;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
@@ -68,8 +66,6 @@ import java.util.stream.Collectors;
  */
 public class TabLoader extends DataLoader
 {
-    public static final String FEATUREFLAG_UNESCAPE_BACKSLASH  = "dataloader-unescape-backslashes";
-
     public static final FileType TSV_FILE_TYPE = new TabFileType(Arrays.asList(".tsv", ".txt"), ".tsv", "text/tab-separated-values");
     public static final FileType CSV_FILE_TYPE = new TabFileType(Collections.singletonList(".csv"), ".csv", "text/comma-separated-values");
 
@@ -138,7 +134,6 @@ public class TabLoader extends DataLoader
         {
             loader.setInferTypes(false);
             // Issue 43661 - Excessive logging when indexing a .log file containing backslash followed by "u" that confuses TabLoader
-            loader.setUnescapeBackslashes(false);
             return loader;
         }
 
@@ -160,7 +155,6 @@ public class TabLoader extends DataLoader
         public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer)
         {
             TabLoader loader = new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
-            loader.setUnescapeBackslashes(false);
             loader.setDelimiters(fieldTerminator, lineTerminator);
             loader.setParseQuotes(false);
             return loader;
@@ -170,7 +164,6 @@ public class TabLoader extends DataLoader
         public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
             TabLoader loader = new TabLoader(Readers.getBOMDetectingReader(is), hasColumnHeaders, mvIndicatorContainer);
-            loader.setUnescapeBackslashes(false);
             loader.setDelimiters(fieldTerminator,lineTerminator);
             loader.setParseQuotes(false);
             return loader;
@@ -203,7 +196,6 @@ public class TabLoader extends DataLoader
 
     private boolean _parseQuotes = true;
     private boolean _parseEnclosedQuotes = false; // only treat quote as quote if it comes in pairs, otherwise treat it as a regular character
-    private boolean _unescapeBackslashes = AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_UNESCAPE_BACKSLASH);
 
     // Infer whether there are headers
     public TabLoader(File inputFile)
@@ -338,26 +330,6 @@ public class TabLoader extends DataLoader
         value = StringUtils.trimToEmpty(value);
         if ("\\N".equals(value))
             return _preserveEmptyString ? null : "";
-        if (_unescapeBackslashes && value.indexOf('\\') >= 0)   // unescapeJava() is really slow
-        {
-            try
-            {
-                return StringEscapeUtils.unescapeJava(value);
-            }
-            catch (IllegalArgumentException e)
-            {
-                // Issue 16691: OctalUnescaper or UnicodeUnescaper translators will throw NumberFormatException for illegal sequences such as '\' followed by octal '9' or unicode 'zzzz'.
-                // StringEscapeUtils can also throw IllegalArgumentException
-                String msg = "Error reading data. Can't unescape value '" + value + "'. ";
-                if (e instanceof NumberFormatException)
-                    msg += "Number format error ";
-                msg += e.getMessage();
-                if (isThrowOnErrors())
-                    throw new IllegalArgumentException(msg, e);
-                else
-                    _log.warn(msg);
-            }
-        }
         return value;
     }
 
@@ -589,11 +561,6 @@ public class TabLoader extends DataLoader
     public void setParseEnclosedQuotes(boolean parseEnclosedQuotes)
     {
         _parseEnclosedQuotes = parseEnclosedQuotes;
-    }
-
-    public void setUnescapeBackslashes(boolean unescapeBackslashes)
-    {
-        _unescapeBackslashes = unescapeBackslashes;
     }
 
     @Override
@@ -1093,27 +1060,9 @@ public class TabLoader extends DataLoader
                 \tthis\\nis\\tmulti-line\tb
                 """;
 
+            // test no-unescaping
             try (TabLoader loader = new TabLoader(data, true))
             {
-                loader.setUnescapeBackslashes(true);
-                List<Map<String, Object>> rows = loader.load();
-                assertEquals(2, rows.size());
-
-                Map<String, Object> row = rows.get(0);
-                assertEquals("a", row.get("A"));
-                assertEquals("this\nis\tmulti-line", row.get("Multi-Line"));
-                assertEquals("b", row.get("B"));
-
-                row = rows.get(1);
-                assertNull(row.get("A"));
-                assertEquals("this\nis\tmulti-line", row.get("Multi-Line"));
-                assertEquals("b", row.get("B"));
-            }
-
-            // now test no-unescaping
-            try (TabLoader loader = new TabLoader(data, true))
-            {
-                loader.setUnescapeBackslashes(false);
                 List<Map<String, Object>> rows = loader.load();
                 assertEquals(2, rows.size());
 
@@ -1196,40 +1145,10 @@ public class TabLoader extends DataLoader
                 Fred\t"quoted stuff" unquoted\t1""";
             data = data + "\nAlice\t\"\"\"quoted stuff\"\" unquoted";
 
+            // test no-unescaping
             try (TabLoader loader = new TabLoader(data, true))
             {
                 loader.setParseQuotes(true);
-                loader.setUnescapeBackslashes(true);
-
-                List<Map<String, Object>> rows = loader.load();
-                assertEquals(6, rows.size());
-
-                Map<String, Object> row = rows.get(0);
-                assertEquals("Bob", row.get("Name"));
-                assertEquals("with\ttab\nwith\"quote", row.get("Multi-Line"));
-                assertEquals(10, row.get("Age"));
-
-                row = rows.get(1);
-                assertEquals("Bob", row.get("Name"));
-                assertEquals("apple  \norange\tgrape", row.get("Multi-Line"));
-                assertEquals(3, row.get("Age"));
-
-                row = rows.get(2);
-                assertEquals("Bob", row.get("Name"));
-                assertEquals("one\n\"two\"  \tthree", row.get("Multi-Line"));
-                assertNull(row.get("Age"));
-
-                row = rows.get(3);
-                assertNull(row.get("Name"));
-                assertEquals("red\nblue\tgreen", row.get("Multi-Line"));
-                assertEquals(4, row.get("Age"));
-            }
-
-            // now test no-unescaping
-            try (TabLoader loader = new TabLoader(data, true))
-            {
-                loader.setParseQuotes(true);
-                loader.setUnescapeBackslashes(false);
 
                 List<Map<String, Object>> rows = loader.load();
                 assertEquals(6, rows.size());
