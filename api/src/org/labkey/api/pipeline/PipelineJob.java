@@ -1793,7 +1793,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
     }
 
     @Override
-    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException
+    public Object get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException
     {
         return get();
     }

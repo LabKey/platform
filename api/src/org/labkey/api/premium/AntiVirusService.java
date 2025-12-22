@@ -97,7 +97,7 @@ public interface AntiVirusService
      */
     default <T> void queueScan(@NotNull File f, @Nullable String originalName, ViewBackgroundInfo info, T extra, Callback<T> callbackFn)
     {
-        JobRunner.getDefault().submit(()-> callbackFn.call(f, extra, scan(new FileScannable(f, originalName), info)));
+        JobRunner.getDefault().execute(()-> callbackFn.call(f, extra, scan(new FileScannable(f, originalName), info)));
     }
 
     default void warnAndAuditLog(Logger log, String logmessage, ViewBackgroundInfo info, @Nullable String originalName)

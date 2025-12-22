@@ -158,6 +158,7 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.JSoupUtil;
+import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.MailHelper;
@@ -398,6 +399,7 @@ public class ApiModule extends CodeOnlyModule
             GenerateUniqueDataIterator.TestCase.class,
             HelpTopic.TestCase.class,
             InlineInClauseGenerator.TestCase.class,
+            JobRunner.TestCase.class,
             JSONDataLoader.HeaderMatchTest.class,
             JSONDataLoader.MetadataTest.class,
             JSONDataLoader.RowTest.class,
@@ -533,7 +535,7 @@ public class ApiModule extends CodeOnlyModule
     {
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
 
-        AuthenticationConfiguration.SSOAuthenticationConfiguration config = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
+        AuthenticationConfiguration.SSOAuthenticationConfiguration<?> config = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
         if (config != null)
             json.put("AutoRedirectSSOAuthConfiguration", config.getDescription());
 
