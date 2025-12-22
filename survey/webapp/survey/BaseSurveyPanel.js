@@ -902,7 +902,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
     },
 
     clearHiddenFieldValues : function(cmp) {
-        if (cmp.isHidden())
+        if (cmp.isHidden() && cmp.getXType() !== 'hiddenfield')
         {
             // the component can either be a form field itself or a container that has multiple fields
             if (cmp.isFormField)
