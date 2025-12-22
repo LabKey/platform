@@ -4968,7 +4968,8 @@ public class QueryController extends SpringActionController
                 else
                 {
                     String queryName = json.optString(PROP_QUERY_NAME, null);
-                    _targetContainer = ContainerManager.getMoveTargetContainer(queryName, getContainer(), getUser(), getTargetContainerProp(), errors);
+                    String schemaName = json.optString(PROP_SCHEMA_NAME, null);
+                    _targetContainer = ContainerManager.getMoveTargetContainer(schemaName, queryName, getContainer(), getUser(), getTargetContainerProp(), errors);
                 }
             }
         }
