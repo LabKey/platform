@@ -899,7 +899,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             // If we're not in edit mode or if this is the first load we need to only load the minimum amount of data.
             columns = [];
-            var measures = this.getChartConfig().measures;
+            var config = this.getChartConfig();
+            var measures = config.measures;
 
             if (measures.x)
             {
@@ -929,6 +930,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             if (this.autoColumnName) {
                 columns.push(this.autoColumnName.toString());
+            }
+
+            if (config.geomOptions.trendlineParameters) {
+                columns.push(config.geomOptions.trendlineParameters);
             }
 
             Ext4.each(['ySub', 'xSub', 'color', 'shape', 'series'], function(name) {
@@ -1032,6 +1037,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // Apps can set the legendPos to "bottom", so we use the legendPos if it's set on the original config
         if (this.savedReportInfo?.visualizationConfig?.chartConfig?.legendPos)
             config.legendPos = this.savedReportInfo.visualizationConfig.chartConfig.legendPos;
+
+        // Apps can set series specific measuresOptions, so we use the measuresOptions if it's set on the original config
+        if (this.savedReportInfo?.visualizationConfig?.chartConfig?.measuresOptions)
+            config.measuresOptions = this.savedReportInfo.visualizationConfig.chartConfig.measuresOptions;
 
         return config;
     },
