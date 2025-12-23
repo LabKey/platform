@@ -302,31 +302,31 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
     }
 
     @Override
-    public File getDataDirectory()
+    public FileLike getDataDirectory()
     {
-        return _webserverJobDir.toNioPathForWrite().toFile();
+        return _webserverJobDir;
     }
 
     @Override
-    public File getAnalysisDirectory()
+    public FileLike getAnalysisDirectory()
     {
-        return _webserverJobDir.toNioPathForWrite().toFile();
+        return _webserverJobDir;
     }
 
     @Override
-    public File findInputFile(String name)
+    public FileLike findInputFile(String name)
     {
-        return FileUtil.appendName(getAnalysisDirectory(), name);
+        return getAnalysisDirectory().resolveChild(name);
     }
 
     @Override
-    public File findOutputFile(String name)
+    public FileLike findOutputFile(String name)
     {
-        return FileUtil.appendName(getAnalysisDirectory(), name);
+        return getAnalysisDirectory().resolveChild(name);
     }
 
     @Override
-    public File findOutputFile(@NotNull String outputDir, @NotNull String fileName)
+    public FileLike findOutputFile(@NotNull String outputDir, @NotNull String fileName)
     {
         return AbstractFileAnalysisJob.getOutputFile(outputDir, fileName, getPipeRoot(), getLogger(), getAnalysisDirectory());
     }
@@ -338,21 +338,15 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
     }
 
     @Override
-    public @Nullable File getParametersFile()
+    public @Nullable FileLike getParametersFile()
     {
         return null;
     }
 
     @Override
-    public @Nullable File getJobInfoFile()
+    public List<FileLike> getInputFiles()
     {
-        return _webserverJobDir.resolveChild(FileUtil.makeLegalName(_jobName) + ".job.json").toNioPathForWrite().toFile();
-    }
-
-    @Override
-    public List<File> getInputFiles()
-    {
-        return _inputFiles.stream().map(FileLike::toNioPathForRead).map(Path::toFile).toList();
+        return _inputFiles;
     }
 
     @Override
