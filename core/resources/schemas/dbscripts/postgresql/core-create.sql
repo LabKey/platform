@@ -44,3 +44,4 @@ CREATE VIEW core.ActiveUsers AS
     FROM core.Users
     WHERE Active=true;
 
+

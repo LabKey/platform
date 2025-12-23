@@ -28,3 +28,4 @@ CREATE VIEW core.ActiveUsers AS
     WHERE Active=1;
 
 GO
+
