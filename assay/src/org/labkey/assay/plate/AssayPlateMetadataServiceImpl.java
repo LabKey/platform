@@ -705,11 +705,11 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
         private @Nullable String getPrefixedValue(String annotation, String prefix)
         {
-            if (annotation != null && annotation.trim().toLowerCase().startsWith(prefix + ":"))
+            if (annotation != null)
             {
                 // Issue 52782: measure name may contain a colon
                 String[] parts = annotation.split(":", 2);
-                if (parts.length == 2)
+                if (parts.length == 2 && parts[0].trim().equalsIgnoreCase(prefix))
                 {
                     return parts[1].trim();
                 }
