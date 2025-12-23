@@ -68,23 +68,24 @@ public abstract class MessageDigest
 
     public void sendMessageDigest() throws Exception
     {
-        Date prev = getLastSuccessful();
-        Date current = new Date();
-
-        // get the start and end times to compute the message digest for
-        Date start = getStartRange(current, prev);
-        Date end = getEndRange(current, prev);
-
         AtomicReference<Exception> ref = new AtomicReference<>();
 
         // Issue 45978: Run in a background thread to better simulate being triggered by a timer
         JobRunner.getDefault().execute(() -> {
             try
             {
+                Date prev = getLastSuccessful();
+                Date current = new Date();
+
+                // get the start and end times to compute the message digest for
+                Date start = getStartRange(current, prev);
+                Date end = getEndRange(current, prev);
+
                 for (Provider provider : _providers)
                 {
                     provider.sendDigestForAllContainers(start, end);
                 }
+                setLastSuccessful(end);
             }
             catch (Exception e)
             {
@@ -98,8 +99,6 @@ public abstract class MessageDigest
         {
             throw ref.get();
         }
-
-        setLastSuccessful(end);
     }
 
     protected Date getStartRange(Date current, Date last)
