@@ -393,6 +393,20 @@ public class SimpleFilter implements Filter
         {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (o == null || getClass() != o.getClass()) return false;
+            SQLClause sqlClause = (SQLClause) o;
+            return Objects.equals(_fragment, sqlClause._fragment) && Objects.equals(_fieldKeys, sqlClause._fieldKeys);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(_fragment, _fieldKeys);
+        }
     }
 
     public static class FalseClause extends SQLClause
@@ -1701,7 +1715,6 @@ public class SimpleFilter implements Filter
         {
             test(expectedSQL, description, clause, dialect, Collections.emptyMap());
         }
-
     }
 
     public static class InClauseTestCase extends ClauseTestCase
@@ -1951,6 +1964,24 @@ public class SimpleFilter implements Filter
             // verify filter containing multi-value separator ',' use json encoded filter value
             assertEquals(Pair.of("query.Foo~between", "{json:[\"a,b,c\",\"Z\"]}"),
                     new CompareType.BetweenClause(fieldKey, "a,b,c", "Z", false).toURLParam("query."));
+        }
+    }
+
+    public static class SqlClauseTestCase extends Assert
+    {
+        @Test
+        public void testEquals()
+        {
+            SQLClause clause1 = new SQLClause(new SQLFragment("This = That", 1, 2));
+            SQLClause clause2 = new SQLClause(new SQLFragment("This = That", 1, 2));
+            assertEquals(clause1, clause2);
+            assertEquals(clause1.hashCode(), clause2.hashCode());
+            SQLClause clause3 = new SQLClause(new SQLFragment("That = This", 1, 2));
+            assertNotEquals(clause1, clause3);
+            assertNotEquals(clause1.hashCode(), clause3.hashCode());
+            SQLClause clause4 = new SQLClause(new SQLFragment("This = That", 3, 4));
+            assertNotEquals(clause1, clause4);
+            assertNotEquals(clause1.hashCode(), clause4.hashCode());
         }
     }
 }

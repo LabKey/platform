@@ -431,6 +431,7 @@ public class ApiModule extends CodeOnlyModule
             SimpleFilter.BetweenClauseTestCase.class,
             SimpleFilter.FilterTestCase.class,
             SimpleFilter.InClauseTestCase.class,
+            SimpleFilter.SqlClauseTestCase.class,
             SqlScanner.TestCase.class,
             StringExpressionFactory.TestCase.class,
             StringUtilsLabKey.TestCase.class,

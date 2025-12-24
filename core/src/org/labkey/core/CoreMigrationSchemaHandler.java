@@ -86,10 +86,12 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
         super.beforeVerification();
 
         // Delete root and shared containers that were needed for bootstrapping
-        TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
-        Table.delete(containers);
+        Table.delete(CoreSchema.getInstance().getTableInfoContainers());
         DbScope targetScope = DbScope.getLabKeyScope();
         new SqlExecutor(targetScope).execute("ALTER SEQUENCE core.containers_rowid_seq RESTART"); // Reset Containers sequence
+
+        // Delete Guests and Users groups that were needed for bootstrapping
+        Table.delete(CoreSchema.getInstance().getTableInfoPrincipals());
     }
 
     @Override

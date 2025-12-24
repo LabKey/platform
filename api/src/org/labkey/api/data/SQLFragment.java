@@ -1322,6 +1322,12 @@ public class SQLFragment implements Appendable, CharSequence
         return getSQL().equals(other.getSQL()) && getParams().equals(other.getParams());
     }
 
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(getSQL(), getParams());
+    }
+
     /**
      * Joins the SQLFragments in the provided {@code Iterable} into a single SQLFragment. The SQL is joined by string
      * concatenation using the provided separator. The parameters are combined to form the new parameter list.
