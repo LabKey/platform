@@ -65,7 +65,7 @@ LABKEY.vis.Scale.ValueMapDiscrete = function(valueMap) {
     // copied from d3.scale.ordinal
     scale.range = function(_) {
         if (!arguments.length) return range.slice();
-        range = Array.from(_);
+        range = _ ? Array.from(_) : [];
         return scale;
     };
 

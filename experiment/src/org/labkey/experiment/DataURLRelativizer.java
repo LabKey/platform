@@ -22,6 +22,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
@@ -75,21 +76,16 @@ public enum DataURLRelativizer
                 @Override
                 public String rewriteURL(Path path, ExpData data, String roleName, ExpRun expRun, User user, String rootFilePath) throws ExperimentException
                 {
-                    try
-                    {
-                        if (path == null)
-                            return null;
+                    if (path == null)
+                        return null;
 
-                        if (expRun == null || expRun.getFilePathRoot() == null)
-                        {
-                            return FileUtil.pathToString(path);
-                        }
-                        return FileUtil.relativizeUnix(expRun.getFilePathRootPath(), path, false);
-                    }
-                    catch (IOException e)
+                    if (expRun == null || expRun.getFilePathRoot() == null)
                     {
-                        throw new ExperimentException(e);
+                        return FileUtil.pathToString(path);
                     }
+
+                    // NOTE: this will only write a relative path if the file is a direct descendant of the root.
+                    return ExperimentServiceImpl.get().generatePathStringRelativeToRootIfUnderRoot(path, expRun.getFilePathRootPath());
                 }
             };
         }

@@ -88,7 +88,7 @@ public class CoreWarningProvider implements WarningProvider
     public void startSchemaCheck(int delaySeconds)
     {
         // Issue 46264 - proactively check all DB schemas against the schema XML
-        JobRunner.getDefault().execute(TimeUnit.SECONDS.toMillis(delaySeconds), () ->
+        JobRunner.getDefault().execute(() ->
         {
             _dbSchemaWarnings.clear();
 
@@ -101,7 +101,7 @@ public class CoreWarningProvider implements WarningProvider
                     _dbSchemaWarnings.put(schema.getName(), schemaWarnings.getResults());
                 }
             }
-        });
+        }, TimeUnit.SECONDS.toMillis(delaySeconds));
     }
 
     @Override

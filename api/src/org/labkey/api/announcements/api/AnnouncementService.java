@@ -22,6 +22,7 @@ import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public interface AnnouncementService
 {
@@ -61,8 +62,8 @@ public interface AnnouncementService
     // Update
     Announcement updateAnnouncement(int RowId, Container c, User u, String title, String body);
 
-    // move announcements to the given target container
-    int updateContainer(List<String> discussionSrcIds, Container targetContainer, User u);
+    // move announcements and their attachments to the given target container
+    Map<String, Integer> updateContainer(List<String> discussionSrcIds, Container targetContainer, User u);
 
     // Delete
     void deleteAnnouncement(Announcement announcement);
