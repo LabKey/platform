@@ -19,13 +19,11 @@ package org.labkey.query.controllers;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.genai.Chat;
+import com.google.genai.errors.ClientException;
 import com.google.genai.errors.ServerException;
-import com.google.genai.types.FunctionDeclaration;
-import com.google.genai.types.GenerateContentConfig;
+import com.google.genai.types.Content;
 import com.google.genai.types.Part;
-import com.google.genai.types.Schema;
-import com.google.genai.types.Tool;
-import com.google.genai.types.Type;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -165,6 +163,7 @@ import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.mpc.McpService;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -330,7 +329,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -355,19 +353,12 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.common.collect.ImmutableList;
-import com.google.genai.Chat;
-import com.google.genai.Client;
-import com.google.genai.types.Content;
-import com.google.genai.types.GenerateContentResponse;
-
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static org.labkey.api.action.ApiJsonWriter.CONTENT_TYPE_JSON;
 import static org.labkey.api.assay.AssayFileWriter.ensureUploadDirectory;
 import static org.labkey.api.data.DbScope.NO_OP_TRANSACTION;
-import static org.labkey.api.data.views.DataViewProvider.EditInfo.Property.name;
 import static org.labkey.api.query.AbstractQueryUpdateService.saveFile;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
@@ -8932,35 +8923,11 @@ public class QueryController extends SpringActionController
 
         Chat getChat(String currentSchema)
         {
-            return SessionHelper.getAttribute(getViewContext().getRequest(), Chat.class.getName(), () -> {
-                Client client = new Client();
+            HttpSession session = getViewContext().getRequest().getSession(true);
+            Chat chatSession = McpService.get().getChat(session);
 
-                Schema columnsMetaDataParameters = Schema.builder()
-                        .type(Type.Known.OBJECT)
-                        .properties(Map.of("quotedTableName", Schema.builder()
-                                .type(Type.Known.STRING)
-                                .description("Fully qualified table name as it would appear in SQL e.g. \"schema\".\"table\"")
-                                .build()))
-                        .required("quotedTableName")
-                        .build();
-                var listColumnMetaDataFn = FunctionDeclaration.builder().name("listColumnsForTable").description("Provide column metadata for a sql table.  This tool Will also return SQL source for saved queries.").parameters(columnsMetaDataParameters);
-
-                Schema tablesMetaDataParameters = Schema.builder()
-                        .type(Type.Known.OBJECT)
-                        .properties(Map.of("quotedSchemaName", Schema.builder()
-                                .type(Type.Known.STRING)
-                                .description("Fully qualified schema name as it would appear in SQL e.g. \"schema\"")
-                                .build()))
-                        .required("quotedSchemaName")
-                        .build();
-                var listTablesMetaDataFn = FunctionDeclaration.builder().name("listTablesForSchema").description("Provide column metadata for a database table.").parameters(tablesMetaDataParameters);
-
-                var tools = Tool.builder().functionDeclarations(listColumnMetaDataFn, listTablesMetaDataFn);
-
-                GenerateContentConfig config = GenerateContentConfig.builder().tools(tools).build();
-
-                Chat chatSession = client.chats.create(getModel(), config);
-
+            if (Boolean.FALSE == SessionHelper.getAttribute(session, "QueryController#queryChatInitialized", Boolean.FALSE))
+            {
                 StringBuilder serviceMessage = new StringBuilder();
                 serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(getSQLHelp()).append("\n");
                 serviceMessage.append("NOTE: please prefer using lookup syntax rather than JOIN where possible.\n");
@@ -8987,23 +8954,24 @@ public class QueryController extends SpringActionController
                     }
                 }
 
-                chatSession.sendMessage(serviceMessage.toString());
-                return chatSession;
-            });
+                McpService.get().sendMessage(chatSession, serviceMessage.toString());
+                SessionHelper.getAttribute(session, "QueryController#queryChatInitialized", Boolean.TRUE);
+            }
+            return chatSession;
         }
 
         @Override
         public Object execute(PromptForm form, BindException errors) throws Exception
         {
-            Chat chatSession = getChat(form.getSchemaName());
-
-            String prompt = form.getPrompt();
-            for (int retry=0 ; retry < 5 ; retry++)
+            try (var mcpPush = org.labkey.api.mpc.McpContext.withContext(getViewContext()))
             {
-                GenerateContentResponse response;
+                Chat chatSession = getChat(form.getSchemaName());
+                String prompt = form.getPrompt();
+                String responseText;
+
                 try
                 {
-                    response = chatSession.sendMessage(prompt);
+                    responseText = McpService.get().sendMessage(chatSession, prompt);
                 }
                 catch (ServerException x)
                 {
@@ -9013,81 +8981,57 @@ public class QueryController extends SpringActionController
                             "text", "ERROR: " + x.getMessage(),
                             "success", Boolean.FALSE));
                 }
-                var functionCalls = response.functionCalls();
-                if (null == functionCalls || functionCalls.isEmpty())
-                {
-                    var sql = extractSql(response.text());
-                    var text = null==sql ? response.text() : null;
 
-                    /* VALIDATE SQL */
-                    if (null != sql)
+                var sql = extractSql(responseText);
+                var text = null == sql ? responseText : null;
+
+                /* VALIDATE SQL */
+                if (null != sql)
+                {
+                    QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema("study");
+                    try
                     {
-                        QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema("study");
-                        try
+                        TableInfo ti = QueryService.get().createTable(schema, sql, null, true);
+                        var warnings = ti.getWarnings();
+                        if (null != warnings)
                         {
-                            TableInfo ti = QueryService.get().createTable(schema, sql, null, true);
-                            var warnings = ti.getWarnings();
-                            if (null != warnings)
-                            {
-                                var warning = warnings.stream().findFirst();
-                                if (warning.isPresent())
-                                    throw warning.get();
-                            }
-                        }
-                        catch (QueryException x)
-                        {
-                            String validationPrompt = "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below, can you attempt to fix this?\n```" + x.getMessage() + "```";
-                            response = chatSession.sendMessage(validationPrompt);
-                            text = response.text();
-                            var newSQL = extractSql(response.text());
-                            if (isNotBlank(newSQL))
-                                sql = newSQL;
+                            var warning = warnings.stream().findFirst();
+                            if (warning.isPresent())
+                                throw warning.get();
                         }
                     }
+                    catch (QueryException x)
+                    {
+                        String validationPrompt = "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below, can you attempt to fix this?\n```" + x.getMessage() + "```";
+                        responseText = McpService.get().sendMessage(chatSession, validationPrompt);
+                        var newSQL = extractSql(responseText);
+                        if (isNotBlank(newSQL))
+                            sql = newSQL;
+                        text = responseText;
+                    }
+                }
 
-                    System.err.println(chatSession.getHistory(true));
-                    var ret = new JSONObject(Map.of(
-                            "model", getModel(),
-                            "success", Boolean.TRUE));
-                    if (null != sql)
-                        ret.put("sql",sql);
-                    if (null != text)
-                        ret.put("text", text);
-                    return ret;
-                }
-                StringBuilder fnPrompt = new StringBuilder();
-                for (var functionCall : response.functionCalls())
-                {
-                    var functionName = functionCall.name().orElse(null);
-                    if ("listColumnsForTable".equals(functionName))
-                    {
-                        var quotedName = String.valueOf(functionCall.args().get().get("quotedTableName"));
-                        var res = listColumnsForTable(quotedName);
-                        fnPrompt.append("Here is additional metadata for table " + quotedName + " formatted as JSON:\n```").append(res).append("```\n\n");
-                    }
-                    else if ("listTablesForSchema".equals(functionName))
-                    {
-                        var quotedName = String.valueOf(functionCall.args().get().get("quotedSchemaName"));
-                        var res = listTablesForSchema(quotedName);
-                        fnPrompt.append("Here is additional metadata for schema " + quotedName + " formatted as JSON:\n```").append(res).append("```\n\n");
-                    }
-                }
-                prompt = fnPrompt.toString();
+                System.err.println(chatSession.getHistory(true));
+                var ret = new JSONObject(Map.of(
+                        "model", getModel(),
+                        "success", Boolean.TRUE));
+                if (null != sql)
+                    ret.put("sql", sql);
+                if (null != text)
+                    ret.put("text", text);
+                return ret;
             }
-
-            // FALLBACK???
-            GenerateContentResponse response = chatSession.sendMessage(form.getPrompt());
-            System.err.println(chatSession.getHistory(true));
-            var ret = new JSONObject(Map.of(
-                    "text", response.text(),
-                    "user", getViewContext().getUser().getName(),
-                    "model", getModel(),
-                    "success", Boolean.TRUE));
-            var functionCalls = response.functionCalls();
-            if (null != functionCalls && !functionCalls.isEmpty())
-                ret.put("functionCall", functionCalls.get(0).toString());
-            return ret;
+            catch (ClientException ex)
+            {
+                var ret = new JSONObject(Map.of(
+                        "text", ex.getMessage(),
+                        "user", getViewContext().getUser().getName(),
+                        "model", getModel(),
+                        "success", Boolean.FALSE));
+                return ret;
+            }
         }
+
 
         String extractSql(String text)
         {

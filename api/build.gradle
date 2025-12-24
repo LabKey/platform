@@ -1029,6 +1029,45 @@ dependencies {
         )
     )
 
+    BuildUtils.addExternalDependency(
+            project,
+            new ExternalDependency(
+                    "org.springframework.ai:spring-ai-starter-mcp-server-webmvc:${springAiVersion}",
+                    "spring-ai-starter-mcp-server-webmvc",
+                    "spring-ai",
+                    "https://github.com/spring-projects/spring-ai",
+                    ExternalDependency.APACHE_2_LICENSE_NAME,
+                    ExternalDependency.APACHE_2_LICENSE_URL,
+                    "MPC Servlet"
+            )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.springframework.ai:spring-ai-bom:${springAiVersion}",
+            "spring-ai-bom",
+            "spring-ai",
+            "https://github.com/spring-projects/spring-ai",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "MPC Servlet"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+            project,
+            new ExternalDependency(
+                    "com.google.genai:google-genai:1.15.0",
+                    "GENAI",
+                    "GENAI",
+                    "https://google.com/",
+                    "???",
+                    "???",
+                    "GenAI"
+            )
+    )
+
     jspImplementation files(project.tasks.jar)
     jspImplementation apache, jackson, spring
 }

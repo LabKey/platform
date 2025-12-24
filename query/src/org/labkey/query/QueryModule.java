@@ -35,6 +35,7 @@ import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.mpc.McpService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.JavaExportScriptFactory;
@@ -93,6 +94,7 @@ import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
+import org.labkey.query.controllers.QueryMcp;
 import org.labkey.query.controllers.SqlController;
 import org.labkey.query.jdbc.QueryDriver;
 import org.labkey.query.olap.MemberSet;
@@ -237,6 +239,12 @@ public class QueryModule extends DefaultModule
             "Allow for lookup fields in product folders to query across all folders within the top-level folder.", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product folders display folder-specific data",
             "Only list folder-specific data within product folders.", false);
+
+        var mcp = McpService.get();
+        if (null != mcp)
+        {
+            mcp.register(new QueryMcp());
+        }
     }
 
 
