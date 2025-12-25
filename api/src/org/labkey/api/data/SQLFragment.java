@@ -313,12 +313,15 @@ public class SQLFragment implements Appendable, CharSequence
         return "SQLFragment@" + System.identityHashCode(this) + "\n" + JdbcUtil.format(this);
     }
 
-
     public String toDebugString()
     {
         return JdbcUtil.format(this);
     }
 
+    public String toDebugString(SqlDialect dialect)
+    {
+        return JdbcUtil.format(this, dialect);
+    }
 
     public List<Object> getParams()
     {
