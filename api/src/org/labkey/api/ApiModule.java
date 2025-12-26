@@ -366,6 +366,7 @@ public class ApiModule extends CodeOnlyModule
             Aggregate.TestCase.class,
             ApiXmlWriter.TestCase.class,
             ArrayListMap.TestCase.class,
+            AssayResultsFileWriter.TestCase.class,
             BaseServerProperties.TestCase.class,
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
@@ -399,12 +400,12 @@ public class ApiModule extends CodeOnlyModule
             GenerateUniqueDataIterator.TestCase.class,
             HelpTopic.TestCase.class,
             InlineInClauseGenerator.TestCase.class,
-            JobRunner.TestCase.class,
             JSONDataLoader.HeaderMatchTest.class,
             JSONDataLoader.MetadataTest.class,
             JSONDataLoader.RowTest.class,
             JSoupUtil.TestCase.class,
             JavaVersion.TestCase.class,
+            JobRunner.TestCase.class,
             JsonTest.class,
             JsonUtil.TestCase.class,
             LimitedUser.TestCase.class,
@@ -429,6 +430,7 @@ public class ApiModule extends CodeOnlyModule
             SchemaKey.TestCase.class,
             SessionHelper.TestCase.class,
             SimpleFilter.BetweenClauseTestCase.class,
+            SimpleFilter.ContainsOneOfTestCase.class,
             SimpleFilter.FilterTestCase.class,
             SimpleFilter.InClauseTestCase.class,
             SimpleFilter.SqlClauseTestCase.class,
@@ -441,9 +443,8 @@ public class ApiModule extends CodeOnlyModule
             TSVWriter.TestCase.class,
             TabLoader.HeaderMatchTest.class,
             Table.IsSelectTestCase.class,
-            ValidEmail.TestCase.class,
             URIUtil.TestCase.class,
-            AssayResultsFileWriter.TestCase.class
+            ValidEmail.TestCase.class
         );
     }
 
