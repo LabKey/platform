@@ -8,9 +8,14 @@ import org.labkey.api.util.GUID;
 import java.util.Set;
 
 /**
- * Rarely needed, this interface lets a module filter the rows of another module's table. The specific use case: LabBook
- * needs to filter the compliance.SignedSnapshots table of snapshots associated with Notebooks that are excluded by a
- * NotebookFilter.
+ * <p>In the cloning migration case, lets a module filter the rows of another module's table. The specific use case:
+ * LabBook needs to filter the compliance.SignedSnapshots table, removing snapshots associated with Notebooks that are
+ * excluded by a NotebookFilter.
+ * </p>
+ * <p>
+ * In the SQL Server migration case, lets a module replace specific select columns. This is primarily used to translate
+ * GUID values residing in non-GUID columns to lowercase.
+ * </p>
  */
 public interface MigrationTableHandler
 {

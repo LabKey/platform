@@ -294,8 +294,6 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
         {
             SQLFragment columnAlias = super.getValueSql(tableAlias);
 
-            // SELECT CASE WHEN idx > 0 THEN SUBSTRING(Properties, 1, idx - 1) + LOWER(SUBSTRING(Properties, idx, 36)) + SUBSTRING(Properties, idx + 36, LEN(Properties) - idx - 35) ELSE Properties END FROM (SELECT CAST(Properties AS VARCHAR(MAX)) AS Properties, PATINDEX(, Properties) AS idx) AS Properties)
-
             //noinspection StringConcatenationInsideStringBufferAppend - SQLFragment flips out about unmatched quotes, so we're forced to use string concatenation
             return new SQLFragment("(SELECT CASE WHEN idx > 0 THEN SUBSTRING(Properties, 1, idx - 1) + LOWER(SUBSTRING(Properties, idx, 36)) + SUBSTRING(Properties, idx + 36, LEN(Properties) - idx - 35) ELSE Properties END")
                 .append(" FROM (SELECT CAST(")
