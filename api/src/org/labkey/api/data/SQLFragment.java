@@ -310,12 +310,15 @@ public class SQLFragment implements Appendable, CharSequence
     @NotNull
     public String toString()
     {
-        return "SQLFragment@" + System.identityHashCode(this) + "\n" + JdbcUtil.format(this);
+        return "SQLFragment@" + System.identityHashCode(this) + "\n" + toDebugString();
     }
 
+    // Not recommended -- this uses the LabKey scope to dictate parsing of identifiers and string literals... which
+    // might not be correct for the incoming SQL.
+    @Deprecated // Use the variant below that takes a SqlDialect
     public String toDebugString()
     {
-        return JdbcUtil.format(this);
+        return toDebugString(DbScope.getLabKeyScope().getSqlDialect());
     }
 
     public String toDebugString(SqlDialect dialect)
