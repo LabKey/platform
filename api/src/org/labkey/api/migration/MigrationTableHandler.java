@@ -1,5 +1,6 @@
 package org.labkey.api.migration;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.GUID;
@@ -14,5 +15,11 @@ import java.util.Set;
 public interface MigrationTableHandler
 {
     TableInfo getTableInfo();
-    void adjustFilter(TableInfo sourceTable, SimpleFilter filter, Set<GUID> containers);
+    // This method is invoked during cloning migration
+    default void adjustFilter(TableInfo sourceTable, SimpleFilter filter, Set<GUID> containers){}
+    // This method is invoked during SQL Server migration primarily to map GUID values to lowercase
+    default ColumnInfo handleColumn(ColumnInfo sourceColumn)
+    {
+        return sourceColumn;
+    }
 }

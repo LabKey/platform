@@ -413,7 +413,15 @@ public class SimpleFilter implements Filter
     {
         public FalseClause()
         {
-            super("0 = 1", null);
+            super(new SQLFragment("0 = 1"));
+        }
+    }
+
+    public static class TrueClause extends SQLClause
+    {
+        public TrueClause()
+        {
+            super(new SQLFragment("1 = 1"));
         }
     }
 

@@ -34,16 +34,20 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.MessageAuditProvider;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.WrappedColumn;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.migration.DatabaseMigrationConfiguration;
 import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.migration.DefaultMigrationSchemaHandler;
+import org.labkey.api.migration.MigrationTableHandler;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.rss.RSSService;
@@ -52,6 +56,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -206,6 +211,45 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
                 // It's theoretically possible to deploy Announcement without Wiki, so conditionalize
                 WikiService ws = WikiService.get();
                 return ws != null ? List.of(AnnouncementType.get(), ws.getAttachmentType()) : List.of(AnnouncementType.get());
+            }
+        });
+
+        DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
+        {
+            @Override
+            public TableInfo getTableInfo()
+            {
+                return CommSchema.getInstance().getTableInfoAnnouncements();
+            }
+
+            @Override
+            public ColumnInfo handleColumn(ColumnInfo col)
+            {
+                return "DiscussionSrcIdentifier".equals(col.getName()) ? new GuidMapperColumn(col) : col;
+            }
+
+            // In this column, map any value that exactly matches a GUID to lowercase
+            private static final class GuidMapperColumn extends WrappedColumn
+            {
+                public GuidMapperColumn(ColumnInfo col)
+                {
+                    super(col, col.getName());
+                }
+
+                @Override
+                public SQLFragment getValueSql(String tableAlias)
+                {
+                    SQLFragment columnAlias = super.getValueSql(tableAlias);
+                    //noinspection StringConcatenationInsideStringBufferAppend - SQLFragment flips out about unmatched quotes, so we're forced to use string concatenation
+                    return new SQLFragment("CASE WHEN ")
+                        .append(columnAlias)
+                        .append(" LIKE '" + GUID.SQL_LIKE_GUID_PATTERN + "'")
+                        .append(" THEN LOWER(")
+                        .append(columnAlias)
+                        .append(") ELSE ")
+                        .append(columnAlias)
+                        .append(" END");
+                }
             }
         });
     }
