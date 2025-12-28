@@ -328,8 +328,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
 
         try
         {
-            if (context.hasPermission(node.getContainer()))
-                context.writer.writeProperty(node.getLSID(), nodeToJson(node, context.popEdges(node.getLSID()), context));
+            context.writer.writeProperty(node.getLSID(), nodeToJson(node, context.popEdges(node.getLSID()), context));
         }
         catch (IOException e)
         {
@@ -343,10 +342,20 @@ public class ExpLineageServiceImpl implements ExpLineageService
 
         if (node == null)
             json = new JSONObject();
-        else
+        else if (context.hasPermission(node.getContainer()))
         {
             json = ExperimentJSONConverter.serialize(node, context.user, context.settings);
             json.put("type", node.getLSIDNamespacePrefix());
+        }
+        else // if option.includeRestrictedNodes == true
+        {
+            json = new JSONObject();
+            json.put("restricted", true);
+            json.put("type", node.getLSIDNamespacePrefix());
+
+            // TODO: Would be nice to get this without serializing the whole object first
+            var expJson = ExperimentJSONConverter.serialize(node, context.user, context.settings);
+            json.put(ExperimentJSONConverter.EXP_TYPE, expJson.get(ExperimentJSONConverter.EXP_TYPE));
         }
 
         json.put("parents", edges.parents().stream().map(ExpLineage.Edge::toParentJSON).toList());
