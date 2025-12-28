@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px"
+     width="64" height="64"
+     viewBox="0 0 64 64" style="enable-background:new 0 0 64 64;" xml:space="preserve" >
+<style type="text/css">
+     .st1{fill:#D3D3D3;}
+</style>
+    <g id="Lock_Icon">
+    <path class="st1" d="M49.6,28.8h-2.4v-7.2c0-8.4-6.8-15.2-15.2-15.2S16.8,13.2,16.8,21.6v7.2H14.4c-2.7,0-4.8,2.2-4.8,4.8
+        v19.2c0,2.7,2.2,4.8,4.8,4.8h35.2c2.7,0,4.8-2.2,4.8-4.8V33.6C54.4,31,52.3,28.8,49.6,28.8z M39.2,28.8H24.8v-7.2
+        c0-4,3.2-7.2,7.2-7.2s7.2,3.2,7.2,7.2V28.8z"/>
+</g>
+</svg>
