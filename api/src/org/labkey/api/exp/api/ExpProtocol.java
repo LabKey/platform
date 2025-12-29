@@ -166,4 +166,10 @@ public interface ExpProtocol extends ExpObject
     }
 
     Map<String, Object> getAuditRecordMap(AssayProvider provider);
+
+    @Override
+    default String getExpType()
+    {
+        return DEFAULT_CPAS_TYPE;
+    }
 }

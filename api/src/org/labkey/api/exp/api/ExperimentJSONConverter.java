@@ -216,7 +216,6 @@ public class ExperimentJSONConverter
     public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain, @NotNull Settings settings, @Nullable User user)
     {
         JSONObject jsonObject = serializeExpObject(runGroup, domain == null ? null : domain.getProperties(), settings, user);
-        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, ExpExperiment.DEFAULT_CPAS_TYPE);
 
         ExpProtocol protocol = runGroup.getBatchProtocol();
         if (protocol != null)
@@ -236,7 +235,6 @@ public class ExperimentJSONConverter
     public static JSONObject serializeRun(ExpRun run, Domain domain, User user, @NotNull Settings settings)
     {
         JSONObject jsonObject = serializeExpObject(run, domain == null ? null : domain.getProperties(), settings, user);
-        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, ExpRun.DEFAULT_CPAS_TYPE);
 
         ExpProtocol protocol = run.getProtocol();
         if (protocol != null)
@@ -306,9 +304,7 @@ public class ExperimentJSONConverter
 
         // Just include basic protocol properties for now.
         // See GetProtocolAction and GWTProtocol for serializing an assay protocol with domain fields.
-        JSONObject jsonObject = serializeExpObject(protocol, null, DEFAULT_SETTINGS.withIncludeProperties(false), user);
-        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, ExpProtocol.DEFAULT_CPAS_TYPE);
-        return jsonObject;
+        return serializeExpObject(protocol, null, DEFAULT_SETTINGS.withIncludeProperties(false), user);
     }
 
     public static JSONObject serializeRunOutputs(Collection<ExpData> data, Collection<ExpMaterial> materials, User user, @NotNull Settings settings)
@@ -400,10 +396,9 @@ public class ExperimentJSONConverter
     protected static JSONObject serializeRunProtocolApplication(@NotNull ExpProtocolApplication protApp, User user, Settings settings)
     {
         JSONObject json = serializeExpObject(protApp, null, settings, user);
-        json.put(ExperimentJSONConverter.EXP_TYPE, ExpProtocolApplication.DEFAULT_CPAS_TYPE);
-
         json.put(ACTION_SEQUENCE, protApp.getActionSequence());
         json.put(APPLICATION_TYPE, protApp.getApplicationType().toString());
+
         if (protApp.getComments() != null)
             json.put(COMMENT, protApp.getComments());
 
@@ -582,7 +577,7 @@ public class ExperimentJSONConverter
         // instead and use serializeOntologyProperties(ExpObject) so the object properties will be
         // fetched using ExpObject.getProperty().
         JSONObject jsonObject = serializeIdentifiableBean(object, user);
-        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, ExpObject.DEFAULT_CPAS_TYPE);
+        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, object.getExpType());
 
         long rowId = object.getRowId();
         if (rowId != 0)

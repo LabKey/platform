@@ -119,4 +119,9 @@ public interface ExpProtocolApplication extends ExpObject
     @Override
     void save(User user);
 
+    @Override
+    default String getExpType()
+    {
+        return DEFAULT_CPAS_TYPE;
+    }
 }

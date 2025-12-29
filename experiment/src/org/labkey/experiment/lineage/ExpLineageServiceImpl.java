@@ -336,34 +336,38 @@ public class ExpLineageServiceImpl implements ExpLineageService
         }
     }
 
-    private static JSONObject nodeToJson(@Nullable Identifiable node, ExpLineage.Edges edges, StreamContext context)
+    private static @NotNull JSONObject nodeToJson(@Nullable Identifiable node, ExpLineage.Edges edges, StreamContext context)
     {
-        JSONObject json;
-
-        if (node == null)
-            json = new JSONObject();
-        else if (context.hasPermission(node.getContainer()))
-        {
-            json = ExperimentJSONConverter.serialize(node, context.user, context.settings);
-            json.put("type", node.getLSIDNamespacePrefix());
-        }
-        else if (context.settings.isIncludeRestrictedNodes())
-        {
-            json = new JSONObject();
-            json.put("restricted", true);
-            json.put("type", node.getLSIDNamespacePrefix());
-
-            // TODO: Would be nice to get this without serializing the whole object first
-            var expJson = ExperimentJSONConverter.serialize(node, context.user, context.settings);
-            json.put(ExperimentJSONConverter.EXP_TYPE, expJson.get(ExperimentJSONConverter.EXP_TYPE));
-        }
-        else
-            json = new JSONObject();
-
+        JSONObject json = createNodeJson(node, context);
         json.put("parents", edges.parents().stream().map(ExpLineage.Edge::toParentJSON).toList());
         json.put("children", edges.children().stream().map(ExpLineage.Edge::toChildJSON).toList());
 
         return json;
+    }
+
+    private static @NotNull JSONObject createNodeJson(@Nullable Identifiable node, StreamContext context)
+    {
+        if (node == null)
+            return new JSONObject();
+
+        if (context.hasPermission(node.getContainer()))
+        {
+            JSONObject json = ExperimentJSONConverter.serialize(node, context.user, context.settings);
+            json.put("type", node.getLSIDNamespacePrefix());
+            return json;
+        }
+
+        if (context.settings.isIncludeRestrictedNodes())
+        {
+            JSONObject json = new JSONObject();
+            json.put(ExperimentJSONConverter.EXP_TYPE, node instanceof ExpObject expObject ? expObject.getExpType() : null);
+            json.put("restricted", true);
+            json.put("type", node.getLSIDNamespacePrefix());
+
+            return json;
+        }
+
+        return new JSONObject();
     }
 
     private static void writeSeed(LineageResult lineage, StreamContext context, ExpLineageOptions options) throws IOException
