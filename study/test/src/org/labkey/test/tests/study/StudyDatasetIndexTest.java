@@ -131,14 +131,14 @@ public class StudyDatasetIndexTest extends StudyBaseTest
                 .setType(FieldDefinition.ColumnType.Integer)
                 .expand()
                 .clickAdvancedSettings()
-                .setUniqueConstraint(true)
+                .setSingleFieldIndex("Unique")
                 .apply();
         datasetDesignerPage.getFieldsPanel()
                 .addField(fieldName2)
                 .setType(FieldDefinition.ColumnType.DateAndTime)
                 .expand()
                 .clickAdvancedSettings()
-                .setUniqueConstraint(true)
+                .setSingleFieldIndex("Non-Unique")
                 .apply();
         datasetDesignerPage.getFieldsPanel()
                 .addField(fieldName3)
@@ -148,21 +148,25 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         viewRawTableMetadata("DEM-3");
         verifyTableIndices("dem_minus_3_", List.of("field_name1", "fieldname_2"));
         assertTextNotPresent("dem_minus_3_fieldname_3");
+        verifyTableIndexNonUnique("dem_minus_3_", "field_name1", true);
+        verifyTableIndexNonUnique("dem_minus_3_", "fieldname_2", false);
 
         // remove a field unique constraint and add a new one
         goBack();
         datasetDesignerPage = goToEditDatasetDefinition("DEM-3");
         datasetDesignerPage.getFieldsPanel()
-                .getField(fieldName2).expand().clickAdvancedSettings().setUniqueConstraint(false)
+                .getField(fieldName1).expand().clickAdvancedSettings().setSingleFieldIndex("Non-Unique")
                 .apply();
         datasetDesignerPage.getFieldsPanel()
-                .getField(fieldName3).expand().clickAdvancedSettings().setUniqueConstraint(true)
+                .getField(fieldName3).expand().clickAdvancedSettings().setSingleFieldIndex("Unique")
                 .apply();
         datasetDesignerPage.clickSave();
 
         viewRawTableMetadata("DEM-3");
-        verifyTableIndices("dem_minus_3_", List.of("field_name1", "fieldname_3"));
-        assertTextNotPresent("dem_minus_3_fieldname_2");
+        verifyTableIndices("dem_minus_3_", List.of("field_name1", "fieldname_2", "fieldname_3"));
+        verifyTableIndexNonUnique("dem_minus_3_", "field_name1", false);
+        verifyTableIndexNonUnique("dem_minus_3_", "fieldname_2", false);
+        verifyTableIndexNonUnique("dem_minus_3_", "fieldname_3", true);
     }
 
     private DatasetDesignerPage goToEditDatasetDefinition(String datasetName)
@@ -175,7 +179,7 @@ public class StudyDatasetIndexTest extends StudyBaseTest
 
     private void viewRawTableMetadata(String datasetName)
     {
-        beginAt("/query/" + getProjectName() + "/" + getFolderName()  + "/schema.view?schemaName=study");
+        beginAt(getProjectName() + "/" + getFolderName()  + "/query-schema.view?schemaName=study");
         selectQuery("study", datasetName);
         waitForText(10000, "view raw table metadata");
         clickAndWait(Locator.linkWithText("view raw table metadata"));
@@ -195,5 +199,11 @@ public class StudyDatasetIndexTest extends StudyBaseTest
 
         for (String suffix : suffixes)
             assertTextPresentCaseInsensitive(prefix + suffix);
+    }
+
+    private void verifyTableIndexNonUnique(String prefix, String suffix, boolean isUnique)
+    {
+        Locator locator = Locator.xpath("//td[contains(text(), '" + prefix + suffix + "')]/preceding-sibling::td[2][text()='" + !isUnique + "']");
+        checker().verifyTrue("Non_Unique value not as expected in metadata for locator: " + locator, locator.existsIn(getDriver()));
     }
 }
