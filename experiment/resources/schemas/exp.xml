@@ -233,7 +233,6 @@
           <column columnName="TitleColumn" />
           <column columnName="Description" />
           <column columnName="Category"/>
-          <column columnName="DiscussionSetting" />
           <column columnName="AllowDelete" />
           <column columnName="AllowUpload" />
           <column columnName="AllowExport" />

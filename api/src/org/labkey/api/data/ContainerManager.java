@@ -77,6 +77,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
 import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
@@ -2605,7 +2606,7 @@ public class ContainerManager
         return ret.length == 0 ? null : ret[0];
     }
 
-    public static Container getMoveTargetContainer(@Nullable String queryName, @NotNull Container sourceContainer, User user, @Nullable String targetIdOrPath, Errors errors)
+    public static Container getMoveTargetContainer(String schemaName, @Nullable String queryName, @NotNull Container sourceContainer, User user, @Nullable String targetIdOrPath, Errors errors)
     {
         if (targetIdOrPath == null)
         {
@@ -2620,11 +2621,13 @@ public class ContainerManager
             return null;
         }
 
-        if (!_targetContainer.hasPermission(user, InsertPermission.class))
+        Class<? extends Permission> permClass = InsertPermission.class;
+        if (schemaName != null && schemaName.equalsIgnoreCase("workflow") && queryName != null && queryName.equalsIgnoreCase("job"))
+            permClass = SampleWorkflowJobPermission.class;
+        if (!_targetContainer.hasPermission(user, permClass))
         {
             String _queryName = queryName == null ? "this table" : "'" + queryName + "'";
-            errors.reject(ERROR_GENERIC, "You do not have permission to move rows from " + _queryName + " to the target container: " + targetIdOrPath + ".");
-            return null;
+            throw new UnauthorizedException("You do not have permission to move rows from " + _queryName + " to the target container: " + targetIdOrPath + ".");
         }
 
         if (!isValidTargetContainer(sourceContainer, _targetContainer))

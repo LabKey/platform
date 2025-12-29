@@ -33,7 +33,6 @@ public class ThreadsTable extends FilteredTable<AnnouncementSchema>
         removeColumn(getColumn("Body"));
         removeColumn(getColumn("RendererType"));
         removeColumn(getColumn("DiscussionSrcIdentifier"));
-        removeColumn(getColumn("DiscussionSrcUrl"));
         removeColumn(getColumn("Container"));
         var folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
         folderColumn.setFk(new ContainerForeignKey(userSchema));

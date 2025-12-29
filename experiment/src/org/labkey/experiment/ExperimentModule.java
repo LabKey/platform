@@ -153,6 +153,7 @@ import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.lineage.ExpLineageServiceImpl;
 import org.labkey.experiment.lineage.LineagePerfTest;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
+import org.labkey.experiment.pipeline.XarTestPipelineJob;
 import org.labkey.experiment.samples.DataClassFolderImporter;
 import org.labkey.experiment.samples.DataClassFolderWriter;
 import org.labkey.experiment.samples.SampleStatusFolderImporter;
@@ -201,7 +202,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 25.015;
+        return 25.016;
     }
 
     @Nullable
@@ -1079,7 +1080,8 @@ public class ExperimentModule extends SpringModule
             SampleTypeServiceImpl.TestCase.class,
             StorageNameGenerator.TestCase.class,
             StorageProvisionerImpl.TestCase.class,
-            UniqueValueCounterTestCase.class
+            UniqueValueCounterTestCase.class,
+            XarTestPipelineJob.TestCase.class
         );
     }
 
