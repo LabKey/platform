@@ -241,8 +241,8 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
     @Override
     public Collection<AttachmentParentType> copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, @Nullable Set<GUID> copyContainers)
     {
-        // Now that the target tables in this schema have been populated, copy all associated attachments. By
-        // default, use this handler's attachment types to select from the target tables all EntityIds that might be
+        // Now that the target tables in this schema have been populated, copy all associated attachments. By default,
+        // use this handler's attachment parent types to select from the target tables all EntityIds that might be
         // attachment parents (this avoids re-running potentially expensive queries on the source tables). Use the
         // set of EntityIds to copy those attachments from the core.Documents table in the source database. Override
         // if special behavior is required, for example, AttachmentTypes that use documentNameColumn since that

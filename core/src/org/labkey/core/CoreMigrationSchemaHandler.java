@@ -216,7 +216,7 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
     @Override
     public Collection<AttachmentParentType> copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, @Nullable Set<GUID> copyContainers)
     {
-        // Default handling for core's standard attachment types
+        // Default handling for core's standard attachment parent types
         Collection<AttachmentParentType> ret = new LinkedList<>(super.copyAttachments(configuration, sourceSchema, targetSchema, copyContainers));
 
         // Special handling for LookAndFeelResourceType, which must select from the source database. Keep in sync with
