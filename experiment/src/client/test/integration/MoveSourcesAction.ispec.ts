@@ -343,7 +343,7 @@ describe('Move Sources', () => {
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: sourceRowId }],
-            }, { ...subfolder1Options, ...subEditorUserOptions }).expect(400);
+            }, { ...subfolder1Options, ...subEditorUserOptions }).expect(403);
 
             // Assert
             const { exception, success } = response.body;
