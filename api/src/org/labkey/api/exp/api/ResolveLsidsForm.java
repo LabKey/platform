@@ -6,13 +6,25 @@ import java.util.List;
 
 public class ResolveLsidsForm
 {
-    private boolean _singleSeedRequested = false;
+    private boolean _includeProperties;
+    private boolean _includeInputsAndOutputs;
+    private boolean _includeRestrictedNodes;
+    private boolean _includeRunSteps;
     private List<String> _lsids;
+    private boolean _singleSeedRequested = false;
 
-    // serialization options
-    private boolean _includeProperties = false;
-    private boolean _includeInputsAndOutputs = false;
-    private boolean _includeRunSteps = false;
+    public ResolveLsidsForm()
+    {
+        this(false, false, false, false);
+    }
+
+    public ResolveLsidsForm(boolean includeProperties, boolean includeInputsAndOutputs, boolean includeRunSteps, boolean includeRestrictedNodes)
+    {
+        _includeProperties = includeProperties;
+        _includeInputsAndOutputs = includeInputsAndOutputs;
+        _includeRestrictedNodes = includeRestrictedNodes;
+        _includeRunSteps = includeRunSteps;
+    }
 
     public List<String> getLsids()
     {
@@ -54,6 +66,16 @@ public class ResolveLsidsForm
     public void setIncludeInputsAndOutputs(boolean includeInputsAndOutputs)
     {
         _includeInputsAndOutputs = includeInputsAndOutputs;
+    }
+
+    public boolean isIncludeRestrictedNodes()
+    {
+        return _includeRestrictedNodes;
+    }
+
+    public void setIncludeRestrictedNodes(boolean includeRestrictedNodes)
+    {
+        _includeRestrictedNodes = includeRestrictedNodes;
     }
 
     public boolean isIncludeRunSteps()

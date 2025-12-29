@@ -60,10 +60,12 @@ public class ExpLineageOptions extends ResolveLsidsForm
 
     public ExpLineageOptions()
     {
+        super();
     }
 
     public ExpLineageOptions(boolean parents, boolean children, int depth)
     {
+        super();
         _parents = parents;
         _children = children;
         _depth = depth;

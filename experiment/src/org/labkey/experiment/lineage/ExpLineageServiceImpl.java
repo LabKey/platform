@@ -273,7 +273,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
         var context = new StreamContext(
             user,
             new ApiJsonWriter(response),
-            new ExperimentJSONConverter.Settings(options.isIncludeProperties(), options.isIncludeInputsAndOutputs(), options.isIncludeRunSteps()),
+            new ExperimentJSONConverter.Settings(options),
             ExpLineage.processEdges(lineage.edges()),
             new HashMap<>()
         );
@@ -347,7 +347,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
             json = ExperimentJSONConverter.serialize(node, context.user, context.settings);
             json.put("type", node.getLSIDNamespacePrefix());
         }
-        else // if option.includeRestrictedNodes == true
+        else if (context.settings.isIncludeRestrictedNodes())
         {
             json = new JSONObject();
             json.put("restricted", true);
@@ -357,6 +357,8 @@ public class ExpLineageServiceImpl implements ExpLineageService
             var expJson = ExperimentJSONConverter.serialize(node, context.user, context.settings);
             json.put(ExperimentJSONConverter.EXP_TYPE, expJson.get(ExperimentJSONConverter.EXP_TYPE));
         }
+        else
+            json = new JSONObject();
 
         json.put("parents", edges.parents().stream().map(ExpLineage.Edge::toParentJSON).toList());
         json.put("children", edges.children().stream().map(ExpLineage.Edge::toChildJSON).toList());
