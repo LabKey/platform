@@ -131,14 +131,14 @@ public class StudyDatasetIndexTest extends StudyBaseTest
                 .setType(FieldDefinition.ColumnType.Integer)
                 .expand()
                 .clickAdvancedSettings()
-                .setSingleFieldIndex("Unique")
+                .setSingleFieldIndex("Index and require unique values")
                 .apply();
         datasetDesignerPage.getFieldsPanel()
                 .addField(fieldName2)
                 .setType(FieldDefinition.ColumnType.DateAndTime)
                 .expand()
                 .clickAdvancedSettings()
-                .setSingleFieldIndex("Non-Unique")
+                .setSingleFieldIndex("Index")
                 .apply();
         datasetDesignerPage.getFieldsPanel()
                 .addField(fieldName3)
@@ -155,10 +155,10 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         goBack();
         datasetDesignerPage = goToEditDatasetDefinition("DEM-3");
         datasetDesignerPage.getFieldsPanel()
-                .getField(fieldName1).expand().clickAdvancedSettings().setSingleFieldIndex("Non-Unique")
+                .getField(fieldName1).expand().clickAdvancedSettings().setSingleFieldIndex("Index")
                 .apply();
         datasetDesignerPage.getFieldsPanel()
-                .getField(fieldName3).expand().clickAdvancedSettings().setSingleFieldIndex("Unique")
+                .getField(fieldName3).expand().clickAdvancedSettings().setSingleFieldIndex("Index and require unique values")
                 .apply();
         datasetDesignerPage.clickSave();
 
