@@ -37,6 +37,7 @@ import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.TransactionViewForm;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ContainerUser;
@@ -541,6 +542,16 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
 
     public Map<TransactionAuditProvider.TransactionDetail, Object> getTransactionAuditDetails()
     {
+        return getTransactionAuditDetails(getViewContext());
+    }
+
+    public Map<TransactionAuditProvider.TransactionDetail, Object> getTransactionAuditDetails(TransactionViewForm form)
+    {
+        Map<TransactionAuditProvider.TransactionDetail, Object> transactionAuditDetails = getTransactionAuditDetails();
+        if (form.getRequestSource() != null)
+            transactionAuditDetails.put(TransactionAuditProvider.TransactionDetail.RequestSource, form.getRequestSource());
+        if (form.getEditMethod() != null)
+            transactionAuditDetails.put(TransactionAuditProvider.TransactionDetail.EditMethod, form.getEditMethod());
         return getTransactionAuditDetails(getViewContext());
     }
 
