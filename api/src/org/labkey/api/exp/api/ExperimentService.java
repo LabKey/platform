@@ -1303,7 +1303,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
         return null==o ? null : o.getClass() == Long.class ? (Long)o : ((Number)o).longValue();
     }
 
-    @Deprecated // Use IntegerUtils.asLong() instead
+    @Deprecated // Use IntegerUtils.asInteger() instead
     static Integer asInteger(Object o)
     {
         if (null == o)

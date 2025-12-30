@@ -27,7 +27,7 @@ public class IntegerUtils
         return c == Byte.class || c == Short.class || c==Integer.class || c==Long.class;
     }
 
-    /** returns Numeric object as a Long.  This method will throw if not Object is not Integral. */
+    /** returns Numeric object as a Long. This method will throw if Object is not Integral. */
     public static Long asLong(Object o)
     {
         if (!isIntegral(o))
@@ -35,7 +35,7 @@ public class IntegerUtils
         return o.getClass() == Long.class ? (Long)o : Long.valueOf(((Number)o).longValue());
     }
 
-    /** returns Numeric object as an Integer.  This method will throw if not Object is not Integral or is out of range. */
+    /** returns Numeric object as an Integer. This method will throw if Object is not Integral or is out of range. */
     public static Integer asInteger(Object o) throws ClassCastException
     {
         if (null == o)
