@@ -1,1 +1,1 @@
-ALTER TABLE exp.PropertyDescriptor ADD COLUMN URLTargetWindow VARCHAR(10) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN URLTarget VARCHAR(10) NULL;

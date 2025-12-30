@@ -524,7 +524,7 @@ public class DomainUtil
         gwtProp.setImportAliases(prop.getImportAliases());
         StringExpression url = prop.getURL();
         gwtProp.setURL(url == null ? null : url.toString());
-        gwtProp.setURLTargetWindow(prop.getURLTargetWindow());
+        gwtProp.setURLTarget(prop.getURLTarget());
         gwtProp.setScale(prop.getScale());
         gwtProp.setRedactedText(prop.getRedactedText());
         gwtProp.setPrincipalConceptCode(prop.getPrincipalConceptCode());

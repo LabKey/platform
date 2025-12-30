@@ -92,8 +92,8 @@ public interface DomainProperty extends ImportAliasable, MutableColumnConceptPro
     void setImportAliasSet(Set<String> aliases);
     void setURL(String url);
     String getURL();
-    void setURLTargetWindow(String urlTargetWindow);
-    String getURLTargetWindow();
+    void setURLTarget(String urlTarget);
+    String getURLTarget();
 
     DefaultValueType getDefaultValueTypeEnum();
     void setDefaultValueTypeEnum(DefaultValueType defaultValueType);

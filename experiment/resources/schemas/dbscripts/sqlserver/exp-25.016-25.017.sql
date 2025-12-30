@@ -1,1 +1,1 @@
-ALTER TABLE exp.PropertyDescriptor ADD URLTargetWindow NVARCHAR(10) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD URLTarget NVARCHAR(10) NULL;

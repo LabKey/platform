@@ -79,7 +79,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         var nameCol = addWrapColumn(getRealTable().getColumn("Name"));
         nameCol.setKeyField(true);
         nameCol.setURL(new StringExpressionFactory.URLStringExpression("${URL}"));
-        nameCol.setURLTargetWindow("_blank");
+        nameCol.setURLTarget("_blank");
 
         addTextColumn("ReleaseVersion").setScale(255);
         var schemaVersionColumn = addWrapColumn(getRealTable().getColumn("SchemaVersion"));
@@ -88,19 +88,19 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
 
         addTextColumn("Label").setScale(255);
         addTextColumn("Description").setScale(4000);
-        addTextColumn("URL").setURLTargetWindow("_blank");
+        addTextColumn("URL").setURLTarget("_blank");
         addTextColumn("Author");
         addTextColumn("Maintainer");
         addColumn("ManageVersion", JdbcType.BOOLEAN);
 
         var orgCol = addTextColumn("Organization");
         orgCol.setURL(StringExpressionFactory.createURL("${OrganizationURL}"));
-        orgCol.setURLTargetWindow("_blank");
+        orgCol.setURLTarget("_blank");
         addTextColumn("OrganizationURL").setHidden(true);
 
         var licenseCol = addTextColumn("License");
         licenseCol.setURL(StringExpressionFactory.createURL("${LicenseURL}"));
-        licenseCol.setURLTargetWindow("_blank");
+        licenseCol.setURLTarget("_blank");
         addTextColumn("ActiveFolders").setDisplayColumnFactory(new ExpandableTextDisplayColumnFactory());
         addTextColumn("LicenseURL").setHidden(true);
         addTextColumn("VcsRevision");

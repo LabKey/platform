@@ -392,15 +392,15 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setURLTargetWindow(String urlTargetWindow)
+        public void setURLTarget(String urlTarget)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
                 @Override
-                public String getURLTargetWindow()
+                public String getURLTarget()
                 {
-                    return urlTargetWindow;
+                    return urlTarget;
                 }
             };
         }

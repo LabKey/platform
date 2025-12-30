@@ -524,7 +524,7 @@
       <column columnName="DefaultValueType"/>
       <column columnName="ImportAliases"/>
       <column columnName="URL"/>
-      <column columnName="URLTargetWindow"/>
+      <column columnName="URLTarget"/>
       <column columnName="ShownInInsertView"/>
       <column columnName="ShownInUpdateView"/>
       <column columnName="ShownInDetailsView"/>

@@ -86,7 +86,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected boolean _shownInDetailsView = true;
     protected boolean _shownInLookupView = false;
     protected StringExpression _url;
-    protected String _urlTargetWindow;
+    protected String _urlTarget;
     protected String _urlCls;
     protected String _onClick;
     // methods use Set<>, but I'm using a List<> here because it is simpler and more thread safe and explicitly preserves order
@@ -157,7 +157,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         to._recommendedVariable = _recommendedVariable;
         to._defaultScale = _defaultScale;
         to._url = _url;
-        to._urlTargetWindow = _urlTargetWindow;
+        to._urlTarget = _urlTarget;
         to._importAliases = copyFixedList(_importAliases);
         to._facetingBehaviorType = _facetingBehaviorType;
         to._crosstabColumnMember = _crosstabColumnMember;
@@ -423,16 +423,16 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     }
 
     @Override
-    public String getURLTargetWindow()
+    public String getURLTarget()
     {
-        return _urlTargetWindow;
+        return _urlTarget;
     }
 
     @Override
-    public void setURLTargetWindow(String urlTargetWindow)
+    public void setURLTarget(String urlTarget)
     {
         assert _checkLocked();
-        _urlTargetWindow = urlTargetWindow;
+        _urlTarget = urlTarget;
     }
 
     @Override

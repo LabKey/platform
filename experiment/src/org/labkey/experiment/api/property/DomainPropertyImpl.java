@@ -500,17 +500,17 @@ public class DomainPropertyImpl implements DomainProperty
     }
 
     @Override
-    public void setURLTargetWindow(String urlTargetWindow)
+    public void setURLTarget(String urlTarget)
     {
-        if (Strings.CS.equals(getURLTargetWindow(), urlTargetWindow))
+        if (Strings.CS.equals(getURLTarget(), urlTarget))
             return;
-        edit().setURLTargetWindow(urlTargetWindow);
+        edit().setURLTarget(urlTarget);
     }
 
     @Override
-    public String getURLTargetWindow()
+    public String getURLTarget()
     {
-        return _pd.getURLTargetWindow();
+        return _pd.getURLTarget();
     }
 
     private boolean isEdited()
@@ -1053,7 +1053,7 @@ public class DomainPropertyImpl implements DomainProperty
         setImportAliasSet(propSrc.getImportAliasSet());
         setPhi(propSrc.getPHI());
         setURL(propSrc.getURL());
-        setURLTargetWindow(propSrc.getURLTargetWindow());
+        setURLTarget(propSrc.getURLTarget());
         setHidden(propSrc.isHidden());
         setShownInDetailsView(propSrc.isShownInDetailsView());
         setShownInInsertView(propSrc.isShownInInsertView());
@@ -1186,8 +1186,8 @@ public class DomainPropertyImpl implements DomainProperty
             map.put("Format", getFormat());
         if (!StringUtils.isEmpty(getURL()))
             map.put("URL", getURL());
-        if (!StringUtils.isEmpty(getURLTargetWindow()))
-            map.put("URLTargetWindow", getURLTargetWindow());
+        if (!StringUtils.isEmpty(getURLTarget()))
+            map.put("URLTarget", getURLTarget());
         if (getPHI() != null)
             map.put("PHI", getPHI().getLabel());
         if (getDefaultScale() != null)
@@ -1354,7 +1354,7 @@ public class DomainPropertyImpl implements DomainProperty
             pd.setContainer(c);
             pd.setDescription("description");
             pd.setURL(StringExpressionFactory.createURL((String)null));
-            pd.setURLTargetWindow(null);
+            pd.setURLTarget(null);
             pd.setImportAliases(null);
             pd.setRequired(false);
             pd.setHidden(false);
