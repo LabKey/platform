@@ -27,7 +27,7 @@ public interface SqlDialectFactory
     @Nullable SqlDialect createFromDriverClassName(String driverClassName);
 
     /**
-     * Returns null if this factory is not responsible for the specified database server.  Otherwise, if the version is
+     * Returns null if this factory is not responsible for the specified database server. Otherwise, if the version is
      * supported, returns the matching implementation; if the version is not supported, throws DatabaseNotSupportedException.
      * @param primaryDataSource whether the data source is the primary LabKey Server database, or an external/secondary database
      */

@@ -19,7 +19,7 @@
 CREATE VIEW comm.Threads AS
     SELECT threads.*, props.Title, props.AssignedTo, props.Status, props.Expires, props.CreatedBy AS ResponseCreatedBy, props.Created AS ResponseCreated FROM
     (
-        SELECT parents.RowId, parents.EntityId, parents.Container, parents.Body, parents.RendererType, parents.DiscussionSrcIdentifier, parents.DiscussionSrcURL,
+        SELECT parents.RowId, parents.EntityId, parents.Container, parents.Body, parents.RendererType, parents.DiscussionSrcIdentifier,
             parents.CreatedBy, parents.Created, parents.Modified, parents.LastIndexed, COALESCE(LastResponseId, RowId) AS LatestId, COALESCE(ResponseCount, 0) AS ResponseCount
         FROM comm.Announcements parents LEFT OUTER JOIN
         (

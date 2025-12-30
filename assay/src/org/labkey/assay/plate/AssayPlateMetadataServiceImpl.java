@@ -96,7 +96,6 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.TSVProtocolSchema;
-import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateTable;
@@ -706,13 +705,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
         private @Nullable String getPrefixedValue(String annotation, String prefix)
         {
-            if (annotation != null && annotation.trim().toLowerCase().startsWith(prefix))
+            if (annotation != null)
             {
-                String[] parts = annotation.split(":");
-                if (parts.length > 1)
+                // Issue 52782: measure name may contain a colon
+                String[] parts = annotation.split(":", 2);
+                if (parts.length == 2 && parts[0].trim().equalsIgnoreCase(prefix))
                 {
-                    // Issue 52782: measure name may contain a colon, so we need to join the rest of the parts
-                    return StringUtils.join(parts, ":", 1, parts.length).trim();
+                    return parts[1].trim();
                 }
             }
             return null;

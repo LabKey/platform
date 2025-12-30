@@ -393,13 +393,35 @@ public class SimpleFilter implements Filter
         {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (o == null || getClass() != o.getClass()) return false;
+            SQLClause sqlClause = (SQLClause) o;
+            return Objects.equals(_fragment, sqlClause._fragment) && Objects.equals(_fieldKeys, sqlClause._fieldKeys);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(_fragment, _fieldKeys);
+        }
     }
 
     public static class FalseClause extends SQLClause
     {
         public FalseClause()
         {
-            super("0=1", null);
+            super(new SQLFragment("0 = 1"));
+        }
+    }
+
+    public static class TrueClause extends SQLClause
+    {
+        public TrueClause()
+        {
+            super(new SQLFragment("1 = 1"));
         }
     }
 
@@ -560,7 +582,7 @@ public class SimpleFilter implements Filter
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             SQLFragment sqlFragment = new SQLFragment();
-            sqlFragment.append(" NOT (");
+            sqlFragment.append("NOT (");
             sqlFragment.append(_clause.toSQLFragment(columnMap, dialect));
             sqlFragment.append(")");
             return sqlFragment;
@@ -569,13 +591,21 @@ public class SimpleFilter implements Filter
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            return " NOT (" + _clause.getLabKeySQLWhereClause(columnMap) + ")";
+            return "NOT (" + _clause.getLabKeySQLWhereClause(columnMap) + ")";
         }
 
         @Override
         protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             return !_clause.meetsCriteria(col, value);
+        }
+
+        @Override
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        {
+            sb.append("NOT (");
+            _clause.appendFilterText(sb, formatter);
+            sb.append(")");
         }
     }
 
@@ -726,14 +756,14 @@ public class SimpleFilter implements Filter
             String alias = getLabKeySQLColName(getFieldKey());
             ColumnInfo col = columnMap != null ? columnMap.get(getFieldKey()) : null;
             Object[] params = getParamVals();
-            StringBuilder in =  new StringBuilder();
+            StringBuilder in = new StringBuilder();
 
             if (params.length == 0)
             {
                 if (isIncludeNull())
-                    in.append(alias).append(" IS ").append(isNegated() ? " NOT " : "").append("NULL");
-                else if (!isNegated())
-                    in.append(alias).append(" IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+                    in.append(alias).append(" IS ").append(isNegated() ? "NOT " : "").append("NULL");
+                else
+                    in.append(isNegated() ? "1 = 1" : "0 = 1");
             }
             else
             {
@@ -780,11 +810,9 @@ public class SimpleFilter implements Filter
         private void handleEmptyParams(DatabaseIdentifier alias, SQLFragment in)
         {
             if (isIncludeNull())
-                in.appendIdentifier(alias).append(" IS ").append(isNegated() ? " NOT " : "").append("NULL");
-            else if (!isNegated())
-                in.appendIdentifier(alias).append(" IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+                in.appendIdentifier(alias).append(" IS ").append(isNegated() ? "NOT " : "").append("NULL");
             else
-                in.append("1=1");
+                in.append(isNegated() ? "1 = 1" : "0 = 1");
         }
 
         @Override
@@ -930,21 +958,21 @@ public class SimpleFilter implements Filter
                 return getContainsClause(col).getLabKeySQLWhereClause(columnMap);
             }
 
-            return col.getName() + (isNegated() ? " NOT IN" : " IN ") + " (NULL)";  // Empty list case; "WHERE column IN (NULL)" should always be false
+            // Empty params list
+            return isNegated() ? "1 = 1" : "0 = 1";
         }
 
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             ColumnInfo colInfo = columnMap != null ? columnMap.get(getFieldKey()) : null;
-            var alias = getAliasForColumnFilter(dialect, colInfo, getFieldKey());
 
             SQLFragment in = new SQLFragment();
             OperationClause oc = getContainsClause(colInfo);
-            if(!oc.getClauses().isEmpty())
+            if (!oc.getClauses().isEmpty())
                 return in.append(oc.toSQLFragment(columnMap, dialect));
 
-            return in.appendIdentifier(alias).append(isNegated() ? " NOT IN " : " IN ").append("(NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+            return in.append(isNegated() ? "1 = 1" : "0 = 1");
         }
 
         private OperationClause getContainsClause(ColumnInfo colInfo)
@@ -1652,9 +1680,10 @@ public class SimpleFilter implements Filter
             assertArrayEquals(new Object[] { "x", "u_u" }, containsOneOf.getParamVals());
             assertEquals("x;u_u", containsOneOf.toURLParam("query").getValue());
             var containsOneOfFrag = containsOneOf.getLabKeySQLWhereClause(Collections.emptyMap());
-            assertEquals("(LOWER(\"Field2\") LIKE LOWER('%x%')  ESCAPE '!')" +
-                        " OR (LOWER(\"Field2\") LIKE LOWER('%u!_u%')  ESCAPE '!')",
-                    containsOneOfFrag);
+            assertEquals(
+                "(LOWER(\"Field2\") LIKE LOWER('%x%') ESCAPE '!') OR (LOWER(\"Field2\") LIKE LOWER('%u!_u%') ESCAPE '!')",
+                containsOneOfFrag
+            );
             filter.addClause(containsOneOf);
 
             // verify filter containing multi-value separator ';' use json encoded filter value
@@ -1672,18 +1701,18 @@ public class SimpleFilter implements Filter
             filter.addClause(containsClause);
 
             assertEquals("query.Field1~eq=1" +
-                    "&query.Field2~containsoneof=x%3Bu_u" +
-                    "&query.Field3~containsoneof=" + PageFlowUtil.encodeURIComponent(containsOneOfJsonValue) +
-                    "&query.Field4~contains=o_O",
-                    filter.toQueryString("query"));
+                "&query.Field2~containsoneof=x%3Bu_u" +
+                "&query.Field3~containsoneof=" + PageFlowUtil.encodeURIComponent(containsOneOfJsonValue) +
+                "&query.Field4~contains=o_O",
+                filter.toQueryString("query"));
             URLHelper url = new URLHelper("http://labkey.com");
 
             filter.applyToURL(url, "query");
             assertEquals("query.Field1~eq=1" +
-                    "&query.Field2~containsoneof=x%3Bu_u" +
-                    "&query.Field3~containsoneof=" + PageFlowUtil.encodeURIComponent(containsOneOfJsonValue) +
-                    "&query.Field4~contains=o_O",
-                    url.getQueryString());
+                "&query.Field2~containsoneof=x%3Bu_u" +
+                "&query.Field3~containsoneof=" + PageFlowUtil.encodeURIComponent(containsOneOfJsonValue) +
+                "&query.Field4~contains=o_O",
+                url.getQueryString());
         }
     }
 
@@ -1691,7 +1720,7 @@ public class SimpleFilter implements Filter
     {
         protected void test(String expectedSQL, String description, FilterClause clause, SqlDialect dialect, Map<FieldKey, ColumnInfo> columnMap)
         {
-            assertEquals("Generated SQL did not match", expectedSQL, SQLFragment.filterDebugString(clause.toSQLFragment(columnMap, dialect).toDebugString()));
+            assertEquals("Generated SQL did not match", expectedSQL, SQLFragment.filterDebugString(clause.toSQLFragment(columnMap, dialect).toDebugString(dialect)));
             StringBuilder sb = new StringBuilder();
             clause.appendFilterText(sb, new ColumnNameFormatter());
             assertEquals("Description did not match", description, sb.toString());
@@ -1701,7 +1730,6 @@ public class SimpleFilter implements Filter
         {
             test(expectedSQL, description, clause, dialect, Collections.emptyMap());
         }
-
     }
 
     public static class InClauseTestCase extends ClauseTestCase
@@ -1713,8 +1741,15 @@ public class SimpleFilter implements Filter
             FieldKey fieldKey = FieldKey.fromParts("Foo");
 
             // Empty parameter list
-            test("Foo IN (NULL)", "Foo never matches", new InClause(fieldKey, Collections.emptySet()), mockDialect);
-            test("1=1", "Foo has any value", new InClause(fieldKey, Collections.emptySet(), true, true), mockDialect);
+            test("0 = 1", "Foo never matches", new InClause(fieldKey, Collections.emptySet()), mockDialect);
+            test("NOT (0 = 1)", "NOT (Foo never matches)", new NotClause(new InClause(fieldKey, Collections.emptySet())), mockDialect);
+            test("1 = 1", "Foo has any value", new InClause(fieldKey, Collections.emptySet(), true, true), mockDialect);
+            test("NOT (1 = 1)", "NOT (Foo has any value)", new NotClause(new InClause(fieldKey, Collections.emptySet(), true, true)), mockDialect);
+            Map<FieldKey, ColumnInfo> map = Map.of(fieldKey, new BaseColumnInfo(fieldKey, JdbcType.VARCHAR));
+            assertEquals("0 = 1", new InClause(fieldKey, List.of()).getLabKeySQLWhereClause(map));
+            assertEquals("NOT (0 = 1)", new NotClause(new InClause(fieldKey, List.of())).getLabKeySQLWhereClause(map));
+            assertEquals("1 = 1", new InClause(fieldKey, List.of(), false, true).getLabKeySQLWhereClause(map));
+            assertEquals("NOT (1 = 1)", new NotClause(new InClause(fieldKey, List.of(), false, true)).getLabKeySQLWhereClause(map));
 
             // Non-null parameters only
             test("(Foo IN (1, 2, 3))", "Foo IS ONE OF (1, 2, 3)", new InClause(fieldKey, PageFlowUtil.set(1, 2, 3)), mockDialect);
@@ -1737,13 +1772,15 @@ public class SimpleFilter implements Filter
             in._needsTypeConversion = true;
             test("((NOT \"FOO\" IN (1, 2)) OR \"FOO\" IS NULL)", "Foo IS NOT ANY OF (1, 2, S-3)", in, mockDialect, columnInfoMap);
 
-            in =  new InClause(fieldKey, PageFlowUtil.set("S-3"));
+            in = new InClause(fieldKey, PageFlowUtil.set("S-3"));
             in._needsTypeConversion = true;
-            test("\"FOO\" IN (NULL)", "Foo IS ONE OF (S-3)", in, mockDialect, columnInfoMap);
+            test("0 = 1", "Foo IS ONE OF (S-3)", in, mockDialect, columnInfoMap);
+            test("NOT (0 = 1)", "NOT (Foo IS ONE OF (S-3))", new NotClause(in), mockDialect, columnInfoMap);
 
             in = new InClause(fieldKey, PageFlowUtil.set("S-3"), true, true);
             in._needsTypeConversion = true;
-            test("1=1", "Foo IS NOT ANY OF (S-3)", in, mockDialect, columnInfoMap);
+            test("1 = 1", "Foo IS NOT ANY OF (S-3)", in, mockDialect, columnInfoMap);
+            test("NOT (1 = 1)", "NOT (Foo IS NOT ANY OF (S-3))", new NotClause(in), mockDialect, columnInfoMap);
         }
 
         @Test
@@ -1951,6 +1988,57 @@ public class SimpleFilter implements Filter
             // verify filter containing multi-value separator ',' use json encoded filter value
             assertEquals(Pair.of("query.Foo~between", "{json:[\"a,b,c\",\"Z\"]}"),
                     new CompareType.BetweenClause(fieldKey, "a,b,c", "Z", false).toURLParam("query."));
+        }
+    }
+
+    public static class SqlClauseTestCase extends Assert
+    {
+        @Test
+        public void testEqualsAndHashCode()
+        {
+            SQLClause clause1 = new SQLClause(new SQLFragment("This = That", 1, 2));
+            SQLClause clause2 = new SQLClause(new SQLFragment("This = That", 1, 2));
+            assertEquals(clause1, clause2);
+            assertEquals(clause1.hashCode(), clause2.hashCode());
+            SQLClause clause3 = new SQLClause(new SQLFragment("That = This", 1, 2));
+            assertNotEquals(clause1, clause3);
+            assertNotEquals(clause1.hashCode(), clause3.hashCode());
+            SQLClause clause4 = new SQLClause(new SQLFragment("This = That", 3, 4));
+            assertNotEquals(clause1, clause4);
+            assertNotEquals(clause1.hashCode(), clause4.hashCode());
+        }
+    }
+
+    public static class ContainsOneOfTestCase extends ClauseTestCase
+    {
+        @Test
+        public void testContainsOneOf()
+        {
+            SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
+            FieldKey fieldKey = FieldKey.fromParts("Foo");
+            String like = dialect.getCaseInsensitiveLikeOperator();
+            String concat = dialect.isPostgreSQL() ? "||" : "+";
+
+            FilterClause clause = new ContainsOneOfClause(fieldKey, List.of("This", "That"), false);
+            test("(Foo " + like + " '%' " + concat + " 'This' " + concat + " '%' ESCAPE '!') OR (Foo " + like + " '%' " + concat + " 'That' " + concat + " '%' ESCAPE '!')", "Foo CONTAINS ONE OF (This, That)", clause, dialect);
+            test("NOT ((Foo " + like + " '%' " + concat + " 'This' " + concat + " '%' ESCAPE '!') OR (Foo " + like + " '%' " + concat + " 'That' " + concat + " '%' ESCAPE '!'))", "NOT (Foo CONTAINS ONE OF (This, That))", new NotClause(clause), dialect);
+
+            clause = new ContainsOneOfClause(fieldKey, List.of("This", "That"), false, true);
+            test("((Foo IS NULL OR Foo NOT " + like + " '%' " + concat + " 'This' " + concat + " '%' ESCAPE '!')) AND ((Foo IS NULL OR Foo NOT " + like + " '%' " + concat + " 'That' " + concat + " '%' ESCAPE '!'))", "Foo DOES NOT CONTAIN ANY OF (This, That)", clause, dialect);
+            test("NOT (((Foo IS NULL OR Foo NOT " + like + " '%' " + concat + " 'This' " + concat + " '%' ESCAPE '!')) AND ((Foo IS NULL OR Foo NOT " + like + " '%' " + concat + " 'That' " + concat + " '%' ESCAPE '!')))", "NOT (Foo DOES NOT CONTAIN ANY OF (This, That))", new NotClause(clause), dialect);
+
+            Map<FieldKey, ColumnInfo> map = Map.of(fieldKey, new BaseColumnInfo(fieldKey, JdbcType.VARCHAR));
+            clause = new ContainsOneOfClause(fieldKey, List.of(), false);
+            test("0 = 1", "Foo CONTAINS ONE OF (BLANK)", clause, dialect);
+            test("NOT (0 = 1)", "NOT (Foo CONTAINS ONE OF (BLANK))", new NotClause(clause), dialect);
+            assertEquals("0 = 1", clause.getLabKeySQLWhereClause(map));
+            assertEquals("NOT (0 = 1)", new NotClause(clause).getLabKeySQLWhereClause(map));
+
+            clause = new ContainsOneOfClause(fieldKey, List.of(), false, true);
+            test("1 = 1", "Foo DOES NOT CONTAIN ANY OF (BLANK)", clause, dialect);
+            test("NOT (1 = 1)", "NOT (Foo DOES NOT CONTAIN ANY OF (BLANK))", new NotClause(clause), dialect);
+            assertEquals("1 = 1", clause.getLabKeySQLWhereClause(map));
+            assertEquals("NOT (1 = 1)", new NotClause(clause).getLabKeySQLWhereClause(map));
         }
     }
 }

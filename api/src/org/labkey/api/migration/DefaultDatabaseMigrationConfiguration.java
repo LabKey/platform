@@ -8,7 +8,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 
 import java.util.Set;
-import java.util.function.Predicate;
 
 public class DefaultDatabaseMigrationConfiguration implements DatabaseMigrationConfiguration
 {
@@ -34,12 +33,6 @@ public class DefaultDatabaseMigrationConfiguration implements DatabaseMigrationC
     public @NotNull Set<String> getSkipSchemas()
     {
         return Set.of();
-    }
-
-    @Override
-    public Predicate<String> getColumnNameFilter()
-    {
-        return null;
     }
 
     @Override

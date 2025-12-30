@@ -56,7 +56,8 @@ public interface DatabaseMigrationService
         return null;
     }
 
-    default void copySourceTableToTargetTable(DatabaseMigrationConfiguration configuration, TableInfo sourceTable, TableInfo targetTable, DbSchemaType schemaType, boolean updateSequences, String additionalLogMessage, MigrationSchemaHandler schemaHandler) {}
+    default void copySourceTableToTargetTable(DatabaseMigrationConfiguration configuration, TableInfo sourceTable, TableInfo targetTable, DbSchemaType schemaType, boolean updateSequences, @Nullable String additionalLogMessage, MigrationSchemaHandler schemaHandler) {}
+    default void copyAttachments(DatabaseMigrationConfiguration configuration, @Nullable FilterClause filterClause, @Nullable String additionalLogMessage) {}
     default void updateSequences(TableInfo sourceTable, TableInfo targetTable) {}
 
     // Helper method that parses a data filter then adds it and its container to the provided collections, coalescing

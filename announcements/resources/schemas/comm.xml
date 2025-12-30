@@ -121,9 +121,6 @@
       <column columnName="DiscussionSrcEntityType">
           <description>A string representing the entity type of the discussion source.</description>
       </column>
-      <column columnName="DiscussionSrcURL">
-          <description>URL to the display the object to which this message is attached. Always null for rows that are part of the default forum for the container</description>
-      </column>
       <column columnName="LastIndexed">
           <isReadOnly>true</isReadOnly>
           <isUserEditable>false</isUserEditable>
@@ -518,7 +515,6 @@
       </column>
       <column columnName="LatestId"/>
       <column columnName="discussionsrcidentifier"/>
-      <column columnName="discussionsrcurl"/>
       <column columnName="ResponseCount"/>
         <column columnName="Modified">
           <columnTitle>Modified</columnTitle>
