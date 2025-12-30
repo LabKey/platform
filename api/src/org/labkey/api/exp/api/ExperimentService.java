@@ -79,6 +79,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.IntegerUtils;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.HttpView;
@@ -1300,19 +1301,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Deprecated // Use IntegerUtils.asLong() instead
     static Long asLong(Object o)
     {
-        return null==o ? null : o.getClass() == Long.class ? (Long)o : ((Number)o).longValue();
+        return IntegerUtils.asLong(o);
     }
 
     @Deprecated // Use IntegerUtils.asInteger() instead
     static Integer asInteger(Object o)
     {
-        if (null == o)
-            return null;
-        if (o.getClass() == Integer.class)
-            return (Integer)o;
-        long l = ((Number)o).longValue();
-        if (l < Integer.MIN_VALUE || l > Integer.MAX_VALUE)
-            throw new IllegalArgumentException("Invalid int value: " + l);
-        return (int)l;
+        return IntegerUtils.asInteger(o);
     }
 }
