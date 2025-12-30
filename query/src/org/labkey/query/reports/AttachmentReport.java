@@ -80,7 +80,7 @@ public class AttachmentReport extends BaseRedirectReport
     @Override
     public boolean canEdit(User user, Container container, List<ValidationError> errors)
     {
-        // disallow a non site admin user from editing a server AttachmentReport
+        // disallow a non-site-admin user from editing a server AttachmentReport
         if (StringUtils.isNotEmpty(getFilePath()) && !container.hasPermission(user, AdminOperationsPermission.class))
         {
             errors.add(new SimpleValidationError("You must be an administrator in order to edit this report."));
