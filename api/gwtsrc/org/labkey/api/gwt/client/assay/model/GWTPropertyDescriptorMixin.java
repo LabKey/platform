@@ -38,10 +38,12 @@ import org.labkey.api.gwt.client.util.StringProperty;
 })
 public abstract class GWTPropertyDescriptorMixin
 {
-    GWTPropertyDescriptorMixin(@JsonProperty("PHI") StringProperty phi, @JsonProperty("URL") StringProperty url)
+    GWTPropertyDescriptorMixin(@JsonProperty("PHI") StringProperty phi, @JsonProperty("URL") StringProperty url, @JsonProperty("URLTargetWindow") StringProperty URLTargetWindow)
     { }
     @JsonProperty("PHI")
     abstract void setPHI(String phi); // rename property on deserialize
     @JsonProperty("URL")
     abstract void setURL(String url); // rename property on deserialize
+    @JsonProperty("URLTargetWindow")
+    abstract void setURLTargetWindow(String urlTargetWindow); // rename property on deserialize
 }
