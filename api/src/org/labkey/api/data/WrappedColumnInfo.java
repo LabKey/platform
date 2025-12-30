@@ -395,7 +395,14 @@ public class WrappedColumnInfo
         public void setURLTargetWindow(String urlTargetWindow)
         {
             checkLocked();
-            throw new UnsupportedOperationException();
+            delegate = new AbstractWrappedColumnInfo(delegate)
+            {
+                @Override
+                public String getURLTargetWindow()
+                {
+                    return urlTargetWindow;
+                }
+            };
         }
 
         @Override

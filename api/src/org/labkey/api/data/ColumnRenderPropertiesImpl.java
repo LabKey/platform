@@ -157,6 +157,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         to._recommendedVariable = _recommendedVariable;
         to._defaultScale = _defaultScale;
         to._url = _url;
+        to._urlTargetWindow = _urlTargetWindow;
         to._importAliases = copyFixedList(_importAliases);
         to._facetingBehaviorType = _facetingBehaviorType;
         to._crosstabColumnMember = _crosstabColumnMember;

@@ -59,6 +59,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private final BooleanProperty mvEnabled = new BooleanProperty(false);
     private final StringProperty importAliases = new StringProperty();
     private final StringProperty url = new StringProperty();
+    private final StringProperty urlTargetWindow = new StringProperty();
     private final BooleanProperty shownInInsertView = new BooleanProperty(true);
     private final BooleanProperty shownInUpdateView = new BooleanProperty(true);
     private final BooleanProperty shownInDetailsView = new BooleanProperty(true);
@@ -137,6 +138,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setDefaultDisplayValue(s.getDefaultDisplayValue());
         setImportAliases(s.getImportAliases());
         setURL(s.getURL());
+        setURLTargetWindow(s.getURLTargetWindow());
         setFacetingBehaviorType(s.getFacetingBehaviorType());
         setPHI(s.getPHI());
         setExcludeFromShifting(s.isExcludeFromShifting());
@@ -660,6 +662,16 @@ public class GWTPropertyDescriptor implements IsSerializable
     public void setURL(String url)
     {
         this.url.set(url);
+    }
+
+    public String getURLTargetWindow()
+    {
+        return urlTargetWindow.toString();
+    }
+
+    public void setURLTargetWindow(String urlTargetWindow)
+    {
+        this.urlTargetWindow.set(urlTargetWindow);
     }
 
     public String getLookupDescription()
