@@ -3,10 +3,8 @@ package org.labkey.api.migration;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -30,7 +28,6 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.TableSorter;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 
@@ -40,9 +37,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
@@ -242,14 +239,16 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
     }
 
     @Override
-    public void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Set<GUID> copyContainers)
+    public Collection<AttachmentParentType> copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, @Nullable Set<GUID> copyContainers)
     {
-        // Now that the target tables in this schema have been populated, copy all associated attachments. By
-        // default, use this handler's attachment types to select from the target tables all EntityIds that might be
+        // Now that the target tables in this schema have been populated, copy all associated attachments. By default,
+        // use this handler's attachment parent types to select from the target tables all EntityIds that might be
         // attachment parents (this avoids re-running potentially expensive queries on the source tables). Use the
         // set of EntityIds to copy those attachments from the core.Documents table in the source database. Override
         // if special behavior is required, for example, AttachmentTypes that use documentNameColumn since that
         // requires querying and re-filtering the source tables instead.
+        Collection<AttachmentParentType> ret = new LinkedList<>();
+
         getAttachmentTypes().forEach(type -> {
             SQLFragment sql = type.getSelectParentEntityIdsSql();
             if (sql != null)
@@ -258,13 +257,15 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
                 SQLFragment selectParents = new SQLFragment("Parent");
                 // This query against the source database is likely to contain a large IN clause, so use an alternative InClauseGenerator
                 sourceSchema.getSqlDialect().appendInClauseSqlWithCustomInClauseGenerator(selectParents, entityIds, getTempTableInClauseGenerator(sourceSchema.getScope()));
-                copyAttachments(configuration, sourceSchema, new SQLClause(selectParents), type);
+                ret.addAll(copyAttachments(configuration, new SQLClause(selectParents), type));
             }
             else
             {
                 throw new ConfigurationException("AttachmentType \"" + type.getUniqueName() + "\" is not configured to find parent EntityIds!");
             }
         });
+
+        return ret;
     }
 
     // Creates a TempTableInClauseGenerator that targets the *source* temp schema instead of the default
@@ -274,47 +275,12 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         return new TempTableInClauseGenerator(() -> sourceScope.getSchema("temp", DbSchemaType.Bare));
     }
 
-    private static final Set<AttachmentParentType> SEEN = new HashSet<>();
-    private static final JobRunner ATTACHMENT_JOB_RUNNER = new JobRunner("Attachment JobRunner", 1, () -> "Attachments");
-
     // Copy all core.Documents rows that match the provided filter clause
-    protected final void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, FilterClause filterClause, AttachmentParentType... type)
+    protected final Collection<AttachmentParentType> copyAttachments(DatabaseMigrationConfiguration configuration, FilterClause filterClause, AttachmentParentType... type)
     {
-        SEEN.addAll(Arrays.asList(type));
         String additionalMessage = " associated with " + Arrays.stream(type).map(t -> t.getClass().getSimpleName()).collect(Collectors.joining(", "));
-        TableInfo sourceDocumentsTable = sourceSchema.getScope().getSchema("core", DbSchemaType.Migration).getTable("Documents");
-        TableInfo targetDocumentsTable = CoreSchema.getInstance().getTableInfoDocuments();
-
-        // Queue up the core.Documents transfers and let them run in the background
-        ATTACHMENT_JOB_RUNNER.execute(() -> DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceDocumentsTable, targetDocumentsTable, DbSchemaType.Module, false, additionalMessage, new DefaultMigrationSchemaHandler(CoreSchema.getInstance().getSchema())
-        {
-            @Override
-            public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
-            {
-                return filterClause;
-            }
-        }));
-    }
-
-    // Global (not schema- or configuration-specific) cleanup
-    public static void afterMigration() throws InterruptedException
-    {
-        // Report any unseen attachment types
-        Set<AttachmentParentType> unseen = new HashSet<>(AttachmentService.get().getAttachmentParentTypes());
-        unseen.removeAll(SEEN);
-
-        if (unseen.isEmpty())
-            LOG.info("All AttachmentTypes have been seen");
-        else
-            LOG.error("These AttachmentTypes have not been seen: {}", unseen.stream().map(type -> type.getClass().getSimpleName()).collect(Collectors.joining(", ")));
-
-        // Shut down the attachment JobRunner
-        LOG.info("Waiting for attachments background transfer to complete");
-        ATTACHMENT_JOB_RUNNER.shutdown();
-        if (ATTACHMENT_JOB_RUNNER.awaitTermination(2, TimeUnit.HOURS))
-            LOG.info("Attachments background transfer is complete");
-        else
-            LOG.error("Attachments background transfer did not complete after two hours! Giving up.");
+        DatabaseMigrationService.get().copyAttachments(configuration, filterClause, additionalMessage);
+        return Arrays.asList(type);
     }
 
     @Override

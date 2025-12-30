@@ -16,7 +16,6 @@
 
 package org.labkey.api.security;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,6 +48,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.security.xml.GroupEnumType;
@@ -72,7 +72,7 @@ import java.util.Set;
 
 public class GroupManager
 {
-    private static final Logger _log = LogManager.getLogger(GroupManager.class);
+    private static final Logger _log = LogHelper.getLogger(GroupManager.class, "Security group warnings");
     private static final CoreSchema _core = CoreSchema.getInstance();
 
     public static final String GROUP_AUDIT_EVENT = "GroupAuditEvent";
@@ -101,7 +101,7 @@ public class GroupManager
     {
         int gotUserId;
         if ((gotUserId = createSystemGroup(userId, name, type)) != userId)
-            _log.warn(name + " group exists but has an unexpected UserId (is " + gotUserId + ", should be " + userId + ")");
+            _log.warn("{} group exists but has an unexpected UserId (is {}, should be {})", name, gotUserId, userId);
         GroupCache.uncache(userId);
     }
 

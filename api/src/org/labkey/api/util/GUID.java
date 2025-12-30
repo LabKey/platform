@@ -80,6 +80,8 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
     private static long msTimer = System.currentTimeMillis();
     private static int nanoCounter = 0xffffffff;
 
+    // Can be used to match GUID values in SQL
+    public static String SQL_LIKE_GUID_PATTERN = "[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]";
 
     private static String genClockSeqAndReserved()
     {
