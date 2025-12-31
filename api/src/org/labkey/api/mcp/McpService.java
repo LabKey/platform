@@ -1,4 +1,4 @@
-package org.labkey.api.mpc;
+package org.labkey.api.mcp;
 
 
 import com.google.genai.Chat;
@@ -7,9 +7,11 @@ import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.McpProvider;
 import org.labkey.api.services.ServiceRegistry;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.tool.ToolCallback;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 
 public interface McpService
@@ -51,5 +53,9 @@ public interface McpService
 
     Chat getChat(HttpSession session);
     String sendMessage(Chat chat, String message);
+
+    ChatClient getChatSpringAi(HttpSession session, String agentName, Supplier<String> systemPromptSupplier);
+    String sendMessage(ChatClient chat, String message);
+
     /* </PROTOTYPE> */
 }

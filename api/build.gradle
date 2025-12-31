@@ -1056,6 +1056,32 @@ dependencies {
     )
 
     BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.springframework.ai:spring-ai-starter-model-google-genai:${springAiVersion}",
+            "spring-ai-starter-google-genai",
+            "spring-ai",
+            "https://github.com/spring-projects/spring-ai",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "LLM Chat Client integration for Gemini"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.springframework.ai:spring-ai-client-chat:${springAiVersion}",
+            "spring-ai-client-chat",
+            "spring-ai",
+            "https://github.com/spring-projects/spring-ai",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "LLM Chat Client"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
             project,
             new ExternalDependency(
                     "com.google.genai:google-genai:1.15.0",

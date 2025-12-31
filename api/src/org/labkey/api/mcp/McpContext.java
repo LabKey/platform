@@ -1,4 +1,4 @@
-package org.labkey.api.mpc;
+package org.labkey.api.mcp;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
@@ -28,7 +28,7 @@ public class McpContext implements ContainerUser
         this.user = user;
     }
 
-    ToolContext getToolContext()
+    public ToolContext getToolContext()
     {
         return new ToolContext(Map.of("container", getContainer(), "user", getUser()));
     }

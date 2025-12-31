@@ -22,8 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Chat;
 import com.google.genai.errors.ClientException;
 import com.google.genai.errors.ServerException;
-import com.google.genai.types.Content;
-import com.google.genai.types.Part;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -161,9 +159,12 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.mcp.McpContext;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.mpc.McpService;
+import org.labkey.api.mcp.AbstractAgentAction;
+import org.labkey.api.mcp.McpService;
+import org.labkey.api.mcp.PromptForm;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -246,7 +247,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ReturnURLString;
-import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
@@ -311,6 +311,7 @@ import org.labkey.remoteapi.RemoteConnections;
 import org.labkey.remoteapi.SelectRowsStreamHack;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.vfs.FileLike;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -8869,10 +8870,9 @@ public class QueryController extends SpringActionController
     }
 
 
-    public static class PromptForm
+    public static class SqlPromptForm extends PromptForm
     {
-        String prompt;
-        String schemaName;
+        public String schemaName;
 
         public String getSchemaName()
         {
@@ -8883,23 +8883,59 @@ public class QueryController extends SpringActionController
         {
             this.schemaName = schemaName;
         }
-
-        public void setPrompt(String prompt)
-        {
-            this.prompt = prompt;
-        }
-
-        public String getPrompt()
-        {
-            return this.prompt;
-        }
     }
 
 
     @RequiresPermission(ReadPermission.class)
     @RequiresLogin
-    public static class QueryAgentAction extends ReadOnlyApiAction<PromptForm>
+    public static class QueryAgentAction extends AbstractAgentAction<SqlPromptForm>
     {
+        SqlPromptForm _form;
+
+        @Override
+        public void validateForm(SqlPromptForm sqlPromptForm, Errors errors)
+        {
+            _form = sqlPromptForm;
+        }
+
+        @Override
+        protected String getAgentName()
+        {
+            return QueryAgentAction.class.getName();
+        }
+
+        @Override
+        protected String getServicePrompt()
+        {
+            StringBuilder serviceMessage = new StringBuilder();
+            serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(getSQLHelp()).append("\n");
+            serviceMessage.append("NOTE: please prefer using lookup syntax rather than JOIN where possible.\n");
+
+            DefaultSchema defaultSchema = DefaultSchema.get(getUser(), getContainer());
+            Map<SchemaKey, UserSchema> schemaMap = listAllSchemas(defaultSchema);
+            StringBuilder sb = new StringBuilder();
+            for (var schema : schemaMap.values())
+            {
+                sb.append("\t* ").append(schema.getSchemaPath().toSQLString());
+                if (isNotBlank(schema.getDescription()))
+                    sb.append("\t").append(schema.getDescription());
+                sb.append("\n");
+            }
+            serviceMessage.append("\n\nHere are the available schemas:\n" + sb);
+
+            if (!isBlank(_form.getSchemaName()))
+            {
+                var schema = defaultSchema.getSchema(_form.getSchemaName());
+                if (null != schema)
+                {
+                    serviceMessage.append("\n\nCurrent default schema is " + schema.getSchemaPath().toSQLString() + ".  This is a list of tables in this schema formatted as JSON\n```"
+                            + listColumnsForTable(schema.getSchemaPath().toSQLString()) + "\n```");
+                }
+            }
+            return serviceMessage.toString();
+        }
+
+
         String getSQLHelp()
         {
             try
@@ -8912,61 +8948,15 @@ public class QueryController extends SpringActionController
             }
         }
 
-        Content contentFromText(String s)
-        {
-            return Content.fromParts(Part.fromText(s));
-        }
-
-        String getModel()
-        {
-            return "gemini-2.5-flash";
-        }
-
-        Chat getChat(String currentSchema)
-        {
-            HttpSession session = getViewContext().getRequest().getSession(true);
-            Chat chatSession = McpService.get().getChat(session);
-
-            if (Boolean.FALSE == SessionHelper.getAttribute(session, "QueryController#queryChatInitialized", Boolean.FALSE))
-            {
-                StringBuilder serviceMessage = new StringBuilder();
-                serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(getSQLHelp()).append("\n");
-                serviceMessage.append("NOTE: please prefer using lookup syntax rather than JOIN where possible.\n");
-
-                DefaultSchema defaultSchema = DefaultSchema.get(getUser(), getContainer());
-                Map<SchemaKey, UserSchema> schemaMap = listAllSchemas(defaultSchema);
-                StringBuilder sb = new StringBuilder();
-                for (var schema : schemaMap.values())
-                {
-                    sb.append("\t* ").append(schema.getSchemaPath().toSQLString());
-                    if (isNotBlank(schema.getDescription()))
-                        sb.append("\t").append(schema.getDescription());
-                    sb.append("\n");
-                }
-                serviceMessage.append("\n\nHere are the available schemas:\n" + sb);
-
-                if (!isBlank(currentSchema))
-                {
-                    var schema = defaultSchema.getSchema(currentSchema);
-                    if (null != schema)
-                    {
-                        serviceMessage.append("\n\nCurrent default schema is " + schema.getSchemaPath().toSQLString() + ".  This is a list of tables in this schema formatted as JSON\n```"
-                            + listColumnsForTable(schema.getSchemaPath().toSQLString()) + "\n```");
-                    }
-                }
-
-                McpService.get().sendMessage(chatSession, serviceMessage.toString());
-                SessionHelper.getAttribute(session, "QueryController#queryChatInitialized", Boolean.TRUE);
-            }
-            return chatSession;
-        }
-
         @Override
-        public Object execute(PromptForm form, BindException errors) throws Exception
+        public Object execute(SqlPromptForm form, BindException errors) throws Exception
         {
-            try (var mcpPush = org.labkey.api.mpc.McpContext.withContext(getViewContext()))
+            // save form here for context in getServicePrompt()
+            _form = form;
+
+            try (var mcpPush = McpContext.withContext(getViewContext()))
             {
-                Chat chatSession = getChat(form.getSchemaName());
+                ChatClient chatSession = getChat();
                 String prompt = form.getPrompt();
                 String responseText;
 
@@ -8977,7 +8967,6 @@ public class QueryController extends SpringActionController
                 catch (ServerException x)
                 {
                     return new JSONObject(Map.of(
-                            "model", getModel(),
                             "error", x.getMessage(),
                             "text", "ERROR: " + x.getMessage(),
                             "success", Boolean.FALSE));
@@ -9012,9 +9001,8 @@ public class QueryController extends SpringActionController
                     }
                 }
 
-                System.err.println(chatSession.getHistory(true));
+//                System.err.println(chatSession.getHistory(true));
                 var ret = new JSONObject(Map.of(
-                        "model", getModel(),
                         "success", Boolean.TRUE));
                 if (null != sql)
                     ret.put("sql", sql);
@@ -9027,7 +9015,6 @@ public class QueryController extends SpringActionController
                 var ret = new JSONObject(Map.of(
                         "text", ex.getMessage(),
                         "user", getViewContext().getUser().getName(),
-                        "model", getModel(),
                         "success", Boolean.FALSE));
                 return ret;
             }
@@ -9052,7 +9039,6 @@ public class QueryController extends SpringActionController
             return null;
         }
     }
-
 
     @RequiresPermission(ReadPermission.class)
     @RequiresLogin

@@ -97,7 +97,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SchemaUpdateType;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
-import org.labkey.api.mpc.McpService;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.notification.NotificationMenuView;

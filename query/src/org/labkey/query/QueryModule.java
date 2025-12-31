@@ -35,7 +35,7 @@ import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.mpc.McpService;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.JavaExportScriptFactory;

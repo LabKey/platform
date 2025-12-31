@@ -3,6 +3,7 @@ package org.labkey.core.mpc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Chat;
 import com.google.genai.Client;
+import com.google.genai.types.ClientOptions;
 import com.google.genai.types.FunctionCall;
 import com.google.genai.types.FunctionDeclaration;
 import com.google.genai.types.GenerateContentConfig;
@@ -27,11 +28,21 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.collections.CopyOnWriteHashMap;
-import org.labkey.api.mpc.McpService;
+import org.labkey.api.mcp.McpContext;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.ShutdownListener;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.ChatMemoryRepository;
+import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.google.genai.GoogleGenAiChatModel;
+import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
 import org.springframework.ai.mcp.McpToolUtils;
 import org.springframework.ai.support.ToolCallbacks;
 import org.springframework.ai.tool.ToolCallback;
@@ -48,6 +59,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -63,6 +75,7 @@ public class McpServiceImpl implements McpService
 
     private final ObjectMapper objectMapper = JsonUtil.DEFAULT_MAPPER;
     private final _McpServlet  mcpServlet = new _McpServlet(JsonUtil.DEFAULT_MAPPER, MESSAGE_ENDPOINT, SSE_ENDPOINT);
+    private final ChatMemoryRepository chatMemoryRepository = new InMemoryChatMemoryRepository();
 
 
     public static McpServiceImpl get()
@@ -369,6 +382,8 @@ public class McpServiceImpl implements McpService
     String getModel()
     {
         return "gemini-2.5-flash";
+//      gemini-2.5-flash-lite is cheaper but it seems to be much worse at SQL than gemini-2.5-flash
+//        return "gemini-2.5-flash-lite";
     }
 
 
@@ -398,9 +413,10 @@ public class McpServiceImpl implements McpService
         });
     }
 
+    @Override
     public String sendMessage(Chat chatSession, String message)
     {
-        org.labkey.api.mpc.McpContext.get();
+        // TODO tool context? org.labkey.api.mpc.McpContext.get();
 
         GenerateContentResponse response;
         List<FunctionCall> functionCalls;
@@ -443,14 +459,54 @@ public class McpServiceImpl implements McpService
     }
 
 
-//    public GenerateContentResponse sendPrompt(Chat chatSession, String promptName)
-//    {
-//        // is McpContext set?
-//        McpContext.get();
-//
-//        var p = Objects.requireNonNull(promptMap.get(promptName));
-//        p.promptHandler().
-//
-//        return sendMesssage(chatSession);
-//    }
+    // SPRING AI CHAT SERVICE
+    @Override
+    public ChatClient getChatSpringAi(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
+    {
+        return SessionHelper.getAttribute(session, ChatClient.class.getName() + "#" + agentName, () ->
+        {
+            String systemPrompt = systemPromptSupplier.get();
+            String conversationId = session.getId() + ":" + agentName;
+
+            ClientOptions clientOptions = ClientOptions.builder()
+                    .build();
+
+            Client genAiClient = Client.builder()
+                    .clientOptions(clientOptions)
+                    .build();
+
+            GoogleGenAiChatOptions chatOptions = GoogleGenAiChatOptions.builder()
+                    .model(getModel())
+                    .toolCallbacks(listTools())
+                    .build();
+            ChatModel chatModel = GoogleGenAiChatModel.builder()
+                    .genAiClient(genAiClient)
+                    .defaultOptions(chatOptions)
+                    .build();
+            ChatMemory chatMemory = MessageWindowChatMemory.builder()
+                    .maxMessages(100)
+                    .chatMemoryRepository(chatMemoryRepository)
+                    .build();
+            return ChatClient.builder(chatModel)
+                    .defaultOptions(chatOptions)
+                    .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory)
+                            .conversationId(conversationId)
+                            .build())
+                    .defaultSystem(systemPrompt)
+                    .build();
+        });
+    }
+
+
+    @Override
+    public String sendMessage(ChatClient chatSession, String message)
+    {
+        String content;
+        content = chatSession
+                .prompt(message)
+                .toolContext(McpContext.get().getToolContext().getContext())
+                .call()
+                .content();
+        return content;
+    }
 }
