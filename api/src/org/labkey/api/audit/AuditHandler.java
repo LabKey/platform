@@ -116,8 +116,6 @@ public interface AuditHandler
                     nameFromAlias = encodedInputColumn;
                 }
             }
-            else
-                nameFromAlias = lcName;
 
             boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(nameFromAlias);
             if (!excludedFromDetailDiff.contains(nameFromAlias) && (row.containsKey(nameFromAlias) || isExpInput))
