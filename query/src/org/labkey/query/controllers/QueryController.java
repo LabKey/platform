@@ -8962,7 +8962,7 @@ public class QueryController extends SpringActionController
 
                 try
                 {
-                    responseText = McpService.get().sendMessage(chatSession, prompt);
+                    responseText = McpService.get().sendMessage(chatSession, prompt).markdown();
                 }
                 catch (ServerException x)
                 {
@@ -8993,7 +8993,7 @@ public class QueryController extends SpringActionController
                     catch (QueryException x)
                     {
                         String validationPrompt = "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below, can you attempt to fix this?\n```" + x.getMessage() + "```";
-                        responseText = McpService.get().sendMessage(chatSession, validationPrompt);
+                        responseText = McpService.get().sendMessage(chatSession, validationPrompt).markdown();
                         var newSQL = extractSql(responseText);
                         if (isNotBlank(newSQL))
                             sql = newSQL;

@@ -1,12 +1,12 @@
 package org.labkey.api.mcp;
 
 
-import com.google.genai.Chat;
 import io.modelcontextprotocol.server.McpServerFeatures;
 import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.McpProvider;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.HtmlString;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.tool.ToolCallback;
 
@@ -45,17 +45,10 @@ public interface McpService
 
     @NotNull List<McpServerFeatures.SyncResourceSpecification> listResources();
 
+    ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier);
 
-    /* <PROTOTYPE> */
-    // This probably belongs in its own LLM Service, but it's here for prototyping at the moment
-    // This is hard-coded to use Gemini (switch to using Spring-AI wrapper or maybe LangChain4j?)
-    // For now there is no more than one chat session per session!  The caller must keep track of prompts sent.
+    record MessageResponse(String markdown, HtmlString html) {}
 
-    Chat getChat(HttpSession session);
-    String sendMessage(Chat chat, String message);
-
-    ChatClient getChatSpringAi(HttpSession session, String agentName, Supplier<String> systemPromptSupplier);
-    String sendMessage(ChatClient chat, String message);
-
+    MessageResponse sendMessage(ChatClient chat, String message);
     /* </PROTOTYPE> */
 }

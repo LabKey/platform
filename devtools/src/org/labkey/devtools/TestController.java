@@ -26,6 +26,7 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresLogin;
@@ -54,6 +55,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1267,6 +1269,40 @@ public class TestController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
+        }
+    }
+
+    @RequiresLogin
+    public static class ChatAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            return new JspView<>("/org/labkey/devtools/view/chat.jsp");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild("chat");
+        }
+    }
+
+
+    @RequiresLogin
+    public static class ChatEndpointAction extends AbstractAgentAction
+    {
+        @Override
+        protected String getAgentName()
+        {
+            return "TestController.chat";
+        }
+
+        @Override
+        protected String getServicePrompt()
+        {
+            return "You are the generic LabKey agent.  Good luck.";
         }
     }
 }

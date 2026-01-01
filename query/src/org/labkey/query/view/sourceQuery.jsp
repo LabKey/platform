@@ -83,16 +83,16 @@
         border: none;
     }
 
-    /* chat history */
     DIV.chatItem {
-      /* width: 200px; */
+      margin: 5px;
+      padding: 5px;
       background-color: #4CAF50;
       border-radius: 15px;
+      border : solid 1px darkgray;
       display: flex;
-      /* justify-content: center;
       align-items: center; */
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Optional shadow effect */
-    }
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+   }
 
     DIV.userPrompt {
       margin: 5px;
@@ -129,7 +129,7 @@
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
 
-Ext4.onReady(function(){
+LABKEY.Utils.onReady(function(){
 
     Ext4.QuickTips.init();
 
