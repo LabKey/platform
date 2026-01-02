@@ -18,20 +18,13 @@ package org.labkey.search.view;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.Portal;
+import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.view.WebPartView;
 
 import java.text.ParseException;
 
-/**
- * User: adam
- * Date: Jan 19, 2010
- * Time: 2:03:13 PM
- */
 public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
 {
     public SearchWebPartFactory()
@@ -41,7 +34,7 @@ public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
     }
 
     @Override
-    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+    public SearchWebPart getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
     {
         boolean includeSubfolders = includeSubfolders(webPart);
 
@@ -57,13 +50,13 @@ public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
 
 
     @Override
-    public HttpView<?> getEditView(Portal.WebPart webPart, ViewContext context)
+    public JspView<WebPart> getEditView(WebPart webPart, ViewContext context)
     {
         return new JspView<>("/org/labkey/search/view/customizeSearchWebPart.jsp", webPart);
     }
 
 
-    public static boolean includeSubfolders(Portal.WebPart part)
+    public static boolean includeSubfolders(WebPart part)
     {
         String value = part.getPropertyMap().get("includeSubfolders");
 
@@ -77,5 +70,3 @@ public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
         }
     }
 }
-
-
