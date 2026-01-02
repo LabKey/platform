@@ -4,17 +4,19 @@ package org.labkey.api.mcp;
 import io.modelcontextprotocol.server.McpServerFeatures;
 import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.labkey.api.module.McpProvider;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HtmlString;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
 
 import java.util.List;
 import java.util.function.Supplier;
 
 
-public interface McpService
+public interface McpService extends ToolCallbackProvider
 {
     static McpService get()
     {
@@ -39,11 +41,8 @@ public interface McpService
 
     void registerResources(@NotNull List<McpServerFeatures.SyncResourceSpecification> resources);
 
-    @NotNull List<ToolCallback> listTools();
-
-    @NotNull List<McpServerFeatures.SyncPromptSpecification> listPrompts();
-
-    @NotNull List<McpServerFeatures.SyncResourceSpecification> listResources();
+    @Override
+    ToolCallback @NonNull [] getToolCallbacks();
 
     ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier);
 

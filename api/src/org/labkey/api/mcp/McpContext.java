@@ -14,13 +14,13 @@ public class McpContext implements ContainerUser
     final User user;
     final Container container;
 
-    private McpContext(ContainerUser ctx)
+    public McpContext(ContainerUser ctx)
     {
         this.container = ctx.getContainer();
         this.user = ctx.getUser();
     }
 
-    McpContext(Container container, User user)
+    public McpContext(Container container, User user)
     {
         if (!container.hasPermission(user, ReadPermission.class))
             throw new UnauthorizedException();
