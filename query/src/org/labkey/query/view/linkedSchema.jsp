@@ -40,8 +40,7 @@
     BaseExternalSchemaBean bean = (BaseExternalSchemaBean)HttpView.currentModel();
     AbstractExternalSchemaDef def = bean.getSchemaDef();
 
-    Container targetContainer = getContainer();
-    Container sourceContainer = targetContainer;
+    Container sourceContainer = getContainer();
 
     boolean isExternal = true;
     if (def instanceof LinkedSchemaDef lsd)
@@ -60,8 +59,6 @@
     Ext4.onReady(function () {
 
         var schemaType = <%=q(isExternal ? SchemaType.external.name() : SchemaType.linked.name())%>;
-        var external = <%=isExternal%>;
-
         Ext4.QuickTips.init();
 
         Ext4.define('LABKEY.Query.SchemaTemplate', {
@@ -115,14 +112,14 @@
                 if (this.getOverride()) {
                     this.setOverride(false);
                     this.boundField.setDisabled(true);
-                    var fieldContainer = this.boundField.up('fieldcontainer');
+                    let fieldContainer = this.boundField.up('fieldcontainer');
                     if (fieldContainer)
                         fieldContainer.setDisabled(true);
                 }
                 else {
                     this.setOverride(true);
                     this.boundField.setDisabled(false);
-                    var fieldContainer = this.boundField.up('fieldcontainer');
+                    let fieldContainer = this.boundField.up('fieldcontainer');
                     if (fieldContainer)
                         fieldContainer.setDisabled(false);
                 }
@@ -176,7 +173,6 @@
             displayField: 'name',
             valueField: 'name',
             editable: true,
-            //autoLoad: <%=def.getDataSource() != null%>,
             disabled: <%=def.getDataSource() == null%>,
             value: <%=q(initialTemplateName)%>,
             listConfig : {
@@ -331,8 +327,7 @@
                 var schemaTemplateName = schemaTemplateCombo.getValue();
                 var schemaTemplateRecord = schemaTemplateCombo.store.getById(schemaTemplateName);
                 if (schemaTemplateRecord) {
-                    var sourceSchemaName = schemaTemplateRecord.get('sourceSchemaName');
-                    return sourceSchemaName;
+                    return  schemaTemplateRecord.get('sourceSchemaName');
                 }
             }
         });
@@ -416,8 +411,7 @@
                 var schemaTemplateName = schemaTemplateCombo.getValue();
                 var schemaTemplateRecord = schemaTemplateCombo.store.getById(schemaTemplateName);
                 if (schemaTemplateRecord) {
-                    var tables = schemaTemplateRecord.get('tables');
-                    return tables;
+                    return schemaTemplateRecord.get('tables');
                 }
             }
         });
@@ -452,8 +446,7 @@
                 var schemaTemplateName = schemaTemplateCombo.getValue();
                 var schemaTemplateRecord = schemaTemplateCombo.store.getById(schemaTemplateName);
                 if (schemaTemplateRecord) {
-                    var metaData = schemaTemplateRecord.get('metadata');
-                    return metaData;
+                    return schemaTemplateRecord.get('metadata');
                 }
             }
         });
