@@ -436,6 +436,12 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     }
 
     @Override
+    public void setURLTargetWindow(String urlTarget)
+    {
+        setURLTarget(urlTarget);
+    }
+
+    @Override
     public String getURLCls()
     {
         return _urlCls;

@@ -406,6 +406,12 @@ public class WrappedColumnInfo
         }
 
         @Override
+        public void setURLTargetWindow(String urlTarget)
+        {
+            setURLTarget(urlTarget);
+        }
+
+        @Override
         public void setURLCls(String urlCls)
         {
             checkLocked();

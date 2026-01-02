@@ -47,6 +47,7 @@ public interface MutableColumnRenderProperties extends ColumnRenderProperties, M
     void setURL(StringExpression url);
 
     void setURLTarget(String urlTarget);
+    void setURLTargetWindow(String urlTarget);
 
     void setURLCls(String urlCls);
 
