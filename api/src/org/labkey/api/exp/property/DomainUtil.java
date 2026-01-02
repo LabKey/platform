@@ -617,6 +617,8 @@ public class DomainUtil
         // TODO: Include null value behavior
         if (columnXml.isSetUrl())
             gwtProp.setURL(columnXml.getUrl().getStringValue());
+        if (columnXml.isSetUrlTarget())
+            gwtProp.setURLTarget(columnXml.getUrlTarget());
         if (columnXml.isSetShownInInsertView())
             gwtProp.setShownInInsertView(columnXml.getShownInInsertView());
         if (columnXml.isSetShownInUpdateView())

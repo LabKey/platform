@@ -411,6 +411,16 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 xmlColumn.unsetUrl();
             }
 
+            // Set the URL Target
+            if (shouldStoreValue(metadataColumnJSON.getURLTarget(), rawColumnInfo.getURLTarget()))
+            {
+                xmlColumn.setUrlTarget(metadataColumnJSON.getURLTarget());
+            }
+            else if (xmlColumn.isSetUrlTarget())
+            {
+                xmlColumn.unsetUrlTarget();
+            }
+
             // Set the ImportAliases
             Set<String> importAliasSet = rawColumnInfo.getImportAliasSet();
             if (metadataColumnJSON.getImportAliases() != null)
