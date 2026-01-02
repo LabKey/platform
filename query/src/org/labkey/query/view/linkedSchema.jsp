@@ -140,7 +140,6 @@
             name: 'userSchemaName',
             fieldLabel: 'Schema Name',
             allowBlank: false,
-            validateOnBlur: false,
             maxLength: 50,
             value: <%=q(def.getUserSchemaName())%>,
             helpPopup: <%=qh(bean.getHelpHTML("UserSchemaName"))%>
@@ -150,6 +149,9 @@
             name: 'dataSource',
             fieldLabel: 'Source Container',
             value: <%=q(def.getDataSource())%>,
+            typeAhead: true,
+            anyMatch: true,
+            forceSelection: true,
             <%--helpPopup: <%=qh(bean.getHelpHTML("DataSource"))%>--%>
         }));
 
@@ -497,6 +499,7 @@
                 items: [{
                     text: <%=q(bean.isInsert() ? "Create" : "Update")%>,
                     type: 'submit',
+                    formBind : true,
                     handler: function () {
                         var sourceContainerValue = sourceContainerCombo.getValue();
                         if (!sourceContainerValue)
@@ -544,7 +547,7 @@
                         });
                     }
                 },{
-                    <% if (bean.isInsert()) { %>
+                    <% if (!bean.isInsert()) { %>
                     text: 'Delete',
                     handler: function() { document.location = <%=q(bean.getDeleteURL())%>; }
                 },{
