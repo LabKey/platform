@@ -594,13 +594,11 @@ public class DatasetQueryView extends StudyQueryView
         }
 
         boolean addSeparator = false;
+
         if (getContainer().hasPermission(getUser(), QCAnalystPermission.class))
         {
-            if (!addSeparator)
-            {
-                addSeparator = true;
-                button.addSeparator();
-            }
+            addSeparator = true;
+            button.addSeparator();
             ActionURL updateAction = new ActionURL(StudyController.UpdateQCStateAction.class, getContainer());
             updateAction.addReturnUrl(getViewContext().getActionURL());
             button.addMenuItem("Update state of selected rows", "if (verifySelected(" + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form, \"" +

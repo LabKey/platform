@@ -19,7 +19,6 @@ package org.labkey.list.controllers;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -217,8 +216,8 @@ public class ListController extends SpringActionController
             SimpleFilter filter = new SimpleFilter();
 
             SQLFragment sql = new SQLFragment("Category IS NULL OR Category = ")
-                    .appendValue(ListDefinition.Category.PublicPicklist)
-                    .append(" OR CreatedBy = ").appendValue(getUser().getUserId());
+                .appendValue(ListDefinition.Category.PublicPicklist)
+                .append(" OR CreatedBy = ").appendValue(getUser().getUserId());
             filter.addWhereClause(sql, FieldKey.fromParts("Category"), FieldKey.fromParts("CreatedBy"));
             settings.setBaseFilter(filter);
 

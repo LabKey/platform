@@ -13,7 +13,7 @@ public enum PostgreSqlServerType
         }
 
         @Override
-        boolean supportsGroupConcat()
+        public boolean supportsGroupConcat()
         {
             return true;
         }
@@ -33,7 +33,7 @@ public enum PostgreSqlServerType
         }
 
         @Override
-        boolean supportsGroupConcat()
+        public boolean supportsGroupConcat()
         {
             return false;
         }
@@ -46,7 +46,7 @@ public enum PostgreSqlServerType
     };
 
     abstract boolean shouldTest();
-    abstract boolean supportsGroupConcat();
+    public abstract boolean supportsGroupConcat();
     public abstract boolean supportsSpecialMetadataQueries();
 
     public static PostgreSqlServerType getFromParameterStatuses(Map<String, String> parameterStatuses)

@@ -873,12 +873,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     private void bootstrap()
     {
+        // Create the initial groups
+        GroupManager.bootstrapGroup(Group.groupUsers, "Users");
+        GroupManager.bootstrapGroup(Group.groupGuests, "Guests");
+
         if (ModuleLoader.getInstance().shouldInsertData())
         {
-            // Create the initial groups
-            GroupManager.bootstrapGroup(Group.groupUsers, "Users");
-            GroupManager.bootstrapGroup(Group.groupGuests, "Guests");
-
             // Other containers inherit permissions from root; admins get all permissions, users & guests none
             Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
             Role readerRole = RoleManager.getRole(ReaderRole.class);
@@ -928,7 +928,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         else
         {
-            // It's very difficult to bootstrap without the root or shared containers in place; create them now and
+            // It's very difficult to bootstrap without the root or shared containers in place; create them now, and
             // we'll delete them later
             Container root = ContainerManager.ensureContainer("/", User.getAdminServiceUser());
             Table.insert(null, CoreSchema.getInstance().getTableInfoContainers(), Map.of("Parent", root.getId(), "Name", "Shared"));

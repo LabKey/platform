@@ -17,16 +17,12 @@
 package org.labkey.api.util;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.SqlDialect;
 
 import java.util.Date;
 
-/**
- * User: kevink
- */
 public final class JdbcUtil
 {
     private JdbcUtil() { }
@@ -37,20 +33,10 @@ public final class JdbcUtil
         return format(fragment, dialect.getStringHandler());
     }
 
-
-    // Not recommended -- this uses the LabKey scope to dictate parsing of identifiers and string literals... which
-    // might not be correct for the incoming SQL.
-    public static String format(SQLFragment fragment)
-    {
-        return format(fragment, DbScope.getLabKeyScope().getSqlDialect().getStringHandler());
-    }
-
-
     private static String format(SQLFragment fragment, DialectStringHandler handler)
     {
         return handler.substituteParameters(fragment);
     }
-
 
     // handle equality check for various row version types, LONG, ROWVERSION, TIMESTAMP (date time)
     public static boolean rowVersionEqual(@NotNull Object a, @NotNull Object b)

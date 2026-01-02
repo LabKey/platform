@@ -1257,7 +1257,7 @@ public void testUpdateAuditForLongField() throws Exception
         List<AuditTypeEvent> events = AuditLogService.get().getAuditEvents(c, user, "QueryUpdateAuditEvent", filter, new Sort("-RowId"));
         assertEquals("Number of audit events not as expected", 2, events.size()); // should have one for insert and one for update
         String oldRecordMap = ((DetailedAuditTypeEvent) events.get(0)).getOldRecordMap();
-        assertTrue("Old record map (" + oldRecordMap + ") does not contain expected field", oldRecordMap.contains(encodeURIComponent(fieldName.toLowerCase()) + "=Initial"));
+        assertTrue("Old record map (" + oldRecordMap + ") does not contain expected field", oldRecordMap.contains(encodeURIComponent(fieldName) + "=Initial"));
     }
 }
 %>
