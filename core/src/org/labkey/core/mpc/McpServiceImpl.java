@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mcp.McpContext;
@@ -140,10 +141,11 @@ public class McpServiceImpl implements McpService
 
 
     @Override
-    public @NotNull List<ToolCallback> listTools()
+    public ToolCallback @NonNull [] getToolCallbacks()
     {
-        return new ArrayList<>(toolMap.values());
+        return toolMap.values().toArray(new ToolCallback[0]);
     }
+
 
     public List<McpSchema.Tool> tools()
     {
@@ -156,20 +158,6 @@ public class McpServiceImpl implements McpService
                         .build()
         ).toList();
     }
-
-    @Override
-    public @NotNull List<McpServerFeatures.SyncPromptSpecification> listPrompts()
-    {
-        return List.of();
-    }
-
-
-    @Override
-    public @NotNull List<McpServerFeatures.SyncResourceSpecification> listResources()
-    {
-        return List.of();
-    }
-
 
     private class _McpServlet extends HttpServlet // wraps HttpServletSseServerTransportProvider
     {
@@ -192,11 +180,12 @@ public class McpServiceImpl implements McpService
 
         void startMcpServer()
         {
-            ToolCallback[] toolCallbacks = ToolCallbacks.from(new HelloWorld());
-            var tools = Arrays.stream(toolCallbacks).map(McpToolUtils::toSyncToolSpecification).toList();
+            List<McpServerFeatures.SyncToolSpecification> tools = Arrays.stream(getToolCallbacks()).map(McpToolUtils::toSyncToolSpecification).toList();
+            List<McpServerFeatures.SyncResourceSpecification> resources = new ArrayList<>(resourceMap.values());
 
             mcpServer = McpServer.sync(transportProvider)
                     .tools(tools)
+                    .resources(resources)
 //                    .capabilities(new McpSchema.ServerCapabilities())
                     .build();
             ContextListener.addShutdownListener(new _ShutdownListener());
@@ -319,7 +308,7 @@ public class McpServiceImpl implements McpService
 
             GoogleGenAiChatOptions chatOptions = GoogleGenAiChatOptions.builder()
                     .model(getModel())
-                    .toolCallbacks(listTools())
+                    .toolCallbacks(getToolCallbacks())
                     .build();
             ChatModel chatModel = GoogleGenAiChatModel.builder()
                     .genAiClient(genAiClient)
