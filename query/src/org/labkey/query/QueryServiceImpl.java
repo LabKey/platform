@@ -385,18 +385,16 @@ public class QueryServiceImpl implements QueryService
 
         SQLFragment fromSql = t.getFromSQL("_");
 
-        SQLFragment sqlFragment = new SQLFragment()
-                .append("(").appendIdentifier(col.getAlias())
-                .append(")")
-                .append(negate ? " NOT" : "")
-                .append(" IN (")
-                .append(" SELECT ")
-                .append(t.getColumns().get(0).getValueSql("_"))
-                .append(" FROM ")
-                .append(fromSql)
-                .append(")");
-
-        return sqlFragment;
+        return new SQLFragment()
+            .append("(").appendIdentifier(col.getAlias())
+            .append(")")
+            .append(negate ? " NOT" : "")
+            .append(" IN (")
+            .append(" SELECT ")
+            .append(t.getColumns().get(0).getValueSql("_"))
+            .append(" FROM ")
+            .append(fromSql)
+            .append(")");
     }
 
     /**

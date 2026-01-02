@@ -362,7 +362,7 @@ describe('Move Samples', () => {
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId }],
-            }, {...subfolder1Options, ...subEditorUserOptions}).expect(400);
+            }, {...subfolder1Options, ...subEditorUserOptions}).expect(403);
 
             // Assert
             const {exception, success} = response.body;

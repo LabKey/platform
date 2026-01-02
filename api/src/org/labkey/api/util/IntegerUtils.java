@@ -5,11 +5,11 @@ import org.junit.Test;
 
 /**
  * This Class to help with dealing with Object that may represent an integer number (char,short,int,long).  It
- * is meant to fill in the small gap between Java (e.g casts and instanceof) and ConvertUtils.  Hopefully, this
+ * is meant to fill in the small gap between Java (e.g. casts and instanceof) and ConvertUtils. Hopefully, this
  * class makes it just a little easier to deal with Integer valued Numbers.
  * <br>
- * Unfortunately, Number does not help with detecting integer/non-integer types, so this class only handles Object
- * instances that have corresponding to the primitive types.  {@code boolean}, {@code byte}, {@code char},
+ * Unfortunately, Number does not help with detecting integer/noninteger types, so this class only handles Object
+ * instances that have corresponding to the primitive types. {@code boolean}, {@code byte}, {@code char},
  * {@code short}, {@code int}, {@code long}, {@code float}, and {@code double})
  * <br>
  * Because "Integer" is kind of ambiguous, I will use "Integral" to mean any integer type.  For now, I am not including
@@ -27,7 +27,7 @@ public class IntegerUtils
         return c == Byte.class || c == Short.class || c==Integer.class || c==Long.class;
     }
 
-    /** returns Numeric object as a Long.  This method will throw if not Object is not Integral. */
+    /** returns Numeric object as a Long. This method will throw if Object is not Integral. */
     public static Long asLong(Object o)
     {
         if (!isIntegral(o))
@@ -35,7 +35,7 @@ public class IntegerUtils
         return o.getClass() == Long.class ? (Long)o : Long.valueOf(((Number)o).longValue());
     }
 
-    /** returns Numeric object as an Integer.  This method will throw if not Object is not Integral or is out of range. */
+    /** returns Numeric object as an Integer. This method will throw if Object is not Integral or is out of range. */
     public static Integer asInteger(Object o) throws ClassCastException
     {
         if (null == o)

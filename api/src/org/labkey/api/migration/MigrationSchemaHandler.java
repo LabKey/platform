@@ -12,7 +12,6 @@ import org.labkey.api.migration.DatabaseMigrationService.DataFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
 
-import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -53,7 +52,7 @@ public interface MigrationSchemaHandler
 
     void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema);
 
-    void copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, Set<GUID> copyContainers);
+    Collection<AttachmentParentType> copyAttachments(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema, @Nullable Set<GUID> copyContainers);
 
     @NotNull Collection<AttachmentParentType> getAttachmentTypes();
 

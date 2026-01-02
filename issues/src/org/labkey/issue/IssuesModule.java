@@ -84,7 +84,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @Override
     public Double getSchemaVersion()
     {
-        return 25.001;
+        return 26.000;
     }
 
     @Override

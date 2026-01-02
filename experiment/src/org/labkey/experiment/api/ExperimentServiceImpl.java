@@ -3610,6 +3610,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    @Override
     public void clearAncestors(ExpRunItem runItem)
     {
         boolean isSample = runItem instanceof ExpMaterial;
@@ -3619,16 +3620,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             clearDataAncestors(List.of(runItem.getRowId()));
     }
 
+    @Override
     public void repopulateAncestors()
     {
         ClosureQueryHelper.truncateAndRecreate();
     }
 
+    @Override
     public void clearDataAncestors(Collection<Long> dataRowIds)
     {
         ClosureQueryHelper.clearAncestorsForDataObjects(dataRowIds);
     }
 
+    @Override
     public void clearMaterialAncestors(Collection<Long> materialRowIds)
     {
         ClosureQueryHelper.clearAncestorsForMaterials(materialRowIds);

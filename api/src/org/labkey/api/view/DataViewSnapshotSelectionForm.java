@@ -3,7 +3,6 @@ package org.labkey.api.view;
 import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.data.DataRegionSelection;
 
-import java.util.HashSet;
 import java.util.Set;
 
 public class DataViewSnapshotSelectionForm extends DataViewSelectionForm

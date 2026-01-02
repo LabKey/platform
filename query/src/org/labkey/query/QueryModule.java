@@ -160,7 +160,7 @@ public class QueryModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 25.001;
+        return 26.000;
     }
 
     @Override

@@ -20,8 +20,12 @@ import org.apache.logging.log4j.Level;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Selector.ForEachBlock;
+import org.labkey.api.data.SimpleFilter.FilterClause;
+import org.labkey.api.data.SimpleFilter.InClause;
+import org.labkey.api.data.SimpleFilter.NotClause;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -39,6 +43,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -514,5 +519,21 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         assertEquals(rowCount, list.size());
         assertEquals(sortedList.subList(offset, offset + rowCount), list);
         verifyResultSets(selector, rowCount, expectedComplete);
+    }
+
+    @Test
+    public void testInClause()
+    {
+        TableInfo table = CoreSchema.getInstance().getTableInfoContainers();
+        long rowCount = new TableSelector(table).getRowCount();
+
+        Container root = ContainerManager.getRoot();
+        FilterClause rootClause = new InClause(FieldKey.fromParts("RowId"), Set.of(root.getRowId()));
+        assertEquals(1, new TableSelector(table, new SimpleFilter(rootClause), null).getRowCount());
+        assertEquals(rowCount - 1, new TableSelector(table, new SimpleFilter(new NotClause(rootClause)), null).getRowCount());
+
+        FilterClause emptyClause = new InClause(FieldKey.fromParts("RowId"), Set.of());
+        assertEquals(0, new TableSelector(table, new SimpleFilter(emptyClause), null).getRowCount());
+        assertEquals(rowCount, new TableSelector(table, new SimpleFilter(new NotClause(emptyClause)), null).getRowCount());
     }
 }
