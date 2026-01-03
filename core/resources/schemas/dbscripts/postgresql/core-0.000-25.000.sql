@@ -27,22 +27,23 @@ CREATE SCHEMA temp;
 
 CREATE TABLE core.Logins
 (
-  Email VARCHAR(255) NOT NULL,
-  Crypt VARCHAR(64) NOT NULL,
-  Verification VARCHAR(64),
-  LastChanged TIMESTAMP NULL,
-  PreviousCrypts VARCHAR(1000),
-  RequestedEmail VARCHAR(255),
-  VerificationTimeout TIMESTAMP,
+    Email VARCHAR(255) NULL, -- No longer used. Has been dropped in a later script.
+    Crypt VARCHAR(64) NOT NULL,
+    Verification VARCHAR(64),
+    LastChanged TIMESTAMP NULL,
+    PreviousCrypts VARCHAR(1000),
+    RequestedEmail VARCHAR(255),
+    VerificationTimeout TIMESTAMP,
+    UserId USERID NOT NULL,
 
-  CONSTRAINT PK_Logins PRIMARY KEY (Email)
+    CONSTRAINT PK_Logins PRIMARY KEY (UserId)
 );
 
 -- Principals is used for managing security related information
 -- It is not used for validating login, that requires an 'external'
 -- process, either using LDAP, JDBC, etc. (see Logins table)
 --
--- It does not contain contact info or other generic user visible data
+-- It does not contain contact info or other generic user-visible data
 
 CREATE TABLE core.Principals
 (
@@ -53,19 +54,25 @@ CREATE TABLE core.Principals
   Type CHAR(1),                     -- 'u'=user 'g'=group 'm'=module-specific
   Active BOOLEAN NOT NULL DEFAULT TRUE,
 
-  CONSTRAINT PK_Principals PRIMARY KEY (UserId),
-  CONSTRAINT UQ_Principals_Container_Name_OwnerId UNIQUE (Container, Name, OwnerId)
+  CONSTRAINT PK_Principals PRIMARY KEY (UserId)
 );
 
 SELECT SETVAL('core.Principals_UserId_Seq', 1000);
 
+-- NULLS NOT DISTINCT syntax was introduced in PostgreSQL 15, so we can't use it yet. Once PostgreSQL 15 is a minimum
+-- we could consider switching back to NULLS NOT DISTINCT.
+
+-- COALESCE() works around PostgreSQL behavior that NULL values are not unique
+CREATE UNIQUE INDEX UQ_Principals_Container_Name_OwnerId ON core.Principals
+    (COALESCE(Container, '00000000-0000-0000-0000-000000000000'), LOWER(Name), COALESCE(OwnerId, '00000000-0000-0000-0000-000000000000'));
+
 -- maps users to groups
 CREATE TABLE core.Members
 (
-  UserId USERID,
-  GroupId USERID,
+    UserId USERID,
+    GroupId USERID,
 
-  CONSTRAINT PK_Members PRIMARY KEY (UserId, GroupId)
+    CONSTRAINT PK_Members PRIMARY KEY (UserId, GroupId)
 );
 
 CREATE TABLE core.UsersData
@@ -96,9 +103,8 @@ CREATE TABLE core.UsersData
   CONSTRAINT UQ_DisplayName UNIQUE (DisplayName)
 );
 
-/* 22.xxx SQL scripts */
-
 ALTER TABLE core.UsersData ADD System BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE core.UsersData ADD LastActivity TIMESTAMP NULL;
 
 CREATE TABLE core.Containers
 (
@@ -117,7 +123,6 @@ CREATE TABLE core.Containers
   Title VARCHAR(1000),
   Type VARCHAR(16) NOT NULL DEFAULT 'normal',
 
-  CONSTRAINT UQ_Containers_RowId UNIQUE (RowId),
   CONSTRAINT UQ_Containers_EntityId UNIQUE (EntityId),
   CONSTRAINT UQ_Containers_Parent_Name UNIQUE (Parent, Name),
   CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)
@@ -127,19 +132,26 @@ CREATE INDEX IX_Containers_Parent_Entity ON core.Containers(Parent, EntityId);
 
 ALTER TABLE core.Containers ADD LockState VARCHAR(25) NULL;
 ALTER TABLE core.Containers ADD ExpirationDate TIMESTAMP NULL;
+ALTER TABLE core.Containers ADD FileRootSize BIGINT;
+ALTER TABLE core.Containers ADD FileRootLastCrawled TIMESTAMP;
+
+-- Adding a PK on RowId seemed like a good idea, but it broke existing lookups to core.Containers and other assumptions.
+-- We could add a PK on EntityId, but that column is currently nullable. For now, we'll just live without a PK.
+ALTER TABLE core.Containers ADD CONSTRAINT UQ_Containers_RowId UNIQUE (RowId);
 
 -- table for all modules
 CREATE TABLE core.Modules
 (
-  Name VARCHAR(255),
+  Name VARCHAR(255) NOT NULL,
   ClassName VARCHAR(255),
   SchemaVersion FLOAT8 NULL,
   Enabled BOOLEAN DEFAULT '1',
   AutoUninstall BOOLEAN NOT NULL DEFAULT FALSE,  -- TRUE means LabKey should uninstall this module (drop schemas, delete SqlScripts rows, delete Modules rows), if it no longer exists
-  Schemas VARCHAR(4000) NULL,                    -- Schemas managed by this module; LabKey will drop these schemas when a module marked AutoUninstall = TRUE is missing
-
-  CONSTRAINT PK_Modules PRIMARY KEY (Name)
+  Schemas VARCHAR(4000) NULL                    -- Schemas managed by this module; LabKey will drop these schemas when a module marked AutoUninstall = TRUE is missing
 );
+
+-- Create case-insensitive unique constraint instead of a PK
+CREATE UNIQUE INDEX UQ_ModuleName ON core.Modules (LOWER(Name));
 
 -- keep track of sql scripts that have been run in each module
 CREATE TABLE core.SqlScripts
@@ -384,16 +396,18 @@ CREATE INDEX IX_Notification_User ON core.Notifications(UserId);
 
 CREATE TABLE core.DataStates
 (
-  RowId SERIAL,
-  Label VARCHAR(64) NULL,
-  Description VARCHAR(500) NULL,
-  Container ENTITYID NOT NULL,
-  PublicData BOOLEAN NOT NULL,
-  CONSTRAINT PK_QCState PRIMARY KEY (RowId),
-  CONSTRAINT UQ_QCState_Label UNIQUE(Label, Container)
+    RowId SERIAL,
+    Label VARCHAR(64) NULL,
+    Description VARCHAR(500) NULL,
+    Container ENTITYID NOT NULL,
+    PublicData BOOLEAN NOT NULL,
+    CONSTRAINT PK_QCState PRIMARY KEY (RowId),
+    CONSTRAINT UQ_QCState_Label UNIQUE(Label, Container)
 );
 
 ALTER TABLE core.DataStates ADD COLUMN StateType VARCHAR(20);
+
+ALTER TABLE core.datastates ADD COLUMN Color VARCHAR(7);
 
 CREATE TABLE core.APIKeys
 (
@@ -406,6 +420,9 @@ CREATE TABLE core.APIKeys
     CONSTRAINT PK_APIKeys PRIMARY KEY (RowId),
     CONSTRAINT UQ_CRYPT UNIQUE (Crypt)
 );
+
+ALTER TABLE core.APIKeys ADD COLUMN Description VARCHAR(256);
+ALTER TABLE core.APIKeys ADD COLUMN LastUsed TIMESTAMP;
 
 CREATE TABLE core.ReportEngines
 (
@@ -433,16 +450,6 @@ CREATE TABLE core.ReportEngineMap
 
   CONSTRAINT PK_ReportEngineMap PRIMARY KEY (EngineId, Container, EngineContext),
   CONSTRAINT FK_ReportEngineMap_ReportEngines FOREIGN KEY (EngineId) REFERENCES core.ReportEngines (RowId)
-);
-
-CREATE TABLE core.PrincipalRelations
-(
-  userid USERID NOT NULL,
-  otherid USERID NOT NULL,
-  relationship VARCHAR(100) NOT NULL,
-  created TIMESTAMP,
-
-  CONSTRAINT PK_PrincipalRelations PRIMARY KEY (userid, otherid, relationship)
 );
 
 CREATE TABLE core.AuthenticationConfigurations
@@ -701,57 +708,3 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-
--- Switch Name from PK to case-insensitive unique constraint
-ALTER TABLE core.Modules DROP CONSTRAINT PK_Modules;
-ALTER TABLE core.Modules ALTER COLUMN Name SET NOT NULL;
-CREATE UNIQUE INDEX UQ_ModuleName ON core.Modules (LOWER(Name));
-
-ALTER TABLE core.UsersData ADD LastActivity TIMESTAMP NULL;
-
--- NULLS NOT DISTINCT syntax was introduced in PostgreSQL 15, so we can't use it yet. Next script adds the correct index.
---ALTER TABLE core.Principals DROP CONSTRAINT UQ_Principals_Container_Name_OwnerId;
---CREATE UNIQUE INDEX UQ_Principals_Container_Name_OwnerId ON core.Principals (Container, LOWER(Name), OwnerId) NULLS NOT DISTINCT;
-
--- Previous script attempted to create a unique index specifying NULLS NOT DISTINCT, but that syntax was just introduced
--- in PostgreSQL 15. We want to fix servers that failed to create the new index; we also want to migrate servers that
--- created it successfully, for consistency. Once PostgreSQL 15 is a minimum we could consider switching back to NULLS
--- NOT DISTINCT.
-
-ALTER TABLE core.Principals DROP CONSTRAINT IF EXISTS UQ_Principals_Container_Name_OwnerId;
-DROP INDEX IF EXISTS core.UQ_Principals_Container_Name_OwnerId;
--- COALESCE() works around PostgreSQL behavior that NULL values are not unique
-CREATE UNIQUE INDEX UQ_Principals_Container_Name_OwnerId ON core.Principals
-    (COALESCE(Container, '00000000-0000-0000-0000-000000000000'), LOWER(Name), COALESCE(OwnerId, '00000000-0000-0000-0000-000000000000'));
-
-/* 24.xxx SQL scripts */
-
-ALTER TABLE core.datastates ADD COLUMN Color VARCHAR(7);
-
-SELECT core.fn_dropifexists('PrincipalRelations','core','TABLE', NULL);
-
-ALTER TABLE core.APIKeys ADD COLUMN Description VARCHAR(256);
-ALTER TABLE core.APIKeys ADD COLUMN LastUsed TIMESTAMP;
-
-ALTER TABLE core.Containers ADD FileRootSize BIGINT;
-ALTER TABLE core.Containers ADD FileRootLastCrawled TIMESTAMP;
-ALTER TABLE core.Containers ADD CONSTRAINT PK_Containers PRIMARY KEY (RowId);
-ALTER TABLE core.Containers DROP CONSTRAINT UQ_Containers_RowID;
-
--- Adding a PK on RowId seemed like a good idea, but it broke existing lookups to core.Containers and other assumptions.
--- We could add a PK on EntityId, but that column is currently nullable. For now, we'll just live without a PK.
-ALTER TABLE core.Containers DROP CONSTRAINT PK_Containers;
-ALTER TABLE core.Containers ADD CONSTRAINT UQ_Containers_RowId UNIQUE (RowId);
-
--- Shift the core.Logins PK from Email to UserId. Add UserId column as NULLABLE, populate it from core.Principals,
--- delete rows that didn't join (UserId IS NULL), make UserId NOT NULL, drop the old PK, and add the new PK.
-
-ALTER TABLE core.Logins ADD UserId USERID;
-UPDATE core.Logins SET UserId = (SELECT UserId FROM core.Principals p WHERE Name = Email);
-DELETE FROM core.Logins WHERE UserId IS NULL;
-ALTER TABLE core.Logins ALTER COLUMN UserId DROP NOT NULL;
-ALTER TABLE core.Logins DROP CONSTRAINT PK_Logins;
-ALTER TABLE core.Logins ADD CONSTRAINT PK_Logins PRIMARY KEY (UserId);
-
--- LabKey no longer reads or writes to the Email column. But we'll leave the column in place until 24.12 as a precaution.
-ALTER TABLE core.Logins ALTER COLUMN Email DROP NOT NULL;

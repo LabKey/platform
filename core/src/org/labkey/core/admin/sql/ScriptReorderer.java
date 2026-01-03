@@ -93,9 +93,10 @@ public class ScriptReorderer
         patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, Operation.Other));
         patterns.add(new SqlPattern(getRegExWithPrefix("TRUNCATE( TABLE)? "), Type.Table, Operation.Other));
 
+        patterns.add(new SqlPattern(getRegExWithPrefix("DROP TABLE (IF EXISTS )?"), Type.Table, Operation.Other));
+
         if (_schema.getSqlDialect().isSqlServer())
         {
-            patterns.add(new SqlPattern(getRegExWithPrefix("DROP TABLE "), Type.Table, Operation.Other));
             patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, Operation.Other));
 
             // Specific sp_rename pattern for table rename
@@ -107,14 +108,13 @@ public class ScriptReorderer
             patterns.add(new SqlPattern("EXEC(UTE)? core\\.fn_dropifexists\\s*'(\\w+)',\\s*'(?<schema>\\w+)'.*?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
 
             // Index names are prefixed with their associated table names on SQL Server
-            patterns.add(new SqlPattern(getRegExWithPrefix("DROP INDEX "), Type.Table, Operation.Other));
+            patterns.add(new SqlPattern(getRegExWithPrefix("DROP INDEX (IF EXISTS )?"), Type.Table, Operation.Other));
 
             patterns.add(new SqlPattern("(CREATE|ALTER) PROCEDURE .+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
         }
         else
         {
             patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " RENAME TO " + TABLE_NAME2_REGEX + STATEMENT_ENDING_REGEX, Type.Table, Operation.RenameTable));
-            patterns.add(new SqlPattern(getRegExWithPrefix("DROP TABLE (IF EXISTS )?"), Type.Table, Operation.Other));
             patterns.add(new SqlPattern(getRegExWithPrefix("CREATE (TEMPORARY )?TABLE "), Type.Table, Operation.Other));
             patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(?<table>\\w+)',\\s*'(?<schema>\\w+)',\\s*'(TABLE|COLUMN|INDEX|DEFAULT|CONSTRAINT)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
             patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(\\w+)',\\s*'(?<schema>\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
