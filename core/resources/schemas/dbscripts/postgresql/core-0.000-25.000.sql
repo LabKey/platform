@@ -723,3 +723,35 @@ DROP INDEX IF EXISTS core.UQ_Principals_Container_Name_OwnerId;
 -- COALESCE() works around PostgreSQL behavior that NULL values are not unique
 CREATE UNIQUE INDEX UQ_Principals_Container_Name_OwnerId ON core.Principals
     (COALESCE(Container, '00000000-0000-0000-0000-000000000000'), LOWER(Name), COALESCE(OwnerId, '00000000-0000-0000-0000-000000000000'));
+
+/* 24.xxx SQL scripts */
+
+ALTER TABLE core.datastates ADD COLUMN Color VARCHAR(7);
+
+SELECT core.fn_dropifexists('PrincipalRelations','core','TABLE', NULL);
+
+ALTER TABLE core.APIKeys ADD COLUMN Description VARCHAR(256);
+ALTER TABLE core.APIKeys ADD COLUMN LastUsed TIMESTAMP;
+
+ALTER TABLE core.Containers ADD FileRootSize BIGINT;
+ALTER TABLE core.Containers ADD FileRootLastCrawled TIMESTAMP;
+ALTER TABLE core.Containers ADD CONSTRAINT PK_Containers PRIMARY KEY (RowId);
+ALTER TABLE core.Containers DROP CONSTRAINT UQ_Containers_RowID;
+
+-- Adding a PK on RowId seemed like a good idea, but it broke existing lookups to core.Containers and other assumptions.
+-- We could add a PK on EntityId, but that column is currently nullable. For now, we'll just live without a PK.
+ALTER TABLE core.Containers DROP CONSTRAINT PK_Containers;
+ALTER TABLE core.Containers ADD CONSTRAINT UQ_Containers_RowId UNIQUE (RowId);
+
+-- Shift the core.Logins PK from Email to UserId. Add UserId column as NULLABLE, populate it from core.Principals,
+-- delete rows that didn't join (UserId IS NULL), make UserId NOT NULL, drop the old PK, and add the new PK.
+
+ALTER TABLE core.Logins ADD UserId USERID;
+UPDATE core.Logins SET UserId = (SELECT UserId FROM core.Principals p WHERE Name = Email);
+DELETE FROM core.Logins WHERE UserId IS NULL;
+ALTER TABLE core.Logins ALTER COLUMN UserId DROP NOT NULL;
+ALTER TABLE core.Logins DROP CONSTRAINT PK_Logins;
+ALTER TABLE core.Logins ADD CONSTRAINT PK_Logins PRIMARY KEY (UserId);
+
+-- LabKey no longer reads or writes to the Email column. But we'll leave the column in place until 24.12 as a precaution.
+ALTER TABLE core.Logins ALTER COLUMN Email DROP NOT NULL;

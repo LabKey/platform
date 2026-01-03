@@ -920,3 +920,40 @@ END;
 GO
 
 ALTER TABLE core.UsersData ADD LastActivity DATETIME NULL;
+
+/* 24.xxx SQL scripts */
+
+ALTER TABLE core.datastates ADD Color NVARCHAR(7) NULL;
+
+DROP TABLE IF EXISTS core.PrincipalRelations;
+
+ALTER TABLE core.APIKeys ADD Description NVARCHAR(256);
+ALTER TABLE core.APIKeys ADD LastUsed DATETIME;
+
+ALTER TABLE core.Containers ADD FileRootSize BIGINT;
+ALTER TABLE core.Containers ADD FileRootLastCrawled DATETIME;
+ALTER TABLE core.Containers ADD CONSTRAINT PK_Containers PRIMARY KEY (RowId);
+ALTER TABLE core.Containers DROP CONSTRAINT UQ_Containers_RowID;
+
+-- Adding a PK on RowId seemed like a good idea, but it broke existing lookups to core.Containers and other assumptions.
+-- We could add a PK on EntityId, but that column is currently nullable. For now, we'll just live without a PK.
+ALTER TABLE core.Containers DROP CONSTRAINT PK_Containers;
+ALTER TABLE core.Containers ADD CONSTRAINT UQ_Containers_RowId UNIQUE CLUSTERED (RowId);
+
+-- Shift the core.Logins PK from Email to UserId. Add UserId column as NULLABLE, populate it from core.Principals,
+-- delete rows that didn't join (UserId IS NULL), make UserId NOT NULL, drop the old PK, and add the new PK.
+
+ALTER TABLE core.Logins ADD UserId USERID;
+GO
+
+UPDATE core.Logins SET UserId = (SELECT UserId FROM core.Principals p WHERE Name = Email);
+DELETE FROM core.Logins WHERE UserId IS NULL;
+ALTER TABLE core.Logins ALTER COLUMN UserId USERID NOT NULL;
+GO
+
+ALTER TABLE core.Logins DROP CONSTRAINT PK_Logins;
+ALTER TABLE core.Logins ADD CONSTRAINT PK_Logins PRIMARY KEY (UserId);
+
+-- LabKey no longer reads or writes to the Email column. But we'll leave the column in place until 24.12 as a precaution.
+ALTER TABLE core.Logins ALTER COLUMN Email VARCHAR(255) NULL;
+GO
