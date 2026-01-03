@@ -57,7 +57,7 @@ public class CoreUpgradeCode implements UpgradeCode
 
     /** Java upgrade method used for testing purposes (see PG and MSSQL InlineProcedureTestCase) */
     @SuppressWarnings({"UnusedDeclaration"})
-    public void upgradeCode(ModuleContext moduleContext)
+    public void testUpgradeCode(ModuleContext moduleContext)
     {
         TestUpgradeCodeCounter.incrementCounter();
     }
