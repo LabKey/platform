@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import java.lang.ref.Cleaner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -77,6 +78,59 @@ public class ConnectionWrapper implements java.sql.Connection
     @SuppressWarnings({"SSBasedInspection", "unused"})
     private static final Logger packageLogger = LogManager.getLogger(ConnectionWrapper.class.getPackageName());
     private static final Logger LOG = LogHelper.getLogger(ConnectionWrapper.class, "All JDBC metadata and SQL execution calls being made");
+
+    private static final Cleaner CLEANER = Cleaner.create();
+
+    private static class ConnectionState implements Runnable
+    {
+        private Connection _connection;
+        private final DbScope _scope;
+        private final ConnectionWrapper _wrapper; // This is risky, but we need toString()
+        private final Logger _log;
+
+        private boolean _closed = false;
+
+        private ConnectionState(Connection connection, DbScope scope, ConnectionWrapper wrapper, Logger log)
+        {
+            _connection = connection;
+            _scope = scope;
+            _wrapper = wrapper;
+            _log = log;
+        }
+
+        @Override
+        public void run()
+        {
+            if (_connection != null && !_closed)
+            {
+                _log.error("Connection was not closed! " + _wrapper.toString());
+                realClose();
+            }
+        }
+
+        private void realClose()
+        {
+            if (!_closed)
+            {
+                try
+                {
+                    _wrapper.realCloseInternal();
+                }
+                catch (SQLException e)
+                {
+                    _log.error("Failed to close connection", e);
+                }
+                finally
+                {
+                    _closed = true;
+                    _connection = null;
+                }
+            }
+        }
+    }
+
+    private final ConnectionState _state;
+    private final Cleaner.Cleanable _cleanable;
 
     private static final Set<ConnectionWrapper> _openConnections = Collections.synchronizedSet(new HashSet<>());
     private static final Set<ConnectionWrapper> _loggedLeaks = new HashSet<>();
@@ -165,6 +219,8 @@ public class ConnectionWrapper implements java.sql.Connection
         _openConnections.add(this);
 
         _log = log != null ? log : getConnectionLogger();
+        _state = new ConnectionState(_connection, _scope, this, _log);
+        _cleanable = CLEANER.register(this, _state);
     }
 
     /** this is a best guess logger, pass one in to be predictable */
@@ -457,7 +513,13 @@ public class ConnectionWrapper implements java.sql.Connection
         _type.close(_scope, this, this::realClose);
     }
 
-    private void realClose() throws SQLException
+    private void realClose()
+    {
+        _state.realClose();
+        _cleanable.clean();
+    }
+
+    private void realCloseInternal() throws SQLException
     {
         _openConnections.remove(this);
         _loggedLeaks.remove(this);
@@ -938,18 +1000,6 @@ public class ConnectionWrapper implements java.sql.Connection
         return iface.isAssignableFrom(_connection.getClass());
     }
 
-    @Override
-    protected void finalize() throws Throwable
-    {
-        // If the thread was banned from getting a connection, _connection will be null, and we shouldn't complain that it wasn't closed
-        if (_connection != null && !isClosed())
-        {
-            LOG.error("Connection was not closed! " + this);
-            realClose();
-        }
-
-        super.finalize();
-    }
 
     public @NotNull Closer getRunOnClose()
     {
