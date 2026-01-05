@@ -48,6 +48,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
+import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -107,6 +108,8 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         names.addAll(Arrays.stream(ExpDataClassDataTable.Column.values()).map(ExpDataClassDataTable.Column::name).toList());
         names.add("RunId"); // Issue 50461
         names.add("Container");
+        // GitHub Issue 717
+        names.addAll(Arrays.stream(ExpDataTable.Column.values()).map(ExpDataTable.Column::name).toList());
 
         RESERVED_NAMES = DomainUtil.getNamesAndLabels(names);
 
