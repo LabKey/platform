@@ -46,8 +46,14 @@ public interface McpService extends ToolCallbackProvider
 
     ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier);
 
-    record MessageResponse(String markdown, HtmlString html) {}
+    record MessageResponse(String contentType, String text, HtmlString html) {}
 
+    /** get consolidated response (good for many text oriented agents/use-cases) */
     MessageResponse sendMessage(ChatClient chat, String message);
-    /* </PROTOTYPE> */
+
+    /** get individual response parts, useful for agents that generate SQL or programmatic responses */
+    default List<MessageResponse> sendMessageEx(ChatClient chat, String message)
+    {
+        return List.of(sendMessage(chat, message));
+    }
 }

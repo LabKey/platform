@@ -40,10 +40,10 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
                 ret.put("contentType", "text/html");
                 ret.put("response", response.html());
             }
-            else if (isNotBlank(response.markdown()))
+            else if (isNotBlank(response.text()))
             {
-                ret.put("contentType", "text/markdown");
-                ret.put("response", response.html());
+                ret.put("contentType", response.contentType());
+                ret.put("response", response.text());
             }
             else
             {

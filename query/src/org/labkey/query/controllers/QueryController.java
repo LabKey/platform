@@ -135,7 +135,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.VirtualTable;
@@ -159,12 +158,12 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.mcp.McpContext;
-import org.labkey.api.module.ModuleHtmlView;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.mcp.AbstractAgentAction;
+import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.mcp.PromptForm;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -181,7 +180,6 @@ import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
-import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryParseException;
@@ -240,6 +238,7 @@ import org.labkey.api.util.DOM;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.LinkBuilder;
@@ -349,7 +348,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -8947,11 +8945,13 @@ public class QueryController extends SpringActionController
             {
                 ChatClient chatSession = getChat();
                 String prompt = form.getPrompt();
-                String responseText;
+                List<McpService.MessageResponse> responses;
+                SqlResponse sqlResponse;
 
                 try
                 {
-                    responseText = McpService.get().sendMessage(chatSession, prompt).markdown();
+                    responses = McpService.get().sendMessageEx(chatSession, prompt);
+                    sqlResponse = extractSql(responses);
                 }
                 catch (ServerException x)
                 {
@@ -8961,16 +8961,13 @@ public class QueryController extends SpringActionController
                             "success", Boolean.FALSE));
                 }
 
-                var sql = extractSql(responseText);
-                var text = null == sql ? responseText : null;
-
                 /* VALIDATE SQL */
-                if (null != sql)
+                if (null != sqlResponse.sql())
                 {
                     QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema("study");
                     try
                     {
-                        TableInfo ti = QueryService.get().createTable(schema, sql, null, true);
+                        TableInfo ti = QueryService.get().createTable(schema, sqlResponse.sql(), null, true);
                         var warnings = ti.getWarnings();
                         if (null != warnings)
                         {
@@ -8982,21 +8979,20 @@ public class QueryController extends SpringActionController
                     catch (QueryException x)
                     {
                         String validationPrompt = "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below, can you attempt to fix this?\n```" + x.getMessage() + "```";
-                        responseText = McpService.get().sendMessage(chatSession, validationPrompt).markdown();
-                        var newSQL = extractSql(responseText);
-                        if (isNotBlank(newSQL))
-                            sql = newSQL;
-                        text = responseText;
+                        responses = McpService.get().sendMessageEx(chatSession, validationPrompt);
+                        var newSqlResponse = extractSql(responses);
+                        if (isNotBlank(newSqlResponse.sql()))
+                            sqlResponse = newSqlResponse;
                     }
                 }
 
 //                System.err.println(chatSession.getHistory(true));
                 var ret = new JSONObject(Map.of(
                         "success", Boolean.TRUE));
-                if (null != sql)
-                    ret.put("sql", sql);
-                if (null != text)
-                    ret.put("text", text);
+                if (null != sqlResponse.sql())
+                    ret.put("sql", sqlResponse.sql());
+                if (null != sqlResponse.html())
+                    ret.put("html", sqlResponse.html());
                 return ret;
             }
             catch (ClientException ex)
@@ -9008,26 +9004,53 @@ public class QueryController extends SpringActionController
                 return ret;
             }
         }
-
-
-        String extractSql(String text)
-        {
-            if (text.startsWith("SELECT "))
-                return text;
-            if (text.startsWith("WITH ") && text.contains("SELECT "))
-                return text;
-            if (text.startsWith("PARAMETERS ") && text.contains("SELECT "))
-                return text;
-            var sql = text.indexOf("```sql\n");
-            if (sql >= 0)
-            {
-                var end = text.indexOf("```", sql+7);
-                if (end >= 0)
-                    return text.substring(sql+7,end);
-            }
-            return null;
-        }
     }
+
+    record SqlResponse(HtmlString html, String sql)
+    {
+    }
+
+    static SqlResponse extractSql(List<McpService.MessageResponse> responses)
+    {
+        HtmlStringBuilder html = HtmlStringBuilder.of();
+        String sql = null;
+
+        for (var response : responses)
+        {
+            if (null == sql)
+            {
+                var text = response.text();
+                String sqlFind = extractSql(text);
+                if (null != sqlFind)
+                {
+                    sql = sqlFind;
+                    if (sql.equals(text) || text.startsWith("```sql"))
+                        continue;   // Don't append this to the html response
+                }
+            }
+            html.append(response.html());
+        }
+        return new SqlResponse(html.getHtmlString(), sql);
+    }
+
+    static String extractSql(String text)
+    {
+        if (text.startsWith("SELECT "))
+            return text;
+        if (text.startsWith("WITH ") && text.contains("SELECT "))
+            return text;
+        if (text.startsWith("PARAMETERS ") && text.contains("SELECT "))
+            return text;
+        var sql = text.indexOf("```sql\n");
+        if (sql >= 0)
+        {
+            var end = text.indexOf("```", sql+7);
+            if (end >= 0)
+                return text.substring(sql+7,end);
+        }
+        return null;
+    }
+
 
     @RequiresPermission(ReadPermission.class)
     @RequiresLogin

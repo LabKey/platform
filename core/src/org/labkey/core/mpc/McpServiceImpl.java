@@ -41,7 +41,6 @@ import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
 import org.springframework.ai.mcp.McpToolUtils;
-import org.springframework.ai.support.ToolCallbacks;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -106,12 +105,6 @@ public class McpServiceImpl implements McpService
         {
             return "bye now";
         }
-    }
-
-
-    static McpServerFeatures.SyncToolSpecification syncTool(ToolCallback tool)
-    {
-        return McpToolUtils.toSyncToolSpecification(tool, null);
     }
 
 
@@ -348,6 +341,27 @@ public class McpServiceImpl implements McpService
         }
         String md = sb.toString().strip();
         HtmlString html = HtmlString.unsafe(MarkdownService.get().toHtml(md));
-        return new MessageResponse(md, html);
+        return new MessageResponse("text/markdown", md, html);
+    }
+
+    @Override
+    public List<MessageResponse> sendMessageEx(ChatClient chatSession, String message)
+    {
+        var callResponse = chatSession
+                .prompt(message)
+                .toolContext(McpContext.get().getToolContext().getContext())
+                .call();
+        List<MessageResponse> ret = new ArrayList<>();
+        for (Generation result : callResponse.chatResponse().getResults())
+        {
+            var output = result.getOutput();
+            if (ASSISTANT == output.getMessageType())
+            {
+                String md = output.getText();
+                HtmlString html = HtmlString.unsafe(MarkdownService.get().toHtml(md));
+                ret.add(new MessageResponse("text/markdown", md, html));
+            }
+        }
+        return ret;
     }
 }

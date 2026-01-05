@@ -299,6 +299,14 @@ LABKEY.Utils.onReady(function(){
         document.getElementById('chatHistory').appendChild(chatItem);
         scrollToBottom();
     }
+    function appendHtmlResponse(html)
+    {
+        const chatItem = document.createElement('div');
+        chatItem.className = 'chatItem genaiResponse';
+        chatItem.innerHTML = html;
+        document.getElementById('chatHistory').appendChild(chatItem);
+        scrollToBottom();
+    }
     function appendSqlResponse(text)
     {
         const chatItem = document.createElement('div');
@@ -376,10 +384,14 @@ LABKEY.Utils.onReady(function(){
                     if (req.status >= 200 && req.status < 300) {
                         var responseJson = JSON.parse(req.responseText);
                         var responseText = responseJson['text'];
+                        var responseHtml = responseJson['html'];
                         var responseSql = responseJson['sql'];
                         if (responseSql) {
                             Ext4.getCmp("qep").getSourceEditor().setValue(responseSql);
                             appendSqlResponse(responseSql);
+                        }
+                        if (responseHtml) {
+                            appendHtmlResponse(responseHtml);
                         }
                         if (responseText) {
                             appendTextResponse(responseText);
