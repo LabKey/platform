@@ -405,6 +405,7 @@
         <formatString>DateTime</formatString>
       </column>
       <column columnName="Body"/>
+      <column columnName="EntityId"/>
     </columns>
   </table>
   <table tableName="AllWikiVersions" tableDbType="VIEW" useColumnOrder="true">
@@ -450,6 +451,7 @@
         <formatString>DateTime</formatString>
       </column>
       <column columnName="Body"/>
+      <column columnName="EntityId"/>
     </columns>
   </table>
   <table tableName="UserList" tableDbType="TABLE">
