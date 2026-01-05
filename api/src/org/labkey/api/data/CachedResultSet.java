@@ -77,13 +77,9 @@ public class CachedResultSet implements ResultSet, TableResultSet
     // data
     private final ArrayList<RowMap<Object>> _rowMaps;
     private final boolean _isComplete;
-    @Nullable
-    private final StackTraceElement[] _stackTrace;
-    private final String _threadName;
 
     private boolean _wasClosed = false;
     private boolean _requireClose = true;
-    private String _url = null;
 
     // state
     private int _row = -1;
@@ -176,25 +172,23 @@ public class CachedResultSet implements ResultSet, TableResultSet
             throw new RuntimeSQLException(x);
         }
 
-        if (MiniProfiler.isCollectTroubleshootingStackTraces())
+        String url = null;
+        String threadName = null;
+        if (MiniProfiler.isCollectTroubleshootingStackTraces() || true) // TODO - remove hack!
         {
             // Stash stack trace that created this CachedRowSet
-            if (null != stackTrace)
+            if (null == stackTrace)
             {
-                _stackTrace = stackTrace;
-            }
-            else
-            {
-                _stackTrace = MiniProfiler.getTroubleshootingStackTrace();
+                stackTrace = MiniProfiler.getTroubleshootingStackTrace();
             }
 
-            _threadName = Thread.currentThread().getName();
+            threadName = Thread.currentThread().getName();
 
             if (HttpView.getStackSize() > 0)
             {
                 try
                 {
-                    _url = ViewServlet.getOriginalURL();
+                    url = ViewServlet.getOriginalURL();
                 }
                 catch (Exception x)
                 {
@@ -202,13 +196,8 @@ public class CachedResultSet implements ResultSet, TableResultSet
                 }
             }
         }
-        else
-        {
-            _stackTrace = null;
-            _threadName = null;
-        }
 
-        _state = new CachedResultSetState(_requireClose, _stackTrace, _threadName, _url, _log);
+        _state = new CachedResultSetState(_requireClose, stackTrace, threadName, url, _log);
         _cleanable = CLEANER.register(this, _state);
 
         MemTracker.getInstance().put(this);
