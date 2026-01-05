@@ -6,6 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -148,23 +149,20 @@
             value: <%=q(def.getDataSource())%>,
             typeAhead: true,
             anyMatch: true,
-            forceSelection: true,
-            <%--helpPopup: <%=qh(bean.getHelpHTML("DataSource"))%>--%>
+            forceSelection: true
         }));
 
-        sourceContainerCombo.on('select', function (field, records) {
-            var record = records[0];
-            if (record) {
+        sourceContainerCombo.on('change', function (field, newValue) {
+            if (newValue) {
                 sourceSchemaField.setDisabled(false);
                 metadataField.setDisabled(false);
-                schemaTemplateCombo.loadTemplateField(field.getValue());
+                schemaTemplateCombo.loadTemplateField(newValue);
             } else {
                 sourceSchemaField.setDisabled(true);
                 metadataField.setDisabled(true);
                 schemaTemplateCombo.setDisabled(true);
             }
         });
-
 
         var schemaTemplateCombo = Ext4.create('Ext.form.field.ComboBox', {
             name: 'schemaTemplate',
