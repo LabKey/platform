@@ -276,8 +276,6 @@ public class McpServiceImpl implements McpService
     String getModel()
     {
         return "gemini-2.5-flash";
-//      gemini-2.5-flash-lite is cheaper but it seems to be much worse at SQL than gemini-2.5-flash
-//        return "gemini-2.5-flash-lite";
     }
 
 
