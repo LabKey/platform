@@ -269,7 +269,7 @@ public class MiniProfiler
     @Nullable
     public static StackTraceElement[] getTroubleshootingStackTrace()
     {
-        if (isCollectTroubleshootingStackTraces())
+        if (isCollectTroubleshootingStackTraces() || true)  // TODO - remove hack
         {
             StackTraceElement[] fullStack = Thread.currentThread().getStackTrace();
             if (fullStack.length > 0)
