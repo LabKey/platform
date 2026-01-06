@@ -443,9 +443,7 @@ public class ParticipantGroupManager
         List<ParticipantCategoryImpl> filtered = new ArrayList<>();
 
         // TODO: Switch ParticipantCategoryImpl internals from arrays to lists... but not right now
-        categories.stream().filter(category -> category.canRead(c, user)).forEach(category -> {
-            filtered.add(category);
-        });
+        categories.stream().filter(category -> category.canRead(c, user)).forEach(filtered::add);
         return filtered;
     }
 
@@ -454,11 +452,10 @@ public class ParticipantGroupManager
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
+        ParticipantCategoryImpl ret;
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            ParticipantCategoryImpl ret;
             boolean isUpdate = !def.isNew();
-            List<Throwable> errors;
 
             ret = _saveParticipantCategory(c, user, def);
 
@@ -477,33 +474,23 @@ public class ParticipantGroupManager
             }
             transaction.commit();
             ParticipantGroupCache.uncache(c);
-
-            if (def.isNew())
-                errors = fireCreatedCategory(user, ret);
-            else
-                errors = fireUpdateCategory(user, ret);
-
-            if (!errors.isEmpty())
-            {
-                Throwable first = errors.get(0);
-                if (first instanceof RuntimeException)
-                    throw (RuntimeException) first;
-                else
-                    throw new RuntimeException(first);
-            }
-            return ret;
         }
+
+        if (def.isNew())
+            fireCreatedCategory(user, ret);
+        else
+            fireUpdateCategory(user, ret);
+
+        return ret;
     }
 
     public ParticipantCategoryImpl setParticipantCategory(Container c, User user, ParticipantCategoryImpl def) throws ValidationException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
+        ParticipantCategoryImpl ret;
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            ParticipantCategoryImpl ret;
-            List<Throwable> errors;
-
             ret = _saveParticipantCategory(c, user, def);
 
             switch (ParticipantCategory.Type.valueOf(ret.getType()))
@@ -515,22 +502,14 @@ public class ParticipantGroupManager
             }
             transaction.commit();
             ParticipantGroupCache.uncache(c);
-
-            if (def.isNew())
-                errors = fireCreatedCategory(user, ret);
-            else
-                errors = fireUpdateCategory(user, ret);
-
-            if (!errors.isEmpty())
-            {
-                Throwable first = errors.get(0);
-                if (first instanceof RuntimeException)
-                    throw (RuntimeException) first;
-                else
-                    throw new RuntimeException(first);
-            }
-            return ret;
         }
+
+        if (def.isNew())
+            fireCreatedCategory(user, ret);
+        else
+            fireUpdateCategory(user, ret);
+
+        return ret;
     }
 
     private ParticipantCategoryImpl _saveParticipantCategory(Container c, User user, ParticipantCategoryImpl def) throws ValidationException
@@ -771,9 +750,6 @@ public class ParticipantGroupManager
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            ParticipantCategoryImpl ret;
-            List<Throwable> errors;
-
             List<ParticipantGroup> groups = getParticipantGroups(c, user, def);
             if (groups.size() != 1)
                 throw new RuntimeException("Expected one group in category " + def.getLabel());
@@ -794,22 +770,11 @@ public class ParticipantGroupManager
             }
             transaction.commit();
             ParticipantGroupCache.uncache(c);
-
-            //Reselect
-            ret = getParticipantCategory(c, user, def.getRowId());
-
-            errors = fireUpdateCategory(user, ret);
-
-            if (!errors.isEmpty())
-            {
-                Throwable first = errors.get(0);
-                if (first instanceof RuntimeException)
-                    throw (RuntimeException) first;
-                else
-                    throw new RuntimeException(first);
-            }
-            return ret;
         }
+        //Reselect
+        ParticipantCategoryImpl ret = getParticipantCategory(c, user, def.getRowId());
+        fireUpdateCategory(user, ret);
+        return ret;
     }
 
     private void addGroupParticipants(Container c, User user, ParticipantGroup group, String[] participantsToAdd) throws ValidationException
@@ -1012,17 +977,9 @@ public class ParticipantGroupManager
 
             ParticipantGroupCache.uncache(c);
             transaction.commit();
-
-            List<Throwable> errors = fireDeleteCategory(user, def);
-            if (!errors.isEmpty())
-            {
-                Throwable first = errors.get(0);
-                if (first instanceof RuntimeException)
-                    throw (RuntimeException) first;
-                else
-                    throw new RuntimeException(first);
-            }
         }
+
+        fireDeleteCategory(user, def);
     }
 
     public void deleteParticipantGroup(Container c, User user, ParticipantGroup group) throws ValidationException
@@ -1109,58 +1066,28 @@ public class ParticipantGroupManager
         _listeners.remove(listener);
     }
 
-    private static List<Throwable> fireDeleteCategory(User user, ParticipantCategoryImpl category)
+    private static void fireDeleteCategory(User user, ParticipantCategoryImpl category)
     {
-        List<Throwable> errors = new ArrayList<>();
-
         for (ParticipantCategoryListener l : _listeners)
         {
-            try
-            {
-                l.categoryDeleted(user, category);
-            }
-            catch (Throwable t)
-            {
-                errors.add(t);
-            }
+            l.categoryDeleted(user, category);
         }
-        return errors;
     }
 
-    private static List<Throwable> fireUpdateCategory(User user, ParticipantCategoryImpl category)
+    private static void fireUpdateCategory(User user, ParticipantCategoryImpl category)
     {
-        List<Throwable> errors = new ArrayList<>();
-
         for (ParticipantCategoryListener l : _listeners)
         {
-            try
-            {
-                l.categoryUpdated(user, category);
-            }
-            catch (Throwable t)
-            {
-                errors.add(t);
-            }
+            l.categoryUpdated(user, category);
         }
-        return errors;
     }
 
-    private static List<Throwable> fireCreatedCategory(User user, ParticipantCategoryImpl category)
+    private static void fireCreatedCategory(User user, ParticipantCategoryImpl category)
     {
-        List<Throwable> errors = new ArrayList<>();
-
         for (ParticipantCategoryListener l : _listeners)
         {
-            try
-            {
-                l.categoryCreated(user, category);
-            }
-            catch (Throwable t)
-            {
-                errors.add(t);
-            }
+            l.categoryCreated(user, category);
         }
-        return errors;
     }
 
     public void clearCache(Container c)
