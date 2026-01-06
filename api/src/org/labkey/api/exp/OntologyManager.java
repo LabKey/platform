@@ -88,7 +88,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableCollection;
@@ -215,11 +214,9 @@ public class OntologyManager
                 _sharedContainer.getProject().getId()
             );
 
-            try (Stream<Map<String, Object>> s = new SqlSelector(getExpSchema(), sql).mapStream())
-            {
-                return s.map(map -> Pair.of((String) map.get("PropertyURI"), (Boolean) map.get("Required")))
-                    .toList();
-            }
+            return new SqlSelector(getExpSchema(), sql).mapStream()
+                .map(map -> Pair.of((String)map.get("PropertyURI"), (Boolean)map.get("Required")))
+                .toList();
         }
     });
     private static final Cache<Container, Map<String, DomainDescriptor>> DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "Domain descriptors by container", (c, argument) -> {

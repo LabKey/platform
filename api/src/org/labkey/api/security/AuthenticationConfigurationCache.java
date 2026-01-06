@@ -72,17 +72,14 @@ public class AuthenticationConfigurationCache
             // Select the configurations stored in the core.AuthenticationConfigurations table, add the database
             // authentication configuration, map each to the appropriate AuthenticationConfiguration, and add to the maps.
 
-            Stream<Map<String, Object>> configs;
-            try (var s = new TableSelector(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), null, new Sort("SortOrder, RowId")).mapStream())
-            {
-                configs = Stream.concat(
-                        s,
-                        // Gather the "permanent" configurations -- this should be just a single configuration for Database authentication
-                        AuthenticationManager.getAllPrimaryProviders().stream()
-                                .filter(AuthenticationProvider::isPermanent)
-                                .map(p -> Map.of("Provider", p.getName()))
-                );
-            }
+            Stream<Map<String, Object>> configs = Stream.concat(
+                new TableSelector(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), null, new Sort("SortOrder, RowId")).mapStream(),
+
+                // Gather the "permanent" configurations -- this should be just a single configuration for Database authentication
+                AuthenticationManager.getAllPrimaryProviders().stream()
+                    .filter(AuthenticationProvider::isPermanent)
+                    .map(p->Map.of("Provider", p.getName()))
+            );
 
             configs
                 .map(this::getAuthenticationConfiguration)

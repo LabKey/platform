@@ -10359,12 +10359,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             Set<DomainKind<?>> retrievedKinds = new HashSet<>();
             // This domain kind changed names at some point, so old deployments could have two rows that map to it -- tolerate
             Set<String> ignore = Set.of("StudySecurityEscalationEvent");
-            List<String> failures;
-            try (Stream<Map<String, Object>> s = new TableSelector(dd, new CsvSet("Name, DomainURI"), filter, new Sort("Name")).mapStream())
-            {
-                failures = s.map(map -> {
-                    String name = (String) map.get("Name");
-                    String uri = (String) map.get("DomainURI");
+            List<String> failures = new TableSelector(dd, new CsvSet("Name, DomainURI"), filter, new Sort("Name")).mapStream()
+                .map(map -> {
+                    String name = (String)map.get("Name");
+                    String uri = (String)map.get("DomainURI");
                     DomainKind<?> kind = svc.getDomainKind(uri);
                     String ret = null;
                     if (null == kind)
@@ -10375,7 +10373,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 })
                 .filter(Objects::nonNull)
                 .toList();
-            }
 
             if (!failures.isEmpty())
                 Assert.fail(StringUtilsLabKey.pluralize(failures.size(), "duplicate domain kind") + "! " + failures);
