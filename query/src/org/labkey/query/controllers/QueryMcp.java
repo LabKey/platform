@@ -16,6 +16,7 @@ import org.labkey.api.module.McpProvider;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleSchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
@@ -206,9 +207,17 @@ public class QueryMcp implements McpProvider
         for (String tableName : names)
         {
             // CONSIDER schema.getTableDescription()???
-            TableInfo td = schema.getTable(tableName, null);
-            if (null == td)
+            TableInfo td;
+            try
+            {
+                td = schema.getTable(tableName, null);
+                if (null == td)
+                    continue;
+            }
+            catch (QueryParseException qpe)
+            {
                 continue;
+            }
             QueryDefinition qd = ((UserSchema)schema).getQueryDef(tableName);
             JSONObject table = new JSONObject();
             table.put("schemaName", schema.getName());

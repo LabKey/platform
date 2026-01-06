@@ -32,6 +32,12 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
         try (var mcpPush = McpContext.withContext(getViewContext()))
         {
             ChatClient chatSession = getChat();
+            if (null == chatSession)
+                return new JSONObject(Map.of(
+                        "contentType", "text/plain",
+                        "response", "Service is not ready yet",
+                        "success", Boolean.FALSE));
+
             String prompt = form.getPrompt();
             McpService.MessageResponse response = McpService.get().sendMessage(chatSession, prompt);
             var ret = new JSONObject(Map.of("success", Boolean.TRUE));

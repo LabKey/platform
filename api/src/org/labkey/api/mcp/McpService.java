@@ -29,6 +29,8 @@ public interface McpService extends ToolCallbackProvider
         ServiceRegistry.get().registerService(McpService.class, service);
     }
 
+    boolean isReady();
+
     default void register(McpProvider mcp)
     {
         registerTools(mcp.getMcpTools());

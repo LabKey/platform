@@ -80,6 +80,7 @@ public class McpServiceImpl implements McpService
     private final _McpServlet mcpServlet = new _McpServlet(JsonUtil.DEFAULT_MAPPER, MESSAGE_ENDPOINT, SSE_ENDPOINT);
     private final ChatMemoryRepository chatMemoryRepository = new InMemoryChatMemoryRepository();
 
+    private boolean serverReady = false;
 
     public static McpServiceImpl get()
     {
@@ -118,8 +119,16 @@ public class McpServiceImpl implements McpService
 
     public void startMpcServer()
     {
-        mcpServlet.startMcpServer();
         vectorStore = createVectorStore();
+        mcpServlet.startMcpServer();
+        serverReady = true;
+    }
+
+
+    @Override
+    public boolean isReady()
+    {
+        return serverReady;
     }
 
 
@@ -320,6 +329,9 @@ public class McpServiceImpl implements McpService
     @Override
     public ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
     {
+        if (!serverReady)
+            return null;
+
         return SessionHelper.getAttribute(session, ChatClient.class.getName() + "#" + agentName, () ->
         {
             String systemPrompt = systemPromptSupplier.get();
@@ -442,7 +454,7 @@ public class McpServiceImpl implements McpService
     @Override
     public VectorStore getVectorStore()
     {
-        return vectorStore;
+        return !serverReady ? null : vectorStore;
     }
 
 
