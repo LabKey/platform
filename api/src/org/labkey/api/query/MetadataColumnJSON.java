@@ -138,6 +138,8 @@ public class MetadataColumnJSON extends GWTPropertyDescriptor
             map.put("Format", getFormat());
         if (!StringUtils.isEmpty(getURL()))
             map.put("URL", getURL());
+        if (!StringUtils.isEmpty(getURLTarget()))
+            map.put("URLTarget", getURLTarget());
         if (!StringUtils.isEmpty(getPHI()))
             map.put("PHI", getPHI());
         if (!StringUtils.isEmpty(getDefaultScale()))

@@ -84,7 +84,7 @@ public interface ColumnRenderProperties extends ImportAliasable
 
     StringExpression getURL();
 
-    String getURLTargetWindow();
+    String getURLTarget();
 
     String getURLCls();
 

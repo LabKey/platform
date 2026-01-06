@@ -2659,7 +2659,7 @@ public class OntologyManager
 
     static final String parameters = "propertyuri,name,description,rangeuri,concepturi,label," +
             "format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
-            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale," +
+            "mvenabled,importaliases,url,urltarget,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale," +
             "sourceontology,conceptimportcolumn,conceptlabelcolumn,principalconceptcode,conceptsubtree," +
             "recommendedvariable,derivationdatascope,storagecolumnname,facetingbehaviortype,phi,redactedText," +
             "excludefromshifting,mvindicatorstoragecolumnname,defaultscale,scannable";
@@ -3029,6 +3029,7 @@ public class OntologyManager
         // don't setContainer
         p.setDescription(pd.getDescription());
         p.setURL((pd.getURL() != null) ? pd.getURL().toString() : null);
+        p.setURLTarget(pd.getURLTarget());
         p.setImportAliasSet(ColumnRenderPropertiesImpl.convertToSet(pd.getImportAliases()));
         p.setRequired(pd.isRequired());
         p.setHidden(pd.isHidden());

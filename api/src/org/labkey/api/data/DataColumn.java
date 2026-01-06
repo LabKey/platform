@@ -116,7 +116,7 @@ public class DataColumn extends DisplayColumn
         StringExpression url = withLookups ? _boundColumn.getEffectiveURL() : _boundColumn.getURL();
         if (null != url)
             super.setURLExpression(url);
-        setLinkTarget(_boundColumn.getURLTargetWindow());
+        setLinkTarget(_boundColumn.getURLTarget());
         setLinkCls(_boundColumn.getURLCls());
         setOnClick(_boundColumn.getOnClick());
         setFormatString(_displayColumn.getFormat());
