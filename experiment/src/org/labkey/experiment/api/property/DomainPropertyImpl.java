@@ -499,6 +499,20 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getURL() == null ? null : _pd.getURL().toString();
     }
 
+    @Override
+    public void setURLTarget(String urlTarget)
+    {
+        if (Strings.CS.equals(getURLTarget(), urlTarget))
+            return;
+        edit().setURLTarget(urlTarget);
+    }
+
+    @Override
+    public String getURLTarget()
+    {
+        return _pd.getURLTarget();
+    }
+
     private boolean isEdited()
     {
         return null != _pdOld;
@@ -1039,6 +1053,7 @@ public class DomainPropertyImpl implements DomainProperty
         setImportAliasSet(propSrc.getImportAliasSet());
         setPhi(propSrc.getPHI());
         setURL(propSrc.getURL());
+        setURLTarget(propSrc.getURLTarget());
         setHidden(propSrc.isHidden());
         setShownInDetailsView(propSrc.isShownInDetailsView());
         setShownInInsertView(propSrc.isShownInInsertView());
@@ -1171,6 +1186,8 @@ public class DomainPropertyImpl implements DomainProperty
             map.put("Format", getFormat());
         if (!StringUtils.isEmpty(getURL()))
             map.put("URL", getURL());
+        if (!StringUtils.isEmpty(getURLTarget()))
+            map.put("URLTarget", getURLTarget());
         if (getPHI() != null)
             map.put("PHI", getPHI().getLabel());
         if (getDefaultScale() != null)
@@ -1337,6 +1354,7 @@ public class DomainPropertyImpl implements DomainProperty
             pd.setContainer(c);
             pd.setDescription("description");
             pd.setURL(StringExpressionFactory.createURL((String)null));
+            pd.setURLTarget(null);
             pd.setImportAliases(null);
             pd.setRequired(false);
             pd.setHidden(false);
