@@ -566,9 +566,9 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
-    public String getURLTargetWindow()
+    public String getURLTarget()
     {
-        return delegate.getURLTargetWindow();
+        return delegate.getURLTarget();
     }
 
     @Override
