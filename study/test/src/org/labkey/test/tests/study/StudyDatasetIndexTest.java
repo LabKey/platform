@@ -24,6 +24,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
+import org.labkey.test.components.domain.AdvancedSettingsDialog;
 import org.labkey.test.pages.pipeline.PipelineStatusDetailsPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.params.FieldDefinition;
@@ -44,6 +45,7 @@ public class StudyDatasetIndexTest extends StudyBaseTest
     private static final File STUDY_WITH_DATASET_INDEX = TestFileUtils.getSampleData("studies/StudyWithDatasetIndex.folder.zip");
     private static final File STUDY_WITH_DATASET_SHARED_INDEX = TestFileUtils.getSampleData("studies/StudyWithDatasetSharedIndex.folder.zip");
     private static final String METADATA = "Table Meta Data";
+    boolean IS_POSTGRES = WebTestHelper.getDatabaseType() == WebTestHelper.DatabaseType.PostgreSQL;
 
     @Override
     protected String getProjectName()
@@ -146,27 +148,27 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         datasetDesignerPage.clickSave();
 
         viewRawTableMetadata("DEM-3");
-        verifyTableIndices("dem_minus_3_", List.of("field_name1", "fieldname_2"));
+        verifyTableIndices("dem_minus_3_", List.of("field_Name1", "fieldName_2"));
         assertTextNotPresent("dem_minus_3_fieldname_3");
-        verifyTableIndexNonUnique("dem_minus_3_", "field_name1", true);
-        verifyTableIndexNonUnique("dem_minus_3_", "fieldname_2", false);
+        verifyTableIndexNonUnique("dem_minus_3_", "field_Name1", true);
+        verifyTableIndexNonUnique("dem_minus_3_", "fieldName_2", false);
 
         // remove a field unique constraint and add a new one
         goBack();
         datasetDesignerPage = goToEditDatasetDefinition("DEM-3");
         datasetDesignerPage.getFieldsPanel()
-                .getField(fieldName1).expand().clickAdvancedSettings().setSingleFieldIndex("Index")
+                .getField(fieldName1).expand().clickAdvancedSettings().setSingleFieldIndex(AdvancedSettingsDialog.SingleFieldIndexType.INDEX)
                 .apply();
         datasetDesignerPage.getFieldsPanel()
-                .getField(fieldName3).expand().clickAdvancedSettings().setSingleFieldIndex("Index and require unique values")
+                .getField(fieldName3).expand().clickAdvancedSettings().setSingleFieldIndex(AdvancedSettingsDialog.SingleFieldIndexType.UNIQUE_INDEX)
                 .apply();
         datasetDesignerPage.clickSave();
 
         viewRawTableMetadata("DEM-3");
-        verifyTableIndices("dem_minus_3_", List.of("field_name1", "fieldname_2", "fieldname_3"));
-        verifyTableIndexNonUnique("dem_minus_3_", "field_name1", false);
-        verifyTableIndexNonUnique("dem_minus_3_", "fieldname_2", false);
-        verifyTableIndexNonUnique("dem_minus_3_", "fieldname_3", true);
+        verifyTableIndices("dem_minus_3_", List.of("field_Name1", "fieldName_2", "FieldName_3"));
+        verifyTableIndexNonUnique("dem_minus_3_", "field_Name1", false);
+        verifyTableIndexNonUnique("dem_minus_3_", "fieldName_2", false);
+        verifyTableIndexNonUnique("dem_minus_3_", "FieldName_3", true);
     }
 
     private DatasetDesignerPage goToEditDatasetDefinition(String datasetName)
@@ -203,7 +205,11 @@ public class StudyDatasetIndexTest extends StudyBaseTest
 
     private void verifyTableIndexNonUnique(String prefix, String suffix, boolean isUnique)
     {
-        Locator locator = Locator.xpath("//td[contains(text(), '" + prefix + suffix + "')]/preceding-sibling::td[2][text()='" + !isUnique + "']");
+        String boolDisplay = isUnique ? "0" : "1";
+        if (IS_POSTGRES) boolDisplay = isUnique ? "false" : "true";
+        String fieldKey = prefix + suffix;
+        if (IS_POSTGRES) fieldKey = fieldKey.toLowerCase();
+        Locator locator = Locator.xpath("//td[contains(text(), '" + fieldKey + "')]/preceding-sibling::td[2][text()='" + boolDisplay + "']");
         checker().verifyTrue("Non_Unique value not as expected in metadata for locator: " + locator, locator.existsIn(getDriver()));
     }
 }
