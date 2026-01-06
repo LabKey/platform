@@ -182,6 +182,7 @@ public class ImportTypesHelper
                 builder.setInputType(columnXml.isSetInputType() ? columnXml.getInputType() : null);
                 builder.setHidden(columnXml.getIsHidden());
                 builder.setUrl(columnXml.getUrl());
+                builder.setUrlTarget(columnXml.getUrlTarget());
 
                 builder.setValidators(ValidatorKind.convertFromXML(columnXml.getValidators()));
                 builder.setConditionalFormats(ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()));
@@ -303,6 +304,7 @@ public class ImportTypesHelper
         private String _description;
         private String _format;
         private StringExpression _url;
+        private String _urlTarget;
         private String _importAliases;
         private String _lookupContainer;
         private String _lookupSchema;
@@ -376,6 +378,7 @@ public class ImportTypesHelper
             pd.setDescription(_description);
             pd.setFormat(_format);
             pd.setURL(_url);
+            pd.setURLTarget(_urlTarget);
             pd.setImportAliases(_importAliases);
             pd.setLookupContainer(_lookupContainer);
             pd.setLookupSchema(_lookupSchema);
@@ -512,6 +515,12 @@ public class ImportTypesHelper
         {
             if (url != null)
                 _url = StringExpressionFactory.fromXML(url, true);
+            return this;
+        }
+
+        public Builder setUrlTarget(String urlTarget)
+        {
+            _urlTarget = urlTarget;
             return this;
         }
 

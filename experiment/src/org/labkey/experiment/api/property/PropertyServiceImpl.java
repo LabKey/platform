@@ -497,6 +497,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         }
         
         prop.setURL(xProp.getURL());
+        prop.setURLTarget(xProp.getURLTarget());
         Set<String> importAliases = new LinkedHashSet<>();
         if (xProp.isSetImportAliases())
         {

@@ -529,6 +529,7 @@
             <xs:element name="SemanticType" type="string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="Format" type="string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="URL" type="string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="URLTarget" type="string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="FK" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>A structure that describes a foreign key relationship between a column in the current table and a target column in another table. </xs:documentation>

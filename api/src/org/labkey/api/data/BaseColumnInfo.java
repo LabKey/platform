@@ -559,7 +559,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             }
             setURL(url);
         }
-        setURLTargetWindow(col.getURLTargetWindow());
+        setURLTarget(col.getURLTarget());
         setURLCls(col.getURLCls());
         setOnClick(col.getOnClick());
     }
@@ -1166,7 +1166,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         if (xmlCol.isSetUrl())
             setURL(StringExpressionFactory.fromXML(xmlCol.getUrl(), false));
         if (xmlCol.isSetUrlTarget())
-            setURLTargetWindow(xmlCol.getUrlTarget());
+            setURLTarget(xmlCol.getUrlTarget());
         if (xmlCol.isSetIsAutoInc())
             _isAutoIncrement = xmlCol.getIsAutoInc();
         if (xmlCol.isSetHasDbSequence())
