@@ -18,15 +18,21 @@ package org.labkey.devtools;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.LabKeyCollectors;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.mcp.AbstractAgentAction;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresLogin;
@@ -43,7 +49,9 @@ import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -56,6 +64,10 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.wiki.WikiService;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -68,6 +80,9 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Gatherers;
 
 import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.src;
@@ -1303,6 +1318,84 @@ public class TestController extends SpringActionController
         protected String getServicePrompt()
         {
             return "You are the generic LabKey agent.  Good luck.";
+        }
+    }
+
+
+    @RequiresLogin
+    public static class PopulateVectorStoreAction extends ConfirmAction<Object>
+    {
+        AtomicInteger count = new AtomicInteger();
+
+        @Override
+        public ModelAndView getConfirmView(Object o, BindException errors) throws Exception
+        {
+            var db = FileUtil.getTempDirectoryFileLike().resolveChild("VectorStore.database");
+            HtmlStringBuilder message = HtmlStringBuilder.of();
+            message.append("This will add the contents of /Documention wikis to the vector store.").append(HtmlString.BR);
+            message.append("This may take a few minutes.");
+            if (db.exists())
+                message.unsafeAppend("<p/><p/>").append("I see a vector store file already exists.  Just FYI.");
+            return new HtmlView(message);
+        }
+
+        @Override
+        public void validateCommand(Object o, Errors errors)
+        {
+        }
+
+        @Override
+        public @NotNull URLHelper getSuccessURL(Object o)
+        {
+            return null;
+        }
+
+
+        // not usually used but some actions return views that close the current window etc...
+        public ModelAndView getSuccessView(Object form)
+        {
+            return HtmlView.of(count.get() + " documents added to vector store");
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            Container documentsContainer = ContainerManager.getForPath("/Documentation");
+            if (null == documentsContainer)
+                throw new NotFoundException();
+            VectorStore vs = McpService.get().getVectorStore();
+            if (null == vs)
+                throw new NotFoundException();
+
+            WikiService service = Objects.requireNonNull(WikiService.get());
+            List<String> all = service.getNames(documentsContainer);
+            all.stream()
+                    .map(name -> service.getRenderedWiki(documentsContainer, name))
+                    .filter(Objects::nonNull)
+                    .map(wiki ->
+                    {
+                        count.incrementAndGet();
+                        var metadata = Map.of(
+                                "Content-Type", "text/html",
+                                "filename", wiki.name() + ".html",
+                                "title", (Object)wiki.title()
+                        );
+                        return new Document(wiki.entityId(), wiki.html().toString(), metadata);
+                    })
+                    .gather(Gatherers.windowFixed(50))
+                    .forEach(vs);
+
+            var db = FileUtil.getTempDirectoryFileLike().resolveChild("VectorStore.database");
+            try
+            {
+                ((SimpleVectorStore)vs).save(db.toNioPathForRead().toFile());
+            }
+            catch (Exception x)
+            {
+                System.err.println(x.getMessage());
+            }
+
+            return true;
         }
     }
 }

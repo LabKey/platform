@@ -11,6 +11,7 @@ import org.labkey.api.util.HtmlString;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
+import org.springframework.ai.vectorstore.VectorStore;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -56,4 +57,10 @@ public interface McpService extends ToolCallbackProvider
     {
         return List.of(sendMessage(chat, message));
     }
+
+    /**
+     * return an in-memory Vector store for prototyping RAG features
+     * CONSIDER: Is it possible to implement VectorStoreRetriever wrapper for SearchService???
+     */
+    VectorStore getVectorStore();
 }

@@ -26,23 +26,31 @@ import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.ShutdownListener;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.Generation;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
+import org.springframework.ai.google.genai.GoogleGenAiEmbeddingConnectionDetails;
+import org.springframework.ai.google.genai.text.GoogleGenAiTextEmbeddingModel;
+import org.springframework.ai.google.genai.text.GoogleGenAiTextEmbeddingOptions;
 import org.springframework.ai.mcp.McpToolUtils;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import reactor.core.publisher.Mono;
@@ -111,6 +119,7 @@ public class McpServiceImpl implements McpService
     public void startMpcServer()
     {
         mcpServlet.startMcpServer();
+        vectorStore = createVectorStore();
     }
 
 
@@ -257,6 +266,7 @@ public class McpServiceImpl implements McpService
         public void shutdownPre()
         {
             closing = mcpServlet.closeGracefully();
+            saveVectorDatabase();
         }
 
         @Override
@@ -269,16 +279,41 @@ public class McpServiceImpl implements McpService
     }
 
 
-
     /* GEMINI CHAT SERVICE */
-
 
     String getModel()
     {
         return "gemini-2.5-flash";
+        // gemini-2.5-flash
+        // gemini-2.5-pro
+        // gemini-3-flash-preview
+    }
+
+    String getEmbeddingModel()
+    {
+        return "gemini-embedding-001";
     }
 
 
+    Object _initClientLock = new Object();
+    Client _genAiClient = null;
+
+    Client getLlmClient()
+    {
+        synchronized (_initClientLock)
+        {
+            if (null == _genAiClient)
+            {
+                ClientOptions clientOptions = ClientOptions.builder()
+                        .build();
+                _genAiClient = Client.builder()
+                        .clientOptions(clientOptions)
+                        .build();
+            }
+
+            return _genAiClient;
+        }
+    }
 
 
     // SPRING AI CHAT SERVICE
@@ -290,12 +325,7 @@ public class McpServiceImpl implements McpService
             String systemPrompt = systemPromptSupplier.get();
             String conversationId = session.getId() + ":" + agentName;
 
-            ClientOptions clientOptions = ClientOptions.builder()
-                    .build();
-
-            Client genAiClient = Client.builder()
-                    .clientOptions(clientOptions)
-                    .build();
+            Client genAiClient = getLlmClient();
 
             GoogleGenAiChatOptions chatOptions = GoogleGenAiChatOptions.builder()
                     .model(getModel())
@@ -314,6 +344,7 @@ public class McpServiceImpl implements McpService
                     .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory)
                             .conversationId(conversationId)
                             .build())
+                    .defaultAdvisors(QuestionAnswerAdvisor.builder(getVectorStore()).build())
                     .defaultSystem(systemPrompt)
                     .build();
         });
@@ -361,5 +392,74 @@ public class McpServiceImpl implements McpService
             }
         }
         return ret;
+    }
+
+
+    VectorStore vectorStore = null;
+
+    private VectorStore createVectorStore()
+    {
+        SimpleVectorStore ret = null;
+
+        try
+        {
+            ClientOptions clientOptions = ClientOptions.builder()
+                    .build();
+            Client client = Client.builder() // not shared with getLlmClient() ??? maybe causing problems?
+                    .clientOptions(clientOptions)
+                    .build();
+            GoogleGenAiEmbeddingConnectionDetails connectionDetails = GoogleGenAiEmbeddingConnectionDetails.builder()
+                    .genAiClient(client)
+                    .build();
+            GoogleGenAiTextEmbeddingOptions embeddingOptions = GoogleGenAiTextEmbeddingOptions.builder()
+                    .model(getEmbeddingModel())
+                    .build();
+            EmbeddingModel embeddingModel = new GoogleGenAiTextEmbeddingModel(connectionDetails, embeddingOptions);
+            ret = SimpleVectorStore.builder(embeddingModel).build();
+
+            var savedFile = FileUtil.getTempDirectoryFileLike().resolveChild("VectorStore.database");
+            if (savedFile.exists())
+            {
+                try
+                {
+                    ret.load(savedFile.toNioPathForRead().toFile());
+                }
+                catch (Exception x)
+                {
+                    System.err.println(x.getMessage());
+                }
+            }
+        }
+        catch (Exception x)
+        {
+            System.err.println(x.getMessage());
+        }
+
+        return ret;
+    }
+
+
+    @Override
+    public VectorStore getVectorStore()
+    {
+        return vectorStore;
+    }
+
+
+    void saveVectorDatabase()
+    {
+        SimpleVectorStore vectorStore = (SimpleVectorStore)getVectorStore();
+        if (null == vectorStore)
+            return;
+
+        var db = FileUtil.getTempDirectoryFileLike().resolveChild("VectorStore.database");
+        try
+        {
+            vectorStore.save(db.toNioPathForRead().toFile());
+        }
+        catch (Exception x)
+        {
+            System.err.println(x.getMessage());
+        }
     }
 }
