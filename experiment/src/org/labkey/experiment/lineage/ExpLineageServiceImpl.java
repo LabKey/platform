@@ -357,17 +357,14 @@ public class ExpLineageServiceImpl implements ExpLineageService
             return json;
         }
 
-        if (context.settings.isIncludeRestrictedNodes())
-        {
-            JSONObject json = new JSONObject();
-            json.put(ExperimentJSONConverter.EXP_TYPE, node instanceof ExpObject expObject ? expObject.getExpType() : null);
-            json.put("restricted", true);
-            json.put("type", node.getLSIDNamespacePrefix());
+        // GitHub Issue #441: Indicate there is missing lineage information when the user does not have permission to
+        // see the full lineage tree.
+        JSONObject json = new JSONObject();
+        json.put(ExperimentJSONConverter.EXP_TYPE, node instanceof ExpObject expObject ? expObject.getExpType() : null);
+        json.put("restricted", true);
+        json.put("type", node.getLSIDNamespacePrefix());
 
-            return json;
-        }
-
-        return new JSONObject();
+        return json;
     }
 
     private static void writeSeed(LineageResult lineage, StreamContext context, ExpLineageOptions options) throws IOException

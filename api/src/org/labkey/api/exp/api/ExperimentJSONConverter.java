@@ -139,25 +139,23 @@ public class ExperimentJSONConverter
     {
         private final boolean includeProperties;
         private final boolean includeInputsAndOutputs;
-        private final boolean includeRestrictedNodes;
         private final boolean includeRunSteps;
 
         private Settings()
         {
-            this(true, true, false, false);
+            this(true, true, false);
         }
 
-        public Settings(boolean includeProperties, boolean includeInputsAndOutputs, boolean includeRunSteps, boolean includeRestrictedNodes)
+        public Settings(boolean includeProperties, boolean includeInputsAndOutputs, boolean includeRunSteps)
         {
             this.includeProperties = includeProperties;
             this.includeInputsAndOutputs = includeInputsAndOutputs;
             this.includeRunSteps = includeRunSteps;
-            this.includeRestrictedNodes = includeRestrictedNodes;
         }
 
         public Settings(ResolveLsidsForm form)
         {
-            this(form.isIncludeProperties(), form.isIncludeInputsAndOutputs(), form.isIncludeRunSteps(), form.isIncludeRestrictedNodes());
+            this(form.isIncludeProperties(), form.isIncludeInputsAndOutputs(), form.isIncludeRunSteps());
         }
 
         public boolean isIncludeProperties()
@@ -175,24 +173,19 @@ public class ExperimentJSONConverter
             return includeRunSteps;
         }
 
-        public boolean isIncludeRestrictedNodes()
-        {
-            return includeRestrictedNodes;
-        }
-
         public Settings withIncludeProperties(boolean b)
         {
-            return new Settings(b, includeInputsAndOutputs, includeRunSteps, includeRestrictedNodes);
+            return new Settings(b, includeInputsAndOutputs, includeRunSteps);
         }
 
         public Settings withIncludeInputsAndOutputs(boolean b)
         {
-            return new Settings(includeProperties, b, includeRunSteps, includeRestrictedNodes);
+            return new Settings(includeProperties, b, includeRunSteps);
         }
 
         public Settings withIncludeRunSteps(boolean b)
         {
-            return new Settings(includeProperties, includeInputsAndOutputs, b, includeRestrictedNodes);
+            return new Settings(includeProperties, includeInputsAndOutputs, b);
         }
     }
 

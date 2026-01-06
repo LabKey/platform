@@ -8,21 +8,19 @@ public class ResolveLsidsForm
 {
     private boolean _includeProperties;
     private boolean _includeInputsAndOutputs;
-    private boolean _includeRestrictedNodes;
     private boolean _includeRunSteps;
     private List<String> _lsids;
     private boolean _singleSeedRequested = false;
 
     public ResolveLsidsForm()
     {
-        this(false, false, false, false);
+        this(false, false, false);
     }
 
-    public ResolveLsidsForm(boolean includeProperties, boolean includeInputsAndOutputs, boolean includeRunSteps, boolean includeRestrictedNodes)
+    public ResolveLsidsForm(boolean includeProperties, boolean includeInputsAndOutputs, boolean includeRunSteps)
     {
         _includeProperties = includeProperties;
         _includeInputsAndOutputs = includeInputsAndOutputs;
-        _includeRestrictedNodes = includeRestrictedNodes;
         _includeRunSteps = includeRunSteps;
     }
 
@@ -66,16 +64,6 @@ public class ResolveLsidsForm
     public void setIncludeInputsAndOutputs(boolean includeInputsAndOutputs)
     {
         _includeInputsAndOutputs = includeInputsAndOutputs;
-    }
-
-    public boolean isIncludeRestrictedNodes()
-    {
-        return _includeRestrictedNodes;
-    }
-
-    public void setIncludeRestrictedNodes(boolean includeRestrictedNodes)
-    {
-        _includeRestrictedNodes = includeRestrictedNodes;
     }
 
     public boolean isIncludeRunSteps()
