@@ -42,6 +42,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
@@ -131,11 +132,13 @@ public class WikiCollections
         _adminNavTree = createNavTree(c, true);
         _nonAdminNavTree = createNavTree(c, false);
 
-        _aliasesByRowId = new TableSelector(CommSchema.getInstance().getTableInfoPageAliases(), PageFlowUtil.set("Alias", "PageRowId"), SimpleFilter.createContainerFilter(c), null)
-            .mapStream()
-            .map(map->new Alias(asInteger(map.get("PageRowId")), (String)map.get("Alias")))
-            .sorted(Comparator.comparing(Alias::alias, String.CASE_INSENSITIVE_ORDER))
-            .collect(LabKeyCollectors.toMultiValuedMap(record->record.pageRowId, record->record.alias));
+        try (Stream<Map<String, Object>> s = new TableSelector(CommSchema.getInstance().getTableInfoPageAliases(), PageFlowUtil.set("Alias", "PageRowId"), SimpleFilter.createContainerFilter(c), null).mapStream())
+        {
+            _aliasesByRowId = s
+                    .map(map -> new Alias(asInteger(map.get("PageRowId")), (String) map.get("Alias")))
+                    .sorted(Comparator.comparing(Alias::alias, String.CASE_INSENSITIVE_ORDER))
+                    .collect(LabKeyCollectors.toMultiValuedMap(record -> record.pageRowId, record -> record.alias));
+        }
         _namesByAlias = _aliasesByRowId.entries().stream()
             .filter(e->_treesByRowId.get(e.getKey()) != null) // Just in case - ignore orphaned aliases
             .collect(LabKeyCollectors.toCaseInsensitiveMap(Map.Entry::getValue, e->_treesByRowId.get(e.getKey()).getName()));

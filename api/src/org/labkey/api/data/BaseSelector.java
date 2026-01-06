@@ -248,6 +248,9 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
         }, false);
     }
 
+    /**
+     * Returns a cached Map Stream that <b>must be closed</b>
+     */
     @Override
     public Stream<Map<String, Object>> mapStream()
     {
