@@ -131,14 +131,14 @@ public class StudyDatasetIndexTest extends StudyBaseTest
                 .setType(FieldDefinition.ColumnType.Integer)
                 .expand()
                 .clickAdvancedSettings()
-                .setSingleFieldIndex("Index and require unique values")
+                .setSingleFieldIndex(AdvancedSettingsDialog.SingleFieldIndexType.UNIQUE_INDEX)
                 .apply();
         datasetDesignerPage.getFieldsPanel()
                 .addField(fieldName2)
                 .setType(FieldDefinition.ColumnType.DateAndTime)
                 .expand()
                 .clickAdvancedSettings()
-                .setSingleFieldIndex("Index")
+                .setSingleFieldIndex(AdvancedSettingsDialog.SingleFieldIndexType.INDEX)
                 .apply();
         datasetDesignerPage.getFieldsPanel()
                 .addField(fieldName3)
