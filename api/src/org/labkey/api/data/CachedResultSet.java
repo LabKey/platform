@@ -79,7 +79,6 @@ public class CachedResultSet implements ResultSet, TableResultSet
     private final boolean _isComplete;
 
     private boolean _wasClosed = false;
-    private boolean _requireClose = true;
 
     // state
     private int _row = -1;
@@ -149,7 +148,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
 
         stackTrace is used to set an alternate stack trace -- good for async queries, to indicate original creation stack trace
      */
-    CachedResultSet(ResultSetMetaData md, ArrayList<RowMap<Object>> maps, boolean isComplete, @Nullable StackTraceElement[] stackTrace)
+    CachedResultSet(ResultSetMetaData md, ArrayList<RowMap<Object>> maps, boolean isComplete, boolean requireClose, @Nullable StackTraceElement[] stackTrace)
     {
         _rowMaps = maps;
         _isComplete = isComplete;
@@ -197,21 +196,10 @@ public class CachedResultSet implements ResultSet, TableResultSet
             }
         }
 
-        _state = new CachedResultSetState(_requireClose, stackTrace, threadName, url, _log);
+        _state = new CachedResultSetState(requireClose, stackTrace, threadName, url, _log);
         _cleanable = CLEANER.register(this, _state);
 
         MemTracker.getInstance().put(this);
-    }
-
-    public boolean isRequireClose()
-    {
-        return _requireClose;
-    }
-
-    public CachedResultSet setRequireClose(boolean requireClose)
-    {
-        _requireClose = requireClose;
-        return this;
     }
 
     @Override

@@ -281,9 +281,12 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             assertEquals(count, emails.size());
         }
 
-        try (Stream<Map<String, Object>> s = selector.mapStream())
+        assertEquals(count, selector.mapStream().count());
+
+        // Auto-closing is allowed (but not required for a Stream over cached results)
+        try (Stream<Map<String, Object>> mapStream = selector.mapStream())
         {
-            assertEquals(count, s.count());
+            assertEquals(count, mapStream.count());
         }
 
         try (Stream<Map<String, Object>> uncachedMapStream = selector.uncachedMapStream())

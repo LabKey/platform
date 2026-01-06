@@ -1755,26 +1755,26 @@ public class QueryController extends SpringActionController
                 {
                     JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator,
                             (dbmd, l) -> dbmd.getColumns(l.getCatalogName(), l.getSchemaNamePattern(), l.getTableNamePattern(), null));
-                    result.addView(new ResultSetView(CachedResultSets.create(columnSelector.getResultSet(), true, Table.ALL_ROWS), "Table Meta Data"));
+                    result.addView(new ResultSetView(CachedResultSets.create(columnSelector.getResultSet(), true, true, Table.ALL_ROWS), "Table Meta Data"));
 
                     JdbcMetaDataSelector pkSelector = new JdbcMetaDataSelector(locator,
                             (dbmd, l) -> dbmd.getPrimaryKeys(l.getCatalogName(), l.getSchemaName(), l.getTableName()));
-                    result.addView(new ResultSetView(CachedResultSets.create(pkSelector.getResultSet(), true, Table.ALL_ROWS), "Primary Key Meta Data"));
+                    result.addView(new ResultSetView(CachedResultSets.create(pkSelector.getResultSet(), true, true, Table.ALL_ROWS), "Primary Key Meta Data"));
 
                     if (dialect.canCheckIndices(ti))
                     {
                         JdbcMetaDataSelector indexSelector = new JdbcMetaDataSelector(locator,
                                 (dbmd, l) -> dbmd.getIndexInfo(l.getCatalogName(), l.getSchemaName(), l.getTableName(), false, false));
-                        result.addView(new ResultSetView(CachedResultSets.create(indexSelector.getResultSet(), true, Table.ALL_ROWS), "Other Index Meta Data"));
+                        result.addView(new ResultSetView(CachedResultSets.create(indexSelector.getResultSet(), true, true, Table.ALL_ROWS), "Other Index Meta Data"));
                     }
 
                     JdbcMetaDataSelector ikSelector = new JdbcMetaDataSelector(locator,
                             (dbmd, l) -> dbmd.getImportedKeys(l.getCatalogName(), l.getSchemaName(), l.getTableName()));
-                    result.addView(new ResultSetView(CachedResultSets.create(ikSelector.getResultSet(), true, Table.ALL_ROWS), "Imported Keys Meta Data"));
+                    result.addView(new ResultSetView(CachedResultSets.create(ikSelector.getResultSet(), true, true, Table.ALL_ROWS), "Imported Keys Meta Data"));
 
                     JdbcMetaDataSelector ekSelector = new JdbcMetaDataSelector(locator,
                             (dbmd, l) -> dbmd.getExportedKeys(l.getCatalogName(), l.getSchemaName(), l.getTableName()));
-                    result.addView(new ResultSetView(CachedResultSets.create(ekSelector.getResultSet(), true, Table.ALL_ROWS), "Exported Keys Meta Data"));
+                    result.addView(new ResultSetView(CachedResultSets.create(ekSelector.getResultSet(), true, true, Table.ALL_ROWS), "Exported Keys Meta Data"));
                 }
                 return result;
             }
@@ -1827,7 +1827,7 @@ public class QueryController extends SpringActionController
                 ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer())
                     .addParameter("schemaName", _schemaName)
                     .addParameter("query.queryName", null);
-                tablesView = new ResultSetView(CachedResultSets.create(selector.getResultSet(), true, Table.ALL_ROWS), "Tables", "TABLE_NAME", url)
+                tablesView = new ResultSetView(CachedResultSets.create(selector.getResultSet(), true, true, Table.ALL_ROWS), "Tables", "TABLE_NAME", url)
                 {
                     @Override
                     protected boolean shouldLink(ResultSet rs) throws SQLException
