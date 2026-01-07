@@ -8906,8 +8906,9 @@ public class QueryController extends SpringActionController
         protected String getServicePrompt()
         {
             StringBuilder serviceMessage = new StringBuilder();
-            serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(getSQLHelp()).append("\n");
-            serviceMessage.append("NOTE: please prefer using lookup syntax rather than JOIN where possible.\n");
+            serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(getSQLHelp()).append("\n\n");
+            serviceMessage.append("NOTE: Prefer using lookup syntax rather than JOIN where possible.\n");
+            serviceMessage.append("NOTE: When helping generate SQL please don't use names of tables and columns from documentation examples. Always refer to the available tools for retrieving database metadata.\n");
 
             DefaultSchema defaultSchema = DefaultSchema.get(getUser(), getContainer());
 

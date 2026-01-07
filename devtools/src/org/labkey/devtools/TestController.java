@@ -1369,6 +1369,8 @@ public class TestController extends SpringActionController
             if (null == vs)
                 throw new NotFoundException();
 
+            ActionURL wikiBase = new ActionURL("wiki","page",documentsContainer);
+
             WikiService service = Objects.requireNonNull(WikiService.get());
             List<String> all = service.getNames(documentsContainer);
             all.stream()
@@ -1380,7 +1382,8 @@ public class TestController extends SpringActionController
                         var metadata = Map.of(
                                 "Content-Type", "text/html",
                                 "filename", wiki.name() + ".html",
-                                "title", (Object)wiki.title()
+                                "title", (Object)wiki.title(),
+                                "source", wikiBase.clone().addParameter("name",wiki.name()).getURIString()
                         );
                         return new Document(wiki.entityId(), wiki.html().toString(), metadata);
                     })

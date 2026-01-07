@@ -6,9 +6,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.mcp.McpContext;
@@ -16,11 +18,13 @@ import org.labkey.api.module.McpProvider;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleSchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserManager;
+import org.labkey.query.sql.SqlParser;
 import org.springaicommunity.mcp.annotation.McpResource;
 import org.springaicommunity.mcp.provider.resource.SyncMcpResourceProvider;
 import org.springframework.ai.support.ToolCallbacks;
@@ -32,6 +36,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -114,7 +119,7 @@ public class QueryMcp implements McpProvider
 
 
     @Tool(description = "Provide the SQL source for a saved query.")
-    String getSourceForSavedQuery(@ToolParam(description = "Fully qualified query name as it would appear in SQL e.g. \"schema\".\"saved query\"") String fullQuotedTableName)
+    String getSourceForSavedQuery(@ToolParam(description = "Fully qualified query name as it would appear in SQL e.g. \"schema\".\"table or query\"") String fullQuotedTableName)
     {
         var json = _listTablesForSchema(fullQuotedTableName);
         if (json.has("sql"))
@@ -123,6 +128,30 @@ public class QueryMcp implements McpProvider
             return "I could not find the source for " + fullQuotedTableName;
     }
 
+
+    @Tool(description = """
+            Save addition information for database columns.  If additional metadata is gathered via
+            chat, it can be saved to improve further interactions.
+            """)
+    String saveColumnDescription(
+            @ToolParam(description = "Fully qualified table or query name as it would appear in SQL e.g. \"schema\".\"table or query\"")
+                String fullQuotedTableName,
+            @ToolParam(description = "Quoted column name as it would appear in SQL e.g. \"column name\"")
+                String quotedColumnName,
+            @ToolParam(description = "Additional metadata to remember for future use.  This will replace any currently saved value")
+                String columnMetadata
+    )
+    {
+        McpContext context = McpContext.get();
+        var map = PropertyManager.getWritableProperties(context.getContainer(), "QueryMCP.annotations", true);
+        String fullPath = normalizeIdentifier(fullQuotedTableName + "." + quotedColumnName);
+        map.put(fullPath, columnMetadata);
+        try (var ignore = SpringActionController.ignoreSqlUpdates())
+        {
+            map.save();
+        }
+        return new JSONObject(Map.of("success",Boolean.TRUE)).toString();
+    }
 
     /* TODO  McpContext setup */
 
@@ -239,25 +268,16 @@ public class QueryMcp implements McpProvider
 
     public static JSONObject _listColumnsForTable(String fullQuotedName)
     {
-        SchemaKey fullKey;
-
-        // TODO : correct method for parsing quoted identifier
-        if (fullQuotedName.startsWith("\"") && fullQuotedName.endsWith("\""))
-        {
-            String[] parts = StringUtils.strip(fullQuotedName, "\"").split("\"\\.\"");
-            fullKey = SchemaKey.fromParts(parts);
-        }
-        else
-        {
-            String[] parts = StringUtils.split(fullQuotedName, ".");
-            fullKey = SchemaKey.fromParts(parts);
-        }
-
+        McpContext context = McpContext.get();
+        QueryKey fullKey = dottedIdentifier(fullQuotedName);
         SchemaKey schemaKey;
+
+        var props = PropertyManager.getProperties(context.getContainer(), "QueryMCP.annotations");
+
         String tableName;
         if (fullKey.size() > 1)
         {
-            schemaKey = fullKey.getParent();
+            schemaKey = SchemaKey.fromParts(fullKey.getParent().getParts());
             tableName = fullKey.getName();
         }
         else if (fullKey.size() == 1)
@@ -270,7 +290,8 @@ public class QueryMcp implements McpProvider
             return new JSONObject("error", "could not find table");
         }
 
-        McpContext context = getContext();
+        SchemaKey tableKey = new SchemaKey(schemaKey, tableName);
+
         var defaultSchema = DefaultSchema.get(context.getUser(), context.getContainer());
 
         var schema = DefaultSchema.resolve(defaultSchema, schemaKey);
@@ -303,11 +324,18 @@ public class QueryMcp implements McpProvider
         JSONArray columns = new JSONArray();
         for (ColumnInfo col : td.getColumns())
         {
+            String columnPropsKey = new SchemaKey(tableKey, col.getName()).toSQLString(true).toLowerCase();
+            String extra = props.get(columnPropsKey);
+
             JSONObject md = new JSONObject();
             md.put("name", col.getName());
             md.put("label", col.getLabel());
             md.put("type", col.getJdbcType().name());
-            md.put("description", col.getDescription());
+            String description = "";
+            description += Objects.toString(col.getDescription(), col.getLabel());
+            description += "\n" + Objects.toString(extra, "");
+            if (null != col.getDescription())
+                md.put("description", description.strip());
             if (col.getFieldKey().equals(pk))
                 md.put("is_primary_key", Boolean.TRUE);
             var fk = col.getFk();
@@ -338,6 +366,19 @@ public class QueryMcp implements McpProvider
         table.put("columns",columns);
 
         return table;
+    }
+
+
+    static QueryKey<?> dottedIdentifier(String compoundIdentifier)
+    {
+        return new SqlParser().parseIdentifier(compoundIdentifier);
+    }
+
+
+    // QueryKey supports toSQLString(), but not parseSQLString()?  Does parsing code for this exist outside of SqlBase.g?
+    static String normalizeIdentifier(String compoundIdentifier)
+    {
+        return new SqlParser().parseIdentifier(compoundIdentifier).toSQLString(true).toLowerCase();
     }
 
 
