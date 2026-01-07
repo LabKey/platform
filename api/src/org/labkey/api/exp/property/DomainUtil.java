@@ -524,6 +524,7 @@ public class DomainUtil
         gwtProp.setImportAliases(prop.getImportAliases());
         StringExpression url = prop.getURL();
         gwtProp.setURL(url == null ? null : url.toString());
+        gwtProp.setURLTarget(prop.getURLTarget());
         gwtProp.setScale(prop.getScale());
         gwtProp.setRedactedText(prop.getRedactedText());
         gwtProp.setPrincipalConceptCode(prop.getPrincipalConceptCode());
@@ -616,6 +617,8 @@ public class DomainUtil
         // TODO: Include null value behavior
         if (columnXml.isSetUrl())
             gwtProp.setURL(columnXml.getUrl().getStringValue());
+        if (columnXml.isSetUrlTarget())
+            gwtProp.setURLTarget(columnXml.getUrlTarget());
         if (columnXml.isSetShownInInsertView())
             gwtProp.setShownInInsertView(columnXml.getShownInInsertView());
         if (columnXml.isSetShownInUpdateView())
