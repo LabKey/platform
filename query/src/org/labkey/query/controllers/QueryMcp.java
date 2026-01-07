@@ -1,6 +1,5 @@
 package org.labkey.query.controllers;
 
-import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -14,7 +13,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.mcp.McpContext;
-import org.labkey.api.module.McpProvider;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForeignKey;
@@ -26,14 +25,10 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserManager;
 import org.labkey.query.sql.SqlParser;
 import org.springaicommunity.mcp.annotation.McpResource;
-import org.springaicommunity.mcp.provider.resource.SyncMcpResourceProvider;
-import org.springframework.ai.support.ToolCallbacks;
-import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -43,30 +38,8 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /* TODO: integrate ToolContext support */
 
-public class QueryMcp implements McpProvider
+public class QueryMcp implements McpService.McpImpl
 {
-    @Override
-    public List<ToolCallback> getMcpTools()
-    {
-        ToolCallback[] queryTools = ToolCallbacks.from(this);
-        return Arrays.asList(queryTools);
-    }
-
-    @Override
-    public List<McpServerFeatures.SyncPromptSpecification> getMcpPrompts()
-    {
-        return List.of();
-    }
-
-    @Override
-    public List<McpServerFeatures.SyncResourceSpecification> getMcpResources()
-    {
-        List<McpServerFeatures.SyncResourceSpecification> ret;
-        ret = new SyncMcpResourceProvider(List.of(this)).getResourceSpecifications();
-        return ret;
-    }
-
-
     @McpResource(
             uri = "resource://org/labkey/query/controllers/LabKeySql.md",
             mimeType = "application/markdown",
