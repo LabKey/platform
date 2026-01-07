@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
+<%@ page import="org.labkey.api.mcp.McpService" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -51,6 +53,8 @@
     boolean canEdit = queryDef.canEdit(getUser());
     boolean canEditMetadata = queryDef.canEditMetadata(getUser());
     boolean canDelete = queryDef.canDelete(getUser());
+
+    boolean isChatReady = McpService.get().isReady();
 %>
 <style type="text/css">
 
@@ -90,7 +94,7 @@
       border-radius: 15px;
       border : solid 1px darkgray;
       display: flex;
-      align-items: center; */
+      align-items: center;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
    }
 
@@ -114,6 +118,7 @@
 </style>
 
 <%-- should use Ext4 Panel for layout, but this is just a prototype anyway --%>
+<% if (isChatReady) { %>
 <table style="width:100%; min-width:600px" id="querySourceLayout"><tr>
     <td style="width:80%; min-width:400px; vertical-align: top; ">
         <div id="status" class="labkey-status-info" style="visibility: hidden;" width="100%">(status)</div>
@@ -124,12 +129,14 @@
         <textarea id="geminiPrompt" style="height:100px; width:100%;" placeholder="Shift-Enter to submit"></textarea>
     </td>
 </tr></table>
-
+<% } %>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
 
 LABKEY.Utils.onReady(function(){
+
+    const isChatReady = <%=JavaScriptFragment.bool(isChatReady)%>;
 
     Ext4.QuickTips.init();
 
@@ -328,6 +335,9 @@ LABKEY.Utils.onReady(function(){
 
     function initChat()
     {
+        if (!isChatReady)
+            return;
+
         // initialize conversation with the current SQL
         // CONSIDER: update before every prompt if the SQL has changed
         var schemaName = <%=q(queryDef.getSchemaPath().getName())%>;
@@ -360,53 +370,58 @@ LABKEY.Utils.onReady(function(){
     }
 
     let firstChat = true;
-    elPrompt.addEventListener('keydown', function (ev)
+    if (isChatReady)
     {
-        var isEnter = (ev.key === 'Enter') || (ev.keyCode === 13);
-        if (ev.shiftKey && isEnter)
+        elPrompt.addEventListener('keydown', function (ev)
         {
-            if (firstChat)
+            var isEnter = (ev.key === 'Enter') || (ev.keyCode === 13);
+            if (ev.shiftKey && isEnter)
             {
-                firstChat = false;
-                initChat();
-            }
-            const prompt = elPrompt.value;
-            appendUserPrompt(prompt);
-            elPrompt.value = '';
-            // TODO waiting/thinking UI
-            // Build URL with same base as current document, endpoint /query-queryagent.api and prompt parameter
-            var url = new URL('./query-queryagent.api', window.location.href);
-            url.searchParams.set('prompt', prompt);
-            var req = new XMLHttpRequest();
-            req.open('GET', url.toString(), true);
-            req.onreadystatechange = function () {
-                if (req.readyState === 4) {
-                    if (req.status >= 200 && req.status < 300) {
-                        var responseJson = JSON.parse(req.responseText);
-                        var responseText = responseJson['text'];
-                        var responseHtml = responseJson['html'];
-                        var responseSql = responseJson['sql'];
-                        if (responseSql) {
-                            Ext4.getCmp("qep").getSourceEditor().setValue(responseSql);
-                            appendSqlResponse(responseSql);
-                        }
-                        if (responseHtml) {
-                            appendHtmlResponse(responseHtml);
-                        }
-                        if (responseText) {
-                            appendTextResponse(responseText);
-                        }
-                    } else {
-                        appendTextResponse('Request failed: ' + req.status + ' ' + (req.statusText || ''));
-                    }
+                const prompt = elPrompt.value;
+                if (!prompt)
+                    return;
+                if (firstChat)
+                {
+                    firstChat = false;
+                    initChat();
                 }
-            };
-            req.send();
-            ev.preventDefault();
-            ev.stopPropagation();
-            return false;
-        }
-        return true;
-    });
+                appendUserPrompt(prompt);
+                elPrompt.value = '';
+                // TODO waiting/thinking UI
+                // Build URL with same base as current document, endpoint /query-queryagent.api and prompt parameter
+                var url = new URL('./query-queryagent.api', window.location.href);
+                url.searchParams.set('prompt', prompt);
+                var req = new XMLHttpRequest();
+                req.open('GET', url.toString(), true);
+                req.onreadystatechange = function () {
+                    if (req.readyState === 4) {
+                        if (req.status >= 200 && req.status < 300) {
+                            var responseJson = JSON.parse(req.responseText);
+                            var responseText = responseJson['text'];
+                            var responseHtml = responseJson['html'];
+                            var responseSql = responseJson['sql'];
+                            if (responseSql) {
+                                Ext4.getCmp("qep").getSourceEditor().setValue(responseSql);
+                                appendSqlResponse(responseSql);
+                            }
+                            if (responseHtml) {
+                                appendHtmlResponse(responseHtml);
+                            }
+                            if (responseText) {
+                                appendTextResponse(responseText);
+                            }
+                        } else {
+                            appendTextResponse('Request failed: ' + req.status + ' ' + (req.statusText || ''));
+                        }
+                    }
+                };
+                req.send();
+                ev.preventDefault();
+                ev.stopPropagation();
+                return false;
+            }
+            return true;
+        });
+    }
 });
 </script>

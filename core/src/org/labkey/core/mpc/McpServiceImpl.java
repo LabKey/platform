@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.springframework.ai.chat.messages.MessageType.ASSISTANT;
 
 
@@ -388,6 +389,8 @@ public class McpServiceImpl implements McpService
     @Override
     public List<MessageResponse> sendMessageEx(ChatClient chatSession, String message)
     {
+        if (isBlank(message))
+            return List.of();
         var callResponse = chatSession
                 .prompt(message)
                 .toolContext(McpContext.get().getToolContext().getContext())

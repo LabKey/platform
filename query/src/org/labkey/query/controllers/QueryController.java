@@ -8949,6 +8949,13 @@ public class QueryController extends SpringActionController
                 List<McpService.MessageResponse> responses;
                 SqlResponse sqlResponse;
 
+                if (isBlank(prompt))
+                {
+                    return new JSONObject(Map.of(
+                        "text", "🤷",
+                        "success", Boolean.TRUE));
+                }
+
                 try
                 {
                     responses = McpService.get().sendMessageEx(chatSession, prompt);
