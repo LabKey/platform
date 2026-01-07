@@ -1,2 +1,0 @@
--- Biologics is not supported on SQL Server so this upgrade is not applicable
--- EXEC core.executeJavaUpgradeCode 'populatePlateWellTypes';

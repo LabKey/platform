@@ -172,22 +172,22 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         public void testJavaUpgradeCode()
         {
             String goodSql =
-                "SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +                       // Normal
-                "SELECT core.executeJavaInitializationCode('upgradeCode');\n" +                // executeJavaInitializationCode works as a synonym
-                "    SELECT     core.executeJavaUpgradeCode    ('upgradeCode')    ;     \n" +  // Lots of whitespace
-                "select CORE.EXECUTEJAVAUPGRADECODE('upgradeCode');\n" +                       // Case-insensitive
-                "SELECT core.executeJavaUpgradeCode('upgradeCode');";                          // No line ending
+                "SELECT core.executeJavaUpgradeCode('testUpgradeCode');\n" +                       // Normal
+                "SELECT core.executeJavaInitializationCode('testUpgradeCode');\n" +                // executeJavaInitializationCode works as a synonym
+                "    SELECT     core.executeJavaUpgradeCode    ('testUpgradeCode')    ;     \n" +  // Lots of whitespace
+                "select CORE.EXECUTEJAVAUPGRADECODE('testUpgradeCode');\n" +                       // Case-insensitive
+                "SELECT core.executeJavaUpgradeCode('testUpgradeCode');";                          // No line ending
 
             String badSql =
-                "/* SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +       // Inside block comment
+                "/* SELECT core.executeJavaUpgradeCode('testUpgradeCode');\n" +       // Inside block comment
                 "   more comment\n" +
                 "*/" +
-                "    -- SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +   // Inside single-line comment
-                "SELECTcore.executeJavaUpgradeCode('upgradeCode');\n" +           // Bad syntax
-                "SELECT core. executeJavaUpgradeCode('upgradeCode');\n" +         // Bad syntax
-                "SEECT core.executeJavaUpgradeCode('upgradeCode');\n" +           // Misspell SELECT
-                "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
-                "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
+                "    -- SELECT core.executeJavaUpgradeCode('testUpgradeCode');\n" +   // Inside single-line comment
+                "SELECTcore.executeJavaUpgradeCode('testUpgradeCode');\n" +           // Bad syntax
+                "SELECT core. executeJavaUpgradeCode('testUpgradeCode');\n" +         // Bad syntax
+                "SEECT core.executeJavaUpgradeCode('testUpgradeCode');\n" +           // Misspell SELECT
+                "SELECT core.executeJaavUpgradeCode('testUpgradeCode');\n" +          // Misspell function name
+                "SELECT core.executeJavaUpgradeCode('testUpgradeCode')\n";            // No semicolon
 
             SqlDialect dialect = getOldestSupportedDialect();
             ModuleContext coreContext = ModuleLoader.getInstance().getModuleContext(ModuleLoader.getInstance().getCoreModule());
@@ -202,7 +202,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             assertEquals(0, TestUpgradeCodeCounter.getCount());
 
             // Verify that fallbackHandler() is called if upgrade method doesn't exist
-            String fallbackTestSql = goodSql.replace("'upgradeCode'", "'bogusUpgradeCode'");
+            String fallbackTestSql = goodSql.replace("'testUpgradeCode'", "'bogusUpgradeCode'");
             TestUpgradeCodeCounter.resetCounter();
             try
             {
