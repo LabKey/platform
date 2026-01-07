@@ -92,10 +92,10 @@ public class ContentSecurityPolicyFilter implements Filter
     static
     {
         // ReactJS hot reload uses localhost port 3001. If in dev mode, allow the browser to access that port for fonts
-        // and connections.
+        // and connections. Also allow webpack: protocol for source map loading by some external packages.
         if (AppProps.getInstance().isDevMode())
         {
-            registerAllowedSources("reactjs.hot.reload", Directive.Connection, "localhost:3001 ws://localhost:3001");
+            registerAllowedSources("reactjs.hot.reload", Directive.Connection, "localhost:3001 ws://localhost:3001 webpack:");
             registerAllowedSources("reactjs.hot.reload", Directive.Font, "localhost:3001");
         }
     }
