@@ -127,4 +127,10 @@ public interface ExpData extends ExpRunItem
         }
         return s;
     }
+
+    @Override
+    default String getExpType()
+    {
+        return DEFAULT_CPAS_TYPE;
+    }
 }

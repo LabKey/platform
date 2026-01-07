@@ -273,7 +273,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
         var context = new StreamContext(
             user,
             new ApiJsonWriter(response),
-            new ExperimentJSONConverter.Settings(options.isIncludeProperties(), options.isIncludeInputsAndOutputs(), options.isIncludeRunSteps()),
+            new ExperimentJSONConverter.Settings(options),
             ExpLineage.processEdges(lineage.edges()),
             new HashMap<>()
         );
@@ -328,8 +328,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
 
         try
         {
-            if (context.hasPermission(node.getContainer()))
-                context.writer.writeProperty(node.getLSID(), nodeToJson(node, context.popEdges(node.getLSID()), context));
+            context.writer.writeProperty(node.getLSID(), nodeToJson(node, context.popEdges(node.getLSID()), context));
         }
         catch (IOException e)
         {
@@ -337,20 +336,33 @@ public class ExpLineageServiceImpl implements ExpLineageService
         }
     }
 
-    private static JSONObject nodeToJson(@Nullable Identifiable node, ExpLineage.Edges edges, StreamContext context)
+    private static @NotNull JSONObject nodeToJson(@Nullable Identifiable node, ExpLineage.Edges edges, StreamContext context)
     {
-        JSONObject json;
-
-        if (node == null)
-            json = new JSONObject();
-        else
-        {
-            json = ExperimentJSONConverter.serialize(node, context.user, context.settings);
-            json.put("type", node.getLSIDNamespacePrefix());
-        }
-
+        JSONObject json = createNodeJson(node, context);
         json.put("parents", edges.parents().stream().map(ExpLineage.Edge::toParentJSON).toList());
         json.put("children", edges.children().stream().map(ExpLineage.Edge::toChildJSON).toList());
+
+        return json;
+    }
+
+    private static @NotNull JSONObject createNodeJson(@Nullable Identifiable node, StreamContext context)
+    {
+        if (node == null)
+            return new JSONObject();
+
+        if (context.hasPermission(node.getContainer()))
+        {
+            JSONObject json = ExperimentJSONConverter.serialize(node, context.user, context.settings);
+            json.put("type", node.getLSIDNamespacePrefix());
+            return json;
+        }
+
+        // GitHub Issue #441: Indicate there is missing lineage information when the user does not have permission to
+        // see the full lineage tree.
+        JSONObject json = new JSONObject();
+        json.put(ExperimentJSONConverter.EXP_TYPE, node instanceof ExpObject expObject ? expObject.getExpType() : null);
+        json.put("restricted", true);
+        json.put("type", node.getLSIDNamespacePrefix());
 
         return json;
     }
