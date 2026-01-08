@@ -561,8 +561,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         ScriptEngineManagerImpl.registerEncryptionMigrationHandler();
 
+        McpService.get().register(new CoreMcp());
+
         deleteTempFiles();
     }
+
 
     private void deleteTempFiles()
     {
