@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
@@ -39,6 +38,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.Portal;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
@@ -174,14 +174,23 @@ public class ContainerTable extends FilteredTable<UserSchema>
         var title = getMutableColumn("Title");
         title.setURL(detailsURL);
 
+        // everything except activeModules and webParts
+        setDefaultVisibleColumns(getDefaultVisibleColumns());
+
         var activeModules = new AliasedColumn("ActiveModules", getColumn("RowId"));
         activeModules.setDisplayColumnFactory(ActiveModulesDisplayColumn::new);
         activeModules.setReadOnly(true);
-        activeModules.setHidden(true);
         addColumn(activeModules);
 
+        SQLFragment webpartNamesSQL = new SQLFragment("(SELECT ")
+                .append(getSqlDialect().getGroupConcat(new SQLFragment("PWP.name"), true, true, ", "))
+                .append(" FROM ").append(Portal.getTableInfoPortalWebParts(), "PWP")
+                .append(" WHERE PWP.container = " + ExprColumn.STR_TABLE_ALIAS + ".entityId)");
+        ExprColumn webpartColumn = new ExprColumn(this, "WebParts", webpartNamesSQL, JdbcType.VARCHAR);
+        webpartColumn.setReadOnly(true);
+        addColumn(webpartColumn);
+
         setTitleColumn("DisplayName");
-        
         setImportURL(LINK_DISABLER);
     }
 
@@ -205,6 +214,9 @@ public class ContainerTable extends FilteredTable<UserSchema>
         public ActiveModulesDisplayColumn(ColumnInfo rowIdCol)
         {
             super(rowIdCol, String.class);
+            // VARCHAR rendering
+            _textAlign = "left";
+            _nowrap = false;
         }
 
         @Override
