@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.MultiChoice;
 import org.labkey.api.dataiterator.HashDataIterator;
 import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableIterator;
@@ -405,6 +406,16 @@ public class TabLoader extends DataLoader
             char ch = buf.charAt(start);
             char chQuote = '"';
 
+            boolean isArrayColumn = false;
+            if (columns != null)
+            {
+                var column = columns[colIndex];
+                if (column != null)
+                    isArrayColumn = column.clazz == MultiChoice.class || column.clazz == MultiChoice.Array.class;
+            }
+
+            boolean parseEnclosedQuotes = _parseEnclosedQuotes || isArrayColumn;
+
             colIndex++;
 
             boolean isDelimiterOrQuote = false;
@@ -431,7 +442,7 @@ public class TabLoader extends DataLoader
                         if (nextLine == null)
                         {
                             // We've reached the end of the input, so there's nothing else to append
-                            if (_parseEnclosedQuotes)
+                            if (parseEnclosedQuotes)
                                 isDelimiterOrQuote = false;
                             break;
                         }
@@ -446,7 +457,7 @@ public class TabLoader extends DataLoader
                         // " a, " b should be parsed as [" a, " b], not [a,  b]
                         // if the next quote is before the end of the buffer and the next non-blank character is not the delimiter,
                         // retain the quote as a mid-field value.
-                        if (_parseEnclosedQuotes && end != buf.length() - 1 && (fieldEnd == -1 || !_whitespacePattern.matcher(buf.substring(end+1, fieldEnd)).matches()))
+                        if (parseEnclosedQuotes && end != buf.length() - 1 && (fieldEnd == -1 || !_whitespacePattern.matcher(buf.substring(end+1, fieldEnd)).matches()))
                             isDelimiterOrQuote = false;
                         break;
                     }

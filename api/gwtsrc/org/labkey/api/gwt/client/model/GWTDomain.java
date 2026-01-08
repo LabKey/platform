@@ -42,6 +42,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     @Getter @Setter private boolean allowAttachmentProperties;
     @Getter @Setter private boolean allowFlagProperties;
     @Getter @Setter private boolean allowTextChoiceProperties;
+    @Getter @Setter private boolean allowMultiChoiceProperties;
     @Getter @Setter private boolean allowSampleSubjectProperties;
     @Getter @Setter private boolean allowTimepointProperties;
     @Getter @Setter private boolean allowUniqueConstraintProperties;
@@ -90,6 +91,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.allowAttachmentProperties = src.allowAttachmentProperties;
         this.allowFlagProperties = src.allowFlagProperties;
         this.allowTextChoiceProperties = src.allowTextChoiceProperties;
+        this.allowMultiChoiceProperties = src.allowMultiChoiceProperties;
         this.allowSampleSubjectProperties = src.allowSampleSubjectProperties;
         this.allowTimepointProperties = src.allowTimepointProperties;
         this.allowUniqueConstraintProperties = src.allowUniqueConstraintProperties;

@@ -21,6 +21,7 @@ import java.io.StringBufferInputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.text.Format;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -56,6 +57,11 @@ public class MultiChoice
 
         @Override
         public Object getValue(RenderContext ctx)
+        {
+            return getArrayValue(ctx);
+        }
+
+        public Array getArrayValue(RenderContext ctx)
         {
             Object v = super.getValue(ctx);
             if (!(v instanceof java.sql.Array array))
@@ -128,6 +134,29 @@ public class MultiChoice
             return HtmlString.of(
                 DIV(array.stream().map(v -> SPAN(at(style,"border:solid 1px black; border-radius:3px;"), v))
                         .collect(new JoinRenderable(HtmlString.SP))));
+        }
+
+        @Override
+        public String getTsvFormattedValue(RenderContext ctx)
+        {
+            Array values = getArrayValue(ctx);
+            if (null != values && !values.isEmpty())
+            {
+                return PageFlowUtil.joinValuesToStringForExport(values);
+            }
+            return null;
+        }
+
+        @Override
+        public Object getExcelCompatibleValue(RenderContext ctx)
+        {
+            return getTsvFormattedValue(ctx);
+        }
+
+        @Override
+        public Object getExportCompatibleValue(RenderContext ctx)
+        {
+            return getTsvFormattedValue(ctx);
         }
     }
 

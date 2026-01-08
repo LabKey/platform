@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.IntHashMap;
@@ -34,6 +35,7 @@ import java.sql.Array;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -300,7 +302,36 @@ public enum JdbcType
         }
     },
 
-    ARRAY(Types.ARRAY, Array.class),
+    ARRAY(Types.ARRAY, Array.class)
+    {
+        @Override
+        public Object convert(Object o) throws ConversionException
+        {
+            if ((o instanceof java.sql.Array array))
+                return array;
+            if (o instanceof JSONArray jsonArray)
+            {
+                // convert jsonArray to array
+                Object[] elements = new Object[jsonArray.length()];
+                for (int i = 0; i < jsonArray.length(); i++)
+                {
+                    elements[i] = jsonArray.get(i);
+                }
+                return new MultiChoice.Array(Arrays.stream(elements));
+            }
+            if (o instanceof Collection collection)
+            {
+                return new MultiChoice.Array(collection.stream().map(String::valueOf));
+            }
+            if (o != null)
+            {
+                String s = String.valueOf(o);
+                return new MultiChoice.Array(Arrays.stream(new String[] {s}));
+            }
+
+            return null;
+        }
+    },
 
     NULL(Types.NULL, Object.class),
 

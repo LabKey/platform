@@ -154,6 +154,12 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     }
 
     @Override
+    public boolean allowMultiChoiceProperties()
+    {
+        return true;
+    }
+
+    @Override
     public boolean showDefaultValueSettings()
     {
         return true;

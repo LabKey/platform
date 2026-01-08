@@ -205,6 +205,12 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
+    public boolean allowMultiChoiceProperties()
+    {
+        return true;
+    }
+
+    @Override
     public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
     {
         return PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateDataClassURL(container);

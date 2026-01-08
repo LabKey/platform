@@ -36,6 +36,8 @@ import org.labkey.vfs.FileLike;
 import java.io.File;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.sql.Array;
+import java.sql.SQLException;
 import java.sql.Time;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -234,13 +236,16 @@ public enum PropertyType
         @Override
         protected void setValue(ObjectProperty property, Object value)
         {
-            throw new UnsupportedOperationException("TODO MultiChoice");
+            if ((value instanceof java.sql.Array array))
+                property.arrayValue = MultiChoice.Array.from(array);
+            else if (value != null)
+                property.arrayValue = MultiChoice.Array.from(new Object[]{value});
         }
 
         @Override
         protected Object getValue(ObjectProperty property)
         {
-            throw new UnsupportedOperationException("TODO MultiChoice");
+            return property.arrayValue;
         }
 
         @Override
