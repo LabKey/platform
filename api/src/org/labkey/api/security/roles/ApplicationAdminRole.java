@@ -22,6 +22,7 @@ import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.EnableRestrictedModules;
 import org.labkey.api.security.permissions.ExemptFromAccountDisablingPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
@@ -39,6 +40,7 @@ public class ApplicationAdminRole extends AbstractRootContainerRole implements A
         ApplicationAdminPermission.class,
         CanImpersonateSiteRolesPermission.class,
         DeleteUserPermission.class,
+        PlatformDeveloperPermission.class, // GitHub Issue #774
         EnableRestrictedModules.class,
         ExemptFromAccountDisablingPermission.class,
         TroubleshooterPermission.class,
@@ -49,7 +51,7 @@ public class ApplicationAdminRole extends AbstractRootContainerRole implements A
     public ApplicationAdminRole()
     {
         super("Application Admin", "Application Administrators have control over non-operational administration settings.",
-                //" By default, Application Administrators have admin permissions to all projects/folders as well, see User.getStandardContextualRoles().",
+                // By default, Application Administrators have admin permissions to all projects/folders as well, see User.getStandardContextualRoles().,
             FolderAdminRole.PERMISSIONS,
             PERMISSIONS
         );
