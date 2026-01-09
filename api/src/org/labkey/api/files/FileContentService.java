@@ -325,6 +325,8 @@ public interface FileContentService
      */
     SQLFragment listFilesQuery(@NotNull User currentUser);
 
+    SQLFragment listSampleFilesQuery(@NotNull User currentUser);
+
     void setWebfilesEnabled(boolean enabled, User user);
 
     /**

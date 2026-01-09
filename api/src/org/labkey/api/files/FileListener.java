@@ -94,4 +94,9 @@ public interface FileListener
      * </ul>
      */
     SQLFragment listFilesQuery();
+
+    default SQLFragment listSampleFilesQuery()
+    {
+        return null;
+    }
 }

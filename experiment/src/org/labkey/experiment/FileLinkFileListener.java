@@ -311,7 +311,26 @@ public class FileLinkFileListener implements FileListener
             SQLFragment containerFrag = new SQLFragment("?", containerId);
             TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath, null, containerFrag);
             frag.append("UNION").append(StringUtils.isEmpty(filePath) ? "" : " ALL" /*keep duplicate*/).append("\n");
-            frag.append(updater.listFilesQuery(skipCreatedModified, filePath));
+            frag.append(updater.listFilesQuery(skipCreatedModified, filePath, false));
+        });
+
+        return frag;
+    }
+
+    @Override
+    public SQLFragment listSampleFilesQuery()
+    {
+        final SQLFragment frag = new SQLFragment();
+
+        hardTableFileLinkColumns((schema, table, pathColumn, containerId, domainUri) -> {
+            if (schema.getName().equals("expsampleset"))
+            {
+                SQLFragment containerFrag = new SQLFragment("?", containerId);
+                TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath, "rowid", containerFrag);
+                if (!frag.isEmpty())
+                    frag.append("UNION").append("").append("\n");
+                frag.append(updater.listFilesQuery(true, null, true));
+            }
         });
 
         return frag;

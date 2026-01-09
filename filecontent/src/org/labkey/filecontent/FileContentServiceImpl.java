@@ -1233,6 +1233,27 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     }
 
     @Override
+    public SQLFragment listSampleFilesQuery(@NotNull User currentUser)
+    {
+        SQLFragment frag = new SQLFragment();
+        String union = "";
+        frag.append("(");
+
+        for (FileListener fileListener : _fileListeners)
+        {
+            SQLFragment subselect = fileListener.listSampleFilesQuery();
+            if (subselect != null)
+            {
+                frag.append(union);
+                frag.append(subselect);
+                union = "UNION\n";
+            }
+        }
+        frag.append(")");
+        return frag;
+    }
+
+    @Override
     public SQLFragment listFilesQuery(@NotNull User currentUser)
     {
         SQLFragment frag = new SQLFragment();

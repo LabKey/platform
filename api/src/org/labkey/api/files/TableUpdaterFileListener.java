@@ -353,10 +353,10 @@ public class TableUpdaterFileListener implements FileListener
     @Override
     public SQLFragment listFilesQuery()
     {
-        return listFilesQuery(false, null);
+        return listFilesQuery(false, null, false);
     }
 
-    public SQLFragment listFilesQuery(boolean skipCreatedModified, String filePath)
+    public SQLFragment listFilesQuery(boolean skipCreatedModified, String filePath, boolean extractName)
     {
         SQLFragment selectFrag = new SQLFragment();
         selectFrag.append("SELECT\n");
@@ -394,6 +394,16 @@ public class TableUpdaterFileListener implements FileListener
         }
 
         selectFrag.append("  ").appendIdentifier(_pathColumn.getSelectIdentifier()).append(" AS FilePath,\n");
+
+        if (extractName)
+        {
+            SqlDialect dialect = _table.getSchema().getSqlDialect();
+            SQLFragment fileNameFrag = new SQLFragment();
+            fileNameFrag.append("regexp_replace(").appendIdentifier(_pathColumn.getSelectIdentifier()).append(", ");
+            fileNameFrag.append(dialect.getStringHandler().quoteStringLiteral(".*/")).append(", ");
+            fileNameFrag.append(dialect.getStringHandler().quoteStringLiteral("")).append(")");;
+            selectFrag.append("  ").append(fileNameFrag).append(" AS FilePathShort,\n");
+        }
 
         if (_keyColumn != null)
             selectFrag.append("  ").appendIdentifier(_keyColumn.getSelectIdentifier()).append(" AS SourceKey,\n");

@@ -70,6 +70,7 @@ public class ExpSchema extends AbstractExpSchema
     public static final String SAMPLE_STATE_TYPE_TABLE = "SampleStateType";
     public static final String SAMPLE_TYPE_CATEGORY_TABLE = "SampleTypeCategoryType";
     public static final String MEASUREMENT_UNITS_TABLE = "MeasurementUnits";
+    public static final String SAMPLE_FILES_TABLE = "StaleSampleFiles";
 
     public static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
     public static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
@@ -219,6 +220,14 @@ public class ExpSchema extends AbstractExpSchema
                 ExpDataTable result = ExperimentService.get().createFilesTable(Files.toString(), expSchema);
                 return expSchema.setupTable(result);
             }
+        },
+        StaleSampleFiles
+        {
+             @Override
+             public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
+             {
+                 return new ExpStaleSampleFilesTable(expSchema, cf);
+             }
         },
         SampleStatus
         {
