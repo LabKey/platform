@@ -47,6 +47,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -70,7 +71,7 @@ public class ExpSchema extends AbstractExpSchema
     public static final String SAMPLE_STATE_TYPE_TABLE = "SampleStateType";
     public static final String SAMPLE_TYPE_CATEGORY_TABLE = "SampleTypeCategoryType";
     public static final String MEASUREMENT_UNITS_TABLE = "MeasurementUnits";
-    public static final String SAMPLE_FILES_TABLE = "StaleSampleFiles";
+    public static final String SAMPLE_FILES_TABLE = "UnreferencedSampleFiles";
 
     public static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
     public static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
@@ -221,13 +222,19 @@ public class ExpSchema extends AbstractExpSchema
                 return expSchema.setupTable(result);
             }
         },
-        StaleSampleFiles
+        UnreferencedSampleFiles
         {
              @Override
              public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
              {
-                 return new ExpStaleSampleFilesTable(expSchema, cf);
+                 return new ExpUnreferencedSampleFilesTable(expSchema, cf);
              }
+
+            @Override
+            public boolean includeTable()
+            {
+                return AppProps.getInstance().isOptionalFeatureEnabled(SAMPLE_FILES_TABLE);
+            }
         },
         SampleStatus
         {

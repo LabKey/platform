@@ -15,17 +15,18 @@ import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 
-public class ExpStaleSampleFilesTable extends FilteredTable<ExpSchema>
+public class ExpUnreferencedSampleFilesTable extends FilteredTable<ExpSchema>
 {
-    public ExpStaleSampleFilesTable(@NotNull ExpSchema schema, ContainerFilter cf)
+    public ExpUnreferencedSampleFilesTable(@NotNull ExpSchema schema, ContainerFilter cf)
     {
         super(createVirtualTable(schema), schema, cf);
+        setDescription("Contains all sample files that are not referenced by any domain fields.");
         wrapAllColumns(true);
     }
 
     private static TableInfo createVirtualTable(@NotNull ExpSchema schema)
     {
-        return new ExpStaleSampleFilesTable.FileUnionTable(schema);
+        return new ExpUnreferencedSampleFilesTable.FileUnionTable(schema);
     }
 
     private static class FileUnionTable extends VirtualTable
@@ -51,7 +52,7 @@ public class ExpStaleSampleFilesTable extends FilteredTable<ExpSchema>
                     .append(materialTable, "m")
                     .append(" ON if.SourceKey = m.RowId");
 
-            SQLFragment staleFileSql = new SQLFragment("SELECT ed.rowId, ed.name as filename, ed.container, ed.created, ed.createdBy, ed.DataFileUrl FROM ")
+            SQLFragment unreferencedFileSql = new SQLFragment("SELECT ed.rowId, ed.name as filename, ed.container, ed.created, ed.createdBy, ed.DataFileUrl FROM ")
                     .append(expDataTable, "ed")
                     .append(" LEFT JOIN (")
                     .append(sampleFileSql)
@@ -61,7 +62,7 @@ public class ExpStaleSampleFilesTable extends FilteredTable<ExpSchema>
                     .appendValue("%@files/sampletype/%")
                     .append(" AND sf.FilePathShort IS NULL");
 
-            _query.append(staleFileSql);
+            _query.append(unreferencedFileSql);
 
             _query.appendComment("</SampleFileListTableInfo>", getSchema().getSqlDialect());
 
