@@ -117,7 +117,6 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteDatasURL(getContainer(), null);
         setDeleteURL(new DetailsURL(deleteUrl));
 
-        addColumn(getFileLinkReferenceCountColumn());
     }
 
     public void setDefaultColumns(List<String> customProps)
@@ -225,52 +224,6 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         result.setShownInInsertView(false);
         result.setShownInDetailsView(true);
 
-        return result;
-    }
-
-    private MutableColumnInfo getFileLinkReferenceCountColumn()
-    {
-//        FileLinkFileListener fileListener = new FileLinkFileListener();
-//        SQLFragment unionSql = fileListener.listFilesQuery(true, new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataFileUrl"));
-//        return new ExprColumn(this, FieldKey.fromParts("ReferenceCount"), unionSql, JdbcType.INTEGER);
-        var result = wrapColumn("ReferenceCountDisplay", _rootTable.getColumn("RowId"));
-        result.setJdbcType(JdbcType.VARCHAR);
-        result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
-        {
-            @Override
-            protected void renderData(HtmlWriter out, ExpData data)
-            {
-
-                if (data == null || StringUtils.isEmpty(data.getDataFileUrl()))
-                    out.write("");
-                else
-                {
-                    FileLinkFileListener fileListener = new FileLinkFileListener();
-                    SQLFragment unionSql = fileListener.listFilesQuery(true, data.getFile().getAbsolutePath());
-
-                    long count = new SqlSelector(CoreSchema.getInstance().getSchema(), unionSql).getRowCount();
-
-                    out.write(count);
-                }
-            }
-
-            @Override
-            protected Object getJsonValue(ExpData data)
-            {
-                Object val;
-                if (data == null || StringUtils.isEmpty(data.getDataFileUrl()))
-                    val = null;
-                else
-                {
-                    FileLinkFileListener fileListener = new FileLinkFileListener();
-                    SQLFragment unionSql = fileListener.listFilesQuery(true, data.getFile().getAbsolutePath());
-
-                    val = new SqlSelector(CoreSchema.getInstance().getSchema(), unionSql).getRowCount();
-
-                }
-                return val;
-            }
-        });
         return result;
     }
 

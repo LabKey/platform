@@ -34,12 +34,14 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
@@ -231,10 +233,46 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
     private MutableColumnInfo getFileLinkReferenceCountColumn()
     {
-        FileLinkFileListener fileListener = new FileLinkFileListener();
-        SQLFragment unionSql = fileListener.listFilesQuery(true, new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataFileUrl"));
-        SQLFragment countSql = new SQLFragment("(SELECT COUNT(*) FROM (").append(unionSql).append("))");
-        return new ExprColumn(this, FieldKey.fromParts("ReferenceCount"), countSql, JdbcType.INTEGER);
+        var result = wrapColumn(Column.ReferenceCount.name(), _rootTable.getColumn("RowId"));
+        result.setDescription("The number of references to this file from File fields in any domain.");
+        result.setJdbcType(JdbcType.INTEGER);
+        result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
+        {
+            @Override
+            protected void renderData(HtmlWriter out, ExpData data)
+            {
+
+                if (data == null || StringUtils.isEmpty(data.getDataFileUrl()))
+                    out.write("");
+                else
+                {
+                    FileLinkFileListener fileListener = new FileLinkFileListener();
+                    SQLFragment unionSql = fileListener.listFilesQuery(true, data.getFile().getAbsolutePath());
+
+                    long count = new SqlSelector(CoreSchema.getInstance().getSchema(), unionSql).getRowCount();
+
+                    out.write(count);
+                }
+            }
+
+            @Override
+            protected Object getJsonValue(ExpData data)
+            {
+                Object val;
+                if (data == null || StringUtils.isEmpty(data.getDataFileUrl()))
+                    val = null;
+                else
+                {
+                    FileLinkFileListener fileListener = new FileLinkFileListener();
+                    SQLFragment unionSql = fileListener.listFilesQuery(true, data.getFile().getAbsolutePath());
+
+                    val = new SqlSelector(CoreSchema.getInstance().getSchema(), unionSql).getRowCount();
+
+                }
+                return val;
+            }
+        });
+        return result;
     }
 
     @Override

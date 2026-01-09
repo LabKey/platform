@@ -51,7 +51,7 @@ public class ExpStaleSampleFilesTable extends FilteredTable<ExpSchema>
                     .append(materialTable, "m")
                     .append(" ON if.SourceKey = m.RowId");
 
-            SQLFragment staleFileSql = new SQLFragment("SELECT ed.name as filename, ed.container, ed.created, ed.createdBy, ed.DataFileUrl FROM ")
+            SQLFragment staleFileSql = new SQLFragment("SELECT ed.rowId, ed.name as filename, ed.container, ed.created, ed.createdBy, ed.DataFileUrl FROM ")
                     .append(expDataTable, "ed")
                     .append(" LEFT JOIN (")
                     .append(sampleFileSql)
@@ -65,9 +65,13 @@ public class ExpStaleSampleFilesTable extends FilteredTable<ExpSchema>
 
             _query.appendComment("</SampleFileListTableInfo>", getSchema().getSqlDialect());
 
+            var rowIdCol = new BaseColumnInfo("RowId", this, JdbcType.INTEGER);
+            rowIdCol.setHidden(true);
+            rowIdCol.setKeyField(true);
+            addColumn(rowIdCol);
 
-            var filePathShortCol = new BaseColumnInfo("FileName", this, JdbcType.VARCHAR);
-            addColumn(filePathShortCol);
+            var fileNameCol = new BaseColumnInfo("FileName", this, JdbcType.VARCHAR);
+            addColumn(fileNameCol);
 
             if (schema.getUser().hasApplicationAdminPermission())
             {
@@ -86,6 +90,10 @@ public class ExpStaleSampleFilesTable extends FilteredTable<ExpSchema>
             var createdByCol = new BaseColumnInfo("CreatedBy", this, JdbcType.INTEGER);
             UserIdForeignKey.initColumn(createdByCol);
             addColumn(createdByCol);
+
+//            var referenceCol = new BaseColumnInfo("ReferenceCount", this, JdbcType.INTEGER);
+//            referenceCol.setHidden(true);
+//            addColumn(referenceCol);
 
         }
 
