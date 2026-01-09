@@ -37,6 +37,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
@@ -45,6 +46,8 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.labkey.api.exp.query.ExpSchema.SAMPLE_FILES_TABLE;
 
 public class ExpFilesTableImpl extends ExpDataTableImpl
 {
@@ -117,7 +120,8 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteDatasURL(getContainer(), null);
         setDeleteURL(new DetailsURL(deleteUrl));
 
-        addColumn(getFileLinkReferenceCountColumn());
+        if (AppProps.getInstance().isOptionalFeatureEnabled(SAMPLE_FILES_TABLE))
+            addColumn(getFileLinkReferenceCountColumn());
     }
 
     public void setDefaultColumns(List<String> customProps)
