@@ -356,7 +356,7 @@ public class TableUpdaterFileListener implements FileListener
         return listFilesQuery(false, null, false);
     }
 
-    public SQLFragment listFilesQuery(boolean skipCreatedModified, String filePath, boolean extractName)
+    public SQLFragment listFilesQuery(boolean skipCreatedModified, CharSequence filePath, boolean extractName)
     {
         SQLFragment selectFrag = new SQLFragment();
         selectFrag.append("SELECT\n");
@@ -418,6 +418,8 @@ public class TableUpdaterFileListener implements FileListener
 
         if (StringUtils.isEmpty(filePath))
             selectFrag.append(" IS NOT NULL\n");
+        else if (filePath instanceof SQLFragment)
+            selectFrag.append(" = ").append(filePath).append("\n");
         else
             selectFrag.append(" = ").appendStringLiteral(filePath, _table.getSchema().getSqlDialect()).append("\n");
 

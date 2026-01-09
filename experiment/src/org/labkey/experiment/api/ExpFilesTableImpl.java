@@ -19,15 +19,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.SecurityManager;
@@ -37,6 +40,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
+import org.labkey.experiment.FileLinkFileListener;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.ArrayList;
@@ -112,6 +116,8 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         getMutableColumn(Column.Name).setURL(detailsURL);
         ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteDatasURL(getContainer(), null);
         setDeleteURL(new DetailsURL(deleteUrl));
+
+        addColumn(getFileLinkReferenceCountColumn());
     }
 
     public void setDefaultColumns(List<String> customProps)
@@ -219,6 +225,52 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         result.setShownInInsertView(false);
         result.setShownInDetailsView(true);
 
+        return result;
+    }
+
+    private MutableColumnInfo getFileLinkReferenceCountColumn()
+    {
+//        FileLinkFileListener fileListener = new FileLinkFileListener();
+//        SQLFragment unionSql = fileListener.listFilesQuery(true, new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataFileUrl"));
+//        return new ExprColumn(this, FieldKey.fromParts("ReferenceCount"), unionSql, JdbcType.INTEGER);
+        var result = wrapColumn("ReferenceCountDisplay", _rootTable.getColumn("RowId"));
+        result.setJdbcType(JdbcType.VARCHAR);
+        result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
+        {
+            @Override
+            protected void renderData(HtmlWriter out, ExpData data)
+            {
+
+                if (data == null || StringUtils.isEmpty(data.getDataFileUrl()))
+                    out.write("");
+                else
+                {
+                    FileLinkFileListener fileListener = new FileLinkFileListener();
+                    SQLFragment unionSql = fileListener.listFilesQuery(true, data.getFile().getAbsolutePath());
+
+                    long count = new SqlSelector(CoreSchema.getInstance().getSchema(), unionSql).getRowCount();
+
+                    out.write(count);
+                }
+            }
+
+            @Override
+            protected Object getJsonValue(ExpData data)
+            {
+                Object val;
+                if (data == null || StringUtils.isEmpty(data.getDataFileUrl()))
+                    val = null;
+                else
+                {
+                    FileLinkFileListener fileListener = new FileLinkFileListener();
+                    SQLFragment unionSql = fileListener.listFilesQuery(true, data.getFile().getAbsolutePath());
+
+                    val = new SqlSelector(CoreSchema.getInstance().getSchema(), unionSql).getRowCount();
+
+                }
+                return val;
+            }
+        });
         return result;
     }
 

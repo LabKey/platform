@@ -275,7 +275,7 @@ public class FileLinkFileListener implements FileListener
         return listFilesQuery(skipCreatedModified, null);
     }
 
-    public SQLFragment listFilesQuery(boolean skipCreatedModified, String filePath)
+    public SQLFragment listFilesQuery(boolean skipCreatedModified, CharSequence filePath)
     {
         final SQLFragment frag = new SQLFragment();
 
@@ -298,8 +298,11 @@ public class FileLinkFileListener implements FileListener
         frag.append("WHERE\n");
         if (StringUtils.isEmpty(filePath))
             frag.append("  op.StringValue IS NOT NULL AND\n");
+        else if (filePath instanceof SQLFragment)
+            frag.append("  op.StringValue = ").append(filePath).append(" AND\n");
         else
             frag.append("  op.StringValue = ").appendStringLiteral(filePath, OntologyManager.getTinfoObject().getSqlDialect()).append(" AND\n");
+
         frag.append("  o.ObjectId = op.ObjectId AND\n");
         frag.append("  PropertyId IN (\n");
         frag.append("    SELECT PropertyId\n");

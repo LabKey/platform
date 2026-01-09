@@ -84,6 +84,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.experiment.FileLinkFileListener;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.lineage.LineageMethod;
 import org.springframework.beans.MutablePropertyValues;
@@ -200,6 +201,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addColumn(Column.FileExtension);
         addColumn(Column.WebDavUrl);
         addColumn(Column.WebDavUrlRelative);
+        addColumn(getFileLinkReferenceCountColumn());
         var flagCol = addColumn(Column.Flag);
         if (isFilesTable)
             flagCol.setLabel("Description");
@@ -225,6 +227,14 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
 
         return customProps;
+    }
+
+    private MutableColumnInfo getFileLinkReferenceCountColumn()
+    {
+        FileLinkFileListener fileListener = new FileLinkFileListener();
+        SQLFragment unionSql = fileListener.listFilesQuery(true, new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataFileUrl"));
+        SQLFragment countSql = new SQLFragment("(SELECT COUNT(*) FROM (").append(unionSql).append("))");
+        return new ExprColumn(this, FieldKey.fromParts("ReferenceCount"), countSql, JdbcType.INTEGER);
     }
 
     @Override
