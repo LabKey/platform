@@ -76,4 +76,10 @@ public interface ExpExperiment extends ExpObject
     /** Override to signal that we never throw BatchValidationExceptions */
     @Override
     void save(User user);
+
+    @Override
+    default String getExpType()
+    {
+        return DEFAULT_CPAS_TYPE;
+    }
 }

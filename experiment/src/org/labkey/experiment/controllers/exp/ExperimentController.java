@@ -7299,7 +7299,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(ResolveLsidsForm form, BindException errors)
         {
-            var settings = new ExperimentJSONConverter.Settings(form.isIncludeProperties(), form.isIncludeInputsAndOutputs(), form.isIncludeRunSteps());
+            var settings = new ExperimentJSONConverter.Settings(form);
             var data = _seeds.stream().map(n -> ExperimentJSONConverter.serialize(n, getUser(), settings)).collect(toList());
             return new ApiSimpleResponse("data", data);
         }

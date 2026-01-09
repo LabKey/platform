@@ -29,15 +29,16 @@ GO
 
 CREATE TABLE core.Logins
 (
-    Email VARCHAR(255) NOT NULL,
+    Email VARCHAR(255) NULL, -- No longer used. A later script will drop this column.
     Crypt VARCHAR(64) NOT NULL,
     Verification VARCHAR(64),
     LastChanged DATETIME NULL,
     PreviousCrypts VARCHAR(1000),
     RequestedEmail NVARCHAR(255),
     VerificationTimeout DATETIME,
+    UserId USERID NOT NULL,
 
-    CONSTRAINT PK_Logins PRIMARY KEY (Email)
+    CONSTRAINT PK_Logins PRIMARY KEY (UserId)
 );
 
 -- Principals is used for managing security related information
@@ -97,6 +98,7 @@ CREATE TABLE core.UsersData
 );
 
 ALTER TABLE core.UsersData ADD System BIT NOT NULL DEFAULT 0;
+ALTER TABLE core.UsersData ADD LastActivity DATETIME NULL;
 
 CREATE TABLE core.Containers
 (
@@ -115,7 +117,6 @@ CREATE TABLE core.Containers
     Title NVARCHAR(1000),
     Type VARCHAR(16) CONSTRAINT DF_Container_Type DEFAULT 'normal' NOT NULL,
 
-    CONSTRAINT UQ_Containers_RowId UNIQUE CLUSTERED (RowId),
     CONSTRAINT UQ_Containers_EntityId UNIQUE (EntityId),
     CONSTRAINT UQ_Containers_Parent_Name UNIQUE (Parent, Name),
     CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)
@@ -125,6 +126,12 @@ CREATE INDEX IX_Containers_Parent_Entity ON core.Containers(Parent, EntityId);
 
 ALTER TABLE core.Containers ADD LockState VARCHAR(25) NULL;
 ALTER TABLE core.Containers ADD ExpirationDate DATETIME NULL;
+ALTER TABLE core.Containers ADD FileRootSize BIGINT;
+ALTER TABLE core.Containers ADD FileRootLastCrawled DATETIME;
+
+-- Adding a PK on RowId seemed like a good idea, but it broke existing lookups to core.Containers and other assumptions.
+-- We could add a PK on EntityId, but that column is currently nullable. For now, we'll just live without a PK.
+ALTER TABLE core.Containers ADD CONSTRAINT UQ_Containers_RowId UNIQUE CLUSTERED (RowId);
 
 -- table for all modules
 CREATE TABLE core.Modules
@@ -217,6 +224,7 @@ CREATE TABLE core.ContainerAliases
 );
 
 ALTER TABLE core.containeraliases ALTER COLUMN path NVARCHAR(4000);
+
 CREATE TABLE core.MappedDirectories
 (
     EntityId ENTITYID NOT NULL,
@@ -389,6 +397,7 @@ CREATE TABLE core.DataStates
 );
 
 ALTER TABLE core.DataStates ADD StateType NVARCHAR(20);
+ALTER TABLE core.datastates ADD Color NVARCHAR(7) NULL;
 
 CREATE TABLE core.APIKeys
 (
@@ -401,6 +410,9 @@ CREATE TABLE core.APIKeys
     CONSTRAINT PK_APIKeys PRIMARY KEY (RowId),
     CONSTRAINT UQ_CRYPT UNIQUE (Crypt)
 );
+
+ALTER TABLE core.APIKeys ADD Description NVARCHAR(256);
+ALTER TABLE core.APIKeys ADD LastUsed DATETIME;
 
 CREATE TABLE core.ReportEngines
 (
@@ -428,16 +440,6 @@ CREATE TABLE core.ReportEngineMap
 
     CONSTRAINT PK_ReportEngineMap PRIMARY KEY (EngineId, Container, EngineContext),
     CONSTRAINT FK_ReportEngineMap_ReportEngines FOREIGN KEY (EngineId) REFERENCES core.ReportEngines (RowId)
-);
-
-CREATE TABLE core.PrincipalRelations
-(
-    userid USERID NOT NULL,
-    otherid USERID NOT NULL,
-    relationship NVARCHAR(100) NOT NULL,
-    created DATETIME,
-
-    CONSTRAINT PK_PrincipalRelations PRIMARY KEY (userid, otherid, relationship)
 );
 
 CREATE TABLE core.AuthenticationConfigurations
@@ -918,5 +920,3 @@ BEGIN
 END;
 
 GO
-
-ALTER TABLE core.UsersData ADD LastActivity DATETIME NULL;

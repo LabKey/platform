@@ -1187,3 +1187,59 @@ BEGIN
     COMMIT
 END
 GO
+
+/* 24.xxx SQL scripts */
+
+CREATE TABLE exp.MaterialIndexed
+(
+    MaterialId INT NOT NULL,
+    LastIndexed DATETIME NOT NULL,
+
+    CONSTRAINT PK_MaterialIndexing PRIMARY KEY (MaterialId),
+    CONSTRAINT FK_MaterialId FOREIGN KEY (MaterialId) REFERENCES exp.Material (RowId) ON DELETE CASCADE
+);
+
+INSERT INTO exp.MaterialIndexed (MaterialId, LastIndexed) (SELECT RowId, LastIndexed FROM exp.Material WHERE LastIndexed IS NOT NULL);
+
+ALTER TABLE exp.Material DROP COLUMN LastIndexed;
+
+
+CREATE TABLE exp.DataIndexed
+(
+    DataId INT NOT NULL,
+    LastIndexed DATETIME NOT NULL,
+
+    CONSTRAINT PK_DataIndexing PRIMARY KEY (DataId),
+    CONSTRAINT FK_DataId FOREIGN KEY (DataId) REFERENCES exp.Data (RowId) ON DELETE CASCADE
+);
+
+INSERT INTO exp.DataIndexed (DataId, LastIndexed) (SELECT RowId, LastIndexed FROM exp.Data WHERE LastIndexed IS NOT NULL);
+
+ALTER TABLE exp.Data DROP COLUMN LastIndexed;
+
+CREATE TABLE exp.MaterialAncestors
+(
+    RowId INT NOT NULL,
+    AncestorRowId INT NOT NULL,
+    AncestorTypeId VARCHAR(11),
+
+    CONSTRAINT FK_MaterialAncestors_MaterialId FOREIGN KEY (RowId) REFERENCES exp.Material (RowId) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX UQ_MaterialAncestors_AncestorTypeId_RowId ON exp.MaterialAncestors (AncestorTypeId, RowId);
+CREATE INDEX IDX_MaterialAncestors_AncestorTypeId_RowId_AncestorRowId ON exp.MaterialAncestors (AncestorTypeId, RowId, AncestorRowId);
+
+CREATE TABLE exp.DataAncestors
+(
+    RowId INT NOT NULL,
+    AncestorRowId INT NOT NULL,
+    AncestorTypeId VARCHAR(11),
+
+    CONSTRAINT FK_DataAncestors_DataId FOREIGN KEY (RowId) REFERENCES exp.Data (RowId) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX UQ_DataAncestors_AncestorTypeId_RowId ON exp.DataAncestors (AncestorTypeId, RowId);
+CREATE INDEX IDX_DataAncestors_AncestorTypeId_RowId_AncestorRowId ON exp.DataAncestors (AncestorTypeId, RowId, AncestorRowId);
+
+DROP INDEX ix_material_cpastype on exp.material;
+CREATE INDEX ix_material_cpastype ON exp.material (cpastype, rowid);

@@ -865,7 +865,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         throw new ValidationException(error);
     }
 
-    public @NotNull Plate requirePlate(Container container, long plateRowId, @Nullable String errorPrefix) throws ValidationException
+    private @NotNull Plate requirePlate(Container container, long plateRowId, @Nullable String errorPrefix) throws ValidationException
     {
         return (Plate) require(getPlate(container, plateRowId), "Plate id \"" + plateRowId + "\" not found.", errorPrefix);
     }
@@ -1134,7 +1134,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return AssayDbSchema.getInstance().getSchema().getScope().ensureTransaction(locks);
     }
 
-    public long savePlateImpl(Container container, User user, @NotNull PlateImpl plate) throws Exception
+    private long savePlateImpl(Container container, User user, @NotNull PlateImpl plate) throws Exception
     {
         return savePlateImpl(container, user, plate, false);
     }
