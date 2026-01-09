@@ -47,6 +47,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -228,6 +229,12 @@ public class ExpSchema extends AbstractExpSchema
              {
                  return new ExpStaleSampleFilesTable(expSchema, cf);
              }
+
+            @Override
+            public boolean includeTable()
+            {
+                return AppProps.getInstance().isOptionalFeatureEnabled(SAMPLE_FILES_TABLE);
+            }
         },
         SampleStatus
         {
