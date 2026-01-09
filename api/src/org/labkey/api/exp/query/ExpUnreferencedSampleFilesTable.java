@@ -1,5 +1,6 @@
 package org.labkey.api.exp.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
@@ -38,11 +39,18 @@ public class ExpUnreferencedSampleFilesTable extends FilteredTable<ExpSchema>
             super(CoreSchema.getInstance().getSchema(), ExpSchema.SAMPLE_FILES_TABLE, schema);
 
             FileContentService svc = FileContentService.get();
+
             _query = new SQLFragment();
+            if (svc == null)
+                return;
             _query.appendComment("<SampleFileListTableInfo>", getSchema().getSqlDialect());
 
             TableInfo expDataTable = ExperimentService.get().getTinfoData();
             TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
+
+            SQLFragment listQuery = svc.listSampleFilesQuery(schema.getUser());
+            if (StringUtils.isEmpty(listQuery))
+                return;
 
             SQLFragment sampleFileSql = new SQLFragment("SELECT m.Container, if.FilePathShort \n")
                     .append("FROM (")
@@ -91,11 +99,6 @@ public class ExpUnreferencedSampleFilesTable extends FilteredTable<ExpSchema>
             var createdByCol = new BaseColumnInfo("CreatedBy", this, JdbcType.INTEGER);
             UserIdForeignKey.initColumn(createdByCol);
             addColumn(createdByCol);
-
-//            var referenceCol = new BaseColumnInfo("ReferenceCount", this, JdbcType.INTEGER);
-//            referenceCol.setHidden(true);
-//            addColumn(referenceCol);
-
         }
 
         @NotNull
