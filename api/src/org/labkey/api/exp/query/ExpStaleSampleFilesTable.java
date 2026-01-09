@@ -51,7 +51,7 @@ public class ExpStaleSampleFilesTable extends FilteredTable<ExpSchema>
                     .append(materialTable, "m")
                     .append(" ON if.SourceKey = m.RowId");
 
-            SQLFragment staleFileSql = new SQLFragment("SELECT ed.name as filename, ed.container, ed.created, ed.createdBy, ed.DataFileUrl FROM ")
+            SQLFragment staleFileSql = new SQLFragment("SELECT ed.rowId, ed.name as filename, ed.container, ed.created, ed.createdBy, ed.DataFileUrl FROM ")
                     .append(expDataTable, "ed")
                     .append(" LEFT JOIN (")
                     .append(sampleFileSql)
@@ -75,6 +75,11 @@ public class ExpStaleSampleFilesTable extends FilteredTable<ExpSchema>
                 filePathCol.setHidden(true);
                 addColumn(filePathCol);
             }
+
+            var rowIdCol = new BaseColumnInfo("RowId", this, JdbcType.INTEGER);
+            rowIdCol.setHidden(true);
+            rowIdCol.setKeyField(true);
+            addColumn(rowIdCol);
 
             var containerCol = new BaseColumnInfo("Container", this, JdbcType.VARCHAR);
             containerCol.setConceptURI(BuiltInColumnTypes.CONTAINERID_CONCEPT_URI);
