@@ -15,9 +15,7 @@
  */
 package org.labkey.list.view;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
@@ -50,24 +48,24 @@ public class ListItemType implements AttachmentParentType
     }
 
     @Override
-    public @Nullable SQLFragment getSelectParentEntityIdsSql()
+    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
         ListService svc = ListService.get();
         assert null != svc;
 
-        List<String> selectStatements = new LinkedList<>();
+        List<SQLFragment> selectStatements = new LinkedList<>();
 
         ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(c -> {
             Map<String, ListDefinition> map = svc.getLists(c, null, false);
             map.forEach((k, v) -> {
                 Domain domain = v.getDomain();
                 if (null != domain && domain.getProperties().stream().anyMatch(p -> p.getPropertyType() == PropertyType.ATTACHMENT))
-                    selectStatements.add("\n    SELECT EntityId AS ID FROM list." + domain.getStorageTableName());
+                    selectStatements.add(new SQLFragment("\n    SELECT EntityId, ? AS Description FROM list.", domain.getName()).append(domain.getStorageTableName()));
             });
         });
 
         return selectStatements.isEmpty() ?
-            NO_ENTITY_IDS : // No lists with attachment columns
-            new SQLFragment(StringUtils.join(selectStatements, "\n    UNION"));
+            NO_ROWS : // No lists with attachment columns
+            SQLFragment.join(selectStatements, new SQLFragment("\n    UNION"));
     }
 }

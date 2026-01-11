@@ -37,6 +37,7 @@ import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
@@ -48,6 +49,7 @@ import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ResultSetView;
 import org.labkey.api.data.RuntimeSQLException;
@@ -128,9 +130,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -280,7 +282,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             return;
 
         List<String> duplicates = findDuplicates(files);
-        if (duplicates.size() > 0)
+        if (!duplicates.isEmpty())
         {
             throw new AttachmentService.DuplicateFilenameException(duplicates);
         }
@@ -763,7 +765,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     public WebPartView<?> getFindAttachmentParentsView()
     {
         SQLFragment sql = new SQLFragment("SELECT RowId, CreatedBy, Created, ModifiedBy, Modified, Container, DocumentName, TableName FROM core.Documents LEFT OUTER JOIN (\n");
-        addSelectAllEntityIdsSql(sql, Sets.newCaseInsensitiveHashSet("Audit"));
+        addSelectAllEntityIdsSql(sql, null, Sets.newCaseInsensitiveHashSet("Audit"), false);
         sql.append(") c ON EntityId = Parent\nORDER BY TableName, DocumentName, Container");
 
         return getResultSetView(sql, "Probable Attachment Parents", null);
@@ -773,53 +775,64 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     // - Enumerate all tables in all schemas in the labkey scope
     // - Enumerate columns and identify potential attachment parents (currently, EntityId columns and ObjectIds extracted from LSIDs)
     // - Create a UNION query that selects the candidate ids along with a constant column that lists the table name
-    private void addSelectAllEntityIdsSql(SQLFragment sql, Set<String> userRequestedSchemasToIgnore)
+    private void addSelectAllEntityIdsSql(SQLFragment sql, @Nullable Set<String> userRequestedSchemas, Set<String> userRequestedSchemasToIgnore, boolean lsidsOnly)
     {
-        List<String> selectStatements = new LinkedList<>();
         Set<String> schemasToIgnore = Sets.newCaseInsensitiveHashSet(userRequestedSchemasToIgnore);
+        String documentsSelectName = CoreSchema.getInstance().getTableInfoDocuments().getSelectName();
+        if (documentsSelectName == null)
+            throw new IllegalStateException("core.Document select name is null");
 
         // Temp schema causes problems because materialized tables disappear but stay in the cached list. This is probably a bug with
         // MaterializedQueryHelper... it should clear the temp DbSchema when it deletes a temp table. TODO: fix MQH & remove this workaround
         schemasToIgnore.add("temp");
 
-        DbScope.getLabKeyScope().getSchemaNames().stream()
+        sql.append((userRequestedSchemas != null ? userRequestedSchemas.stream() : DbScope.getLabKeyScope().getSchemaNames().stream())
             .filter(schemaName->!schemasToIgnore.contains(schemaName)) // Exclude unwanted schema names
             .map(schemaName->DbSchema.get(schemaName, DbSchemaType.Bare))
-            .forEach(schema-> schema.getTableNames().stream()
-                .map(schema::getTable)
-                .filter(table->table.getTableType() == DatabaseTableType.TABLE) // We just want the underlying tables (no views or virtual tables)
-                .map(SchemaTableInfo::getColumns)
-                .flatMap(Collection::stream)
-                .filter(ColumnRenderProperties::isStringType)
-                .forEach(c->addSelectStatement(selectStatements, c))
-            );
-
-        sql.append(StringUtils.join(selectStatements, "    UNION\n"));
+            .flatMap(schema->schema.getTableNames().stream().map(schema::getTable))
+            .filter(table->table.getTableType() == DatabaseTableType.TABLE) // We just want the underlying tables (no views or virtual tables)
+            .filter(table->!documentsSelectName.equals(table.getSelectName())) // Don't join to the Documents table!
+            .map(SchemaTableInfo::getColumns)
+            .flatMap(Collection::stream)
+            .filter(ColumnRenderProperties::isStringType)
+            .map(c->getSelectStatement(c, lsidsOnly))
+            .filter(Objects::nonNull)
+            .collect(LabKeyCollectors.joining(new SQLFragment("    UNION\n"))));
     }
 
-    private void addSelectStatement(List<String> selectStatements, ColumnInfo column)
+    private SQLFragment getSelectStatement(ColumnInfo column, boolean lsidsOnly)
     {
-        String expression;
-        String where = null;
+        SQLFragment expression;
+        SQLFragment where = null;
 
-        if (Strings.CI.contains(column.getName(), "EntityId"))
+        if (column.getJdbcType() == JdbcType.GUID && !lsidsOnly)
         {
-            // TODO convert all this to use SQLFragment
-            expression = column.getSelectIdentifier().getSql().getRawSQL();
+            expression = column.getSelectIdentifier().getSql();
         }
         else if (Strings.CI.endsWith(column.getName(), "LSID"))
         {
-            Pair<String, String> pair = Lsid.getSqlExpressionToExtractObjectId(column.getSelectIdentifier().getSql().getRawSQL(), column.getSqlDialect());
+            Pair<SQLFragment, SQLFragment> pair = Lsid.getSqlExpressionToExtractObjectId(column.getSelectIdentifier().getSql(), column.getSqlDialect());
             expression = pair.first;
             where = pair.second;
         }
         else
         {
-            return;
+             return null;
         }
 
         TableInfo table = column.getParentTable();
-        selectStatements.add("    SELECT " + expression + " AS EntityId, " + table.getSqlDialect().quoteStringLiteral(table.getSelectName()) + " AS TableName FROM " + table.getSelectName() + (null != where ? " WHERE " + where : "") + "\n");
+        SQLFragment sql = new SQLFragment("    SELECT ")
+            .append(expression)
+            .append(" AS EntityId, ? AS TableName FROM ")
+            .add(table.getSelectName())
+            .append(table);
+
+        if (null != where)
+            sql.append(" WHERE ").append(where);
+
+        sql.append("\n");
+
+        return sql;
     }
 
     private WebPartView<?> getResultSetView(SQLFragment sql, String title, @Nullable ActionURL linkUrl)
@@ -1752,6 +1765,19 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             service.deleteAttachment(root, file2.getName(), user);
             attachments = service.getAttachments(root);
             assertEquals(originalCount, attachments.size());
+        }
+
+        // Tests the ability to extract EntityIds from data class LSIDs
+        @Test
+        public void testLsidGuidExtraction()
+        {
+            SQLFragment sql = new SQLFragment();
+            new AttachmentServiceImpl().addSelectAllEntityIdsSql(sql, Set.of("expdataclass"), Set.of(), true);
+            new SqlSelector(DbScope.getLabKeyScope(), sql).forEach(rs -> {
+                String entityId = rs.getString("entityid");
+                if (!GUID.isGUID(entityId))
+                    fail(entityId + " from " + rs.getString("tablename") + " is not a valid GUID");
+            });
         }
     }
 }

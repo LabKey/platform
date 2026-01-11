@@ -16,10 +16,10 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 
 public class AuthenticationLogoType implements AttachmentParentType
 {
@@ -41,8 +41,13 @@ public class AuthenticationLogoType implements AttachmentParentType
     }
 
     @Override
-    public @Nullable SQLFragment getSelectParentEntityIdsSql()
+    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
-        return new SQLFragment("SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), "acs");
+        TableInfo table = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
+
+        return new SQLFragment("SELECT EntityId, ")
+            .append(table.getSqlDialect().concatenate("'Configuration #'", "CAST(RowId AS VARCHAR)"))
+            .append(" AS Description FROM ")
+            .append(table, "acs");
     }
 }

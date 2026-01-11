@@ -49,4 +49,11 @@ public class LookAndFeelResourceType implements AttachmentParentType
         sql.append(documentNameColumn).append(" LIKE '" + AttachmentCache.LOGO_FILE_NAME_PREFIX + "%' OR ");
         sql.append(documentNameColumn).append(" LIKE '" + AttachmentCache.MOBILE_LOGO_FILE_NAME_PREFIX + "%')");
     }
+
+    @Override
+    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
+    {
+        return new SQLFragment("SELECT EntityId, CASE WHEN Name IS NULL THEN '<Root>' ELSE Name END AS Description FROM ")
+            .append(CoreSchema.getInstance().getTableInfoContainers());
+    }
 }

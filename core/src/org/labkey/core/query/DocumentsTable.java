@@ -1,11 +1,20 @@
 package org.labkey.core.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.LabKeyCollectors;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserIdQueryForeignKey;
+
+import java.util.Objects;
 
 public class DocumentsTable extends FilteredTable<CoreQuerySchema>
 {
@@ -23,5 +32,26 @@ public class DocumentsTable extends FilteredTable<CoreQuerySchema>
         getMutableColumnOrThrow("DocumentSize").setFormat("#,##0");
         getMutableColumnOrThrow("Document").setHidden(true);
         getMutableColumnOrThrow("LastIndexed").setHidden(true);
+        addColumn(new BaseColumnInfo("ParentDescription", this, JdbcType.VARCHAR));
+    }
+
+    @Override
+    public @NotNull SQLFragment getFromSQL(String alias)
+    {
+        SqlDialect dialect = getSqlDialect();
+        AliasManager am = new AliasManager(dialect);
+        SQLFragment parents = AttachmentService.get().getAttachmentParentTypes().stream()
+            .map(type -> new SQLFragment("SELECT ? AS ParentType, EntityId, Description FROM (")
+                .add(type.getUniqueName())
+                .append(type.getSelectEntityIdAndDescriptionSql())
+                .append(") ")
+                .appendIdentifier(am.decideAlias("x")))
+            .filter(Objects::nonNull)
+            .collect(LabKeyCollectors.joining(new SQLFragment("\nUNION\n")));
+
+        return new SQLFragment("(SELECT d.*, CASE WHEN EntityId IS NULL THEN '<Parent Is Missing>' ELSE p.Description END AS ParentDescription FROM core.Documents d LEFT JOIN (\n")
+            .append(parents)
+            .append("\n) p ON d.Parent = p.EntityId AND d.ParentType = p.ParentType) ")
+            .append(alias);
     }
 }

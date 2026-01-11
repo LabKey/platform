@@ -15,9 +15,7 @@
  */
 package org.labkey.experiment.api;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -55,17 +53,17 @@ public class ExpDataClassType implements AttachmentParentType
     }
 
     @Override
-    public @Nullable SQLFragment getSelectParentEntityIdsSql()
+    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
         TableInfo tableInfo = ExperimentService.get().getTinfoDataClass();
 
         // Get a dialect-specific expression that can extract an ObjectId from the LSID column and a WHERE clause to
         // filter the rows to LSIDs containing ObjectIds
-        Pair<String, String> pair = Lsid.getSqlExpressionToExtractObjectId("LSID", tableInfo.getSqlDialect());
-        String expressionToExtractObjectId = pair.first;
-        String where = pair.second;
+        Pair<SQLFragment, SQLFragment> pair = Lsid.getSqlExpressionToExtractObjectId(new SQLFragment("LSID"), tableInfo.getSqlDialect());
+        SQLFragment expressionToExtractObjectId = pair.first;
+        SQLFragment where = pair.second;
 
-        List<String> selectStatements = new LinkedList<>();
+        List<SQLFragment> selectStatements = new LinkedList<>();
 
         // Enumerate the rows in exp.DataClass
         new TableSelector(tableInfo, PageFlowUtil.set("Container", "LSID")).forEach(rs->{
@@ -77,12 +75,18 @@ public class ExpDataClassType implements AttachmentParentType
             // Add a select for the ObjectIds in this ExpDataClass if the domain includes an attachment column. ExpDataClass attachments
             // use the LSID's ObjectId as the attachment parent EntityId, so we need to use a SQL expression to extract it.
             if (null != domain && domain.getProperties().stream().anyMatch(p -> p.getPropertyType() == PropertyType.ATTACHMENT))
-                selectStatements.add("\n    SELECT " + expressionToExtractObjectId + " AS ID FROM expdataclass." + domain.getStorageTableName() + " WHERE " + where);
+                selectStatements.add(
+                    new SQLFragment("\n    SELECT ")
+                        .append(expressionToExtractObjectId)
+                        .append(" AS EntityId, Name AS Description FROM expdataclass.")
+                        .append(domain.getStorageTableName())
+                        .append(" WHERE ").append(where)
+                );
         });
 
         return selectStatements.isEmpty() ?
-            NO_ENTITY_IDS : // No ExpDataClasses with attachment columns
-            new SQLFragment(StringUtils.join(selectStatements, "\n    UNION"));
+            NO_ROWS : // No ExpDataClasses with attachment columns
+            SQLFragment.join(selectStatements, new SQLFragment("\n    UNION"));
     }
 }
 
