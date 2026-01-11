@@ -36,12 +36,6 @@ public interface AttachmentParentType
         }
 
         @Override
-        public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
-        {
-            sql.append("0 = 1");
-        }
-
-        @Override
         public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
         {
             return NO_ROWS;

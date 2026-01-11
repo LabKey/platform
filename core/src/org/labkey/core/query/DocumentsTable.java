@@ -33,6 +33,9 @@ public class DocumentsTable extends FilteredTable<CoreQuerySchema>
         getMutableColumnOrThrow("Document").setHidden(true);
         getMutableColumnOrThrow("LastIndexed").setHidden(true);
         addColumn(new BaseColumnInfo("ParentDescription", this, JdbcType.VARCHAR));
+        BaseColumnInfo orphaned = new BaseColumnInfo("Orphaned", this, JdbcType.BOOLEAN);
+        orphaned.setHidden(true);
+        addColumn(orphaned);
     }
 
     @Override
@@ -49,7 +52,11 @@ public class DocumentsTable extends FilteredTable<CoreQuerySchema>
             .filter(Objects::nonNull)
             .collect(LabKeyCollectors.joining(new SQLFragment("\nUNION\n")));
 
-        return new SQLFragment("(SELECT d.*, CASE WHEN EntityId IS NULL THEN '<Parent Is Missing>' ELSE p.Description END AS ParentDescription FROM core.Documents d LEFT JOIN (\n")
+        return new SQLFragment("(SELECT d.*, p.Description AS ParentDescription, ")
+            .append(dialect.wrapBooleanExpression(new SQLFragment("EntityId IS NULL")))
+            .append(" AS Orphaned FROM ")
+            .append(super.getFromSQL("d")) // core.Documents with container filter applied
+            .append(" LEFT JOIN (\n")
             .append(parents)
             .append("\n) p ON d.Parent = p.EntityId AND d.ParentType = p.ParentType) ")
             .append(alias);
