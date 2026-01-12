@@ -40,7 +40,7 @@ public class SimpleConnectionWrapper implements java.sql.Connection
     public Array createArrayOf(String unused, Object[] array) throws SQLException
     {
         SqlDialect dialect = _scope.getSqlDialect();
-        String typeName = dialect.getJDBCArrayType(array[0]);
+        String typeName = dialect.getJDBCArrayType(array);
         return _connection.createArrayOf(typeName, array);
     }
 
