@@ -173,7 +173,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
 
         String url = null;
         String threadName = null;
-        if (MiniProfiler.isCollectTroubleshootingStackTraces() || true) // TODO - remove hack!
+        if (MiniProfiler.isCollectTroubleshootingStackTraces())
         {
             // Stash stack trace that created this CachedRowSet
             if (null == stackTrace)
