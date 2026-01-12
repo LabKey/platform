@@ -220,6 +220,18 @@ public class ContainerTable extends FilteredTable<UserSchema>
         }
 
         @Override
+        public boolean isSortable()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isFilterable()
+        {
+            return false;
+        }
+
+        @Override
         protected String transformValue(Integer rawValue)
         {
             if (rawValue == null)
