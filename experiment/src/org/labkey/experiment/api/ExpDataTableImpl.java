@@ -233,6 +233,8 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         return customProps;
     }
 
+    // This is included in exp.data, not just exp.files because we want to be able to show a filtered view of
+    // sample files from our applications, and exp.files will not show subfolders
     private MutableColumnInfo getFileLinkReferenceCountColumn()
     {
         var result = wrapColumn(Column.ReferenceCount.name(), _rootTable.getColumn("RowId"));
