@@ -150,6 +150,7 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
         Domain dataDomain = provider.getResultsDomain(protocol);
         DataLoaderSettings loaderSettings = new DataLoaderSettings();
         loaderSettings.setAllowUnexpectedColumns(true);
+        loaderSettings.setBestEffortConversion(true); // GitHub Issue 751: setBestEffortConversion to match TsvDataExchangeHandler._writeRunData
 
         return context -> {
             FileLike fo = new FileSystemLike.Builder(runData.toURI()).readonly().root();
