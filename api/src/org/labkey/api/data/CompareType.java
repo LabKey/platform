@@ -808,7 +808,7 @@ public abstract class CompareType
         }
     };
 
-    public Collection getCollectionParam(Object value)
+    protected Collection getCollectionParam(Object value)
     {
         if (value instanceof Collection)
         {
@@ -831,6 +831,7 @@ public abstract class CompareType
             return values;
         }
     }
+
     /** TODO:
      *             <xsd:enumeration value="arrayisempty"/>
      *             <xsd:enumeration value="arrayisnotempty"/>

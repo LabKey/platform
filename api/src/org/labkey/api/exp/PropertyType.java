@@ -240,6 +240,8 @@ public enum PropertyType
                 property.arrayValue = MultiChoice.Array.from(array);
             else if (value != null)
                 property.arrayValue = MultiChoice.Array.from(new Object[]{value});
+            else
+                property.arrayValue = null;
         }
 
         @Override

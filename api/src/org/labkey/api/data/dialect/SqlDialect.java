@@ -1303,7 +1303,7 @@ public abstract class SqlDialect
     public String getJDBCArrayType(Object[] array)
     {
         String typeName;
-        if (array.length == 0)
+        if (array.length == 0 || array[0] == null)
         {
             // Handle empty arrays by inferring the SQL element type from the Java component type.
             // Primary target is String[0], but handle a reasonable set of common types defensively.
