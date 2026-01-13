@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.logging.log4j.LogManager;
+import java.lang.ref.Cleaner;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -54,6 +55,73 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     private final StackTraceElement[] _debugCreated;
     protected boolean _wasClosed = false;
 
+
+    private static final Cleaner CLEANER = Cleaner.create();
+
+    private static class ResultSetState implements Runnable
+    {
+        private final String _creatingThreadName;
+        private final StackTraceElement[] _debugCreated;
+        private final @Nullable DbScope _scope;
+        private final @Nullable Connection _connection;
+        private final ResultSet _rs; // This is the underlying result set
+
+        private boolean _wasClosed = false;
+
+        private ResultSetState(String creatingThreadName, StackTraceElement[] debugCreated, @Nullable DbScope scope, @Nullable Connection connection, ResultSet rs)
+        {
+            _creatingThreadName = creatingThreadName;
+            _debugCreated = debugCreated;
+            _scope = scope;
+            _connection = connection;
+            _rs = rs;
+        }
+
+        @Override
+        public void run()
+        {
+            if (!_wasClosed)
+            {
+                _log.error("ResultSet was not closed. Created by thread " + _creatingThreadName + " with stacktrace: " + ExceptionUtil.renderStackTrace(_debugCreated));
+                close();
+            }
+        }
+
+        private void close()
+        {
+            if (!_wasClosed)
+            {
+                try
+                {
+                    if (null != _scope)
+                    {
+                        Statement stmt = _rs.getStatement();
+                        _rs.close();
+                        if (stmt != null)
+                        {
+                            stmt.close();
+                        }
+                        _scope.releaseConnection(_connection);
+                    }
+                    else
+                    {
+                        _rs.close();
+                    }
+                }
+                catch (SQLException e)
+                {
+                    _log.error("Error closing ResultSet", e);
+                }
+                finally
+                {
+                    _wasClosed = true;
+                }
+            }
+        }
+    }
+
+    private final ResultSetState _state;
+    private final Cleaner.Cleanable _cleanable;
 
     public ResultSetImpl(ResultSet rs, QueryLogging queryLogging)
     {
@@ -95,6 +163,8 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
             throw new RuntimeSQLException(e);
         }
         _scope = scope;
+        _state = new ResultSetState(_creatingThreadName, _debugCreated, _scope, _connection, rs);
+        _cleanable = CLEANER.register(this, _state);
     }
 
 
@@ -176,20 +246,8 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
         }
         else
         {
-            // Uncached case... close everything down
-            if (null != _scope)
-            {
-                Statement stmt = getStatement();
-                super.close();
-                if (stmt != null)
-                {
-                    stmt.close();
-                }
-                _scope.releaseConnection(_connection);
-            }
-            else
-                super.close();
-
+            _state.close();
+            _cleanable.clean();
             _wasClosed = true;
         }
     }
@@ -213,16 +271,6 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     }
 
 
-    @Override
-    protected void finalize() throws Throwable
-    {
-        if (!_wasClosed)
-        {
-            close();
-            _log.error("ResultSet was not closed. Created by thread " + _creatingThreadName + " with stacktrace: " + ExceptionUtil.renderStackTrace(_debugCreated));
-        }
-        super.finalize();
-    }
 
     @Override
     public @Nullable Connection getConnection()

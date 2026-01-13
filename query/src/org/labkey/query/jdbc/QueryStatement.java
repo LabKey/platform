@@ -45,13 +45,6 @@ public class QueryStatement implements Statement
         _conn = conn;
     }
 
-    @Override
-    protected void finalize() throws Throwable
-    {
-        assert null == _rs;
-        assert _closed;
-        super.finalize();
-    }
 
     @Override
     public ResultSet executeQuery(String s) throws SQLException

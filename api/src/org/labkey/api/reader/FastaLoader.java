@@ -18,6 +18,7 @@ package org.labkey.api.reader;
 import org.labkey.vfs.FileLike;
 
 import java.io.BufferedReader;
+import java.lang.ref.Cleaner;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
@@ -53,10 +54,33 @@ public abstract class FastaLoader<T> implements Iterable<T>
         U createNext(String header, byte[] body);
     }
 
+    private static final Cleaner CLEANER = Cleaner.create();
+
+    private static class FastaIteratorState implements Runnable
+    {
+        private BufferedReader _reader;
+
+        @Override
+        public void run()
+        {
+            if (null != _reader)
+            {
+                try
+                {
+                    _reader.close();
+                }
+                catch (IOException ignored) {}
+                _reader = null;
+            }
+        }
+    }
+
     public class FastaIterator implements Iterator<T>
     {
+        private final FastaIteratorState _state = new FastaIteratorState();
+        private final Cleaner.Cleanable _cleanable = CLEANER.register(this, _state);
+
         private String _header = null;
-        private BufferedReader _reader = null;
 
         // Various measures of where we are in the file to help with progress and error reporting.
         private boolean _beforeFirst = true;
@@ -72,7 +96,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
             try
             {
                 // Detect Charset encoding based on BOM
-                _reader = Readers.getBOMDetectingReader(_fastaFile.getName().toLowerCase().endsWith(".gz") ? new GZIPInputStream(_fastaFile.openInputStream()): _fastaFile.openInputStream());
+                _state._reader = Readers.getBOMDetectingReader(_fastaFile.getName().toLowerCase().endsWith(".gz") ? new GZIPInputStream(_fastaFile.openInputStream()): _fastaFile.openInputStream());
 
                 String line = getLine();
 
@@ -84,22 +108,14 @@ public abstract class FastaLoader<T> implements Iterable<T>
                 }
                 else
                 {
-                    if (null != _reader)
-                        _reader.close();
+                    _state.run();
 
                     throw new IllegalArgumentException("Invalid FASTA file. The file did not start with \">\".");
                 }
             }
             catch (IOException x)
             {
-                if (null != _reader)
-                {
-                    try
-                    {
-                        _reader.close();
-                    }
-                    catch (IOException ignored) {}
-                }
+                _state.run();
             }
 
             _beforeFirst = false;
@@ -108,7 +124,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
 
         private String getLine() throws IOException
         {
-            String line = _reader.readLine();
+            String line = _state._reader.readLine();
 
             if (null != line)
             {
@@ -132,18 +148,6 @@ public abstract class FastaLoader<T> implements Iterable<T>
                 init();
 
             return null != _header;
-        }
-
-        /**
-         * Closes file just in case.
-         * @throws java.io.IOException if file is not closeable
-         */
-        @Override
-        protected void finalize() throws Throwable
-        {
-            super.finalize();    //If iteration is not complete, still close the file...
-            if (null != _reader)
-                _reader.close();
         }
 
         /**
@@ -219,14 +223,8 @@ public abstract class FastaLoader<T> implements Iterable<T>
          */
         public void close()
         {
-            if (null != _reader)
-                try
-                {
-                    _reader.close();
-                }
-                catch (IOException ignored) {}
-
-            _reader = null;
+            _state.run();
+            _cleanable.clean();
             _header = null;
         }
 
