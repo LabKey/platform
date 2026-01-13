@@ -96,6 +96,7 @@
             <xsd:enumeration value="arraycontainsall"/>
             <xsd:enumeration value="arraycontainsany"/>
             <xsd:enumeration value="arraymatches"/>
+            <xsd:enumeration value="arraynotmatches"/>
             <xsd:enumeration value="arraycontainsnone"/>
             <xsd:enumeration value="arrayisempty"/>
             <xsd:enumeration value="arrayisnotempty"/>
