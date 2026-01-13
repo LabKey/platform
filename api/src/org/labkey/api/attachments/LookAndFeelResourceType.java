@@ -53,7 +53,6 @@ public class LookAndFeelResourceType implements AttachmentParentType
     @Override
     public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
-        return new SQLFragment("SELECT EntityId, CASE WHEN Name IS NULL THEN '<Root>' ELSE Name END AS Description FROM ")
-            .append(CoreSchema.getInstance().getTableInfoContainers());
+        return PARENT_CONTAINER_SQL;
     }
 }

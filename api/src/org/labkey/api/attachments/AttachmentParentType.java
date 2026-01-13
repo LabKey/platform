@@ -16,6 +16,7 @@
 package org.labkey.api.attachments;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 
 /**
@@ -25,6 +26,8 @@ import org.labkey.api.data.SQLFragment;
 public interface AttachmentParentType
 {
     SQLFragment NO_ROWS = new SQLFragment("SELECT NULL AS EntityId, NULL AS Description WHERE 1 = 0");
+    SQLFragment PARENT_CONTAINER_SQL = new SQLFragment("SELECT EntityId, COALESCE(Name, '<Root>') AS Description FROM ")
+        .append(CoreSchema.getInstance().getTableInfoContainers());
 
     AttachmentParentType UNKNOWN = new AttachmentParentType()
     {
