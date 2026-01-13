@@ -1127,7 +1127,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public JSONObject getPageContextJson(ContainerUser context)
     {
-        JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
+        JSONObject json = super.getPageContextJson(context);
         json.put(SAMPLE_FILES_TABLE, OptionalFeatureService.get().isFeatureEnabled(SAMPLE_FILES_TABLE));
         return json;
     }

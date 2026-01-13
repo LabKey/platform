@@ -95,7 +95,7 @@ public interface FileListener
      */
     SQLFragment listFilesQuery();
 
-    default SQLFragment listSampleFilesQuery()
+    @Nullable default SQLFragment listSampleFilesQuery()
     {
         return null;
     }

@@ -30,11 +30,11 @@ public class ExpUnreferencedSampleFilesTable extends FilteredTable<ExpSchema>
         return new ExpUnreferencedSampleFilesTable.FileUnionTable(schema);
     }
 
-    private static class FileUnionTable extends VirtualTable
+    private static class FileUnionTable extends VirtualTable<ExpSchema>
     {
         private final SQLFragment _query;
 
-        public FileUnionTable(@NotNull UserSchema schema)
+        public FileUnionTable(@NotNull ExpSchema schema)
         {
             super(CoreSchema.getInstance().getSchema(), ExpSchema.SAMPLE_FILES_TABLE, schema);
 
@@ -43,14 +43,15 @@ public class ExpUnreferencedSampleFilesTable extends FilteredTable<ExpSchema>
             _query = new SQLFragment();
             if (svc == null)
                 return;
-            _query.appendComment("<SampleFileListTableInfo>", getSchema().getSqlDialect());
-
-            TableInfo expDataTable = ExperimentService.get().getTinfoData();
-            TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
 
             SQLFragment listQuery = svc.listSampleFilesQuery(schema.getUser());
             if (StringUtils.isEmpty(listQuery))
                 return;
+
+            TableInfo expDataTable = ExperimentService.get().getTinfoData();
+            TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
+
+            _query.appendComment("<SampleFileListTableInfo>", getSchema().getSqlDialect());
 
             SQLFragment sampleFileSql = new SQLFragment("SELECT m.Container, if.FilePathShort \n")
                     .append("FROM (")

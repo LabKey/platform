@@ -1242,7 +1242,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         for (FileListener fileListener : _fileListeners)
         {
             SQLFragment subselect = fileListener.listSampleFilesQuery();
-            if (subselect != null)
+            if (subselect != null && !subselect.isEmpty())
             {
                 frag.append(union);
                 frag.append(subselect);
@@ -1250,7 +1250,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             }
         }
         frag.append(")");
-        return frag;
+        return union.isEmpty() ? new SQLFragment() : frag;
     }
 
     @Override

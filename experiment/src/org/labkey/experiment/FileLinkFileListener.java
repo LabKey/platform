@@ -326,7 +326,7 @@ public class FileLinkFileListener implements FileListener
         final SQLFragment frag = new SQLFragment();
 
         hardTableFileLinkColumns((schema, table, pathColumn, containerId, domainUri) -> {
-            if (schema.getName().equals("expsampleset"))
+            if (PROVISIONED_SCHEMA_NAME.equalsIgnoreCase(schema.getName()))
             {
                 SQLFragment containerFrag = new SQLFragment("?", containerId);
                 TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath, "rowid", containerFrag);

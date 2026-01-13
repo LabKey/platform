@@ -112,7 +112,6 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         getMutableColumn(Column.Name).setURL(detailsURL);
         ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteDatasURL(getContainer(), null);
         setDeleteURL(new DetailsURL(deleteUrl));
-
     }
 
     public void setDefaultColumns(List<String> customProps)
