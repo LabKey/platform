@@ -1817,7 +1817,7 @@ boxPlot.render();
                 if (conversion === LABKEY.vis.PlotProperties.ValueConversion.PercentDeviation) {
                     row[valProp] = convertToPercentDeviation(row[valProp], row[meanProp]);
                 }
-                if (conversion === LABKEY.vis.PlotProperties.ValueConversion.DeltaFromMean) {
+                else if (conversion === LABKEY.vis.PlotProperties.ValueConversion.DeltaFromMean) {
                     row[valProp] = convertToDeltaFromMean(row[valProp], row[meanProp]);
                 }
                 else {
@@ -1829,7 +1829,7 @@ boxPlot.render();
                 if (conversion === LABKEY.vis.PlotProperties.ValueConversion.PercentDeviation) {
                     row[valRightProp] = convertToPercentDeviation(row[valRightProp], row[meanProp]);
                 }
-                if (conversion === LABKEY.vis.PlotProperties.ValueConversion.DeltaFromMean) {
+                else if (conversion === LABKEY.vis.PlotProperties.ValueConversion.DeltaFromMean) {
                     row[valRightProp] = convertToDeltaFromMean(row[valRightProp], row[meanProp]);
                 }
                 else {
