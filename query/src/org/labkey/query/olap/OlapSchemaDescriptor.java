@@ -16,6 +16,7 @@
 package org.labkey.query.olap;
 
 import org.apache.commons.io.IOUtils;
+import java.lang.ref.Cleaner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -48,6 +49,26 @@ import java.util.Map;
  */
 public abstract class OlapSchemaDescriptor
 {
+    private static final Cleaner CLEANER = Cleaner.create();
+
+    private static class OlapState implements Runnable
+    {
+        private File _tmpFile;
+
+        @Override
+        public void run()
+        {
+            if (null != _tmpFile)
+            {
+                _tmpFile.delete();
+                _tmpFile = null;
+            }
+        }
+    }
+
+    private final OlapState _state = new OlapState();
+    private final Cleaner.Cleanable _cleanable = CLEANER.register(this, _state);
+
     private final Module _module;
     private final String _id;
     private final String _name;
@@ -256,6 +277,7 @@ public abstract class OlapSchemaDescriptor
             if (null == tmpFile)
             {
                 tmpFile = FileUtil.createTempFile("olap", getName());
+                _state._tmpFile = tmpFile;
                 tmpFile.deleteOnExit();
                 try (
                     FileOutputStream out = new FileOutputStream(tmpFile);
@@ -268,18 +290,4 @@ public abstract class OlapSchemaDescriptor
         return tmpFile;
     }
 
-    // TODO use ReferenceQueue to do cleanup instead of finalize()
-    @Override
-    protected void finalize() throws Throwable
-    {
-        try
-        {
-            if (null != tmpFile)
-                tmpFile.delete();
-        }
-        finally
-        {
-            super.finalize();
-        }
-    }
 }

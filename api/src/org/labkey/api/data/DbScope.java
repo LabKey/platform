@@ -1878,7 +1878,7 @@ public class DbScope
             stmt.setString(1, databaseName);
             stmt.setString(2, applicationName);
 
-            try (CachedResultSet rs = CachedResultSets.create(stmt.executeQuery(), true, 1000))
+            try (CachedResultSet rs = CachedResultSets.create(stmt.executeQuery(), true, true, 1000))
             {
                 count = rs.getSize();
                 if (count != 0)

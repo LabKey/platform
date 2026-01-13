@@ -16,6 +16,7 @@
 package org.labkey.api.reports.report.r;
 
 import org.rosuda.REngine.Rserve.RConnection;
+import java.lang.ref.Cleaner;
 
 import javax.script.ScriptException;
 import jakarta.servlet.http.HttpSessionBindingEvent;
@@ -27,6 +28,29 @@ import java.util.HashSet;
 //
 public class RConnectionHolder implements HttpSessionBindingListener
 {
+    private static final Cleaner CLEANER = Cleaner.create();
+
+    private static class RConnectionState implements Runnable
+    {
+        private RConnection _connection;
+
+        @Override
+        public void run()
+        {
+            if (_connection != null)
+            {
+                if (_connection.isConnected())
+                {
+                    _connection.close();
+                }
+                _connection = null;
+            }
+        }
+    }
+
+    private final RConnectionState _state = new RConnectionState();
+    private final Cleaner.Cleanable _cleanable = CLEANER.register(this, _state);
+
     RConnection _connection;
     boolean _inUse;
     Object _clientContext; // client supplied value to help identify a report session
@@ -45,11 +69,6 @@ public class RConnectionHolder implements HttpSessionBindingListener
         }
     }
 
-    @Override
-    protected void finalize()
-    {
-        close();
-    }
 
     public static HashSet<String> getReportSessions()
     {
@@ -84,6 +103,7 @@ public class RConnectionHolder implements HttpSessionBindingListener
         {
             close();
             _connection = connection;
+            _state._connection = connection;
         }
     }
 
@@ -136,13 +156,8 @@ public class RConnectionHolder implements HttpSessionBindingListener
 
     private void close()
     {
-        if (_connection != null)
-        {
-            if (_connection.isConnected())
-            {
-                _connection.close();
-            }
-            _connection = null;
-        }
+        _state.run();
+        _cleanable.clean();
+        _connection = null;
     }
 }

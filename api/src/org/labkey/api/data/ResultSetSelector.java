@@ -103,7 +103,7 @@ public class ResultSetSelector extends NonSqlExecutingSelector<ResultSetSelector
     {
         if (cache)
         {
-            return CachedResultSets.create(rs, true, Table.ALL_ROWS).setRequireClose(requireClose);
+            return CachedResultSets.create(rs, true, requireClose, Table.ALL_ROWS);
         }
         else
         {
