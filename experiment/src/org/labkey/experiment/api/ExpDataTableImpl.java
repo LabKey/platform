@@ -243,38 +243,33 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         result.setHidden(true);
         result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
         {
-            @Override
-            protected void renderData(HtmlWriter out, ExpData data)
+            private Long getCount(ExpData data)
             {
-
-                if (data == null || StringUtils.isEmpty(data.getDataFileUrl()))
-                    out.write("");
+                if (data == null || StringUtils.isEmpty(data.getDataFileUrl()) || data.getFile() == null)
+                    return null;
                 else
                 {
                     FileLinkFileListener fileListener = new FileLinkFileListener();
                     SQLFragment unionSql = fileListener.listFilesQuery(true, data.getFile().getAbsolutePath());
 
-                    long count = new SqlSelector(CoreSchema.getInstance().getSchema(), unionSql).getRowCount();
-
-                    out.write(count);
+                    return new SqlSelector(CoreSchema.getInstance().getSchema(), unionSql).getRowCount();
                 }
+            }
+
+            @Override
+            protected void renderData(HtmlWriter out, ExpData data)
+            {
+                Long val = getCount(data);
+                if (val == null)
+                    out.write("");
+                else
+                    out.write(val);
             }
 
             @Override
             protected Object getJsonValue(ExpData data)
             {
-                Object val;
-                if (data == null || StringUtils.isEmpty(data.getDataFileUrl()))
-                    val = null;
-                else
-                {
-                    FileLinkFileListener fileListener = new FileLinkFileListener();
-                    SQLFragment unionSql = fileListener.listFilesQuery(true, data.getFile().getAbsolutePath());
-
-                    val = new SqlSelector(CoreSchema.getInstance().getSchema(), unionSql).getRowCount();
-
-                }
-                return val;
+                return getCount(data);
             }
         });
         return result;
