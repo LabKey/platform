@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import java.lang.ref.Cleaner;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,7 +26,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ResultSetUtil;
@@ -77,13 +77,8 @@ public class CachedResultSet implements ResultSet, TableResultSet
     // data
     private final ArrayList<RowMap<Object>> _rowMaps;
     private final boolean _isComplete;
-    @Nullable
-    private final StackTraceElement[] _stackTrace;
-    private final String _threadName;
 
     private boolean _wasClosed = false;
-    private boolean _requireClose = true;
-    private String _url = null;
 
     // state
     private int _row = -1;
@@ -91,13 +86,69 @@ public class CachedResultSet implements ResultSet, TableResultSet
     private int _fetchSize = 1;
     private Object _lastObject = null;
 
+    private static final Cleaner CLEANER = Cleaner.create();
+
+    private static class CachedResultSetState implements Runnable
+    {
+        private final boolean _requireClose;
+        private final @Nullable StackTraceElement[] _stackTrace;
+        private final String _threadName;
+        private final String _url;
+        private final Logger _log;
+
+        private boolean _wasClosed = false;
+
+        private CachedResultSetState(boolean requireClose, @Nullable StackTraceElement[] stackTrace, String threadName, String url, Logger log)
+        {
+            _requireClose = requireClose;
+            _stackTrace = stackTrace;
+            _threadName = threadName;
+            _url = url;
+            _log = log;
+        }
+
+        @Override
+        public void run()
+        {
+            if (!_wasClosed)
+            {
+                if (_requireClose)
+                {
+                    StringBuilder error = new StringBuilder("CachedResultSet was not closed.");
+                    if (null != _threadName)
+                    {
+                        error.append(" Created by thread ").append(_threadName);
+                    }
+                    if (null != _url)
+                    {
+                        error.append(" for URL ").append(_url);
+                    }
+                    if (null != _stackTrace)
+                    {
+                        error.append("\n").append(ExceptionUtil.renderStackTrace(_stackTrace));
+                    }
+                    _log.error(error);
+                }
+                _wasClosed = true;
+            }
+        }
+
+        private void close()
+        {
+            _wasClosed = true;
+        }
+    }
+
+    private final CachedResultSetState _state;
+    private final Cleaner.Cleanable _cleanable;
+
 
     /*
         Constructor is not normally used... see CachedResultSets for static factory methods.
 
         stackTrace is used to set an alternate stack trace -- good for async queries, to indicate original creation stack trace
      */
-    CachedResultSet(ResultSetMetaData md, ArrayList<RowMap<Object>> maps, boolean isComplete, @Nullable StackTraceElement[] stackTrace)
+    CachedResultSet(ResultSetMetaData md, ArrayList<RowMap<Object>> maps, boolean isComplete, boolean requireClose, @Nullable StackTraceElement[] stackTrace)
     {
         _rowMaps = maps;
         _isComplete = isComplete;
@@ -120,25 +171,23 @@ public class CachedResultSet implements ResultSet, TableResultSet
             throw new RuntimeSQLException(x);
         }
 
+        String url = null;
+        String threadName = null;
         if (MiniProfiler.isCollectTroubleshootingStackTraces())
         {
             // Stash stack trace that created this CachedRowSet
-            if (null != stackTrace)
+            if (null == stackTrace)
             {
-                _stackTrace = stackTrace;
-            }
-            else
-            {
-                _stackTrace = MiniProfiler.getTroubleshootingStackTrace();
+                stackTrace = MiniProfiler.getTroubleshootingStackTrace();
             }
 
-            _threadName = Thread.currentThread().getName();
+            threadName = Thread.currentThread().getName();
 
             if (HttpView.getStackSize() > 0)
             {
                 try
                 {
-                    _url = ViewServlet.getOriginalURL();
+                    url = ViewServlet.getOriginalURL();
                 }
                 catch (Exception x)
                 {
@@ -146,24 +195,11 @@ public class CachedResultSet implements ResultSet, TableResultSet
                 }
             }
         }
-        else
-        {
-            _stackTrace = null;
-            _threadName = null;
-        }
+
+        _state = new CachedResultSetState(requireClose, stackTrace, threadName, url, _log);
+        _cleanable = CLEANER.register(this, _state);
 
         MemTracker.getInstance().put(this);
-    }
-
-    public boolean isRequireClose()
-    {
-        return _requireClose;
-    }
-
-    public CachedResultSet setRequireClose(boolean requireClose)
-    {
-        _requireClose = requireClose;
-        return this;
     }
 
     @Override
@@ -223,6 +259,8 @@ public class CachedResultSet implements ResultSet, TableResultSet
     public void close()
     {
         _wasClosed = true;
+        _state.close();
+        _cleanable.clean();
     }
 
     @Override
@@ -729,28 +767,6 @@ public class CachedResultSet implements ResultSet, TableResultSet
         _row = _rowMaps.size();
     }
 
-    @Override
-    protected void finalize() throws Throwable
-    {
-        if (!_wasClosed)
-        {
-            close();
-
-            if (_requireClose && AppProps.getInstance().isDevMode())
-            {
-                StringBuilder error = new StringBuilder("CachedResultSet was not closed.");
-                if (null != _url)
-                    error.append("\nURL: ").append(_url);
-                else if (_threadName != null)
-                    error.append("\nthreadName: ").append(_threadName);
-                error.append("\nStack trace from the creation:");
-                error.append(ExceptionUtil.renderStackTrace(_stackTrace));
-
-                _log.error(error);
-            }
-        }
-        super.finalize();
-    }
 
     @Override
     public boolean first()

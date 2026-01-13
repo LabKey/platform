@@ -31,7 +31,6 @@ import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
@@ -44,7 +43,6 @@ import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.iterator.CloseableFilteredIterator;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.query.BatchValidationException;
@@ -88,7 +86,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
      * We'll try each one in turn, falling back
      * to the more general as necessary
      **/
-    private final static Class[] CONVERT_CLASSES = new Class[]
+    private final static Class<?>[] CONVERT_CLASSES = new Class[]
     {
         Date.class,
         Integer.class,
@@ -328,7 +326,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             int inferStartLine = _skipLines == -1 ? 1 : _skipLines;
             for (int f = 0; f < nCols; f++)
             {
-                List<Class> classesToTest = new ArrayList<>(Arrays.asList(CONVERT_CLASSES));
+                List<Class<?>> classesToTest = new ArrayList<>(Arrays.asList(CONVERT_CLASSES));
 
                 int classIndex = -1;
                 //NOTE: this means we have a header row
@@ -343,8 +341,8 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
                         if (knownColumn != null)
                         {
-                            Class knownColumnClass = knownColumn.getJavaClass();
-                            classesToTest.add(0, knownColumnClass);
+                            Class<?> knownColumnClass = knownColumn.getJavaClass();
+                            classesToTest.addFirst(knownColumnClass);
                         }
                     }
                 }

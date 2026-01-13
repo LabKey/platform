@@ -32,12 +32,12 @@ import java.util.Map;
  */
 public class CachedResultSets
 {
-    public static CachedResultSet create(ResultSet rs, boolean cacheMetaData, int maxRows) throws SQLException
+    public static CachedResultSet create(ResultSet rs, boolean cacheMetaData, boolean requireClose, int maxRows) throws SQLException
     {
-        return create(rs, cacheMetaData, maxRows, null, QueryLogging.emptyQueryLogging());
+        return create(rs, cacheMetaData, requireClose, maxRows, null, QueryLogging.emptyQueryLogging());
     }
 
-    public static CachedResultSet create(ResultSet rsIn, boolean cacheMetaData, int maxRows, @Nullable StackTraceElement[] stackTrace, QueryLogging queryLogging) throws SQLException
+    public static CachedResultSet create(ResultSet rsIn, boolean cacheMetaData, boolean requireClose, int maxRows, @Nullable StackTraceElement[] stackTrace, QueryLogging queryLogging) throws SQLException
     {
         try (ResultSet rs = new LoggingResultSetWrapper(rsIn, queryLogging))         // TODO: avoid if we're passed a read-only and empty one??
         {
@@ -58,13 +58,13 @@ public class CachedResultSets
             // If we have another row, then we're not complete
             boolean isComplete = !rs.next();
 
-            return new CachedResultSet(md, list, isComplete, stackTrace);
+            return new CachedResultSet(md, list, isComplete, requireClose, stackTrace);
         }
     }
 
     public static CachedResultSet create(ResultSetMetaData md, List<Map<String, Object>> maps, boolean isComplete)
     {
-        return new CachedResultSet(md, convertToRowMaps(md, maps), isComplete, null);
+        return new CachedResultSet(md, convertToRowMaps(md, maps), isComplete, true, null);
     }
 
     public static CachedResultSet create(List<Map<String, Object>> maps)
@@ -88,7 +88,7 @@ public class CachedResultSets
         ResultSetMetaData md = createMetaData(columnNames);
 
         // Avoid error message from CachedResultSet.finalize() about unclosed CachedResultSet.
-        try (CachedResultSet crs = new CachedResultSet(md, convertToRowMaps(md, maps), true, null))
+        try (CachedResultSet crs = new CachedResultSet(md, convertToRowMaps(md, maps), true, true, null))
         {
             return crs;
         }

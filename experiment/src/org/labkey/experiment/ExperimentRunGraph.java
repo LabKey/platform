@@ -37,6 +37,7 @@ import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 import org.labkey.experiment.api.ExpRunImpl;
 
 import javax.imageio.ImageIO;
+import java.lang.ref.Cleaner;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -765,6 +766,40 @@ public class ExperimentRunGraph
         return fileName;
     }
 
+    private static final Cleaner CLEANER = Cleaner.create();
+
+    private static class FileLockState implements Runnable
+    {
+        private final Throwable _allocation;
+        private Lock _lock;
+
+        private FileLockState(Throwable allocation, Lock lock)
+        {
+            _allocation = allocation;
+            _lock = lock;
+        }
+
+        @Override
+        public void run()
+        {
+            if (_lock != null)
+            {
+                _log.error("Lock was not released. Creation was at:", _allocation);
+                _lock.unlock();
+                _lock = null;
+            }
+        }
+
+        private void release()
+        {
+            if (_lock != null)
+            {
+                _lock.unlock();
+                _lock = null;
+            }
+        }
+    }
+
     /**
      * Results for run graph generation. Must be released once the files have been consumed by the caller.
      */
@@ -772,14 +807,15 @@ public class ExperimentRunGraph
     {
         private final File _mapFile;
         private final File _imageFile;
-        private Lock _lock;
-        private final Throwable _allocation = new Throwable();
+        private final FileLockState _state;
+        private final Cleaner.Cleanable _cleanable;
 
         public RunGraphFiles(File mapFile, File imageFile, Lock lock)
         {
             _mapFile = mapFile;
             _imageFile = imageFile;
-            _lock = lock;
+            _state = new FileLockState(new Throwable(), lock);
+            _cleanable = CLEANER.register(this, _state);
         }
 
         public File getMapFile()
@@ -792,27 +828,13 @@ public class ExperimentRunGraph
             return _imageFile;
         }
 
-        @Override
-        protected void finalize() throws Throwable
-        {
-            super.finalize();
-            if (_lock != null)
-            {
-                _log.error("Lock was not released. Creation was at:", _allocation);
-                release();
-            }
-        }
-
         /**
          * Release the lock on the files.
          */
         public void release()
         {
-            if (_lock != null)
-            {
-                _lock.unlock();
-                _lock = null;
-            }
+            _state.release();
+            _cleanable.clean();
         }
     }
 }
