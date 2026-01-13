@@ -6,13 +6,23 @@ import java.util.List;
 
 public class ResolveLsidsForm
 {
-    private boolean _singleSeedRequested = false;
+    private boolean _includeProperties;
+    private boolean _includeInputsAndOutputs;
+    private boolean _includeRunSteps;
     private List<String> _lsids;
+    private boolean _singleSeedRequested = false;
 
-    // serialization options
-    private boolean _includeProperties = false;
-    private boolean _includeInputsAndOutputs = false;
-    private boolean _includeRunSteps = false;
+    public ResolveLsidsForm()
+    {
+        this(false, false, false);
+    }
+
+    public ResolveLsidsForm(boolean includeProperties, boolean includeInputsAndOutputs, boolean includeRunSteps)
+    {
+        _includeProperties = includeProperties;
+        _includeInputsAndOutputs = includeInputsAndOutputs;
+        _includeRunSteps = includeRunSteps;
+    }
 
     public List<String> getLsids()
     {

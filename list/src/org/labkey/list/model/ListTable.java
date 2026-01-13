@@ -371,11 +371,11 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         if (FileLinkDisplayColumn.AS_ATTACHMENT_FORMAT.equalsIgnoreCase(col.getFormat()))
         {
             url.addParameter("inline", "false");
-            col.setURLTargetWindow(null);
+            col.setURLTarget(null);
         }
         else
         {
-            col.setURLTargetWindow("_blank");
+            col.setURLTarget("_blank");
         }
         col.setURL(StringExpressionFactory.createURL(url));
     }

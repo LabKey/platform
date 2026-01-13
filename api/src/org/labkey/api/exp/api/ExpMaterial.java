@@ -86,4 +86,10 @@ public interface ExpMaterial extends ExpRunItem
     Date getMaterialExpDate();
 
     ActionURL detailsURL(Container container, boolean checkForOverride);
+
+    @Override
+    default String getExpType()
+    {
+        return DEFAULT_CPAS_TYPE;
+    }
 }

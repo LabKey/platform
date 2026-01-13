@@ -146,4 +146,10 @@ public interface ExpRun extends ExpObject, Identifiable
     @Nullable Long getWorkflowTaskId();
 
     boolean canDelete(User user);
+
+    @Override
+    default String getExpType()
+    {
+        return DEFAULT_CPAS_TYPE;
+    }
 }
