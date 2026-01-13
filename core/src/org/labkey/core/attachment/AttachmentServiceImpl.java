@@ -1773,11 +1773,14 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         {
             SQLFragment sql = new SQLFragment();
             new AttachmentServiceImpl().addSelectAllEntityIdsSql(sql, Set.of("expdataclass"), Set.of(), true);
-            new SqlSelector(DbScope.getLabKeyScope(), sql).forEach(rs -> {
-                String entityId = rs.getString("entityid");
-                if (!GUID.isGUID(entityId))
-                    fail(entityId + " from " + rs.getString("tablename") + " is not a valid GUID");
-            });
+            if (!sql.isEmpty())
+            {
+                new SqlSelector(DbScope.getLabKeyScope(), sql).forEach(rs -> {
+                    String entityId = rs.getString("entityid");
+                    if (!GUID.isGUID(entityId))
+                        fail(entityId + " from " + rs.getString("tablename") + " is not a valid GUID");
+                });
+            }
         }
     }
 }
