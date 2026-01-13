@@ -12,7 +12,7 @@ import org.labkey.api.data.VirtualTable;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 
@@ -97,7 +97,7 @@ public class ExpUnreferencedSampleFilesTable extends FilteredTable<ExpSchema>
             addColumn(createdCol);
 
             var createdByCol = new BaseColumnInfo("CreatedBy", this, JdbcType.INTEGER);
-            UserIdForeignKey.initColumn(createdByCol);
+            createdByCol.setFk(new UserIdQueryForeignKey(getUserSchema(), true));
             addColumn(createdByCol);
         }
 
