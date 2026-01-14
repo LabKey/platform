@@ -8805,69 +8805,6 @@ public class QueryController extends SpringActionController
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public static class QueryWriterAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/query/view/queryWriter.jsp", null, errors);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-
-        }
-    }
-
-
     public static class SqlPromptForm extends PromptForm
     {
         public String schemaName;
@@ -8923,7 +8860,6 @@ public class QueryController extends SpringActionController
             return serviceMessage.toString();
         }
 
-
         String getSQLHelp()
         {
             try
@@ -8944,6 +8880,7 @@ public class QueryController extends SpringActionController
 
             try (var mcpPush = McpContext.withContext(getViewContext()))
             {
+                // TODO when/how to do we reset or isolate different chat sessions, e.g. if two SQL windows are open concurrently?
                 ChatClient chatSession = getChat();
                 String prompt = form.getPrompt();
                 List<McpService.MessageResponse> responses;
@@ -8994,7 +8931,6 @@ public class QueryController extends SpringActionController
                     }
                 }
 
-//                System.err.println(chatSession.getHistory(true));
                 var ret = new JSONObject(Map.of(
                         "success", Boolean.TRUE));
                 if (null != sqlResponse.sql())
@@ -9057,20 +8993,5 @@ public class QueryController extends SpringActionController
                 return text.substring(sql+7,end);
         }
         return null;
-    }
-
-
-    @RequiresPermission(ReadPermission.class)
-    @RequiresLogin
-    public static class ResetQueryAgentAction extends ReadOnlyApiAction
-    {
-        @Override
-        public Object execute(Object o, BindException errors) throws Exception
-        {
-            var session = getViewContext().getRequest().getSession(false);
-            if (null != session)
-                session.removeAttribute(Chat.class.getName());
-            return new JSONObject(Map.of("success", Boolean.TRUE));
-        }
     }
 }
