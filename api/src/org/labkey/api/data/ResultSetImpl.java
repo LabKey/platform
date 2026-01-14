@@ -229,6 +229,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     @Override
     public void close() throws SQLException
     {
+        super.close();
         close(true);
     }
 
