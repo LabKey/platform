@@ -384,7 +384,7 @@ public class ExpLineage
                 }
                 else // ExpMaterial or generic Identifiable
                 {
-                    if (!seen.contains(target))
+                    if (!seen.contains(target) && target != null)
                     {
                         stack.add(target);
                         seen.add(target);
