@@ -41,20 +41,12 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
 {
     private static final Logger _log = LogManager.getLogger(ResultSetImpl.class);
 
-    private final @Nullable DbScope _scope;
-    private final @Nullable Connection _connection;
-    private final String _creatingThreadName;
     private int _maxRows;
     private boolean _countComplete;
 
     private boolean _isComplete = true;
 
     protected int _size;
-
-    // for resource tracking
-    private final StackTraceElement[] _debugCreated;
-    protected boolean _wasClosed = false;
-
 
     private static final Cleaner CLEANER = Cleaner.create();
 
@@ -83,29 +75,35 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
             if (!_wasClosed)
             {
                 _log.error("ResultSet was not closed. Created by thread " + _creatingThreadName + " with stacktrace: " + ExceptionUtil.renderStackTrace(_debugCreated));
-                close();
+                close(true);
             }
         }
 
-        private void close()
+        private void close(boolean closeUnderlying)
         {
             if (!_wasClosed)
             {
                 try
                 {
-                    if (null != _scope)
+                    if (closeUnderlying)
                     {
-                        Statement stmt = _rs.getStatement();
-                        _rs.close();
-                        if (stmt != null)
+                        if (null != _scope)
                         {
-                            stmt.close();
+                            Statement stmt = _rs.getStatement();
+                            _rs.close();
+                            if (stmt != null)
+                            {
+                                stmt.close();
+                            }
+                            if (_connection != null)
+                            {
+                                _scope.releaseConnection(_connection);
+                            }
                         }
-                        _scope.releaseConnection(_connection);
-                    }
-                    else
-                    {
-                        _rs.close();
+                        else
+                        {
+                            _rs.close();
+                        }
                     }
                 }
                 catch (SQLException e)
@@ -139,31 +137,22 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
         super(rs, queryLogging);
         MemTracker.getInstance().put(this);
         // Capturing the full stack can be expensive so only do it when enabled
-        _debugCreated = MiniProfiler.getTroubleshootingStackTrace();
+        StackTraceElement[] debugCreated = MiniProfiler.getTroubleshootingStackTrace();
         // Capturing the thread name is cheap and provides useful context for troubleshooting failures to close
-        _creatingThreadName = Thread.currentThread().getName();
+        String creatingThreadName = Thread.currentThread().getName();
         _maxRows = maxRows;
         try
         {
-            if (connection != null)
+            if (connection == null && rs.getStatement() != null)
             {
-                _connection = connection;
-            }
-            else if (rs.getStatement() != null)
-            {
-                _connection = rs.getStatement().getConnection();
-            }
-            else
-            {
-                _connection = null;
+                connection = rs.getStatement().getConnection();
             }
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
-        _scope = scope;
-        _state = new ResultSetState(_creatingThreadName, _debugCreated, _scope, _connection, rs);
+        _state = new ResultSetState(creatingThreadName, debugCreated, scope, connection, rs);
         _cleanable = CLEANER.register(this, _state);
     }
 
@@ -198,6 +187,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     @Override
     public int countAll() throws SQLException
     {
+        //noinspection StatementWithEmptyBody
         while(next());
         return _size;
     }
@@ -239,16 +229,20 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     @Override
     public void close() throws SQLException
     {
-        if (_wasClosed)
+        close(true);
+    }
+
+    protected void close(boolean closeUnderlying)
+    {
+        if (_state._wasClosed)
         {
             if (ResultSetUtil.STRICT_CHECKING)
                 throw new IllegalStateException("ResultSet has already been closed!");
         }
         else
         {
-            _state.close();
+            _state.close(closeUnderlying);
             _cleanable.clean();
-            _wasClosed = true;
         }
     }
 
@@ -275,6 +269,6 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     @Override
     public @Nullable Connection getConnection()
     {
-        return _connection;
+        return _state._connection;
     }
 }
