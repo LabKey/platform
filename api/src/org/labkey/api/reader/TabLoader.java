@@ -407,7 +407,7 @@ public class TabLoader extends DataLoader
             char chQuote = '"';
 
             boolean isArrayColumn = false;
-            if (columns != null)
+            if (columns != null && colIndex < columns.length)
             {
                 var column = columns[colIndex];
                 if (column != null)
