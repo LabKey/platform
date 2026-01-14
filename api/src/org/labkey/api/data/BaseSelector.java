@@ -50,8 +50,6 @@ import java.util.stream.StreamSupport;
  * A partial, base implementation of {@link org.labkey.api.data.Selector}. This class manipulates result sets but doesn't
  * generate them. Subclasses include ExecutingSelector (which executes SQL to generate a result set) and ResultSetSelector,
  * which takes an externally generated ResultSet (e.g., from JDBC metadata calls) and allows Selector operations on it.
- * User: adam
- * Date: 12/11/12
  */
 
 public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends JdbcCommand<SELECTOR> implements Selector
