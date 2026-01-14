@@ -39,6 +39,7 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.SPAN;
@@ -210,6 +211,8 @@ public class MultiChoice
     // LK impl to help with conversions
     public static class Array implements List<String>, java.sql.Array
     {
+        public static final Array EMPTY = new Array(new String[0]);
+
         final String[] array;
         List<String> list = null;
 
@@ -272,6 +275,8 @@ public class MultiChoice
 
         public static Array from(@NotNull String s)
         {
+            if (isBlank(s))
+                return EMPTY;
             List<String> split = PageFlowUtil.splitStringToValuesForImport(s);
             return from(split.toArray());
         }
@@ -338,7 +343,7 @@ public class MultiChoice
         @Override
         public @NotNull Object[] toArray()
         {
-            return array;
+            return 0==array.length ? array : array.clone();
         }
 
         @Override
@@ -539,7 +544,7 @@ public class MultiChoice
         public <T> T convert(Class<T> aClass, Object o)
         {
             if (null == o)
-                return (T) Array.from(new String[]{});
+                return (T) Array.EMPTY;
             if (o instanceof MultiChoice.Array arr)
                 return (T)arr;
             if (o instanceof String s)
@@ -576,6 +581,11 @@ public class MultiChoice
             assertEquals(expected, _converter.convert(Array.class, new JSONArray(List.of("a,","b\"","c "))));
             // test that result is ordered
             assertEquals(expected, _converter.convert(Array.class, "\"c \",\"b\"\"\",\"a,\""));
+
+            // empty
+            assertEquals(0, _converter.convert(Array.class, " ").size());
+            assertEquals(0, _converter.convert(Array.class, "").size());
+            assertEquals(0, _converter.convert(Array.class, null).size());
         }
 
         @Test
