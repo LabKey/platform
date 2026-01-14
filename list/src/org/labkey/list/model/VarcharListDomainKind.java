@@ -24,7 +24,7 @@ import java.util.Collections;
 
 public class VarcharListDomainKind extends ListDomainKind
 {
-    protected static final String NAMESPACE_PREFIX = "VarList";
+    public static final String NAMESPACE_PREFIX = "VarList";
 
     private static final Collection<ListDefinition.KeyType> supportedTypes = Collections.singletonList(ListDefinition.KeyType.Varchar);
 

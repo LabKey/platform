@@ -17,16 +17,20 @@ package org.labkey.list.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParentType;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.list.model.IntegerListDomainKind;
+import org.labkey.list.model.PicklistDomainKind;
+import org.labkey.list.model.VarcharListDomainKind;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ListItemType implements AttachmentParentType
 {
@@ -55,7 +59,7 @@ public class ListItemType implements AttachmentParentType
 
         List<SQLFragment> selectStatements = new LinkedList<>();
 
-        ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(c -> {
+        PropertyService.get().getContainersWithDomains(Set.of(IntegerListDomainKind.NAMESPACE_PREFIX, VarcharListDomainKind.NAMESPACE_PREFIX, PicklistDomainKind.NAMESPACE_PREFIX)).forEach(c -> {
             Map<String, ListDefinition> map = svc.getLists(c, null, false);
             map.forEach((k, v) -> {
                 Domain domain = v.getDomain();
