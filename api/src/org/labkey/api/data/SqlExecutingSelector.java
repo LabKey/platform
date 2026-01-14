@@ -211,7 +211,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         if (cache)
         {
             // Cache ResultSet and meta data
-            return CachedResultSets.create(rs, true, _maxRows, _loggingStacktrace, getQueryLogging()).setRequireClose(requireClose);
+            return CachedResultSetBuilder.create(rs).setRequireClose(requireClose).setMaxRows(_maxRows).setStackTrace(_loggingStacktrace).setQueryLogging(getQueryLogging()).build();
         }
         else
         {

@@ -16,6 +16,7 @@
 package org.labkey.pipeline.api;
 
 import org.apache.logging.log4j.LogManager;
+import java.lang.ref.Cleaner;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.WorkDirFactory;
 import org.labkey.api.pipeline.WorkDirectory;
@@ -544,6 +545,66 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         private final Throwable _creationStack;
         private Lock _memoryLock;
 
+        private static final Cleaner CLEANER = Cleaner.create();
+
+        private static class LockState implements Runnable
+        {
+            private FileChannel _channel;
+            private FileLock _lock;
+            private Lock _memoryLock;
+            private final Throwable _creationStack;
+
+            private LockState(FileChannel channel, FileLock lock, Lock memoryLock, Throwable creationStack)
+            {
+                _channel = channel;
+                _lock = lock;
+                _memoryLock = memoryLock;
+                _creationStack = creationStack;
+            }
+
+            @Override
+            public void run()
+            {
+                if (_lock != null || _memoryLock != null)
+                {
+                    _systemLog.error("FileLockCopyingResource was not released before it was garbage collected. Creation stack is: ", _creationStack);
+                    close();
+                }
+            }
+
+            private void close()
+            {
+                try
+                {
+                    if (_lock != null)
+                    {
+                        _lock.release();
+                        _lock = null;
+                    }
+                    if (_channel != null)
+                    {
+                        _channel.close();
+                        _channel = null;
+                    }
+                }
+                catch (IOException e)
+                {
+                    _systemLog.error("Failed to release lock", e);
+                }
+                finally
+                {
+                    if (_memoryLock != null)
+                    {
+                        _memoryLock.unlock();
+                        _memoryLock = null;
+                    }
+                }
+            }
+        }
+
+        private final LockState _state;
+        private final Cleaner.Cleanable _cleanable;
+
         public FileLockCopyingResource(FileChannel channel, int lockNumber, File f) throws IOException
         {
             _channel = channel;
@@ -556,34 +617,23 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
             // Lock the file part second
             _lock = _channel.lock();
+
+            _state = new LockState(_channel, _lock, _memoryLock, _creationStack);
+            _cleanable = CLEANER.register(this, _state);
         }
 
-        @Override
-        protected void finalize() throws Throwable
-        {
-            super.finalize();
-            if (_lock != null)
-            {
-                _systemLog.error("FileLockCopyingResource was not released before it was garbage collected. Creation stack is: ", _creationStack);
-            }
-            close();
-        }
 
         @Override
         public void close()
         {
             if (_lock != null)
             {
-                // Unlock the file part first
-                try { _lock.release(); } catch (IOException e) {}
-                try { _channel.close(); } catch (IOException e) {}
+                _state.close();
+                _cleanable.clean();
                 _jobLog.debug("Lock #" + _lockNumber + " released");
                 _lock = null;
                 _channel = null;
                 super.close();
-
-                // Unlock the memory part last
-                _memoryLock.unlock();
                 _memoryLock = null;
             }
         }
