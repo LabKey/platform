@@ -203,11 +203,5 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
             return sb.toString();
         }
 
-        @Override
-        protected void finalize() throws Throwable
-        {
-            assert _closed && null == _currentPhase;
-            super.finalize();
-        }
     }
 }

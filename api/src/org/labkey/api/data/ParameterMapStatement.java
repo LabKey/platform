@@ -1,6 +1,7 @@
 package org.labkey.api.data;
 
 import org.apache.logging.log4j.Level;
+import java.lang.ref.Cleaner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.arrays.IntegerArray;
@@ -51,6 +52,26 @@ public class ParameterMapStatement implements AutoCloseable
     int batchCount = 0;
 
     private ExceptionFramework _exceptionFramework = ExceptionFramework.Spring;
+
+    private static final Cleaner CLEANER = Cleaner.create();
+
+    private static class ParameterMapState implements Runnable
+    {
+        private Runnable _onClose;
+
+        @Override
+        public void run()
+        {
+            if (null != _onClose)
+            {
+                _onClose.run();
+                _onClose = null;
+            }
+        }
+    }
+
+    private final ParameterMapState _state = new ParameterMapState();
+    private final Cleaner.Cleanable _cleanable = CLEANER.register(this, _state);
 
     protected ParameterMapStatement()
     {
@@ -519,6 +540,7 @@ public class ParameterMapStatement implements AutoCloseable
         if (null != _onClose)
             throw new IllegalStateException("only one onClose() callback supported");
         _onClose = r;
+        _state._onClose = r;
     }
 
 
@@ -532,17 +554,11 @@ public class ParameterMapStatement implements AutoCloseable
                 _onClose.run();
         }
         _onClose = null;
+        _state._onClose = null;
+        _cleanable.clean();
     }
 
 
-    @Override
-    protected void finalize() throws Throwable
-    {
-        super.finalize();
-        assert null == _onClose;
-        if (null != _onClose)
-            _onClose.run();
-    }
 
 
     String _debugSql;

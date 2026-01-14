@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* search-0.00-10.10.sql */
-
 CREATE SCHEMA search;
 GO
 

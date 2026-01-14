@@ -1,1 +1,0 @@
-EXEC core.executeJavaUpgradeCode 'initializeWellExclusions';

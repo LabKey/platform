@@ -99,4 +99,9 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
     {
         return this;
     }
+
+    default String getExpType()
+    {
+        return DEFAULT_CPAS_TYPE;
+    }
 }
