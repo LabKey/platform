@@ -6,6 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -40,8 +41,7 @@
     BaseExternalSchemaBean bean = (BaseExternalSchemaBean)HttpView.currentModel();
     AbstractExternalSchemaDef def = bean.getSchemaDef();
 
-    Container targetContainer = getContainer();
-    Container sourceContainer = targetContainer;
+    Container sourceContainer = getContainer();
 
     boolean isExternal = true;
     if (def instanceof LinkedSchemaDef lsd)
@@ -60,8 +60,6 @@
     Ext4.onReady(function () {
 
         var schemaType = <%=q(isExternal ? SchemaType.external.name() : SchemaType.linked.name())%>;
-        var external = <%=isExternal%>;
-
         Ext4.QuickTips.init();
 
         Ext4.define('LABKEY.Query.SchemaTemplate', {
@@ -115,14 +113,14 @@
                 if (this.getOverride()) {
                     this.setOverride(false);
                     this.boundField.setDisabled(true);
-                    var fieldContainer = this.boundField.up('fieldcontainer');
+                    let fieldContainer = this.boundField.up('fieldcontainer');
                     if (fieldContainer)
                         fieldContainer.setDisabled(true);
                 }
                 else {
                     this.setOverride(true);
                     this.boundField.setDisabled(false);
-                    var fieldContainer = this.boundField.up('fieldcontainer');
+                    let fieldContainer = this.boundField.up('fieldcontainer');
                     if (fieldContainer)
                         fieldContainer.setDisabled(false);
                 }
@@ -140,7 +138,6 @@
             name: 'userSchemaName',
             fieldLabel: 'Schema Name',
             allowBlank: false,
-            validateOnBlur: false,
             maxLength: 50,
             value: <%=q(def.getUserSchemaName())%>,
             helpPopup: <%=qh(bean.getHelpHTML("UserSchemaName"))%>
@@ -150,22 +147,22 @@
             name: 'dataSource',
             fieldLabel: 'Source Container',
             value: <%=q(def.getDataSource())%>,
-            <%--helpPopup: <%=qh(bean.getHelpHTML("DataSource"))%>--%>
+            typeAhead: true,
+            anyMatch: true,
+            forceSelection: true
         }));
 
-        sourceContainerCombo.on('select', function (field, records) {
-            var record = records[0];
-            if (record) {
+        sourceContainerCombo.on('change', function (field, newValue) {
+            if (newValue) {
                 sourceSchemaField.setDisabled(false);
                 metadataField.setDisabled(false);
-                schemaTemplateCombo.loadTemplateField(field.getValue());
+                schemaTemplateCombo.loadTemplateField(newValue);
             } else {
                 sourceSchemaField.setDisabled(true);
                 metadataField.setDisabled(true);
                 schemaTemplateCombo.setDisabled(true);
             }
         });
-
 
         var schemaTemplateCombo = Ext4.create('Ext.form.field.ComboBox', {
             name: 'schemaTemplate',
@@ -174,7 +171,6 @@
             displayField: 'name',
             valueField: 'name',
             editable: true,
-            //autoLoad: <%=def.getDataSource() != null%>,
             disabled: <%=def.getDataSource() == null%>,
             value: <%=q(initialTemplateName)%>,
             listConfig : {
@@ -329,8 +325,7 @@
                 var schemaTemplateName = schemaTemplateCombo.getValue();
                 var schemaTemplateRecord = schemaTemplateCombo.store.getById(schemaTemplateName);
                 if (schemaTemplateRecord) {
-                    var sourceSchemaName = schemaTemplateRecord.get('sourceSchemaName');
-                    return sourceSchemaName;
+                    return  schemaTemplateRecord.get('sourceSchemaName');
                 }
             }
         });
@@ -414,8 +409,7 @@
                 var schemaTemplateName = schemaTemplateCombo.getValue();
                 var schemaTemplateRecord = schemaTemplateCombo.store.getById(schemaTemplateName);
                 if (schemaTemplateRecord) {
-                    var tables = schemaTemplateRecord.get('tables');
-                    return tables;
+                    return schemaTemplateRecord.get('tables');
                 }
             }
         });
@@ -450,8 +444,7 @@
                 var schemaTemplateName = schemaTemplateCombo.getValue();
                 var schemaTemplateRecord = schemaTemplateCombo.store.getById(schemaTemplateName);
                 if (schemaTemplateRecord) {
-                    var metaData = schemaTemplateRecord.get('metadata');
-                    return metaData;
+                    return schemaTemplateRecord.get('metadata');
                 }
             }
         });
@@ -497,6 +490,7 @@
                 items: [{
                     text: <%=q(bean.isInsert() ? "Create" : "Update")%>,
                     type: 'submit',
+                    formBind : true,
                     handler: function () {
                         var sourceContainerValue = sourceContainerCombo.getValue();
                         if (!sourceContainerValue)
@@ -544,7 +538,7 @@
                         });
                     }
                 },{
-                    <% if (bean.isInsert()) { %>
+                    <% if (!bean.isInsert()) { %>
                     text: 'Delete',
                     handler: function() { document.location = <%=q(bean.getDeleteURL())%>; }
                 },{
