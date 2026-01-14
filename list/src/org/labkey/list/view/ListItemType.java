@@ -18,12 +18,14 @@ package org.labkey.list.view;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.list.model.IntegerListDomainKind;
+import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.PicklistDomainKind;
 import org.labkey.list.model.VarcharListDomainKind;
 
@@ -56,7 +58,7 @@ public class ListItemType implements AttachmentParentType
     {
         ListService svc = ListService.get();
         assert null != svc;
-
+        SqlDialect dialect = ListSchema.getInstance().getSchema().getSqlDialect();
         List<SQLFragment> selectStatements = new LinkedList<>();
 
         PropertyService.get().getContainersWithDomains(Set.of(IntegerListDomainKind.NAMESPACE_PREFIX, VarcharListDomainKind.NAMESPACE_PREFIX, PicklistDomainKind.NAMESPACE_PREFIX)).forEach(c -> {
@@ -64,7 +66,14 @@ public class ListItemType implements AttachmentParentType
             map.forEach((k, v) -> {
                 Domain domain = v.getDomain();
                 if (null != domain && domain.getProperties().stream().anyMatch(p -> p.getPropertyType() == PropertyType.ATTACHMENT))
-                    selectStatements.add(new SQLFragment("\n    SELECT EntityId, ? AS Description FROM list.", domain.getName()).append(domain.getStorageTableName()));
+                    selectStatements.add(new SQLFragment("\n    SELECT EntityId, ")
+                        .append(dialect.concatenate(
+                            new SQLFragment("?", domain.getName()),
+                            new SQLFragment("':'"),
+                            new SQLFragment("CAST(").append(dialect.makeDatabaseIdentifier(v.getKeyName()).getSql())).append(" AS VARCHAR)")
+                        )
+                        .append(" AS Description FROM list.").append(domain.getStorageTableName())
+                    );
             });
         });
 

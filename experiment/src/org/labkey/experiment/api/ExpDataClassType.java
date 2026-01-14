@@ -22,6 +22,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -56,6 +57,7 @@ public class ExpDataClassType implements AttachmentParentType
     public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
         TableInfo tableInfo = ExperimentService.get().getTinfoDataClass();
+        SqlDialect dialect = tableInfo.getSqlDialect();
 
         // Get a dialect-specific expression that can extract an ObjectId from the LSID column and a WHERE clause to
         // filter the rows to LSIDs containing ObjectIds
@@ -78,7 +80,13 @@ public class ExpDataClassType implements AttachmentParentType
                 selectStatements.add(
                     new SQLFragment("\n    SELECT ")
                         .append(expressionToExtractObjectId)
-                        .append(" AS EntityId, Name AS Description FROM expdataclass.")
+                        .append(" AS EntityId, ")
+                        .append(dialect.concatenate(
+                            new SQLFragment("?", domain.getName()),
+                            new SQLFragment("':'"),
+                            new SQLFragment("Name")
+                        ))
+                        .append(" AS Description FROM expdataclass.")
                         .append(domain.getStorageTableName())
                         .append(" WHERE ").append(where)
                 );
