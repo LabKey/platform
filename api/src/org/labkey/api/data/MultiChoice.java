@@ -6,7 +6,6 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
@@ -21,7 +20,6 @@ import java.io.StringBufferInputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.text.Format;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -32,6 +30,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -216,12 +215,12 @@ public class MultiChoice
 
         protected Array(Stream<Object> str)
         {
-            CaseInsensitiveHashSet set = new CaseInsensitiveHashSet();
-            array = str.filter(Objects::nonNull)
+            TreeSet<String> setCaseSensitive = new TreeSet<>();
+            str.filter(Objects::nonNull)
                     .map(s -> StringUtils.trimToNull(s.toString()))
                     .filter(Objects::nonNull)
-                    .filter(set::add)
-                    .toArray(String[]::new);
+                    .forEach(setCaseSensitive::add);
+            array = setCaseSensitive.toArray(new String[0]);
         }
 
         protected Array(Object[] array)
@@ -575,6 +574,8 @@ public class MultiChoice
             assertEquals(expected, _converter.convert(Array.class, new String[]{"a,","b\"","c "}));
             assertEquals(expected, _converter.convert(Array.class, List.of("a,","b\"","c ")));
             assertEquals(expected, _converter.convert(Array.class, new JSONArray(List.of("a,","b\"","c "))));
+            // test that result is ordered
+            assertEquals(expected, _converter.convert(Array.class, "\"c \",\"b\"\"\",\"a,\""));
         }
 
         @Test
