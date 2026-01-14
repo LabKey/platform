@@ -120,6 +120,9 @@ public class McpServiceImpl implements McpService
 
     public void startMpcServer()
     {
+        /* For now the presense of GEMINI_API_KEY will enable/disable the McpServer */
+        if (isBlank(System.getenv("GEMINI_API_KEY")))
+            return;
         vectorStore = createVectorStore();
         mcpServlet.startMcpServer();
         serverReady = true;

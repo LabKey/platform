@@ -53,7 +53,6 @@
     boolean canEdit = queryDef.canEdit(getUser());
     boolean canEditMetadata = queryDef.canEditMetadata(getUser());
     boolean canDelete = queryDef.canDelete(getUser());
-
     boolean isChatReady = McpService.get().isReady();
 %>
 <style type="text/css">
@@ -87,6 +86,7 @@
         border: none;
     }
 
+<% if (isChatReady) { %>
     DIV.chatItem {
       margin: 5px;
       padding: 5px;
@@ -114,11 +114,11 @@
       margin-left: 10px;
       background-color: pink;
     }
-
+<% } %>
 </style>
 
-<%-- should use Ext4 Panel for layout, but this is just a prototype anyway --%>
 <% if (isChatReady) { %>
+<%-- should use Ext4 Panel for layout, but this is just a prototype anyway --%>
 <table style="width:100%; min-width:600px" id="querySourceLayout"><tr>
     <td style="width:80%; min-width:400px; vertical-align: top; ">
         <div id="status" class="labkey-status-info" style="visibility: hidden;" width="100%">(status)</div>
@@ -129,14 +129,13 @@
         <textarea id="geminiPrompt" style="height:100px; width:100%;" placeholder="Shift-Enter to submit"></textarea>
     </td>
 </tr></table>
+<% } else { %>
+<div id="status" class="labkey-status-info" style="visibility: hidden;" width="100%">(status)</div>
+<div id="query-editor-panel" class="extContainer"></div>
 <% } %>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-
-
-LABKEY.Utils.onReady(function(){
-
-    const isChatReady = <%=JavaScriptFragment.bool(isChatReady)%>;
+    Ext4.onReady(function(){
 
     Ext4.QuickTips.init();
 
@@ -214,7 +213,7 @@ LABKEY.Utils.onReady(function(){
         }
     };
 
-    var queryEditorPanel = Ext4.create('Ext.panel.Panel', {
+        var panel = Ext4.create('Ext.panel.Panel', {
         renderTo   : 'query-editor-panel',
         bodyCls    : 'query-editor-panel-parent',
         layout     : 'fit',
@@ -261,7 +260,10 @@ LABKEY.Utils.onReady(function(){
         })]
     });
 
-    const resizeFn = function(evt)
+<%  if (isChatReady) { %>
+    const isChatReady = <%=JavaScriptFragment.bool(isChatReady)%>;
+
+     const resizeFn = function(evt)
     {
         // console.log(evt);
         // console.log("window " + window.innerHeight + " " + window.innerWidth);
@@ -273,11 +275,11 @@ LABKEY.Utils.onReady(function(){
             const height = Math.max(400, window.innerHeight-rect.top-40);
             el.style.width =  width + "px";
             el.style.height = height + "px";
-            queryEditorPanel.setWidth(Math.max(400,width*0.75));
-            queryEditorPanel.setHeight(Math.max(650,height));
+            panel.setWidth(Math.max(400,width*0.75));
+            panel.setHeight(Math.max(650,height));
             document.getElementById("geminiPrompt").style.width = Math.max(200,width*0.25) + 'px';
             document.getElementById("chatHistory").style.height = Math.max(200,height-100) + 'px';
-            queryEditorPanel.updateLayout();
+            panel.updateLayout();
         }
     };
     window.onresize = resizeFn;
@@ -423,5 +425,6 @@ LABKEY.Utils.onReady(function(){
             return true;
         });
     }
+<%  } %>
 });
 </script>
