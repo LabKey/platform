@@ -1263,11 +1263,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (table == null)
                 return;
 
-            // Index the data class if it has never been indexed OR it has changed since it was last indexed
+            indexDataClassData(dataClass, q);
+
+            // GitHub Issue 783: Server lockup when updating data class domain design
+            // Index DataClass after data indexing, to avoid holding locks on exp.DataClass table for too long
             SQLFragment sql = new SQLFragment("SELECT * FROM ")
                     .append(getTinfoDataClass(), "dc")
                     .append(" WHERE dc.LSID = ?").add(dataClass.getLSID())
-                    .append(" AND (dc.lastIndexed IS NULL OR dc.lastIndexed < ?)")
+                    .append(" AND (dc.lastIndexed IS NULL OR dc.lastIndexed < ?)") // Index the data class if it has never been indexed OR it has changed since it was last indexed
                     .add(dataClass.getModified());
 
             DataClass dClass = new SqlSelector(getExpSchema().getScope(), sql).getObject(DataClass.class);
@@ -1276,8 +1279,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 ExpDataClassImpl impl = new ExpDataClassImpl(dClass);
                 impl.index(q, table);
             }
-
-            indexDataClassData(dataClass, q);
         });
     }
 
@@ -8046,7 +8047,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!errors.hasErrors())
             {
                 transaction.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-                transaction.addCommitTask(() -> indexDataClass(getDataClass(c, dataClass.getName()), SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified)), POSTCOMMIT);
+                transaction.addCommitTask(() -> indexDataClass(dataClass, SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified)), POSTCOMMIT);
                 transaction.commit();
             }
         }
