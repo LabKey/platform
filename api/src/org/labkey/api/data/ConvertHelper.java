@@ -190,7 +190,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new JSONTypeConverter(), JSONObject.class);
         _register(new ShortURLRecordConverter(), ShortURLRecord.class);
         _register(new ColumnHeaderType.Converter(), ColumnHeaderType.class);
-        _register(MultiChoice.Converter.getInstance(), MultiChoice.class);
+        _register(MultiChoice.Converter.getInstance(), MultiChoice.Array.class);
     }
 
 

@@ -818,16 +818,7 @@ public abstract class CompareType
         {
             List<String> values = new ArrayList<>();
             if (value != null)
-            {
-                if (value.toString().trim().isEmpty())
-                {
-                    values.add(null);
-                }
-                else
-                {
-                    values.addAll(parseParams(value, getValueSeparator(), isNewLineSeparatorAllowed()));
-                }
-            }
+                values.addAll(parseParams(value, getValueSeparator(), isNewLineSeparatorAllowed()));
             return values;
         }
     }

@@ -236,12 +236,7 @@ public enum PropertyType
         @Override
         protected void setValue(ObjectProperty property, Object value)
         {
-            if ((value instanceof java.sql.Array array))
-                property.arrayValue = MultiChoice.Array.from(array);
-            else if (value != null)
-                property.arrayValue = MultiChoice.Array.from(new Object[]{value});
-            else
-                property.arrayValue = null;
+            property.arrayValue = MultiChoice.Converter.getInstance().convert(MultiChoice.Array.class, value);
         }
 
         @Override
