@@ -190,8 +190,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         sqlTypeIntMap.put(Types.TIMESTAMP, "TIMESTAMP");
         sqlTypeIntMap.put(Types.DOUBLE, "DOUBLE PRECISION");
         sqlTypeIntMap.put(Types.FLOAT, "DOUBLE PRECISION");
-
-        sqlTypeIntMap.put(Types.ARRAY, "text[]"); // only support text arrays for now
     }
 
     @Override

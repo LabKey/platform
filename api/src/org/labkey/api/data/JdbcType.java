@@ -302,36 +302,7 @@ public enum JdbcType
         }
     },
 
-    ARRAY(Types.ARRAY, Array.class)
-    {
-        @Override
-        public Object convert(Object o) throws ConversionException
-        {
-            if ((o instanceof java.sql.Array array))
-                return array;
-            if (o instanceof JSONArray jsonArray)
-            {
-                // convert jsonArray to array
-                Object[] elements = new Object[jsonArray.length()];
-                for (int i = 0; i < jsonArray.length(); i++)
-                {
-                    elements[i] = jsonArray.get(i);
-                }
-                return new MultiChoice.Array(Arrays.stream(elements));
-            }
-            if (o instanceof Collection collection)
-            {
-                return new MultiChoice.Array(collection.stream().map(String::valueOf));
-            }
-            if (o != null)
-            {
-                String s = String.valueOf(o);
-                return new MultiChoice.Array(Arrays.stream(new String[] {s}));
-            }
-
-            return null;
-        }
-    },
+    ARRAY(Types.ARRAY, Array.class),
 
     NULL(Types.NULL, Object.class),
 

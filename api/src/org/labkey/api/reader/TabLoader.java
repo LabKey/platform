@@ -411,7 +411,7 @@ public class TabLoader extends DataLoader
             {
                 var column = columns[colIndex];
                 if (column != null)
-                    isArrayColumn = column.clazz == MultiChoice.class || column.clazz == MultiChoice.Array.class;
+                    isArrayColumn = column.clazz == MultiChoice.Array.class;
             }
 
             boolean parseEnclosedQuotes = _parseEnclosedQuotes || isArrayColumn;
