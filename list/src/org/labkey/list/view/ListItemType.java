@@ -70,7 +70,9 @@ public class ListItemType implements AttachmentParentType
                         .append(dialect.concatenate(
                             new SQLFragment("?", domain.getName()),
                             new SQLFragment("':'"),
-                            new SQLFragment("CAST(").append(dialect.makeDatabaseIdentifier(v.getKeyName()).getSql())).append(" AS VARCHAR)")
+                            new SQLFragment("CAST(")
+                                .append(dialect.makeDatabaseIdentifier(domain.getPropertyByName(v.getKeyName()).getPropertyDescriptor().getStorageColumnName().toLowerCase()).getSql()))
+                                .append(" AS VARCHAR)")
                         )
                         .append(" AS Description FROM list.").append(domain.getStorageTableName())
                     );
