@@ -344,27 +344,27 @@ public class ExpDataFileConverter
         }
 
         // Value specified as simple property, so we have to guess what it might be
-        // First, try looking it up as a RowId
-        try
-        {
-            int dataRowId = Integer.parseInt(value.toString());
-            ExpData data = ExperimentService.get().getExpData(dataRowId);
-            if (data != null)
-            {
-                File result = data.getFile();
-                if (result != null)
-                {
-                    return result;
-                }
-            }
-        }
-        catch (NumberFormatException ignored)
-        {
-        }
+//        // First, try looking it up as a RowId
+//        try
+//        {
+//            int dataRowId = Integer.parseInt(value.toString());
+//            ExpData data = ExperimentService.get().getExpData(dataRowId);
+//            if (data != null)
+//            {
+//                File result = data.getFile();
+//                if (result != null)
+//                {
+//                    return result;
+//                }
+//            }
+//        }
+//        catch (NumberFormatException ignored)
+//        {
+//        }
 
         // toss in here an additional check, if starts with HTTP then try to use _webdav to resolve it
         // MAKE sure that the security is in place - figure out what container it is in
-        String rootSubstitutedPath = getFileRootSubstitutedFilePath(value.toString(), fileRootPath);;
+        String rootSubstitutedPath = getFileRootSubstitutedFilePath(value.toString(), fileRootPath);
         if (null != StringUtils.trimToNull(rootSubstitutedPath))
         {
             if (assayResultFileRoot != null)
