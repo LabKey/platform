@@ -106,7 +106,6 @@ import org.labkey.api.module.ModuleHtmlViewDefinition;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleLoader.StartupPropertyStartupListener;
 import org.labkey.api.module.ModuleXml;
-import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
@@ -522,7 +521,6 @@ public class ApiModule extends CodeOnlyModule
             Table.TestCase.class,
             TableSelectorTestCase.class,
             TempTableInClauseGenerator.TestCase.class,
-            TomcatVersion.TestCase.class,
             URLHelper.TestCase.class,
             UserManager.TestCase.class,
             ViewCategoryManager.TestCase.class,
