@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.13.0-fb-mvtc.4",
+    "@labkey/components": "7.13.0-fb-mvtc.20",
     "@labkey/themes": "1.5.0"
   },
   "devDependencies": {
