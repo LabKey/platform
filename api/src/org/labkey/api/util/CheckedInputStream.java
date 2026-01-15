@@ -15,8 +15,9 @@
  */
 package org.labkey.api.util;
 
-import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,10 +28,11 @@ import java.lang.ref.Cleaner;
  * User: adam
  * Date: 7/2/12
  */
-
 public class CheckedInputStream extends InputStreamWrapper
 {
     private static final Cleaner CLEANER = Cleaner.create();
+    public static final Logger LOG = LogHelper.getLogger(CheckedInputStream.class, "Utility to ensure InputStreams are closed");
+    private final State _state;
 
     private static class State implements Runnable
     {
@@ -49,36 +51,39 @@ public class CheckedInputStream extends InputStreamWrapper
         {
             if (!_closed)
             {
-                LogManager.getLogger(CheckedInputStream.class).error("InputStream was not closed. Creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
-                try
-                {
-                    _is.close();
-                }
-                catch (IOException e)
-                {
-                    LogManager.getLogger(CheckedInputStream.class).error("Failed to close InputStream", e);
-                }
-                finally
-                {
-                    _closed = true;
-                }
+                LOG.error("InputStream was not closed. Creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
+                close();
+            }
+        }
+
+        private void close()
+        {
+            try
+            {
+                _is.close();
+            }
+            catch (IOException e)
+            {
+                LOG.error("Failed to close InputStream", e);
+            }
+            finally
+            {
+                _closed = true;
             }
         }
     }
-
-    private final Cleaner.Cleanable _cleanable;
 
     public CheckedInputStream(InputStream is)
     {
         super(is);
         StackTraceElement[] creationStackTrace = MiniProfiler.getTroubleshootingStackTrace();
-        State state = new State(is, creationStackTrace);
-        _cleanable = CLEANER.register(this, state);
+        _state = new State(is, creationStackTrace);
+        CLEANER.register(this, _state);
     }
 
     @Override
     public void close() throws IOException
     {
-        _cleanable.clean();
+        _state.close();
     }
 }

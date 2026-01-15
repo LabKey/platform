@@ -47,6 +47,8 @@ public class TempTableTracker
     private final String schemaName;
     private final String tableName;
     private final String qualifiedName;
+    private final Cleaner.Cleanable cleanable;
+    private final CleanupState state;
 
     private static class CleanupState implements Runnable
     {
@@ -78,15 +80,13 @@ public class TempTableTracker
         }
     }
 
-    private final CleanupState state;
-
     private TempTableTracker(DbSchema schema, String tableName, Object ref)
     {
         this.schemaName = schema.getName();
         this.tableName = tableName;
         this.qualifiedName = this.schemaName + "." + this.tableName;
         this.state = new CleanupState(schema, tableName, qualifiedName, schemaName);
-        cleaner.register(ref, state);
+        cleanable = cleaner.register(ref, state);
     }
 
 
@@ -144,9 +144,8 @@ public class TempTableTracker
 
     public synchronized void delete()
     {
-        state.run();
+        cleanable.clean();
     }
-
 
     private static void untrack(String qualifiedName, String schemaName, String tableName)
     {
