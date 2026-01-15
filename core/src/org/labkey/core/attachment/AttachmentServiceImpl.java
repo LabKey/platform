@@ -51,6 +51,7 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.PropertySchema;
 import org.labkey.api.data.ResultSetView;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -779,8 +780,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     {
         Set<String> schemasToIgnore = Sets.newCaseInsensitiveHashSet(userRequestedSchemasToIgnore);
         String documentsSelectName = CoreSchema.getInstance().getTableInfoDocuments().getSelectName();
-        if (documentsSelectName == null)
-            throw new IllegalStateException("core.Document select name is null");
+        String propertySetsSelectName = PropertySchema.getInstance().getTableInfoPropertySets().getSelectName();
 
         // Temp schema causes problems because materialized tables disappear but stay in the cached list. This is probably a bug with
         // MaterializedQueryHelper... it should clear the temp DbSchema when it deletes a temp table. TODO: fix MQH & remove this workaround
@@ -791,7 +791,8 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             .map(schemaName->DbSchema.get(schemaName, DbSchemaType.Bare))
             .flatMap(schema->schema.getTableNames().stream().map(schema::getTable))
             .filter(table->table.getTableType() == DatabaseTableType.TABLE) // We just want the underlying tables (no views or virtual tables)
-            .filter(table->!documentsSelectName.equals(table.getSelectName())) // Don't join to the Documents table!
+            .filter(table->!Objects.equals(documentsSelectName, table.getSelectName())) // Don't join to the Documents table!
+            .filter(table->!Objects.equals(propertySetsSelectName, table.getSelectName())) // Nor to prop.PropertySets
             .map(SchemaTableInfo::getColumns)
             .flatMap(Collection::stream)
             .filter(ColumnRenderProperties::isStringType)
@@ -800,12 +801,16 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             .collect(LabKeyCollectors.joining(new SQLFragment("    UNION\n"))));
     }
 
+    private static final Set<String> EXCLUDED_COLUMNS = CaseInsensitiveHashSet.of("Container", "ContainerId", "LookupContainer", "OwnerId", "Project", "ResourceId");
+
     private SQLFragment getSelectStatement(ColumnInfo column, boolean lsidsOnly)
     {
         SQLFragment expression;
         SQLFragment where = null;
 
-        if (column.getJdbcType() == JdbcType.GUID && !lsidsOnly)
+        // GUID columns that don't have an "excluded" name, otherwise attachments associated with core.Containers rows
+        // will appear to be attached to many tables in the database.
+        if (column.getJdbcType() == JdbcType.GUID && !lsidsOnly && !EXCLUDED_COLUMNS.contains(column.getName()))
         {
             expression = column.getSelectIdentifier().getSql();
         }
