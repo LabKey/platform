@@ -16,12 +16,12 @@
 
 package org.labkey.api.data;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -37,19 +37,16 @@ import java.util.TreeSet;
  */
 public class TempTableTracker
 {
-    private static final Logger _log = LogManager.getLogger(TempTableTracker.class);
+    private static final Logger _log = LogHelper.getLogger(TempTableTracker.class, "Manages temp tables and their deletion");
     private static final String LOGFILE = "CPAS_sqlTempTables.log";
     private static final Map<String, TempTableTracker> createdTableNames = new TreeMap<>();
     private static final Cleaner cleaner = Cleaner.create();
 
     private static RandomAccessFile tempTableLog = null;
 
-    private final DbSchema schema;
     private final String schemaName;
     private final String tableName;
     private final String qualifiedName;
-
-    private boolean deleted = false;
 
     private static class CleanupState implements Runnable
     {
@@ -70,28 +67,14 @@ public class TempTableTracker
         @Override
         public void run()
         {
-            if (delete())
+            if (!deleted)
             {
-                _log.error("finalizing undeleted TempTableTracker: " + qualifiedName);
+                _log.debug("Deleting table " + schema.getName() + "." + tableName);
+                schema.dropTableIfExists(tableName);
+
+                deleted = true;
+                untrack(qualifiedName, schemaName, tableName);
             }
-        }
-
-        private synchronized boolean delete()
-        {
-            if (deleted)
-                return false;
-
-            _log.debug("Deleting table " + schema.getName() + "." + tableName);
-            schema.dropTableIfExists(tableName);
-
-            deleted = true;
-            untrack(qualifiedName, schemaName, tableName);
-            return true;
-        }
-
-        private synchronized void markDeleted()
-        {
-            deleted = true;
         }
     }
 
@@ -99,7 +82,6 @@ public class TempTableTracker
 
     private TempTableTracker(DbSchema schema, String tableName, Object ref)
     {
-        this.schema = schema;
         this.schemaName = schema.getName();
         this.tableName = tableName;
         this.qualifiedName = this.schemaName + "." + this.tableName;
@@ -113,13 +95,13 @@ public class TempTableTracker
         this(DbSchema.get(schemaName), tableName, ref);  // TODO: Treat as provisioned?
     } 
 
-    private static final Object initlock = new Object();
+    private static final Object LOCK = new Object();
     private static boolean initialized = false;
 
     // make sure temp table tracker is initialized
     public static void init()
     {
-        synchronized(initlock)
+        synchronized(LOCK)
         {
             if (!initialized)
             {
@@ -160,31 +142,9 @@ public class TempTableTracker
         }
     }
 
-
-    private DbSchema getSchema()
-    {
-        return schema;
-    }
-
-
     public synchronized void delete()
     {
-        if (deleted)
-            return;
-
-        state.markDeleted();
-        sqlDelete();
-
-        deleted = true;
-        untrack(qualifiedName, schemaName, tableName);
-    }
-
-
-    private boolean sqlDelete()
-    {
-        _log.debug("Deleting table " + schema.getName() + "." + tableName);
-        schema.dropTableIfExists(tableName);
-        return true;
+        state.run();
     }
 
 
@@ -296,7 +256,7 @@ public class TempTableTracker
                 tempTableLog.setLength(0);
                 for (TempTableTracker ttt : createdTableNames.values())
                 {
-                    if (!ttt.deleted)
+                    if (!ttt.state.deleted)
                         appendToLog("+" + ttt.schemaName + "\t" + ttt.tableName + "\n");
                 }
             }
@@ -329,9 +289,7 @@ public class TempTableTracker
             {
                 for (TempTableTracker ttt : createdTableNames.values())
                 {
-                    ttt.state.markDeleted();
-                    ttt.sqlDelete();
-                    ttt.deleted = true;
+                    ttt.state.run();
                 }
             }
 
