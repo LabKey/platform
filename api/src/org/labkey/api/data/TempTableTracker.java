@@ -23,28 +23,24 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ShutdownListener;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
+import java.lang.ref.Cleaner;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * User: Matthew
  * Date: May 4, 2006
  * Time: 7:27:50 PM
  */
-public class TempTableTracker extends WeakReference<Object>
+public class TempTableTracker
 {
     private static final Logger _log = LogManager.getLogger(TempTableTracker.class);
     private static final String LOGFILE = "CPAS_sqlTempTables.log";
     private static final Map<String, TempTableTracker> createdTableNames = new TreeMap<>();
-    private static final ReferenceQueue<Object> cleanupQueue = new ReferenceQueue<>();
+    private static final Cleaner cleaner = Cleaner.create();
 
     private static RandomAccessFile tempTableLog = null;
 
@@ -55,14 +51,60 @@ public class TempTableTracker extends WeakReference<Object>
 
     private boolean deleted = false;
 
+    private static class CleanupState implements Runnable
+    {
+        private final DbSchema schema;
+        private final String tableName;
+        private final String qualifiedName;
+        private final String schemaName;
+        private boolean deleted = false;
+
+        private CleanupState(DbSchema schema, String tableName, String qualifiedName, String schemaName)
+        {
+            this.schema = schema;
+            this.tableName = tableName;
+            this.qualifiedName = qualifiedName;
+            this.schemaName = schemaName;
+        }
+
+        @Override
+        public void run()
+        {
+            if (delete())
+            {
+                _log.error("finalizing undeleted TempTableTracker: " + qualifiedName);
+            }
+        }
+
+        private synchronized boolean delete()
+        {
+            if (deleted)
+                return false;
+
+            _log.debug("Deleting table " + schema.getName() + "." + tableName);
+            schema.dropTableIfExists(tableName);
+
+            deleted = true;
+            untrack(qualifiedName, schemaName, tableName);
+            return true;
+        }
+
+        private synchronized void markDeleted()
+        {
+            deleted = true;
+        }
+    }
+
+    private final CleanupState state;
 
     private TempTableTracker(DbSchema schema, String tableName, Object ref)
     {
-        super(ref, cleanupQueue);
         this.schema = schema;
         this.schemaName = schema.getName();
         this.tableName = tableName;
         this.qualifiedName = this.schemaName + "." + this.tableName;
+        this.state = new CleanupState(schema, tableName, qualifiedName, schemaName);
+        cleaner.register(ref, state);
     }
 
 
@@ -84,8 +126,6 @@ public class TempTableTracker extends WeakReference<Object>
                 initialized = true;
                 synchronizeLog(true);
                 purgeTempSchema();
-                tempTableThread.setDaemon(true);
-                tempTableThread.start();
             }
         }
     }
@@ -132,44 +172,33 @@ public class TempTableTracker extends WeakReference<Object>
         if (deleted)
             return;
 
+        state.markDeleted();
         sqlDelete();
 
         deleted = true;
-        untrack();
+        untrack(qualifiedName, schemaName, tableName);
     }
 
 
     private boolean sqlDelete()
     {
-        DbSchema schema = getSchema();
         _log.debug("Deleting table " + schema.getName() + "." + tableName);
         schema.dropTableIfExists(tableName);
         return true;
     }
 
 
-    @Override
-    protected void finalize() throws Throwable
-    {
-        if (!deleted)
-            _log.error("finalizing undeleted TempTableTracker: " + qualifiedName);
-        super.finalize();
-    }
-
-
-    private void untrack()
+    private static void untrack(String qualifiedName, String schemaName, String tableName)
     {
         _log.debug("untrack(" + qualifiedName + ")");
 
         synchronized(createdTableNames)
         {
-            var ttt = createdTableNames.remove(qualifiedName);
+            createdTableNames.remove(qualifiedName);
             appendToLog("-" + schemaName + "\t" + tableName + "\n");
 
             if (createdTableNames.isEmpty() || System.currentTimeMillis() > lastSync + CacheManager.DAY)
                 synchronizeLog(false);
-
-            ttt.clear();
         }
     }
 
@@ -285,47 +314,12 @@ public class TempTableTracker extends WeakReference<Object>
 
     static final TempTableThread tempTableThread = new TempTableThread();
 
-    static class TempTableThread extends Thread  implements ShutdownListener
+    public static class TempTableThread implements ShutdownListener
     {
-        AtomicBoolean _shutdown = new AtomicBoolean(false);
-        
-        TempTableThread()
-        {
-            super("Temp table cleanup");
-            setDaemon(true);
-        }
-
         @Override
-        public void run()
+        public String getName()
         {
-            while (true)
-            {
-                try
-                {
-                    Reference<?> r = _shutdown.get() ? cleanupQueue.poll() : cleanupQueue.remove();
-                    if (_shutdown.get() && r == null)
-                        return;
-                    //noinspection RedundantCast
-                    TempTableTracker t = (TempTableTracker)(Object)r;
-                    t.delete();
-                }
-                catch (InterruptedException x)
-                {
-                    _log.debug("interrupted");
-                }
-                catch (Throwable x)
-                {
-                    _log.error("unexpected error", x);
-                }
-            }
-        }
-
-
-        @Override
-        public void shutdownPre()
-        {
-            _shutdown.set(true);
-            interrupt();
+            return "Temp table cleanup";
         }
 
         @Override
@@ -335,16 +329,12 @@ public class TempTableTracker extends WeakReference<Object>
             {
                 for (TempTableTracker ttt : createdTableNames.values())
                 {
+                    ttt.state.markDeleted();
                     ttt.sqlDelete();
                     ttt.deleted = true;
                 }
             }
 
-            try
-            {
-                join(5000);
-            }
-            catch (InterruptedException ignored) {}
             synchronizeLog(false);
         }
     }

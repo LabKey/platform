@@ -16,11 +16,11 @@
 package org.labkey.api.util;
 
 import org.apache.logging.log4j.LogManager;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.miniprofiler.MiniProfiler;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.Cleaner;
 
 /**
  * Verifies that close() was called at some point before finalization; logs an error and creation stack trace if not.
@@ -30,32 +30,55 @@ import java.io.InputStream;
 
 public class CheckedInputStream extends InputStreamWrapper
 {
-    @Nullable
-    private final StackTraceElement[] _creationStackTrace;
-    private boolean _closed = false;
+    private static final Cleaner CLEANER = Cleaner.create();
+
+    private static class State implements Runnable
+    {
+        private final InputStream _is;
+        private final StackTraceElement[] _creationStackTrace;
+        private boolean _closed = false;
+
+        private State(InputStream is, StackTraceElement[] creationStackTrace)
+        {
+            _is = is;
+            _creationStackTrace = creationStackTrace;
+        }
+
+        @Override
+        public void run()
+        {
+            if (!_closed)
+            {
+                LogManager.getLogger(CheckedInputStream.class).error("InputStream was not closed. Creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
+                try
+                {
+                    _is.close();
+                }
+                catch (IOException e)
+                {
+                    LogManager.getLogger(CheckedInputStream.class).error("Failed to close InputStream", e);
+                }
+                finally
+                {
+                    _closed = true;
+                }
+            }
+        }
+    }
+
+    private final Cleaner.Cleanable _cleanable;
 
     public CheckedInputStream(InputStream is)
     {
         super(is);
-        _creationStackTrace = MiniProfiler.getTroubleshootingStackTrace();
+        StackTraceElement[] creationStackTrace = MiniProfiler.getTroubleshootingStackTrace();
+        State state = new State(is, creationStackTrace);
+        _cleanable = CLEANER.register(this, state);
     }
 
     @Override
     public void close() throws IOException
     {
-        _closed = true;
-        super.close();
-    }
-
-    @Override
-    protected void finalize() throws Throwable
-    {
-        if (!_closed)
-        {
-            LogManager.getLogger(CheckedInputStream.class).error("InputStream was not closed. Creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
-            super.close();
-        }
-
-        super.finalize();
+        _cleanable.clean();
     }
 }
