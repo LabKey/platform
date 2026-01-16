@@ -46,6 +46,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.ConcurrentHashSet;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
@@ -1209,6 +1210,51 @@ public class ConvertHelper implements PropertyEditorRegistrar
                     // Expected exception
                 }
             }
+        }
+
+        @Test
+        public void testEmpty()
+        {
+            assertEquals("", JdbcType.CHAR.convert(""));
+            assertNull(JdbcType.VARCHAR.convert(""));
+            assertNull(JdbcType.LONGVARCHAR.convert(""));
+            assertEquals("", PropertyType.STRING.convert(""));
+            assertEquals("", PropertyType.MULTI_LINE.convert(""));
+            assertEquals("", PropertyType.XML_TEXT.convert(""));
+            assertNull(ConvertHelper.convert("", String.class));
+            assertNull(ConvertUtils.convert(""));
+            assertNull(ConvertUtils.convert("", String.class));
+        }
+
+        @Test
+        public void testBlank()
+        {
+            // blank strings do not get the empty string special handling.
+            assertEquals(" ", JdbcType.CHAR.convert(" "));
+            assertEquals(" ", JdbcType.VARCHAR.convert(" "));
+            assertEquals(" ", JdbcType.LONGVARCHAR.convert(" "));
+            assertEquals(" ", PropertyType.STRING.convert(" "));
+            assertEquals(" ", PropertyType.MULTI_LINE.convert(" "));
+            assertEquals(" ", PropertyType.XML_TEXT.convert(" "));
+            assertEquals(" ", ConvertHelper.convert(" ", String.class));
+            assertEquals(" ", ConvertUtils.convert(" "));
+            assertEquals(" ", ConvertUtils.convert(" ", String.class));
+        }
+
+        @Test
+        public void testTrim()
+        {
+            // convert() does not trim.  That is handled in DataIterator.
+            // e.g. see SimpleTranslator.createConvertColumn()
+            assertEquals(" x ", JdbcType.CHAR.convert(" x "));
+            assertEquals(" x ", JdbcType.VARCHAR.convert(" x "));
+            assertEquals(" x ", JdbcType.LONGVARCHAR.convert(" x "));
+            assertEquals(" x ", PropertyType.STRING.convert(" x "));
+            assertEquals(" x ", PropertyType.MULTI_LINE.convert(" x "));
+            assertEquals(" x ", PropertyType.XML_TEXT.convert(" x "));
+            assertEquals(" x ", ConvertHelper.convert(" x ", String.class));
+            assertEquals(" x ", ConvertUtils.convert(" x "));
+            assertEquals(" x ", ConvertUtils.convert(" x ", String.class));
         }
     }
 
