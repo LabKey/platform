@@ -1215,7 +1215,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         @Test
         public void testEmpty()
         {
-            assertEquals("", JdbcType.CHAR.convert(""));            // inconsistent with VARCHAR
+            assertNull(JdbcType.CHAR.convert(""));
             assertNull(JdbcType.VARCHAR.convert(""));
             assertNull(JdbcType.LONGVARCHAR.convert(""));
 
