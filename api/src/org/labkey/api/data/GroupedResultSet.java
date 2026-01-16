@@ -37,76 +37,12 @@ import java.util.Objects;
  */
 public class GroupedResultSet extends ResultSetImpl
 {
-    private int _columnIndex;
+    private final int _columnIndex;
     private int _rowOffset = 0;
     private int _lastRow = 0;
     private int _groupCount = 0;
 
     private boolean _ignoreNext;
-
-    public GroupedResultSet(ResultSet rs, String columnName, int maxRows, int maxGroups)
-    {
-        this(rs, columnName);
-        try
-        {
-            setMaxRows(maxRows);
-
-            if (maxRows > 0)
-            {
-                rs.last();
-                if (rs.getRow() > maxRows || (rs instanceof TableResultSet && !((TableResultSet)rs).isComplete()))
-                {
-                    setComplete(false);
-                    Object value = getObject(_columnIndex);
-                    while (rs.previous() && value.equals(getObject(_columnIndex)))
-                    {
-                        // Don't need to do anything here
-                    }
-                    _lastRow = rs.getRow();
-                    value = getObject(_columnIndex);
-                    int groupCount = 1;
-                    while (rs.previous())
-                    {
-                        if (!value.equals(getObject(_columnIndex)))
-                        {
-                            value = getObject(_columnIndex);
-                            groupCount++;
-                        }
-                    }
-                    _groupCount = groupCount;
-                }
-                rs.beforeFirst();
-            }
-
-            Object value = null;
-
-            if (maxRows > 0 && maxGroups > 0)
-            {
-                int groupingCount = 0;
-                while (rs.next())
-                {
-                    if (!getObject(_columnIndex).equals(value))
-                    {
-                        value = getObject(_columnIndex);
-                        groupingCount++;
-                        if (groupingCount > maxGroups)
-                        {
-                            _groupCount = maxGroups;
-                            _lastRow = getRow() - 1;
-                            setComplete(false);
-                            break;
-                        }
-                    }
-                }
-                rs.beforeFirst();
-            }
-            setComplete(_lastRow == 0);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-    }
 
     public GroupedResultSet(ResultSet rs, String columnName, int maxGroups) throws SQLException
     {
@@ -231,7 +167,7 @@ public class GroupedResultSet extends ResultSetImpl
         public void close()
         {
             // Rely on the outer result set for closing
-            _wasClosed = true;
+            close(false);
         }
 
         // Treat a change of value in the grouping column as the "end" of the ResultSet
