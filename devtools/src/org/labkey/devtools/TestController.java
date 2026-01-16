@@ -71,6 +71,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -1394,13 +1395,13 @@ public class TestController extends SpringActionController
             try
             {
                 ((SimpleVectorStore)vs).save(db.toNioPathForRead().toFile());
+                return true;
             }
             catch (Exception x)
             {
-                System.err.println(x.getMessage());
+                errors.addError(new ObjectError("form", "error saving vectordb: " + x.getMessage()));
+                return false;
             }
-
-            return true;
         }
     }
 }

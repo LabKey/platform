@@ -7,9 +7,18 @@ import java.util.List;
 
 public interface McpProvider
 {
-    List<ToolCallback> getMcpTools();
+    default List<ToolCallback> getMcpTools()
+    {
+        return List.of();
+    }
 
-    List<McpServerFeatures.SyncPromptSpecification> getMcpPrompts();
+    default List<McpServerFeatures.SyncPromptSpecification> getMcpPrompts()
+    {
+        return List.of();
+    }
 
-    List<McpServerFeatures.SyncResourceSpecification> getMcpResources();
+    default List<McpServerFeatures.SyncResourceSpecification> getMcpResources()
+    {
+        return List.of();
+    }
 }

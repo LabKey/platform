@@ -240,11 +240,7 @@ public class QueryModule extends DefaultModule
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product folders display folder-specific data",
             "Only list folder-specific data within product folders.", false);
 
-        var mcp = McpService.get();
-        if (null != mcp)
-        {
-            mcp.register(new QueryMcp());
-        }
+        McpService.get().register(new QueryMcp());
     }
 
 

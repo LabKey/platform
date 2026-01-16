@@ -31,6 +31,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.logging.LogHelper;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
@@ -444,7 +445,8 @@ public class McpServiceImpl implements McpService
                 }
                 catch (Exception x)
                 {
-                    System.err.println(x.getMessage());
+                    LogHelper.getLogger(McpServiceImpl.class,"mcp service")
+                            .error("error restoring saved vectordb: " + savedFile.toNioPathForRead(), x);
                 }
             }
         }

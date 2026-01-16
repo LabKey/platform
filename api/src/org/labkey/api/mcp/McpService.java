@@ -22,10 +22,10 @@ import java.util.function.Supplier;
 
 public interface McpService extends ToolCallbackProvider
 {
-    // marker interface for classes that we will "injest" using Spring annotations
+    // marker interface for classes that we will "ingest" using Spring annotations
     interface McpImpl {};
 
-    static McpService get()
+    static @NotNull McpService get()
     {
         return ServiceRegistry.get().getService(McpService.class);
     }
