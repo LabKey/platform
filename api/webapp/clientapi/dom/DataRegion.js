@@ -4505,14 +4505,17 @@ if (!LABKEY.DataRegions) {
             }
 
             // NOTE: ignore maxRows, showRows, and offset
+        } else {
+            params = LABKEY.ActionURL.getParameters(config.url);
+            config.url = LABKEY.ActionURL.buildURL('query', 'selectAll.api', config.containerPath);
         }
 
         LABKEY.Ajax.request({
             url: config.url,
             method: 'POST',
-            params: params,
-            success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
-            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+            jsonData: params,
+            success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), region),
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), region, true)
         });
     };
 
