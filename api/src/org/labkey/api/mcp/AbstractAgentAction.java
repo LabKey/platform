@@ -13,6 +13,12 @@ import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+/**
+ * "agent" it is too strong a word, but if you want to create a tools specific chat endpoint then
+ * start here.
+ * First implement getServicePrompt() to tell your "agent its mission.  You can also listen in on the
+ * conversation to help you user get the right results.
+ */
 public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnlyApiAction<F>
 {
     protected abstract String getAgentName();

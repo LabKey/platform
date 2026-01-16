@@ -19,7 +19,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
-
+/**
+ * This service lets you expose functionality over the MCP protocol (only simple http for now).  This allows
+ * external chat sessions to pull information from LabKey Server.  These methods are also made available
+ * to chat session shosted by LabKey (see AbstractAgentAction).
+ * <p></p>
+ * These calls are not security checked.  Any tools registered here must check user permissions.  Maybe that
+ * will come as we get further along.  Note that the LLM may make callbacks concerning containers other than the
+ * current container.  This is an area for investigation.
+ */
 public interface McpService extends ToolCallbackProvider
 {
     // marker interface for classes that we will "ingest" using Spring annotations

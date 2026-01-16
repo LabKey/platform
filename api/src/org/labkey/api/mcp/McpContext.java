@@ -9,6 +9,11 @@ import org.labkey.api.writer.ContainerUser;
 import org.springframework.ai.chat.model.ToolContext;
 import java.util.Map;
 
+/**
+ *  TODO MCP tool calling supports passing along a ToolContext.  And most all
+ *  interesting tools probably need a User and Container.  This is not all hooked-up
+ *  yet.  This is an area for further investiation.
+ */
 public class McpContext implements ContainerUser
 {
     final User user;
