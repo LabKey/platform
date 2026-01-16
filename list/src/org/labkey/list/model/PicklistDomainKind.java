@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class PicklistDomainKind extends IntegerListDomainKind
 {
-    protected static final String NAMESPACE_PREFIX = "Picklist";
+    public static final String NAMESPACE_PREFIX = "Picklist";
     protected static final String PICK_OBJECT_COLUMN_NAME = "SampleID";
 
     @Override

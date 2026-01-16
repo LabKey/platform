@@ -83,6 +83,18 @@ public interface PropertyService
 
     Stream<? extends Domain> getDomainsStream(Container container, User user, Set<String> domainKinds, @Nullable Set<String> domainNames, boolean includeProjectAndShared);
 
+    /**
+     * Get a stream of all containers that have a domain with a DomainURI that starts with this server's LSID authority
+     * followed by any of the provided namespace prefixes. Not typically needed, but it can be useful for maintenance
+     * or reporting purposes. On servers with many containers, filtering the containers before enumerating domains can
+     * be much faster than enumerating domains in every container. Callers are responsible for passing in the namespace
+     * prefixes because DomainKinds don't provide a standard getter for this; the namespace prefix is often (but not
+     * always) getKindName(). Note that it's possible that containers that don't have your desired domain may be
+     * returned since different kinds' prefixes can overlap and this method doesn't use getPriority() to resolve
+     * domains.
+     */
+    Stream<Container> getContainersWithDomains(@NotNull Set<String> domainNamespacePrefixes);
+
     /** Creates an in-memory Domain. It is not automatically saved to the database */
     @NotNull
     Domain createDomain(Container container, String typeURI, String name);

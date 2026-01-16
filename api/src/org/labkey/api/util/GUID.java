@@ -38,6 +38,8 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.apache.commons.lang3.StringUtils.repeat;
+
 
 /**
  * Create GUID that looks like this f082cbda-b574-4e1e-9dba-b9e9b377f5b1.
@@ -81,7 +83,13 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
     private static int nanoCounter = 0xffffffff;
 
     // Can be used to match GUID values in SQL
-    public static String SQL_LIKE_GUID_PATTERN = "[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]";
+    public static final String SQL_LIKE_GUID_PATTERN;
+
+    static
+    {
+        String d = "[0-9a-f]"; // pattern for a single digit
+        SQL_LIKE_GUID_PATTERN = repeat(d, 8) + "-" + repeat(d, 4) + "-" + repeat(d, 4) + "-" + repeat(d, 4) + "-" + repeat(d, 12);
+    }
 
     private static String genClockSeqAndReserved()
     {
