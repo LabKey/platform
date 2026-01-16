@@ -172,6 +172,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.ExpUnreferencedSampleFilesTable;
 import org.labkey.api.exp.query.SampleStatusTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LSIDRelativizer;
@@ -1606,6 +1607,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter containerFilter)
     {
         return new SampleStatusTable(expSchema, containerFilter);
+    }
+
+    @Override
+    public ExpUnreferencedSampleFilesTable createUnreferencedSampleFilesTable(ExpSchema expSchema, ContainerFilter cf)
+    {
+        return new ExpUnreferencedSampleFilesTableImpl(expSchema, cf);
     }
 
     @Override

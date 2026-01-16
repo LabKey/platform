@@ -227,7 +227,7 @@ public class ExpSchema extends AbstractExpSchema
              @Override
              public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
              {
-                 return new ExpUnreferencedSampleFilesTable(expSchema, cf);
+                 return ExperimentService.get().createUnreferencedSampleFilesTable(expSchema, cf);
              }
 
             @Override
