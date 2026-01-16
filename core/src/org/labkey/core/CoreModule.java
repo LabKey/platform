@@ -173,6 +173,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JobRunner;
+import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
@@ -356,6 +357,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1451,6 +1453,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());
 
         return testClasses;
+    }
+
+    @Override
+    public @NotNull Collection<Supplier<Class<?>>> getIntegrationTestFactories()
+    {
+        List<Supplier<Class<?>>> ret = new ArrayList<>(super.getIntegrationTestFactories());
+        ret.add(new JspTestCase("/org/labkey/api/data/ColumnInfoTests.jsp"));
+        return ret;
     }
 
     @Override

@@ -649,7 +649,7 @@ public class DataColumn extends DisplayColumn
                 }
             }
             else
-                strVal = ConvertUtils.convert(value);
+                strVal = ConvertHelper.convert(value, String.class);
         }
         return strVal;
     }

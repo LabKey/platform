@@ -1573,6 +1573,34 @@ public abstract class Method
         }
     }
 
+    public static class ArrayIsEmptyMethod extends Method
+    {
+        ArrayIsEmptyMethod(String name)
+        {
+            super(name, JdbcType.BOOLEAN, 1, 1);
+        }
+
+        @Override
+        public MethodInfo getMethodInfo()
+        {
+            return new AbstractMethodInfo(JdbcType.BOOLEAN)
+            {
+                @Override
+                public JdbcType getJdbcType(JdbcType[] args)
+                {
+                    if (1 == args.length && args[0] != JdbcType.ARRAY)
+                        throw new QueryParseException(_name + " requires an argument of type ARRAY", null, -1, -1);
+                    return super.getJdbcType(args);
+                }
+
+                @Override
+                public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+                {
+                    return new SQLFragment("(cardinality(").append(arguments[0]).append(")=0)");
+                }
+            };
+        }
+    }
 
     final static Map<String, Method> postgresMethods = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
 
@@ -1650,6 +1678,8 @@ public abstract class Method
         // not array_equals() because arrays are ordered, this is an unordered comparison
         postgresMethods.put("array_is_same", new ArrayOperatorMethod("array_is_same", SqlDialect::array_same_array));
         // Use "NOT array_is_same()" instead of something clumsy like "array_is_not_same()"
+
+        postgresMethods.put("array_is_empty", new ArrayIsEmptyMethod("array_is_empty"));
     }
 
 

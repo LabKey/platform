@@ -75,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -2228,5 +2229,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public void setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior missingBehavior)
     {
         _remapMissingBehavior = missingBehavior;
+    }
+
+    @Override @Transient
+    public final SimpleConvert getConvertFn()
+    {
+        return ColumnRenderProperties.getDefaultConvertFn(this);
     }
 }

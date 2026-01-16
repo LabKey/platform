@@ -26,7 +26,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
@@ -421,19 +420,14 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             {
                 if (null != bindValue)
                 {
-                    propType = getTruePropType(propName);
                     Object val;
-                    if (null != col && null != col.getKindOfQuantity())
+                    if (col != null)
                     {
-                        // TODO MultiChoice switch to col.getConvertFn().apply(bindValue)
-                        val = Quantity.convert(bindValue, col.getDisplayUnit());
+                        val = col.convert(bindValue);
                     }
                     else
                     {
-                        if (propType != null)
-                            val = ConvertUtils.convert(bindValue, propType);
-                        else
-                            val = bindValue;
+                        val = getSimpleConvert(propName).convert(bindValue);
                     }
                     values.put(propName, val);
                 }
@@ -733,18 +727,20 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         setDataLoaded(false);
     }
 
-
-    protected Class<?> getTruePropType(String propName)
+    protected SimpleConvert getSimpleConvert(String propName)
     {
         ColumnInfo column = getColumnByFormFieldName(propName);
         if (null == column)
-            return null;
-        // TODO MultiChoice : move this to ColumnInfo (it does not belong in this one place)
-        // TODO MultiChoice : Can we actually assume that the FK column (in this table) is the same type as the lookup column?
+            return (value) -> value;
         boolean multiValued = column.getFk() instanceof MultiValuedForeignKey && ((MultiValuedForeignKey)column.getFk()).isMultiSelectInput();
         if (multiValued)
-            return arrayClass(column.getJavaClass());
-        return column.getJavaClass();
+        {
+            // TODO This should be reconciled with SimpleTranslator.MultiValueConvertColumn.convert()
+            // TODO shouldn't this be getFk().createLookupColumn(getLookupDisplayName()).getJavaClass() or something like that?
+            // I think String is a better guess than column.getJavaClass()
+            return ConvertHelper.getSimpleConvert(String[].class);
+        }
+        return column.getConvertFn();
     }
 
     private static <K> Class<?> arrayClass(Class<K> k)
@@ -878,7 +874,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             setValueToBind(pv.getName(), pv.getValue());
         }
 
-        BindException errors = new NullSafeBindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "form"));
+        BindException errors = new NullSafeBindException(this, "form");
         validateBind(errors);
         return errors;
     }

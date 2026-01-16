@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,7 +42,7 @@ import java.util.function.Function;
 
 import static org.labkey.api.ontology.OntologyService.conceptCodeConceptURI;
 
-public interface ColumnRenderProperties extends ImportAliasable
+public interface ColumnRenderProperties extends ImportAliasable, SimpleConvert
 {
     void copyTo(ColumnRenderPropertiesImpl to);
 
@@ -235,11 +236,11 @@ public interface ColumnRenderProperties extends ImportAliasable
      * From an implementation point of view we need a path from the ontology.hierarchy table.  From the user's
      * point of view we only need a concept (assuming hierarchy table is complete and consistent WRT subclass
      * relationship between concepts).
-     *
+     * <br>
      * This should be set to an unambiguous path of conceptid (e.g. /NCI:concept1/NCI:concept2).  However, we will
      * accept a simple conceptid and map to a path and hope the hierarchy tree is consistent e.g. {set of concepts
      * under (path1)/CONCEPT/} == {set of concepts under (alternate path2)/CONCEPT/}
-     *
+     * <br>
      * Use OntologyManager.resolveSubtreePath(crp.getConceptSubtree()) to get ontology.hierarchy.path.
      */
     default String getConceptSubtree()
@@ -319,13 +320,7 @@ public interface ColumnRenderProperties extends ImportAliasable
         return getDefaultFormatFn(getName(), getJavaObjectClass(), getDisplayUnit(), getTsvFormatString(), DisplayColumn.tsvFormatSymbols);
     }
 
-    @Transient
-    default Function<Object,Object> getConvertFn()
-    {
-        return getDefaultConvertFn(this);
-    }
-
-    static Function<Object, String> getDefaultFormatFn(String colName, Class javaObjectClass, final Unit displayUnit, String formatString, DecimalFormatSymbols dfs)
+    static Function<Object, String> getDefaultFormatFn(String colName, Class<?> javaObjectClass, final Unit displayUnit, String formatString, DecimalFormatSymbols dfs)
     {
         final var format = null==formatString ? null : DisplayColumn.createFormat(formatString, javaObjectClass, dfs);
 
@@ -376,8 +371,21 @@ public interface ColumnRenderProperties extends ImportAliasable
         };
     }
 
-    /* empty string -> null */
-    static Function<Object,Object> getDefaultConvertFn(ColumnRenderProperties col)
+    /**
+     * The returned Function&lt;Object,Object> should throw ConversionException (undeclared RuntimeException).
+     * This method does not handle compound conversions e.g. MissingValues or Out-of-range indicators.
+     */
+    @Override @Transient
+    SimpleConvert getConvertFn();
+
+    /** see getConvertFn() */
+    @Override
+    default Object convert(Object o) throws ConversionException
+    {
+        return getConvertFn().convert(o);
+    }
+
+    static SimpleConvert getDefaultConvertFn(ColumnRenderProperties col)
     {
         final Class<?> javaClass = col.getJavaObjectClass();
         final var defaultUnit = col.getDisplayUnit();
@@ -386,17 +394,9 @@ public interface ColumnRenderProperties extends ImportAliasable
         if (null != defaultUnit)
             return defaultUnit::convert;
 
-        if (PropertyType.MULTI_CHOICE == col.getPropertyType())
-            return MultiChoice.Converter.getInstance();
+        if (null != col.getPropertyType())
+            return col.getPropertyType();
 
-        return (value) ->
-        {
-            // quick check for unnecessary conversion
-            if (value == null || javaClass == value.getClass())
-                return value;
-            if (value instanceof CharSequence)
-                return ConvertUtils.convert(value.toString(), javaClass);
-            return jdbcType.convert(value);
-        };
+        return col.getJdbcType();
     }
 }

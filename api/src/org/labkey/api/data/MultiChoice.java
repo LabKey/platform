@@ -48,7 +48,8 @@ import static org.labkey.api.util.DOM.at;
 public class MultiChoice
 {
     public static final String ARRAY_MARKER = "[]";
-    public static class DisplayColumn extends DataColumn
+
+    public static class DisplayColumn extends DataColumn implements IMultiValuedDisplayColumn
     {
         public DisplayColumn(ColumnInfo col)
         {
@@ -76,12 +77,6 @@ public class MultiChoice
         }
 
         @Override
-        protected Object getInputValue(RenderContext ctx)
-        {
-            return super.getInputValue(ctx);
-        }
-
-        @Override
         protected String getStringValue(Object value, Unit unit, boolean disabledInput)
         {
             // Because MultiChoice.Array implements Collection ConvertUtils will return convert(Array.get(0).toString()))
@@ -104,7 +99,7 @@ public class MultiChoice
             boolean disabledInput = isDisabledInput(ctx);
             String formFieldName = getFormFieldName(ctx);
             ColumnInfo boundColumn = getBoundColumn();
-            IPropertyValidator textChoiceValidator = PropertyService.get().getValidatorForColumn(boundColumn, PropertyValidatorType.TextChoice);
+            IPropertyValidator textChoiceValidator = null==boundColumn ? null : PropertyService.get().getValidatorForColumn(boundColumn, PropertyValidatorType.TextChoice);
 
             if (textChoiceValidator != null)
             {
@@ -132,7 +127,7 @@ public class MultiChoice
                 return HtmlString.EMPTY_STRING;
 
             return HtmlString.of(
-                DIV(array.stream().map(v -> SPAN(at(style,"border:solid 1px black; border-radius:3px;"), v))
+                DIV(array.stream().map(v -> SPAN(at(style,"border:solid 1px #DDDDDD; border-radius:3px; padding:4px;"), v))
                         .collect(new JoinRenderable(HtmlString.SP))));
         }
 
@@ -157,6 +152,38 @@ public class MultiChoice
         public Object getExportCompatibleValue(RenderContext ctx)
         {
             return getTsvFormattedValue(ctx);
+        }
+
+        // IMultiValuedDisplayColumn
+
+        @Override
+        public List<Object> getDisplayValues(RenderContext ctx)
+        {
+            return (List<Object>)getValue(ctx);
+        }
+
+        @Override
+        public List<String> renderURLs(RenderContext ctx)
+        {
+            return List.of();
+        }
+
+        @Override
+        public List<String> getTsvFormattedValues(RenderContext ctx)
+        {
+            return (Array)getValue(ctx);
+        }
+
+        @Override
+        public List<String> getFormattedTexts(RenderContext ctx)
+        {
+            return (Array)getValue(ctx);
+        }
+
+        @Override
+        public List<Object> getJsonValues(RenderContext ctx)
+        {
+            return (List<Object>)getValue(ctx);
         }
     }
 
@@ -341,13 +368,13 @@ public class MultiChoice
         }
 
         @Override
-        public @NotNull Object[] toArray()
+        public Object @NotNull [] toArray()
         {
             return 0==array.length ? array : array.clone();
         }
 
         @Override
-        public @NotNull <T> T[] toArray(@NotNull T[] a)
+        public <T> T @NotNull [] toArray(T @NotNull [] a)
         {
             if (a.length == 0 && a.getClass().getComponentType().isAssignableFrom(String.class))
                 return (T[])array.clone();
@@ -462,13 +489,13 @@ public class MultiChoice
         }
 
         @Override
-        public String getBaseTypeName() throws SQLException
+        public String getBaseTypeName()
         {
             return "VARCHAR";
         }
 
         @Override
-        public int getBaseType() throws SQLException
+        public int getBaseType()
         {
             return Types.VARCHAR;
         }
@@ -540,6 +567,7 @@ public class MultiChoice
             return _converter;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public <T> T convert(Class<T> aClass, Object o)
         {
@@ -553,8 +581,8 @@ public class MultiChoice
                 return (T) Array.from((Object[]) o);
             if (o instanceof org.json.JSONArray json)
                 return (T) Array.from(json);
-            if (o instanceof List list)
-                return (T) new Array(list.stream());
+            if (o instanceof List<?> list)
+                return (T) new Array(((List<Object>)list).stream());
             return (T) Array.from(o.toString());
         }
 
