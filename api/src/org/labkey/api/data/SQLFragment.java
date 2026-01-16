@@ -47,7 +47,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
@@ -1339,25 +1338,23 @@ public class SQLFragment implements Appendable, CharSequence
      * concatenation using the provided separator. The parameters are combined to form the new parameter list.
      *
      * @param fragments SQLFragments to join together
-     * @param separator Separator to use on the SQL portion
+     * @param separator Separator to use
      * @return A new SQLFragment that joins all the SQLFragments
      */
-    public static SQLFragment join(Iterable<SQLFragment> fragments, String separator)
+    public static SQLFragment join(Iterable<SQLFragment> fragments, SQLFragment separator)
     {
-        if (separator.contains("?"))
-            throw new IllegalStateException("separator must not include a parameter marker");
+        SQLFragment join = new SQLFragment();
+        boolean first = true;
 
-        // Join all the SQL statements
-        String sql = StreamSupport.stream(fragments.spliterator(), false)
-            .map(SQLFragment::getSQL)
-            .collect(Collectors.joining(separator));
+        for (SQLFragment fragment : fragments)
+        {
+            if (first)
+                first = false;
+            else
+                join.append(separator);
+            join.append(fragment);
+        }
 
-        // Collect all the parameters to a single list
-        List<?> params = StreamSupport.stream(fragments.spliterator(), false)
-            .map(SQLFragment::getParams)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
-
-        return new SQLFragment(sql, params);
+        return join;
     }
 }

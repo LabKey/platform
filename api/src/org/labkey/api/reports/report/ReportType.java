@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 
 public class ReportType implements AttachmentParentType
 {
@@ -40,8 +41,12 @@ public class ReportType implements AttachmentParentType
     }
 
     @Override
-    public @NotNull SQLFragment getSelectParentEntityIdsSql()
+    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
-        return new SQLFragment("SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoReport(), "reports");
+        TableInfo table = CoreSchema.getInstance().getTableInfoReport();
+        return new SQLFragment("SELECT EntityId, ")
+            .append(table.getSqlDialect().concatenate("ReportKey", "':'", "CAST(RowId AS VARCHAR)"))
+            .append(" AS Description FROM ")
+            .append(table, "reports");
     }
 }

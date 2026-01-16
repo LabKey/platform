@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.fhcrc.cpas.exp.xml.DefaultType;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
@@ -33,7 +34,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
@@ -52,6 +53,7 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.Lsid.LsidBuilder;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -95,6 +97,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -315,6 +318,35 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
             stream = stream.filter(d -> domainNames.contains(d.getName()));
 
         return stream;
+    }
+
+    @Override
+    public Stream<Container> getContainersWithDomains(@NotNull Set<String> domainNamespacePrefixes)
+    {
+        final Stream<Container> ret;
+
+        if (domainNamespacePrefixes.isEmpty())
+        {
+            ret = Stream.empty();
+        }
+        else
+        {
+            SQLFragment sql = new SQLFragment("SELECT DISTINCT Container FROM ")
+                .append(OntologyManager.getTinfoDomainDescriptor())
+                .append(" WHERE ");
+
+            sql.append(domainNamespacePrefixes.stream()
+                .map(prefix -> new SQLFragment("DomainURI LIKE ?")
+                    // Use chop() to get rid of unwanted colon at the end
+                    .add(StringUtils.chop(new LsidBuilder(prefix, null).build().toString()) + "%")
+                )
+                .collect(LabKeyCollectors.joining(new SQLFragment(" OR "))));
+
+            ret = new SqlSelector(OntologyManager.getExpSchema(), sql).stream(String.class)
+                .map(ContainerManager::getForId)
+                .filter(Objects::nonNull);
+        }
+        return ret;
     }
 
     @Override

@@ -16,7 +16,7 @@
 package org.labkey.api.attachments;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 
 /**
@@ -25,7 +25,9 @@ import org.labkey.api.data.SQLFragment;
  */
 public interface AttachmentParentType
 {
-    SQLFragment NO_ENTITY_IDS = new SQLFragment("SELECT NULL AS EntityId WHERE 1 = 0");
+    SQLFragment NO_ROWS = new SQLFragment("SELECT NULL AS EntityId, NULL AS Description WHERE 1 = 0");
+    SQLFragment PARENT_CONTAINER_SQL = new SQLFragment("SELECT EntityId, COALESCE(Name, '<Root>') AS Description FROM ")
+        .append(CoreSchema.getInstance().getTableInfoContainers());
 
     AttachmentParentType UNKNOWN = new AttachmentParentType()
     {
@@ -37,9 +39,9 @@ public interface AttachmentParentType
         }
 
         @Override
-        public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
+        public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
         {
-            sql.append("0 = 1");
+            return NO_ROWS;
         }
     };
 
@@ -56,20 +58,27 @@ public interface AttachmentParentType
     default void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
     {
         SQLFragment selectSql = getSelectParentEntityIdsSql();
-        if (selectSql == null)
-            throw new IllegalStateException("Must override either addWhereSql() or getSelectParentEntityIdsSql()");
         sql.append(parentColumn).append(" IN (").append(selectSql).append(")");
     }
 
     /**
-     * Return a SQLFragment that selects all the EntityIds that might be attachment parents from the table(s) that
-     * provide attachments of this type, without involving the core.Documents table. For example,
-     * {@code SELECT EntityId FROM comm.Announcements}. Return null if this is not-yet-implemented or inappropriate.
-     * For example, some attachments' parents are container IDs. If the method determines that no parents exist, then
-     * return a valid query that selects no rows, for example, {@code NO_ENTITY_IDS}.
+     * Return a SQLFragment that selects just the EntityId of rows that might be attachment parents from the table(s)
+     * that provide attachments of this type, without involving the core.Documents table.
      */
-    default @Nullable SQLFragment getSelectParentEntityIdsSql()
+    default @NotNull SQLFragment getSelectParentEntityIdsSql()
     {
-        return null;
+        SQLFragment selectSql = getSelectEntityIdAndDescriptionSql();
+
+        // The returned SQL is always used inside a subselect, so the alias doesn't have to be unique
+        return new SQLFragment("SELECT EntityId FROM (").append(selectSql).append(") x");
     }
+
+    /**
+     * Return a SQLFragment that selects the EntityId and an appropriate Description of all rows that might be
+     * attachment parents from the table(s) that provide attachment parents of this type, without involving the
+     * core.Documents table. For example, {@code SELECT EntityId, Title AS Description FROM comm.Announcements}.
+     * If the method determines that no parents exist, then return a valid query that selects no rows, for example,
+     * {@code NO_ROWS}.
+     */
+    @NotNull SQLFragment getSelectEntityIdAndDescriptionSql();
 }

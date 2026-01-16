@@ -6,6 +6,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 
@@ -14,6 +15,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -219,6 +221,18 @@ public class LabKeyCollectors
             },
             (h1, h2) -> { h1.append(h2.getHtmlString()); return h1; },
             HtmlStringBuilder::getHtmlString
+        );
+    }
+
+    /**
+     * Returns a {@link Collector} that joins {@link SQLFragment}s into a single {@link SQLFragment} separated by delimiter
+     */
+    public static Collector<SQLFragment, List<SQLFragment>, SQLFragment> joining(SQLFragment delimiter) {
+        return Collector.of(
+            LinkedList::new,
+            List::add,
+            (list1, list2) -> {list1.addAll(list2); return list1;},
+            (list) -> SQLFragment.join(list, delimiter)
         );
     }
 

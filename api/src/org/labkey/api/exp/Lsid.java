@@ -25,8 +25,10 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.data.Builder;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 
 import java.net.URI;
@@ -35,8 +37,6 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-
-import static org.apache.commons.lang3.StringUtils.repeat;
 
 /**
  * Life-sciences identifier (LSID). A structured URI to describe things like samples, data files, assay runs, and protocols.
@@ -122,7 +122,6 @@ public class Lsid
      *
      * To spend less time parsing, maybe cached parsed Lsid in ExpObjectImpl? (not that straightforward)
      */
-
     @Nullable
     private static String[] parseLsid(@Nullable String s)
     {
@@ -138,28 +137,32 @@ public class Lsid
         return new String[] {parts[2], parts[3], parts[4], parts.length < 6 ? null : parts[5]};
     }
 
-
-    // Keep in sync with LSID_REGEX (above)
-    public static Pair<String, String> getSqlExpressionToExtractObjectId(String lsidExpression, SqlDialect dialect)
+    // Keep in sync with LSID_REGEX (above). Note: AttachmentServiceImpl.TestCase.testLsidGuidExtraction tests this.
+    public static Pair<SQLFragment, SQLFragment> getSqlExpressionToExtractObjectId(SQLFragment lsidExpression, SqlDialect dialect)
     {
+        String objectId = GUID.SQL_LIKE_GUID_PATTERN;
+
         if (dialect.isPostgreSQL())
         {
-            // PostgreSQL SUBSTRING supports simple regular expressions. This captures all the text from the third
-            // colon to the end of the string (or to the fourth colon, if present).
-            String expression = "SUBSTRING(" + lsidExpression + " FROM '%urn:lsid:%:#\"%#\":?%' FOR '#')";
-            String where = lsidExpression + " SIMILAR TO '%urn:lsid:%:[0-9a-f\\-]{36}:?%'";
+            // PostgreSQL SUBSTRING supports simple regular expressions. This captures all the text from the fourth
+            // colon to the end of the string (or to the fifth colon, if present).
+            SQLFragment expression = new SQLFragment("SUBSTRING(")
+                .append(lsidExpression)
+                .append(" FROM '%urn:lsid:%:%:#\"[0-9a-f\\-]{36}#\":?%' FOR '#')");
+            SQLFragment where = new SQLFragment(lsidExpression).append(" SIMILAR TO '%urn:lsid:%:%:[0-9a-f\\-]{36}:?%'");
 
             return new Pair<>(expression, where);
         }
 
         if (dialect.isSqlServer())
         {
-            // SQL Server doesn't support regular expressions; this uses an unwieldy pattern to extract the objectid
-            String d = "[0-9a-f]"; // pattern for a single digit
-            String objectId = repeat(d, 8) + "-" + repeat(d, 4) + "-" + repeat(d, 4) + "-" + repeat(d, 4) + "-" + repeat(d, 12);
-
-            String expression = "SUBSTRING(" + lsidExpression + ", PATINDEX('%:" + objectId + "%', " + lsidExpression + ") + 1, 36)";
-            String where = lsidExpression + " LIKE '%urn:lsid:%:" + objectId + "%'";
+            // SQL Server doesn't support regular expressions
+            SQLFragment expression = new SQLFragment("SUBSTRING(")
+                .append(lsidExpression)
+                .append(", PATINDEX('%:" + objectId + "%', ")
+                .append(lsidExpression)
+                .append(") + 1, 36)");
+            SQLFragment where = new SQLFragment(lsidExpression).append(" LIKE '%urn:lsid:%:%:" + objectId + "%'");
 
             return new Pair<>(expression, where);
         }
