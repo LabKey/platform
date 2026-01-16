@@ -88,6 +88,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 
 /**
@@ -1265,6 +1266,72 @@ public class ConvertHelper implements PropertyEditorRegistrar
             assertEquals(" x ", ConvertHelper.convert(" x ", String.class));
             assertEquals(" x ", ConvertUtils.convert(" x "));
             assertEquals(" x ", ConvertUtils.convert(" x ", String.class));
+        }
+
+        Exception ex(Callable c)
+        {
+            try
+            {
+                c.call();
+                return null;
+            }
+            catch (Exception x)
+            {
+                return x;
+            }
+        }
+
+        @Test
+        public void testNumber()
+        {
+            // fractions -> integer
+            assertTrue(ex(()->JdbcType.BIGINT.convert("5.0001")) instanceof ConversionException);
+            assertTrue(ex(()->JdbcType.BIGINT.convert(new BigDecimal("5.0001"))) instanceof ConversionException);
+            assertTrue(ex(()->JdbcType.BIGINT.convert(5.0001f)) instanceof ConversionException);
+            assertTrue(ex(()->JdbcType.BIGINT.convert(5.0001d)) instanceof ConversionException);
+            assertTrue(ex(()->JdbcType.BIGINT.convert(5.0001d)).getMessage().startsWith("Could not convert '"));
+
+            assertTrue(ex(()->JdbcType.INTEGER.convert("5.0001")) instanceof ConversionException);
+            assertTrue(ex(()->JdbcType.INTEGER.convert(new BigDecimal("5.0001"))) instanceof ConversionException);
+            assertTrue(ex(()->JdbcType.INTEGER.convert(5.0001f)) instanceof ConversionException);
+            assertTrue(ex(()->JdbcType.INTEGER.convert(5.0001d)) instanceof ConversionException);
+
+            assertTrue(ex(()->JdbcType.SMALLINT.convert("5.0001")) instanceof ConversionException);
+            assertTrue(ex(()->JdbcType.SMALLINT.convert(new BigDecimal("5.0001"))) instanceof ConversionException);
+            assertTrue(ex(()->JdbcType.SMALLINT.convert(5.0001f)) instanceof ConversionException);
+            assertTrue(ex(()->JdbcType.SMALLINT.convert(5.0001d)) instanceof ConversionException);
+
+            assertTrue(ex(()->PropertyType.BIGINT.convert("5.0001")) instanceof ConversionException);
+            assertTrue(ex(()->PropertyType.BIGINT.convert(new BigDecimal("5.0001"))) instanceof ConversionException);
+            assertTrue(ex(()->PropertyType.BIGINT.convert(5.0001f)) instanceof ConversionException);
+            assertTrue(ex(()->PropertyType.BIGINT.convert(5.0001d)) instanceof ConversionException);
+            assertTrue(ex(()->PropertyType.BIGINT.convert(5.0001d)).getMessage().startsWith("Could not convert '"));
+
+            assertTrue(ex(()->PropertyType.INTEGER.convert("5.0001")) instanceof ConversionException);
+            assertTrue(ex(()->PropertyType.INTEGER.convert(new BigDecimal("5.0001"))) instanceof ConversionException);
+            assertTrue(ex(()->PropertyType.INTEGER.convert(5.0001f)) instanceof ConversionException);
+            assertTrue(ex(()->PropertyType.INTEGER.convert(5.0001d)) instanceof ConversionException);
+
+            assertTrue(ex(()->ConvertUtils.convert("5.0001", Long.class)) instanceof ConversionException);
+            assertTrue(ex(()->ConvertUtils.convert(new BigDecimal("5.0001"), Long.class)) instanceof ConversionException);
+            assertTrue(ex(()->ConvertUtils.convert(5.0001f, Long.class)) instanceof ConversionException);
+            assertTrue(ex(()->ConvertUtils.convert(5.0001d, Long.class)) instanceof ConversionException);
+            assertTrue(ex(()->ConvertUtils.convert(5.0001d)).getMessage().startsWith("Could not convert '"));
+
+            // OOR
+            assertTrue(ex(()->JdbcType.TINYINT.convert(Long.MAX_VALUE)) instanceof ConversionException);
+            assertTrue(ex(()->JdbcType.TINYINT.convert(10_000_000_000d)) instanceof ConversionException);
+            assertTrue(ex(()->JdbcType.TINYINT.convert("10000000000")) instanceof ConversionException);
+            assertTrue(ex(()->PropertyType.INTEGER.convert(Long.MAX_VALUE)) instanceof ConversionException);
+            assertTrue(ex(()->PropertyType.INTEGER.convert(10_000_000_000d)) instanceof ConversionException);
+            assertTrue(ex(()->PropertyType.INTEGER.convert("10000000000")) instanceof ConversionException);
+            assertTrue(ex(()->ConvertUtils.convert(10_000_000_000d, Short.class)) instanceof ConversionException);
+            assertTrue(ex(()->ConvertUtils.convert("10000000000", Short.class)) instanceof ConversionException);
+            assertEquals(Long.MAX_VALUE, ConvertUtils.convert(BigDecimal.valueOf(Long.MAX_VALUE), Long.class));
+            assertEquals(Long.MIN_VALUE, ConvertUtils.convert(BigDecimal.valueOf(Long.MIN_VALUE), Long.class));
+            // precision of Double is not high enough for this equality test to work for any random integer this large
+            assertEquals(Long.MAX_VALUE, ConvertUtils.convert(Double.valueOf(Long.MAX_VALUE), Long.class));
+            assertEquals(Long.MIN_VALUE, ConvertUtils.convert(Double.valueOf(Long.MIN_VALUE), Long.class));
         }
     }
 
