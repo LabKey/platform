@@ -18,6 +18,7 @@ package org.labkey.issue.model;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.issues.IssuesSchema;
 
 public class IssueCommentType implements AttachmentParentType
@@ -40,8 +41,13 @@ public class IssueCommentType implements AttachmentParentType
     }
 
     @Override
-    public @NotNull SQLFragment getSelectParentEntityIdsSql()
+    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
-        return new SQLFragment("SELECT EntityId FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "comments");
+        TableInfo table = IssuesSchema.getInstance().getTableInfoComments();
+
+        return new SQLFragment("SELECT EntityId, ")
+            .append(table.getSqlDialect().concatenate("'Issue #'", "CAST(IssueId AS VARCHAR)"))
+            .append(" AS Description FROM ")
+            .append(table, "comments");
     }
 }

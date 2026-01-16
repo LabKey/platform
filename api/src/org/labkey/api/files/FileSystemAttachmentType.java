@@ -16,7 +16,6 @@
 package org.labkey.api.files;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
@@ -41,8 +40,8 @@ public class FileSystemAttachmentType implements AttachmentParentType
     }
 
     @Override
-    public @Nullable SQLFragment getSelectParentEntityIdsSql()
+    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
-        return new SQLFragment("SELECT EntityId FROM ").append(CoreSchema.getInstance().getMappedDirectories(), "md");
+        return new SQLFragment("SELECT EntityId, Name AS Description FROM ").append(CoreSchema.getInstance().getMappedDirectories(), "md");
     }
 }
