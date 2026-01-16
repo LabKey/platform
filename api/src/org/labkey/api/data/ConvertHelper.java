@@ -1215,12 +1215,22 @@ public class ConvertHelper implements PropertyEditorRegistrar
         @Test
         public void testEmpty()
         {
-            assertEquals("", JdbcType.CHAR.convert(""));
+            assertEquals("", JdbcType.CHAR.convert(""));            // inconsistent with VARCHAR
             assertNull(JdbcType.VARCHAR.convert(""));
             assertNull(JdbcType.LONGVARCHAR.convert(""));
+
+            // PropertyType is used for domain defined tables.
+            // I would expect these to return null.
             assertEquals("", PropertyType.STRING.convert(""));
             assertEquals("", PropertyType.MULTI_LINE.convert(""));
             assertEquals("", PropertyType.XML_TEXT.convert(""));
+
+            // Since we often convert "through" string, I'm not sure this low-level
+            // method should modify "".  This could potential mess up
+            // converting array->string->array for instance.
+            // [] -> "" -> null
+            // vs
+            // [] -> "" -> []
             assertNull(ConvertHelper.convert("", String.class));
             assertNull(ConvertUtils.convert(""));
             assertNull(ConvertUtils.convert("", String.class));
