@@ -241,37 +241,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         result.setDescription("The number of references to this file from File fields in any domain.");
         result.setJdbcType(JdbcType.INTEGER);
         result.setHidden(true);
-        result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
-        {
-            private Long getCount(ExpData data)
-            {
-                if (data == null || StringUtils.isEmpty(data.getDataFileUrl()) || data.getFile() == null)
-                    return null;
-                else
-                {
-                    FileLinkFileListener fileListener = new FileLinkFileListener();
-                    SQLFragment unionSql = fileListener.listFilesQuery(true, data.getFile().getAbsolutePath());
-
-                    return new SqlSelector(CoreSchema.getInstance().getSchema(), unionSql).getRowCount();
-                }
-            }
-
-            @Override
-            protected void renderData(HtmlWriter out, ExpData data)
-            {
-                Long val = getCount(data);
-                if (val == null)
-                    out.write("");
-                else
-                    out.write(val);
-            }
-
-            @Override
-            protected Object getJsonValue(ExpData data)
-            {
-                return getCount(data);
-            }
-        });
+        result.setDisplayColumnFactory(new ReferenceCountDisplayColumnFactory());
         return result;
     }
 

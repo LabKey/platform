@@ -110,39 +110,7 @@ public class ExpUnreferencedSampleFilesTableImpl extends FilteredTable<ExpSchema
 
             var referenceCountCol = new AliasedColumn( this, "ReferenceCount", rowIdCol);
             referenceCountCol.setKeyField(false);
-            referenceCountCol.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
-                    {
-                        private Long getCount(ExpData data)
-                        {
-
-                            if (data == null || StringUtils.isEmpty(data.getDataFileUrl()) || data.getFile() == null)
-                                return null;
-                            else
-                            {
-                                FileLinkFileListener fileListener = new FileLinkFileListener();
-                                SQLFragment unionSql = fileListener.listFilesQuery(true, data.getFile().getAbsolutePath());
-
-                                return new SqlSelector(CoreSchema.getInstance().getSchema(), unionSql).getRowCount();
-                            }
-                        }
-
-                        @Override
-                        protected void renderData(HtmlWriter out, ExpData data)
-                        {
-                            Long val = getCount(data);
-                            if (val == null)
-                                out.write("");
-                            else
-                                out.write(val);
-                        }
-
-                        @Override
-                        protected Object getJsonValue(ExpData data)
-                        {
-                            return getCount(data);
-                        }
-                    }
-            );
+            referenceCountCol.setDisplayColumnFactory(new ReferenceCountDisplayColumnFactory());
             addColumn(referenceCountCol);
         }
 
