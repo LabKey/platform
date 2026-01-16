@@ -1226,7 +1226,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
             assertEquals("", PropertyType.XML_TEXT.convert(""));
 
             // Since we often convert "through" string, I'm not sure this low-level
-            // method should modify "".  This could potential mess up
+            // method should modify "".  This could potentially mess up
             // converting array->string->array for instance.
             // [] -> "" -> null
             // vs
