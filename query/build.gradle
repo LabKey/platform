@@ -30,19 +30,6 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-                "com.google.genai:google-genai:1.15.0",
-                "GENAI",
-                "GENAI",
-                "https://google.com/",
-                "???",
-                "???",
-                "GenAI"
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
             "org.antlr:antlr:${antlrVersion}",
             "ANTLR",
             "ANTLR",
