@@ -387,12 +387,8 @@ public interface ColumnRenderProperties extends ImportAliasable, SimpleConvert
 
     static SimpleConvert getDefaultConvertFn(ColumnRenderProperties col)
     {
-        final Class<?> javaClass = col.getJavaObjectClass();
-        final var defaultUnit = col.getDisplayUnit();
-        final @NotNull var jdbcType = col.getJdbcType();
-
-        if (null != defaultUnit)
-            return defaultUnit::convert;
+        if (null != col.getDisplayUnit())
+            return col.getDisplayUnit();
 
         if (null != col.getPropertyType())
             return col.getPropertyType();

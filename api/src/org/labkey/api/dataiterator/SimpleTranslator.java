@@ -1296,7 +1296,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         col.setJdbcType(toType);
         if (toFk != null)
             col.setFk(toFk);
-        if (PropertyType.MULTI_CHOICE.equals(pt)) // TODO: should this be applied to all column types?
+        if (null != pt)
             col.setPropertyType(pt);
 
         return addConvertColumn(col, fromIndex, fromIndex, remapMissingBehavior, withLookupRemapping);
