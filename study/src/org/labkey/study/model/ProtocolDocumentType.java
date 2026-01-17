@@ -16,7 +16,6 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.study.StudySchema;
@@ -41,8 +40,8 @@ public class ProtocolDocumentType implements AttachmentParentType
     }
 
     @Override
-    public @Nullable SQLFragment getSelectParentEntityIdsSql()
+    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
-        return new SQLFragment("SELECT ProtocolDocumentEntityId FROM ").append(StudySchema.getInstance().getTableInfoStudy(), "s");
+        return new SQLFragment("SELECT ProtocolDocumentEntityId AS EntityId, Label AS Description FROM ").append(StudySchema.getInstance().getTableInfoStudy(), "s");
     }
 }

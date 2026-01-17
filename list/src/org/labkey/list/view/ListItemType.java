@@ -15,20 +15,24 @@
  */
 package org.labkey.list.view;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParentType;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.list.model.IntegerListDomainKind;
+import org.labkey.list.model.ListSchema;
+import org.labkey.list.model.PicklistDomainKind;
+import org.labkey.list.model.VarcharListDomainKind;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ListItemType implements AttachmentParentType
 {
@@ -50,24 +54,33 @@ public class ListItemType implements AttachmentParentType
     }
 
     @Override
-    public @Nullable SQLFragment getSelectParentEntityIdsSql()
+    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
         ListService svc = ListService.get();
         assert null != svc;
+        SqlDialect dialect = ListSchema.getInstance().getSchema().getSqlDialect();
+        List<SQLFragment> selectStatements = new LinkedList<>();
 
-        List<String> selectStatements = new LinkedList<>();
-
-        ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(c -> {
+        PropertyService.get().getContainersWithDomains(Set.of(IntegerListDomainKind.NAMESPACE_PREFIX, VarcharListDomainKind.NAMESPACE_PREFIX, PicklistDomainKind.NAMESPACE_PREFIX)).forEach(c -> {
             Map<String, ListDefinition> map = svc.getLists(c, null, false);
             map.forEach((k, v) -> {
                 Domain domain = v.getDomain();
                 if (null != domain && domain.getProperties().stream().anyMatch(p -> p.getPropertyType() == PropertyType.ATTACHMENT))
-                    selectStatements.add("\n    SELECT EntityId AS ID FROM list." + domain.getStorageTableName());
+                    selectStatements.add(new SQLFragment("\n    SELECT EntityId, ")
+                        .append(dialect.concatenate(
+                            new SQLFragment("?", domain.getName()),
+                            new SQLFragment("':'"),
+                            new SQLFragment("CAST(")
+                                .append(dialect.makeDatabaseIdentifier(domain.getPropertyByName(v.getKeyName()).getPropertyDescriptor().getStorageColumnName().toLowerCase()).getSql()))
+                                .append(" AS VARCHAR)")
+                        )
+                        .append(" AS Description FROM list.").append(domain.getStorageTableName())
+                    );
             });
         });
 
         return selectStatements.isEmpty() ?
-            NO_ENTITY_IDS : // No lists with attachment columns
-            new SQLFragment(StringUtils.join(selectStatements, "\n    UNION"));
+            NO_ROWS : // No lists with attachment columns
+            SQLFragment.join(selectStatements, new SQLFragment("\n    UNION"));
     }
 }

@@ -25,11 +25,11 @@ import java.util.List;
 
 public class IntegerListDomainKind extends ListDomainKind
 {
-    protected static final String NAMESPACE_PREFIX = "IntList";
+    public static final String NAMESPACE_PREFIX = "IntList";
 
-    protected static final List<ListDefinition.KeyType> supportedTypes = Arrays.asList(
-            ListDefinition.KeyType.AutoIncrementInteger,
-            ListDefinition.KeyType.Integer
+    protected static final List<ListDefinition.KeyType> supportedTypes = List.of(
+        ListDefinition.KeyType.AutoIncrementInteger,
+        ListDefinition.KeyType.Integer
     );
 
     @Override
