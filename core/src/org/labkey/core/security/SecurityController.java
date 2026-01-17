@@ -77,7 +77,6 @@ import org.labkey.api.security.InvalidGroupMembershipException;
 import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -719,14 +718,6 @@ public class SecurityController extends SpringActionController
         }
 
         return view;
-    }
-
-    private void verifySystemGroupIsAssignedRole(Group group, Role role, BindException errors)
-    {
-        Set<Role> roles = ContainerManager.getRoot().getPolicy().getRoles(new PrincipalArray(List.of(group.getUserId())));
-        if (!roles.contains(role))
-            errors.reject(ERROR_MSG, "Warning: This group is not assigned its standard role, "
-                + role.getDisplayName() + "! Consider assigning it on the Site Permissions page.");
     }
 
     @RequiresPermission(AdminPermission.class)

@@ -25,6 +25,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.AbstractRootContainerRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -58,15 +59,16 @@ public interface ImpersonationContext extends Serializable
      */
     default Stream<Role> getAssignedRoles(User user, SecurableResource resource)
     {
-        Stream<Role> roles = getSiteRoles(user);
+        Stream<Role> roles = getSiteRoles(user, resource);
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
-        return Streams.concat(roles, policy.getRoles(user.getGroups()).stream()).distinct();
+        return Streams.concat(roles, policy.streamRoles(user.getGroups())).distinct();
     }
 
     /**
      * @return The roles assigned to this user in the root. The roles may be modified and/or filtered by the
      * impersonation context.
      */
+    @Deprecated
     default Stream<Role> getSiteRoles(User user)
     {
         Container root = ContainerManager.getRoot();
@@ -79,9 +81,29 @@ public interface ImpersonationContext extends Serializable
         return roles.stream();
     }
 
+    /**
+     * @return The roles assigned to this user in the root that are applicable to the passed in resource. The roles may
+     * be modified and/or filtered by the impersonation context.
+     */
+    default Stream<Role> getSiteRoles(User user, SecurableResource resource)
+    {
+        Container root = ContainerManager.getRoot();
+        SecurityPolicy policy = root.getPolicy();
+        return policy.streamRoles(getGroups(user))
+            .filter(role -> !role.equals(RoleManager.getRole(NoPermissionsRole.class)))
+            .filter(role -> {
+                if (!role.isApplicable(policy, root))
+                    throw new IllegalStateException("Root role " + role.getName() + " is not applicable");
+                if (!(role instanceof AbstractRootContainerRole siteRole))
+                    throw new IllegalStateException("Root roles should all be AbstractRootContainerRole");
+
+                return siteRole.isAvailableEverywhere() || resource.equals(ContainerManager.getRoot());
+            });
+    }
+
     ImpersonationContextFactory getFactory();
 
-    /** Responsible for adding menu items to allow the user to initiate or stop impersonating, based on the current state */
+    /** Responsible for adding menu items to allow the user to initiate, adjust, or stop impersonating, based on the current state */
     void addMenu(NavTree menu, Container c, User user, ActionURL currentURL);
 
     // restrict the permissions this user is allowed

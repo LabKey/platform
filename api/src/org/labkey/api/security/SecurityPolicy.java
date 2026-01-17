@@ -38,15 +38,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.Spliterators;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
- * Represents a security policy for a {@link org.labkey.api.security.SecurableResource}. You can get a security policy for a resource
- * using SecurityManager.getPolicy(). Note that this class is immutable once constructed, so it may
- * be used by multiple threads at the same time. To make changes to an existing policy, construct a new
+ * Represents a security policy for a {@link org.labkey.api.security.SecurableResource}. You can get a security policy
+ * for a resource using SecurityManager.getPolicy(). Note that this class is immutable once constructed, so it may be
+ * used by multiple threads at the same time. To make changes to an existing policy, construct a new
  * {@link MutableSecurityPolicy} passing the existing SecurityPolicy instance in the constructor.
- * Note: intentionally does not implement HasPermission, use that interface for things that have a SecurityPolicy
+ * Note: intentionally does not implement HasPermission; use that interface for things that have a SecurityPolicy.
  */
 public class SecurityPolicy
 {
@@ -211,6 +215,12 @@ public class SecurityPolicy
         Set<Class<? extends Permission>> permClasses = new HashSet<>();
         handleRoles(principalArray, role -> permClasses.addAll(role.getPermissions()));
 
+        Set<Class<? extends Permission>> permClasses2 = streamRoles(principalArray)
+            .flatMap(role -> role.getPermissions().stream())
+            .collect(Collectors.toSet());
+
+        assert permClasses2.equals(permClasses);
+
         return permClasses;
     }
 
@@ -221,13 +231,18 @@ public class SecurityPolicy
         Set<Role> roles = new HashSet<>();
         handleRoles(principalArray, roles::add);
 
+        Set<Role> roles2 = streamRoles(principalArray).collect(Collectors.toSet());
+
+        assert roles.equals(roles2);
+
         return roles;
     }
 
     /* Does not inspect any contextual roles, just the roles explicitly given by this SecurityPolicy */
     public boolean hasRole(UserPrincipal principal, Class<? extends Role> roleClass)
     {
-        return getRoles(principal.getGroups()).contains(RoleManager.getRole(roleClass));
+        return streamRoles(principal.getGroups())
+            .anyMatch(r -> r.equals(RoleManager.getRole(roleClass)));
     }
 
     private void handleRoles(PrincipalArray principalArray, Consumer<Role> consumer)
@@ -256,6 +271,70 @@ public class SecurityPolicy
                 assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
             else
                 ++principalsIdx;
+        }
+    }
+
+    /* Does not return any contextual roles, just the roles explicitly granted by this SecurityPolicy */
+    @NotNull
+    public Stream<Role> streamRoles(PrincipalArray principalArray)
+    {
+        return StreamSupport.stream(
+            Spliterators.spliteratorUnknownSize(
+                new RoleIterator(principalArray, getAssignments()),
+                0
+            ),
+            false
+        );
+    }
+
+    private static class RoleIterator implements Iterator<Role>
+    {
+        private final Iterator<RoleAssignment> _assignmentIterator;
+        private final List<Integer> _principals;
+
+        private RoleAssignment _assignment;
+        private int _principalsIdx = 0;
+        private Role _nextRole = null;
+
+        public RoleIterator(PrincipalArray principals, SortedSet<RoleAssignment> roleAssignments)
+        {
+            _assignmentIterator = roleAssignments.iterator();
+            _principals = principals.getList();
+            _assignment = _assignmentIterator.hasNext() ? _assignmentIterator.next() : null;
+        }
+
+        private @Nullable Role getNextRole()
+        {
+            while (null != _assignment && _principalsIdx < _principals.size())
+            {
+                int principalId = _principals.get(_principalsIdx);
+                if (_assignment.getUserId() == principalId)
+                {
+                    Role role = _assignment.getRole();
+                    _assignment = _assignmentIterator.hasNext() ? _assignmentIterator.next() : null;
+                    if (null != role)
+                        return role;
+                }
+                else if (_assignment.getUserId() < principalId)
+                    _assignment = _assignmentIterator.hasNext() ? _assignmentIterator.next() : null;
+                else
+                    ++_principalsIdx;
+            }
+
+            return null;
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            _nextRole = getNextRole();
+            return _nextRole != null;
+        }
+
+        @Override
+        public Role next()
+        {
+            return _nextRole;
         }
     }
 
@@ -345,12 +424,18 @@ public class SecurityPolicy
 
     public boolean hasNonInheritedPermission(@NotNull UserPrincipal principal, Class<? extends Permission> perm)
     {
+        boolean ret = streamRoles(new PrincipalArray(List.of(principal.getUserId()))).anyMatch(role -> role.getPermissions().contains(perm));
+
         for (Role role : getRoles(new PrincipalArray(List.of(principal.getUserId()))))
         {
             if (role.getPermissions().contains(perm))
+            {
+                assert ret;
                 return true;
+            }
         }
 
+        assert !ret;
         return false;
     }
 }

@@ -3376,7 +3376,7 @@ public class SecurityManager
                 public Stream<Role> getAssignedRoles(SecurableResource resource)
                 {
                     SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
-                    return policy.getRoles(getGroups()).stream();
+                    return policy.streamRoles(getGroups());
                 }
 
                 @Override

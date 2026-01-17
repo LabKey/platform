@@ -362,6 +362,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         return _impersonationContext.getSiteRoles(this);
     }
 
+    public final Stream<Role> getSiteRoles(SecurableResource resource)
+    {
+        return _impersonationContext.getSiteRoles(this, resource);
+    }
+
     @Override
     public Object clone() throws CloneNotSupportedException
     {
