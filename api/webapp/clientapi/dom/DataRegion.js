@@ -3051,23 +3051,7 @@ if (!LABKEY.DataRegions) {
 
     var _chainSelectionCountCallback = function(region, config) {
 
-        var success = LABKEY.Utils.getOnSuccess(config);
-
-        // On success, update the current selectedCount on this DataRegion and fire the 'selectchange' event
-        config.success = function(data) {
-            region.removeMessage('selection');
-            region.selectionModified = true;
-            region.selectionLoading = false;
-            region.selectedCount = data.count;
-            _onSelectionChange(region);
-
-            // Chain updateSelected with the user-provided success callback
-            if ($.isFunction(success)) {
-                success.call(config.scope, data);
-            }
-        };
-
-        var failure = LABKEY.Utils.getOnFailure(config);
+        const failure = LABKEY.Utils.getOnFailure(config);
         config.failure = function(error) {
             region.selectionLoading = false;
 
@@ -3079,6 +3063,35 @@ if (!LABKEY.DataRegions) {
                 failure.call(config.scope, error);
             }
         }
+
+        // On success, update the current selectedCount on this DataRegion and fire the 'selectchange' event
+        const success = LABKEY.Utils.getOnSuccess(config);
+        config.success = function(data, response) {
+
+            // Workaround for GitHub Issue 778 where the response payload is JSON but the response has been
+            // configured by the server as non-JSON.
+            if (!data && response?.responseText) {
+                try {
+                    data = JSON.parse(response.responseText);
+                } catch (e) {
+                    const msg = 'failed to parse response';
+                    console.error(msg, e, response);
+                    config.failure.call(config.scope, { exception: msg });
+                    return;
+                }
+            }
+
+            region.removeMessage('selection');
+            region.selectionModified = true;
+            region.selectionLoading = false;
+            region.selectedCount = data.count;
+            _onSelectionChange(region);
+
+            // Chain updateSelected with the user-provided success callback
+            if ($.isFunction(success)) {
+                success.call(config.scope, data);
+            }
+        };
 
         return config;
     };
@@ -4505,15 +4518,12 @@ if (!LABKEY.DataRegions) {
             }
 
             // NOTE: ignore maxRows, showRows, and offset
-        } else {
-            params = LABKEY.ActionURL.getParameters(config.url);
-            config.url = LABKEY.ActionURL.buildURL('query', 'selectAll.api', config.containerPath);
         }
 
         LABKEY.Ajax.request({
             url: config.url,
             method: 'POST',
-            jsonData: params,
+            params: params,
             success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), region),
             failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), region, true)
         });
