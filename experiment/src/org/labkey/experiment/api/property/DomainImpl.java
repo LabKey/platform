@@ -405,7 +405,7 @@ public class DomainImpl implements Domain
         ExperimentService exp = ExperimentService.get();
         try (DbScope.Transaction transaction = exp.getSchema().getScope().ensureTransaction())
         {
-            lockForDelete(exp.getSchema());
+            lockForUpdateDelete();
             DefaultValueService.get().clearDefaultValues(getContainer(), this);
             OntologyManager.deleteDomain(getTypeURI(), getContainer());
             StorageProvisioner.get().drop(this);
@@ -434,18 +434,19 @@ public class DomainImpl implements Domain
     }
 
     @Override
-    public void lockForDelete(DbSchema expSchema)
+    public void lockForUpdateDelete()
     {
         // NOTE code relies on the lock returned from Domain.getLock() does not require unlock().
         var lock = getDatabaseLock();
         assert lock instanceof DbScope.ServerLock;
-        assert ExperimentService.get().getSchema().getScope().isTransactionActive();
+        DbSchema expSchema = ExperimentService.get().getSchema();
+        assert expSchema.getScope().isTransactionActive();
         lock.lock();
 
         // CONSIDER verify table exists: SELECT 1 FROM pg_tables WHERE schemaname = ? AND tablename = ?
         if (null != getStorageTableName() && expSchema.getSqlDialect().isPostgreSQL())
         {
-            SQLFragment lockSQL = new SQLFragment().append("LOCK TABLE ").appendDottedIdentifiers(getDomainKind().getStorageSchemaName(), getStorageTableName()).append(" IN EXCLUSIVE MODE").appendEOS().append("\n");
+            SQLFragment lockSQL = new SQLFragment().append("LOCK TABLE ").appendDottedIdentifiers(getDomainKind().getStorageSchemaName(), getStorageTableName()).append(" IN ACCESS EXCLUSIVE MODE").appendEOS().append("\n");
             new SqlExecutor(expSchema).execute(lockSQL);
         }
     }

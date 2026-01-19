@@ -618,7 +618,7 @@ public class PropertyController extends SpringActionController
         public Object execute(DomainApiForm form, BindException errors)
         {
             GWTDomain<?> newDomain = form.getDomainDesign();
-            GWTDomain<?> originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser());
+            GWTDomain<?> originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser(), true);
 
             boolean includeWarnings = form.includeWarnings();
             boolean hasErrors = false;
@@ -1631,6 +1631,11 @@ public class PropertyController extends SpringActionController
     @NotNull
     private static GWTDomain<?> getDomain(String schemaName, String queryName, Integer domainId, @NotNull Container container, @NotNull User user) throws NotFoundException
     {
+        return getDomain(schemaName, queryName, domainId, container, user, false);
+    }
+    @NotNull
+    private static GWTDomain<?> getDomain(String schemaName, String queryName, Integer domainId, @NotNull Container container, @NotNull User user, boolean getForUpdate) throws NotFoundException
+    {
         if ((schemaName == null || queryName == null) && domainId == null)
         {
             throw new IllegalArgumentException("domainId or schemaName and queryName are required" );
@@ -1645,6 +1650,9 @@ public class PropertyController extends SpringActionController
 
             if (!container.equals(dom.getContainer())) // issue 38502
                 throw new NotFoundException("Could not find domain for " + domainId + " in container '" + container.getPath() + "'.");
+
+            if (getForUpdate)
+                dom.lockForUpdateDelete();
 
             domain = DomainUtil.getDomainDescriptor(user, dom);
         }
