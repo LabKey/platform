@@ -47,11 +47,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.NameExpressionValidationResult;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
@@ -60,6 +62,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.DomainKindDesign;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -618,12 +621,19 @@ public class PropertyController extends SpringActionController
         public Object execute(DomainApiForm form, BindException errors)
         {
             GWTDomain<?> newDomain = form.getDomainDesign();
-            GWTDomain<?> originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser(), true);
 
             boolean includeWarnings = form.includeWarnings();
             boolean hasErrors = false;
+            ValidationException updateErrors;
 
-            ValidationException updateErrors = updateDomain(originalDomain, newDomain, form.getOptions(), getContainer(), getUser(), includeWarnings, form.getAuditUserComment());
+            try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+            {
+                // GitHub Issue #783: Server lockup when updating data class domain design
+                GWTDomain<?> originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser(), true);
+                updateErrors = updateDomain(originalDomain, newDomain, form.getOptions(), getContainer(), getUser(), includeWarnings, form.getAuditUserComment());
+
+                tx.commit();
+            }
 
             for (ValidationError ve : updateErrors.getErrors())
             {
@@ -1642,28 +1652,37 @@ public class PropertyController extends SpringActionController
         }
 
         GWTDomain<?> domain;
+        Domain dom;
         if (domainId != null)
         {
-            Domain dom = PropertyService.get().getDomain(domainId);
+            dom = PropertyService.get().getDomain(domainId);
             if (dom == null)
                 throw new NotFoundException("Could not find domain for " + domainId + ".");
 
             if (!container.equals(dom.getContainer())) // issue 38502
                 throw new NotFoundException("Could not find domain for " + domainId + " in container '" + container.getPath() + "'.");
 
-            if (getForUpdate)
-                dom.lockForUpdateDelete();
-
             domain = DomainUtil.getDomainDescriptor(user, dom);
         }
         else
         {
             String domainURI = PropertyService.get().getDomainURI(schemaName, queryName, container, user);
-            domain = DomainUtil.getDomainDescriptor(user, domainURI, container);
 
-            if (domain == null)
+            DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainURI, container);
+            if (null != dd)
+            {
+                dom = PropertyService.get().getDomain(dd.getDomainId());
+                if (dom == null)
+                    throw new NotFoundException("Could not find domain for schemaName=" + schemaName + ", queryName=" + queryName + ".");
+
+                domain = DomainUtil.getDomainDescriptor(container, user, dom, false);
+            }
+            else
                 throw new NotFoundException("Could not find domain for schemaName=" + schemaName + ", queryName=" + queryName + ".");
         }
+
+        if (getForUpdate)
+            dom.lockForUpdateDelete();
 
         return domain;
     }
