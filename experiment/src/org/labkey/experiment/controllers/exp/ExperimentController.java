@@ -7470,8 +7470,8 @@ public class ExperimentController extends SpringActionController
                 return new SimpleResponse<>(false, "No FileContentService found");
             }
 
-            int numPotentialDuplicates = service.fixContainerForExpDataFiles(getUser());
-            return success(Map.of("hadRepairs", numPotentialDuplicates > 0));
+            int numDuplicates = service.fixContainerForExpDataFiles(getUser());
+            return success(Map.of("hadRepairs", numDuplicates > 0));
         }
     }
 
