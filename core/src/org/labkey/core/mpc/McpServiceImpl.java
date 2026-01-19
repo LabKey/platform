@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import org.labkey.api.collections.CopyOnWriteHashMap;
@@ -73,12 +74,12 @@ public class McpServiceImpl implements McpService
 {
     public static final String MESSAGE_ENDPOINT = "/_mcp/message";
     public static final String SSE_ENDPOINT = "/_mcp/sse";
+    private static final Logger LOG = LogHelper.getLogger(McpServiceImpl.class, "MCP services");
 
     private final CopyOnWriteHashMap<String, ToolCallback> toolMap = new CopyOnWriteHashMap<>();
     private final CopyOnWriteHashMap<String, McpServerFeatures.SyncPromptSpecification> promptMap = new CopyOnWriteHashMap<>();
     private final CopyOnWriteHashMap<String, McpServerFeatures.SyncResourceSpecification> resourceMap = new CopyOnWriteHashMap<>();
 
-    private final ObjectMapper objectMapper = JsonUtil.DEFAULT_MAPPER;
     private final _McpServlet mcpServlet = new _McpServlet(JsonUtil.DEFAULT_MAPPER, MESSAGE_ENDPOINT, SSE_ENDPOINT);
     private final ChatMemoryRepository chatMemoryRepository = new InMemoryChatMemoryRepository();
 
@@ -177,7 +178,7 @@ public class McpServiceImpl implements McpService
 
     private class _McpServlet extends HttpServlet // wraps HttpServletSseServerTransportProvider
     {
-        HttpServletStreamableServerTransportProvider transportProvider = null;
+        HttpServletStreamableServerTransportProvider transportProvider;
         McpSyncServer mcpServer = null;
 
         _McpServlet(ObjectMapper objectMapper, String messageEndpoint, String sseEndpoint)
@@ -309,7 +310,7 @@ public class McpServiceImpl implements McpService
     }
 
 
-    Object _initClientLock = new Object();
+    final Object _initClientLock = new Object();
     Client _genAiClient = null;
 
     Client getLlmClient()
@@ -452,7 +453,7 @@ public class McpServiceImpl implements McpService
         }
         catch (Exception x)
         {
-            System.err.println(x.getMessage());
+            LOG.error("Can't create vector store", x);
         }
 
         return ret;
@@ -479,7 +480,7 @@ public class McpServiceImpl implements McpService
         }
         catch (Exception x)
         {
-            System.err.println(x.getMessage());
+            LOG.error("Can't save vector store", x);
         }
     }
 }
