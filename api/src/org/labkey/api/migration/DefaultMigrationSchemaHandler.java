@@ -26,7 +26,6 @@ import org.labkey.api.migration.DatabaseMigrationService.DataFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.TableSorter;
-import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
@@ -249,20 +248,14 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         // requires querying and re-filtering the source tables instead.
         Collection<AttachmentParentType> ret = new LinkedList<>();
 
+        // TODO: Select ParentType as well to avoid duplication
         getAttachmentTypes().forEach(type -> {
             SQLFragment sql = type.getSelectParentEntityIdsSql();
-            if (sql != null)
-            {
-                Collection<String> entityIds = new SqlSelector(targetSchema, sql).getCollection(String.class);
-                SQLFragment selectParents = new SQLFragment("Parent");
-                // This query against the source database is likely to contain a large IN clause, so use an alternative InClauseGenerator
-                sourceSchema.getSqlDialect().appendInClauseSqlWithCustomInClauseGenerator(selectParents, entityIds, getTempTableInClauseGenerator(sourceSchema.getScope()));
-                ret.addAll(copyAttachments(configuration, new SQLClause(selectParents), type));
-            }
-            else
-            {
-                throw new ConfigurationException("AttachmentType \"" + type.getUniqueName() + "\" is not configured to find parent EntityIds!");
-            }
+            Collection<String> entityIds = new SqlSelector(targetSchema, sql).getCollection(String.class);
+            SQLFragment selectParents = new SQLFragment("Parent");
+            // This query against the source database is likely to contain a large IN clause, so use an alternative InClauseGenerator
+            sourceSchema.getSqlDialect().appendInClauseSqlWithCustomInClauseGenerator(selectParents, entityIds, getTempTableInClauseGenerator(sourceSchema.getScope()));
+            ret.addAll(copyAttachments(configuration, new SQLClause(selectParents), type));
         });
 
         return ret;

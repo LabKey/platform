@@ -16,8 +16,8 @@
 package org.labkey.core;
 
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentParentType;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.SQLFragment;
@@ -99,6 +99,7 @@ public class CoreUpgradeCode implements UpgradeCode
                 .append(" SET ParentType = ?")
                 .add(type.getUniqueName())
                 .append(" WHERE ");
+            // TODO: This is the only caller of addWhereSql(), which can be removed when this upgrade code is deleted.
             type.addWhereSql(updateSql, "Parent", "DocumentName");
 
             new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(updateSql);

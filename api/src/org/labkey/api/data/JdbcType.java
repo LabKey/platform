@@ -89,6 +89,12 @@ public enum JdbcType
         {
             sqlTypes.add(Types.NCHAR);
         }
+
+        @Override
+        public Object convert(Object o) throws ConversionException
+        {
+            return VARCHAR.convert(o);
+        }
     },
 
     DECIMAL(Types.DECIMAL, BigDecimal.class, null, "numberfield")
