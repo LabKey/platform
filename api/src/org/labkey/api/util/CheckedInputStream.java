@@ -15,47 +15,75 @@
  */
 package org.labkey.api.util;
 
-import org.apache.logging.log4j.LogManager;
-import org.jetbrains.annotations.Nullable;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.Cleaner;
 
 /**
  * Verifies that close() was called at some point before finalization; logs an error and creation stack trace if not.
  * User: adam
  * Date: 7/2/12
  */
-
 public class CheckedInputStream extends InputStreamWrapper
 {
-    @Nullable
-    private final StackTraceElement[] _creationStackTrace;
-    private boolean _closed = false;
+    private static final Cleaner CLEANER = Cleaner.create();
+    public static final Logger LOG = LogHelper.getLogger(CheckedInputStream.class, "Utility to ensure InputStreams are closed");
+    private final State _state;
+
+    private static class State implements Runnable
+    {
+        private final InputStream _is;
+        private final StackTraceElement[] _creationStackTrace;
+        private boolean _closed = false;
+
+        private State(InputStream is, StackTraceElement[] creationStackTrace)
+        {
+            _is = is;
+            _creationStackTrace = creationStackTrace;
+        }
+
+        @Override
+        public void run()
+        {
+            if (!_closed)
+            {
+                LOG.error("InputStream was not closed. Creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
+                close();
+            }
+        }
+
+        private void close()
+        {
+            try
+            {
+                _is.close();
+            }
+            catch (IOException e)
+            {
+                LOG.error("Failed to close InputStream", e);
+            }
+            finally
+            {
+                _closed = true;
+            }
+        }
+    }
 
     public CheckedInputStream(InputStream is)
     {
         super(is);
-        _creationStackTrace = MiniProfiler.getTroubleshootingStackTrace();
+        StackTraceElement[] creationStackTrace = MiniProfiler.getTroubleshootingStackTrace();
+        _state = new State(is, creationStackTrace);
+        CLEANER.register(this, _state);
     }
 
     @Override
     public void close() throws IOException
     {
-        _closed = true;
-        super.close();
-    }
-
-    @Override
-    protected void finalize() throws Throwable
-    {
-        if (!_closed)
-        {
-            LogManager.getLogger(CheckedInputStream.class).error("InputStream was not closed. Creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
-            super.close();
-        }
-
-        super.finalize();
+        _state.close();
     }
 }
