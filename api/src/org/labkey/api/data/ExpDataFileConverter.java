@@ -211,6 +211,11 @@ public class ExpDataFileConverter
 
     public static File convert(Object value)
     {
+        return convert(value, true);
+    }
+
+    public static File convert(Object value, boolean tryResolutionByRowId)
+    {
         if (value == null)
             return null;
 
@@ -226,7 +231,7 @@ public class ExpDataFileConverter
         {
             try
             {
-                return convert(value, fileRootPath, assayResultFileRoot, container, user);
+                return convert(value, fileRootPath, assayResultFileRoot, container, user, tryResolutionByRowId);
             }
             catch (ConvertHelper.FileConversionException e)
             {
@@ -242,12 +247,12 @@ public class ExpDataFileConverter
     }
 
     // TODO, refactor more usages to call this method directly without using needing to set/getEnvironment
-    public static File convert(Object value, @Nullable String fileRootPath, @Nullable FileLike assayResultFileRoot, Container container, User user)
+    public static File convert(Object value, @Nullable String fileRootPath, @Nullable FileLike assayResultFileRoot, Container container, User user, boolean tryResolutionByRowId)
     {
         if (value == null)
             return null;
 
-        File f = convertToFile(value, container, user, fileRootPath, assayResultFileRoot);
+        File f = convertToFile(value, container, user, fileRootPath, assayResultFileRoot, tryResolutionByRowId);
 
         // If we have a file path, make sure it's supposed to be visible in the current container
         if (f != null)
@@ -326,7 +331,7 @@ public class ExpDataFileConverter
         return null;
     }
 
-    public static File convertToFile(Object value, @NotNull Container container, @NotNull User user, @Nullable String fileRootPath, @Nullable FileLike assayResultFileRoot)
+    public static File convertToFile(Object value, @NotNull Container container, @NotNull User user, @Nullable String fileRootPath, @Nullable FileLike assayResultFileRoot, boolean tryResolutionByRowId)
     {
         if (value instanceof File f)
         {
@@ -344,23 +349,26 @@ public class ExpDataFileConverter
         }
 
         // Value specified as simple property, so we have to guess what it might be
-//        // First, try looking it up as a RowId
-//        try
-//        {
-//            int dataRowId = Integer.parseInt(value.toString());
-//            ExpData data = ExperimentService.get().getExpData(dataRowId);
-//            if (data != null)
-//            {
-//                File result = data.getFile();
-//                if (result != null)
-//                {
-//                    return result;
-//                }
-//            }
-//        }
-//        catch (NumberFormatException ignored)
-//        {
-//        }
+        if (tryResolutionByRowId)
+        {
+            // First, try looking it up as a RowId
+            try
+            {
+                int dataRowId = Integer.parseInt(value.toString());
+                ExpData data = ExperimentService.get().getExpData(dataRowId);
+                if (data != null)
+                {
+                    File result = data.getFile();
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                }
+            }
+            catch (NumberFormatException ignored)
+            {
+            }
+        }
 
         // toss in here an additional check, if starts with HTTP then try to use _webdav to resolve it
         // MAKE sure that the security is in place - figure out what container it is in
