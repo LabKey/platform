@@ -173,7 +173,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     private static Throwable _startupFailure = null;
     private static boolean _newInstall = false;
-    private static TomcatVersion _tomcatVersion = null;
     private static JavaVersion _javaVersion = null;
 
     private static final String BANNER = """
@@ -534,8 +533,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         _log.info(BANNER);
 
         AppProps.getInstance().setContextPath(_servletContext.getContextPath());
-
-        setTomcatVersion();
 
         File root = FileUtil.getAbsoluteCaseSensitiveFile(new File(_servletContext.getRealPath(""))).getParentFile();
         FileLike labkeyRoot = new FileSystemLike.Builder(root).readwrite().noMemCheck().root();
@@ -1397,23 +1394,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     public JavaVersion getJavaVersion()
     {
         return _javaVersion;
-    }
-
-    /**
-     * Sets the running Tomcat version, if servlet container is recognized and supported. Otherwise, ConfigurationException is thrown and server fails to start.
-     * <p>
-     * Warnings for deprecated Tomcat versions are handled in CoreWarningProvider.
-     *
-     * @throws ConfigurationException if Tomcat version is not recognized or supported
-     */
-    private void setTomcatVersion()
-    {
-        _tomcatVersion = TomcatVersion.get();
-    }
-
-    public TomcatVersion getTomcatVersion()
-    {
-        return _tomcatVersion;
     }
 
     /**
