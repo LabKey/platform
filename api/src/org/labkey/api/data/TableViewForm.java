@@ -30,6 +30,7 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.validator.RequiredValidator;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -418,50 +419,32 @@ public class TableViewForm extends ViewForm implements HasBindParameters
 
             try
             {
-                if (null != bindValue)
-                {
-                    Object val;
-                    if (col != null)
-                    {
-                        val = col.convert(bindValue);
-                    }
-                    else
-                    {
-                        val = getSimpleConvert(propName).convert(bindValue);
-                    }
-                    values.put(propName, val);
-                }
-                else if (_validateRequired && null != _tinfo)
-                {
-                    if (null == col || !col.isRequired())
-                    {
-                        values.put(propName, null);
-                    }
-                    else
-                    {
-                        boolean isError = true;
-
-                        // if the column is mv-enabled and a mv indicator has been specified, don't flag the required
-                        // error
-                        if (col.isMvEnabled() && col.isNullable())
-                        {
-                            ColumnInfo mvCol = _tinfo.getColumn(col.getMvColumnName());
-                            if (mvCol != null)
-                            {
-                                String ff_mvName = getFormFieldName(mvCol);
-                                isError = null == getValueToBind(ff_mvName);
-                            }
-                        }
-                        if (isError)
-                            errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {SpringActionController.ERROR_REQUIRED}, new String[] {caption}, caption + " must not be empty."));
-                        else
-                            values.put(propName, null);
-                    }
-                }
+                Object val;
+                if (col != null)
+                    val = col.convert(bindValue);
                 else
+                    val = getSimpleConvert(propName).convert(bindValue);
+
+                boolean requiredError = false;
+                if (_validateRequired && null != _tinfo && null != col && col.isRequired() && !col.isAutoIncrement())
                 {
-                    values.put(propName, null);
+                    requiredError =col.getJdbcType().isEmpty(val);
+
+                    // if the column is mv-enabled and a mv indicator has been specified, don't flag the required error
+                    if (col.isMvEnabled() && col.isNullable())
+                    {
+                        ColumnInfo mvCol = _tinfo.getColumn(col.getMvColumnName());
+                        if (mvCol != null)
+                        {
+                            String ff_mvName = getFormFieldName(mvCol);
+                            requiredError = null == getValueToBind(ff_mvName);
+                        }
+                    }
                 }
+                if (requiredError)
+                    errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {SpringActionController.ERROR_REQUIRED}, new String[] {caption}, caption + " must not be empty."));
+                else
+                    values.put(propName, val);
             }
             catch (ConversionException e)
             {

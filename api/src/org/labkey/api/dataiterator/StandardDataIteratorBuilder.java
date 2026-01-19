@@ -319,9 +319,9 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                 {
                     if (additionalRequiredCols.contains(col.getColumnName()))
                     {
-                        List<ColumnValidator> validators = new ArrayList<>();
-                        validators.add(new RequiredValidator(col.getColumnName(), false, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString)));
-                        validate.addValidators(index, validators);
+                        var reqd = ColumnValidators.createRequiredValidator(col, null, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString));
+                        if (null != reqd)
+                            validate.addValidator(index, reqd);
                     }
                     continue;
                 }

@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.sql.Array;
+import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
@@ -37,6 +38,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.util.IntegerUtils.isIntegral;
 
 /**
@@ -85,6 +87,12 @@ public enum JdbcType implements SimpleConvert
         protected void addSqlTypes(Collection<Integer> sqlTypes)
         {
             sqlTypes.add(Types.NCHAR);
+        }
+
+        @Override
+        public boolean isEmpty(Object value)
+        {
+            return VARCHAR.isEmpty(value);
         }
 
         @Override
@@ -175,6 +183,12 @@ public enum JdbcType implements SimpleConvert
         {
             sqlTypes.add(Types.CLOB);
             sqlTypes.add(Types.LONGNVARCHAR);
+        }
+
+        @Override
+        public boolean isEmpty(Object value)
+        {
+            return VARCHAR.isEmpty(value);
         }
 
         @Override
@@ -292,6 +306,12 @@ public enum JdbcType implements SimpleConvert
         }
 
         @Override
+        public boolean isEmpty(Object value)
+        {
+            return null==value || "".equals(value);
+        }
+
+        @Override
         public Object convert(Object o) throws ConversionException
         {
             if (null == o)
@@ -321,7 +341,34 @@ public enum JdbcType implements SimpleConvert
         }
     },
 
-    ARRAY(Types.ARRAY, Array.class),
+    ARRAY(Types.ARRAY, Array.class)
+    {
+        @Override
+        public boolean isEmpty(Object value)
+        {
+            if (null == value)
+                return true;
+            if (value instanceof String s)
+                return isBlank(s);
+            if (value instanceof Object[] arr)
+                return 0==arr.length;
+            else if (value instanceof Collection coll)
+                return coll.isEmpty();
+            else if (value instanceof java.sql.Array sqlArray)
+            {
+                try
+                {
+                    Object[] arr = (Object[]) sqlArray.getArray();
+                    return null == arr || 0==arr.length;
+                }
+                catch (SQLException sqlx)
+                {
+                    throw new RuntimeSQLException(sqlx);
+                }
+            }
+            throw new IllegalArgumentException("illegal value " + value.getClass());
+        }
+    },
 
     NULL(Types.NULL, Object.class),
 
@@ -471,12 +518,19 @@ public enum JdbcType implements SimpleConvert
         return OTHER;
     }
 
+    /**
+     * returns true if value should be considered to fail an isRequired() check.
+     * value should be already be coverted (e.g. via JdbcType.convert())
+     */
+    public boolean isEmpty(Object value)
+    {
+        return null == value;
+    }
 
     public boolean isText()
     {
         return this.cls == String.class;
     }
-
 
     public boolean isNumeric()
     {

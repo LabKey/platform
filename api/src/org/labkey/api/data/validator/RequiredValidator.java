@@ -16,6 +16,7 @@
 package org.labkey.api.data.validator;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.exp.MvFieldWrapper;
 
 /**
@@ -25,18 +26,20 @@ import org.labkey.api.exp.MvFieldWrapper;
  */
 public class RequiredValidator extends AbstractColumnValidator implements UnderstandsMissingValues
 {
+    final JdbcType jdbcType;
     final boolean allowMV;
     final boolean allowES;
     final String _message;
 
-    public RequiredValidator(String columnName, boolean allowMissingValueIndicators, boolean allowEmptyString)
+    public RequiredValidator(String columnName, JdbcType jdbcType, boolean allowMissingValueIndicators, boolean allowEmptyString)
     {
-        this(columnName, allowMissingValueIndicators, allowEmptyString, null);
+        this(columnName, jdbcType, allowMissingValueIndicators, allowEmptyString, null);
     }
 
-    public RequiredValidator(String columnName, boolean allowMissingValueIndicators, boolean allowEmptyString, @Nullable String message)
+    public RequiredValidator(String columnName, JdbcType jdbcType, boolean allowMissingValueIndicators, boolean allowEmptyString, @Nullable String message)
     {
         super(columnName);
+        this.jdbcType = jdbcType;
         allowMV = allowMissingValueIndicators;
         allowES = allowEmptyString;
         _message = message;
@@ -47,15 +50,15 @@ public class RequiredValidator extends AbstractColumnValidator implements Unders
     {
         checkRequired:
         {
-            if (null == value)
-                break checkRequired;
-
-            if (value instanceof String && ((String) value).isEmpty())
+            if ("".equals(value))
             {
                 if (allowES)
                     return null;
                 else break checkRequired;
             }
+
+            if (!jdbcType.isEmpty(value))
+                break checkRequired;
 
             if (!(value instanceof MvFieldWrapper mv))
                 return null;
