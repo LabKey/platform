@@ -785,6 +785,8 @@ public class DomainUtil
             return validationException;
         }
 
+        d.lockForUpdateDelete();
+
         DomainKind<?> kind = d.getDomainKind();
         ValidationException validationException = validateProperties(d, update, kind, orig, user);
 
