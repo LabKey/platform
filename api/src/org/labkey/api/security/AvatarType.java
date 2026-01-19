@@ -16,7 +16,6 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
@@ -44,8 +43,8 @@ public class AvatarType implements AttachmentParentType
     }
 
     @Override
-    public @Nullable SQLFragment getSelectParentEntityIdsSql()
+    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
-        return new SQLFragment("SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoUsers(), "users");
+        return new SQLFragment("SELECT EntityId, DisplayName AS Description FROM ").append(CoreSchema.getInstance().getTableInfoUsers(), "users");
     }
 }
