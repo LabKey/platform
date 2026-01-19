@@ -49,7 +49,6 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
@@ -64,7 +63,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
-import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LongHashMap;
@@ -7475,15 +7473,6 @@ public class ExperimentController extends SpringActionController
             int numPotentialDuplicates = service.fixContainerForExpDataFiles(getUser());
             return success(Map.of("hadRepairs", numPotentialDuplicates > 0));
         }
-
-//        @Override
-//        public void addNavTrail(NavTree root)
-//        {
-//            root.addChild("Admin Console", urlProvider(AdminUrls.class).getAdminConsoleURL());
-//
-//            ActionURL urlLog = new ActionURL(RepairExpDataFilesAction.class, ContainerManager.getRoot());
-//            root.addChild("Exp Data Files Repair", urlLog);
-//        }
     }
 
     @RequiresPermission(UpdatePermission.class)
