@@ -16,7 +16,6 @@
 package org.labkey.announcements.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.SQLFragment;
@@ -41,8 +40,8 @@ public class AnnouncementType implements AttachmentParentType
     }
 
     @Override
-    public @Nullable SQLFragment getSelectParentEntityIdsSql()
+    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
-        return new SQLFragment("SELECT EntityId FROM ").append(CommSchema.getInstance().getTableInfoAnnouncements(), "ann");
+        return new SQLFragment("SELECT EntityId, Title AS Description FROM ").append(CommSchema.getInstance().getTableInfoAnnouncements(), "ann");
     }
 }

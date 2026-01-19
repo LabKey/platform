@@ -1573,6 +1573,12 @@ public class ExceptionUtil
         }
 
         @Override
+        public void sendRedirect(String s, int i, boolean b) throws IOException
+        {
+            redirect = s;
+        }
+
+        @Override
         public void setDateHeader(String s, long l)
         {
             headers.put(s, DateUtil.toISO(l));

@@ -16,9 +16,9 @@
 package org.labkey.specimen.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.specimen.SpecimenSchema;
 
 public class SpecimenRequestEventType implements AttachmentParentType
@@ -41,8 +41,12 @@ public class SpecimenRequestEventType implements AttachmentParentType
     }
 
     @Override
-    public @Nullable SQLFragment getSelectParentEntityIdsSql()
+    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
-        return new SQLFragment("SELECT EntityId FROM ").append(SpecimenSchema.get().getTableInfoSampleRequestEvent(), "sre");
+        TableInfo table = SpecimenSchema.get().getTableInfoSampleRequestEvent();
+        return new SQLFragment("SELECT EntityId, ")
+            .append(table.getSqlDialect().concatenate("'RowId:'", "CAST(RowId AS VARCHAR)"))
+            .append(" AS Description FROM ")
+            .append(table, "sre");
     }
 }
