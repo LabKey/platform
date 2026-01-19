@@ -4628,7 +4628,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 for (var domain : provider.getDomains(expProtocol))
                 {
-                    domain.lockForUpdateDelete();
+                    domain.lockForUpdateDelete(expSchema);
                 }
             }
         }

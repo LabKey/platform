@@ -88,7 +88,7 @@ public interface Domain extends IPropertyType
      * This pattern effectively forces all callers who are trying to manipulate this domain to queue up.
      */
     Lock getDatabaseLock();
-    void lockForUpdateDelete();
+    void lockForUpdateDelete(DbSchema lockSchema);
 
     void delete(@Nullable User user) throws DomainNotFoundException;
     default void delete(@Nullable User user, @Nullable String auditUserComment) throws DomainNotFoundException
