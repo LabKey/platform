@@ -348,6 +348,14 @@ public interface FileContentService
     void ensureFileData(@NotNull ExpDataTable table);
 
     /**
+     * Fix the container column in the exp.data table for files that were moved as part of a sample move operation
+     * but did not have their containers updated
+     * @param admin The user doing the repair
+     * @return Number of duplicate rows removed from exp.data table
+     */
+    int fixContainerForExpDataFiles(User admin);
+
+    /**
      * Allows a module to register a directory pattern to be checked in the files webpart in order to zip the matching directory before uploading.
      * @param directoryPattern DirectoryPattern
      * */
