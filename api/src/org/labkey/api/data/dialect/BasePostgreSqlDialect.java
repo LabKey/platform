@@ -69,6 +69,10 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     // Issue 52190: Expose troubleshooting data that supports postgreSQL-specific analysis
     public static final String POSTGRES_SCHEMA_NAME = "postgres";
 
+    public static final String POSTGRES_STAT_ACTIVITY_TABLE_NAME = "pg_stat_activity";
+    public static final String POSTGRES_LOCKS_TABLE_NAME = "pg_locks";
+    public static final String POSTGRES_TABLE_SIZES_TABLE_NAME = "pg_tablesizes";
+
     private final Map<String, Integer> _domainScaleMap = new CopyOnWriteHashMap<>();
 
     private HtmlString _adminWarning = null;

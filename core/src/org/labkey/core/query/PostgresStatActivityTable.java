@@ -18,6 +18,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TransactionFilter;
+import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -47,7 +48,7 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
 
     public PostgresStatActivityTable(@NotNull PostgresUserSchema userSchema)
     {
-        super(PostgresUserSchema.POSTGRES_STAT_ACTIVITY_TABLE_NAME, userSchema);
+        super(BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_TABLE_NAME, userSchema);
 
         setDescription("Shows info about the active Postgres connections and their activity");
 
