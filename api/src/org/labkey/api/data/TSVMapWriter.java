@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.iterator.MarkableIterator;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -116,6 +117,8 @@ public class TSVMapWriter extends TSVWriter
     {
         Iterable<String> values = _columns.stream().map(col -> {
             Object o = row.get(col);
+            if (o instanceof List list && list.getFirst() instanceof String)
+                return PageFlowUtil.joinValuesToStringForExport(list);
             return o == null ? "" : String.valueOf(o);
         }).toList();
 

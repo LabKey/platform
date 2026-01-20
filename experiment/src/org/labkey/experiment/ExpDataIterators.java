@@ -2269,7 +2269,7 @@ public class ExpDataIterators
                             }
                         }
 
-                        return ExpDataFileConverter.convert(value);
+                        return ExpDataFileConverter.convert(value, false);
                     };
                 }
             }
