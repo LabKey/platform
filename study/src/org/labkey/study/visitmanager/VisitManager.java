@@ -212,6 +212,8 @@ public abstract class VisitManager
      */
     protected abstract @NotNull ValidationException updateVisitTable(User user, @Nullable Logger logger, boolean failForUndefinedVisits);
 
+    public abstract Set<CohortFilter.Type> supportedCohortFilterTypes();
+
     // Produce appropriate SQL for getVisitSummary(). The SQL must select dataset ID, sequence number, and then the specified statistics;
     // it also needs to filter by cohort and qcstates.
     @Nullable
