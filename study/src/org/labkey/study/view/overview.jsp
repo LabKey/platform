@@ -180,6 +180,7 @@
             out.print(unsafe("<label><input id=\"" + id + "\" name=\"visitStatistic\" value=\"" + h(stat.name()) + "\" type=\"checkbox\"" + checked(checked) + ">" + h(stat.getDisplayString(study)) + "</label>\n"));
         }
     %>
+<labkey:errors></labkey:errors>
 </labkey:form>
 <br><br>
 <table id="studyOverview" class="labkey-data-region-legacy labkey-show-borders" style="border-collapse:collapse;">
