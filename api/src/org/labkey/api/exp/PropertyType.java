@@ -38,6 +38,8 @@ import org.labkey.vfs.FileLike;
 import java.io.File;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.sql.Array;
+import java.sql.SQLException;
 import java.sql.Time;
 import java.text.DateFormat;
 import java.text.ParseException;

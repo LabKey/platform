@@ -298,6 +298,14 @@ public class StatementUtils
         String variableName = null;
         Object constantValue = null;
         boolean isConstant = false;
+
+        public String getSqlTypeName(SqlDialect dialect)
+        {
+            var jdbcType = p.getType();
+            if (JdbcType.ARRAY == jdbcType && _columnInfo != null && _columnInfo.getPropertyType() == PropertyType.MULTI_CHOICE)
+                return "text[]";
+            return dialect.getSqlTypeName(jdbcType);
+        }
     }
 
     private final static String pgRowVarPrefix = "$1.";
@@ -1001,7 +1009,7 @@ public class StatementUtils
             for (Map.Entry<String, ParameterHolder> e : parameters.entrySet())
             {
                 ParameterHolder ph = e.getValue();
-                String type = _dialect.getSqlTypeName(ph.p.getType());
+                String type = ph.getSqlTypeName(_dialect);
                 fn.append("\n").append(comma);
                 fn.append(makePgRowTypeName(ph.variableName));
                 fn.append(" ");
@@ -1203,7 +1211,7 @@ public class StatementUtils
         sqlfDeclare.append(" ");
         JdbcType jdbcType = ph.p.getType();
         assert null != jdbcType;
-        String type = _dialect.getSqlTypeName(jdbcType);
+        String type = ph.getSqlTypeName(_dialect);
         assert null != type;
 
         // Workaround - SQLServer doesn't support TEXT, NTEXT, or IMAGE as local variables in statements, but is OK with NVARCHAR(MAX)
