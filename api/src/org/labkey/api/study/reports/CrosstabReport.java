@@ -164,22 +164,11 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
                 Set<Stats.StatDefinition> statSet = new LinkedHashSet<>();
                 for (String stat : descriptor.getStats())
                 {
-                    if ("Count".equals(stat))
-                        statSet.add(Stats.COUNT);
-                    else if ("Sum".equals(stat))
-                        statSet.add(Stats.SUM);
-                    else if ("Mean".equals(stat))
-                        statSet.add(Stats.MEAN);
-                    else if ("Min".equals(stat))
-                        statSet.add(Stats.MIN);
-                    else if ("Max".equals(stat))
-                        statSet.add(Stats.MAX);
-                    else if ("StdDev".equals(stat))
-                        statSet.add(Stats.STDDEV);
-                    else if ("Var".equals(stat))
-                        statSet.add(Stats.VAR);
-                    else if ("Median".equals(stat))
-                        statSet.add(Stats.MEDIAN);
+                    try
+                    {
+                        statSet.add(Stats.getStatFromString(stat));
+                    }
+                    catch (IllegalArgumentException _) {}
                 }
                 return new Crosstab(results, rowFieldKey, colFieldKey, statFieldKey, statSet);
             }
