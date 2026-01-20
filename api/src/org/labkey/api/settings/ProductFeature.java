@@ -20,6 +20,7 @@ public enum ProductFeature
     NonstandardAssay("nonstandardAssay"),
     Folders("sampleManagement"),
     SampleManagement("sampleManagement"),
+    SchemaBrowser("sampleManagement"),
     TransformScripts("core"),
     Workflow("sampleManagement");
 

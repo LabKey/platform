@@ -1612,7 +1612,7 @@ boxPlot.render();
  * @param {Number} [config.properties.boundType] Either 'absolute' or 'stddev', to describe how to interpret the upperBound and lowerBound.
  *                          Used by LeveyJennings only. Defaults to 'stddev'.
  * @param {String} [config.properties.valueConversion] The data property name for the conversion of the plot to either percent
- *                          of the mean ('percentDeviation') or standard deviations ('standardDeviation').
+ *                          of the mean ('percentDeviation'), standard deviations ('standardDeviation') or delta from mean ('deltaFromMean').
  *                          Used by LeveyJennings and Moving Range only.
  * @param {String} [config.properties.defaultGuideSets] The data property name for default std dev and mean needed for percentDeviation
  *                          or standardDeviation conversion.
@@ -1784,7 +1784,7 @@ boxPlot.render();
                     config.properties.TrailingMeanRight ||
                     config.properties.TrailingCVRight;
 
-        var convertToPercentDeviation = function(value, mean) {
+        let convertToPercentDeviation = function(value, mean) {
             var calc = Math.round(((value / mean) * 100) * 100) / 100;
             if (isNaN(calc))
                 return 100;
@@ -1792,12 +1792,16 @@ boxPlot.render();
             return calc;
         };
 
-        var convertToStandardDeviation = function(value, mean, stddev) {
+        let convertToStandardDeviation = function(value, mean, stddev) {
             var calc = Math.round(((value - mean) / stddev) * 100) / 100;
             if (isNaN(calc))
                 return 0;
 
             return calc;
+        };
+
+        let convertToDeltaFromMean = function(value, mean) {
+            return (value - mean);
         };
 
         var convertValues = function(conversion) {
@@ -1813,6 +1817,9 @@ boxPlot.render();
                 if (conversion === LABKEY.vis.PlotProperties.ValueConversion.PercentDeviation) {
                     row[valProp] = convertToPercentDeviation(row[valProp], row[meanProp]);
                 }
+                else if (conversion === LABKEY.vis.PlotProperties.ValueConversion.DeltaFromMean) {
+                    row[valProp] = convertToDeltaFromMean(row[valProp], row[meanProp]);
+                }
                 else {
                     row[valProp] = convertToStandardDeviation(row[valProp], row[meanProp], row[sdProp]);
                 }
@@ -1821,6 +1828,9 @@ boxPlot.render();
                 row.rawValue = row[valRightProp];
                 if (conversion === LABKEY.vis.PlotProperties.ValueConversion.PercentDeviation) {
                     row[valRightProp] = convertToPercentDeviation(row[valRightProp], row[meanProp]);
+                }
+                else if (conversion === LABKEY.vis.PlotProperties.ValueConversion.DeltaFromMean) {
+                    row[valRightProp] = convertToDeltaFromMean(row[valRightProp], row[meanProp]);
                 }
                 else {
                     row[valRightProp] = convertToStandardDeviation(row[valRightProp], row[meanProp], row[sdProp]);
@@ -1842,6 +1852,10 @@ boxPlot.render();
                     if (config.properties.valueConversion === LABKEY.vis.PlotProperties.ValueConversion.StandardDeviation) {
                         maxValue = config.properties.upperBound + cushion;
                         minValue = config.properties.lowerBound - cushion;
+                    }
+                    else if (config.properties.valueConversion === LABKEY.vis.PlotProperties.ValueConversion.DeltaFromMean) {
+                        maxValue = config.properties.upperBound + mean + cushion;
+                        minValue = config.properties.lowerBound - mean - cushion;
                     }
                     else {
                         maxValue = mean + ((config.properties.upperBound + cushion) * stddev);
@@ -1981,7 +1995,6 @@ boxPlot.render();
                 // Handle value conversions
                 convertValues(config.properties.valueConversion);
                 if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
-
                     if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.Absolute) {
                         row.upperBound = config.properties.upperBound;
                         row.lowerBound = config.properties.lowerBound;
@@ -2028,6 +2041,11 @@ boxPlot.render();
                         }
                     }
 
+                    else if (config.properties.valueConversion === LABKEY.vis.PlotProperties.ValueConversion.DeltaFromMean) {
+                        row.upperBound = convertToDeltaFromMean(row.upperBound, row[meanProp]);
+                        row.lowerBound = convertToDeltaFromMean(row.lowerBound, row[meanProp]);
+                    }
+
                     if (config.properties.yAxisDomain) {
                         if (config.properties.yAxisDomain[0] > row.lowerBound) {
                             config.properties.yAxisDomain[0] = row.lowerBound - cushion;
@@ -2043,6 +2061,10 @@ boxPlot.render();
                 }
                 else if (config.properties.valueConversion === LABKEY.vis.PlotProperties.ValueConversion.StandardDeviation) {
                     row[sdProp] = 1;
+                    row[meanProp] = 0;
+                }
+                else if (config.properties.valueConversion === LABKEY.vis.PlotProperties.ValueConversion.DeltaFromMean) {
+                    row[sdProp] = 0;
                     row[meanProp] = 0;
                 }
 
