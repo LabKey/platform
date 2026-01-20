@@ -151,8 +151,8 @@ public class SecurityPolicy
 
     /**
      * Returns only the roles directly assigned to this principal (not other roles the principal is playing due to group
-     * memberships). Since a principal can't be assigned the same role twice, the returned roles should be distinct (no
-     * duplicates).
+     * memberships). Since a single principal can't be directly assigned the same role twice, the returned roles should
+     * be distinct (no duplicates).
      * @param principal The principal
      * @return The roles this principal is directly assigned
      */

@@ -3122,6 +3122,8 @@ public class SecurityManager
      * appropriate only for generating reports about role assignments for administrators.
      * Returns the roles the principal is playing in this securable resource, either due to direct assignment or due
      * to membership in a group that is assigned the role.
+     * Note: The returned stream may duplicate some roles; if a distinct stream of roles is required, callers should
+     * invoke {@code distinct()} or collect to a set.
      * @param principal The principal
      * @return The roles this principal is playing in the securable resource
      */
