@@ -357,11 +357,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         return User.getUserProps(this);
     }
 
-    public final Stream<Role> getSiteRoles()
-    {
-        return _impersonationContext.getSiteRoles(this);
-    }
-
     public final Stream<Role> getSiteRoles(SecurableResource resource)
     {
         return _impersonationContext.getSiteRoles(this, resource);

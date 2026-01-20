@@ -1950,7 +1950,7 @@ public class SecurityManager
 
         //don't filter if all site users is playing a role
         Group allSiteUsers = getGroup(Group.groupUsers);
-        if (!policy.getAssignedRoles(allSiteUsers).isEmpty())
+        if (policy.getAssignedRoles(allSiteUsers).findAny().isPresent())
         {
             // Just select all users
             SQLFragment sql = new SQLFragment("SELECT u.UserId FROM ");
@@ -3376,7 +3376,7 @@ public class SecurityManager
                 public Stream<Role> getAssignedRoles(SecurableResource resource)
                 {
                     SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
-                    return policy.streamRoles(getGroups());
+                    return policy.getRoles(getGroups());
                 }
 
                 @Override
@@ -3560,9 +3560,13 @@ public class SecurityManager
             // check that the user has the expected role
             Container rootContainer = ContainerManager.getRoot();
             User user = UserManager.getUser(userEmail);
-            Collection<Role> roles = rootContainer.getPolicy().getAssignedRoles(user);
+            assertNotNull(user);
             Role role = RoleManager.getRole(TEST_USER_1_ROLE_NAME);
-            assertTrue("The user defined in the startup properties: "  + userEmail + " did not have the specified role: " + TEST_USER_1_ROLE_NAME, roles.contains(role));
+            assertTrue(
+                "The user defined in the startup properties: "  + userEmail + " did not have the specified role: " + TEST_USER_1_ROLE_NAME,
+                rootContainer.getPolicy().getAssignedRoles(user)
+                    .anyMatch(r -> r.equals(role))
+            );
 
             // delete the test user that was added
             UserManager.deleteUser(user.getUserId());
@@ -3598,9 +3602,14 @@ public class SecurityManager
 
             // check that the group has the expected role
             Group group = GroupManager.getGroup(rootContainer, TEST_GROUP_1_NAME, GroupEnumType.SITE);
-            Collection<Role> roles = rootContainer.getPolicy().getAssignedRoles(group);
+            assertNotNull(group);
             Role role = RoleManager.getRole(TEST_GROUP_1_ROLE_NAME);
-            assertTrue("The group defined in the startup properties: "  + TEST_GROUP_1_NAME + " did not have the specified role: " + TEST_GROUP_1_ROLE_NAME, roles.contains(role));
+            assertNotNull(role);
+            assertTrue(
+                "The group defined in the startup properties: "  + TEST_GROUP_1_NAME + " did not have the specified role: " + TEST_GROUP_1_ROLE_NAME,
+                rootContainer.getPolicy().getAssignedRoles(group)
+                    .anyMatch(r -> r.equals(role))
+            );
 
             // delete the test group that was added
             deleteGroup(group, TestContext.get().getUser());

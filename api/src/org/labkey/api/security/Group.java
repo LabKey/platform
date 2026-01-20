@@ -111,7 +111,7 @@ public class Group extends UserPrincipal
     public Stream<Role> getAssignedRoles(SecurableResource resource)
     {
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
-        return policy.streamRoles(getGroups());
+        return policy.getRoles(getGroups());
     }
 
     @Override

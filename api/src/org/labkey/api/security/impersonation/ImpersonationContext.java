@@ -33,7 +33,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
 import java.io.Serializable;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -61,24 +60,7 @@ public interface ImpersonationContext extends Serializable
     {
         Stream<Role> roles = getSiteRoles(user, resource);
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
-        return Streams.concat(roles, policy.streamRoles(user.getGroups())).distinct();
-    }
-
-    /**
-     * @return The roles assigned to this user in the root. The roles may be modified and/or filtered by the
-     * impersonation context.
-     */
-    @Deprecated
-    default Stream<Role> getSiteRoles(User user)
-    {
-        Container root = ContainerManager.getRoot();
-        SecurityPolicy policy = root.getPolicy();
-        Set<Role> roles = policy.getRoles(getGroups(user));
-        roles.remove(RoleManager.getRole(NoPermissionsRole.class));
-        for (Role role : roles)
-            assert role.isApplicable(policy, root);
-
-        return roles.stream();
+        return Streams.concat(roles, policy.getRoles(user.getGroups())).distinct(); // TODO: Remove distinct() call?
     }
 
     /**
@@ -89,7 +71,7 @@ public interface ImpersonationContext extends Serializable
     {
         Container root = ContainerManager.getRoot();
         SecurityPolicy policy = root.getPolicy();
-        return policy.streamRoles(getGroups(user))
+        return policy.getRoles(getGroups(user))
             .filter(role -> !role.equals(RoleManager.getRole(NoPermissionsRole.class)))
             .filter(role -> {
                 if (!role.isApplicable(policy, root))

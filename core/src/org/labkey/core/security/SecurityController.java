@@ -1208,19 +1208,19 @@ public class SecurityController extends SpringActionController
         private void addAuditEvent(Group group, SecurityPolicy newPolicy, SecurityPolicy oldPolicy, AuditChangeType changeType)
         {
             Role oldRole = RoleManager.getRole(NoPermissionsRole.class);
-            if(null != oldPolicy)
+            if (null != oldPolicy)
             {
-                List<Role> oldRoles = oldPolicy.getAssignedRoles(group);
-                if(!oldRoles.isEmpty())
-                    oldRole = oldRoles.get(0);
+                oldRole = oldPolicy.getAssignedRoles(group)
+                    .findFirst()
+                    .orElse(oldRole);
             }
 
             Role newRole = RoleManager.getRole(NoPermissionsRole.class);
-            if(null != newPolicy)
+            if (null != newPolicy)
             {
-                List<Role> newRoles = newPolicy.getAssignedRoles(group);
-                if(!newRoles.isEmpty())
-                    newRole = newRoles.get(0);
+                newRole = newPolicy.getAssignedRoles(group)
+                    .findFirst()
+                    .orElse(newRole);
             }
 
             switch (changeType)
@@ -1610,7 +1610,7 @@ public class SecurityController extends SpringActionController
                 continue;
 
             MutableSecurityPolicy policy = new MutableSecurityPolicy(container, container.getPolicy());
-            Collection<Role> roles = policy.getAssignedRoles(user);
+            Collection<Role> roles = policy.getAssignedRoles(user).toList();
 
             if (!roles.isEmpty())
             {
@@ -2235,18 +2235,12 @@ public class SecurityController extends SpringActionController
 
     public static void fillUserAccessGroups(UserPrincipal user, List<Group> groups, SecurityPolicy policy, Collection<Role> effectiveRoles, Map<String, List<Group>> userAccessGroups)
     {
-        for (Group group : groups)
-        {
-            if (user.isInGroup(group.getUserId()))
-            {
-                Collection<Role> groupRoles = policy.getAssignedRoles(group);
-                for (Role role : effectiveRoles)
-                {
-                    if (groupRoles.contains(role))
-                        userAccessGroups.get(role.getName()).add(group);
-                }
-            }
-        }
+        groups.stream().filter(group -> user.isInGroup(group.getUserId())).forEach(group -> {
+            Collection<Role> groupRoles = policy.getAssignedRoles(group).collect(Collectors.toSet());
+            effectiveRoles.stream()
+                .filter(groupRoles::contains)
+                .forEach(role -> userAccessGroups.get(role.getName()).add(group));
+        });
     }
 
     public static class FolderAccessForm

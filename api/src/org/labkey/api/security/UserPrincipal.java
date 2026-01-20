@@ -146,7 +146,7 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
     public boolean hasPrivilegedRole()
     {
         // Check for any privileged role assigned to this principal at the root
-        return ContainerManager.getRoot().getPolicy().streamRoles(getGroups())
+        return ContainerManager.getRoot().getPolicy().getRoles(getGroups())
             .anyMatch(Role::isPrivileged);
     }
 

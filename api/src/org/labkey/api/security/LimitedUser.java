@@ -123,6 +123,7 @@ public class LimitedUser extends ClonedUser
         {
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
+            Container root = ContainerManager.getRoot();
 
             testPermissions(ElevatedUser.getElevatedUser(new LimitedUser(user, SubmitterRole.class, null), ReaderRole.class, null), 2, true, true, false, false, false);
             testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user)), 1, false, false, false, false, true);
@@ -131,18 +132,18 @@ public class LimitedUser extends ClonedUser
 
             int groupCount = user.getGroups().size();
             int roleCount = (int)user.getAssignedRoles(c).count();
-            int siteRolesCount = (int)user.getSiteRoles().count();
+            int siteRolesCount = (int)user.getSiteRoles(root).count();
             User elevated = ElevatedUser.getElevatedUser(user);
             assertEquals(groupCount, elevated.getGroups().size());
             assertEquals(roleCount, (int)elevated.getAssignedRoles(c).count());
-            assertEquals(siteRolesCount, (int)elevated.getSiteRoles().count());
+            assertEquals(siteRolesCount, (int)elevated.getSiteRoles(root).count());
         }
 
         private void testPermissions(User user, int roleCount, boolean hasRead, boolean hasInsert, boolean hasUpdate, boolean hasAdmin, boolean hasCanSeeAuditLog)
         {
             Container c = JunitUtil.getTestContainer();
             assertEquals(roleCount, (int)user.getAssignedRoles(c).count());
-            assertTrue(user.getSiteRoles().findAny().isEmpty());
+            assertTrue(user.getSiteRoles(ContainerManager.getRoot()).findAny().isEmpty());
             assertFalse(user.hasSiteAdminPermission());
             assertEquals(0, user.getGroups().stream().count());
             assertFalse(user.hasPrivilegedRole());

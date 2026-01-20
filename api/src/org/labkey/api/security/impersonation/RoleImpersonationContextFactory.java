@@ -278,7 +278,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public Stream<Role> getSiteRoles(User user)
+        public Stream<Role> getSiteRoles(User user, SecurableResource resource)
         {
             // Return the site roles that are being impersonated
             return _roles.stream().filter(role->role instanceof AbstractRootContainerRole);
