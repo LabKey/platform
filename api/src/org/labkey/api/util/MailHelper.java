@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2016 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,18 @@
 package org.labkey.api.util;
 
 import jakarta.mail.Address;
-import jakarta.mail.Authenticator;
 import jakarta.mail.BodyPart;
 import jakarta.mail.Message;
 import jakarta.mail.Message.RecipientType;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Multipart;
-import jakarta.mail.NoSuchProviderException;
-import jakarta.mail.PasswordAuthentication;
 import jakarta.mail.Session;
-import jakarta.mail.Transport;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
-import jakarta.servlet.ServletContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -41,12 +35,8 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.MessageAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LenientStartupPropertyHandler;
-import org.labkey.api.settings.StartupProperty;
-import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 
 import java.io.IOException;
@@ -54,30 +44,69 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 
 /**
  * Provides static functions for help with sending email.
+ * Supports SMTP and Microsoft Graph transport providers.
  */
 public class MailHelper
 {
     public static final String MESSAGE_AUDIT_EVENT = "MessageAuditEvent";
 
     private static final Logger _log = LogManager.getLogger(MailHelper.class);
-    private static final Session DEFAULT_SESSION;
 
-    private static Session _session = null;
+    // Transport providers
+    private static final SmtpTransportProvider _smtpProvider = new SmtpTransportProvider();
+    private static final GraphTransportProvider _graphProvider = new GraphTransportProvider();
+    private static final List<EmailTransportProvider> _providers = List.of(_smtpProvider, _graphProvider);
+
+    // Active provider (set during initialization)
+    private static EmailTransportProvider _activeProvider = null;
+
+    // Configuration conflict flag
+    private static boolean _configurationConflict = false;
 
     static
     {
-        DEFAULT_SESSION = initDefaultSession();
-        setSession(null);
+        _activeProvider = loadActiveProvider();
+    }
+
+    /**
+     * Load configuration for all providers and return the single configured provider.
+     * Sets _configurationConflict flag if multiple providers are configured.
+     *
+     * @return the configured provider, or null if none configured
+     */
+    private static EmailTransportProvider loadActiveProvider()
+    {
+        List<EmailTransportProvider> configured = new ArrayList<>();
+
+        for (EmailTransportProvider provider : _providers)
+        {
+            provider.loadConfiguration();
+            if (provider.isConfigured())
+            {
+                configured.add(provider);
+            }
+        }
+
+        if (configured.size() > 1)
+        {
+            _configurationConflict = true;
+            String names = configured.stream()
+                .map(EmailTransportProvider::getName)
+                .collect(Collectors.joining(" and "));
+            _log.error("Invalid email configuration: {} are configured. " +
+                "Please configure only one email transport method. Email sending will fail until this is resolved.", names);
+            return null;
+        }
+
+        return configured.isEmpty() ? null : configured.get(0);
     }
 
     public static void init()
@@ -85,87 +114,19 @@ public class MailHelper
         // Invoked just to initialize DEFAULT_SESSION
     }
 
-    private static class SmtpStartupProperty implements StartupProperty
+    /**
+     * Returns the session that will be used for all messages.
+     * Returns SMTP session if configured, otherwise a default session.
+     */
+    public static Session getSession()
     {
-        @Override
-        public String getPropertyName()
+        Session session = _smtpProvider.getSession();
+        if (session == null)
         {
-            return "<JavaMail SMTP setting>";
+            // Return a default session for message creation even if SMTP not configured
+            session = Session.getInstance(System.getProperties());
         }
-
-        @Override
-        public String getDescription()
-        {
-            return "One property for each JavaMail SMTP setting, documented here: https://javaee.github.io/javamail/docs/api/com/sun/mail/smtp/package-summary.html";
-        }
-    }
-
-    private static Session initDefaultSession()
-    {
-        Session session = null;
-        try
-        {
-            /* first check if specified in startup properties */
-            var properties = new Properties();
-            ModuleLoader.getInstance().handleStartupProperties(new LenientStartupPropertyHandler<>("mail_smtp", new SmtpStartupProperty())
-            {
-                @Override
-                public void handle(Collection<StartupPropertyEntry> entries)
-                {
-                    entries.forEach(entry -> properties.put("mail.smtp." + entry.getName(), entry.getValue()));
-                }
-            });
-
-            /* now check if specified in tomcat config instead */
-            if (properties.isEmpty())
-            {
-                ServletContext context = ModuleLoader.getServletContext();
-                Enumeration<String> names = Objects.requireNonNull(context).getInitParameterNames();
-                while (names.hasMoreElements())
-                {
-                    String name = names.nextElement();
-                    if (name.startsWith("mail.smtp."))
-                        properties.put(name, context.getInitParameter(name));
-                }
-            }
-
-            if (!properties.isEmpty())
-            {
-                session = Session.getInstance(properties);
-
-                if ("true".equalsIgnoreCase(session.getProperty("mail.smtp.ssl.enable")) ||
-                        "true".equalsIgnoreCase(session.getProperty("mail.smtp.starttls.enable")))
-                {
-                    String username = session.getProperty("mail.smtp.user");
-                    String password = session.getProperty("mail.smtp.password");
-                    session = Session.getInstance(session.getProperties(), new Authenticator() {
-                        @Override
-                        protected PasswordAuthentication getPasswordAuthentication()
-                        {
-                            return new PasswordAuthentication(username, password);
-                        }
-                    });
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            _log.log(Level.ERROR, "Exception loading mail session", e);
-        }
-
         return session;
-    }
-
-    public static void setSession(@Nullable Session session)
-    {
-        if (session != null)
-        {
-            _session = session;
-        }
-        else
-        {
-            _session = DEFAULT_SESSION;
-        }
     }
 
     /**
@@ -173,20 +134,12 @@ public class MailHelper
      */
     public static ViewMessage createMessage()
     {
-        return new ViewMessage(_session);
+        return new ViewMessage(getSession());
     }
 
     public static MultipartMessage createMultipartMessage()
     {
-        return new MultipartMessage(_session);
-    }
-
-    /**
-     * Returns the session that will be used for all messages
-     */
-    public static Session getSession()
-    {
-        return _session;
+        return new MultipartMessage(getSession());
     }
 
     /**
@@ -222,9 +175,7 @@ public class MailHelper
     }
 
     /**
-     * Sends an email message, using the system mail session, and SMTP transport. This function logs a warning on a
-     * MessagingException, and then throws it to the caller. The caller should avoid double-logging the failure, but
-     * may want to handle the exception in some other way, e.g. displaying a message to the user.
+     * Sends an email message using the configured transport provider.
      *
      * @param m    the message to send
      * @param user for auditing purposes, the user who originated the message
@@ -234,14 +185,26 @@ public class MailHelper
     {
         try
         {
-            Transport.send(m);
+            // Check for configuration conflict
+            if (_configurationConflict)
+            {
+                throw new ConfigurationException(
+                    "Multiple email transport methods are configured. Please configure only one email transport method.");
+            }
+
+            // Check if any provider is configured
+            if (_activeProvider == null)
+            {
+                throw new ConfigurationException(
+                    "No email transport configured. Please configure either SMTP (mail.smtp.*) " +
+                    "or Microsoft Graph (mail.graph.*) settings.");
+            }
+
+            // Send via the active provider
+            _activeProvider.send(m);
             addAuditEvent(user, c, m);
         }
-        catch (NoSuchProviderException e)
-        {
-            _log.log(Level.ERROR, "Error getting SMTP transport");
-        }
-        catch (NumberFormatException | MessagingException e)
+        catch (MessagingException e)
         {
             logMessagingException(m, e);
             throw new ConfigurationException("Error sending email: " + e.getMessage(), e);
@@ -281,13 +244,13 @@ public class MailHelper
         {
             sb.append(sep);
             sb.append(a.toString());
-
             sep = ", ";
         }
         return sb.toString();
     }
 
-    private static final String ERROR_MESSAGE = "Exception sending email; check your SMTP configuration in " + AppProps.getInstance().getWebappConfigurationFilename();
+    private static final String ERROR_MESSAGE = "Exception sending email; check your email configuration in " +
+        AppProps.getInstance().getWebappConfigurationFilename();
 
     private static void logMessagingException(Message m, Exception e)
     {
@@ -303,7 +266,6 @@ public class MailHelper
             //ignore
         }
     }
-
 
     public static void renderHtml(Message m, String title, Writer out)
     {
@@ -450,7 +412,6 @@ public class MailHelper
             setSubject(template.renderSubject(c));
         }
     }
-
 
     /**
      * Sends one or more email messages in a background thread. Add message(s) to the emailer, then call start().
