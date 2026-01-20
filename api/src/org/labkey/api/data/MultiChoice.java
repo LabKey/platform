@@ -165,7 +165,9 @@ public class MultiChoice
         @Override
         public List<String> renderURLs(RenderContext ctx)
         {
-            return List.of();
+            List<Object> values = getDisplayValues(ctx);
+            int size = (values == null) ? 0 : values.size();
+            return Collections.nCopies(size, "");
         }
 
         @Override
