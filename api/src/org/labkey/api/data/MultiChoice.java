@@ -6,7 +6,6 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
@@ -31,6 +30,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -39,6 +39,7 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.SPAN;
@@ -56,6 +57,11 @@ public class MultiChoice
 
         @Override
         public Object getValue(RenderContext ctx)
+        {
+            return getArrayValue(ctx);
+        }
+
+        public Array getArrayValue(RenderContext ctx)
         {
             Object v = super.getValue(ctx);
             if (!(v instanceof java.sql.Array array))
@@ -129,6 +135,29 @@ public class MultiChoice
                 DIV(array.stream().map(v -> SPAN(at(style,"border:solid 1px black; border-radius:3px;"), v))
                         .collect(new JoinRenderable(HtmlString.SP))));
         }
+
+        @Override
+        public String getTsvFormattedValue(RenderContext ctx)
+        {
+            Array values = getArrayValue(ctx);
+            if (null != values && !values.isEmpty())
+            {
+                return PageFlowUtil.joinValuesToStringForExport(values);
+            }
+            return null;
+        }
+
+        @Override
+        public Object getExcelCompatibleValue(RenderContext ctx)
+        {
+            return getTsvFormattedValue(ctx);
+        }
+
+        @Override
+        public Object getExportCompatibleValue(RenderContext ctx)
+        {
+            return getTsvFormattedValue(ctx);
+        }
     }
 
 
@@ -182,17 +211,19 @@ public class MultiChoice
     // LK impl to help with conversions
     public static class Array implements List<String>, java.sql.Array
     {
+        public static final Array EMPTY = new Array(new String[0]);
+
         final String[] array;
         List<String> list = null;
 
         protected Array(Stream<Object> str)
         {
-            CaseInsensitiveHashSet set = new CaseInsensitiveHashSet();
-            array = str.filter(Objects::nonNull)
+            TreeSet<String> setCaseSensitive = new TreeSet<>();
+            str.filter(Objects::nonNull)
                     .map(s -> StringUtils.trimToNull(s.toString()))
                     .filter(Objects::nonNull)
-                    .filter(set::add)
-                    .toArray(String[]::new);
+                    .forEach(setCaseSensitive::add);
+            array = setCaseSensitive.toArray(new String[0]);
         }
 
         protected Array(Object[] array)
@@ -244,6 +275,8 @@ public class MultiChoice
 
         public static Array from(@NotNull String s)
         {
+            if (isBlank(s))
+                return EMPTY;
             List<String> split = PageFlowUtil.splitStringToValuesForImport(s);
             return from(split.toArray());
         }
@@ -310,7 +343,7 @@ public class MultiChoice
         @Override
         public @NotNull Object[] toArray()
         {
-            return array;
+            return 0==array.length ? array : array.clone();
         }
 
         @Override
@@ -511,7 +544,7 @@ public class MultiChoice
         public <T> T convert(Class<T> aClass, Object o)
         {
             if (null == o)
-                return (T) Array.from(new String[]{});
+                return (T) Array.EMPTY;
             if (o instanceof MultiChoice.Array arr)
                 return (T)arr;
             if (o instanceof String s)
@@ -546,6 +579,13 @@ public class MultiChoice
             assertEquals(expected, _converter.convert(Array.class, new String[]{"a,","b\"","c "}));
             assertEquals(expected, _converter.convert(Array.class, List.of("a,","b\"","c ")));
             assertEquals(expected, _converter.convert(Array.class, new JSONArray(List.of("a,","b\"","c "))));
+            // test that result is ordered
+            assertEquals(expected, _converter.convert(Array.class, "\"c \",\"b\"\"\",\"a,\""));
+
+            // empty
+            assertEquals(0, _converter.convert(Array.class, " ").size());
+            assertEquals(0, _converter.convert(Array.class, "").size());
+            assertEquals(0, _converter.convert(Array.class, null).size());
         }
 
         @Test

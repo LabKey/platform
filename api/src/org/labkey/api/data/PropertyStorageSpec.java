@@ -169,6 +169,7 @@ public class PropertyStorageSpec
         setMvEnabled(propertyDescriptor.isMvEnabled());
         setDescription(propertyDescriptor.getDescription());
         setImportAliases(propertyDescriptor.getImportAliases());
+        setTypeURI(propertyDescriptor.getRangeURI());
 
         if (null != propertyDescriptor.getDatabaseDefaultValue())
             setDefaultValue(propertyDescriptor.getDatabaseDefaultValue());

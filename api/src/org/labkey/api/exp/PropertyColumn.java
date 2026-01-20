@@ -255,7 +255,7 @@ public class PropertyColumn extends LookupColumn
 
         return switch (pd.getPropertyType().getStorageType())
                 {
-                    case 's' -> "StringValue";
+                    case 's', '?' -> "StringValue";
                     case 'f' -> "FloatValue";
                     case 'd' -> "DateTimeValue";
                     default -> throw new IllegalStateException("Bad storage type");

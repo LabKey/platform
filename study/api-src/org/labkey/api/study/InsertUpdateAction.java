@@ -316,7 +316,20 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
                 Map<DomainProperty, Object> dataMap = new HashMap<>(requestMap.size());
                 for (DomainProperty property : properties)
                 {
-                    ColumnInfo currentColumn = property.getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", user, getContainer());
+                    ColumnInfo currentColumn;
+
+                    try
+                    {
+                        currentColumn = property.getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", user, getContainer());
+                    }
+                    catch (Exception e)
+                    {
+                        // can happen if a column type is not supported as a property columnn, such as MultiChoice
+                        currentColumn = datasetTable.getColumn(property.getName());
+                    }
+                    if (currentColumn == null)
+                        continue;
+
                     Object value = requestMap.get(updateForm.getFormFieldName(currentColumn));
                     if (property.isMvEnabled())
                     {

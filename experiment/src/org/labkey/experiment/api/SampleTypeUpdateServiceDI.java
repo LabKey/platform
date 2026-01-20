@@ -1847,9 +1847,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     else
                     {
                         if (isScopedField)
-                            _addConvertColumn(name, i, to.getJdbcType(), to.getFk(), aliquotedFromDataColInd, scopedFields.get(name));
+                            _addConvertColumn(name, i, to.getJdbcType(), to.getPropertyType(), to.getFk(), aliquotedFromDataColInd, scopedFields.get(name));
                         else
-                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), to.getRemapMissingBehavior(), true);
+                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getPropertyType(), to.getFk(), to.getRemapMissingBehavior(), true);
                     }
                 }
                 else
@@ -1884,11 +1884,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             return ExperimentService.isAliquotedFromColumn(fromCol);
         }
 
-        private void _addConvertColumn(String name, int fromIndex, JdbcType toType, ForeignKey toFk, int derivationDataColInd, boolean isAliquotField)
+        private void _addConvertColumn(String name, int fromIndex, JdbcType toType, @Nullable PropertyType pt, ForeignKey toFk, int derivationDataColInd, boolean isAliquotField)
         {
             var col = new BaseColumnInfo(getInput().getColumnInfo(fromIndex));
             col.setName(name);
             col.setJdbcType(toType);
+            if (PropertyType.MULTI_CHOICE.equals(pt)) // TODO: should this be applied to all column types?
+                col.setPropertyType(pt);
             if (toFk != null)
                 col.setFk(toFk);
 

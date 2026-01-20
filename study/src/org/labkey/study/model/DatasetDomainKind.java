@@ -258,6 +258,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     }
 
     @Override
+    public boolean allowMultiChoiceProperties()
+    {
+        return true;
+    }
+
+    @Override
     public boolean showDefaultValueSettings()
     {
         return true;
