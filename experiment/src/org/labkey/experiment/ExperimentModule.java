@@ -822,6 +822,12 @@ public class ExperimentModule extends SpringModule
                                  JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
                                  JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
                         WHERE DD.storageSchemaName = ? AND D.rangeURI = ?""", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
+                results.put("sampleTypeWithMultiValueColumnCount", new SqlSelector(schema, """
+                        SELECT COUNT(DISTINCT DD.DomainURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE DD.storageSchemaName = ? AND D.rangeURI = ?""", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.MULTI_CHOICE.getTypeUri()).getObject(Long.class));
 
                 results.put("sampleTypeAliquotSpecificField", new SqlSelector(schema, """
                         SELECT COUNT(DISTINCT D.PropertyURI) FROM
@@ -855,6 +861,12 @@ public class ExperimentModule extends SpringModule
                                  JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
                                  JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
                         WHERE DD.storageSchemaName = ? AND D.rangeURI = ?""", DataClassDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
+                results.put("dataClassWithMultiValueColumnCount", new SqlSelector(schema, """
+                        SELECT COUNT(DISTINCT DD.DomainURI) FROM
+                             exp.PropertyDescriptor D\s
+                                 JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
+                                 JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
+                        WHERE DD.storageSchemaName = ? AND D.rangeURI = ?""", DataClassDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.MULTI_CHOICE.getTypeUri()).getObject(Long.class));
 
                 results.put("textChoiceColumnCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", TEXT_CHOICE_CONCEPT_URI).getObject(Long.class));
                 results.put("multiValueTextChoiceColumnCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE rangeuri = ?", PropertyType.MULTI_CHOICE.getTypeUri()).getObject(Long.class));
