@@ -1086,6 +1086,12 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     }
 
     @Override
+    public SQLFragment array_is_empty(SQLFragment a)
+    {
+        return new SQLFragment("(cardinality(").append(a).append(")=0)");
+    }
+
+    @Override
     public SQLFragment array_all_in_array(SQLFragment a, SQLFragment b)
     {
         SQLFragment ret = new SQLFragment();

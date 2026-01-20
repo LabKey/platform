@@ -1596,7 +1596,7 @@ public abstract class Method
                 @Override
                 public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                 {
-                    return new SQLFragment("(cardinality(").append(arguments[0]).append(")=0)");
+                    return dialect.array_is_empty(arguments[0]);
                 }
             };
         }
