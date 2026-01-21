@@ -207,6 +207,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.util.CsrfInput;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ErrorRenderer;
@@ -228,7 +229,6 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
-import org.labkey.api.util.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DataView;
@@ -329,7 +329,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -7454,6 +7453,25 @@ public class ExperimentController extends SpringActionController
             ret.put("result", result);
             ret.put("success", true);
             return ret;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminPermission.class)
+    public static class RepairExpDataFilesAction extends MutatingApiAction<Object>
+    {
+        @Override
+        public Object execute(Object form, BindException errors)
+        {
+            FileContentService service = FileContentService.get();
+            if (service == null)
+            {
+                errors.reject(ERROR_GENERIC, "No FileContentService found");
+                return new SimpleResponse<>(false, "No FileContentService found");
+            }
+
+            int numDuplicates = service.fixContainerForExpDataFiles(getUser());
+            return success(Map.of("hadRepairs", numDuplicates > 0));
         }
     }
 

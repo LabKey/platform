@@ -16,7 +16,6 @@
 package org.labkey.api.files;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +33,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -45,13 +45,13 @@ import java.util.Set;
 
 /**
  * FileListener implementation that can update tables that store file paths in various flavors (URI, standard OS
- * paths, etc).
+ * paths, etc.).
  * User: jeckels
  * Date: 11/7/12
  */
 public class TableUpdaterFileListener implements FileListener
 {
-    private static final Logger LOG = LogManager.getLogger(TableUpdaterFileListener.class);
+    protected static final Logger LOG = LogHelper.getLogger(TableUpdaterFileListener.class, "File listener activity");
 
     public static final String TABLE_ALIAS = "x";
 
@@ -273,7 +273,7 @@ public class TableUpdaterFileListener implements FileListener
         singleEntrySQL.append(")");
 
         int rows = schema.getScope().executeWithRetry(tx -> new SqlExecutor(schema).execute(singleEntrySQL));
-        LOG.info("Updated " + rows + " row in " + _table + " for move from " + src + " to " + dest);
+        LOG.info("Updated {} row in {} for move from {} to {}", rows, _table, src, dest);
 
         // Handle updating child paths, unless we know that the entry is a file. If it's not (either it's a
         // directory or it doesn't exist), then try to fix up child records
@@ -305,7 +305,7 @@ public class TableUpdaterFileListener implements FileListener
             childPathsSQL.append(whereClause);
             childRowsUpdated += new SqlExecutor(schema).execute(childPathsSQL);
 
-            LOG.info("Updated " + childRowsUpdated + " child paths in " + _table + " rows for move from " + src + " to " + dest);
+            LOG.info("Updated {} child paths in {} rows for move from {} to {}", childRowsUpdated, _table, src, dest);
             return childRowsUpdated;
         }
         return 0;
@@ -353,10 +353,10 @@ public class TableUpdaterFileListener implements FileListener
     @Override
     public SQLFragment listFilesQuery()
     {
-        return listFilesQuery(false, null);
+        return listFilesQuery(false, null, false);
     }
 
-    public SQLFragment listFilesQuery(boolean skipCreatedModified, String filePath)
+    public SQLFragment listFilesQuery(boolean skipCreatedModified, CharSequence filePath, boolean extractName)
     {
         SQLFragment selectFrag = new SQLFragment();
         selectFrag.append("SELECT\n");
@@ -395,6 +395,16 @@ public class TableUpdaterFileListener implements FileListener
 
         selectFrag.append("  ").appendIdentifier(_pathColumn.getSelectIdentifier()).append(" AS FilePath,\n");
 
+        if (extractName)
+        {
+            SqlDialect dialect = _table.getSchema().getSqlDialect();
+            SQLFragment fileNameFrag = new SQLFragment();
+            fileNameFrag.append("regexp_replace(").appendIdentifier(_pathColumn.getSelectIdentifier()).append(", ");
+            fileNameFrag.append(dialect.getStringHandler().quoteStringLiteral(".*/")).append(", ");
+            fileNameFrag.append(dialect.getStringHandler().quoteStringLiteral("")).append(")");
+            selectFrag.append("  ").append(fileNameFrag).append(" AS FilePathShort,\n");
+        }
+
         if (_keyColumn != null)
             selectFrag.append("  ").appendIdentifier(_keyColumn.getSelectIdentifier()).append(" AS SourceKey,\n");
         else
@@ -408,6 +418,8 @@ public class TableUpdaterFileListener implements FileListener
 
         if (StringUtils.isEmpty(filePath))
             selectFrag.append(" IS NOT NULL\n");
+        else if (filePath instanceof SQLFragment)
+            selectFrag.append(" = ").append(filePath).append("\n");
         else
             selectFrag.append(" = ").appendStringLiteral(filePath, _table.getSchema().getSqlDialect()).append("\n");
 

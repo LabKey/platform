@@ -35,6 +35,7 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
         SourceProtocolApplication,
         SourceApplicationInput,
         DataFileUrl,
+        ReferenceCount,
         Run,
         RunApplication,
         RunApplicationOutput,

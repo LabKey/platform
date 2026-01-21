@@ -2153,7 +2153,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 throw new ExperimentException("Sample " + ref.sampleName + " cannot be moved since it references a shared file: " + sourceFile.getName());
 
             // TODO, support batch fireFileMoveEvent to avoid excessive FileLinkFileListener.hardTableFileLinkColumns calls
-            fileService.fireFileMoveEvent(sourceFile, ref.targetFile, user, targetContainer);
+            fileService.fireFileMoveEvent(sourceFile.toPath(), ref.targetFile.toPath(), user, ref.sourceContainer, targetContainer);
             FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(targetContainer, "File moved from " + ref.sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");
             event.setProvidedFileName(sourceFile.getName());
             event.setFile(ref.targetFile.getName());

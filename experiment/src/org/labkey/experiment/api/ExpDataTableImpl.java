@@ -34,12 +34,14 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
@@ -75,6 +77,7 @@ import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
@@ -84,6 +87,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.experiment.FileLinkFileListener;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.lineage.LineageMethod;
 import org.springframework.beans.MutablePropertyValues;
@@ -200,6 +204,8 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addColumn(Column.FileExtension);
         addColumn(Column.WebDavUrl);
         addColumn(Column.WebDavUrlRelative);
+        if (AppProps.getInstance().isOptionalFeatureEnabled(ExpSchema.SAMPLE_FILES_TABLE))
+            addColumn(getFileLinkReferenceCountColumn());
         var flagCol = addColumn(Column.Flag);
         if (isFilesTable)
             flagCol.setLabel("Description");
@@ -225,6 +231,18 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
 
         return customProps;
+    }
+
+    // This is included in exp.data, not just exp.files because we want to be able to show a filtered view of
+    // sample files from our applications, and exp.files will not show subfolders
+    private MutableColumnInfo getFileLinkReferenceCountColumn()
+    {
+        var result = wrapColumn(Column.ReferenceCount.name(), _rootTable.getColumn("RowId"));
+        result.setDescription("The number of references to this file from File fields in any domain.");
+        result.setJdbcType(JdbcType.INTEGER);
+        result.setHidden(true);
+        result.setDisplayColumnFactory(new ReferenceCountDisplayColumnFactory());
+        return result;
     }
 
     @Override

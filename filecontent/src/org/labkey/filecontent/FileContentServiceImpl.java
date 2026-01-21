@@ -40,6 +40,7 @@ import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TabContainerType;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -51,6 +52,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.DirectoryPattern;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileListener;
@@ -135,6 +137,44 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
     private volatile boolean _fileRootSetViaStartupProperty = false;
     private String _problematicFileRootMessage;
+
+    @Override
+    public int fixContainerForExpDataFiles(User admin)
+    {
+        _log.info("Populating exp.data with rows for all the files in all containers");
+        ensureFileDataInAllContainers(admin);
+
+        // Delete entries with duplicate datafileurls
+        SQLFragment sql = new SQLFragment("""
+                DELETE FROM exp.data WHERE RowId IN (SELECT RowId
+                                                     FROM exp.data
+                                                     WHERE datafileurl IN (SELECT DataFileURL
+                                                                           FROM (SELECT DataFileURL, COUNT(*) AS count
+                                                                                 FROM exp.data
+                                                                                 WHERE DataFileURL IS NOT NULL
+                                                                                 GROUP BY DataFileUrl) c
+                                                                           WHERE c.count > 1))""");
+        int count = new SqlExecutor(ExperimentService.get().getSchema().getScope()).execute(sql);
+        _log.info("Deleted {} duplicate entries from exp.data", count);
+        _log.info("Repopulating file data in exp.data.");
+        ensureFileDataInAllContainers(admin);
+        return count;
+    }
+
+    private void ensureFileDataInAllContainers(User user)
+    {
+        ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(c ->
+                {
+
+                    ExpDataTable expDataTable = ExperimentService.get().createDataTable("data", new ExpSchema(user, c), null);
+                    if (expDataTable != null)
+                    {
+                        _log.info("Ensuring file data in container {}", c.getPath());
+                        ensureFileDataUnsynchronized(expDataTable);
+                    }
+                }
+        );
+    }
 
     enum FileAction
     {
@@ -1233,6 +1273,27 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     }
 
     @Override
+    public SQLFragment listSampleFilesQuery(@NotNull User currentUser)
+    {
+        SQLFragment frag = new SQLFragment();
+        String union = "";
+        frag.append("(");
+
+        for (FileListener fileListener : _fileListeners)
+        {
+            SQLFragment subselect = fileListener.listSampleFilesQuery();
+            if (subselect != null && !subselect.isEmpty())
+            {
+                frag.append(union);
+                frag.append(subselect);
+                union = "UNION\n";
+            }
+        }
+        frag.append(")");
+        return union.isEmpty() ? new SQLFragment() : frag;
+    }
+
+    @Override
     public SQLFragment listFilesQuery(@NotNull User currentUser)
     {
         SQLFragment frag = new SQLFragment();
@@ -1448,14 +1509,10 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     @Override
     public void ensureFileData(@NotNull ExpDataTable table)
     {
+        if (table.getUserSchema() == null)
+            throw new IllegalArgumentException("getUserSchema() returned null from " + table);
+
         Container container = table.getUserSchema().getContainer();
-        // The current user may not have insert permission, and they didn't necessarily upload the files anyway
-        User user = User.getAdminServiceUser();
-        QueryUpdateService qus = table.getUpdateService();
-        if (qus == null)
-        {
-            throw new IllegalArgumentException("getUpdateServer() returned null from " + table);
-        }
 
         synchronized (_fileDataUpToDateCache)
         {
@@ -1465,6 +1522,23 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             _fileDataUpToDateCache.put(container, true);
         }
 
+        ensureFileDataUnsynchronized(table);
+    }
+
+    // N.B. Use the synchronized method above. This is exposed only because of the need to use it in for data repair (e.g., in an upgrade script).
+    private void ensureFileDataUnsynchronized(@NotNull ExpDataTable table)
+    {
+        if (table.getUserSchema() == null)
+            throw new IllegalArgumentException("getUserSchema() returned null from " + table);
+
+        Container container = table.getUserSchema().getContainer();
+        // The current user may not have insert permission, and they didn't necessarily upload the files anyway
+        User user = User.getAdminServiceUser();
+        QueryUpdateService qus = table.getUpdateService();
+        if (qus == null)
+        {
+            throw new IllegalArgumentException("getUpdateServer() returned null from " + table);
+        }
         List<String> existingDataFileUrls = getDataFileUrls(container);
         Collection<AttachmentDirectory> filesets = getRegisteredDirectories(container);
         Set<Map<String, Object>> children = getNodes(false, null, container);
@@ -1527,13 +1601,13 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 try (Stream<java.nio.file.Path> pathStream = Files.walk(rootPath, 100)) // prevent symlink loop
                 {
                     pathStream
-                        .filter(path -> !Files.isSymbolicLink(path) && path.compareTo(rootPath) != 0) // exclude symlink & root
-                        .forEach(path -> {
-                            if (!containsUrlOrVariation(existingDataFileUrls, path))
-                                rows.add(new CaseInsensitiveHashMap<>(Collections.singletonMap("DataFileUrl", path.toUri().toString())));
-                        });
+                            .filter(path -> !Files.isSymbolicLink(path) && path.compareTo(rootPath) != 0) // exclude symlink & root
+                            .forEach(path -> {
+                                if (!containsUrlOrVariation(existingDataFileUrls, path))
+                                    rows.add(new CaseInsensitiveHashMap<>(Collections.singletonMap("DataFileUrl", path.toUri().toString())));
+                            });
                 }
-
+                _log.debug("Inserting " + rows.size() + " rows into " + table);
                 qus.insertRows(user, container, rows, errors, null, null);
             }
             catch (Exception e)
