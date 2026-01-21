@@ -19,10 +19,12 @@ package org.labkey.api.exp;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.util.GUID;
 
 import java.io.File;
+import java.sql.Array;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
@@ -49,6 +51,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
     // ObjectProperty
     protected Identifiable objectValue;
     private Map<String, ObjectProperty> _childProperties;
+    protected MultiChoice.Array arrayValue;
 
     // Don't delete this -- it's accessed via introspection
     public ObjectProperty()

@@ -1300,6 +1300,55 @@ public abstract class SqlDialect
         return StringUtils.lowerCase(getSqlTypeNameFromObject(object));
     }
 
+    public String getJDBCArrayType(Object[] array)
+    {
+        String typeName;
+        if (array.length == 0 || array[0] == null)
+        {
+            // Handle empty arrays by inferring the SQL element type from the Java component type.
+            // Primary target is String[0], but handle a reasonable set of common types defensively.
+            Class<?> componentType = array.getClass().getComponentType();
+            if (String.class.equals(componentType))
+            {
+                // Use dialect mapping for a String instance
+                typeName = getJDBCArrayType("");
+            }
+            else if (Integer.class.equals(componentType))
+            {
+                typeName = getJDBCArrayType(Integer.valueOf(0));
+            }
+            else if (Long.class.equals(componentType))
+            {
+                typeName = getJDBCArrayType(Long.valueOf(0L));
+            }
+            else if (Double.class.equals(componentType))
+            {
+                typeName = getJDBCArrayType(Double.valueOf(0.0d));
+            }
+            else if (Float.class.equals(componentType))
+            {
+                typeName = getJDBCArrayType(Float.valueOf(0.0f));
+            }
+            else if (Boolean.class.equals(componentType))
+            {
+                typeName = getJDBCArrayType(Boolean.FALSE);
+            }
+            else
+            {
+                // Fallback to VARCHAR which is the safest for most text use-cases
+                typeName = getSqlTypeName(JdbcType.VARCHAR);
+                if (typeName != null)
+                    typeName = typeName.toLowerCase();
+            }
+        }
+        else
+        {
+            typeName = getJDBCArrayType(array[0]);
+        }
+
+        return typeName;
+    }
+
     public Collection<String> getScriptWarnings(String name, String sql)
     {
         return Collections.emptyList();
