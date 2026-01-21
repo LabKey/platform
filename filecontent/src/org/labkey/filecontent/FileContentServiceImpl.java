@@ -1607,7 +1607,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                                     rows.add(new CaseInsensitiveHashMap<>(Collections.singletonMap("DataFileUrl", path.toUri().toString())));
                             });
                 }
-
+                _log.debug("Inserting " + rows.size() + " rows into " + table);
                 qus.insertRows(user, container, rows, errors, null, null);
             }
             catch (Exception e)
