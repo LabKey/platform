@@ -101,10 +101,10 @@ public class PopupAdminView
             }
         }
 
-        if (user.isAnalyst())
+        if (user.isAnalyst() || user.hasRootPermission(TroubleshooterPermission.class))
         {
             NavTree devMenu = new NavTree("Developer Links");
-            devMenu.addChildren(PopupDeveloperView.getNavTree(context));
+            devMenu.addChildren(DeveloperMenu.getNavTree(context));
             navTree.addChild(devMenu);
         }
 
