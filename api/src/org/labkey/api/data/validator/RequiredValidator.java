@@ -57,7 +57,7 @@ public class RequiredValidator extends AbstractColumnValidator implements Unders
                 else break checkRequired;
             }
 
-            if (!jdbcType.isEmpty(value))
+            if (jdbcType.isEmpty(value))
                 break checkRequired;
 
             if (!(value instanceof MvFieldWrapper mv))
