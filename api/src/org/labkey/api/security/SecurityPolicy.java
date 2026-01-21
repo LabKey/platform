@@ -216,14 +216,11 @@ public class SecurityPolicy
     @NotNull
     public Stream<Role> getRoles(PrincipalArray principalArray)
     {
-        SortedSet<RoleAssignment> assignments = getAssignments();
         return StreamSupport.stream(
-            Spliterators.spliterator(
-                new RoleIterator(principalArray, assignments),
-                // Estimate: one role per assigment, so this is the max size
-                assignments.size(),
-                // Not guaranteed to be DISTINCT or SIZED (though we do provide an estimated size above).
-                // Likely that none of this is important, since we're not specifying parallel.
+            Spliterators.spliteratorUnknownSize(
+                new RoleIterator(principalArray, getAssignments()),
+                // Not DISTINCT. Not SIZED.
+                // Likely that these characteristics aren't important, since we're not specifying parallel.
                 Spliterator.IMMUTABLE | Spliterator.NONNULL
             ),
             // Iterator-based Spliterators don't work well with parallel. Plus the iterator is computationally simple.

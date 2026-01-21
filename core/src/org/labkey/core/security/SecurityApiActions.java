@@ -195,7 +195,9 @@ public class SecurityApiActions
                 groupPerms.put("isProjectGroup", group.isProjectGroup());
 
                 //add effective roles
-                List<String> effectiveRoleList = SecurityManager.getEffectiveRoles(container, group).map(Role::getUniqueName).toList();
+                Set<String> effectiveRoleList = SecurityManager.getEffectiveRoles(container, group)
+                    .map(Role::getUniqueName)
+                    .collect(Collectors.toSet());
                 groupPerms.put("roles", effectiveRoleList);
                 groupPerms.put("effectivePermissions", effectivePermissions);
 
@@ -317,7 +319,9 @@ public class SecurityApiActions
             permsInfo.put("path", container.getPath());
 
             //effective roles
-            List<String> effectiveRoles = SecurityManager.getEffectiveRoles(container, user).map(Role::getUniqueName).toList();
+            Set<String> effectiveRoles = SecurityManager.getEffectiveRoles(container, user)
+                .map(Role::getUniqueName)
+                .collect(Collectors.toSet());
             permsInfo.put("roles", effectiveRoles);
             permsInfo.put("effectivePermissions", SecurityManager.getPermissionNames(container, user));
 
@@ -332,7 +336,9 @@ public class SecurityApiActions
                 groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(group));
 
                 //effective roles
-                List<String> groupEffectiveRoles = SecurityManager.getEffectiveRoles(container, group).map(Role::getUniqueName).toList();
+                Set<String> groupEffectiveRoles = SecurityManager.getEffectiveRoles(container, group)
+                    .map(Role::getUniqueName)
+                    .collect(Collectors.toSet());
                 groupInfo.put("roles", groupEffectiveRoles);
                 groupInfo.put("effectivePermissions", SecurityManager.getPermissionNames(container, group));
 
