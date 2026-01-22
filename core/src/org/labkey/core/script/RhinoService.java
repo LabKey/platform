@@ -240,8 +240,8 @@ public final class RhinoService
 
             if (null != simpleTest)
             {
-                assertEquals("Scripts from the simpletest module", 15, ScriptReferenceImpl.SCRIPT_CACHE.getResourceMap(simpleTest).size());
-                assertEquals("Top-level script timestamps from the simpletest module", 15, LabKeyModuleSourceProvider.TOP_LEVEL_SCRIPT_CACHE.getResourceMap(simpleTest).size());
+                assertEquals("Scripts from the simpletest module", 16, ScriptReferenceImpl.SCRIPT_CACHE.getResourceMap(simpleTest).size());
+                assertEquals("Top-level script timestamps from the simpletest module", 16, LabKeyModuleSourceProvider.TOP_LEVEL_SCRIPT_CACHE.getResourceMap(simpleTest).size());
             }
         }
     }
