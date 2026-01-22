@@ -35,6 +35,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.AuthFilter;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -54,6 +55,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.DavException;
 import org.labkey.api.writer.PrintWriters;
+import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.springframework.dao.DataAccessResourceFailureException;
 
 import jakarta.servlet.ServletException;
@@ -594,7 +596,7 @@ public class ExceptionUtil
         else if (!local)
         {
             String hash = hashStackTrace(stackTrace);
-            ExceptionTally tally = EXCEPTION_TALLIES.computeIfAbsent(hash, k -> new ExceptionTally());
+            ExceptionTally tally = EXCEPTION_TALLIES.computeIfAbsent(hash, _ -> new ExceptionTally());
             // Once we've reported an exception 5 times within this server session, don't report it more than every 5 minutes
             if (tally._count.incrementAndGet() > 5 && System.currentTimeMillis() - tally._lastReported < 1000 * 60 * 5)
             {
@@ -822,18 +824,29 @@ public class ExceptionUtil
         {
             try
             {
-                response.reset();
-                // mostly to make security scanners happy
-                if (ModuleLoader.getInstance().isStartupComplete())
+                // Capture security-related headers to re-apply after reset()
+                Map<String, String> securityHeaders = new HashMap<>();
+                for (String headerName : Arrays.asList(
+                        ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce.getHeaderName(),
+                        ContentSecurityPolicyFilter.ContentSecurityPolicyType.Report.getHeaderName(),
+                        AuthFilter.STRICT_TRANSPORT_SECURITY_HEADER_NAME,
+                        AuthFilter.X_FRAME_OPTIONS_HEADER_NAME,
+                        AuthFilter.X_CONTENT_TYPE_OPTIONS_HEADER_NAME,
+                        AuthFilter.REFERRER_POLICY_HEADER_NAME,
+                        AuthFilter.SERVER_HEADER_NAME))
                 {
-                    if (!"ALLOW".equals(AppProps.getInstance().getXFrameOption()))
-                        response.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOption());
-                    response.setHeader("X-Content-Type-Options", "nosniff");
+                    String value = response.getHeader(headerName);
+                    if (value != null)
+                        securityHeaders.put(headerName, value);
                 }
+
+                response.reset();
+
+                securityHeaders.forEach(response::setHeader);
             }
             catch (IllegalStateException x)
             {
-                // This is fine, just can't clear the existing response as its
+                // This is fine, just can't clear the existing response as it's
                 // been at least partially written back to the client
             }
         }
@@ -1246,7 +1259,7 @@ public class ExceptionUtil
         t = unwrapException(t);
         synchronized (_exceptionDecorations)
         {
-            HashMap<Enum<?>, String> m = _exceptionDecorations.computeIfAbsent(t, k -> new HashMap<>());
+            HashMap<Enum<?>, String> m = _exceptionDecorations.computeIfAbsent(t, _ -> new HashMap<>());
             if (overwrite || !m.containsKey(key))
             {
                 LOG.debug("add decoration to " + t.getClass() + "@" + System.identityHashCode(t) + " " + key + "=" + value);
@@ -1305,15 +1318,13 @@ public class ExceptionUtil
     @Nullable
     public static Throwable getCause(Throwable t)
     {
-        Throwable cause;
-        if (t instanceof RuntimeSQLException)
-            cause = ((RuntimeSQLException)t).getSQLException();
-        else if (t instanceof ServletException)
-            cause = ((ServletException)t).getRootCause();
-        else if (t instanceof BatchUpdateException)
-            cause = ((BatchUpdateException)t).getNextException();
-        else
-            cause = t.getCause();
+        Throwable cause = switch (t)
+        {
+            case RuntimeSQLException runtimeSQLException -> runtimeSQLException.getSQLException();
+            case ServletException servletException -> servletException.getRootCause();
+            case BatchUpdateException throwables -> throwables.getNextException();
+            case null, default -> t.getCause();
+        };
         return cause==t ? null : cause;
     }
 
@@ -1330,7 +1341,7 @@ public class ExceptionUtil
         ExceptionResponse handleIt(final User user, Exception ex)
         {
             final MockServletResponse res = new MockServletResponse();
-            InvocationHandler h = (o, method, objects) -> {
+            InvocationHandler h = (_, method, objects) -> {
                 // still calls in 'headers' for validation
                 res.addHeader(method.getDeclaringClass().getSimpleName() + "." + method.getName(), objects.length==0 ? "" : objects.length==1 ? String.valueOf(objects[0]) : Arrays.toString(objects));
                 return null;
@@ -1485,9 +1496,35 @@ public class ExceptionUtil
         }
 
         @Test
-        public void testUnwrap()
+        public void testSecurityHeaderRetention()
         {
+            final User user = UserManager.getGuestUser();
+            final MockServletResponse res = new MockServletResponse();
+            res.setHeader(ContentSecurityPolicyFilter.ContentSecurityPolicyType.Report.getHeaderName(), "default-src 'self'");
+            res.setHeader(AuthFilter.STRICT_TRANSPORT_SECURITY_HEADER_NAME, "max-age=31536000");
+            final String otherHeader = "Some-Other-Header";
+            res.setHeader(otherHeader, "should-be-gone");
 
+            HttpServletRequestWrapper req = new HttpServletRequestWrapper(TestContext.get().getRequest())
+            {
+                @Override
+                public Principal getUserPrincipal()
+                {
+                    return user;
+                }
+
+                @Override
+                public String getMethod()
+                {
+                    return "GET";
+                }
+            };
+
+            ExceptionUtil.handleException(req, res, new RuntimeException("Test Exception"), null, false);
+
+            assertEquals("default-src 'self'", res.getHeader(ContentSecurityPolicyFilter.ContentSecurityPolicyType.Report.getHeaderName()));
+            assertEquals("max-age=31536000", res.getHeader(AuthFilter.STRICT_TRANSPORT_SECURITY_HEADER_NAME));
+            assertNull(res.getHeader(otherHeader));
         }
     }
 
@@ -1703,7 +1740,6 @@ public class ExceptionUtil
             resetBuffer();
             status = 0;
             message = null;
-    //        headers.clear();
         }
 
         @Override
