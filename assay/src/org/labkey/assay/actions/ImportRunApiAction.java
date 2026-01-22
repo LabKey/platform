@@ -69,6 +69,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.workflow.WorkflowService;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.MutablePropertyValues;
@@ -345,6 +346,12 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
             Pair<ExpExperiment, ExpRun> result = provider.getRunCreator().saveExperimentRun(uploadContext, batchId, forceAsync, getTransactionAuditDetails());
             ExpRun run = result.second;
+            if (workflowTaskId != null)
+            {
+                WorkflowService workService = WorkflowService.get();
+                if (workService != null)
+                    workService.onActionComplete(getContainer(), getUser(), workflowTaskId, WorkflowService.ActionType.AssayImport);
+            }
 
             transaction.commit();
             success = true;
