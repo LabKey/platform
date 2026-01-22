@@ -1070,23 +1070,20 @@ class SandboxContextFactory extends ContextFactory
                     if (mp.getMap().get(SCRIPT_TIMEOUT_PROPERTY) != null)
                     {
                         Object rawTimeout = mp.getMap().get(SCRIPT_TIMEOUT_PROPERTY);
-                        if (NumberUtils.isCreatable(String.valueOf(rawTimeout)))
+                        try
                         {
-                            try
+                            int scriptTimeout = Integer.parseInt(String.valueOf(rawTimeout));
+                            if (scriptTimeout > MAX_ALLOWABLE_TIMEOUT)
                             {
-                                int scriptTimeout = Integer.parseInt(String.valueOf(rawTimeout));
-                                if (scriptTimeout > MAX_ALLOWABLE_TIMEOUT)
-                                {
-                                    scriptTimeout = MAX_ALLOWABLE_TIMEOUT;
-                                    LOG.error("Script timeout is greater than max allowable, using: {}", MAX_ALLOWABLE_TIMEOUT);
-                                }
+                                scriptTimeout = MAX_ALLOWABLE_TIMEOUT;
+                                LOG.error("Script timeout is greater than max allowable, using: {}", MAX_ALLOWABLE_TIMEOUT);
+                            }
 
-                                return scriptTimeout;
-                            }
-                            catch (Exception e)
-                            {
-                                LOG.error("Non-integer value provided to extractContext.scriptTimeout for script: {}", rawTimeout);
-                            }
+                            return scriptTimeout;
+                        }
+                        catch (Exception e)
+                        {
+                            LOG.error("Non-integer value provided to extractContext.scriptTimeout for script: {}", rawTimeout);
                         }
                     }
                 }
