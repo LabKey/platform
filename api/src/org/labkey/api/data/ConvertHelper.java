@@ -1023,7 +1023,11 @@ public class ConvertHelper implements PropertyEditorRegistrar
         public Object convert(Class type, Object value)
         {
             if (!type.isEnum())
+            {
+                if (type == String.class)
+                    return value;
                 throw new IllegalArgumentException();
+            }
 
             if (value == null)
                 return null;
