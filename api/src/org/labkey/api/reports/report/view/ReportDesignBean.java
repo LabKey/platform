@@ -204,7 +204,7 @@ public class ReportDesignBean<R extends Report> extends ReportForm
         _cached = cached;
     }
 
-    public R getReport(ContainerUser cu) throws Exception
+    public R getReport(ContainerUser cu)
     {
         R report = null;
         if (null != getReportId())

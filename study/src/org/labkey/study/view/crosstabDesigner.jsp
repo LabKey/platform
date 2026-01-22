@@ -126,8 +126,8 @@
             if (ptid.equals(col.getFieldKey()) || seqNum.equals(col.getFieldKey()))
                 continue;
 
-            builder.addOption(col.getLabel(), col.getFieldKey().encode())
-                    .selected(null != selected && selected.equalsIgnoreCase(col.getFieldKey().encode()));
+            builder.addOption(new OptionBuilder(col.getLabel(), col.getFieldKey().encode())
+                    .selected(null != selected && selected.equalsIgnoreCase(col.getFieldKey().encode())));
         }
         return builder.getHtmlString();
     }

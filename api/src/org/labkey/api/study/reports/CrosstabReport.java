@@ -20,24 +20,28 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Stats;
 import org.labkey.api.view.ViewContext;
 
+import java.sql.SQLException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -67,7 +71,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
         return CrosstabReportDescriptor.TYPE;
     }
 
-    protected ReportQueryView createQueryView(ViewContext context, ReportDescriptor descriptor) throws Exception
+    protected ReportQueryView createQueryView(ViewContext context, ReportDescriptor descriptor)
     {
         final String queryName = descriptor.getProperty(QueryParam.queryName.toString());
         final String viewName = descriptor.getProperty(QueryParam.viewName.toString());
@@ -111,7 +115,11 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
                     return new CrosstabView(crosstab, exportAction);
                 }
             }
-            catch (Exception e)
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+            catch (ValidationException e)
             {
                 throw new RuntimeException(e);
             }
@@ -124,7 +132,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
     }
 
     @Override
-    public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception
+    public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws SQLException, ValidationException
     {
         ReportQueryView view = createQueryView(context, getDescriptor());
         validateQueryView(view);
@@ -141,37 +149,33 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
         return null;
     }
 
-    protected Crosstab createCrosstab(ViewContext context, boolean allowAsyncQuery) throws Exception
+    protected Crosstab createCrosstab(ViewContext context, boolean allowAsyncQuery) throws SQLException, ValidationException
     {
         CrosstabReportDescriptor descriptor = (CrosstabReportDescriptor)getDescriptor();
         Results results = generateResults(context, allowAsyncQuery);
         if (results != null)
         {
-            FieldKey rowFieldKey = FieldKey.decode(descriptor.getProperty("rowField"));
-            FieldKey colFieldKey = FieldKey.decode(descriptor.getProperty("colField"));
-            FieldKey statFieldKey = FieldKey.decode(descriptor.getProperty("statField"));
-
-            Set<Stats.StatDefinition> statSet = new LinkedHashSet<>();
-            for (String stat : descriptor.getStats())
+            try
             {
-                if ("Count".equals(stat))
-                    statSet.add(Stats.COUNT);
-                else if ("Sum".equals(stat))
-                    statSet.add(Stats.SUM);
-                else if ("Mean".equals(stat))
-                    statSet.add(Stats.MEAN);
-                else if ("Min".equals(stat))
-                    statSet.add(Stats.MIN);
-                else if ("Max".equals(stat))
-                    statSet.add(Stats.MAX);
-                else if ("StdDev".equals(stat))
-                    statSet.add(Stats.STDDEV);
-                else if ("Var".equals(stat))
-                    statSet.add(Stats.VAR);
-                else if ("Median".equals(stat))
-                    statSet.add(Stats.MEDIAN);
+                FieldKey rowFieldKey = FieldKey.decode(descriptor.getProperty("rowField"));
+                FieldKey colFieldKey = FieldKey.decode(descriptor.getProperty("colField"));
+                FieldKey statFieldKey = FieldKey.decode(descriptor.getProperty("statField"));
+
+                Set<Stats.StatDefinition> statSet = new LinkedHashSet<>();
+                for (String stat : descriptor.getStats())
+                {
+                    try
+                    {
+                        statSet.add(Stats.getStatFromString(stat));
+                    }
+                    catch (IllegalArgumentException _) {}
+                }
+                return new Crosstab(results, rowFieldKey, colFieldKey, statFieldKey, statSet);
             }
-            return new Crosstab(results, rowFieldKey, colFieldKey, statFieldKey, statSet);
+            finally
+            {
+                ResultSetUtil.close(results);
+            }
         }
         return null;
     }
