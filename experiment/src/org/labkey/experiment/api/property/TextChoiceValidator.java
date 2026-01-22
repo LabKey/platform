@@ -24,6 +24,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 
 import java.util.Collection;
@@ -75,6 +76,11 @@ public class TextChoiceValidator extends RegExValidator implements ValidatorKind
         }
         else if (value instanceof Collection col)
         {
+            if (col.size() > 10)
+            {
+                errors.add(new SimpleValidationError("At most 10 values are allowed for field '" + field.getNonBlankCaption() + "'"));
+                return false;
+            }
             for (Object item : col)
             {
                 if (null == item || !validValues.contains(Objects.toString(item)))

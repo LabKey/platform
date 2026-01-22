@@ -808,6 +808,341 @@ public abstract class CompareType
         }
     };
 
+    protected Collection getCollectionParam(Object value)
+    {
+        if (value instanceof Collection)
+        {
+            return (Collection)value;
+        }
+        else
+        {
+            List<String> values = new ArrayList<>();
+            if (value != null)
+                values.addAll(parseParams(value, getValueSeparator(), isNewLineSeparatorAllowed()));
+            return values;
+        }
+    }
+
+    /** TODO:
+     *             <xsd:enumeration value="arrayisempty"/>
+     *             <xsd:enumeration value="arrayisnotempty"/>
+     */
+    public static final CompareType ARRAY_CONTAINS_ALL = new CompareType("Contains All", "arraycontainsall", "ARRAYCONTAINSALL", true, null, OperatorType.ARRAYCONTAINSALL)
+    {
+        @Override
+        public ArrayContainsAllClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            return new ArrayContainsAllClause(fieldKey, getCollectionParam(value));
+        }
+
+        @Override
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
+        {
+            throw new UnsupportedOperationException("Conditional formatting not yet supported for Multi Choices");
+        }
+
+        @Override
+        public String getValueSeparator()
+        {
+            return ArrayClause.ARRAY_VALUE_SEPARATOR;
+        }
+    };
+
+    public static final CompareType ARRAY_CONTAINS_ANY = new CompareType("Contains Any", "arraycontainsany", "ARRAYCONTAINSANY", true, null, OperatorType.ARRAYCONTAINSANY)
+    {
+        @Override
+        public ArrayContainsAnyClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            return new ArrayContainsAnyClause(fieldKey, getCollectionParam(value));
+        }
+
+        @Override
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
+        {
+            throw new UnsupportedOperationException("Conditional formatting not yet supported for Multi Choices");
+        }
+
+        @Override
+        public String getValueSeparator()
+        {
+            return ArrayClause.ARRAY_VALUE_SEPARATOR;
+        }
+    };
+
+    public static final CompareType ARRAY_CONTAINS_NONE = new CompareType("Contains None", "arraycontainsnone", "ARRAYCONTAINSNONE", true, null, OperatorType.ARRAYCONTAINSNONE)
+    {
+        @Override
+        public ArrayContainsNoneClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            return new ArrayContainsNoneClause(fieldKey, getCollectionParam(value));
+        }
+
+        @Override
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
+        {
+            throw new UnsupportedOperationException("Conditional formatting not yet supported for Multi Choices");
+        }
+
+        @Override
+        public String getValueSeparator()
+        {
+            return ArrayClause.ARRAY_VALUE_SEPARATOR;
+        }
+    };
+
+    public static final CompareType ARRAY_MATCHES = new CompareType("Contains Exactly", "arraymatches", "ARRAYMATCHES", true, null, OperatorType.ARRAYMATCHES)
+    {
+        @Override
+        public ArrayMatchesClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            return new ArrayMatchesClause(fieldKey, getCollectionParam(value));
+        }
+
+        @Override
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
+        {
+            throw new UnsupportedOperationException("Conditional formatting not yet supported for Multi Choices");
+        }
+
+        @Override
+        public String getValueSeparator()
+        {
+            return ArrayClause.ARRAY_VALUE_SEPARATOR;
+        }
+    };
+
+    public static final CompareType ARRAY_NOT_MATCHES = new CompareType("Does Not Contain Exactly", "arraynotmatches", "ARRAYNOTMATCHES", true, null, OperatorType.ARRAYNOTMATCHES)
+    {
+        @Override
+        public ArrayNotMatchesClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            return new ArrayNotMatchesClause(fieldKey, getCollectionParam(value));
+        }
+
+        @Override
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
+        {
+            throw new UnsupportedOperationException("Conditional formatting not yet supported for Multi Choices");
+        }
+
+        @Override
+        public String getValueSeparator()
+        {
+            return ArrayClause.ARRAY_VALUE_SEPARATOR;
+        }
+    };
+
+    public static abstract class ArrayClause extends SimpleFilter.MultiValuedFilterClause
+    {
+        public static final String ARRAY_VALUE_SEPARATOR = ",";
+
+        public ArrayClause(@NotNull FieldKey fieldKey, CompareType comparison, Collection<?> params, boolean negated)
+        {
+            super(fieldKey, comparison, params, negated);
+        }
+
+        public SQLFragment[] getParamSQLFragments(SqlDialect dialect)
+        {
+            Object[] params = getParamVals();
+            SQLFragment[] fragments = new SQLFragment[params.length];
+
+            JdbcType type = null;
+            // Try to infer the type from the first non-null parameter
+            for (Object param : params)
+            {
+                if (param != null)
+                {
+                    type = JdbcType.valueOf(param.getClass());
+                    break;
+                }
+            }
+
+            for (int i = 0; i < params.length; i++)
+                fragments[i] = new SQLFragment().append(escapeLabKeySqlValue(params[i], type));
+
+            return fragments;
+        }
+
+        public Pair<SQLFragment, SQLFragment> getSqlFragments(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            SQLFragment[] paramValues = getParamSQLFragments(dialect);
+
+            if (paramValues == null || paramValues.length == 0)
+                return null;
+
+            ColumnInfo colInfo = columnMap != null ? columnMap.get(_fieldKey) : null;
+            var alias = SimpleFilter.getAliasForColumnFilter(dialect, colInfo, _fieldKey);
+
+            SQLFragment valuesFragment = dialect.array_construct(paramValues);
+            SQLFragment columnFragment = new SQLFragment().appendIdentifier(alias);
+
+            return new Pair<>(valuesFragment, columnFragment);
+        }
+
+    }
+
+    private static class ArrayContainsAllClause extends ArrayClause
+    {
+
+        public ArrayContainsAllClause(@NotNull FieldKey fieldKey, Collection<?> params)
+        {
+            super(fieldKey, CompareType.ARRAY_CONTAINS_ALL, params, false);
+        }
+
+        @Override
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            Pair<SQLFragment, SQLFragment> valueFieldSql = getSqlFragments(columnMap, dialect);
+            if (valueFieldSql == null)
+                return new SQLFragment("1=2");
+
+            return dialect.array_all_in_array(valueFieldSql.first, valueFieldSql.second);
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            return "array_contains_all(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")";
+        }
+
+        @Override
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        {
+            Object[] params = getParamVals();
+            sb.append("contains all of ").append(Arrays.toString(params));
+        }
+
+    }
+
+    private static class ArrayContainsAnyClause extends ArrayClause
+    {
+
+        public ArrayContainsAnyClause(@NotNull FieldKey fieldKey, CompareType comparison, Collection<?> params, boolean negated)
+        {
+            super(fieldKey, comparison, params, negated);
+        }
+
+        public ArrayContainsAnyClause(@NotNull FieldKey fieldKey, Collection<?> params)
+        {
+            this(fieldKey, CompareType.ARRAY_CONTAINS_ANY, params, false);
+        }
+
+        @Override
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            Pair<SQLFragment, SQLFragment> valueFieldSql = getSqlFragments(columnMap, dialect);
+            if (valueFieldSql == null)
+                return new SQLFragment("1=2");
+
+            SQLFragment sql = dialect.array_some_in_array(valueFieldSql.first, valueFieldSql.second);
+            if (!_negated)
+                return sql;
+            return new SQLFragment(" NOT (").append(sql).append(")");
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            return "array_contains_any(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")";
+        }
+
+        @Override
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        {
+            Object[] params = getParamVals();
+            sb.append("contains at least one of ").append(Arrays.toString(params));
+        }
+
+    }
+
+    private static class ArrayContainsNoneClause extends ArrayContainsAnyClause
+    {
+
+        public ArrayContainsNoneClause(@NotNull FieldKey fieldKey, Collection<?> params)
+        {
+            super(fieldKey, CompareType.ARRAY_CONTAINS_NONE, params, true);
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            return "array_contains_none(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")";
+        }
+
+        @Override
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        {
+            Object[] params = getParamVals();
+            sb.append("contains none of ").append(Arrays.toString(params));
+        }
+
+    }
+
+    private static class ArrayMatchesClause extends ArrayClause
+    {
+
+        public ArrayMatchesClause(@NotNull FieldKey fieldKey, CompareType comparison, Collection<?> params, boolean negated)
+        {
+            super(fieldKey, comparison, params, negated);
+        }
+
+        public ArrayMatchesClause(@NotNull FieldKey fieldKey, Collection<?> params)
+        {
+            this(fieldKey, CompareType.ARRAY_MATCHES, params, false);
+        }
+
+        @Override
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            Pair<SQLFragment, SQLFragment> valueFieldSql = getSqlFragments(columnMap, dialect);
+            if (valueFieldSql == null)
+                return new SQLFragment("1=2");
+
+            SQLFragment sql = dialect.array_same_array(valueFieldSql.first, valueFieldSql.second);
+            if (!_negated)
+                return sql;
+            return new SQLFragment(" NOT (").append(sql).append(")");
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            return "array_is_same(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")";
+        }
+
+        @Override
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        {
+            Object[] params = getParamVals();
+            sb.append("contains the same elements as ").append(Arrays.toString(params));
+        }
+
+    }
+
+    private static class ArrayNotMatchesClause extends ArrayMatchesClause
+    {
+
+        public ArrayNotMatchesClause(@NotNull FieldKey fieldKey, Collection<?> params)
+        {
+            super(fieldKey, CompareType.ARRAY_NOT_MATCHES, params, true);
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            return "NOT array_is_same(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")";
+        }
+
+        @Override
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        {
+            Object[] params = getParamVals();
+            sb.append("does not contain the same elements as ").append(Arrays.toString(params));
+        }
+
+    }
+
+
     private static class QClause extends CompareType.CompareClause
     {
         private List<ColumnInfo> _queryColumns = null;

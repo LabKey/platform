@@ -735,15 +735,17 @@ public class DataColumn extends DisplayColumn
 
     private void renderSelectFormInput(HtmlWriter out, String formFieldName, Object value, List<String> strValues, boolean disabledInput, NamedObjectList entryList)
     {
+        boolean isMultiple = "select.multiple".equalsIgnoreCase(_inputType);
         SelectBuilder select = new SelectBuilder()
             .disabled(disabledInput)
-            .multiple("select.multiple".equalsIgnoreCase(_inputType))
+            .multiple(isMultiple)
             .name(formFieldName);
 
         List<OptionBuilder.Option> options = new ArrayList<>();
 
         // add empty option
-        options.add(new OptionBuilder().build());
+        if (!isMultiple)
+            options.add(new OptionBuilder().build());
 
         Set<String> selectedValues = strValues.isEmpty() ? Set.of() :
                 strValues.size()==1 ? (null == strValues.get(0) ? Set.of() : Set.of(strValues.get(0))) :

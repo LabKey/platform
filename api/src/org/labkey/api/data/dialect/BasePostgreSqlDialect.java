@@ -42,6 +42,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.LimitRowsSqlGenerator.LimitRowsCustomizer;
 import org.labkey.api.data.dialect.LimitRowsSqlGenerator.StandardLimitRowsCustomizer;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -768,6 +769,10 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         else if (prop.getJdbcType() == JdbcType.VARCHAR && (prop.getSize() == -1 || prop.getSize() > SqlDialect.MAX_VARCHAR_SIZE))
         {
             return getSqlTypeName(JdbcType.LONGVARCHAR);
+        }
+        else if (PropertyType.MULTI_CHOICE.getTypeUri().equals(prop.getTypeURI()) && prop.getJdbcType() == JdbcType.ARRAY)
+        {
+            return "text[]";
         }
         else
         {

@@ -93,6 +93,13 @@
 
     <xsd:simpleType name="operatorType">
         <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="arraycontainsall"/>
+            <xsd:enumeration value="arraycontainsany"/>
+            <xsd:enumeration value="arraymatches"/>
+            <xsd:enumeration value="arraynotmatches"/>
+            <xsd:enumeration value="arraycontainsnone"/>
+            <xsd:enumeration value="arrayisempty"/>
+            <xsd:enumeration value="arrayisnotempty"/>
             <xsd:enumeration value="eq"/>
             <xsd:enumeration value="dateeq"/>
             <xsd:enumeration value="dateneq"/>

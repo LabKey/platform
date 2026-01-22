@@ -188,4 +188,11 @@ public class AssayResultDomainKind extends AssayDomainKind
     {
         return DIR_NAME;
     }
+
+    @Override
+    public boolean allowMultiChoiceProperties()
+    {
+        return true;
+    }
+
 }
