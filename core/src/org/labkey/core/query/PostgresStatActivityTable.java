@@ -30,6 +30,8 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -69,8 +71,10 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
         addColumn(new BaseColumnInfo("client_port", this, JdbcType.INTEGER));
         addColumn(new BaseColumnInfo("backend_start", this, JdbcType.TIMESTAMP));
         addColumn(new BaseColumnInfo("xact_start", this, JdbcType.TIMESTAMP));
-        addColumn(new BaseColumnInfo("query_start", this, JdbcType.TIMESTAMP));
-        addColumn(new BaseColumnInfo("state_change", this, JdbcType.TIMESTAMP));
+        addColumn(new BaseColumnInfo("query_start", this, JdbcType.TIMESTAMP)).
+                setFormat(DateUtil.ISO_DATE_TIME_FORMAT_STRING);
+        addColumn(new BaseColumnInfo("state_change", this, JdbcType.TIMESTAMP)).
+                setFormat(DateUtil.ISO_DATE_TIME_FORMAT_STRING);
         addColumn(new BaseColumnInfo("wait_event_type", this, JdbcType.VARCHAR));
         addColumn(new BaseColumnInfo("wait_event", this, JdbcType.VARCHAR));
         addColumn(new BaseColumnInfo("state", this, JdbcType.VARCHAR));
@@ -232,14 +236,14 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
                     }
                 }
             }
-            String separator = "";
+            HtmlString separator = HtmlString.EMPTY_STRING;
             for (Thread thread : threads)
             {
                 out.write(separator);
                 ActionURL url = new ActionURL(AdminController.ShowThreadsAction.class, ContainerManager.getRoot());
                 url.setFragment(thread.getName());
                 out.write(LinkBuilder.labkeyLink(thread.getName(), url).target("_blank"));
-                separator = "\n<br/>";
+                separator = HtmlString.BR;
 
                 // Check for HTTP threads and their async counterparts to tie queries to the request that spawned them
                 var request = TransactionFilter.getRequestSummary(thread);
