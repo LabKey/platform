@@ -35,6 +35,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -79,6 +80,8 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
@@ -429,6 +432,15 @@ public class DomainUtil
         return calculatedFieldKeys;
     }
 
+    public static boolean allowMultiChoice(DomainKind<?> kind)
+    {
+        if (!kind.allowMultiChoiceProperties())
+            return false;
+        if (!OptionalFeatureService.get().isFeatureEnabled(AppProps.MULTI_VALUE_TEXT_CHOICE))
+            return false;
+        return CoreSchema.getInstance().getSqlDialect().isPostgreSQL();
+    }
+
     private static GWTDomain<GWTPropertyDescriptor> getDomain(Domain dd)
     {
         GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<>();
@@ -448,6 +460,7 @@ public class DomainUtil
             gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
             gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
             gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
+            gwtDomain.setAllowMultiChoiceProperties(allowMultiChoice(kind));
             gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
             gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
             gwtDomain.setAllowUniqueConstraintProperties(kind.allowUniqueConstraintProperties());
@@ -467,6 +480,7 @@ public class DomainUtil
         gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
         gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
         gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
+        gwtDomain.setAllowMultiChoiceProperties(allowMultiChoice(kind));
         gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
         gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
         gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
