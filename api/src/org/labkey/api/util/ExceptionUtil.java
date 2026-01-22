@@ -1738,6 +1738,7 @@ public class ExceptionUtil
         public void reset()
         {
             resetBuffer();
+            headers.clear();
             status = 0;
             message = null;
         }
