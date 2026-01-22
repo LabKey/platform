@@ -16,11 +16,12 @@
 package org.labkey.core.script;
 
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,6 +36,7 @@ import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.resource.Resource;
@@ -58,6 +60,7 @@ import org.mozilla.javascript.LazilyLoadedCtor;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeJavaObject;
 import org.mozilla.javascript.RhinoException;
+import org.mozilla.javascript.ScriptRuntime;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.WrapFactory;
@@ -1043,6 +1046,9 @@ class SandboxContextFactory extends ContextFactory
 
     private static class SandboxContext extends Context
     {
+        public static final String SCRIPT_TIMEOUT_PROPERTY = "scriptTimeout";
+        private static final int MAX_ALLOWABLE_TIMEOUT = 300;
+
         private final long startTime;
 
         private SandboxContext(SandboxContextFactory factory)

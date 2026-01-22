@@ -4643,7 +4643,7 @@ public class QueryController extends SpringActionController
                 }
             }
 
-            Map<String, Object> extraContext = json.has("extraContext") ? json.getJSONObject("extraContext").toMap() : new CaseInsensitiveHashMap<>();
+            Map<String, Object> extraContext = json.has(QueryService.EXTRA_CONTEXT) ? json.getJSONObject(QueryService.EXTRA_CONTEXT).toMap() : new CaseInsensitiveHashMap<>();
 
             Map<String, Object> auditDetails = json.has("auditDetails") ? json.getJSONObject("auditDetails").toMap() : new CaseInsensitiveHashMap<>();
 
@@ -5138,7 +5138,7 @@ public class QueryController extends SpringActionController
             }
 
             JSONArray resultArray = new JSONArray();
-            JSONObject extraContext = json.optJSONObject("extraContext");
+            JSONObject extraContext = json.optJSONObject(QueryService.EXTRA_CONTEXT);
             JSONObject auditDetails = json.optJSONObject("auditDetails");
 
             int startingErrorIndex = 0;
@@ -5162,11 +5162,11 @@ public class QueryController extends SpringActionController
                     Map<String, Object> commandExtraContext = new HashMap<>();
                     if (extraContext != null)
                         commandExtraContext.putAll(extraContext.toMap());
-                    if (commandObject.has("extraContext"))
+                    if (commandObject.has(QueryService.EXTRA_CONTEXT))
                     {
-                        commandExtraContext.putAll(commandObject.getJSONObject("extraContext").toMap());
+                        commandExtraContext.putAll(commandObject.getJSONObject(QueryService.EXTRA_CONTEXT).toMap());
                     }
-                    commandObject.put("extraContext", commandExtraContext);
+                    commandObject.put(QueryService.EXTRA_CONTEXT, commandExtraContext);
                     Map<String, Object> commandAuditDetails = new HashMap<>();
                     if (auditDetails != null)
                         commandAuditDetails.putAll(auditDetails.toMap());

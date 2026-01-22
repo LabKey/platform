@@ -23,6 +23,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -445,7 +446,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
             json.put("errors", arr);
             json.put("errorCount", arr.length());
             json.put("exception", message);
-            json.put("extraContext", bve.getExtraContext());
+            json.put(QueryService.EXTRA_CONTEXT, bve.getExtraContext());
 
             return json;
         }
