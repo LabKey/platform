@@ -164,8 +164,15 @@ public enum JdbcType implements SimpleConvert
         @Override
         protected Object _fromString(String s)
         {
-            // Be tolerant of trailing decimal zeros like "39.0", which Integer.parseInt() is not
-            return new BigDecimal(s.trim()).intValueExact();
+            try
+            {
+                // Be tolerant of trailing decimal zeros like "39.0", which Integer.parseInt() is not
+                return new BigDecimal(s.trim()).intValueExact();
+            }
+            catch (NumberFormatException x)
+            {
+                return null;
+            }
         }
     },
 
