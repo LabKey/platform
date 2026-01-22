@@ -1009,7 +1009,7 @@ class SandboxContextFactory extends ContextFactory
     {
         SandboxContext ctx = (SandboxContext)cx;
         long currentTime = HeartBeat.currentTimeMillis();
-        final int timeout = 60;
+        final long timeout = ctx.getTimeout();
         if (currentTime - ctx.startTime > timeout*1000)
             Context.reportError("Script execution exceeded " + timeout + " seconds.");
     }
@@ -1050,12 +1050,54 @@ class SandboxContextFactory extends ContextFactory
         private static final int MAX_ALLOWABLE_TIMEOUT = 300;
 
         private final long startTime;
+        private long timeout = 60;
 
         private SandboxContext(SandboxContextFactory factory)
         {
             super(factory);
             setLanguageVersion(Context.VERSION_1_8);
             startTime = HeartBeat.currentTimeMillis();
+        }
+
+        public long getTimeout()
+        {
+            if (ScriptRuntime.hasTopCall(this))
+            {
+                Scriptable script = ScriptRuntime.getTopCallScope(this);
+                Object o = ScriptRuntime.getObjectProp(script, QueryService.EXTRA_CONTEXT, this);
+                if (o instanceof Map<?,?> mp)
+                {
+                    if (mp.containsKey(QueryService.EXTRA_CONTEXT) && mp.get(QueryService.EXTRA_CONTEXT) != null)
+                    {
+                        Object rawTimeout = mp.get(SCRIPT_TIMEOUT_PROPERTY);
+                        if (NumberUtils.isCreatable(String.valueOf(rawTimeout)))
+                        {
+                            try
+                            {
+                                int scriptTimeout = Integer.parseInt(String.valueOf(rawTimeout));
+                                if (scriptTimeout > MAX_ALLOWABLE_TIMEOUT)
+                                {
+                                    scriptTimeout = MAX_ALLOWABLE_TIMEOUT;
+                                    LOG.error("Script timeout is greater than max allowable, using: {}", MAX_ALLOWABLE_TIMEOUT);
+                                }
+
+                                return scriptTimeout;
+                            }
+                            catch (Exception e)
+                            {
+                                LOG.error("Non-integer value provided to extractContext.scriptTimeout for script: {}", rawTimeout);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return timeout;
+        }
+
+        public void setTimeout(long timeout)
+        {
+            this.timeout = timeout;
         }
     }
 
