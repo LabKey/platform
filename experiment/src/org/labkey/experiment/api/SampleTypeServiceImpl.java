@@ -331,10 +331,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             return;
 
         queue.addRunnable((q) -> {
-            indexSampleTypeMaterials(sampleType, q);
-
-            // GitHub Issue 783: Server lockup when updating data class domain design
-            // Index MaterialSource after materials indexing, to avoid holding locks on exp.MaterialSource table for too long
             // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
             SQLFragment sql = new SQLFragment("SELECT * FROM ")
                     .append(getTinfoMaterialSource(), "ms")
@@ -349,6 +345,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 ExpSampleTypeImpl impl = new ExpSampleTypeImpl(materialSource);
                 impl.index(q, null);
             }
+
+            indexSampleTypeMaterials(sampleType, q);
         });
     }
 
