@@ -275,7 +275,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         {
             PropertyDescriptor pd = pair.dp == null ? null : pair.dp.getPropertyDescriptor();
             PropertyType pt = pd == null ? null : pd.getPropertyType();
-            assert null == pt || pair.getTarget().getPropertyType() == pt;
+            assert null == pt || null == pair.getTarget().getPropertyType() || pair.getTarget().getPropertyType() == pt;
             boolean isAttachment = pt == PropertyType.ATTACHMENT || pt == PropertyType.FILE_LINK;
 
             if (null == pair.target)
