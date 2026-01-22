@@ -5,6 +5,7 @@ package org.labkey.api.settings;
  */
 public enum ProductFeature
 {
+    AdvancedWorkflow("sampleManagement"),
     ApiKeys("core"),
     Assay("assay"),
     AssayQC("premium"),
