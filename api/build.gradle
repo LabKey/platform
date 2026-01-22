@@ -1071,6 +1071,19 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
+            "org.springframework.ai:spring-ai-anthropic:${springAiVersion}",
+            "spring-ai-anthropic",
+            "spring-ai",
+            "https://github.com/spring-projects/spring-ai",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "LLM Chat Client integration for Claude"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
             "org.springframework.ai:spring-ai-client-chat:${springAiVersion}",
             "spring-ai-client-chat",
             "spring-ai",

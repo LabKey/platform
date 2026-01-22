@@ -33,8 +33,11 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.logging.LogHelper;
+import org.springframework.ai.anthropic.AnthropicChatModel;
+import org.springframework.ai.anthropic.AnthropicChatOptions;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
@@ -42,6 +45,7 @@ import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.Generation;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
@@ -50,7 +54,6 @@ import org.springframework.ai.google.genai.text.GoogleGenAiTextEmbeddingModel;
 import org.springframework.ai.google.genai.text.GoogleGenAiTextEmbeddingOptions;
 import org.springframework.ai.mcp.McpToolUtils;
 import org.springframework.ai.tool.ToolCallback;
-import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -67,6 +70,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.ai.chat.messages.MessageType.ASSISTANT;
 
 
@@ -82,12 +86,34 @@ public class McpServiceImpl implements McpService
 
     private final _McpServlet mcpServlet = new _McpServlet(JsonUtil.DEFAULT_MAPPER, MESSAGE_ENDPOINT, SSE_ENDPOINT);
     private final ChatMemoryRepository chatMemoryRepository = new InMemoryChatMemoryRepository();
-
+    private VectorStore vectorStore = null;
     private boolean serverReady = false;
+
+    private final _ModelProvider modelProvider;
+    private final _ModelProvider embeddingProvider;
+
 
     public static McpServiceImpl get()
     {
         return (McpServiceImpl) McpService.get();
+    }
+
+    public McpServiceImpl()
+    {
+        _ModelProvider model = null;
+        _ModelProvider embedding = null;
+        if (isNotBlank(System.getenv("CLAUDE_API_KEY")))
+        {
+            model = new _ClaudeProvider();
+        }
+        if (isNotBlank(System.getenv("GEMINI_API_KEY")))
+        {
+            embedding = new _GeminiProvider();
+            if (null == model)
+                model = new _GeminiProvider();
+        }
+        modelProvider = model;
+        embeddingProvider = embedding;
     }
 
 
@@ -104,27 +130,12 @@ public class McpServiceImpl implements McpService
     }
 
 
-    public static class HelloWorld
-    {
-        @Tool(description = "Call this tool when starting a new conversation")
-        String hello()
-        {
-            return "hello world!";
-        }
-
-        @Tool(description = "Call this tool when ending a conversation")
-        String bye()
-        {
-            return "bye now";
-        }
-    }
-
-
     public void startMpcServer()
     {
-        /* For now the presense of GEMINI_API_KEY will enable/disable the McpServer */
-        if (isBlank(System.getenv("GEMINI_API_KEY")))
+        if (null  == modelProvider)
+        {
             return;
+        }
         vectorStore = createVectorStore();
         mcpServlet.startMcpServer();
         serverReady = true;
@@ -183,12 +194,6 @@ public class McpServiceImpl implements McpService
 
         _McpServlet(ObjectMapper objectMapper, String messageEndpoint, String sseEndpoint)
         {
-//            transportProvider = HttpServletSseServerTransportProvider.builder()
-//                    .jsonMapper(McpJsonMapper.getDefault())
-//                    .messageEndpoint(messageEndpoint)
-//                    .sseEndpoint(sseEndpoint)
-//                    .build();
-
             transportProvider = HttpServletStreamableServerTransportProvider.builder()
                     .jsonMapper(McpJsonMapper.getDefault())
                     .mcpEndpoint(messageEndpoint)
@@ -222,7 +227,6 @@ public class McpServiceImpl implements McpService
                 res.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
                 return;
             }
-
 
             if ("POST".equals(req.getMethod()))
             {
@@ -294,44 +298,6 @@ public class McpServiceImpl implements McpService
     }
 
 
-    /* GEMINI CHAT SERVICE */
-
-    String getModel()
-    {
-        return "gemini-2.5-flash";
-        // gemini-2.5-flash
-        // gemini-2.5-pro
-        // gemini-3-flash-preview
-    }
-
-    String getEmbeddingModel()
-    {
-        return "gemini-embedding-001";
-    }
-
-
-    final Object _initClientLock = new Object();
-    Client _genAiClient = null;
-
-    Client getLlmClient()
-    {
-        synchronized (_initClientLock)
-        {
-            if (null == _genAiClient)
-            {
-                ClientOptions clientOptions = ClientOptions.builder()
-                        .build();
-                _genAiClient = Client.builder()
-                        .clientOptions(clientOptions)
-                        .build();
-            }
-
-            return _genAiClient;
-        }
-    }
-
-
-    // SPRING AI CHAT SERVICE
     @Override
     public ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
     {
@@ -342,27 +308,24 @@ public class McpServiceImpl implements McpService
         {
             String systemPrompt = systemPromptSupplier.get();
             String conversationId = session.getId() + ":" + agentName;
+            List<Advisor> advisors = new ArrayList<>();
 
-            Client genAiClient = getLlmClient();
-
-            GoogleGenAiChatOptions chatOptions = GoogleGenAiChatOptions.builder()
-                    .model(getModel())
-                    .toolCallbacks(getToolCallbacks())
-                    .build();
-            ChatModel chatModel = GoogleGenAiChatModel.builder()
-                    .genAiClient(genAiClient)
-                    .defaultOptions(chatOptions)
-                    .build();
             ChatMemory chatMemory = MessageWindowChatMemory.builder()
                     .maxMessages(100)
                     .chatMemoryRepository(chatMemoryRepository)
                     .build();
-            return ChatClient.builder(chatModel)
-                    .defaultOptions(chatOptions)
-                    .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory)
-                            .conversationId(conversationId)
-                            .build())
-                    .defaultAdvisors(QuestionAnswerAdvisor.builder(getVectorStore()).build())
+            MessageChatMemoryAdvisor chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory)
+                    .conversationId(conversationId)
+                    .build();
+            advisors.add(chatMemoryAdvisor);
+
+            VectorStore vs = getVectorStore();
+            if (null != vs)
+                advisors.add(QuestionAnswerAdvisor.builder(vs).build());
+
+            return ChatClient.builder(modelProvider.getChatModel())
+                    .defaultOptions(modelProvider.getChatOptions())
+                    .defaultAdvisors(advisors)
                     .defaultSystem(systemPrompt)
                     .build();
         });
@@ -415,26 +378,23 @@ public class McpServiceImpl implements McpService
     }
 
 
-    VectorStore vectorStore = null;
+    @Override
+    public VectorStore getVectorStore()
+    {
+        return !serverReady ? null : vectorStore;
+    }
 
-    private VectorStore createVectorStore()
+
+    VectorStore createVectorStore()
     {
         SimpleVectorStore ret = null;
 
         try
         {
-            ClientOptions clientOptions = ClientOptions.builder()
-                    .build();
-            Client client = Client.builder() // not shared with getLlmClient() ??? maybe causing problems?
-                    .clientOptions(clientOptions)
-                    .build();
-            GoogleGenAiEmbeddingConnectionDetails connectionDetails = GoogleGenAiEmbeddingConnectionDetails.builder()
-                    .genAiClient(client)
-                    .build();
-            GoogleGenAiTextEmbeddingOptions embeddingOptions = GoogleGenAiTextEmbeddingOptions.builder()
-                    .model(getEmbeddingModel())
-                    .build();
-            EmbeddingModel embeddingModel = new GoogleGenAiTextEmbeddingModel(connectionDetails, embeddingOptions);
+            EmbeddingModel embeddingModel = embeddingProvider.createEmbeddingModel();
+            if (null == embeddingModel)
+                return null;
+
             ret = SimpleVectorStore.builder(embeddingModel).build();
 
             var savedFile = FileUtil.getTempDirectoryFileLike().resolveChild("VectorStore.database");
@@ -459,14 +419,6 @@ public class McpServiceImpl implements McpService
         return ret;
     }
 
-
-    @Override
-    public VectorStore getVectorStore()
-    {
-        return !serverReady ? null : vectorStore;
-    }
-
-
     void saveVectorDatabase()
     {
         SimpleVectorStore vectorStore = (SimpleVectorStore)getVectorStore();
@@ -481,6 +433,143 @@ public class McpServiceImpl implements McpService
         catch (Exception x)
         {
             LOG.error("Can't save vector store", x);
+        }
+    }
+
+
+    interface _ModelProvider
+    {
+        String getModel();
+
+        String getEmbeddingModel();
+
+        ChatOptions getChatOptions();
+
+        ChatModel getChatModel();
+
+//        ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier);
+        EmbeddingModel createEmbeddingModel();
+    }
+
+
+    class _GeminiProvider implements _ModelProvider
+    {
+        final Object _initClientLock = new Object();
+        Client _genAiClient = null;
+
+        @Override
+        public String getModel()
+        {
+            return "gemini-2.5-flash";
+            // gemini-2.5-flash
+            // gemini-2.5-pro
+            // gemini-3-flash-preview
+        }
+
+        @Override
+        public String getEmbeddingModel()
+        {
+            return "gemini-embedding-001";
+        }
+
+        Client getLlmClient()
+        {
+            synchronized (_initClientLock)
+            {
+                if (null == _genAiClient)
+                {
+                    ClientOptions clientOptions = ClientOptions.builder()
+                            .build();
+                    _genAiClient = Client.builder()
+                            .clientOptions(clientOptions)
+                            .build();
+                }
+
+                return _genAiClient;
+            }
+        }
+
+        public GoogleGenAiChatOptions getChatOptions()
+        {
+            GoogleGenAiChatOptions chatOptions = GoogleGenAiChatOptions.builder()
+                    .model(getModel())
+                    .toolCallbacks(getToolCallbacks())
+                    .build();
+            return chatOptions;
+        }
+
+        public ChatModel getChatModel()
+        {
+            Client genAiClient = getLlmClient();
+            GoogleGenAiChatOptions chatOptions = getChatOptions();
+
+            ChatModel chatModel = GoogleGenAiChatModel.builder()
+                    .genAiClient(genAiClient)
+                    .defaultOptions(chatOptions)
+                    .build();
+            return chatModel;
+        }
+
+        @Override
+        public EmbeddingModel createEmbeddingModel()
+        {
+            ClientOptions clientOptions = ClientOptions.builder()
+                    .build();
+            Client client = Client.builder() // not shared with getLlmClient() ??? maybe causing problems?
+                    .clientOptions(clientOptions)
+                    .build();
+            GoogleGenAiEmbeddingConnectionDetails connectionDetails = GoogleGenAiEmbeddingConnectionDetails.builder()
+                    .genAiClient(client)
+                    .build();
+            GoogleGenAiTextEmbeddingOptions embeddingOptions = GoogleGenAiTextEmbeddingOptions.builder()
+                    .model(getEmbeddingModel())
+                    .build();
+            EmbeddingModel embeddingModel;
+            embeddingModel = new GoogleGenAiTextEmbeddingModel(connectionDetails, embeddingOptions);
+            return embeddingModel;
+        }
+    }
+
+
+    class _ClaudeProvider implements _ModelProvider
+    {
+        @Override
+        public String getModel()
+        {
+            return "claude-3-5-sonnet-20241022";
+        }
+
+        @Override
+        public String getEmbeddingModel()
+        {
+            // NYI in spring-ai -- need to use a different service (or Claude java library)
+            // return "voyage-3.5-lite";
+            return null;
+        }
+
+        public AnthropicChatOptions getChatOptions()
+        {
+            AnthropicChatOptions chatOptions = AnthropicChatOptions.builder()
+                    .model(getModel())
+                    .toolCallbacks(getToolCallbacks())
+                    .build();
+            return chatOptions;
+        }
+
+        public AnthropicChatModel getChatModel()
+        {
+            AnthropicChatOptions chatOptions = getChatOptions();
+
+            AnthropicChatModel chatModel = AnthropicChatModel.builder()
+                    .defaultOptions(chatOptions)
+                    .build();
+            return chatModel;
+        }
+
+        @Override
+        public EmbeddingModel createEmbeddingModel()
+        {
+            return null;
         }
     }
 }
