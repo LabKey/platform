@@ -1046,11 +1046,11 @@ class SandboxContextFactory extends ContextFactory
 
     private static class SandboxContext extends Context
     {
-        public static final String SCRIPT_TIMEOUT_PROPERTY = "scriptTimeout";
+        private static final String SCRIPT_TIMEOUT_PROPERTY = "scriptTimeout";
         private static final int MAX_ALLOWABLE_TIMEOUT = 300;
+        private final long DEFAULT_TIMEOUT = 60;
 
         private final long startTime;
-        private long timeout = 60;
 
         private SandboxContext(SandboxContextFactory factory)
         {
@@ -1065,11 +1065,11 @@ class SandboxContextFactory extends ContextFactory
             {
                 Scriptable script = ScriptRuntime.getTopCallScope(this);
                 Object o = ScriptRuntime.getObjectProp(script, QueryService.EXTRA_CONTEXT, this);
-                if (o instanceof Map<?,?> mp)
+                if (o instanceof ScriptableMap mp)
                 {
-                    if (mp.containsKey(QueryService.EXTRA_CONTEXT) && mp.get(QueryService.EXTRA_CONTEXT) != null)
+                    if (mp.getMap().get(SCRIPT_TIMEOUT_PROPERTY) != null)
                     {
-                        Object rawTimeout = mp.get(SCRIPT_TIMEOUT_PROPERTY);
+                        Object rawTimeout = mp.getMap().get(SCRIPT_TIMEOUT_PROPERTY);
                         if (NumberUtils.isCreatable(String.valueOf(rawTimeout)))
                         {
                             try
@@ -1092,12 +1092,7 @@ class SandboxContextFactory extends ContextFactory
                 }
             }
 
-            return timeout;
-        }
-
-        public void setTimeout(long timeout)
-        {
-            this.timeout = timeout;
+            return DEFAULT_TIMEOUT;
         }
     }
 
