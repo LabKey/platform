@@ -88,6 +88,12 @@ public class MothershipModule extends DefaultModule
     }
 
     @Override
+    public boolean isAvailableOnlyWhenActive()
+    {
+        return true;
+    }
+
+    @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
         if (moduleContext.isNewInstall() && ModuleLoader.getInstance().shouldInsertData())

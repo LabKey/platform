@@ -135,6 +135,7 @@ public class PopupAdminView
             SortedSet<Module> disabledModules = new TreeSet<>(moduleComparator);
             disabledModules.addAll(ModuleLoader.getInstance().getModules());
             disabledModules.removeAll(activeModules);
+            disabledModules.removeIf(Module::isAvailableOnlyWhenActive);
 
             NavTree goToModuleMenu = new NavTree("Go To Module");
             Module defaultModule = null;

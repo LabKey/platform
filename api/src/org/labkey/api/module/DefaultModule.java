@@ -1109,6 +1109,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         ViewContext rootContext = new ViewContext(request, response, url);
 
+        Container container = rootContext.getContainer();
+        if (container != null && isAvailableOnlyWhenActive() && !container.getActiveModules().contains(this))
+        {
+            ExceptionUtil.handleException(request, response, new NotFoundException("Module " + getName() + " is not active in " + container.getPath()), null, false);
+            return;
+        }
+
         try (var ignored =HttpView.initForRequest(rootContext, request, response))
         {
             response.setContentType("text/html;charset=UTF-8");
@@ -1125,8 +1132,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             }
             request.setAttribute(ViewServlet.REQUEST_ACTION_URL, url);
 
-            if (controller instanceof HasViewContext)
-                ((HasViewContext)controller).setViewContext(rootContext);
+            if (controller instanceof HasViewContext hvc)
+                hvc.setViewContext(rootContext);
             controller.handleRequest(request, response);
         }
         catch (ServletException | IOException x)

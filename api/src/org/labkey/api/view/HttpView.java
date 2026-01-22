@@ -119,7 +119,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         {
             if (response.getContentType() != null && !response.getContentType().contains("charset"))
                 response.setContentType(response.getContentType()+"; charset=UTF-8");
-            try (var closeable = HttpView.pushView(this, request, response, null))
+            try (var _ = HttpView.pushView(this, request, response, null))
             {
                 initViewContext(getViewContext(), request, response);
                 renderInternal(model, request, response);
@@ -752,7 +752,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
             ModelAndView mv = vse.mv;
             if (mv instanceof HasViewContext)
             {
-                ViewContext context = ((HttpView)mv).getViewContext();
+                ViewContext context = ((HttpView<?>)mv).getViewContext();
                 if (context._pvsBind != null)
                     return context._pvsBind;
             }
