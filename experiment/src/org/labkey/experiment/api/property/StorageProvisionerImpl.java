@@ -66,6 +66,7 @@ import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.AbstractDomainKind;
@@ -111,6 +112,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+
+import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
 
 /**
  * Creates and maintains "hard" tables in the underlying database based on dynamically configured data types.
@@ -573,9 +576,35 @@ public class StorageProvisionerImpl implements StorageProvisioner
         Set<String> base = Sets.newCaseInsensitiveHashSet();
         kind.getBaseProperties(domain).forEach(s -> base.add(s.getName()));
 
+        Map<String, PropertyType> oldPropTypes = new HashMap<>();
         if (!base.contains(prop.getName()))
-            propChange.addColumn(prop.getPropertyDescriptor());
+        {
+            if (prop instanceof DomainPropertyImpl dpi)
+            {
+                var oldPd = dpi._pdOld;
+                if (oldPd != null)
+                {
+                    var newPd = dpi._pd;
+                    if (oldPd.getPropertyType() == PropertyType.MULTI_CHOICE && TEXT_CHOICE_CONCEPT_URI.equals(newPd.getConceptURI()))
+                    {
+                        String sql = "SELECT COUNT(*) FROM " + kind.getStorageSchemaName() + "." + domain.getStorageTableName() +
+                                " WHERE " + prop.getPropertyDescriptor().getStorageColumnName() + " IS NOT NULL AND " +
+                                " array_length(" + prop.getPropertyDescriptor().getStorageColumnName() + ", 1) > 1";
+                        long count = new SqlSelector(scope, sql).getObject(Long.class);
+                        if (count > 0)
+                        {
+                            throw new ChangePropertyDescriptorException("Unable to change property type. There are rows with multiple values stored for '" + prop.getName() + "'.");
+                        }
+                    }
+                    oldPropTypes.put(prop.getName(), oldPd.getPropertyType());
+                }
 
+            }
+
+            propChange.addColumn(prop.getPropertyDescriptor());
+        }
+
+        propChange.setOldPropertyTypes(oldPropTypes);
         propChange.execute();
     }
 

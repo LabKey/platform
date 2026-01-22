@@ -40,13 +40,13 @@ public abstract class AbstractQueryChangeListener implements QueryChangeListener
     protected abstract void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, String query);
 
     @Override
-    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, String queryName, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
     {
         for (QueryPropertyChange<?> change : changes)
-            queryChanged(user, container, scope, schema, change);
+            queryChanged(user, container, scope, schema, queryName, change);
     }
 
-    protected abstract void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryPropertyChange<?> change);
+    protected abstract void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, String queryName, QueryPropertyChange<?> change);
 
     @Override
     public void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)

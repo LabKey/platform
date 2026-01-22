@@ -3268,7 +3268,13 @@ public class QueryServiceImpl implements QueryService
     @Override
     public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryPropertyChange<?>> changes)
     {
-        QueryManager.get().fireQueryChanged(user, container, scope, schema, property, changes);
+        QueryManager.get().fireQueryChanged(user, container, scope, schema, null, property, changes);
+    }
+
+    @Override
+    public void fireQueryColumnChanged(User user, Container container, @NotNull SchemaKey schemaPath, @NotNull String queryName, QueryChangeListener.QueryProperty property, Collection<QueryPropertyChange<?>> changes)
+    {
+        QueryManager.get().fireQueryChanged(user, container, null, schemaPath, queryName, property, changes);
     }
 
     @Override

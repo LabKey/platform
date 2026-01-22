@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewChangeListener;
 import org.labkey.api.query.CustomViewInfo;
@@ -28,6 +30,10 @@ import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
+import org.labkey.api.exp.PropertyType;
+
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -55,7 +61,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
     }
 
     @Override
-    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, String queryName, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
     {
         if (property.equals(QueryProperty.Name))
         {
@@ -65,6 +71,64 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
         {
             _updateCustomViewSchemaNameChange(user, container, changes);
         }
+        if (property.equals(QueryProperty.ColumnType))
+        {
+            _updateCustomViewColumnTypeChange(user, container, schema, queryName, changes);
+        }
+    }
+
+
+    private void _updateCustomViewColumnTypeChange(User user, Container container, SchemaKey schema, String queryName, @NotNull Collection<QueryPropertyChange<?>> changes)
+    {
+        for (QueryPropertyChange<?> qpc : changes)
+        {
+
+            PropertyDescriptor oldDp = (PropertyDescriptor) qpc.getOldValue();
+            PropertyDescriptor newDp = (PropertyDescriptor) qpc.getNewValue();
+
+            if (oldDp == null || newDp == null)
+                continue;
+
+            String columnName = newDp.getName() == null ? oldDp.getName() : newDp.getName();
+
+            List<CustomView> databaseCustomViews = QueryService.get().getDatabaseCustomViews(user, container, null, schema.toString(), queryName, false, false);
+
+            for (CustomView customView : databaseCustomViews)
+            {
+                try
+                {
+                    // update custom view filter and sort based on column type change
+                    String filterAndSort = customView.getFilterAndSort();
+                    if (filterAndSort == null || filterAndSort.isEmpty())
+                        continue;
+
+                    /* Example:
+                     *   "/?filter.MCF2~arrayisnotempty=&filter.Name~in=S-5%3BS-6%3BS-8%3BS-9&filter.MCF~arraycontainsall=2%2C1%2C3&filter.sort=zz"
+                    */
+                    String prefix = filterAndSort.startsWith("/?") ? "/?" : (filterAndSort.startsWith("?") ? "?" : "");
+                    String[] filterComponents = filterAndSort.substring(prefix.length()).split("&");
+                    StringBuilder updatedFilterAndSort = new StringBuilder(prefix);
+                    for (String filterPart : filterComponents)
+                    {
+                        String updatedPart = QueryChangeListener.getUpdatedFilterStrOnColumnTypeUpdate(filterPart, columnName, oldDp.getPropertyType(), newDp.getPropertyType());
+                        updatedFilterAndSort.append(updatedPart);
+                    }
+
+                    String updatedFilterAndSortStr = updatedFilterAndSort.toString();
+                    if (!updatedFilterAndSortStr.equals(filterAndSort))
+                    {
+                        customView.setFilterAndSort(updatedFilterAndSortStr);
+                        HttpServletRequest request = new MockHttpServletRequest();
+                        customView.save(customView.getModifiedBy(), request);
+                    }
+                }
+                catch (Exception e)
+                {
+                    LogManager.getLogger(CustomViewQueryChangeListener.class).error("An error occurred upgrading custom view properties: ", e);
+                }
+            }
+        }
+
     }
 
     @Override

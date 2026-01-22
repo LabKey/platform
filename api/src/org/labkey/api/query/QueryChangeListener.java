@@ -20,10 +20,14 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.event.PropertyChange;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.security.User;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Listener for table and query events that fires when the structure/schema changes, but not when individual data
@@ -58,10 +62,11 @@ public interface QueryChangeListener
      * @param container The container the tables or queries are changed in.
      * @param scope The scope of containers that the tables or queries affect.
      * @param schema The schema of the tables or queries.
+     * @param queryName The query name if the change is specific to a single query.
      * @param property The QueryProperty that has changed.
      * @param changes The set of change events.  Each QueryPropertyChange is associated with a single table or query.
      */
-    void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes);
+    void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @Nullable String queryName, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes);
 
     /**
      * This method is called when a set of tables or queries are deleted from the given container and schema.
@@ -94,7 +99,9 @@ public interface QueryChangeListener
         Description(String.class),
         Inherit(Boolean.class),
         Hidden(Boolean.class),
-        SchemaName(String.class),;
+        SchemaName(String.class),
+        ColumnName(String.class),
+        ColumnType(PropertyType.class),;
 
         private final Class<?> _klass;
 
@@ -112,7 +119,7 @@ public interface QueryChangeListener
     /**
      * A change event for a single property of a single table or query.
      * If multiple properties have been changed, QueryChangeListener will
-     * fire {@link QueryChangeListener#queryChanged(User, Container, ContainerFilter, SchemaKey, QueryChangeListener.QueryProperty, Collection)}
+     * fire {@link QueryChangeListener#queryChanged(User, Container, ContainerFilter, SchemaKey, String, QueryChangeListener.QueryProperty, Collection)}
      * for each property that has changed.
      *
      * @param <V> The property type.
@@ -171,6 +178,22 @@ public interface QueryChangeListener
                     QueryProperty.SchemaName, Collections.singleton(change));
         }
 
+        public static void handleColumnTypeChange(@NotNull PropertyDescriptor oldValue, PropertyDescriptor newValue, @NotNull SchemaKey schemaPath, @NotNull String queryName, User user, Container container)
+        {
+            if (oldValue.getPropertyType() == newValue.getPropertyType())
+                return;
+
+            QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
+                    null,
+                    QueryChangeListener.QueryProperty.ColumnType,
+                    oldValue,
+                    newValue
+            );
+
+            QueryService.get().fireQueryColumnChanged(user, container, schemaPath, queryName,
+                    QueryProperty.ColumnType, Collections.singleton(change));
+        }
+
         @Nullable public QueryDefinition getSource() { return _queryDef; }
 
         @Override
@@ -185,4 +208,156 @@ public interface QueryChangeListener
         @Nullable
         public V getNewValue() { return _newValue; }
     }
+
+    /**
+     * Utility to update encoded filter string when a column type changes from Multi_Choice to a non Multi_Choice.
+     * This method performs targeted replacements for the given column name (case-insensitive).
+     */
+    private static String getUpdatedFilterStrFromMVTC(String filterStr, String columnName, PropertyType oldType, PropertyType newType)
+    {
+        if (filterStr == null || columnName == null || oldType == null || newType == null)
+            return filterStr;
+
+        // Only act when changing away from MULTI_CHOICE
+        if (oldType != PropertyType.MULTI_CHOICE || newType == PropertyType.MULTI_CHOICE)
+            return filterStr;
+
+        String colLower = columnName.toLowerCase();
+        String sLower = filterStr.toLowerCase();
+
+        // No action if column doesn't match
+        if (!sLower.startsWith("filter." + colLower + "~"))
+            return filterStr;
+
+        // drop arraycontainsall since there is no good match
+        if (sLower.startsWith("filter." + colLower + "~arraycontainsall"))
+            return "";
+
+        String updated = filterStr;
+
+        if (containsOp(updated, columnName, "arrayisempty"))
+        {
+            return replaceOp(updated, columnName, "arrayisempty", "isblank");
+        }
+        if (containsOp(updated, columnName, "arrayisnotempty"))
+        {
+            return replaceOp(updated, columnName, "arrayisnotempty", "isnonblank");
+        }
+        if (containsOp(updated, columnName, "arraymatches"))
+        {
+            updated = replaceOp(updated, columnName, "arraymatches", "eq");
+            // Replace all occurrences of %2C with %2C%20,
+            // "," -> ", " during array to string conversion
+            return updated.replace("%2C", "%2C%20");
+        }
+        if (containsOp(updated, columnName, "arraynotmatches"))
+        {
+            updated = replaceOp(updated, columnName, "arraynotmatches", "neq");
+            // Replace all occurrences of %2C with %2C%20
+            return updated.replace("%2C", "%2C%20");
+        }
+        if (containsOp(updated, columnName, "arraycontainsany"))
+        {
+            updated = replaceOp(updated, columnName, "arraycontainsany", "in");
+            // Replace all occurrences of %2C with %3B
+            // ";" is used as the separator for "in" operator
+            return updated.replace("%2C", "%3B");
+        }
+        if (containsOp(updated, columnName, "arraycontainsnone"))
+        {
+            updated = replaceOp(updated, columnName, "arraycontainsnone", "notin");
+            // Replace all occurrences of %2C with %3B
+            // ";" is used as the separator for "notin" operator
+            return updated.replace("%2C", "%3B");
+        }
+
+        // No matching operator found for this column, drop the filter
+        return "";
+    }
+
+    /**
+     * Utility to update encoded filter string when a column type is changed to Multi_Choice (migrating operators to array equivalents).
+     */
+    private static String getUpdatedMVTCFilterStr(String filterStr, String columnName, PropertyType oldType, PropertyType newType)
+    {
+        if (filterStr == null || columnName == null || oldType == null || newType == null)
+            return filterStr;
+
+        // Only act when changing to MULTI_CHOICE
+        if (oldType == PropertyType.MULTI_CHOICE || newType != PropertyType.MULTI_CHOICE)
+            return filterStr;
+
+        String colLower = columnName.toLowerCase();
+        String sLower = filterStr.toLowerCase();
+
+        // No action if column doesn't match
+        if (!sLower.startsWith("filter." + colLower + "~"))
+            return filterStr;
+
+        String updated = filterStr;
+
+        // Return on first matching operator for this column
+        if (containsOp(updated, columnName, "eq"))
+        {
+            return replaceOp(updated, columnName, "eq", "arraymatches");
+        }
+        if (containsOp(updated, columnName, "neq"))
+        {
+            return replaceOp(updated, columnName, "neq", "arraycontainsnone");
+        }
+        if (containsOp(updated, columnName, "isblank"))
+        {
+            return replaceOp(updated, columnName, "isblank", "arrayisempty");
+        }
+        if (containsOp(updated, columnName, "isnonblank"))
+        {
+            return replaceOp(updated, columnName, "isnonblank", "arrayisnotempty");
+        }
+        if (containsOp(updated, columnName, "in"))
+        {
+            updated = replaceOp(updated, columnName, "in", "arraycontainsany");
+            // update ";" to "," for separator appropriate for array operator
+            return updated.replace("%3B", "%2C");
+        }
+        if (containsOp(updated, columnName, "notin"))
+        {
+            updated = replaceOp(updated, columnName, "notin", "arraycontainsnone");
+            return updated.replace("%3B", "%2C");
+        }
+
+        // No matching operator found for this column, drop the filter
+        return "";
+    }
+
+    static String getUpdatedFilterStrOnColumnTypeUpdate(String filterStr, String columnName, PropertyType oldType, PropertyType newType)
+    {
+        if (oldType == PropertyType.MULTI_CHOICE)
+            return getUpdatedFilterStrFromMVTC(filterStr, columnName, oldType, newType);
+        else if (newType == PropertyType.MULTI_CHOICE)
+            return getUpdatedMVTCFilterStr(filterStr, columnName, oldType, newType);
+        else
+            return filterStr;
+    }
+
+    private static boolean containsOp(String filterStr, String columnName, String op)
+    {
+        String regex = "(?i)filter\\." + Pattern.quote(columnName) + "~" + Pattern.quote(op);
+        return Pattern.compile(regex).matcher(filterStr).find();
+    }
+
+    private static String replaceOp(String filterStr, String columnName, String fromOp, String toOp)
+    {
+        String regex = "(?i)(filter\\.)" + Pattern.quote(columnName) + "(~)" + Pattern.quote(fromOp);
+        Matcher m = Pattern.compile(regex).matcher(filterStr);
+        StringBuffer sb = new StringBuffer();
+        while (m.find())
+        {
+            // Preserve the literal 'filter.' and '~', but use the provided columnName casing and new operator
+            String replacement = m.group(1) + columnName + m.group(2) + toOp;
+            m.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
 }
