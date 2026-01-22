@@ -314,7 +314,10 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                         append(ExperimentServiceImpl.get().getTinfoDataIndexed(), "di").
                         append(" WHERE di.DataId = ").
                         append(ExprColumn.STR_TABLE_ALIAS).append(".RowId)");
-                var lastIndexed = new ExprColumn(this, "LastIndexed", lastIndexedSql, JdbcType.TIMESTAMP);
+                var lastIndexed = new ExprColumn(this, Column.LastIndexed.name(), lastIndexedSql, JdbcType.TIMESTAMP);
+                lastIndexed.setDescription("Date when the data was last full-text search indexed in the system");
+                lastIndexed.setHidden(true);
+                lastIndexed.setReadOnly(true);
                 lastIndexed.setUserEditable(false);
                 return lastIndexed;
             case DataClass:
