@@ -43,8 +43,8 @@ public class CrosstabReportDescriptor extends QueryReportDescriptor
         final Object stats = _props.get(STATS);
         if (stats instanceof List)
             return ((List<String>)stats).toArray(new String[0]);
-        else if (stats instanceof String)
-            return new String[]{(String)stats};
+        else if (stats instanceof String s)
+            return new String[]{s};
 
         return new String[]{""};
     }

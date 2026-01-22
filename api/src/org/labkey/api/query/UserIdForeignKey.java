@@ -16,10 +16,7 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
 
@@ -30,14 +27,7 @@ public class UserIdForeignKey extends LookupForeignKey
     static public <COL extends MutableColumnInfo> COL initColumn(COL column)
     {
         column.setFk(new UserIdForeignKey(column.getParentTable().getUserSchema()));
-        column.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new UserIdRenderer(colInfo);
-            }
-        });
+        column.setDisplayColumnFactory(UserIdRenderer::new);
         return column;
     }
 

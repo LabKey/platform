@@ -92,7 +92,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -387,7 +386,7 @@ public class ReportsController extends BaseStudyController
 
         public String[] getStats()
         {
-            return _stats;
+            return _stats == null ? new String[0] : _stats;
         }
 
         public void setStats(String[] stats)
@@ -396,7 +395,7 @@ public class ReportsController extends BaseStudyController
         }
 
         @Override
-        public CrosstabReport getReport(ContainerUser cu) throws Exception
+        public CrosstabReport getReport(ContainerUser cu)
         {
             CrosstabReport report = super.getReport(cu);
             if (null == report)
@@ -408,7 +407,7 @@ public class ReportsController extends BaseStudyController
             if (!StringUtils.isEmpty(_rowField)) descriptor.setProperty("rowField", _rowField);
             if (!StringUtils.isEmpty(_colField)) descriptor.setProperty("colField", _colField);
             if (!StringUtils.isEmpty(_statField)) descriptor.setProperty("statField", _statField);
-            if (_stats.length > 0) descriptor.setStats(_stats);
+            if (_stats != null && _stats.length > 0) descriptor.setStats(_stats);
 
             return report;
         }
@@ -473,6 +472,10 @@ public class ReportsController extends BaseStudyController
                 QuerySettings settings = schema.getSettings(form.getViewContext(), "Dataset", form.getQueryName());
 
                 QueryView qv = schema.createView(getViewContext(), settings, errors);
+                if (qv.getTable() == null)
+                {
+                    throw new NotFoundException("Table not found");
+                }
                 List<DisplayColumn> cols = qv.getDisplayColumns();
                 for (DisplayColumn col : cols)
                 {
@@ -480,6 +483,10 @@ public class ReportsController extends BaseStudyController
                     if (colInfo != null)
                         colMap.put(colInfo.getAlias().getId(), colInfo);
                 }
+            }
+            else
+            {
+                throw new NotFoundException("Schema not found");
             }
             return colMap;
         }
