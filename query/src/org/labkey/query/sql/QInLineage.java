@@ -28,21 +28,48 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.query.QueryServiceImpl;
 
+import java.util.Objects;
+
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXPANCESTORSOF;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXPDESCENDANTSOF;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXPLINEAGEOF;
 
 final public class QInLineage extends QExpr
 {
     final boolean _in;
+    final boolean _children;
     final boolean _parents;
+    final String _method;
 
-    public QInLineage(boolean in, boolean parents)
+    public QInLineage(boolean in, int methodTokenType)
     {
-        this._in = in;
-        this._parents = parents;
+        super(QNode.class);
+
+        _in = in;
+        _method = switch (methodTokenType)
+        {
+            case EXPANCESTORSOF -> {
+                _children = false;
+                _parents = true;
+                yield "EXPANCESTORSOF";
+            }
+            case EXPDESCENDANTSOF -> {
+                _children = true;
+                _parents = false;
+                yield "EXPDESCENDANTSOF";
+            }
+            case EXPLINEAGEOF -> {
+                _children = true;
+                _parents = true;
+                yield "EXPLINEAGEOF";
+            }
+            default -> throw new IllegalArgumentException("Invalid QInLineage method token type: " + methodTokenType);
+        };
     }
 
     String operator()
     {
-        return (_in ? " IN " : " NOT IN ") + (_parents ? "EXPANCESTORSOF " : "EXPDESCENDANTSOF " );
+        return (_in ? " IN " : " NOT IN ") + _method + " ";
     }
 
     @Override
@@ -51,7 +78,7 @@ final public class QInLineage extends QExpr
         SQLTableInfo sqlti = new SQLTableInfo(query.getSchema().getDbSchema(), "_");
         var children = childList();
         var LHS = ((QExpr) getFirstChild());
-        var RHS = ((QQuery) getLastChild());
+        var RHS = ((QQuery) children.get(1));
 
         // LHS should be a 'lineage object', e.g. the result of calling {ExtTable}.expObject()
         ColumnInfo lhsCol = null;
@@ -80,7 +107,12 @@ final public class QInLineage extends QExpr
         RHS.appendSql(subquery, query);
         // subquery will have surrounding parens, but the double parens don't cause a problem
 
-        ExpLineageOptions options = new ExpLineageOptions(_parents, !_parents, 1000);
+        int depth = 1_000; // TODO: Not sure why limit to 1,000 here. Underlying query will limit itself based on module properties configuration.
+        QNode depthExpr = children.size() > 2 ? getLastChild() : null;
+        if (depthExpr instanceof QNumber n)
+            depth = n.getValue().intValue();
+
+        ExpLineageOptions options = new ExpLineageOptions(_parents, _children, depth);
         options.setUseObjectIds(true);          // expObject() returns objectid not lsid
         options.setOnlySelectObjectId(true);    // generate one column SELECT, also don't join to material/data/protocolapplication
         SQLFragment lineage = ExperimentService.get().generateExperimentTreeSQL(subquery, options);
@@ -92,7 +124,6 @@ final public class QInLineage extends QExpr
         builder.append(lineage);
         builder.append("))");
     }
-
 
     @Override
     public void appendSource(SourceBuilder builder)
@@ -109,18 +140,16 @@ final public class QInLineage extends QExpr
         builder.popPrefix(")");
     }
 
-
     @Override @NotNull
     public JdbcType getJdbcType()
     {
         return JdbcType.BOOLEAN;
     }
 
-
     @Override
     public boolean equalsNode(QNode other)
     {
-        return (other instanceof QInLineage o) && _in == o._in && _parents == o._parents;
+        return (other instanceof QInLineage o) && _in == o._in && Objects.equals(_method, o._method);
     }
 
     @Override

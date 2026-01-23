@@ -885,13 +885,21 @@ public class SqlParser
                 {
                     // rewrite "IN EXPANCESTORS" "IN EXPDESCENDANTS"
                     var method = rhs.getFirstChild();
-                    if (method.getTokenType() != EXPANCESTORSOF && method.getTokenType() != EXPDESCENDANTSOF)
+                    if (method.getTokenType() != EXPANCESTORSOF && method.getTokenType() != EXPDESCENDANTSOF && method.getTokenType() != EXPLINEAGEOF)
                     {
                         _parseErrors.add(new QueryParseException("Illegal syntax near 'IN'", null, node.getLine(), node.getCharPositionInLine()));
                         return null;
                     }
-                    var qInLineage = new QInLineage(node.getType()==IN, method.getTokenType() == EXPANCESTORSOF );
-                    qInLineage._replaceChildren(new LinkedList<>(List.of(lhs, rhs.childList().get(1))));
+                    var qInLineage = new QInLineage(node.getType() == IN, method.getTokenType());
+                    var qInLineageChildren = new LinkedList<QNode>();
+                    qInLineageChildren.add(lhs);
+
+                    var rhsChildren = rhs.childList();
+                    qInLineageChildren.add(rhsChildren.get(1));
+                    if (rhsChildren.size() > 2)
+                        qInLineageChildren.add(rhsChildren.get(2));
+
+                    qInLineage._replaceChildren(qInLineageChildren);
                     return qInLineage;
                 }
             }
@@ -967,7 +975,7 @@ public class SqlParser
                 }
 
                 // special case for table returning method
-                var isTableResultMethod = id.getTokenType() == EXPANCESTORSOF || id.getTokenType() == EXPDESCENDANTSOF;
+                var isTableResultMethod = id.getTokenType() == EXPANCESTORSOF || id.getTokenType() == EXPDESCENDANTSOF || id.getTokenType() == EXPLINEAGEOF;
                 if (!isTableResultMethod)
                 {
                     try
@@ -1658,6 +1666,7 @@ public class SqlParser
                 break;
             case EXPANCESTORSOF:
             case EXPDESCENDANTSOF:
+            case EXPLINEAGEOF:
             case IDENT:
             case QUOTED_IDENTIFIER:
                 return QIdentifier.create(node);
@@ -1941,6 +1950,33 @@ public class SqlParser
         "SELECT a, GROUP_CONCAT(DISTINCT b, '%$') FROM R GROUP BY a",
         "SELECT a, GROUP_CONCAT(DISTINCT b, CHR(10)) FROM R GROUP BY a",
         "SELECT GROUP_CONCAT(b) FROM R GROUP BY a",
+
+        "SELECT * FROM EXPANCESTORSOF((SELECT 1), 10) AS X",
+        "SELECT * FROM EXPDESCENDANTSOF((SELECT 1), Depth < 5) AS X",
+        "SELECT * FROM exp.Materials WHERE expObject() IN EXPLINEAGEOF((SELECT 1), 10)",
+        "SELECT * FROM exp.Materials WHERE expObject() IN EXPLINEAGEOF((SELECT 1), Depth < 10)",
+
+        "SELECT\n" +
+        "    Lineage.SampleType,\n" +
+        "    COUNT(CASE WHEN Lineage.IsAliquot = FALSE OR Lineage.IsAliquot IS NULL THEN 1 END) AS Samples,\n" +
+        "    COUNT(CASE WHEN Lineage.IsAliquot = TRUE THEN 1 END) AS Aliquots\n" +
+        "FROM (\n" +
+        "         -- Ancestors\n" +
+        "         SELECT\n" +
+        "             M.SampleSet.Name AS SampleType,\n" +
+        "             M.IsAliquot,\n" +
+        "             M.RowId\n" +
+        "         FROM exp.Materials M\n" +
+        "         WHERE\n" +
+        "             M.SampleSet.Name IN ('SampleType_01','SampleType_02','Study_SampleType')\n" +
+        "           AND M.expObject() IN EXPLINEAGEOF (\n" +
+        "        SELECT DD.expObject()\n" +
+        "        FROM exp.Data DD\n" +
+        "        WHERE DD.lsid = 'urn:lsid:labkey.com:Data.Folder-24:55732295-d9f4-103e-8274-268b9ecad361'\n" +
+        "    )\n" +
+        "     ) AS Lineage\n" +
+        "GROUP BY Lineage.SampleType\n" +
+        "ORDER BY Lineage.SampleType",
 
         "BROKEN",
 
