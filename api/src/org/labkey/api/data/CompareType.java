@@ -827,6 +827,39 @@ public abstract class CompareType
      *             <xsd:enumeration value="arrayisempty"/>
      *             <xsd:enumeration value="arrayisnotempty"/>
      */
+
+
+    public static final CompareType ARRAY_IS_EMPTY = new CompareType("Is Empty", "arrayisempty", "ARRAYISEMPTY", false, null, OperatorType.ARRAYISEMPTY)
+    {
+        @Override
+        public ArrayIsEmptyClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            return new ArrayIsEmptyClause(fieldKey);
+        }
+
+        @Override
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
+        {
+            throw new UnsupportedOperationException("Conditional formatting not yet supported for Multi Choices");
+        }
+    };
+
+
+    public static final CompareType ARRAY_IS_NOT_EMPTY = new CompareType("Is Not Empty", "arrayisnotempty", "ARRAYISNOTEMPTY", false, null, OperatorType.ARRAYISNOTEMPTY)
+    {
+        @Override
+        public ArrayIsEmptyClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            return new ArrayIsNotEmptyClause(fieldKey);
+        }
+
+        @Override
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
+        {
+            throw new UnsupportedOperationException("Conditional formatting not yet supported for Multi Choices");
+        }
+    };
+
     public static final CompareType ARRAY_CONTAINS_ALL = new CompareType("Contains All", "arraycontainsall", "ARRAYCONTAINSALL", true, null, OperatorType.ARRAYCONTAINSALL)
     {
         @Override
@@ -977,6 +1010,68 @@ public abstract class CompareType
             SQLFragment columnFragment = new SQLFragment().appendIdentifier(alias);
 
             return new Pair<>(valuesFragment, columnFragment);
+        }
+
+    }
+
+    private static class ArrayIsEmptyClause extends ArrayClause
+    {
+        public ArrayIsEmptyClause(@NotNull FieldKey fieldKey, CompareType comparison, boolean negated)
+        {
+            super(fieldKey, comparison, null, negated);
+        }
+
+        public ArrayIsEmptyClause(@NotNull FieldKey fieldKey)
+        {
+            this(fieldKey, CompareType.ARRAY_IS_EMPTY, false);
+        }
+
+        @Override
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            ColumnInfo colInfo = columnMap != null ? columnMap.get(_fieldKey) : null;
+            var alias = SimpleFilter.getAliasForColumnFilter(dialect, colInfo, _fieldKey);
+
+            SQLFragment columnFragment = new SQLFragment().appendIdentifier(alias);
+
+            SQLFragment sql = dialect.array_is_empty(columnFragment);
+            if (!_negated)
+                return sql;
+            return new SQLFragment(" NOT (").append(sql).append(")");
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            return "array_is_empty(" + getLabKeySQLColName(_fieldKey) + ")";
+        }
+
+        @Override
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        {
+            sb.append("is empty");
+        }
+
+    }
+
+    private static class ArrayIsNotEmptyClause extends ArrayIsEmptyClause
+    {
+
+        public ArrayIsNotEmptyClause(@NotNull FieldKey fieldKey)
+        {
+            super(fieldKey, CompareType.ARRAY_IS_NOT_EMPTY, true);
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            return "NOT array_is_empty(" + getLabKeySQLColName(_fieldKey) + ")";
+        }
+
+        @Override
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        {
+            sb.append("is not empty");
         }
 
     }

@@ -309,6 +309,8 @@ public class QueryServiceImpl implements QueryService
             CompareType.NONBLANK,
             CompareType.MV_INDICATOR,
             CompareType.NO_MV_INDICATOR,
+            CompareType.ARRAY_IS_EMPTY,
+            CompareType.ARRAY_IS_NOT_EMPTY,
             CompareType.ARRAY_CONTAINS_ALL,
             CompareType.ARRAY_CONTAINS_ANY,
             CompareType.ARRAY_CONTAINS_NONE,

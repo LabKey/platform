@@ -2200,6 +2200,12 @@ public abstract class SqlDialect
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
+    public SQLFragment array_is_empty(SQLFragment a)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
     // element a is in array b
     public SQLFragment element_in_array(SQLFragment a, SQLFragment b)
     {
