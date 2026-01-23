@@ -45,6 +45,9 @@ import static org.labkey.api.util.IntegerUtils.isIntegral;
 
 /**
  * ENUM version of java.sql.Types
+ *
+ * Note convert() methods tend to "fall-through" on errors
+ * to get consistent Exceptions reported by CovertHelper.convert().
  */
 
 public enum JdbcType implements SimpleConvert
@@ -54,14 +57,23 @@ public enum JdbcType implements SimpleConvert
         @Override
         protected Object _fromNumber(Number n)
         {
-            return n.longValue();
+            if (n.doubleValue() == (double) n.longValue())
+                return n.longValue();
+            return null; // fallback
         }
 
         @Override
         protected Object _fromString(String s)
         {
             // Be tolerant of trailing decimal zeros like "39.0", which Long.parseLong() is not
-            return new BigDecimal(s.trim()).longValueExact();
+            try
+            {
+                return new BigDecimal(s.trim()).longValueExact();
+            }
+            catch (NumberFormatException|ArithmeticException ex)
+            {
+                return null;
+            }
         }
     },
 
@@ -127,7 +139,14 @@ public enum JdbcType implements SimpleConvert
         @Override
         protected Object _fromString(String s)
         {
-            return new BigDecimal(s.trim());
+            try
+            {
+                return new BigDecimal(s.trim());
+            }
+            catch (NumberFormatException|ArithmeticException ex)
+            {
+                return null;
+            }
         }
     },
 
