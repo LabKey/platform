@@ -841,8 +841,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 }
             }
 
-            if (null != value)
-                value = innerConvert(value);
+            value = innerConvert(value);
             
             if (supportsMissingValue && null != mv)
             {
