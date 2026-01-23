@@ -49,7 +49,7 @@ public class MultiChoice
 {
     public static final String ARRAY_MARKER = "[]";
 
-    public static class DisplayColumn extends DataColumn implements IMultiValuedDisplayColumn
+    public static class DisplayColumn extends DataColumn
     {
         public DisplayColumn(ColumnInfo col)
         {
@@ -152,40 +152,6 @@ public class MultiChoice
         public Object getExportCompatibleValue(RenderContext ctx)
         {
             return getTsvFormattedValue(ctx);
-        }
-
-        // IMultiValuedDisplayColumn
-
-        @Override
-        public List<Object> getDisplayValues(RenderContext ctx)
-        {
-            return (List<Object>)getValue(ctx);
-        }
-
-        @Override
-        public List<String> renderURLs(RenderContext ctx)
-        {
-            List<Object> values = getDisplayValues(ctx);
-            int size = (values == null) ? 0 : values.size();
-            return Collections.nCopies(size, "");
-        }
-
-        @Override
-        public List<String> getTsvFormattedValues(RenderContext ctx)
-        {
-            return (Array)getValue(ctx);
-        }
-
-        @Override
-        public List<String> getFormattedTexts(RenderContext ctx)
-        {
-            return (Array)getValue(ctx);
-        }
-
-        @Override
-        public List<Object> getJsonValues(RenderContext ctx)
-        {
-            return (List<Object>)getValue(ctx);
         }
     }
 
