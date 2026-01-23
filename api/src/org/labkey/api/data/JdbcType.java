@@ -762,6 +762,9 @@ public enum JdbcType implements SimpleConvert
         @Test
         public void testConvert()
         {
+            assertNull(BOOLEAN.convert(""));
+            assertNull(BOOLEAN.convert((Object)null));
+            assertNull(BOOLEAN.convert((String)null));
             assertEquals("JdbcType.convert produced wrong type.", Boolean.class, BOOLEAN.convert(true).getClass());
             assertEquals("JdbcType.convert produced wrong type.", Boolean.class, BOOLEAN.convert(false).getClass());
             assertEquals("JdbcType.convert produced wrong type.", Boolean.class, BOOLEAN.convert("true").getClass());

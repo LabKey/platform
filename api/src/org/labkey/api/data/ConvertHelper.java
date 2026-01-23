@@ -1236,10 +1236,14 @@ public class ConvertHelper implements PropertyEditorRegistrar
         @Test
         public void testEmpty()
         {
+            assertNull(JdbcType.BOOLEAN.convert(""));
+            assertNull(JdbcType.INTEGER.convert(""));
             assertNull(JdbcType.CHAR.convert(""));
             assertNull(JdbcType.VARCHAR.convert(""));
             assertNull(JdbcType.LONGVARCHAR.convert(""));
 
+            assertNull(PropertyType.BOOLEAN.convert(""));
+            assertNull(PropertyType.INTEGER.convert(""));
             assertNull(PropertyType.STRING.convert(""));
             assertNull(PropertyType.MULTI_LINE.convert(""));
             assertNull(PropertyType.XML_TEXT.convert(""));
@@ -1250,6 +1254,8 @@ public class ConvertHelper implements PropertyEditorRegistrar
             // [] -> "" -> null
             // vs
             // [] -> "" -> []
+            assertNull(ConvertHelper.convert("", Boolean.class));
+            assertNull(ConvertHelper.convert("", Integer.class));
             assertNull(ConvertHelper.convert("", String.class));
             assertNull(ConvertUtils.convert(""));
             assertNull(ConvertUtils.convert("", String.class));

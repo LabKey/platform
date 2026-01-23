@@ -29,7 +29,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SimpleConvert;
-import org.labkey.api.data.Transient;
 import org.labkey.api.exp.OntologyManager.PropertyRow;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.util.DateUtil;
@@ -38,8 +37,6 @@ import org.labkey.vfs.FileLike;
 import java.io.File;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
-import java.sql.Array;
-import java.sql.SQLException;
 import java.sql.Time;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -70,7 +67,7 @@ public enum PropertyType implements SimpleConvert
         @Override
         public Object convert(Object value) throws ConversionException
         {
-            boolean boolValue = false;
+            Boolean boolValue = null;
             if (value instanceof Boolean)
                 boolValue = (Boolean)value;
             else if (null != value && !"".equals(value))
