@@ -286,7 +286,7 @@ public interface WebdavResource extends Resource
             @Override
             public URI getURI() throws IOException
             {
-                // Nnot sure why getExceuteHref() takes a view context. We ay not need for the moment.
+                // Not sure why getExecuteHref() takes a view context. We ay not need for the moment.
                 var href = r.getExecuteHref(null);
                 if (null == href)
                     return null;
@@ -345,7 +345,7 @@ public interface WebdavResource extends Resource
             @Override
             public InputStream getInputStream() throws IOException
             {
-                // FileSTream.openInputStream() enforces one stream per instance, so don't use 'fs'
+                // FileStream.openInputStream() enforces one stream per instance, so don't use 'fs'
                 var filestream = r.getFileStream(user);
                 if (null != filestream)
                     return filestream.openInputStream();

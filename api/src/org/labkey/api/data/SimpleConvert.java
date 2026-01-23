@@ -13,7 +13,7 @@ public interface SimpleConvert
      * use getConvertFn() e.g.
      *      var fn = col.getConvertFn();
      *      while (...)
-     *          var converted = fb.convert(val);
+     *          var converted = fn.convert(val);
      * <p></p>
      * instead of
      *      while(...)

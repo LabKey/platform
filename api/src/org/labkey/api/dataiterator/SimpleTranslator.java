@@ -1343,9 +1343,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         {
             // convert input into Collection of jdbcType values
             c = new MultiValueConvertColumn(c);
-        }        final String name = col.getName();
-
-
+        }
 
         return c;
     }

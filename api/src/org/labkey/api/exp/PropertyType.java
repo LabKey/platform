@@ -475,7 +475,6 @@ public enum PropertyType implements SimpleConvert
         @Override
         public Object convert(Object value) throws ConversionException
         {
-            // Should this use ExpDataFileConverter.convert()???
             if (null == value)
                 return null;
             if (value instanceof File)
