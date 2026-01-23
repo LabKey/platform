@@ -76,9 +76,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
+import static org.labkey.query.sql.QNode.*;
 import static org.labkey.query.sql.antlr.SqlBaseParser.*;
 
 
@@ -890,14 +890,20 @@ public class SqlParser
                         _parseErrors.add(new QueryParseException("Illegal syntax near 'IN'", null, node.getLine(), node.getCharPositionInLine()));
                         return null;
                     }
+
+                    var rhsChildren = rhs.childList();
+                    if (rhsChildren.size() > 3)
+                    {
+                        _parseErrors.add(new QueryParseException(method.getTokenText().toUpperCase() + " supports at most 2 arguments", null, node.getLine(), node.getCharPositionInLine()));
+                        return null;
+                    }
+
                     var qInLineage = new QInLineage(node.getType() == IN, method.getTokenType());
                     var qInLineageChildren = new LinkedList<QNode>();
                     qInLineageChildren.add(lhs);
-
-                    var rhsChildren = rhs.childList();
-                    qInLineageChildren.add(rhsChildren.get(1));
+                    qInLineageChildren.add(secondOrThrow(rhsChildren));
                     if (rhsChildren.size() > 2)
-                        qInLineageChildren.add(rhsChildren.get(2));
+                        qInLineageChildren.add(childOrThrow(rhsChildren, 2));
 
                     qInLineage._replaceChildren(qInLineageChildren);
                     return qInLineage;
@@ -1520,27 +1526,6 @@ public class SqlParser
         }
     }
 
-
-    private static QNode first(LinkedList<QNode> children)
-    {
-        return !children.isEmpty() ? children.get(0) : null;
-    }
-
-    private static @NotNull QNode firstOrThrow(LinkedList<QNode> children)
-    {
-        return Objects.requireNonNull(first(children));
-    }
-
-    private static QNode second(LinkedList<QNode> children)
-    {
-        return children.size() > 1 ? children.get(1) : null;
-    }
-
-    private static @NotNull QNode secondOrThrow(LinkedList<QNode> children)
-    {
-        return Objects.requireNonNull(second(children));
-    }
-
     private QNode constantToStringNode(QNode node)
     {
         if (node instanceof QString)
@@ -1901,7 +1886,6 @@ public class SqlParser
         "SELECT CASE R.a WHEN 1 THEN 'one' WHEN 2 THEN 'two' ELSE 'few' END FROM R",
 
         "SELECT R.a FROM R WHERE R.a LIKE 'a%'",
-//        "SELECT R.a FROM R WHERE R.a LIKE 'a%' AND R.b LIKE 'a/%' ESCAPE '/'",
 
         "SELECT MS2SearchRuns.Flag,MS2SearchRuns.Links,MS2SearchRuns.Name,MS2SearchRuns.Created,MS2SearchRuns.RunGroups FROM MS2SearchRuns",
 
@@ -1917,12 +1901,6 @@ public class SqlParser
         "SELECT (SELECT value FROM S WHERE S.x=R.x) AS V FROM R",
         "SELECT R.value AS V FROM R WHERE R.y > (SELECT MAX(S.y) FROM S WHERE S.x=R.x)",
         "SELECT R.value, T.a, T.b FROM R INNER JOIN (SELECT S.a, S.b FROM S) T ON R.z=T.z",
-
-//        "SELECT R.a FROM R WHERE EXISTS (SELECT S.b FROM S WHERE S.x=R.x)",
-//        "SELECT R.a FROM R WHERE NOT EXISTS (SELECT S.b FROM S WHERE S.x=R.x)",
-//        "SELECT R.a FROM R WHERE R.value > ALL (SELECT value from S WHERE S.x=R.x)",
-//        "SELECT R.a FROM R WHERE R.value > ANY (SELECT value from S WHERE S.x=R.x)",
-//        "SELECT R.a FROM R WHERE R.value > SOME (SELECT value from S WHERE S.x=R.x)",
 
         "SELECT a FROM R WHERE a=b AND b<>c AND b!=c AND c>d AND d<e AND e<=f AND f>=g AND g IS NULL AND h IS NOT NULL " +
                 " AND i BETWEEN 1 AND 2 AND j+k-l=-1 AND m/n=o AND p||q=r AND (NOT s OR t) AND u LIKE '%x%' AND u NOT LIKE '%xx%' " +
@@ -1951,8 +1929,6 @@ public class SqlParser
         "SELECT a, GROUP_CONCAT(DISTINCT b, CHR(10)) FROM R GROUP BY a",
         "SELECT GROUP_CONCAT(b) FROM R GROUP BY a",
 
-        "BROKEN",
-
         // nested JOINS
         "SELECT R.a, \"S\".b FROM R LEFT OUTER JOIN (S RIGHT OUTER JOIN T ON S.y = T.y) ON R.x = S.x",
         // .*
@@ -1961,9 +1937,23 @@ public class SqlParser
         // PIVOT
         "SELECT R.a, R.b, SUM(x) sumX FROM R GROUP BY R.a, R.b PIVOT sumX BY b",
         "SELECT R.a, R.b, SUM(x) sumX FROM R GROUP BY R.a, R.b PIVOT sumX BY b IN (0,1,2)",
-        "SELECT R.a, R.b, SUM(x) sumX FROM R GROUP BY R.a, R.b PIVOT sumX BY b IN (0 AS Zero,1 ONE,2 TWO)"
-    };
+        "SELECT R.a, R.b, SUM(x) sumX FROM R GROUP BY R.a, R.b PIVOT sumX BY b IN (0 AS Zero,1 ONE,2 TWO)",
 
+        // EXPANCESTORSOF
+        "SELECT M.RowId, M.Name FROM exp.Materials M WHERE M.expObject() IN EXPANCESTORSOF (SELECT DD.expObject() FROM exp.Data DD WHERE DD.RowId > 0)",
+        "SELECT M.RowId, M.Name FROM exp.Materials M WHERE M.expObject() IN EXPANCESTORSOF (SELECT DD.expObject() FROM exp.Data DD WHERE DD.RowId > 0, 2)",
+        "SELECT M.RowId, M.Name FROM exp.Materials M WHERE M.expObject() IN EXPANCESTORSOF (SELECT DD.expObject() FROM exp.Data DD WHERE DD.RowId > 0, 2000)",
+
+        // EXPDESCENDANTSOF
+        "SELECT M.RowId, M.Name FROM exp.Materials M WHERE M.expObject() IN EXPDESCENDANTSOF (SELECT DD.expObject() FROM exp.Data DD WHERE DD.RowId > 0)",
+        "SELECT M.RowId, M.Name FROM exp.Materials M WHERE M.expObject() IN EXPDESCENDANTSOF (SELECT DD.expObject() FROM exp.Data DD WHERE DD.RowId > 0, -2)",
+        "SELECT M.RowId, M.Name FROM exp.Materials M WHERE M.expObject() IN EXPDESCENDANTSOF (SELECT DD.expObject() FROM exp.Data DD WHERE DD.RowId > 0, 2000)",
+
+        // EXPLINEAGEOF
+        "SELECT M.RowId, M.Name FROM exp.Materials M WHERE M.expObject() IN EXPLINEAGEOF (SELECT DD.expObject() FROM exp.Data DD WHERE DD.RowId > 0)",
+        "SELECT M.RowId, M.Name FROM exp.Materials M WHERE M.expObject() IN EXPLINEAGEOF (SELECT DD.expObject() FROM exp.Data DD WHERE DD.RowId > 0, 2)",
+        "SELECT M.RowId, M.Name FROM exp.Materials M WHERE M.expObject() IN EXPLINEAGEOF (SELECT DD.expObject() FROM exp.Data DD WHERE DD.RowId > 0, 2000)"
+    };
 
     static String[] failSql = new String[]
     {
@@ -1989,8 +1979,6 @@ public class SqlParser
         "SELECT * FROM (WITH peeps AS (SELECT * FROM study.participant) SELECT * FROM peeps)"
     };
 
-
-    
     @SuppressWarnings("JUnitMalformedDeclaration")
     public static class SqlParserTestCase extends Assert
     {
