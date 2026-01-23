@@ -1294,7 +1294,7 @@ public class PropertyController extends SpringActionController
                     {
                         Object val = values.get(key);
                         if (val != null)
-                            distinctValuesMap.computeIfAbsent(key, k -> new HashSet<>()).add(val.toString());
+                            distinctValuesMap.computeIfAbsent(key, k -> new CaseInsensitiveHashSet()).add(val.toString());
                     }
                 }
             }
