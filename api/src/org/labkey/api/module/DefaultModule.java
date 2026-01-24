@@ -1110,7 +1110,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         ViewContext rootContext = new ViewContext(request, response, url);
 
         Container container = rootContext.getContainer();
-        if (container != null && isAvailableOnlyWhenActive() && !container.getActiveModules().contains(this))
+        if (container != null && !isAvailable(container))
         {
             ExceptionUtil.handleException(request, response, new NotFoundException("Module " + getName() + " is not active in " + container.getPath()), null, false);
             return;

@@ -88,9 +88,9 @@ public class MothershipModule extends DefaultModule
     }
 
     @Override
-    public boolean isAvailableOnlyWhenActive()
+    public boolean isAvailable(Container container)
     {
-        return true;
+        return container.isRoot() || container.getActiveModules().contains(this);
     }
 
     @Override
