@@ -28,6 +28,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.Transient;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -235,7 +236,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
             return getDisplayName(currentUser);
     }
 
-
+    @Transient
     @Override
     public PrincipalArray getGroups()
     {

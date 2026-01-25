@@ -17,6 +17,7 @@ package org.labkey.api.security;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.Transient;
 import org.labkey.api.security.roles.Role;
 
 import java.util.stream.Stream;
@@ -95,6 +96,7 @@ public class Group extends UserPrincipal
         return "/" + c.getName() + "/" + getName();
     }
 
+    @Transient
     @Override
     public PrincipalArray getGroups()
     {
