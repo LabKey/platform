@@ -53,6 +53,13 @@ import java.util.Random;
 public class AuthFilter implements Filter
 {
     private static final Object FIRST_REQUEST_LOCK = new Object();
+
+    public static final String STRICT_TRANSPORT_SECURITY_HEADER_NAME = "Strict-Transport-Security";
+    public static final String X_FRAME_OPTIONS_HEADER_NAME = "X-Frame-Options";
+    public static final String X_CONTENT_TYPE_OPTIONS_HEADER_NAME = "X-Content-Type-Options";
+    public static final String REFERRER_POLICY_HEADER_NAME = "Referrer-Policy";
+    public static final String SERVER_HEADER_NAME = "Server";
+
     private static boolean _firstRequestHandled = false;
     private static volatile boolean _sslChecked = false;
     private static SecurityPointcutService _securityPointcut = null;
@@ -81,9 +88,9 @@ public class AuthFilter implements Filter
         if (ModuleLoader.getInstance().isStartupComplete())
         {
             if (!"ALLOW".equals(AppProps.getInstance().getXFrameOption()))
-                resp.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOption());
-            resp.setHeader("X-Content-Type-Options", "nosniff");
-            resp.setHeader("Referrer-Policy", "origin-when-cross-origin" );
+                resp.setHeader(X_FRAME_OPTIONS_HEADER_NAME, AppProps.getInstance().getXFrameOption());
+            resp.setHeader(X_CONTENT_TYPE_OPTIONS_HEADER_NAME, "nosniff");
+            resp.setHeader(REFERRER_POLICY_HEADER_NAME, "origin-when-cross-origin" );
 
             if (AppProps.getInstance().isIncludeServerHttpHeader())
             {
@@ -91,7 +98,7 @@ public class AuthFilter implements Filter
                 {
                     _serverHeader =  "LabKey/" + AppProps.getInstance().getReleaseVersion();
                 }
-                resp.setHeader("Server", _serverHeader);
+                resp.setHeader(SERVER_HEADER_NAME, _serverHeader);
             }
         }
 
@@ -168,7 +175,7 @@ public class AuthFilter implements Filter
             {
                 // Issue 51904: Strict-Transport-Security header when HTTPS is required
                 // Avoid setting when in dev mode to make it easier to toggle HTTPS on and off again for local deployments
-                resp.setHeader("Strict-Transport-Security", "max-age=31536000;includeSubdomains");
+                resp.setHeader(STRICT_TRANSPORT_SECURITY_HEADER_NAME, "max-age=31536000;includeSubdomains");
             }
         }
 
