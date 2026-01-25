@@ -207,6 +207,12 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
+    public boolean allowMultiChoiceProperties()
+    {
+        return true;
+    }
+
+    @Override
     public boolean allowTimepointProperties()
     {
         return true;

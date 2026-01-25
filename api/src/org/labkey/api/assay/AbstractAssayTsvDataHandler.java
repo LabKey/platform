@@ -38,6 +38,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
@@ -863,7 +864,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 for (DomainProperty pd : columns)
                 {
                     Object o = map.get(pd.getName());
-                    if (o instanceof String)
+                    if (PropertyType.MULTI_CHOICE == pd.getPropertyType())
+                    {
+                        o = MultiChoice.Converter.getInstance().convert(MultiChoice.Array.class, o);
+                    }
+                    else if (o instanceof String)
                     {
                         o = StringUtils.trimToNull((String) o);
                         map.put(pd.getName(), o);

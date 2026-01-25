@@ -916,6 +916,8 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
     },
 
     validateMultiValueInput : function(inputValues, multiValueSeparator, minOccurs, maxOccurs) {
+        if (!inputValues)
+            return true;
         // Used when "Equals One Of.." or "Between" is selected. Calls validateInputField on each value entered.
         const sep = inputValues.indexOf('\n') > 0 ? '\n' : multiValueSeparator;
         var values = inputValues.split(sep);
