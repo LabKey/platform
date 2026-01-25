@@ -26,9 +26,7 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.AbstractRootContainerRole;
-import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
@@ -59,29 +57,28 @@ public interface ImpersonationContext extends Serializable
      */
     default Stream<Role> getAssignedRoles(User user, SecurableResource resource)
     {
-        Stream<Role> roles = getSiteRoles(user, resource);
-        SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
-        return Streams.concat(roles, policy.getRoles(user.getGroups()));
-    }
-
-    /**
-     * @return The roles assigned to this user in the root that are applicable to the passed in resource. The roles may
-     * be modified and/or filtered by the impersonation context.
-     */
-    default Stream<Role> getSiteRoles(User user, SecurableResource resource)
-    {
+        // Collect the site roles first. By default, they are applicable everywhere.
+        PrincipalArray groups = getGroups(user);
         Container root = ContainerManager.getRoot();
-        SecurityPolicy policy = root.getPolicy();
-        return policy.getRoles(getGroups(user))
-            .filter(role -> !role.equals(RoleManager.getRole(NoPermissionsRole.class)))
+        SecurityPolicy rootPolicy = root.getPolicy();
+        Stream<Role> ret = rootPolicy.getRoles(groups)
             .filter(role -> {
-                if (!role.isApplicable(policy, root))
+                if (!role.isApplicable(rootPolicy, root))
                     throw new IllegalStateException("Root role " + role.getName() + " is not applicable");
                 if (!(role instanceof AbstractRootContainerRole siteRole))
                     throw new IllegalStateException("Root roles should all be AbstractRootContainerRole");
 
-                return siteRole.isAvailableEverywhere() || resource.equals(ContainerManager.getRoot());
+                return siteRole.isAvailableEverywhere() || resource.equals(root);
             });
+
+        if (!resource.equals(root))
+        {
+            // Add the roles assigned in the project or folder
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
+            ret = Streams.concat(ret, policy.getRoles(groups));
+        }
+
+        return ret;
     }
 
     ImpersonationContextFactory getFactory();

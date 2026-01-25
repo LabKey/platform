@@ -278,18 +278,14 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public Stream<Role> getSiteRoles(User user, SecurableResource resource)
-        {
-            // Return the site roles that are being impersonated
-            return _roles.stream().filter(role->role instanceof AbstractRootContainerRole);
-        }
-
-        @Override
         public Stream<Role> getAssignedRoles(User user, SecurableResource resource)
         {
-            // No filtering - we trust verifyPermissions to validate that the admin is allowed to impersonate the
-            // specified roles. See Issue #50248 to understand the Container check.
-            return resource instanceof Container ? _roles.stream() : Stream.empty();
+            // No filtering for privileged roles - we trust verifyPermissions to validate that the admin is allowed to
+            // impersonate the specified roles. See Issue #50248 to understand the "instanceof Container" check.
+            return resource instanceof Container c ?
+                _roles.stream()
+                    .filter(role -> !(role instanceof AbstractRootContainerRole siteRole) || siteRole.isAvailableEverywhere() || c.isRoot()) :
+                Stream.empty();
         }
 
         @Override

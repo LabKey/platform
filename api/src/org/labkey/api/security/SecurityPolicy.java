@@ -23,6 +23,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.logging.LogHelper;
@@ -253,7 +254,7 @@ public class SecurityPolicy
                 {
                     Role role = _assignment.getRole();
                     _assignment = _assignmentIterator.hasNext() ? _assignmentIterator.next() : null;
-                    if (null != role)
+                    if (null != role && role.getClass() != NoPermissionsRole.class)
                         return role;
                 }
                 else if (_assignment.getUserId() < principalId)

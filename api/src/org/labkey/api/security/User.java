@@ -44,6 +44,7 @@ import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.AbstractRootContainerRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.SiteAdminRole;
@@ -357,9 +358,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         return User.getUserProps(this);
     }
 
+    // Mostly used for testing. Consider removing this.
     public final Stream<Role> getSiteRoles(SecurableResource resource)
     {
-        return _impersonationContext.getSiteRoles(this, resource);
+        return getAssignedRoles(resource)
+            .filter(role -> role instanceof AbstractRootContainerRole);
     }
 
     @Override
