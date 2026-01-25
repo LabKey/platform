@@ -58,9 +58,8 @@ public class ServletView extends HttpView
     public void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         ViewContext context = getViewContext();
-        for (Object o : context.entrySet())
+        for (Map.Entry<String, Object> entry : context.entrySet())
         {
-            Map.Entry entry = (Map.Entry) o;
             request.setAttribute(String.valueOf(entry.getKey()), entry.getValue());
         }
 
