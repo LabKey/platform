@@ -69,6 +69,13 @@ public interface Module
 
     default boolean isUnderResourcesDirectory(java.nio.file.Path path) { return false; }
 
+    /**
+     * If true, unreachable in the container. More modules should respect whether they're active in the container,
+     * but historically we haven't been especially mindful of service-type modules
+     * (such as query or pipeline) being active in all containers where they're being used.
+     */
+    default boolean isAvailable(Container container) { return true; }
+
     enum TabDisplayMode
     {
         DISPLAY_NEVER,
