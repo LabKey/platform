@@ -18,6 +18,8 @@ package org.labkey.api.util;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 
+import java.util.Properties;
+
 /**
  * Interface for email transport providers (SMTP, Microsoft Graph, etc.).
  * Implementations handle configuration loading and message sending.
@@ -47,4 +49,9 @@ public interface EmailTransportProvider
      * @throws MessagingException if sending fails
      */
     void send(Message message) throws MessagingException;
+
+    /**
+     * @return the configuration properties for this provider
+     */
+    Properties getProperties();
 }

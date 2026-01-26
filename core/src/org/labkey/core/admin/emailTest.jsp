@@ -33,7 +33,9 @@
 message to the address specified in the 'To' text box containing the content specified in the
 'Body' text box.</p>
 
-<% if (null != form.getException()) { %>
+<% if ("true".equals(request.getParameter("success"))) { %>
+<div class="labkey-message">Test email sent successfully!</div>
+<% } else if (null != form.getException()) { %>
 <div class="labkey-status-error">Your message could not be sent for the following reason(s):<br/>
 <%=h(form.getException().getMessage())%>
 </div>

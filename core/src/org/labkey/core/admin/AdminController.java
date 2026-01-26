@@ -8598,7 +8598,7 @@ public class AdminController extends SpringActionController
             JspView<EmailTestForm> testView = new JspView<>("/org/labkey/core/admin/emailTest.jsp", form);
             testView.setTitle("Send a Test Email");
 
-            if(null != MailHelper.getSession() && null != MailHelper.getSession().getProperties())
+            if(MailHelper.hasActiveProvider())
             {
                 JspView<?> emailPropsView = new JspView<>("/org/labkey/core/admin/emailProps.jsp");
                 emailPropsView.setTitle("Current Email Settings");
@@ -8650,7 +8650,9 @@ public class AdminController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(EmailTestForm emailTestForm)
         {
-            return new ActionURL(EmailTestAction.class, getContainer());
+            ActionURL url = new ActionURL(EmailTestAction.class, getContainer());
+            url.addParameter("success", true);
+            return url;
         }
 
         @Override

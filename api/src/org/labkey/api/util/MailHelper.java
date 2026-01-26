@@ -109,9 +109,29 @@ public class MailHelper
         return configured.isEmpty() ? null : configured.get(0);
     }
 
+    public static EmailTransportProvider getActiveProvider()
+    {
+        return _activeProvider;
+    }
+
+    public static boolean hasActiveProvider()
+    {
+        return null != _activeProvider;
+    }
+
     public static void init()
     {
         // Invoked just to initialize DEFAULT_SESSION
+    }
+
+    public static void setSession(Session session)
+    {
+        _smtpProvider.setSession(session);
+
+        if (session != null)
+        {
+            _activeProvider = _smtpProvider;
+        }
     }
 
     /**
@@ -120,13 +140,7 @@ public class MailHelper
      */
     public static Session getSession()
     {
-        Session session = _smtpProvider.getSession();
-        if (session == null)
-        {
-            // Return a default session for message creation even if SMTP not configured
-            session = Session.getInstance(System.getProperties());
-        }
-        return session;
+        return _smtpProvider.getSession();
     }
 
     /**

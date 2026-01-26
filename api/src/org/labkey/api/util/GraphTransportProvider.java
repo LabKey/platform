@@ -311,4 +311,10 @@ public class GraphTransportProvider implements EmailTransportProvider
             return s;
         }
     }
+
+    @Override
+    public Properties getProperties()
+    {
+        return _properties;
+    }
 }

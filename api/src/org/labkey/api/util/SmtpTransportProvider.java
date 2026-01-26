@@ -147,4 +147,15 @@ public class SmtpTransportProvider implements EmailTransportProvider
     {
         return _session;
     }
+
+    public void setSession(Session session)
+    {
+        _session = session;
+    }
+
+    @Override
+    public Properties getProperties()
+    {
+        return _properties;
+    }
 }
