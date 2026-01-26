@@ -17,6 +17,7 @@ package org.labkey.api.view;
 
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.query.QueryUrls;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -51,7 +52,10 @@ public class DeveloperMenu
     static
     {
         registerMenuProvider((c, user, items) -> {
-            items.add(DeveloperMenuNavTrees.Section.tools, new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c)));
+            if (c.hasPermission(user, ReadPermission.class))
+            {
+                items.add(DeveloperMenuNavTrees.Section.tools, new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c)));
+            }
 
             if (user.isPlatformDeveloper())
             {
