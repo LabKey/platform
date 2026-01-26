@@ -48,33 +48,24 @@ public class RequiredValidator extends AbstractColumnValidator implements Unders
     @Override
     protected String _validate(int rowNum, Object value)
     {
-        checkRequired:
+        if (allowES && "".equals(value))
+            return null;
+
+        if (!(value instanceof MvFieldWrapper mv))
         {
-            if ("".equals(value))
-            {
-                if (allowES)
-                    return null;
-                else break checkRequired;
-            }
-
-            if (jdbcType.isEmpty(value))
-                break checkRequired;
-
-            if (!(value instanceof MvFieldWrapper mv))
+            if (!jdbcType.isEmpty(value))
                 return null;
-
-            if (null != mv.getValue())
+        }
+        else
+        {
+            if (!jdbcType.isEmpty(mv.getValue()))
                 return null;
-
-            if (!mv.isEmpty() && allowMV)
+            if (allowMV && !mv.isEmpty())
                 return null;
         }
 
-        if (_message != null)
-            return _message;
-
         // DatasetDefinition.importDatasetData:: errors.add("Row " + rowNumber + " does not contain required field " + col.getName() + ".");
         // OntologyManager.insertTabDelimited::  throw new ValidationException("Missing value for required property " + col.getName());
-        return "Missing value for required property: " + _columnName;
+        return null != _message ? _message : "Missing value for required property: " + _columnName;
     }
 }
