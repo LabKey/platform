@@ -195,10 +195,10 @@ public class SecurityApiActions
                 groupPerms.put("isProjectGroup", group.isProjectGroup());
 
                 //add effective roles
-                Set<String> effectiveRoleList = SecurityManager.getEffectiveRoles(container, group)
+                Set<String> effectiveRoles = SecurityManager.getEffectiveRoles(container, group)
                     .map(Role::getUniqueName)
                     .collect(Collectors.toSet());
-                groupPerms.put("roles", effectiveRoleList);
+                groupPerms.put("roles", effectiveRoles);
                 groupPerms.put("effectivePermissions", effectivePermissions);
 
                 if (isAdmin)
