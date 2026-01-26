@@ -108,7 +108,7 @@ public class ScriptReportDesignBean extends ScriptReportBean
     }
 
     @Override
-    public ScriptReport getReport(ContainerUser cu) throws Exception
+    public ScriptReport getReport(ContainerUser cu)
     {
         Report report = super.getReport(cu);
 
