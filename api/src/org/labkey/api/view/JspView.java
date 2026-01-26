@@ -17,6 +17,7 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
@@ -37,7 +38,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.jsp.HttpJspPage;
 import java.util.Map;
-import java.util.Set;
 
 
 public class JspView<ModelClass> extends WebPartView<ModelClass>
@@ -133,11 +133,11 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         boolean devMode = AppProps.getInstance().isDevMode() ||
                 (_viewContext != null && _viewContext.getUser() != null && _viewContext.getContainer() != null &&
                         _viewContext.getUser().isPlatformDeveloper());
-        boolean isDebugHtml = devMode && this.getFrame() != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(), "text/html");
+        boolean isDebugHtml = devMode && this.getFrame() != FrameType.NOT_HTML && Strings.CI.startsWith(response.getContentType(), "text/html");
         if (isDebugHtml)
             response.getWriter().print("<!--" + _page.getClass() + "-->");
 
-        try (Timing t = MiniProfiler.step(_page.getClass().getSimpleName()))
+        try (Timing _ = MiniProfiler.step(_page.getClass().getSimpleName()))
         {
             _page._jspService(request, response);
         }
@@ -194,10 +194,10 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         if (model != null)
             context.getExtendedProperties().putAll(model);
         
-        for (Map.Entry e : (Set<Map.Entry>)context.getExtendedProperties().entrySet())
+        for (Map.Entry<String, Object> e : context.getExtendedProperties().entrySet())
         {
-            if (e.getKey() instanceof String && e.getValue() != null)
-                request.setAttribute((String)e.getKey(), e.getValue());
+            if (e.getKey() != null && e.getValue() != null)
+                request.setAttribute(e.getKey(), e.getValue());
         }
     }
 }
