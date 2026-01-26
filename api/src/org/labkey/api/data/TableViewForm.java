@@ -30,8 +30,6 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.validator.RequiredValidator;
-import org.labkey.api.ontology.Quantity;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -428,10 +426,10 @@ public class TableViewForm extends ViewForm implements HasBindParameters
                 boolean requiredError = false;
                 if (_validateRequired && null != _tinfo && null != col && col.isRequired() && !col.isAutoIncrement())
                 {
-                    requiredError =col.getJdbcType().isEmpty(val);
+                    requiredError = col.getJdbcType().isEmpty(val);
 
                     // if the column is mv-enabled and a mv indicator has been specified, don't flag the required error
-                    if (col.isMvEnabled() && col.isNullable())
+                    if (requiredError && col.isMvEnabled() && col.isNullable())
                     {
                         ColumnInfo mvCol = _tinfo.getColumn(col.getMvColumnName());
                         if (mvCol != null)
