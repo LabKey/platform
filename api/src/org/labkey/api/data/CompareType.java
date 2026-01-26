@@ -991,7 +991,7 @@ public abstract class CompareType
             }
 
             for (int i = 0; i < params.length; i++)
-                fragments[i] = new SQLFragment().append(escapeLabKeySqlValue(params[i], type));
+                fragments[i] = SQLFragment.unsafe(escapeLabKeySqlValue(params[i], type));
 
             return fragments;
         }
