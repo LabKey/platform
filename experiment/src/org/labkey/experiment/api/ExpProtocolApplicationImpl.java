@@ -411,7 +411,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
             dialect.concatenate("'" + DataInput.lsidPrefix() + "'",
                     "CAST(dataId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-            " FROM " + svc.getTinfoDataInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer());
+            " FROM " + svc.getTinfoDataInput() + " WHERE TargetApplicationId = ?", getRowId()), getContainer());
 
         return Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
     }
@@ -427,7 +427,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
             dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'",
                     "CAST(materialId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-            " FROM " + svc.getTinfoMaterialInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer());
+            " FROM " + svc.getTinfoMaterialInput() + " WHERE TargetApplicationId = ?", getRowId()), getContainer());
 
         return Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
     }

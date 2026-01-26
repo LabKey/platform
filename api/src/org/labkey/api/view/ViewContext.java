@@ -116,9 +116,8 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         setRequest(request);
         setResponse(response);
 
-        for (Object o : _request.getParameterMap().entrySet())
+        for (Map.Entry<String, String[]> entry : _request.getParameterMap().entrySet())
         {
-            Map.Entry<String, String[]> entry = (Map.Entry<String, String[]>) o;
             String key = entry.getKey();
             String[] value = entry.getValue();
 
@@ -126,7 +125,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
                 _map.put(key, value[0]);
             else
             {
-                List list = new ArrayList<>(Arrays.asList(value));
+                List<String> list = new ArrayList<>(Arrays.asList(value));
                 _map.put(key, list);
             }
         }
@@ -193,7 +192,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     // ===========================================
     // Last vestiges of ViewContext implementing BoundMap/Map below.  TODO: Remove these methods
 
-    public Map getExtendedProperties()
+    public Map<String, Object> getExtendedProperties()
     {
         return _map;
     }
