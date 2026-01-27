@@ -41,11 +41,16 @@ public class QType extends QExpr
         String typeName = builder.getDialect().getSqlTypeName(jdbcType);
         builder.append(typeName);
         Integer len = length;
-        if ("NVARCHAR".equalsIgnoreCase(typeName) && null == length)
+
+        // SQL Server silently truncates CAST(value AS NVARCHAR) to the first 30 characters.
+        // If a length is not explicitly specified and this is NVARCHAR, then CAST(value AS NVARCHAR(4000))
+        // to avoid premature truncation.
+        if (null == len && "NVARCHAR".equalsIgnoreCase(typeName))
             len = 4000;
-        if (null != length)
+
+        if (null != len)
         {
-            builder.append("(").appendValue(length);
+            builder.append("(").appendValue(len);
             if (scale != null)
                 builder.append(",").appendValue(scale);
             builder.append(")");

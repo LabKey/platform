@@ -63,14 +63,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.experiment.api.ClosureQueryHelper;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
 import org.labkey.experiment.api.property.StorageProvisionerImpl;
-import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
 import java.sql.Connection;
 import java.sql.SQLException;
