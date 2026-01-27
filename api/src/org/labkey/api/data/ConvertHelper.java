@@ -798,7 +798,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         {
             return null;
         }
-        return cl.cast(ConvertUtils.convert(value.toString(), cl));
+        return (T)ConvertUtils.convert(value.toString(), cl);
     }
 
     public static SimpleConvert getSimpleConvert(Class<?> targetType)
