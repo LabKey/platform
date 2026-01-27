@@ -29,6 +29,8 @@ import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
+
 /**
  * Listener for table and query events that fires when the structure/schema changes, but not when individual data
  * rows change.
@@ -213,13 +215,13 @@ public interface QueryChangeListener
      * Utility to update encoded filter string when a column type changes from Multi_Choice to a non Multi_Choice.
      * This method performs targeted replacements for the given column name (case-insensitive).
      */
-    private static String getUpdatedFilterStrFromMVTC(String filterStr, String columnName, PropertyType oldType, PropertyType newType)
+    private static String getUpdatedFilterStrFromMVTC(String filterStr, String columnName, @NotNull PropertyDescriptor oldType, @NotNull PropertyDescriptor newType)
     {
         if (filterStr == null || columnName == null || oldType == null || newType == null)
             return filterStr;
 
         // Only act when changing away from MULTI_CHOICE
-        if (oldType != PropertyType.MULTI_CHOICE || newType == PropertyType.MULTI_CHOICE)
+        if (oldType.getPropertyType() != PropertyType.MULTI_CHOICE || newType.getPropertyType() == PropertyType.MULTI_CHOICE)
             return filterStr;
 
         String colLower = columnName.toLowerCase();
@@ -235,6 +237,19 @@ public interface QueryChangeListener
 
         String updated = filterStr;
 
+        if (TEXT_CHOICE_CONCEPT_URI.equals(newType.getConceptURI()))
+        {
+            // only keep arraymatches/arraynotmatches when converting to a TEXT_CHOICE since current values are guaranteed to be single value
+            if (containsOp(updated, columnName, "arraymatches"))
+            {
+                return replaceOp(updated, columnName, "arraymatches", "eq");
+            }
+            if (containsOp(updated, columnName, "arraynotmatches"))
+            {
+                return replaceOp(updated, columnName, "arraynotmatches", "neq");
+            }
+        }
+
         if (containsOp(updated, columnName, "arrayisempty"))
         {
             return replaceOp(updated, columnName, "arrayisempty", "isblank");
@@ -243,32 +258,13 @@ public interface QueryChangeListener
         {
             return replaceOp(updated, columnName, "arrayisnotempty", "isnonblank");
         }
-        if (containsOp(updated, columnName, "arraymatches"))
-        {
-            updated = replaceOp(updated, columnName, "arraymatches", "eq");
-            // Replace all occurrences of %2C with %2C%20,
-            // "," -> ", " during array to string conversion
-            return updated.replace("%2C", "%2C%20");
-        }
-        if (containsOp(updated, columnName, "arraynotmatches"))
-        {
-            updated = replaceOp(updated, columnName, "arraynotmatches", "neq");
-            // Replace all occurrences of %2C with %2C%20
-            return updated.replace("%2C", "%2C%20");
-        }
         if (containsOp(updated, columnName, "arraycontainsany"))
         {
-            updated = replaceOp(updated, columnName, "arraycontainsany", "in");
-            // Replace all occurrences of %2C with %3B
-            // ";" is used as the separator for "in" operator
-            return updated.replace("%2C", "%3B");
+            return replaceOp(updated, columnName, "arraycontainsany", "in");
         }
         if (containsOp(updated, columnName, "arraycontainsnone"))
         {
-            updated = replaceOp(updated, columnName, "arraycontainsnone", "notin");
-            // Replace all occurrences of %2C with %3B
-            // ";" is used as the separator for "notin" operator
-            return updated.replace("%2C", "%3B");
+            return replaceOp(updated, columnName, "arraycontainsnone", "notin");
         }
 
         // No matching operator found for this column, drop the filter
@@ -278,13 +274,13 @@ public interface QueryChangeListener
     /**
      * Utility to update encoded filter string when a column type is changed to Multi_Choice (migrating operators to array equivalents).
      */
-    private static String getUpdatedMVTCFilterStr(String filterStr, String columnName, PropertyType oldType, PropertyType newType)
+    private static String getUpdatedMVTCFilterStr(String filterStr, String columnName, @NotNull PropertyDescriptor oldType, @NotNull PropertyDescriptor newType)
     {
         if (filterStr == null || columnName == null || oldType == null || newType == null)
             return filterStr;
 
         // Only act when changing to MULTI_CHOICE
-        if (oldType == PropertyType.MULTI_CHOICE || newType != PropertyType.MULTI_CHOICE)
+        if (oldType.getPropertyType() == PropertyType.MULTI_CHOICE || newType.getPropertyType() != PropertyType.MULTI_CHOICE)
             return filterStr;
 
         String colLower = columnName.toLowerCase();
@@ -315,25 +311,22 @@ public interface QueryChangeListener
         }
         if (containsOp(updated, columnName, "in"))
         {
-            updated = replaceOp(updated, columnName, "in", "arraycontainsany");
-            // update ";" to "," for separator appropriate for array operator
-            return updated.replace("%3B", "%2C");
+            return replaceOp(updated, columnName, "in", "arraycontainsany");
         }
         if (containsOp(updated, columnName, "notin"))
         {
-            updated = replaceOp(updated, columnName, "notin", "arraycontainsnone");
-            return updated.replace("%3B", "%2C");
+            return replaceOp(updated, columnName, "notin", "arraycontainsnone");
         }
 
         // No matching operator found for this column, drop the filter
         return "";
     }
 
-    static String getUpdatedFilterStrOnColumnTypeUpdate(String filterStr, String columnName, PropertyType oldType, PropertyType newType)
+    static String getUpdatedFilterStrOnColumnTypeUpdate(String filterStr, String columnName, @NotNull PropertyDescriptor oldType, @NotNull PropertyDescriptor newType)
     {
-        if (oldType == PropertyType.MULTI_CHOICE)
+        if (oldType.getPropertyType() == PropertyType.MULTI_CHOICE)
             return getUpdatedFilterStrFromMVTC(filterStr, columnName, oldType, newType);
-        else if (newType == PropertyType.MULTI_CHOICE)
+        else if (newType.getPropertyType() == PropertyType.MULTI_CHOICE)
             return getUpdatedMVTCFilterStr(filterStr, columnName, oldType, newType);
         else
             return filterStr;

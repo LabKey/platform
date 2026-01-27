@@ -631,7 +631,9 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
 
         for (PropertyStorageSpec column : change.getColumns())
         {
-            PropertyType oldPropertyType = change.getOldPropTypes().get(column.getName());
+            PropertyType oldPropertyType = null;
+            if (change.getOldPropTypes() != null)
+                oldPropertyType = change.getOldPropTypes().get(column.getName());
             DatabaseIdentifier columnIdent = makePropertyIdentifier(column.getName());
             if (column.getJdbcType().isDateOrTime())
             {

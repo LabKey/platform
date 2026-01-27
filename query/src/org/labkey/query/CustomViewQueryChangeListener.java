@@ -103,15 +103,17 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                         continue;
 
                     /* Example:
-                     *   "/?filter.MCF2~arrayisnotempty=&filter.Name~in=S-5%3BS-6%3BS-8%3BS-9&filter.MCF~arraycontainsall=2%2C1%2C3&filter.sort=zz"
+                     *   "/?filter.MCF2~arrayisnotempty=&filter.Name~in=S-5%3BS-6%3BS-8%3BS-9&filter.MCF~arraycontainsall=2%3B1%3B3&filter.sort=zz"
                     */
                     String prefix = filterAndSort.startsWith("/?") ? "/?" : (filterAndSort.startsWith("?") ? "?" : "");
                     String[] filterComponents = filterAndSort.substring(prefix.length()).split("&");
                     StringBuilder updatedFilterAndSort = new StringBuilder(prefix);
+                    String sep = "";
                     for (String filterPart : filterComponents)
                     {
-                        String updatedPart = QueryChangeListener.getUpdatedFilterStrOnColumnTypeUpdate(filterPart, columnName, oldDp.getPropertyType(), newDp.getPropertyType());
-                        updatedFilterAndSort.append(updatedPart);
+                        String updatedPart = QueryChangeListener.getUpdatedFilterStrOnColumnTypeUpdate(filterPart, columnName, oldDp, newDp);
+                        updatedFilterAndSort.append(sep).append(updatedPart);
+                        sep = "&";
                     }
 
                     String updatedFilterAndSortStr = updatedFilterAndSort.toString();

@@ -967,7 +967,7 @@ public abstract class CompareType
 
     public static abstract class ArrayClause extends SimpleFilter.MultiValuedFilterClause
     {
-        public static final String ARRAY_VALUE_SEPARATOR = ",";
+        public static final String ARRAY_VALUE_SEPARATOR = ";";
 
         public ArrayClause(@NotNull FieldKey fieldKey, CompareType comparison, Collection<?> params, boolean negated)
         {

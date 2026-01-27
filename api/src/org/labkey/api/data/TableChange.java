@@ -336,11 +336,6 @@ public class TableChange
         return _oldPropTypes;
     }
 
-    public void setOldPropTypes(Map<String, PropertyType> oldPropTypes)
-    {
-        _oldPropTypes = oldPropTypes;
-    }
-
     public final List<PropertyStorageSpec> toSpecs(Collection<String> columnNames)
     {
         final Domain domain = _domain;
