@@ -950,6 +950,9 @@ public class ConvertHelper implements PropertyEditorRegistrar
             if (value.getClass() == type)
                 return value;
 
+            if (value instanceof JSONObject)
+                return value;
+
             if (value instanceof Map)
                 return new JSONObject((Map<?, ?>)value);
 
