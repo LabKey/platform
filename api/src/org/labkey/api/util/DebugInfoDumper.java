@@ -18,20 +18,33 @@ package org.labkey.api.util;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Logger;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TransactionFilter;
+import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.InvocationTargetException;
@@ -151,7 +164,7 @@ public class DebugInfoDumper
      */
     public static _PopAutoCloseable pushThreadDumpContext(String context)
     {
-        final var arr = _threadDumpExtraContext.computeIfAbsent(Thread.currentThread(), (p1) -> Collections.synchronizedList(new ArrayList<>()));
+        final var arr = _threadDumpExtraContext.computeIfAbsent(Thread.currentThread(), (_) -> Collections.synchronizedList(new ArrayList<>()));
         int size = arr.size();
         arr.add(new ThreadExtraContext(context, MiniProfiler.getTroubleshootingStackTrace(), System.currentTimeMillis()));
         return new _PopAutoCloseable(size);
@@ -391,6 +404,44 @@ public class DebugInfoDumper
             ConnectionWrapper.dumpOpenConnections(logWriter, null);
             logWriter.debug("*********************************************");
             logWriter.debug("Completed dump of all open connections");
+            logWriter.debug("*********************************************");
+        }
+
+        // GitHib Issue 713: Automatically include PG locks and active queries in thread dumps
+        UserSchema schema = QueryService.get().getUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot(), BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME);
+        // Schema won't exist on SQLServer
+        if (schema != null)
+        {
+            writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_TABLE_NAME, "Postgres activity");
+            writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_LOCKS_TABLE_NAME, "Postgres locks");
+        }
+    }
+
+    private static void writeTable(LoggerWriter logWriter, UserSchema schema, String tableName, String header)
+    {
+        QueryForm form = new QueryForm();
+        try (var _ = ViewContext.pushMockViewContext(schema.getUser(), schema.getContainer(), new ActionURL()))
+        {
+            form.setViewContext(HttpView.currentContext());
+            form.setSchemaName(schema.getName());
+            form.setQueryName(tableName);
+            QueryView view = QueryView.create(form, new NullSafeBindException(new Object(), "form"));
+            logWriter.debug("Starting dump of " + header);
+            logWriter.debug("*********************************************");
+            try (TSVWriter writer = view.getTsvWriter())
+            {
+                StringWriter stringWriter = new StringWriter();
+                PrintWriter printWriter = new PrintWriter(stringWriter);
+                writer.write(printWriter);
+                printWriter.flush();
+                logWriter.debug("\n" + stringWriter.toString());
+            }
+            catch (IOException e)
+            {
+                logWriter.error("Failed to write " + header, e);
+            }
+            logWriter.debug("*********************************************");
+            logWriter.debug("Completed dump of " + header);
             logWriter.debug("*********************************************");
         }
     }
