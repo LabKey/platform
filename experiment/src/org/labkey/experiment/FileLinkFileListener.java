@@ -275,7 +275,7 @@ public class FileLinkFileListener implements FileListener
         return listFilesQuery(skipCreatedModified, null);
     }
 
-    public SQLFragment listFilesQuery(boolean skipCreatedModified, String filePath)
+    public SQLFragment listFilesQuery(boolean skipCreatedModified, CharSequence filePath)
     {
         final SQLFragment frag = new SQLFragment();
 
@@ -298,8 +298,11 @@ public class FileLinkFileListener implements FileListener
         frag.append("WHERE\n");
         if (StringUtils.isEmpty(filePath))
             frag.append("  op.StringValue IS NOT NULL AND\n");
+        else if (filePath instanceof SQLFragment)
+            frag.append("  op.StringValue = ").append(filePath).append(" AND\n");
         else
             frag.append("  op.StringValue = ").appendStringLiteral(filePath, OntologyManager.getTinfoObject().getSqlDialect()).append(" AND\n");
+
         frag.append("  o.ObjectId = op.ObjectId AND\n");
         frag.append("  PropertyId IN (\n");
         frag.append("    SELECT PropertyId\n");
@@ -311,7 +314,26 @@ public class FileLinkFileListener implements FileListener
             SQLFragment containerFrag = new SQLFragment("?", containerId);
             TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath, null, containerFrag);
             frag.append("UNION").append(StringUtils.isEmpty(filePath) ? "" : " ALL" /*keep duplicate*/).append("\n");
-            frag.append(updater.listFilesQuery(skipCreatedModified, filePath));
+            frag.append(updater.listFilesQuery(skipCreatedModified, filePath, false));
+        });
+
+        return frag;
+    }
+
+    @Override
+    public SQLFragment listSampleFilesQuery()
+    {
+        final SQLFragment frag = new SQLFragment();
+
+        hardTableFileLinkColumns((schema, table, pathColumn, containerId, domainUri) -> {
+            if (PROVISIONED_SCHEMA_NAME.equalsIgnoreCase(schema.getName()))
+            {
+                SQLFragment containerFrag = new SQLFragment("?", containerId);
+                TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath, "rowid", containerFrag);
+                if (!frag.isEmpty())
+                    frag.append("UNION").append("").append("\n");
+                frag.append(updater.listFilesQuery(true, null, true));
+            }
         });
 
         return frag;
