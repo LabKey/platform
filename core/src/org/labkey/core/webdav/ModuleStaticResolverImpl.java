@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheListener;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatcher;
@@ -57,12 +58,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.WatchEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -181,16 +184,15 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         for (int i=0 ; i<path.size() ; i++)
         {
             Path.Part p = path.getPart(i);
-            if (null == p || p.toString().equalsIgnoreCase("META-INF") || p.toString().equalsIgnoreCase("WEB-INF") || p.toString().startsWith("."))
+            if (null == p || !isAllowableName(p.toString()))
                 return null;
             r = r.find(p);
             if (null == r)
                 return null;
-            if (r instanceof SymbolicLink)
+            if (r instanceof SymbolicLink symbolicLink)
             {
                 Path remainder = path.subpath(i+1,path.getNameCount());
-                LookupResult result = ((SymbolicLink)r).lookupEx(remainder);
-                return result;
+                return symbolicLink.lookupEx(remainder);
             }
         }
         return new LookupResult(this,r);
@@ -292,12 +294,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
 
         synchronized (shortcuts)
         {
-            Map<String,Pair<Path,String>> map = shortcuts.get(rParent.getPath());
-            if (null == map)
-            {
-                map = new HashMap<>();
-                shortcuts.put(rParent.getPath(), map);
-            }
+            Map<String, Pair<Path, String>> map = shortcuts.computeIfAbsent(rParent.getPath(), k -> new HashMap<>());
             map.put(from.getName(), new Pair<>(target,indexPage));
         }
 
@@ -387,6 +384,15 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         }
     }
 
+    private static final Set<String> ALLOWED_DOT_NAMES = Collections.unmodifiableSet(new CaseInsensitiveHashSet(Arrays.asList(".well-known")));
+
+    private boolean isAllowableName(String name)
+    {
+        return !"WEB-INF".equalsIgnoreCase(name) &&
+                !"META-INF".equalsIgnoreCase(name) &&
+                (!name.startsWith(".") || ALLOWED_DOT_NAMES.contains(name));
+    }
+
     private static final Cache<Path, Map<String, WebdavResource>> CHILDREN_CACHE = CacheManager.getCache(1000, CacheManager.DAY, "Static resources");
 
     private class StaticResource extends _PublicResource implements SupportsFileSystemWatcher
@@ -425,12 +431,6 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
             return ModuleStaticResolverImpl.this;
         }
 
-        @Override
-        public boolean canList(User user, boolean forRead)
-        {
-            return true;
-        }
-
         Map<String,WebdavResource> getChildren()
         {
             synchronized (_lock)
@@ -447,7 +447,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
                         for (FileLike fo : files)
                         {
                             String name = fo.getName();
-                            if (name.startsWith(".") || name.equals("WEB-INF") || name.equals("META-INF"))
+                            if (!isAllowableName(name))
                                 continue;
                             if (!map.containsKey(name))
                                 map.put(name, new ArrayList<>());
@@ -459,7 +459,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
                     {
                         Path path = getPath().append(e.getKey());
                         List<FileLike> alternates = e.getValue();
-                        if (alternates.get(0).isFile())
+                        if (alternates.getFirst().isFile())
                             children.put(e.getKey(), new StaticResource(this, path, alternates.subList(0,1), null));
                         else
                             children.put(e.getKey(), new StaticResource(this, path, e.getValue(), null));
@@ -518,7 +518,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         {
             if (!exists())
                 return null;
-            return _files.get(0).toNioPathForRead().toFile();
+            return _files.getFirst().toNioPathForRead().toFile();
         }
 
         @Override
@@ -537,7 +537,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         @Override
         public boolean isCollection()
         {
-            return exists() && _files.get(0).isDirectory();
+            return exists() && _files.getFirst().isDirectory();
         }
 
         @Override
@@ -549,7 +549,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         @Override
         public boolean isFile()
         {
-            return exists() && _files.get(0).isFile();
+            return exists() && _files.getFirst().isFile();
         }
 
         @Override
@@ -572,7 +572,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         public InputStream getInputStream(User user) throws IOException
         {
             if (isFile())
-                return _files.get(0).openInputStream();
+                return _files.getFirst().openInputStream();
             return null;
         }
 
@@ -586,7 +586,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         public long getContentLength()
         {
             if (isFile())
-                return _files.get(0).getSize();
+                return _files.getFirst().getSize();
             return 0;
         }
 
