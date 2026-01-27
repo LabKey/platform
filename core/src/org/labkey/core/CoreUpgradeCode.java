@@ -82,6 +82,7 @@ public class CoreUpgradeCode implements UpgradeCode
 
     /**
      * Called from core-25.008-25.009.sql
+     * Called from core-26.000-26.001.sql
      */
     @SuppressWarnings("unused")
     @DeferredUpgrade
