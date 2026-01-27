@@ -145,13 +145,7 @@ import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_VOLUME_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_COUNT_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_VOLUME_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.SAMPLE_TYPE_FILE_DIRECTORY_NAME;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotCount;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.LastIndexed;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.schema;
 
