@@ -145,7 +145,13 @@ import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_VOLUME_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_COUNT_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_VOLUME_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.SAMPLE_TYPE_FILE_DIRECTORY_NAME;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotCount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.LastIndexed;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.schema;
 
@@ -699,6 +705,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 ret.setShownInUpdateView(true);
                 return ret;
             }
+            case LastIndexed ->
+            {
+                var sql = new SQLFragment("(SELECT LastIndexed FROM ")
+                        .append(ExperimentServiceImpl.get().getTinfoMaterialIndexed(), "mi")
+                        .append(" WHERE mi.MaterialId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".RowId)");
+                var ret = new ExprColumn(this, LastIndexed.name(), sql, JdbcType.TIMESTAMP);
+                ret.setDescription("Date when the material was last full-text search indexed in the system");
+                ret.setHidden(true);
+                ret.setReadOnly(true);
+                ret.setUserEditable(false);
+                return ret;
+            }
             default -> throw new IllegalArgumentException("Unknown column " + column);
         }
     }
@@ -906,7 +924,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(col);
 
         addVocabularyDomains();
-
+        addColumn(LastIndexed);
         addColumn(Properties);
 
         var colInputs = addColumn(Inputs);

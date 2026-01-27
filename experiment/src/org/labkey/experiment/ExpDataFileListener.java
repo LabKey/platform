@@ -27,6 +27,7 @@ import org.labkey.api.util.FileUtil;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
 
@@ -88,7 +89,13 @@ public class ExpDataFileListener extends TableUpdaterFileListener
                 data.setName(FileUtil.getFileName(dest));
                 // if the data object moved containers, set that as well
                 if (targetContainer != null && !targetContainer.equals(sourceContainer))
+                {
+                    LOG.info("Updating container for file {} from {} to {}.", dest, sourceContainer, targetContainer);
                     data.setContainer(targetContainer);
+                    ExperimentService svc = ExperimentService.get();
+                    LOG.info("Updating object container for objectId {} from {} to {}.", data.getObjectId(), sourceContainer, targetContainer);
+                    svc.updateExpObjectContainers(svc.getTinfoData(), List.of(data.getRowId()), targetContainer);
+                }
                 data.save(user);
                 extra = 1;
             }
