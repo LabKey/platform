@@ -18,7 +18,6 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.IntHashMap;
@@ -33,7 +32,6 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -400,8 +398,14 @@ public enum JdbcType implements SimpleConvert
 
     NULL(Types.NULL, Object.class),
 
-    OTHER(Types.OTHER, Object.class);
-
+    OTHER(Types.OTHER, Object.class)
+    {
+        @Override
+        public boolean isEmpty(Object value)
+        {
+            return null==value || "".equals(value);
+        }
+    };
 
     public final int sqlType;
     public final Class<?> cls;
