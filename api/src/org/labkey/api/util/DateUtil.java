@@ -87,12 +87,12 @@ public class DateUtil
     private static final Locale _localeDefault = Locale.getDefault();
     private static final TimeZone _timezoneDefault = TimeZone.getDefault();
 
-    private static final String ISO_DATE_FORMAT_STRING = "yyyy-MM-dd";
-    private static final String ISO_SHORT_TIME_FORMAT_STRING = "HH:mm";
-    private static final String ISO_DATE_SHORT_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_SHORT_TIME_FORMAT_STRING;
-    private static final String ISO_TIME_FORMAT_STRING = "HH:mm:ss";
-    private static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss.SSS";
-    private static final String ISO_DATE_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_LONG_TIME_FORMAT_STRING;
+    public static final String ISO_DATE_FORMAT_STRING = "yyyy-MM-dd";
+    public static final String ISO_SHORT_TIME_FORMAT_STRING = "HH:mm";
+    public static final String ISO_DATE_SHORT_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_SHORT_TIME_FORMAT_STRING;
+    public static final String ISO_TIME_FORMAT_STRING = "HH:mm:ss";
+    public static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss.SSS";
+    public static final String ISO_DATE_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_LONG_TIME_FORMAT_STRING;
 
     // SimpleDataFormat does not support microseconds, it can only support up to milliseconds
     private static final Pattern NON_SIMPLE_PRECISION_TIME_PATTERN = Pattern.compile(".*([0-5][0-9]):([0-5][0-9])\\.(\\d{4,6}).*");
