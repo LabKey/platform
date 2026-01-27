@@ -71,6 +71,12 @@ public class SequenceVisitManager extends VisitManager
     }
 
     @Override
+    public Set<CohortFilter.Type> supportedCohortFilterTypes()
+    {
+        return Set.of(CohortFilter.Type.PTID_CURRENT, CohortFilter.Type.PTID_INITIAL, CohortFilter.Type.DATA_COLLECTION);
+    }
+
+    @Override
     @Nullable
     protected SQLFragment getVisitSummarySql(StudyQuerySchema sqs, CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats, boolean showAll)
     {

@@ -216,9 +216,9 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
             }
         }
 
-        if (tsvData != null && dataRows != null)
+        if (tsvData != null)
         {
-            AssayRunUploadContext uploadContext = createRunUploadContext(context, protocol, runJson, dataRows,
+            AssayRunUploadContext<?> uploadContext = createRunUploadContext(context, protocol, runJson, dataRows,
                     inputData, outputData, inputMaterial, outputMaterial);
 
             return saveAssayRun(uploadContext, batch, run, BaseViewAction.getTransactionAuditDetails(context));
@@ -229,6 +229,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     /**
      * Handle any mv indicator columns plus any additional conversion on the results domain data before run creation.
      */
+    @NotNull
     private List<Map<String, Object>> convertRunData(JSONArray dataArray, Container container, ExpProtocol protocol)
     {
         Domain domain = _provider.getResultsDomain(protocol);
@@ -290,7 +291,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     {
         if (dataRows != null)
         {
-            AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> factory = createRunUploadContext(protocol, context);
+            AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory<?, ?>> factory = createRunUploadContext(protocol, context);
 
             if (runJsonObject != null && runJsonObject.has(ExperimentJSONConverter.PROPERTIES))
             {
@@ -312,7 +313,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     }
 
     @NotNull
-    protected AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadContext(ExpProtocol protocol, ViewContext context)
+    protected AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory<?, ?>> createRunUploadContext(ExpProtocol protocol, ViewContext context)
     {
         AssayProvider provider = getProvider();
         return provider.createRunUploadFactory(protocol, context);
