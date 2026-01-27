@@ -43,6 +43,7 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         Inputs,
         IsAliquot,
         IsPlated,
+        LastIndexed,
         LSID,
         MaterialExpDate,
         MaterialSourceId,
