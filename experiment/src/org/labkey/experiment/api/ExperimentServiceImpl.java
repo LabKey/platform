@@ -172,6 +172,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.ExpUnreferencedSampleFilesTable;
 import org.labkey.api.exp.query.SampleStatusTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LSIDRelativizer;
@@ -1623,6 +1624,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter containerFilter)
     {
         return new SampleStatusTable(expSchema, containerFilter);
+    }
+
+    @Override
+    public ExpUnreferencedSampleFilesTable createUnreferencedSampleFilesTable(ExpSchema expSchema, ContainerFilter cf)
+    {
+        return new ExpUnreferencedSampleFilesTableImpl(expSchema, cf);
     }
 
     @Override
@@ -5470,6 +5477,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         if (null == c)
             return;
+        LOG.info("Beginning delete of expObj in container {}", c);
 
         String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ?";
         int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
@@ -5553,8 +5561,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ?";
             Collection<Long> dataIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Long.class);
+            LOG.info("Deleting {} dataIds {} ", dataIds.size(), dataIds);
             deleteDataByRowIds(user, c, dataIds);
 
+            LOG.info("Deleting objects from container {}", c);
             OntologyManager.deleteAllObjects(c, user);
 
             transaction.commit();

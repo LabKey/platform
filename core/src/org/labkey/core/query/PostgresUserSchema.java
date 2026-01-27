@@ -15,10 +15,6 @@ import java.util.Set;
 /** Issue 52190: Expose troubleshooting data that supports postgreSQL-specific analysis */
  public class PostgresUserSchema extends UserSchema
 {
-    public static final String POSTGRES_STAT_ACTIVITY_TABLE_NAME = "pg_stat_activity";
-    public static final String POSTGRES_LOCKS_TABLE_NAME = "pg_locks";
-    public static final String POSTGRES_TABLE_SIZES_TABLE_NAME = "pg_tablesizes";
-
     public PostgresUserSchema(User user, Container container)
     {
         super(BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME, "Postgres-specific internal views for database troubleshooting", user, container, CoreSchema.getInstance().getSchema());
@@ -33,11 +29,11 @@ import java.util.Set;
     @Override
     public @Nullable TableInfo createTable(String name, ContainerFilter cf)
     {
-        if (POSTGRES_STAT_ACTIVITY_TABLE_NAME.equalsIgnoreCase(name))
+        if (BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_TABLE_NAME.equalsIgnoreCase(name))
             return new PostgresStatActivityTable(this);
-        if (POSTGRES_LOCKS_TABLE_NAME.equalsIgnoreCase(name))
+        if (BasePostgreSqlDialect.POSTGRES_LOCKS_TABLE_NAME.equalsIgnoreCase(name))
             return new PostgresLocksTable(this);
-        if (POSTGRES_TABLE_SIZES_TABLE_NAME.equalsIgnoreCase(name))
+        if (BasePostgreSqlDialect.POSTGRES_TABLE_SIZES_TABLE_NAME.equalsIgnoreCase(name))
             return new PostgresTableSizesTable(this);
 
         return null;
@@ -47,8 +43,8 @@ import java.util.Set;
     public Set<String> getTableNames()
     {
         return Set.of(
-                POSTGRES_LOCKS_TABLE_NAME,
-                POSTGRES_STAT_ACTIVITY_TABLE_NAME,
-                POSTGRES_TABLE_SIZES_TABLE_NAME);
+                BasePostgreSqlDialect.POSTGRES_LOCKS_TABLE_NAME,
+                BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_TABLE_NAME,
+                BasePostgreSqlDialect.POSTGRES_TABLE_SIZES_TABLE_NAME);
     }
 }

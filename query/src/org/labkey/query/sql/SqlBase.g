@@ -191,6 +191,7 @@ EXCEPT : 'except';
 EXISTS : 'exists';
 EXPDESCENDANTSOF : 'expdescendantsof';
 EXPANCESTORSOF : 'expancestorsof';
+EXPLINEAGEOF : 'explineageof';
 FALSE : 'false';
 FROM : 'from';
 FULL : 'full';
@@ -423,7 +424,7 @@ fromRange
 
 
 tableMethod
-    : (EXPANCESTORSOF | EXPDESCENDANTSOF) op=OPEN^ {$op.setType(METHOD_CALL);} subQuery CLOSE!
+    : (EXPANCESTORSOF | EXPDESCENDANTSOF | EXPLINEAGEOF) op=OPEN^ {$op.setType(METHOD_CALL);} subQuery (COMMA! expression)? CLOSE!
     ;
 
 
@@ -679,7 +680,7 @@ likeEscape
 
 
 inList
-	: (EXPANCESTORSOF | EXPDESCENDANTSOF) op=OPEN^ {$op.setType(METHOD_CALL);} subQuery CLOSE!
+	: (EXPANCESTORSOF | EXPDESCENDANTSOF | EXPLINEAGEOF) op=OPEN^ {$op.setType(METHOD_CALL);} subQuery (COMMA! expression)? CLOSE!
 	| compoundExpr -> ^(IN_LIST compoundExpr)
 	;
 
