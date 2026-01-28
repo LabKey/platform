@@ -154,7 +154,8 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                                                                                  FROM exp.data
                                                                                  WHERE DataFileURL IS NOT NULL
                                                                                  GROUP BY DataFileUrl) c
-                                                                           WHERE c.count > 1))""");
+                                                                           WHERE c.count > 1))
+                                                     AND datafileurl LIKE '%/sampletype/%'""");
         int count = new SqlExecutor(ExperimentService.get().getSchema().getScope()).execute(sql);
         _log.info("Deleted {} duplicate entries from exp.data", count);
         _log.info("Repopulating file data in exp.data.");
