@@ -304,6 +304,15 @@ Ext4.define('LABKEY.query.SourceEditorPanel', {
         if (this.codeMirror)
             queryText = this.codeMirror.getValue();
         return queryText;
+    },
+
+    setValue : function(queryText)
+    {
+        this.query.queryText = queryText;
+        if (this.codeMirror)
+        {
+            return this.codeMirror.setValue(queryText);
+        }
     }
 });
 
