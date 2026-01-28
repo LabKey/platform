@@ -193,7 +193,7 @@ public class GraphTransportProvider implements EmailTransportProvider
             }
 
             // Fetch new token
-            String tokenUrl = "https://login.microsoftonline.com/" + tenantId + "/oauth2/v2.0/token";
+            String tokenUrl = getOAuth2LoginBaseUrl() + "/" + tenantId + "/oauth2/v2.0/token";
             String form = "grant_type=client_credentials" +
                     "&client_id=" + urlEncode(clientId) +
                     "&client_secret=" + urlEncode(clientSecret) +
@@ -243,7 +243,7 @@ public class GraphTransportProvider implements EmailTransportProvider
         String base64Mime = Base64.getEncoder().encodeToString(baos.toByteArray());
 
         // POST to Graph sendMail endpoint
-        String url = "https://graph.microsoft.com/v1.0/users/" + urlEncode(fromAddress) + "/sendMail";
+        String url = getGraphBaseUrl() + "/v1.0/users/" + urlEncode(fromAddress) + "/sendMail";
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Authorization", "Bearer " + accessToken);
@@ -284,6 +284,22 @@ public class GraphTransportProvider implements EmailTransportProvider
     private String getFromAddress()
     {
         return _properties.getProperty("mail.graph.fromAddress");
+    }
+
+    /**
+     * Base URL for OAuth2 token endpoint. Override in tests to point to a mock server.
+     */
+    protected String getOAuth2LoginBaseUrl()
+    {
+        return "https://login.microsoftonline.com";
+    }
+
+    /**
+     * Base URL for Microsoft Graph API. Override in tests to point to a mock server.
+     */
+    protected String getGraphBaseUrl()
+    {
+        return "https://graph.microsoft.com";
     }
 
     private static String readAll(InputStream is) throws IOException
