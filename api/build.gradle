@@ -128,34 +128,6 @@ dependencies {
         )
     )
 
-    // Microsoft Graph SDK for sending OAuth2-authenticated notification emails
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "com.microsoft.graph:microsoft-graph:${microsoftGraphVersion}",
-            "Microsoft Graph SDK",
-            "Microsoft",
-            "https://github.com/microsoftgraph/msgraph-sdk-java",
-            "MIT License",
-            "https://opensource.org/licenses/MIT",
-            "Library to interact with Microsoft Graph API including sending emails",
-        )
-    )
-
-    // Azure Identity library for OAuth2 token authentication and built-in token management capabilities
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "com.azure:azure-identity:${azureIdentityVersion}",
-            "Azure Identity Library",
-            "Microsoft",
-            "https://github.com/Azure/azure-sdk-for-java/tree/main/sdk/identity/azure-identity",
-            "MIT License",
-            "https://opensource.org/licenses/MIT",
-            "Library to handle OAuth2 authentication with Microsoft’s identity platform",
-        )
-    )
-
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
