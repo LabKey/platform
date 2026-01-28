@@ -4,13 +4,14 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 
 /** Backed by pg_locks view */
 public class PostgresTableSizesTable extends AbstractPostgresAdminOnlyTable
 {
     public PostgresTableSizesTable(@NotNull PostgresUserSchema userSchema)
     {
-        super(PostgresUserSchema.POSTGRES_TABLE_SIZES_TABLE_NAME, userSchema);
+        super(BasePostgreSqlDialect.POSTGRES_TABLE_SIZES_TABLE_NAME, userSchema);
 
         setDescription("Shows info Postgres table sizes");
 

@@ -133,6 +133,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.WorkbookContainerType;
+import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
@@ -2645,7 +2646,7 @@ public class AdminController extends SpringActionController
     {
         public PostgresStatActivityAction()
         {
-            super(PostgresUserSchema.POSTGRES_STAT_ACTIVITY_TABLE_NAME);
+            super(BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_TABLE_NAME);
         }
     }
 
@@ -2654,7 +2655,7 @@ public class AdminController extends SpringActionController
     {
         public PostgresLocksAction()
         {
-            super(PostgresUserSchema.POSTGRES_LOCKS_TABLE_NAME);
+            super(BasePostgreSqlDialect.POSTGRES_LOCKS_TABLE_NAME);
         }
     }
 
@@ -2663,7 +2664,7 @@ public class AdminController extends SpringActionController
     {
         public PostgresTableSizesAction()
         {
-            super(PostgresUserSchema.POSTGRES_TABLE_SIZES_TABLE_NAME);
+            super(BasePostgreSqlDialect.POSTGRES_TABLE_SIZES_TABLE_NAME);
         }
     }
 
