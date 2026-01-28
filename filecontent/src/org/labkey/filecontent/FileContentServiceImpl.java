@@ -170,10 +170,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
                     ExpDataTable expDataTable = ExperimentService.get().createDataTable("data", new ExpSchema(user, c), null);
                     if (expDataTable != null)
-                    {
-                        _log.info("Ensuring file data in container {}", c.getPath());
                         ensureFileDataUnsynchronized(expDataTable);
-                    }
                 }
         );
     }
