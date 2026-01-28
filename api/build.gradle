@@ -1029,6 +1029,97 @@ dependencies {
         )
     )
 
+    BuildUtils.addExternalDependency(
+            project,
+            new ExternalDependency(
+                    "org.springframework.ai:spring-ai-starter-mcp-server-webmvc:${springAiVersion}",
+                    "spring-ai-starter-mcp-server-webmvc",
+                    "spring-ai",
+                    "https://github.com/spring-projects/spring-ai",
+                    ExternalDependency.APACHE_2_LICENSE_NAME,
+                    ExternalDependency.APACHE_2_LICENSE_URL,
+                    "MPC Servlet"
+            )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.springframework.ai:spring-ai-bom:${springAiVersion}",
+            "spring-ai-bom",
+            "spring-ai",
+            "https://github.com/spring-projects/spring-ai",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "MPC Servlet"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.springframework.ai:spring-ai-starter-model-google-genai:${springAiVersion}",
+            "spring-ai-starter-google-genai",
+            "spring-ai",
+            "https://github.com/spring-projects/spring-ai",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "LLM Chat Client integration for Gemini"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.springframework.ai:spring-ai-anthropic:${springAiVersion}",
+            "spring-ai-anthropic",
+            "spring-ai",
+            "https://github.com/spring-projects/spring-ai",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "LLM Chat Client integration for Claude"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.springframework.ai:spring-ai-client-chat:${springAiVersion}",
+            "spring-ai-client-chat",
+            "spring-ai",
+            "https://github.com/spring-projects/spring-ai",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "LLM Chat Client"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.springframework.ai:spring-ai-advisors-vector-store:${springAiVersion}",
+            "spring-ai-advisors-vector-store",
+            "spring-ai",
+            "https://github.com/spring-projects/spring-ai",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Vector store integration"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.springframework.ai:spring-ai-starter-model-google-genai-embedding:${springAiVersion}",
+            "spring-ai-starter-model-google-genai-embedding",
+            "spring-ai",
+            "https://github.com/spring-projects/spring-ai",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Vector store integration"
+        )
+    )
+
     jspImplementation files(project.tasks.jar)
     jspImplementation apache, jackson, spring
 }

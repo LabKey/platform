@@ -43,10 +43,12 @@ import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JunitUtil;
@@ -415,6 +417,52 @@ public class SqlParser
             return null;
         }
     }
+
+    public QueryKey parseIdentifier(String str)
+    {
+        _parseErrors = new ArrayList<>();
+        try (var parser = getAntlrParser())
+        {
+            parser.reset(str, _parseErrors);
+            try
+            {
+                ParserRuleReturnScope scope = parser.dottedIdentifier();
+
+                int last = parser.getTokenStream().LA(1);
+                if (EOF != last || !_parseErrors.isEmpty())
+                    return SchemaKey.fromParts(str);
+
+                LinkedList<CommonTree> q = new LinkedList<>();
+                ArrayList<String> parts = new ArrayList<>();
+                q.add((CommonTree) scope.getTree());
+                while (!q.isEmpty())
+                {
+                    CommonTree t = q.removeFirst();
+                    if (t.getType() == IDENT)
+                        parts.add(t.getText());
+                    else if (t.getType() == QUOTED_IDENTIFIER)
+                        parts.add(LabKeySql.unquoteIdentifier(t.getText()));
+                    else if (t.getType() == DOT)
+                    {
+                        q.addFirst((CommonTree)t.getChildren().get(1));
+                        q.addFirst((CommonTree)t.getChildren().get(0));
+                    }
+                    else
+                        return SchemaKey.fromParts(str);
+                }
+                return SchemaKey.fromParts(parts);
+            }
+            catch (Exception x)
+            {
+                return SchemaKey.fromParts(str);
+            }
+        }
+        catch (Exception x)
+        {
+            return SchemaKey.fromParts(str);
+        }
+    }
+
 
 
     public static String toPrefixString(Tree tree)
@@ -2215,6 +2263,18 @@ public class SqlParser
             assertEquals(1, evalInt("1+(1&2)"));
             assertEquals(2, evalInt("1+1&2"));
             assertEquals(2, evalInt("2&1+1"));
+        }
+
+        @Test
+        public void testParseIdentifier()
+        {
+            assertEquals("\"a\"",  new SqlParser().parseIdentifier("a").toSQLString(true));
+            assertEquals("\"a\"",  new SqlParser().parseIdentifier("\"a\"").toSQLString(true));
+            assertEquals("\"a\".\"b\"",  new SqlParser().parseIdentifier("a.b").toSQLString(true));
+            assertEquals("\"a\".\"b\"",  new SqlParser().parseIdentifier("a.\"b\"").toSQLString(true));
+            assertEquals("\"a\".\"b\"",  new SqlParser().parseIdentifier("\"a\".b").toSQLString(true));
+            assertEquals("\"a\".\"b\"",  new SqlParser().parseIdentifier("\"a\".\"b\"").toSQLString(true));
+            assertEquals("\"a\".\"b\".\"c\"",  new SqlParser().parseIdentifier("a.\"b\".c").toSQLString(true));
         }
 
 
