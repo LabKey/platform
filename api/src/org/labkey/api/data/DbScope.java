@@ -92,7 +92,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 import java.util.RandomAccess;
@@ -3267,7 +3266,7 @@ public class DbScope
         }
 
         @Test
-        public void testLockTimeout() throws Throwable
+        public void testLockTimeout()
         {
             ReentrantLock lock1 = new ReentrantLock();
             ReentrantLock lock2 = new ReentrantLock();
@@ -3386,7 +3385,7 @@ public class DbScope
         }
 
         @Test
-        public void testServerRowLock() throws Throwable
+        public void testServerRowLock()
         {
             final User user = TestContext.get().getUser();
 
@@ -3396,7 +3395,7 @@ public class DbScope
             attemptToDeadlock(lockUser, lockHome, (x) -> {}, PessimisticLockingFailureException.class);
         }
 
-        private void attemptToDeadlock(Lock lock1, Lock lock2, @NotNull Consumer<Transaction> transactionModifier, Class<? extends Throwable> expectedException) throws Throwable
+        private void attemptToDeadlock(Lock lock1, Lock lock2, @NotNull Consumer<Transaction> transactionModifier, Class<? extends Throwable> expectedException)
         {
             final Object notifier = new Object();
             final List<Throwable> result = new ArrayList<>();
@@ -3474,12 +3473,9 @@ public class DbScope
                 }
             }
 
-            assertFalse("No exception from attempted deadlock.", result.isEmpty());
-            Optional<Throwable> unwantedException = result.stream().filter(t -> !expectedException.isAssignableFrom(t.getClass())).findAny();
-            if (unwantedException.isPresent())
-            {
-                throw unwantedException.get();
-            }
+            assertFalse("No exceptions from attempted deadlock.", result.isEmpty());
+            result.stream().filter(t -> !expectedException.isAssignableFrom(t.getClass()))
+                .findAny().ifPresent(t -> { throw new RuntimeException("Deadlock didn't generate expected " + expectedException.getSimpleName(), t); });
         }
 
          @Test
