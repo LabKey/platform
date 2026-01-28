@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.13.0",
+    "@labkey/components": "7.13.2-fb-cancel-requests-54041.1",
     "@labkey/themes": "1.5.0"
   },
   "devDependencies": {
