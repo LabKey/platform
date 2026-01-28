@@ -425,12 +425,6 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
             return PageFlowUtil.staticResourceUrl(getPath().encode());
         }
 
-        @Override
-        public WebdavResolver getResolver()
-        {
-            return ModuleStaticResolverImpl.this;
-        }
-
         Map<String,WebdavResource> getChildren()
         {
             synchronized (_lock)
