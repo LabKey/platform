@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 
 import org.antlr.runtime.CommonToken;
 import org.antlr.runtime.tree.CommonTree;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,6 +35,7 @@ import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.labkey.query.sql.antlr.SqlBaseParser.FALSE;
 import static org.labkey.query.sql.antlr.SqlBaseParser.IDENT;
@@ -109,7 +111,7 @@ abstract public class QNode implements Cloneable
 		return _children;
     }
 
-    public List<QNode> childList()
+    public LinkedList<QNode> childList()
     {
 		return _children;
     }
@@ -373,14 +375,11 @@ abstract public class QNode implements Cloneable
             	c.dump(out, nl + "    |", dumped);
     }
 
-
-
     public void addFieldRefs(Object referant)
     {
         for (QNode child : childList())
             child.addFieldRefs(referant);
     }
-
 
     public void releaseFieldRefs(Object referant)
     {
@@ -398,6 +397,35 @@ abstract public class QNode implements Cloneable
         _hasTransformableAggregate = hasTransformableAggregate;
     }
 
+    static @Nullable QNode child(LinkedList<QNode> children, int index)
+    {
+        return children.size() > index ? children.get(index) : null;
+    }
+
+    static @NotNull QNode childOrThrow(LinkedList<QNode> children, int index)
+    {
+        return Objects.requireNonNull(child(children, index));
+    }
+
+    static QNode first(LinkedList<QNode> children)
+    {
+        return child(children, 0);
+    }
+
+    static @NotNull QNode firstOrThrow(LinkedList<QNode> children)
+    {
+        return childOrThrow(children, 0);
+    }
+
+    static QNode second(LinkedList<QNode> children)
+    {
+        return child(children, 1);
+    }
+
+    static @NotNull QNode secondOrThrow(LinkedList<QNode> children)
+    {
+        return childOrThrow(children, 1);
+    }
 
     public static class TestCase extends Assert
     {

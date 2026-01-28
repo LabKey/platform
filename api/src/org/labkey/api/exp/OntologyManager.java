@@ -1338,6 +1338,7 @@ public class OntologyManager
             String deleteObjPropSql = "DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
             executor.execute(deleteObjPropSql, c);
             String deleteObjSql = "DELETE FROM " + getTinfoObject() + " WHERE Container = ?";
+            _log.info("Deleting from exp.object in container {}", c);
             executor.execute(deleteObjSql, c);
 
             // delete property validator references on property descriptors
