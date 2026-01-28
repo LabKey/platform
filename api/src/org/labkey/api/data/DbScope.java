@@ -92,6 +92,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 import java.util.RandomAccess;
@@ -3270,12 +3271,7 @@ public class DbScope
         {
             ReentrantLock lock1 = new ReentrantLock();
             ReentrantLock lock2 = new ReentrantLock();
-            List<Throwable> throwables = attemptToDeadlock(lock1, lock2, (x) -> ((TransactionImpl)x).setLockTimeout(5, TimeUnit.SECONDS));
-
-            assertFalse("No exceptions from attempted deadlock.", throwables.isEmpty());
-            throwables = throwables.stream().filter(t -> ! (t instanceof DeadlockPreventingException)).toList();
-            if (!throwables.isEmpty())
-                throw throwables.getFirst();
+            attemptToDeadlock(lock1, lock2, (x) -> ((TransactionImpl)x).setLockTimeout(5, TimeUnit.SECONDS), DeadlockPreventingException.class);
 
             assertFalse("Lock 1 is still locked", lock1.isLocked());
             assertFalse("Lock 2 is still locked", lock2.isLocked());
@@ -3397,18 +3393,10 @@ public class DbScope
             Lock lockUser = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoUsersData(), user.getUserId());
             Lock lockHome = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoContainers(), ContainerManager.getHomeContainer().getId());
 
-            List<Throwable> throwables = attemptToDeadlock(lockUser, lockHome, (x) -> {});
-
-            assertFalse("No exceptions from attempted deadlock.", throwables.isEmpty());
-            throwables = throwables.stream().filter(t -> ! (t instanceof PessimisticLockingFailureException)).toList();
-            if (!throwables.isEmpty())
-                throw throwables.getFirst();
+            attemptToDeadlock(lockUser, lockHome, (x) -> {}, PessimisticLockingFailureException.class);
         }
 
-        /**
-         * @return foreground and background thread exceptions
-         */
-        private List<Throwable> attemptToDeadlock(Lock lock1, Lock lock2, @NotNull Consumer<Transaction> transactionModifier)
+        private void attemptToDeadlock(Lock lock1, Lock lock2, @NotNull Consumer<Transaction> transactionModifier, Class<? extends Throwable> expectedException) throws Throwable
         {
             final Object notifier = new Object();
             final List<Throwable> result = new ArrayList<>();
@@ -3485,7 +3473,13 @@ public class DbScope
                     }
                 }
             }
-            return result;
+
+            assertFalse("No exception from attempted deadlock.", result.isEmpty());
+            Optional<Throwable> unwantedException = result.stream().filter(t -> !expectedException.isAssignableFrom(t.getClass())).findAny();
+            if (unwantedException.isPresent())
+            {
+                throw unwantedException.get();
+            }
         }
 
          @Test
