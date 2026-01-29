@@ -649,7 +649,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // For audit purposes, we use the first user as the originator of the message.
         // Would be better to have this be a site admin, but we aren't guaranteed to have such a user
         // for hosted sites. Another option is to use the guest user here, but that's strange.
-        svc.sendMessages(messages, users.get(0), ContainerManager.getRoot());
+        svc.sendMessages(messages, users.getFirst(), ContainerManager.getRoot());
     }
 
     private @Nullable String getValue(Map<StashedStartupProperties, StartupPropertyEntry> map, StashedStartupProperties prop)
@@ -1235,9 +1235,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
             if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
             {
+                // Exclude temp schema to avoid PG exceptions when tables are appearing/disappearing during execution
+                // Note that they can be non-trivial in size.
                 SQLFragment sql = new SQLFragment("SELECT table_schema, SUM(total_size) FROM ");
                 sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
-                sql.append(" GROUP BY table_schema");
+                sql.append(" WHERE table_schema != 'temp' GROUP BY table_schema");
 
                 var schemaSizes = new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap();
                 results.put("databaseSchemaSize", schemaSizes);
@@ -1604,15 +1606,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
             ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
             startURL.setExtraPath(c.getId());
-            WebdavResource doc = new SimpleDocumentResource(c.getParsedPath(),
-                    "link:" + c.getId(),
-                    c.getEntityId(),
-                    "text/plain",
-                    body,
-                    startURL,
-                    UserManager.getUser(c.getCreatedBy()), c.getCreated(),
-                    null, null,
-                    properties);
+            WebdavResource doc = new SimpleDocumentResource(
+                c.getParsedPath(),
+                "link:" + c.getId(),
+                c.getEntityId(),
+                "text/plain",
+                body,
+                startURL,
+                UserManager.getUser(c.getCreatedBy()), c.getCreated(),
+                null, null,
+                properties
+            );
             queue.addResource(doc);
         };
         r.run();
@@ -1682,8 +1686,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 if (supportFolder != null)
                 {
                     MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(supportFolder.getPolicy());
-                    for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
-                        supportPolicy.removeRoleAssignment(guests, assignedRole);
+                    supportPolicy.getAssignedRoles(guests).forEach(assignedRole ->
+                        supportPolicy.removeRoleAssignment(guests, assignedRole)
+                    );
                     SecurityPolicyManager.savePolicy(supportPolicy, User.getAdminServiceUser());
                 }
             }
