@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.labkey.test.util.PermissionsHelper.READER_ROLE;
+import static org.labkey.test.util.PermissionsHelper.TROUBLESHOOTER_ROLE;
 
 /**
  * Regression coverage for attachment parent types in audit log and attachment queries. <a href="https://github.com/LabKey/platform/pull/7231">Related PR</a>
@@ -111,7 +112,7 @@ public class AttachmentsTest extends BaseWebDriverTest
     public void testParentTypesInAttachmentQueries() throws ParseException
     {
         testQueries();
-        impersonateRole("Troubleshooter");
+        impersonateRole(TROUBLESHOOTER_ROLE);
         testQueries();
         stopImpersonating();
     }

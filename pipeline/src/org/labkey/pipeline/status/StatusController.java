@@ -52,6 +52,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
@@ -118,7 +119,7 @@ public class StatusController extends SpringActionController
         ActionURL url = urlProvider(PipelineStatusUrls.class).urlBegin(ContainerManager.getRoot(), false);
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "pipeline", url, ReadPermission.class);
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Diagnostics, "pipelines and tasks",
-                new ActionURL(AnalysisController.InternalListPipelinesAction.class, ContainerManager.getRoot()), ReadPermission.class);
+                new ActionURL(AnalysisController.InternalListPipelinesAction.class, ContainerManager.getRoot()), AdminPermission.class);
     }
 
     @Override

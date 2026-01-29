@@ -7460,25 +7460,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @Marshal(Marshaller.Jackson)
-    @RequiresPermission(AdminPermission.class)
-    public static class RepairExpDataFilesAction extends MutatingApiAction<Object>
-    {
-        @Override
-        public Object execute(Object form, BindException errors)
-        {
-            FileContentService service = FileContentService.get();
-            if (service == null)
-            {
-                errors.reject(ERROR_GENERIC, "No FileContentService found");
-                return new SimpleResponse<>(false, "No FileContentService found");
-            }
-
-            int numDuplicates = service.fixContainerForExpDataFiles(getUser());
-            return success(Map.of("hadRepairs", numDuplicates > 0));
-        }
-    }
-
     @RequiresPermission(UpdatePermission.class)
     public static class UpdateMaterialQueryRowAction extends UserSchemaAction
     {
