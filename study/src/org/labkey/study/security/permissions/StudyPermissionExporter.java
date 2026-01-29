@@ -116,8 +116,9 @@ public class StudyPermissionExporter
 
                     for (Group g : restrictedGroups)
                     {
-                        java.util.List<Role> roles = dsPolicy.getAssignedRoles(g);
-                        Role assignedRole = roles.isEmpty() ? null : roles.get(0);
+                        Role assignedRole = dsPolicy.getAssignedRoles(g)
+                            .findFirst()
+                            .orElse(null);
 
                         boolean writePerm = assignedRole != null && assignedRole.getClass() == EditorRole.class;
                         boolean readPerm = !writePerm && dsPolicy.hasNonInheritedPermission(g, ReadPermission.class);

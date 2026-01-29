@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.jetbrains.annotations.Nullable"%>
 <%@ page import="org.labkey.api.security.Group"%>
 <%@ page import="org.labkey.api.security.SecurityManager"%>
 <%@ page import="org.labkey.api.security.SecurityPolicy"%>
@@ -22,14 +23,14 @@
 <%@ page import="org.labkey.api.security.permissions.ReadPermission"%>
 <%@ page import="org.labkey.api.security.permissions.ReadSomePermission"%>
 <%@ page import="org.labkey.api.security.roles.EditorRole"%>
-<%@ page import="org.labkey.api.security.roles.ReaderRole"%>
+<%@ page import="org.labkey.api.security.roles.ReaderRole" %>
 <%@ page import="org.labkey.api.security.roles.Role" %>
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
-<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.OptionBuilder" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
@@ -42,7 +43,6 @@
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Objects" %>
-<%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -270,8 +270,9 @@ set on the alternate ID dataset will affect who can edit other datasets. Hover o
 
         for (Group g : restrictedGroups)
         {
-            List<Role> roles = dsPolicy.getAssignedRoles(g);
-            Role assignedRole = roles.isEmpty() ? null : roles.get(0);
+            Role assignedRole = dsPolicy.getAssignedRoles(g)
+                .findFirst()
+                .orElse(null);
 
             boolean writePerm = assignedRole != null && assignedRole.getClass() == EditorRole.class;
             boolean readPerm = !writePerm && dsPolicy.hasNonInheritedPermission(g, ReadPermission.class);
