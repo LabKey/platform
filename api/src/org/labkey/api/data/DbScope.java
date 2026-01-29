@@ -3475,7 +3475,10 @@ public class DbScope
 
             assertFalse("No exceptions from attempted deadlock.", result.isEmpty());
             result.stream().filter(t -> !expectedException.isAssignableFrom(t.getClass()))
-                .findAny().ifPresent(t -> { throw new RuntimeException("Deadlock didn't generate expected " + expectedException.getSimpleName(), t); });
+                .findAny().ifPresent(t -> {
+                    throw new AssertionError("Wrong error from deadlock. expected: <" +
+                        expectedException.getSimpleName() + ">, but was <" + t.getClass().getSimpleName() + ">", t);
+                });
         }
 
          @Test
