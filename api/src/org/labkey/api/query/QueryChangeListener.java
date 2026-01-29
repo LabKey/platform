@@ -153,7 +153,7 @@ public interface QueryChangeListener
             if (oldValue.equals(newValue))
                 return;
 
-            QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
+            QueryChangeListener.QueryPropertyChange<?> change = new QueryChangeListener.QueryPropertyChange<>(
                     QueryService.get().getUserSchema(user, container, schemaPath).getQueryDefForTable(newValue),
                     QueryChangeListener.QueryProperty.Name,
                     oldValue,
@@ -169,7 +169,7 @@ public interface QueryChangeListener
             if (oldValue.equals(newValue))
                 return;
 
-            QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
+            QueryChangeListener.QueryPropertyChange<?> change = new QueryChangeListener.QueryPropertyChange<>(
                     null,
                     QueryChangeListener.QueryProperty.SchemaName,
                     oldValue,

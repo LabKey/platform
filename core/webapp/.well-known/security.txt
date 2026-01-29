@@ -1,0 +1,5 @@
+Contact: https://www.labkey.com/about/contact-us/
+Expires: 2030-01-01T00:00:00.000Z
+Preferred-Languages: en
+Policy: https://www.labkey.org/Documentation/wiki-page.view?name=securityFixEvaluation
+Acknowledgements: https://www.labkey.org/Documentation/wiki-page.view?name=securityFixEvaluation
