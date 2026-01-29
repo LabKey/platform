@@ -14,6 +14,6 @@ public class TestSecurityPolicy extends MutableSecurityPolicy
 
     public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
     {
-        return getOwnPermissions(principal).contains(permission);
+        return getOwnPermissions(principal).anyMatch(permClass -> permClass == permission);
     }
 }

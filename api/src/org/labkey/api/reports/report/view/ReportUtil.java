@@ -738,10 +738,10 @@ public class ReportUtil
         {
             MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor(), SecurityPolicyManager.getPolicy(report.getDescriptor(), false));
 
-            List<Role> principalAssignedRoles = policy.getAssignedRoles(principal);
-            if (toAdd && principalAssignedRoles.isEmpty())
+            boolean hasNoAssignedRoles = policy.getAssignedRoles(principal).findAny().isEmpty();
+            if (toAdd && hasNoAssignedRoles)
                 policy.addRoleAssignment(principal, ReaderRole.class);
-            else if (!toAdd && !principalAssignedRoles.isEmpty())
+            else if (!toAdd && !hasNoAssignedRoles)
                 policy.addRoleAssignment(principal, NoPermissionsRole.class);
             
             SecurityPolicyManager.savePolicy(policy, context.getUser());
