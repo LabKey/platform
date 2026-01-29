@@ -205,7 +205,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 26.001;
+        return 26.002;
     }
 
     @Nullable
