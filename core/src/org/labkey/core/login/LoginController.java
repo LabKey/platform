@@ -240,6 +240,17 @@ public class LoginController extends SpringActionController
         }
 
         @Override
+        public ActionURL getRegisterURL(Container c, @Nullable URLHelper returnUrl)
+        {
+            ActionURL url = new ActionURL(RegisterAction.class, c);
+
+            if (null != returnUrl)
+                url.addReturnUrl(returnUrl);
+
+            return url;
+        }
+
+        @Override
         public ActionURL getLogoutURL(Container c)
         {
             return new ActionURL(LogoutAction.class, c);
