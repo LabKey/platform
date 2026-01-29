@@ -28,9 +28,9 @@
 <%@ page import="org.labkey.api.security.roles.Role" %>
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.OptionBuilder" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.SafeToRender" %>
-<%@ page import="org.labkey.api.util.OptionBuilder" %>
 <%@ page import="org.labkey.api.util.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -75,13 +75,10 @@ These permissions control whether pipeline files can be downloaded and updated v
     {
         if (g.isProjectGroup())
             continue;
-        List<Role> assignedRoles = policy.getAssignedRoles(g);
-        Role assignedRole = !assignedRoles.isEmpty() ? assignedRoles.get(0) : null;
-        final HtmlString name;
-        if (g.isUsers())
-            name = HtmlString.of("All Users");
-        else
-            name = h(g.getName());
+        Role assignedRole = policy.getAssignedRoles(g)
+            .findFirst()
+            .orElse(null);
+        HtmlString name = h(g.isUsers() ? "All Users" : g.getName());
         %><tr>
             <td><%=name%><input type="hidden" name="groups[<%=i%>]" value="<%=g.getUserId()%>"></td>
             <td><%=getSelect(i, g.isGuests() ? optionsGuest : optionsFull, assignedRole, policy, pipeRoot)%></td>
@@ -97,8 +94,9 @@ These permissions control whether pipeline files can be downloaded and updated v
     {
         if (!g.isProjectGroup())
             continue;
-        List<Role> assignedRoles = policy.getAssignedRoles(g);
-        Role assignedRole = !assignedRoles.isEmpty() ? assignedRoles.get(0) : RoleManager.getRole(NoPermissionsRole.class);
+        Role assignedRole = policy.getAssignedRoles(g)
+            .findFirst()
+            .orElse(RoleManager.getRole(NoPermissionsRole.class));
         %><tr>
             <td><%=h(g.getName())%><input type="hidden" name="groups[<%=i%>]" value="<%=g.getUserId()%>"></td>
             <td><%=getSelect(i, g.isGuests() ? optionsGuest : optionsFull, assignedRole, policy, pipeRoot)%></td>

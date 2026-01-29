@@ -82,7 +82,7 @@ public class DateUtil
     {
     }
 
-    private static final Logger LOG = LogHelper.getLogger(DateUtil.class, "Fill in description");
+    private static final Logger LOG = LogHelper.getLogger(DateUtil.class, "Date parsing problems");
     private static final Map<Integer, TimeZone> tzCache = new ConcurrentHashMap<>();
     private static final Locale _localeDefault = Locale.getDefault();
     private static final TimeZone _timezoneDefault = TimeZone.getDefault();

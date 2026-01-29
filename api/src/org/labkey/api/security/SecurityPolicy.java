@@ -15,7 +15,6 @@
  */
 package org.labkey.api.security;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,33 +23,36 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedSet;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.TreeSet;
-import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
- * Represents a security policy for a {@link org.labkey.api.security.SecurableResource}. You can get a security policy for a resource
- * using SecurityManager.getPolicy(). Note that this class is immutable once constructed, so it may
- * be used by multiple threads at the same time. To make changes to an existing policy, construct a new
+ * Represents a security policy for a {@link org.labkey.api.security.SecurableResource}. You can get a security policy
+ * for a resource using SecurityManager.getPolicy(). Note that this class is immutable once constructed, so it may be
+ * used by multiple threads at the same time. To make changes to an existing policy, construct a new
  * {@link MutableSecurityPolicy} passing the existing SecurityPolicy instance in the constructor.
- * Note: intentionally does not implement HasPermission, use that interface for things that have a SecurityPolicy
+ * Note: intentionally does not implement HasPermission; use that interface for things that have a SecurityPolicy.
  */
 public class SecurityPolicy
 {
-    private static final Logger LOG = LogManager.getLogger(SecurityPolicy.class);
+    private static final Logger LOG = LogHelper.getLogger(SecurityPolicy.class, "Unregistered permission warnings");
 
     protected final SortedSet<RoleAssignment> _assignments = new TreeSet<>();
     protected final String _resourceId;
@@ -149,43 +151,38 @@ public class SecurityPolicy
     }
 
     /**
-     * Returns only the roles directly assigned to this principal
-     * (not other roles the principal is playing due to group
-     * memberships).
+     * Returns only the roles directly assigned to this principal (not other roles the principal is playing due to group
+     * memberships). Since a single principal can't be directly assigned the same role twice, the returned roles should
+     * be distinct (no duplicates).
      * @param principal The principal
      * @return The roles this principal is directly assigned
      */
     @NotNull
-    public List<Role> getAssignedRoles(@NotNull UserPrincipal principal)
+    public Stream<Role> getAssignedRoles(@NotNull UserPrincipal principal)
     {
-        List<Role> roles = new ArrayList<>();
-        for (RoleAssignment assignment : _assignments)
-        {
-            if (assignment.getUserId() == principal.getUserId())
-                roles.add(assignment.getRole());
-        }
-        return roles;
+        return _assignments.stream()
+            .filter(assignment -> assignment.getUserId() == principal.getUserId())
+            .map(RoleAssignment::getRole);
     }
 
-
     /**
-     * Return set of permissions explicitly granted by this SecurityPolicy, will not inspect any
-     * contextual roles (does not call UserPrincipal.getContextualRoles()). E.g. this will not
-     * reflect any permission granted due to assignment of site-wide roles, and it will not reflect
-     * permission filtering by the impersonation context.
+     * Return stream of permissions explicitly granted by this SecurityPolicy, will not inspect any contextual roles
+     * (does not call UserPrincipal.getContextualRoles()). E.g. this will not reflect any permission granted due to
+     * assignment of site-wide roles, and it will not reflect permission filtering by the impersonation context.
+     * Note: The permissions returned are not distinct, i.e., they may be duplicated. This shouldn't matter for most
+     * cases (e.g., existence checks); if a distinct set of permissions is needed, invoke distinct() or collect to a set.
      */
     @NotNull
-    public Set<Class<? extends Permission>> getOwnPermissions(@NotNull UserPrincipal principal)
+    public Stream<Class<? extends Permission>> getOwnPermissions(@NotNull UserPrincipal principal)
     {
-        return getOwnPermissions(principal.getGroups());
+        return getRoles(principal.getGroups())
+            .flatMap(role -> role.getPermissions().stream());
     }
 
-
     /**
-     * Returns true if this policy is empty (i.e., no role assignments).
-     * This method is useful for distinguishing between a policy that has
-     * been established for a SecurableResource and a cached "miss"
-     * (i.e., no explicit policy defined).
+     * Returns true if this policy is empty (i.e., no role assignments). This method is useful for distinguishing
+     * between a policy that has been established for a SecurableResource and a cached "miss" (i.e., no explicit
+     * policy defined).
      * @return True if this policy is empty
      */
     public boolean isEmpty()
@@ -205,57 +202,81 @@ public class SecurityPolicy
     }
 
     /* Does not inspect any contextual roles, just the roles explicitly given by this SecurityPolicy */
-    @NotNull
-    private Set<Class<? extends Permission>> getOwnPermissions(PrincipalArray principalArray)
-    {
-        Set<Class<? extends Permission>> permClasses = new HashSet<>();
-        handleRoles(principalArray, role -> permClasses.addAll(role.getPermissions()));
-
-        return permClasses;
-    }
-
-    /* Does not inspect any contextual roles, just the roles explicitly given by this SecurityPolicy */
-    @NotNull
-    public Set<Role> getRoles(PrincipalArray principalArray)
-    {
-        Set<Role> roles = new HashSet<>();
-        handleRoles(principalArray, roles::add);
-
-        return roles;
-    }
-
-    /* Does not inspect any contextual roles, just the roles explicitly given by this SecurityPolicy */
     public boolean hasRole(UserPrincipal principal, Class<? extends Role> roleClass)
     {
-        return getRoles(principal.getGroups()).contains(RoleManager.getRole(roleClass));
+        Role targetRole = RoleManager.getRole(roleClass);
+        return getRoles(principal.getGroups())
+            .anyMatch(r -> r.equals(targetRole));
     }
 
-    private void handleRoles(PrincipalArray principalArray, Consumer<Role> consumer)
+    /**
+     * Does not return any contextual roles, just the roles explicitly granted by this SecurityPolicy.
+     * Note: The returned stream may duplicate some roles; if a distinct stream of roles is required, callers should
+     * invoke {@code distinct()} or collect to a set.
+     **/
+    @NotNull
+    public Stream<Role> getRoles(PrincipalArray principalArray)
     {
-        List<Integer> principals = principalArray.getList();
+        return StreamSupport.stream(
+            Spliterators.spliteratorUnknownSize(
+                new RoleIterator(principalArray, getAssignments()),
+                // Not DISTINCT. Not SIZED.
+                // Likely that these characteristics aren't important, since we're not specifying parallel.
+                Spliterator.IMMUTABLE | Spliterator.NONNULL
+            ),
+            // Iterator-based Spliterators don't work well with parallel. Plus the iterator is computationally simple.
+            false
+        );
+    }
 
-        //role assignments are sorted by user id,
-        //as are the principal ids,
-        //so iterate over both of them in one pass
-        Iterator<RoleAssignment> assignmentIter = getAssignments().iterator();
-        RoleAssignment assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
-        int principalsIdx = 0;
+    private static class RoleIterator implements Iterator<Role>
+    {
+        private final Iterator<RoleAssignment> _assignmentIterator;
+        private final List<Integer> _principals;
 
-        while (null != assignment && principalsIdx < principals.size())
+        private RoleAssignment _assignment;
+        private int _principalsIdx = 0;
+        private Role _nextRole = null;
+
+        public RoleIterator(PrincipalArray principals, SortedSet<RoleAssignment> roleAssignments)
         {
-            int principalId = principals.get(principalsIdx);
-            if (assignment.getUserId() == principalId)
-            {
-                Role role = assignment.getRole();
-                if (null != role)
-                    consumer.accept(role);
+            _assignmentIterator = roleAssignments.iterator();
+            _principals = principals.getList();
+            _assignment = _assignmentIterator.hasNext() ? _assignmentIterator.next() : null;
+        }
 
-                assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
+        private @Nullable Role getNextRole()
+        {
+            while (null != _assignment && _principalsIdx < _principals.size())
+            {
+                int principalId = _principals.get(_principalsIdx);
+                if (_assignment.getUserId() == principalId)
+                {
+                    Role role = _assignment.getRole();
+                    _assignment = _assignmentIterator.hasNext() ? _assignmentIterator.next() : null;
+                    if (null != role && role.getClass() != NoPermissionsRole.class)
+                        return role;
+                }
+                else if (_assignment.getUserId() < principalId)
+                    _assignment = _assignmentIterator.hasNext() ? _assignmentIterator.next() : null;
+                else
+                    ++_principalsIdx;
             }
-            else if (assignment.getUserId() < principalId)
-                assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
-            else
-                ++principalsIdx;
+
+            return null;
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            _nextRole = getNextRole();
+            return _nextRole != null;
+        }
+
+        @Override
+        public Role next()
+        {
+            return _nextRole;
         }
     }
 
@@ -345,12 +366,7 @@ public class SecurityPolicy
 
     public boolean hasNonInheritedPermission(@NotNull UserPrincipal principal, Class<? extends Permission> perm)
     {
-        for (Role role : getRoles(new PrincipalArray(List.of(principal.getUserId()))))
-        {
-            if (role.getPermissions().contains(perm))
-                return true;
-        }
-
-        return false;
+        return getRoles(new PrincipalArray(List.of(principal.getUserId())))
+            .anyMatch(role -> role.getPermissions().contains(perm));
     }
 }

@@ -41,6 +41,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
 import java.util.Date;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -77,7 +78,7 @@ public class LimitedUser extends ClonedUser
         @Override
         public Stream<Role> getAssignedRoles(User user, SecurableResource resource)
         {
-            return _roles.stream();
+            return Objects.requireNonNull(_roles).stream();
         }
     }
 
@@ -111,11 +112,11 @@ public class LimitedUser extends ClonedUser
         {
             User user = TestContext.get().getUser();
 
-            testPermissions(new LimitedUser(user), 0, false, false, false, false, false);
-            testPermissions(new LimitedUser(user, ReaderRole.class), 1, true, false, false, false, false);
-            testPermissions(new LimitedUser(user, EditorRole.class), 1, true, true, true, false, false);
-            testPermissions(new LimitedUser(user, FolderAdminRole.class), 1, true, true, true, true, true);
-            testPermissions(new LimitedUser(new LimitedUser(user, FolderAdminRole.class), ReaderRole.class), 1, true, false, false, false, false);
+            testPermissions(new LimitedUser(user), 0, 0, false, false, false, false, false);
+            testPermissions(new LimitedUser(user, ReaderRole.class), 1, 0, true, false, false, false, false);
+            testPermissions(new LimitedUser(user, EditorRole.class), 1, 0, true, true, true, false, false);
+            testPermissions(new LimitedUser(user, FolderAdminRole.class), 1, 0, true, true, true, true, true);
+            testPermissions(new LimitedUser(new LimitedUser(user, FolderAdminRole.class), ReaderRole.class), 1, 0, true, false, false, false, false);
         }
 
         @Test
@@ -123,26 +124,27 @@ public class LimitedUser extends ClonedUser
         {
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
+            Container root = ContainerManager.getRoot();
 
-            testPermissions(ElevatedUser.getElevatedUser(new LimitedUser(user, SubmitterRole.class, null), ReaderRole.class, null), 2, true, true, false, false, false);
-            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user)), 1, false, false, false, false, true);
-            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user, ReaderRole.class)), 2, true, false, false, false, true);
-            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, ElevatedUser.getElevatedUser(new LimitedUser(user, ReaderRole.class), EditorRole.class)), 3, true, true, true, false, true);
+            testPermissions(ElevatedUser.getElevatedUser(new LimitedUser(user, SubmitterRole.class, null), ReaderRole.class, null), 2, 0, true, true, false, false, false);
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user)), 1, 1, false, false, false, false, true);
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user, ReaderRole.class)), 2, 1, true, false, false, false, true);
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, ElevatedUser.getElevatedUser(new LimitedUser(user, ReaderRole.class), EditorRole.class)), 3, 1, true, true, true, false, true);
 
             int groupCount = user.getGroups().size();
             int roleCount = (int)user.getAssignedRoles(c).count();
-            int siteRolesCount = (int)user.getSiteRoles().count();
+            int siteRolesCount = (int)user.getSiteRoles(root).count();
             User elevated = ElevatedUser.getElevatedUser(user);
             assertEquals(groupCount, elevated.getGroups().size());
             assertEquals(roleCount, (int)elevated.getAssignedRoles(c).count());
-            assertEquals(siteRolesCount, (int)elevated.getSiteRoles().count());
+            assertEquals(siteRolesCount, (int)elevated.getSiteRoles(root).count());
         }
 
-        private void testPermissions(User user, int roleCount, boolean hasRead, boolean hasInsert, boolean hasUpdate, boolean hasAdmin, boolean hasCanSeeAuditLog)
+        private void testPermissions(User user, int roleCount, int siteRoleCount, boolean hasRead, boolean hasInsert, boolean hasUpdate, boolean hasAdmin, boolean hasCanSeeAuditLog)
         {
             Container c = JunitUtil.getTestContainer();
             assertEquals(roleCount, (int)user.getAssignedRoles(c).count());
-            assertTrue(user.getSiteRoles().findAny().isEmpty());
+            assertEquals(siteRoleCount, user.getSiteRoles(ContainerManager.getRoot()).count());
             assertFalse(user.hasSiteAdminPermission());
             assertEquals(0, user.getGroups().stream().count());
             assertFalse(user.hasPrivilegedRole());

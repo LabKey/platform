@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
@@ -153,7 +154,7 @@ public class RoleSet
             impersonatingUser.setImpersonationContext(factory.getImpersonationContext());
 
             if (null == project)
-                assertEquals(roles, impersonatingUser.getSiteRoles().collect(Collectors.toSet()));
+                assertEquals(roles, impersonatingUser.getSiteRoles(ContainerManager.getRoot()).collect(Collectors.toSet()));
             else
                 assertEquals(roles, impersonatingUser.getAssignedRoles(project).collect(Collectors.toSet()));
 
@@ -161,7 +162,7 @@ public class RoleSet
             User reconstitutedUser = mapper.readValue(json, User.class);
 
             if (null == project)
-                assertEquals(roles, reconstitutedUser.getSiteRoles().collect(Collectors.toSet()));
+                assertEquals(roles, reconstitutedUser.getSiteRoles(ContainerManager.getRoot()).collect(Collectors.toSet()));
             else
                 assertEquals(roles, reconstitutedUser.getAssignedRoles(project).collect(Collectors.toSet()));
         }
