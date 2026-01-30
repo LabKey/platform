@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -105,7 +106,6 @@ public class ContentSecurityPolicyFilter implements Filter
     public void init(FilterConfig filterConfig) throws ServletException
     {
         LogHelper.getLogger(ContentSecurityPolicyFilter.class, "CSP filter initialization").info("Initializing {}", filterConfig.getFilterName());
-        String violationEndpoint = null;
         Enumeration<String> paramNames = filterConfig.getInitParameterNames();
         while (paramNames.hasMoreElements())
         {
@@ -130,19 +130,25 @@ public class ContentSecurityPolicyFilter implements Filter
                 if ("report".equalsIgnoreCase(s))
                     _type = ContentSecurityPolicyType.Report;
             }
-            else if ("violationEndpoint".equalsIgnoreCase(paramName))
-            {
-                // We want to process this after we've extracted the CSP version from the policy, so stash for now
-                violationEndpoint = paramValue.trim();
-            }
             else
             {
                 throw new ServletException("ContentSecurityPolicyFilter is misconfigured, unexpected parameter name: " + paramName);
             }
         }
 
-        // Generate the Reporting-Endpoints header value now since its value is static
-        _reportingEndpoints = "csp-endpoint=\"" + substituteReportParams(violationEndpoint) + "\"";
+        String baseServerUrl = AppProps.getInstance().getBaseServerUrl();
+        // Add "Reporting-Endpoints" header and "report-to" directive only if https: is configured on this server. This
+        // ensures that browsers fall-back on report-uri if https: isn't configured.
+        if (Strings.CI.startsWith(baseServerUrl, "https://"))
+        {
+            // Generate the Reporting-Endpoints header value now since its value is static. Use an absolute URL so we
+            // always post reports to https:, even when the violating request happens to be http:
+            String violationEndpoint = substituteReportParams(baseServerUrl + "/admin-contentSecurityPolicyReportTo.api?${CSP.REPORT.PARAMS}");
+            if (_cspVersion != null)
+                violationEndpoint += "&cspVersion=" + _cspVersion;
+            _reportingEndpoints = "csp-endpoint=\"" + violationEndpoint + "\"";
+            _policyTemplate = _policyTemplate + " report-to csp-endpoint ;";
+        }
 
         if (CSP_FILTERS.put(_type, this) != null)
             throw new ServletException("ContentSecurityPolicyFilter is misconfigured, duplicate policies of type: " + _type);
@@ -153,13 +159,7 @@ public class ContentSecurityPolicyFilter implements Filter
     private String substituteReportParams(String expression)
     {
         return StringExpressionFactory.create(expression, false, NullValueBehavior.KeepSubstitution)
-            .eval(new HashMap<>()
-            {
-                {{
-                    put(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion()));
-                    put("CSP.VERSION", _cspVersion);
-                }}
-            });
+            .eval(Map.of(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())));
     }
 
     /** Filter out block comments and replace special characters in the provided policy */
@@ -245,8 +245,8 @@ public class ContentSecurityPolicyFilter implements Filter
                 var csp = _policyExpression.eval(map);
                 resp.setHeader(_type.getHeaderName(), csp);
 
-                // report-to requires https. If http, omit the header so we fall back on report-uri.
-                if (request.isSecure())
+                // non-null if https: is configured on this server
+                if (_reportingEndpoints != null)
                     resp.setHeader("Reporting-Endpoints", _reportingEndpoints);
             }
         }

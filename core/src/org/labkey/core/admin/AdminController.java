@@ -12058,43 +12058,44 @@ public class AdminController extends SpringActionController
         }
 
         // Returns true if the report should be forwarded
-        protected boolean handleOneReport(JSONObject jsonObj, HttpServletRequest request, String userAgent, String bodyKey, String blockedUriKey, String documentUriKey)
+        protected boolean handleOneReport(JSONObject jsonObj, HttpServletRequest request, String userAgent, String bodyKey, String blockedUrlKey, String documentUrlKey)
         {
             if (null != jsonObj)
             {
                 JSONObject cspReport = jsonObj.optJSONObject(bodyKey);
                 if (cspReport != null)
                 {
-                    String blockedUri = cspReport.optString(blockedUriKey, null);
+                    String blockedUrl = cspReport.optString(blockedUrlKey, null);
 
                     // Issue 52933 - suppress base-uri problems from a crawler or bot on labkey.org
-                    if (blockedUri != null &&
-                        blockedUri.startsWith("https://labkey.org%2C") &&
-                        blockedUri.endsWith("undefined") &&
+                    if (blockedUrl != null &&
+                        blockedUrl.startsWith("https://labkey.org%2C") &&
+                        blockedUrl.endsWith("undefined") &&
                         !_log.isDebugEnabled())
                     {
                         return false;
                     }
 
-                    String urlString = cspReport.optString(documentUriKey, null);
-                    if (urlString != null)
+                    String documentUrl = cspReport.optString(documentUrlKey, null);
+                    if (documentUrl != null)
                     {
-                        URLHelper urlHelper = null;
+                        URLHelper documentUrlHelper;
                         try
                         {
-                            urlHelper = new URLHelper(urlString);
+                            documentUrlHelper = new URLHelper(documentUrl);
                         }
                         catch (URISyntaxException e)
                         {
                             throw new RuntimeException(e);
                         }
+
                         // URL parameter that tells us to bypass suppression of redundant logging
                         // Used to make sure that tests of CSP logging are deterministic and convenient
-                        boolean bypassCspDedupe = "true".equals(urlHelper.getParameter("bypassCspDedupe"));
-                        String path = urlHelper.deleteParameters().getURIString();
+                        boolean bypassCspDedupe = "true".equals(documentUrlHelper.getParameter("bypassCspDedupe"));
+                        String path = documentUrlHelper.deleteParameters().getURIString();
                         if (null == reports.put(path, Boolean.TRUE) || _log.isDebugEnabled() || bypassCspDedupe)
                         {
-                            // Don't modify forwarded reports; they already have user, ip, user-agent, etc. from the forwarding server.
+                            // Don't modify forwarded reports; they already have user, ip, user_agent, etc. from the forwarding server.
                             boolean forwarded = jsonObj.optBoolean("forwarded", false);
                             if (!forwarded)
                             {
@@ -12121,7 +12122,7 @@ public class AdminController extends SpringActionController
                             }
 
                             var jsonStr = jsonObj.toString(2);
-                            _log.warn("ContentSecurityPolicy warning on page: {}\n{}", urlString, jsonStr);
+                            _log.warn("ContentSecurityPolicy warning on page: {}\n{}", documentUrl, jsonStr);
 
                             boolean shouldForward = !forwarded && OptionalFeatureService.get().isFeatureEnabled(ContentSecurityPolicyFilter.FEATURE_FLAG_FORWARD_CSP_REPORTS);
                             if (shouldForward)
