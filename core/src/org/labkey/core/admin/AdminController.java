@@ -2625,6 +2625,11 @@ public class AdminController extends SpringActionController
         @Override
         protected QueryView createQueryView(QueryExportForm form, BindException errors, boolean forExport, @Nullable String dataRegion) throws Exception
         {
+            if (!getContainer().isRoot())
+            {
+                throw new NotFoundException("Available only in the root container");
+            }
+
             if (!CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
             {
                 throw new NotFoundException("Available only with Postgres as the primary database");
