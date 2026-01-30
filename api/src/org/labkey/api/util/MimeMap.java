@@ -126,12 +126,13 @@ public class MimeMap implements FileNameMap
         public static final MimeType JSON = new MimeType("application/json", false, true);
         public static final MimeType TEXT_JSON = new MimeType("text/json", false, true);
         public static final MimeType CSP = new MimeType("application/csp-report", false, true);
+        public static final MimeType CSP_REPORT = new MimeType("application/reports+json", false, true);
     }
 
     static
     {
         for (MimeType mt : Arrays.asList(MimeType.GIF, MimeType.JPEG, MimeType.PDF, MimeType.PNG, MimeType.SVG, MimeType.HTML, MimeType.PLAIN, MimeType.XML,
-                MimeType.TEXT_JSON, MimeType.JSON, MimeType.CSP))
+                MimeType.TEXT_JSON, MimeType.JSON, MimeType.CSP, MimeType.CSP_REPORT))
         {
             mimeTypeMap.put(mt.getContentType(), mt);
         }

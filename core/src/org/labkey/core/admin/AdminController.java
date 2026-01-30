@@ -44,6 +44,7 @@ import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -190,7 +191,6 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Directive;
-import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -11974,16 +11974,54 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private static final URI LABKEY_ORG_REPORT_ACTION;
+    private static final URI LABKEY_ORG_REPORT_URI_ACTION;
+    private static final URI LABKEY_ORG_REPORT_TO_ACTION;
 
     static
     {
-        LABKEY_ORG_REPORT_ACTION = URI.create("https://www.labkey.org/admin-contentSecurityPolicyReport.api");
+        LABKEY_ORG_REPORT_URI_ACTION = URI.create("https://www.labkey.org/admin-contentSecurityPolicyReport.api");
+        LABKEY_ORG_REPORT_TO_ACTION = URI.create("https://www.labkey.org/admin-contentSecurityPolicyReportTo.api");
+    }
+
+    // report-to endpoints get sent a JSON array of reports. Use Jackson to deserialize these into a List<JSONObject>.
+    public static class ReportToJsonObjects extends ArrayList<JSONObject>
+    {
     }
 
     @RequiresNoPermission
     @CSRF(CSRF.Method.NONE)
-    public static class ContentSecurityPolicyReportAction extends ReadOnlyApiAction<SimpleApiJsonForm>
+    @Marshal(Marshaller.Jackson)
+    public static class ContentSecurityPolicyReportToAction extends BaseContentSecurityPolicyReportAction<ReportToJsonObjects>
+    {
+        @Override
+        public void handleReports(ReportToJsonObjects jsonObjects, HttpServletRequest request, String userAgent) throws IOException, InterruptedException
+        {
+            JSONArray reportsToForward = new JSONArray();
+
+            jsonObjects.forEach(jsonObject -> {
+                if (handleOneReport(jsonObject, request, userAgent, "body", "blockedURL", "documentURL"))
+                    reportsToForward.put(jsonObject);
+            });
+
+            if (!reportsToForward.isEmpty())
+                forwardReports(LABKEY_ORG_REPORT_TO_ACTION, request, reportsToForward.toString(2));
+        }
+    }
+
+    @RequiresNoPermission
+    @CSRF(CSRF.Method.NONE)
+    public static class ContentSecurityPolicyReportAction extends BaseContentSecurityPolicyReportAction<SimpleApiJsonForm>
+    {
+        @Override
+        public void handleReports(SimpleApiJsonForm form, HttpServletRequest request, String userAgent) throws IOException, InterruptedException
+        {
+            JSONObject jsonObject = form.getJsonObject();
+            if (handleOneReport(jsonObject, request, userAgent, "csp-report", "blocked-uri", "document-uri"))
+                forwardReports(LABKEY_ORG_REPORT_URI_ACTION, request, jsonObject.toString(2));
+        }
+    }
+
+    protected abstract static class BaseContentSecurityPolicyReportAction<FORM> extends ReadOnlyApiAction<FORM>
     {
         private static final Logger _log = LogHelper.getLogger(ContentSecurityPolicyReportAction.class, "CSP warnings");
 
@@ -11991,7 +12029,15 @@ public class AdminController extends SpringActionController
         private static final Map<String, Boolean> reports = Collections.synchronizedMap(new LRUMap<>(20));
 
         @Override
-        public Object execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        protected String getCommandClassMethodName()
+        {
+            return "handleReports";
+        }
+
+        abstract public void handleReports(FORM form, HttpServletRequest request, String userAgent) throws IOException, InterruptedException;
+
+        @Override
+        public Object execute(FORM form, BindException errors) throws Exception
         {
             var ret = new JSONObject().put("success", true);
 
@@ -12006,28 +12052,42 @@ public class AdminController extends SpringActionController
             if (PageFlowUtil.isRobotUserAgent(userAgent) && !_log.isDebugEnabled())
                 return ret;
 
-            // NOTE User may be "guest", and will always be guest if being relayed to labkey.org
-            var jsonObj = form.getJsonObject();
+            handleReports(form, request, userAgent);
+
+            return ret;
+        }
+
+        // Returns true if the report should be forwarded
+        protected boolean handleOneReport(JSONObject jsonObj, HttpServletRequest request, String userAgent, String bodyKey, String blockedUriKey, String documentUriKey)
+        {
             if (null != jsonObj)
             {
-                JSONObject cspReport = jsonObj.optJSONObject("csp-report");
+                JSONObject cspReport = jsonObj.optJSONObject(bodyKey);
                 if (cspReport != null)
                 {
-                    String blockedUri = cspReport.optString("blocked-uri", null);
+                    String blockedUri = cspReport.optString(blockedUriKey, null);
 
                     // Issue 52933 - suppress base-uri problems from a crawler or bot on labkey.org
                     if (blockedUri != null &&
-                            blockedUri.startsWith("https://labkey.org%2C") &&
-                            blockedUri.endsWith("undefined") &&
-                            !_log.isDebugEnabled())
+                        blockedUri.startsWith("https://labkey.org%2C") &&
+                        blockedUri.endsWith("undefined") &&
+                        !_log.isDebugEnabled())
                     {
-                        return ret;
+                        return false;
                     }
 
-                    String urlString = cspReport.optString("document-uri", null);
+                    String urlString = cspReport.optString(documentUriKey, null);
                     if (urlString != null)
                     {
-                        URLHelper urlHelper = new URLHelper(urlString);
+                        URLHelper urlHelper = null;
+                        try
+                        {
+                            urlHelper = new URLHelper(urlString);
+                        }
+                        catch (URISyntaxException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
                         // URL parameter that tells us to bypass suppression of redundant logging
                         // Used to make sure that tests of CSP logging are deterministic and convenient
                         boolean bypassCspDedupe = "true".equals(urlHelper.getParameter("bypassCspDedupe"));
@@ -12042,7 +12102,7 @@ public class AdminController extends SpringActionController
                                 String email = null;
                                 // If the user is not logged in, we may still be able to snag the email address from our cookie
                                 if (user.isGuest())
-                                    email = LoginController.getEmailFromCookie(getViewContext().getRequest());
+                                    email = LoginController.getEmailFromCookie(request);
                                 if (null == email)
                                     email = user.getEmail();
                                 jsonObj.put("user", email);
@@ -12050,8 +12110,8 @@ public class AdminController extends SpringActionController
                                 if (ipAddress == null)
                                     ipAddress = request.getRemoteAddr();
                                 jsonObj.put("ip", ipAddress);
-                                if (isNotBlank(userAgent))
-                                    jsonObj.put("user-agent", userAgent);
+                                if (isNotBlank(userAgent) && !jsonObj.has("user_agent"))
+                                    jsonObj.put("user_agent", userAgent);
                                 String labkeyVersion = request.getParameter("labkeyVersion");
                                 if (null != labkeyVersion)
                                     jsonObj.put("labkeyVersion", labkeyVersion);
@@ -12063,47 +12123,52 @@ public class AdminController extends SpringActionController
                             var jsonStr = jsonObj.toString(2);
                             _log.warn("ContentSecurityPolicy warning on page: {}\n{}", urlString, jsonStr);
 
-                            if (!forwarded && OptionalFeatureService.get().isFeatureEnabled(ContentSecurityPolicyFilter.FEATURE_FLAG_FORWARD_CSP_REPORTS))
-                            {
+                            boolean shouldForward = !forwarded && OptionalFeatureService.get().isFeatureEnabled(ContentSecurityPolicyFilter.FEATURE_FLAG_FORWARD_CSP_REPORTS);
+                            if (shouldForward)
                                 jsonObj.put("forwarded", true);
 
-                                // Create an HttpClient
-                                HttpClient client = HttpClient.newBuilder()
-                                    .connectTimeout(Duration.ofSeconds(10))
-                                    .build();
-
-                                // Create the POST request
-                                HttpRequest remoteRequest = HttpRequest.newBuilder()
-                                    .uri(LABKEY_ORG_REPORT_ACTION)
-                                    .header("Content-Type", request.getContentType()) // Use whatever the browser set
-                                    .POST(HttpRequest.BodyPublishers.ofString(jsonObj.toString(2)))
-                                    .build();
-
-                                // Send the request and get the response
-                                HttpResponse<String> response = client.send(remoteRequest, HttpResponse.BodyHandlers.ofString());
-
-                                if (response.statusCode() != 200)
-                                {
-                                    _log.error("ContentSecurityPolicy report forwarding to https://www.labkey.org failed: {}\n{}", response.statusCode(), response.body());
-                                }
-                                else
-                                {
-                                    JSONObject jsonResponse = new JSONObject(response.body());
-                                    boolean success = jsonResponse.optBoolean("success", false);
-                                    if (!success)
-                                    {
-                                        _log.error("ContentSecurityPolicy report forwarding to https://www.labkey.org failed: {}", jsonResponse);
-                                    }
-                                }
-                            }
+                            return shouldForward;
                         }
                     }
                 }
             }
-            return ret;
+
+            return false;
+        }
+
+        protected void forwardReports(URI destination, HttpServletRequest request, String content) throws IOException, InterruptedException
+        {
+            // Create an HttpClient
+            try (HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .build())
+            {
+                // Create the POST request
+                HttpRequest remoteRequest = HttpRequest.newBuilder()
+                    .uri(destination)
+                    .header("Content-Type", request.getContentType()) // Use whatever the browser set
+                    .POST(HttpRequest.BodyPublishers.ofString(content))
+                    .build();
+
+                // Send the request and get the response
+                HttpResponse<String> response = client.send(remoteRequest, HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() != 200)
+                {
+                    _log.error("ContentSecurityPolicy report forwarding to https://www.labkey.org failed: {}\n{}", response.statusCode(), response.body());
+                }
+                else
+                {
+                    JSONObject jsonResponse = new JSONObject(response.body());
+                    boolean success = jsonResponse.optBoolean("success", false);
+                    if (!success)
+                    {
+                        _log.error("ContentSecurityPolicy report forwarding to https://www.labkey.org failed: {}", jsonResponse);
+                    }
+                }
+            }
         }
     }
-
 
     public static class TestCase extends AbstractActionPermissionTest
     {

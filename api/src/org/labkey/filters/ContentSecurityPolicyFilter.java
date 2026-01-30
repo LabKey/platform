@@ -66,6 +66,7 @@ public class ContentSecurityPolicyFilter implements Filter
     private ContentSecurityPolicyType _type = ContentSecurityPolicyType.Enforce;
     private String _policyTemplate = null;
     private String _cspVersion = "Unknown";
+    private String _reportingEndpoints = null;
 
     // Updated after every change to "allowed sources"
     private StringExpression _policyExpression = null;
@@ -104,7 +105,7 @@ public class ContentSecurityPolicyFilter implements Filter
     public void init(FilterConfig filterConfig) throws ServletException
     {
         LogHelper.getLogger(ContentSecurityPolicyFilter.class, "CSP filter initialization").info("Initializing {}", filterConfig.getFilterName());
-
+        String violationEndpoint = null;
         Enumeration<String> paramNames = filterConfig.getInitParameterNames();
         while (paramNames.hasMoreElements())
         {
@@ -115,8 +116,7 @@ public class ContentSecurityPolicyFilter implements Filter
                 String s = filterPolicy(paramValue);
 
                 // Replace REPORT_PARAMETER_SUBSTITUTION now since its value is static
-                s = StringExpressionFactory.create(s, false, NullValueBehavior.KeepSubstitution)
-                    .eval(Map.of(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())));
+                s = substituteReportParams(s);
 
                 _policyTemplate = s;
 
@@ -130,16 +130,36 @@ public class ContentSecurityPolicyFilter implements Filter
                 if ("report".equalsIgnoreCase(s))
                     _type = ContentSecurityPolicyType.Report;
             }
+            else if ("violationEndpoint".equalsIgnoreCase(paramName))
+            {
+                // We want to process this after we've extracted the CSP version from the policy, so stash for now
+                violationEndpoint = paramValue.trim();
+            }
             else
             {
                 throw new ServletException("ContentSecurityPolicyFilter is misconfigured, unexpected parameter name: " + paramName);
             }
         }
 
+        // Generate the Reporting-Endpoints header value now since its value is static
+        _reportingEndpoints = "csp-endpoint=\"" + substituteReportParams(violationEndpoint) + "\"";
+
         if (CSP_FILTERS.put(_type, this) != null)
             throw new ServletException("ContentSecurityPolicyFilter is misconfigured, duplicate policies of type: " + _type);
 
         regeneratePolicyExpression();
+    }
+
+    private String substituteReportParams(String expression)
+    {
+        return StringExpressionFactory.create(expression, false, NullValueBehavior.KeepSubstitution)
+            .eval(new HashMap<>()
+            {
+                {{
+                    put(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion()));
+                    put("CSP.VERSION", _cspVersion);
+                }}
+            });
     }
 
     /** Filter out block comments and replace special characters in the provided policy */
@@ -224,6 +244,10 @@ public class ContentSecurityPolicyFilter implements Filter
                 Map<String, String> map = Map.of(NONCE_SUBST, getScriptNonceHeader(req));
                 var csp = _policyExpression.eval(map);
                 resp.setHeader(_type.getHeaderName(), csp);
+
+                // report-to requires https. If http, omit the header so we fall back on report-uri.
+                if (request.isSecure())
+                    resp.setHeader("Reporting-Endpoints", _reportingEndpoints);
             }
         }
         chain.doFilter(request, response);

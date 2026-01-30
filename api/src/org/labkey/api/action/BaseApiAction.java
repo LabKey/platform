@@ -312,7 +312,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             if (null != contentType)
             {
                 if (MimeMap.DEFAULT.isJsonContentTypeHeader(contentType))
-                    {
+                {
                     _reqFormat = ApiResponseWriter.Format.JSON;
                     return populateJsonForm();
                 }

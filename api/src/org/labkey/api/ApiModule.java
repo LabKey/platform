@@ -316,7 +316,8 @@ public class ApiModule extends CodeOnlyModule
         {
             FilterRegistration registration = servletCtx.addFilter(filterName, new ContentSecurityPolicyFilter());
             registration.addMappingForUrlPatterns(allOf(DispatcherType.class), false, "/*");
-            registration.setInitParameters(Map.of("policy", policy, "disposition", disposition));
+            String violation = servletCtx.getInitParameter("csp.violationEndpoint");
+            registration.setInitParameters(Map.of("policy", policy, "disposition", disposition, "violationEndpoint", violation));
         }
     }
 
