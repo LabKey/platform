@@ -2641,7 +2641,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction
+    // This allows Troubleshooters to GET and POST to the action, supporting export to Excel and script, e.g.
+    @RequiresPermission(TroubleshooterPermission.class)
     public class PostgresStatActivityAction extends AbstractPostgresAction
     {
         public PostgresStatActivityAction()
@@ -2650,7 +2651,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction
+    @RequiresPermission(TroubleshooterPermission.class)
     public class PostgresLocksAction extends AbstractPostgresAction
     {
         public PostgresLocksAction()
@@ -2659,7 +2660,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction
+    @RequiresPermission(TroubleshooterPermission.class)
     public class PostgresTableSizesAction extends AbstractPostgresAction
     {
         public PostgresTableSizesAction()
@@ -3581,16 +3582,6 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public void setViewContext(ViewContext context)
-        {
-            // Troubleshooters don't have read permissions but DataRegion requires it. I don't love poking an elevated
-            // user into the ViewContext, but this is the only way I could get DataRegion to see read permission on
-            // tables that are wrapped by a query (e.g., core.Documents used by DocumentsGroupedByParentType.sql).
-            context.setUser(ElevatedUser.getElevatedUser(context.getUser(), ReaderRole.class));
-            super.setViewContext(context);
-        }
-
-        @Override
         protected QueryView createQueryView(QueryExportForm form, BindException errors, boolean forExport, @Nullable String dataRegion) throws Exception
         {
             QuerySettings qSettings = new QuerySettings(getViewContext(), _schemaName, _queryName);
@@ -3610,7 +3601,8 @@ public class AdminController extends SpringActionController
         abstract protected UserSchema getUserSchema();
     }
 
-    @AdminConsoleAction
+    // This allows Troubleshooters to GET and POST to the action, supporting export to Excel and script, e.g.
+    @RequiresPermission(TroubleshooterPermission.class)
     public class AttachmentsAction extends AbstractAdminQueryAction
     {
         @SuppressWarnings("unused") // Invoked via reflection
@@ -3633,7 +3625,7 @@ public class AdminController extends SpringActionController
     }
 
     @SuppressWarnings("unused") // Linked from core.DocumentsGroupedByParentTypeAdmin
-    @AdminConsoleAction
+    @RequiresPermission(TroubleshooterPermission.class)
     public class AttachmentsForTypeAction extends AbstractAdminQueryAction
     {
         @SuppressWarnings("unused") // Invoked via reflection

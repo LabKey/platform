@@ -59,7 +59,7 @@ public class SelectBuilder extends InputBuilder<SelectBuilder>
     }
 
     /**
-     * Adds multiple options to the &lt;select> elements by supplying a collection of objects. See {@link #addOptions(Stream)}
+     * Adds multiple options to the &lt;select> element by supplying a collection of objects. See {@link #addOptions(Stream)}
      * for more details.
      *
      * @param options A collection of Options, OptionBuilders, Strings, or Objects
@@ -83,24 +83,24 @@ public class SelectBuilder extends InputBuilder<SelectBuilder>
     public SelectBuilder addOptions(@NotNull Stream<?> options)
     {
         options
-                .filter(Objects::nonNull)
-                .map(o -> {
-                    if (o instanceof OptionBuilder.Option)
-                    {
-                        return (OptionBuilder.Option) o;
-                    }
-                    else if (o instanceof OptionBuilder)
-                    {
-                        return ((OptionBuilder) o).build();
-                    }
-                    else
-                    {
-                        String value = o.toString();
-                        return new OptionBuilder(value, value).build();
-                    }
+            .filter(Objects::nonNull)
+            .map(o -> {
+                if (o instanceof OptionBuilder.Option)
+                {
+                    return (OptionBuilder.Option) o;
+                }
+                else if (o instanceof OptionBuilder)
+                {
+                    return ((OptionBuilder) o).build();
+                }
+                else
+                {
+                    String value = o.toString();
+                    return new OptionBuilder(value, value).build();
+                }
 
-                })
-                .forEach(_options::add);
+            })
+            .forEach(_options::add);
 
         return this;
     }
@@ -114,8 +114,8 @@ public class SelectBuilder extends InputBuilder<SelectBuilder>
     public SelectBuilder addOptions(Map<?, String> options)
     {
         return addOptions(
-                options.entrySet().stream()
-                        .map(e -> new OptionBuilder(e.getValue(), e.getKey()).build())
+            options.entrySet().stream()
+                .map(e -> new OptionBuilder(e.getValue(), e.getKey()).build())
         );
     }
 
