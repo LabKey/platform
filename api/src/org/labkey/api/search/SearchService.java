@@ -37,6 +37,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
@@ -53,6 +54,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -347,6 +349,26 @@ public interface SearchService extends SearchMXBean
         public JSONObject jsonData;
         public float score;
 
+        public String fullHref(Path contextPath)
+        {
+            try
+            {
+                ActionURL action = new ActionURL(this.url);
+                Path path = action.getParsedExtraPath();
+                if (path.size() == 1 && GUID.isGUID(action.getParsedExtraPath().getName()))
+                {
+                    Container c = ContainerManager.getForId(action.getParsedExtraPath().getName());
+                    if (null != c)
+                        action.setContainer(c);
+                }
+                return action.getURIString(false);
+            }
+            catch (IllegalArgumentException x)
+            {
+                return normalizeHref(contextPath);
+            }
+        }
+
         public String normalizeHref(Path contextPath)
         {
             Container c = ContainerManager.getForId(container);
@@ -362,18 +384,18 @@ public interface SearchService extends SearchMXBean
 
             try
             {
-                if (null != c && href.startsWith("/"))
-                {
+            if (null != c && href.startsWith("/"))
+            {
                     URLHelper url = new URLHelper(href);
                     Path path = url.getParsedPath();
-                    if (path.startsWith(contextPath))
+                if (path.startsWith(contextPath))
+                {
+                    int pos = path.size() - 2; // look to see if second to last path part is GUID
+                    if (pos>=0 && c.getId().equals(path.get(pos)))
                     {
-                        int pos = path.size() - 2; // look to see if second to last path part is GUID
-                        if (pos>=0 && c.getId().equals(path.get(pos)))
-                        {
-                            path = path.subpath(0,pos)
-                                    .append(c.getParsedPath())
-                                    .append(path.subpath(pos+1,path.size()));
+                        path = path.subpath(0,pos)
+                                .append(c.getParsedPath())
+                                .append(path.subpath(pos+1,path.size()));
                             url.setPath(path);
                             return url.getLocalURIString(false);
                         }
@@ -458,6 +480,7 @@ public interface SearchService extends SearchMXBean
     //
     
     void addSearchCategory(SearchCategory category);
+    List<SearchCategory> getAllCategories();
     List<SearchCategory> getCategories(String categories);
     void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);
 
@@ -725,6 +748,27 @@ public interface SearchService extends SearchMXBean
                 this.offset = options.offset;
                 this.scope = options.scope;
                 this.sortField = options.sortField;
+            }
+
+            public Builder limit(int limit)
+            {
+                this.limit = limit;
+                return this;
+            }
+
+            public Builder scope(SearchScope scope)
+            {
+                this.scope = scope;
+                return this;
+            }
+
+            /** space separated list */
+            public Builder categories(String categories)
+            {
+                var list = SearchService.get().getCategories(categories);
+                if (null != list && !list.isEmpty())
+                this.categories = list;
+                return this;
             }
 
             public SearchOptions build()

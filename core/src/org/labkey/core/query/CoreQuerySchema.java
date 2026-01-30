@@ -142,8 +142,7 @@ public class CoreQuerySchema extends UserSchema
             CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, DATA_STATES_TABLE_NAME,
             VIEW_CATEGORY_TABLE_NAME, MISSING_VALUE_INDICATOR_TABLE_NAME);
 
-        // Don't show troubleshooters the query in the schema browser since query-execute.view requires read permissions
-        if (getUser().hasRootPermission(ApplicationAdminPermission.class))
+        if (getUser().hasRootPermission(TroubleshooterPermission.class))
             names.add(DOCUMENTS_TABLE_NAME);
 
         if (getUser().hasRootPermission(UserManagementPermission.class))
@@ -204,7 +203,6 @@ public class CoreQuerySchema extends UserSchema
             return getMVIndicatorTable(cf);
         if (SHORT_URL_TABLE_NAME.equalsIgnoreCase(name) && ShortUrlTableInfo.canDisplayTable(getUser(), getContainer()))
             return new ShortUrlTableInfo(this);
-        // Allow troubleshooters to view this query from the admin console
         if (DOCUMENTS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(TroubleshooterPermission.class))
             return new DocumentsTable(this, cf);
 
