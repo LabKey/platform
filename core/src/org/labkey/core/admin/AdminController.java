@@ -8529,6 +8529,17 @@ public class AdminController extends SpringActionController
         private String _to;
         private String _body;
         private ConfigurationException _exception;
+        private boolean _success;
+
+        public boolean isSuccess()
+        {
+            return _success;
+        }
+
+        public void setSuccess(boolean success)
+        {
+            _success = success;
+        }
 
         public String getTo()
         {
@@ -8571,6 +8582,8 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class EmailTestAction extends FormViewAction<EmailTestForm>
     {
+        private static final String EMAIL_TEST_SUCCESS_KEY = "EmailTestAction.success";
+
         @Override
         public void validateCommand(EmailTestForm form, Errors errors)
         {
@@ -8595,6 +8608,13 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(EmailTestForm form, boolean reshow, BindException errors)
         {
+            // Check for flash message from previous successful send
+            if (Boolean.TRUE.equals(getViewContext().getSession().getAttribute(EMAIL_TEST_SUCCESS_KEY)))
+            {
+                getViewContext().getSession().removeAttribute(EMAIL_TEST_SUCCESS_KEY);
+                form.setSuccess(true);
+            }
+
             JspView<EmailTestForm> testView = new JspView<>("/org/labkey/core/admin/emailTest.jsp", form);
             testView.setTitle("Send a Test Email");
 
@@ -8627,6 +8647,7 @@ public class AdminController extends SpringActionController
                     try
                     {
                         MailHelper.send(msg, getUser(), getContainer());
+                        getViewContext().getSession().setAttribute(EMAIL_TEST_SUCCESS_KEY, Boolean.TRUE);
                     }
                     catch (ConfigurationException e)
                     {
@@ -8650,9 +8671,7 @@ public class AdminController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(EmailTestForm emailTestForm)
         {
-            ActionURL url = new ActionURL(EmailTestAction.class, getContainer());
-            url.addParameter("success", true);
-            return url;
+            return new ActionURL(EmailTestAction.class, getContainer());
         }
 
         @Override
