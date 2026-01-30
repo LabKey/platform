@@ -896,7 +896,7 @@ public class DomainPropertyImpl implements DomainProperty
 
                     TableInfo table = domainKind.getTableInfo(user, getContainer(), _domain, ContainerFilter.getUnsafeEverythingFilter());
                     if (table != null && _pdOld.getPropertyType() != null)
-                        QueryChangeListener.QueryPropertyChange.handleColumnTypeChange(_pdOld, _pd, SchemaKey.fromString(table.getUserSchema().getName()), table.getName(), user, getContainer());
+                        QueryChangeListener.QueryPropertyChange.handleColumnTypeChange(_pdOld, _pd, SchemaKey.fromString(table.getUserSchema().getSchemaName()), table.getName(), user, getContainer());
                 }
                 else if (propResized)
                     StorageProvisionerImpl.get().resizeProperty(this.getDomain(), this, _pdOld.getScale());
