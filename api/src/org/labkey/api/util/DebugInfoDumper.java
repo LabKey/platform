@@ -412,8 +412,22 @@ public class DebugInfoDumper
         // Schema won't exist on SQLServer
         if (schema != null)
         {
-            writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_TABLE_NAME, "Postgres activity");
-            writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_LOCKS_TABLE_NAME, "Postgres locks");
+            try
+            {
+                writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_LOCKS_TABLE_NAME, "Postgres locks");
+            }
+            catch (RuntimeException e)
+            {
+                logWriter.debug("Failed to write Postgres locks table:" + e);
+            }
+            try
+            {
+                writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_TABLE_NAME, "Postgres activity");
+            }
+            catch (RuntimeException e)
+            {
+                logWriter.debug("Failed to write Postgres activity table:" + e);
+            }
         }
     }
 
@@ -434,7 +448,7 @@ public class DebugInfoDumper
                 PrintWriter printWriter = new PrintWriter(stringWriter);
                 writer.write(printWriter);
                 printWriter.flush();
-                logWriter.debug("\n" + stringWriter.toString());
+                logWriter.debug("\n" + stringWriter);
             }
             catch (IOException e)
             {

@@ -80,7 +80,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.mbean.SearchMXBean;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
@@ -114,7 +113,6 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
@@ -1428,7 +1426,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         try
         {
             TopDocs docs = searcher.search(query, 1);
-            return docs.totalHits.value;
+            return docs.totalHits.value(); // TODO: This may not be exact, could be a lower bound. See totalHits.relation().
         }
         finally
         {
@@ -1842,7 +1840,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         }
 
         result.offset = offset;
-        result.totalHits = topDocs.totalHits.value;
+        result.totalHits = topDocs.totalHits.value(); // TODO: This may not be exact, could be a lower bound. See totalHits.relation().
         result.hits = ret;
     }
 
