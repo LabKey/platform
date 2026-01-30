@@ -13,7 +13,7 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "7.13.2-fb-cancel-requests-54041.4"
+    "@labkey/components": "7.13.2-fb-cancel-requests-54041.5"
   },
   "devDependencies": {
     "@labkey/build": "8.7.0",
