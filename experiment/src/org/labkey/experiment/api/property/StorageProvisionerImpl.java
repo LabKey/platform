@@ -587,14 +587,13 @@ public class StorageProvisionerImpl implements StorageProvisioner
                     var newPd = dpi._pd;
                     if (oldPd.getPropertyType() == PropertyType.MULTI_CHOICE && TEXT_CHOICE_CONCEPT_URI.equals(newPd.getConceptURI()))
                     {
+                        var selectColumnName = prop.getPropertyDescriptor().getLegalSelectName(scope.getSqlDialect());
                         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ")
-                                .appendIdentifier(kind.getStorageSchemaName())
-                                .append(".")
-                                .appendIdentifier(domain.getStorageTableName())
+                                .appendDottedIdentifiers(kind.getStorageSchemaName(), domain.getStorageTableName())
                                 .append(" WHERE ")
-                                .appendIdentifier(prop.getPropertyDescriptor().getStorageColumnName())
+                                .appendIdentifier(selectColumnName)
                                 .append(" IS NOT NULL AND array_length(")
-                                .appendIdentifier(prop.getPropertyDescriptor().getStorageColumnName())
+                                .appendIdentifier(selectColumnName)
                                 .append(", 1) > 1");
                         long count = new SqlSelector(scope, sql).getObject(Long.class);
                         if (count > 0)
