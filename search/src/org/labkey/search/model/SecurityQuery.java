@@ -27,11 +27,13 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryVisitor;
 import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.Scorer;
+import org.apache.lucene.search.ScorerSupplier;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.util.BitSetIterator;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.FixedBitSet;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
@@ -96,7 +98,6 @@ class SecurityQuery extends Query
 
             private boolean isReadable(String containerId, String categories)
             {
-//                return _containerIds.containsKey(containerId);
                 if (StringUtils.isEmpty(categories) || !_categoryContainers.containsKey(categories))
                     return _containerIds.containsKey(containerId);
                 else
@@ -104,56 +105,87 @@ class SecurityQuery extends Query
             }
 
             @Override
-            public Scorer scorer(LeafReaderContext context) throws IOException
+            public ScorerSupplier scorerSupplier(LeafReaderContext context)
             {
-                SearchService.SEARCH_PHASE currentPhase = _iTimer.getCurrentPhase();
-                _iTimer.setPhase(SearchService.SEARCH_PHASE.applySecurityFilter);
-
-                LeafReader reader = context.reader();
-                int maxDoc = reader.maxDoc();
-                FixedBitSet bits = new FixedBitSet(maxDoc);
-
-                BinaryDocValues securityContextDocValues = reader.getBinaryDocValues(FIELD_NAME.securityContext.name());
-
-                try
+                return new ScorerSupplier()
                 {
-                    int doc;
+                    private final LeafReader _reader;
+                    private final @Nullable BinaryDocValues _securityContextDocValues;
 
-                    // Can be null, if no documents (e.g., shortly after bootstrap or clear index)
-                    if (null != securityContextDocValues)
                     {
-                        while (NO_MORE_DOCS != (doc = securityContextDocValues.nextDoc()))
+                        SearchService.SEARCH_PHASE currentPhase = _iTimer.getCurrentPhase();
+
+                        try
                         {
-                            BytesRef bytesRef = securityContextDocValues.binaryValue();
-                            String securityContext = StringUtils.trimToNull(bytesRef.utf8ToString());
-
-                            final String containerId;
-                            final String resourceId;
-                            final String categories;
-                            String[] parts = StringUtils.split(securityContext, "|");
-                            // SecurityContext is usually just a container ID and a string of categories, but in some cases it adds a resource ID.
-                            containerId = parts[0];
-                            if (parts.length > 1)
-                                categories = parts[1];
-                            else
-                                categories = null;
-                            if (parts.length > 2)
-                                resourceId = parts[2];
-                            else
-                                resourceId = null;
-
-                            // Must have read permission on the container (always). Must also have read permissions on resource ID, if non-null.
-                            if (isReadable(containerId, categories) && (null == resourceId || canReadResource(resourceId, containerId)))
-                                bits.set(doc);
+                            _iTimer.setPhase(SearchService.SEARCH_PHASE.applySecurityFilter);
+                            _reader = context.reader();
+                            _securityContextDocValues = _reader.getBinaryDocValues(FIELD_NAME.securityContext.name());
+                        }
+                        catch (IOException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                        finally
+                        {
+                            _iTimer.setPhase(currentPhase);
                         }
                     }
 
-                    return new ConstantScoreScorer(this, score(), scoreMode, new BitSetIterator(bits, bits.approximateCardinality()));
-                }
-                finally
-                {
-                    _iTimer.setPhase(currentPhase);
-                }
+                    @Override
+                    public Scorer get(long leadCost) throws IOException
+                    {
+                        SearchService.SEARCH_PHASE currentPhase = _iTimer.getCurrentPhase();
+
+                        try
+                        {
+                            _iTimer.setPhase(SearchService.SEARCH_PHASE.applySecurityFilter);
+                            int maxDoc = _reader.maxDoc();
+                            FixedBitSet bits = new FixedBitSet(maxDoc);
+                            int doc;
+
+                            // Can be null, if no documents (e.g., shortly after bootstrap or clear index)
+                            if (null != _securityContextDocValues)
+                            {
+                                while (NO_MORE_DOCS != (doc = _securityContextDocValues.nextDoc()))
+                                {
+                                    BytesRef bytesRef = _securityContextDocValues.binaryValue();
+                                    String securityContext = StringUtils.trimToNull(bytesRef.utf8ToString());
+
+                                    final String containerId;
+                                    final String resourceId;
+                                    final String categories;
+                                    String[] parts = StringUtils.split(securityContext, "|");
+                                    // SecurityContext is usually just a container ID and a string of categories, but in some cases it adds a resource ID.
+                                    containerId = parts[0];
+                                    if (parts.length > 1)
+                                        categories = parts[1];
+                                    else
+                                        categories = null;
+                                    if (parts.length > 2)
+                                        resourceId = parts[2];
+                                    else
+                                        resourceId = null;
+
+                                    // Must have read permission on the container (always). Must also have read permissions on resource ID, if non-null.
+                                    if (isReadable(containerId, categories) && (null == resourceId || canReadResource(resourceId, containerId)))
+                                        bits.set(doc);
+                                }
+                            }
+
+                            return new ConstantScoreScorer(score(), scoreMode, new BitSetIterator(bits, bits.approximateCardinality()));
+                        }
+                        finally
+                        {
+                            _iTimer.setPhase(currentPhase);
+                        }
+                    }
+
+                    @Override
+                    public long cost()
+                    {
+                        return null == _securityContextDocValues ? 0 : _securityContextDocValues.cost();
+                    }
+                };
             }
         };
     }
