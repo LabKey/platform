@@ -22,7 +22,7 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 public class SearchMcp implements McpService.McpImpl
 {
     final static String mdSearchHelp = """
-             The search functionality is implmeneted by Lucene.  The query syntax is
+             The search functionality is implemented by Lucene. The query syntax is
             
              Core Syntax Elements
             
