@@ -16,7 +16,7 @@
     "@labkey/components": "7.14.1-fb-package-updates-0226.0"
   },
   "devDependencies": {
-    "@labkey/build": "8.7.0",
+    "@labkey/build": "8.7.1-fb-package-updates-0226.0",
     "@labkey/test": "1.10.0",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.27",
