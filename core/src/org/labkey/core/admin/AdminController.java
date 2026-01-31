@@ -883,6 +883,13 @@ public class AdminController extends SpringActionController
             return new ActionURL(ConfigureSystemMaintenanceAction.class, ContainerManager.getRoot());
         }
 
+        @Override
+        public ActionURL getCspReportToURL(@NotNull String cspVersion)
+        {
+            return new ActionURL(ContentSecurityPolicyReportToAction.class, ContainerManager.getRoot())
+                .addParameter("cspVersion", cspVersion);
+        }
+
         public static ActionURL getDeprecatedFeaturesURL()
         {
             return new ActionURL(OptionalFeaturesAction.class, ContainerManager.getRoot()).addParameter("type", FeatureType.Deprecated.name());
