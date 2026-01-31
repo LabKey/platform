@@ -53,6 +53,7 @@ public class ContentSecurityPolicyFilter implements Filter
     private static final String REPORT_PARAMETER_SUBSTITUTION = "CSP.REPORT.PARAMS";
     private static final String UPGRADE_INSECURE_REQUESTS_SUBSTITUTION = "UPGRADE.INSECURE.REQUESTS";
     private static final String HEADER_NONCE = "org.labkey.filters.ContentSecurityPolicyFilter#NONCE";  // needs to match PageConfig.HEADER_NONCE
+    private static final String CSP_ENDPOINT_NAME = "csp-endpoint";
 
     private static final Map<ContentSecurityPolicyType, ContentSecurityPolicyFilter> CSP_FILTERS = new CopyOnWriteHashMap<>();
 
@@ -143,11 +144,12 @@ public class ContentSecurityPolicyFilter implements Filter
         {
             // Generate the Reporting-Endpoints header value now since its value is static. Use an absolute URL so we
             // always post reports to https:, even when the violating request happens to be http:
-            String violationEndpoint = substituteReportParams(baseServerUrl + "/admin-contentSecurityPolicyReportTo.api?${CSP.REPORT.PARAMS}");
+            ActionURL violationUrl = new ActionURL("admin-contentSecurityPolicyReportTo.api");
+            violationUrl = new ActionURL(substituteReportParams(violationUrl + "?${CSP.REPORT.PARAMS}"));
             if (_cspVersion != null)
-                violationEndpoint += "&cspVersion=" + _cspVersion;
-            _reportingEndpoints = "csp-endpoint=\"" + violationEndpoint + "\"";
-            _policyTemplate = _policyTemplate + " report-to csp-endpoint ;";
+                violationUrl.addParameter("cspVersion", _cspVersion);
+            _reportingEndpoints = CSP_ENDPOINT_NAME + "=\"" + violationUrl.getURIString() + "\"";
+            _policyTemplate = _policyTemplate + " report-to " + CSP_ENDPOINT_NAME + " ;";
         }
 
         if (CSP_FILTERS.put(_type, this) != null)
