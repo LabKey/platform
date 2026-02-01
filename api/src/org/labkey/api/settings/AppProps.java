@@ -51,7 +51,6 @@ public interface AppProps
     String QUANTITY_COLUMN_SUFFIX_TESTING = "quantityColumnSuffixTesting";
     String GENERATE_CONTROLLER_FIRST_URLS = "generateControllerFirstUrls";
     String REJECT_CONTROLLER_FIRST_URLS = "rejectControllerFirstUrls";
-    String MULTI_VALUE_TEXT_CHOICE = "multiChoiceDataType";
 
     String UNKNOWN_VERSION = "Unknown Release Version";
 
