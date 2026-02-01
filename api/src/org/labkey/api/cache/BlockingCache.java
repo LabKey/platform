@@ -99,7 +99,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
         if (null == loader)
             loader = _loader;
 
-        try (var ignored = DebugInfoDumper.pushThreadDumpContext(this.getClass().getSimpleName() + ".get(" + key + ")"))
+        try (var _ = DebugInfoDumper.pushThreadDumpContext(this.getClass().getSimpleName() + ".get(" + key + ")"))
         {
             synchronized (loader == null ? _cache : loader.getSyncObject(_cache))
             {

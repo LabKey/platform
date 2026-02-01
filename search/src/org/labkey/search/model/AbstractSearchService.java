@@ -52,6 +52,7 @@ import org.labkey.api.util.MultisetRateAccumulator;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
@@ -228,7 +229,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 }
             };
             addItem(i);
-            final Item r = new Item(this, (q) -> queueItem(i), pri, null);
+            final Item r = new Item(this, (_) -> queueItem(i), pri, null);
             queueItem(r);
         }
 
@@ -419,7 +420,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         return "Search item: " + i._id + " (task: " + taskDescription + ")";
     }
 
-    final Item _commitItem = new Item(null, (q) -> {}, PRIORITY.commit, null);
+    final Item _commitItem = new Item(null, (_) -> {}, PRIORITY.commit, null);
 
 
     @Override
@@ -476,7 +477,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public final void deleteContainer(final String id)
     {
-        Consumer<TaskIndexingQueue> r = (q) -> {
+        Consumer<TaskIndexingQueue> r = (_) -> {
             deleteIndexedContainer(id);
             synchronized (_commitLock)
             {
@@ -519,7 +520,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public void reindexContainerFiles(Container c)
     {
         //Create new runnable instead of using existing methods so they can be run within the same job.
-        Consumer<TaskIndexingQueue> r = (q) -> {
+        Consumer<TaskIndexingQueue> r = (_) -> {
             //Remove old items
             clearIndexedFileSystemFiles(c);
 
@@ -728,7 +729,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         });
         // The indexer uses multiple threads for different types of work. Queue a Runnable first, and when it executes,
         // queue an Item to ensure all queues are cleared
-        task.addRunnable(null, priority, (q) -> {
+        task.addRunnable(null, priority, (_) -> {
             logQueueStatus("drainQueue's Runnable.run()");
             task.addNoop(priority);
         });
@@ -872,7 +873,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             if (resourceResolverKeyIdentifier == null)
                 continue;
             resolverIdentifiers
-                    .computeIfAbsent(resourceResolverKeyIdentifier.first, (k) -> new HashMap<>())
+                    .computeIfAbsent(resourceResolverKeyIdentifier.first, (_) -> new HashMap<>())
                     .put(resourceResolverKeyIdentifier.second, resourceIdentifier);
         }
 
@@ -1085,7 +1086,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             Item i = null;
             boolean success = true;
-            DebugInfoDumper._PopAutoCloseable threadDumpContext = null;
+            QuietCloser threadDumpContext = null;
 
             try
             {
@@ -1097,7 +1098,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     threadDumpContext = DebugInfoDumper.pushThreadDumpContext(getSearchThreadDumpContext(item));
                     while (!_shuttingDown && _itemQueue.size() > 1000)
                     {
-                        try {Thread.sleep(100);}catch(InterruptedException ignored){}
+                        try {Thread.sleep(100);}catch(InterruptedException _){}
                     }
 
                     Container c;
@@ -1259,7 +1260,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         Item i = null;
         boolean success = false;
-        DebugInfoDumper._PopAutoCloseable threadDumpContext = null;
+        QuietCloser threadDumpContext = null;
         try
         {
             i = getItemToIndex();
@@ -1540,7 +1541,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             history.addAll(_history);
         }
 
-        IndexerRateAccumulator historyAccumulator = new IndexerRateAccumulator(history.get(history.size() - 1).getStart());
+        IndexerRateAccumulator historyAccumulator = new IndexerRateAccumulator(history.getLast().getStart());
         SimpleDateFormat f = new SimpleDateFormat("h:mm a");
         StringBuilder hourly = new StringBuilder();
         hourly.append("<table>");
