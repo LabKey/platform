@@ -518,6 +518,37 @@ public class DebugInfoDumper
     }
 
     /**
+     * Returns formatted extra stack context lines for the given thread, suitable for display in thread dumps.
+     * Returns an empty list if the thread has no extra context.
+     */
+    public static List<String> getFormattedExtraContext(Thread thread)
+    {
+        var extraInfo = _threadDumpExtraContext.get(thread);
+        if (extraInfo == null || extraInfo.isEmpty())
+            return List.of();
+
+        List<String> result = new ArrayList<>();
+        result.add("extra stack context (may not match stacktrace if thread is not blocked)");
+        var messages = extraInfo.toArray(new ThreadExtraContext[0]);
+        for (int i = messages.length - 1; i >= 0; i--)
+        {
+            result.add("\t" + messages[i].context.replace('\n', ' ') + "\tage: " + (System.currentTimeMillis() - messages[i].startTime) + "ms");
+            var messageStack = messages[i].stack();
+            if (messageStack != null)
+            {
+                for (int j = 0, count = 0; j < messageStack.length && count < 4; j++)
+                {
+                    if (skipMethods.contains(messageStack[j].getMethodName()))
+                        continue;
+                    result.add(String.format("%3d\t\t%s", messageStack.length - j, messageStack[j].toString()));
+                    count++;
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
      * Writes the current set of thread stacks once to the supplied logger.
      */
     public static synchronized void dumpThreads(Logger log)

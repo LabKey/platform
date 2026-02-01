@@ -22,6 +22,8 @@
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.data.TransactionFilter" %>
+<%@ page import="org.labkey.api.util.DebugInfoDumper" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.ThreadsBean> me = HttpView.currentView();
@@ -69,6 +71,11 @@ for (Thread t : bean.threads)
     for (StackTraceElement e : bean.stackTraces.get(t))
         {
             %><%= h("    at " + e  + "\n") %><%
+        }
+        List<String> extraContext = DebugInfoDumper.getFormattedExtraContext(t);
+        for (String line : extraContext)
+        {
+            %><%= h(line + "\n") %><%
         }
     }
     catch (Exception x)

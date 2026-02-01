@@ -41,6 +41,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
@@ -411,6 +412,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     }
 
+
+    private static String getSearchThreadDumpContext(Item i)
+    {
+        String taskDescription = i._task != null ? i._task.getDescription() : "unknown";
+        return "Search item: " + i._id + " (task: " + taskDescription + ")";
+    }
 
     final Item _commitItem = new Item(null, (q) -> {}, PRIORITY.commit, null);
 
@@ -1078,6 +1085,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             Item i = null;
             boolean success = true;
+            DebugInfoDumper._PopAutoCloseable threadDumpContext = null;
 
             try
             {
@@ -1086,6 +1094,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 if (null != i)
                 {
                     final Item item = i;
+                    threadDumpContext = DebugInfoDumper.pushThreadDumpContext(getSearchThreadDumpContext(item));
                     while (!_shuttingDown && _itemQueue.size() > 1000)
                     {
                         try {Thread.sleep(100);}catch(InterruptedException ignored){}
@@ -1149,6 +1158,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
             finally
             {
+                if (threadDumpContext != null)
+                    threadDumpContext.close();
                 if (null != i)
                 {
                     try
@@ -1248,6 +1259,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         Item i = null;
         boolean success = false;
+        DebugInfoDumper._PopAutoCloseable threadDumpContext = null;
         try
         {
             i = getItemToIndex();
@@ -1267,6 +1279,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 return;
             }
 
+            threadDumpContext = DebugInfoDumper.pushThreadDumpContext(getSearchThreadDumpContext(i));
             WebdavResource r = i.getResource();
             if (null == r || !r.exists())
             {
@@ -1331,6 +1344,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             try
             {
+                if (threadDumpContext != null)
+                    threadDumpContext.close();
                 if (null != i)
                     i.complete(success);
             }

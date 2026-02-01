@@ -19,6 +19,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -94,7 +95,6 @@ import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
-import org.labkey.api.util.FileStream.FileFileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
@@ -393,7 +393,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
         // In dev mode, put the full-text-search index in a Lucene-version-specific subfolder (/Lucene8, /Lucene9, /Lucene10, etc.).
         // This prevents full index rebuilds when switching between branches with different major Lucene versions.
-        return AppProps.getInstance().isDevMode() ? new File(substitutedDirectory, "Lucene" + Version.LATEST.major) : substitutedDirectory;
+        return AppProps.getInstance().isDevMode() ? FileUtil.appendName(substitutedDirectory, "Lucene" + Version.LATEST.major) : substitutedDirectory;
     }
 
     // Create a Map of system properties with file-system escaped values
@@ -615,6 +615,45 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     @Override
     public void deleteIndex(String reason)
     {
+        if (_threadsInitialized && !_shuttingDown)
+        {
+            // Queue the work to run on the indexing thread to avoid deadlocks with concurrent
+            // database operations (e.g., truncating lastIndexed while indexing threads are querying)
+            _log.info("Queuing deletion of full-text search index because: " + reason);
+            final CountDownLatch latch = new CountDownLatch(1);
+            _IndexTask task = createTask("DeleteIndex", new TaskListener()
+            {
+                @Override
+                public void success()
+                {
+                    latch.countDown();
+                }
+
+                @Override
+                public void indexError(Resource r, Throwable t)
+                {
+                    latch.countDown();
+                }
+            });
+            task.addRunnable(null, PRIORITY.delete, (_) -> deleteIndexImpl(reason));
+            task.setReady();
+            try
+            {
+                latch.await();
+            }
+            catch (InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
+            }
+        }
+        else
+        {
+            deleteIndexImpl(reason);
+        }
+    }
+
+    private void deleteIndexImpl(String reason)
+    {
         _log.info("Deleting full-text search index and clearing last indexed because: " + reason);
         if (isIndexManagerReady())
             closeIndex();
@@ -747,7 +786,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                     metadata.add(Metadata.CONTENT_ENCODING, StringUtilsLabKey.DEFAULT_CHARSET.name());
 
                 handler = _BodyContentHandler.create();     // no write limit on the handler -- rely on file size check to limit content
-                parse(r, fs, is, handler, metadata, isTooBig(fs, type));
+                parse(r, is, handler, metadata, isTooBig(fs, type));
 
                 if (StringUtils.isBlank(title))
                     title = metadata.get(TikaCoreProperties.TITLE);
@@ -950,9 +989,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                 {
                     fs.closeInputStream();
                 }
-                catch (IOException x)
-                {
-                }
+                catch (IOException _) {}
             }
         }
 
@@ -1038,7 +1075,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             // Example: Extending LabKey.thmx
             logAsWarning(r, "Can't parse this document type", rootMessage);
         }
-        else if ((topMessage.startsWith("Invalid Image Resource Block Signature Found") || topMessage.startsWith("PSD/PSB magic signature invalid") /* test.fasta.psd */) && StringUtils.endsWithIgnoreCase(r.getName(), ".psd"))
+        else if ((topMessage.startsWith("Invalid Image Resource Block Signature Found") || topMessage.startsWith("PSD/PSB magic signature invalid") /* test.fasta.psd */) && Strings.CI.endsWith(r.getName(), ".psd"))
         {
             // Tika doesn't like some .psd files (e.g., files included in ExtJs 3.4.1)
             logAsWarning(r, "Can't parse this PSD file", rootMessage);
@@ -1072,7 +1109,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         {
             logAsWarning(r, "Can't decompress this file", rootMessage);
         }
-        else if (StringUtils.endsWithIgnoreCase(r.getName(), ".chm"))
+        else if (Strings.CI.endsWith(r.getName(), ".chm"))
         {
             // ChmExtractor throws exceptions for many .chm (compressed HTML) files that it attempts to parse, so we just
             // suppress the lot of them. Some of the messages include:
@@ -1141,12 +1178,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
     private void logBadDocument(String problem, WebdavResource r)
     {
-        _log.error(problem);
+        _log.error(problem + " for " + r.getDocumentId());
         throw new IllegalStateException(problem);
     }
 
     // parse the document of the resource, not that parse() and accept() should agree on what is parsable
-    private void parse(WebdavResource r, FileStream fs, InputStream is, ContentHandler handler, Metadata metadata, boolean tooBig) throws IOException, SAXException, TikaException
+    private void parse(WebdavResource r, InputStream is, ContentHandler handler, Metadata metadata, boolean tooBig) throws IOException, SAXException, TikaException
     {
         if (!is.markSupported())
             is = new BufferedInputStream(is);
@@ -1566,7 +1603,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             processSearchResult(0, 1, topDocs, searcher, result);
             if (result.hits.size() != 1)
                 return null;
-            return result.hits.get(0);
+            return result.hits.getFirst();
         });
     }
 
@@ -1890,9 +1927,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         {
             map.put("Indexed Documents", getNumDocs());
         }
-        catch (IOException x)
-        {
-        }
+        catch (IOException _) {}
 
         map.putAll(super.getIndexerStats());
         return map;
@@ -1973,13 +2008,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
                     if (strict)
                     {
-                        lssi.parse(resource, new FileFileStream(file), is, handler, metadata, false);
+                        lssi.parse(resource, is, handler, metadata, false);
                     }
                     else
                     {
                         try
                         {
-                            lssi.parse(resource, new FileFileStream(file), is, handler, metadata, false);
+                            lssi.parse(resource, is, handler, metadata, false);
                         }
                         catch (Throwable t)
                         {
@@ -2055,7 +2090,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
                 try (InputStream is = new FileInputStream(file))
                 {
-                    lssi.parse(resource, new FileFileStream(file), is, handler, metadata, tooBig);
+                    lssi.parse(resource, is, handler, metadata, tooBig);
 
                     String body = handler.toString();
                     assertTrue("Body for oversized file parsed unexpectedly: " + file.getName(), StringUtils.isBlank(body));
@@ -2137,7 +2172,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         public void testTika()
         {
             File root = new File("c:\\temp");
-            Predicate<WebdavResource> fileFilter = webdavResource -> StringUtils.endsWithIgnoreCase(webdavResource.getName(), ".txt");
+            Predicate<WebdavResource> fileFilter = webdavResource -> Strings.CI.endsWith(webdavResource.getName(), ".txt");
             FileSystemResource rootResource = new FileSystemResource(Path.parse(root.getAbsolutePath()), root, _c);
             traverse(rootResource, fileFilter);
         }
@@ -2148,7 +2183,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             rootResource.list().stream()
                 .filter(Resource::isFile)
                 .filter(fileFilter)
-                .forEach(resource -> ((AbstractSearchService)_ss).processAndIndex(resource.getPath().encode(), resource, new Throwable[]{null}));
+                .forEach(resource -> _ss.processAndIndex(resource.getPath().encode(), resource, new Throwable[]{null}));
 
             rootResource.list().stream()
                 .filter(Resource::isCollection)
@@ -2158,7 +2193,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         @Test
         public void testSort()
         {
-            Consumer<TaskIndexingQueue> r = (q) -> {};
+            Consumer<TaskIndexingQueue> r = (_) -> {};
 
             // Create crawl/Runnable items to ensure they get ordered based on creation order
             Item crawlRunnable1 = new Item(_ss.defaultTask(), r, PRIORITY.crawl, null);
@@ -2230,7 +2265,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         @Test
         public void testKeywordsAndIdentifiers() throws InterruptedException, IOException
         {
-            if (null == _ss || !(_ss instanceof LuceneSearchServiceImpl impl))
+            if (!(_ss instanceof LuceneSearchServiceImpl impl))
                 return;
 
             impl.deleteIndexedContainer(_c.getId());
