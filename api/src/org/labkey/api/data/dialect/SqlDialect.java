@@ -122,10 +122,13 @@ public abstract class SqlDialect
         initializeSqlTypeNameMap();
         initializeSqlTypeIntMap();
         initializeJdbcTableTypeMap(_tableTypeMap);
-        Set<String> types = _tableTypeMap.keySet();
-        _tableTypes = types.toArray(new String[0]);
+        _tableTypes = _tableTypeMap.entrySet().stream()
+            .filter(e -> e.getValue() != DatabaseTableType.NOT_IN_DB)
+            .map(Map.Entry::getKey)
+            .toArray(String[]::new);
         _reservedWordSet = getReservedWords();
-        // NOTE: do not call createStringHandler() here, it may depend on child member fields being initialized (they are not initialized yet!)
+
+        // NOTE: do not call createStringHandler() here; it may depend on child member fields being initialized (they are not initialized yet!)
 
         MemTracker.getInstance().put(this);
     }
@@ -133,7 +136,7 @@ public abstract class SqlDialect
     protected void initializeJdbcTableTypeMap(Map<String, DatabaseTableType> map)
     {
         for (DatabaseTableType type : DatabaseTableType.values())
-            map.put(type.name(), type);
+            map.put(type.getJdbcTypeName(), type);
     }
 
     public DatabaseTableType getTableType(String tableTypeName)
