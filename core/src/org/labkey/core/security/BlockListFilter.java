@@ -180,7 +180,7 @@ public class BlockListFilter
                 return true;
             for (String part : path)
             {
-                if (part.startsWith(".") || part.startsWith("\">") || part.startsWith("wp-") || (part.startsWith("admin")&&!isActionURL))
+                if ((part.startsWith(".") && !part.equals(".well-known")) || part.startsWith("\">") || part.startsWith("wp-") || (part.startsWith("admin")&&!isActionURL))
                     return true;
                 if (part.endsWith("-inf"))
                     return true;

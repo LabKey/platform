@@ -52,6 +52,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ontology.Unit;
@@ -63,14 +64,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.experiment.api.ClosureQueryHelper;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
 import org.labkey.experiment.api.property.StorageProvisionerImpl;
-import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -486,4 +485,28 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         return new ProvisionedSampleTypeContext(domain, provisionedTable);
     }
+
+    /**
+     * Called from exp-26.001-26.002.sql
+     */
+    @SuppressWarnings("unused")
+    public static void fixContainerForMovedSampleFiles(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        {
+            FileContentService service = FileContentService.get();
+            if (service == null)
+            {
+                LOG.error("No FileContentService found. Aborting.");
+                return;
+            }
+            LimitedUser admin = new LimitedUser(context.getUpgradeUser(), SiteAdminRole.class);
+            int numDuplicates = service.fixContainerForExpDataFiles(admin);
+            LOG.info("Fixed {} duplicate data files.", numDuplicates);
+        }
+    }
+
 }

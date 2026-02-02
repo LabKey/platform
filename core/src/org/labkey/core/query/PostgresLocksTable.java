@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.query.QueryForeignKey;
 
 /** Backed by pg_locks view */
@@ -11,7 +12,7 @@ public class PostgresLocksTable extends AbstractPostgresAdminOnlyTable
 {
     public PostgresLocksTable(@NotNull PostgresUserSchema userSchema)
     {
-        super(PostgresUserSchema.POSTGRES_LOCKS_TABLE_NAME, userSchema);
+        super(BasePostgreSqlDialect.POSTGRES_LOCKS_TABLE_NAME, userSchema);
 
         setDescription("Shows info about the currently held Postgres locks");
 
@@ -28,7 +29,7 @@ public class PostgresLocksTable extends AbstractPostgresAdminOnlyTable
         addColumn(new BaseColumnInfo("objsubid", this, JdbcType.INTEGER));
         addColumn(new BaseColumnInfo("virtualtransaction", this, JdbcType.VARCHAR));
         addColumn(new BaseColumnInfo("pid", this, JdbcType.INTEGER)).
-                setFk(new QueryForeignKey.Builder(userSchema, null).table(PostgresUserSchema.POSTGRES_STAT_ACTIVITY_TABLE_NAME).raw(true));
+                setFk(new QueryForeignKey.Builder(userSchema, null).table(BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_TABLE_NAME).raw(true));
         addColumn(new BaseColumnInfo("mode", this, JdbcType.VARCHAR));
         addColumn(new BaseColumnInfo("granted", this, JdbcType.BOOLEAN));
         addColumn(new BaseColumnInfo("fastpath", this, JdbcType.BOOLEAN));

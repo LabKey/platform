@@ -849,7 +849,7 @@ public class WikiManager implements WikiService
 
     /** Note: Does not handle the client dependencies declared by the wiki or any of its embedded webparts! */
     @Override
-    public HtmlString getHtml(Container c, String name)
+    public RenderedWiki getRenderedWiki(Container c, String name)
     {
         if (null == c || null == name)
             return null;
@@ -860,7 +860,8 @@ public class WikiManager implements WikiService
             if (null == wiki)
                 return null;
             WikiVersion version = wiki.getLatestVersion();
-            return version.getHtml(c, wiki);
+            HtmlString html = version.getHtml(c, wiki);
+            return new RenderedWiki(name, version.getTitle(), html, wiki.getEntityId());
         }
         catch (Exception x)
         {

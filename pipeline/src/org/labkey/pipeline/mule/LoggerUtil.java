@@ -23,7 +23,6 @@ import org.apache.logging.log4j.core.config.properties.PropertiesConfiguration;
 import org.apache.logging.log4j.core.config.properties.PropertiesConfigurationFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Objects;
 
 /**
@@ -34,26 +33,18 @@ public class LoggerUtil
 {
     public static void initLogging(String name, String classloaderResource) throws IOException
     {
-        InputStream in = null;
-        try
+        if (classloaderResource.toLowerCase().endsWith(".properties"))
         {
-            if (classloaderResource.toLowerCase().endsWith(".properties"))
-            {
-                ConfigurationSource source = new ConfigurationSource(Objects.requireNonNull(LoggerUtil.class.getClassLoader().getResourceAsStream(classloaderResource)));
-                PropertiesConfigurationFactory factory = new PropertiesConfigurationFactory();
-                LoggerContext context = (LoggerContext) LogManager.getContext(false);
-                PropertiesConfiguration propertiesConfiguration = factory.getConfiguration(context, source);
-                context.setConfiguration(propertiesConfiguration);
-                Configurator.initialize(null, propertiesConfiguration);
-            }
-            else
-            {
-                Configurator.initialize(name, LoggerUtil.class.getClassLoader(), classloaderResource);
-            }
+            ConfigurationSource source = new ConfigurationSource(Objects.requireNonNull(LoggerUtil.class.getClassLoader().getResourceAsStream(classloaderResource)));
+            PropertiesConfigurationFactory factory = new PropertiesConfigurationFactory();
+            LoggerContext context = (LoggerContext) LogManager.getContext(false);
+            PropertiesConfiguration propertiesConfiguration = factory.getConfiguration(context, source);
+            context.setConfiguration(propertiesConfiguration);
+            Configurator.initialize(null, propertiesConfiguration);
         }
-        finally
+        else
         {
-            if (in != null) { try { in.close(); } catch (IOException e) {} }
+            Configurator.initialize(name, LoggerUtil.class.getClassLoader(), classloaderResource);
         }
     }
 

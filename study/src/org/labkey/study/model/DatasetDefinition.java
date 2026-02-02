@@ -168,6 +168,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.query.QueryService.AuditAction.DELETE;
 import static org.labkey.api.query.QueryService.AuditAction.TRUNCATE;
@@ -975,7 +976,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         copyReadPerms(studyPermissions, result);
         if (studyPermissions.contains(ReadSomePermission.class))
         {
-            Set<Class<? extends Permission>> datasetPermissions = SecurityPolicyManager.getPolicy(this).getOwnPermissions(user);
+            Set<Class<? extends Permission>> datasetPermissions = SecurityPolicyManager.getPolicy(this).getOwnPermissions(user).collect(Collectors.toSet());
             copyReadPerms(datasetPermissions, result);
         }
 

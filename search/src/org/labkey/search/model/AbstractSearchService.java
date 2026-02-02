@@ -1377,6 +1377,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     @Override
+    public List<SearchCategory> getAllCategories()
+    {
+        return _readonlyCategories;
+    }
+
+    @Override
     public List<SearchCategory> getCategories(String categories)
     {
         if (categories == null)

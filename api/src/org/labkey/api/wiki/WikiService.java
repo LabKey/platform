@@ -46,7 +46,15 @@ public interface WikiService
     WebPartView<?> getView(Container c, String name, boolean renderContentOnly);
     WebPartView<?> getHistoryView(Container c, String name);
 
-    HtmlString getHtml(Container c, String name);
+    record RenderedWiki (String name, String title, HtmlString html, String entityId) {}
+
+    RenderedWiki getRenderedWiki(Container c, String name);
+
+    default HtmlString getHtml(Container c, String name)
+    {
+        var wiki = getRenderedWiki(c, name);
+        return null == wiki ? null : wiki.html();
+    }
 
     void insertWiki(User user, Container container, String name, String content, WikiRendererType renderType, String title);
 

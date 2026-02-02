@@ -61,6 +61,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.ExpUnreferencedSampleFilesTable;
 import org.labkey.api.exp.query.SampleStatusTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -660,6 +661,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpDataTable createFilesTable(String name, UserSchema schema);
 
     SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter cf);
+
+    ExpUnreferencedSampleFilesTable createUnreferencedSampleFilesTable(ExpSchema expSchema, ContainerFilter cf);
 
     FilteredTable<ExpSchema> createFieldsTable(ExpSchema expSchema, ContainerFilter cf);
 
