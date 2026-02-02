@@ -1182,7 +1182,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         throw new IllegalStateException(problem);
     }
 
-    // parse the document of the resource, not that parse() and accept() should agree on what is parsable
+    // parse the document of the resource, note that parse() and accept() should agree on what is parsable
     private void parse(WebdavResource r, InputStream is, ContentHandler handler, Metadata metadata, boolean tooBig) throws IOException, SAXException, TikaException
     {
         if (!is.markSupported())
