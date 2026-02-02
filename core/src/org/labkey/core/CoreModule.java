@@ -1235,9 +1235,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
             if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
             {
+                // Exclude temp schema to avoid PG exceptions when tables are appearing/disappearing during execution
+                // Note that they can be non-trivial in size.
                 SQLFragment sql = new SQLFragment("SELECT table_schema, SUM(total_size) FROM ");
                 sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
-                sql.append(" GROUP BY table_schema");
+                sql.append(" WHERE table_schema != 'temp' GROUP BY table_schema");
 
                 var schemaSizes = new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap();
                 results.put("databaseSchemaSize", schemaSizes);
