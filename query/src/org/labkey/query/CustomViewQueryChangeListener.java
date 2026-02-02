@@ -111,7 +111,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                     String sep = "";
                     for (String filterPart : filterComponents)
                     {
-                        String updatedPart = QueryChangeListener.getUpdatedFilterStrOnColumnTypeUpdate(filterPart, columnName, oldDp, newDp);
+                        String updatedPart = QueryChangeListener.getUpdatedFilterStrOnColumnTypeUpdate(filterPart, "filter", columnName, oldDp, newDp);
                         updatedFilterAndSort.append(sep).append(updatedPart);
                         sep = "&";
                     }
