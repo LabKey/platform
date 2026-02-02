@@ -1310,7 +1310,7 @@ public class PropertyController extends SpringActionController
         private String _domainKindName;
         private boolean _guessFormatAsTSV;
         private boolean _checkCommentLineCount;
-        private Collection<String> _distinctValueColumns;
+        private @Nullable Collection<String> _distinctValueColumns;
 
         public Integer getNumLinesToInclude()
         {
