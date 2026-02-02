@@ -895,7 +895,7 @@ public class DomainPropertyImpl implements DomainProperty
                     }
 
                     TableInfo table = domainKind.getTableInfo(user, getContainer(), _domain, ContainerFilter.getUnsafeEverythingFilter());
-                    if (table != null && _pdOld.getPropertyType() != null)
+                    if (table != null && _pdOld.getPropertyType() != null && table.getSchema().getSqlDialect().isPostgreSQL())
                         QueryChangeListener.QueryPropertyChange.handleColumnTypeChange(_pdOld, _pd, SchemaKey.fromString(table.getUserSchema().getSchemaName()), table.getName(), user, getContainer());
                 }
                 else if (propResized)
