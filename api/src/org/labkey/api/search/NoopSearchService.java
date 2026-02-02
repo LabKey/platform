@@ -415,6 +415,12 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
+    public List<SearchCategory> getAllCategories()
+    {
+        return List.of();
+    }
+
+    @Override
     public List<SearchCategory> getCategories(String categories)
     {
         return null;
