@@ -1292,8 +1292,11 @@ public class PropertyController extends SpringActionController
 
                     for (String key : colKeys)
                     {
-                        Object val = values.get(key);
-                        distinctValuesMap.computeIfAbsent(key, k -> new CaseInsensitiveHashSet()).add(val == null ? null : val.toString());
+                        if (values.containsKey(key))
+                        {
+                            Object val = values.get(key);
+                            distinctValuesMap.computeIfAbsent(key, k -> new CaseInsensitiveHashSet()).add(val == null ? null : val.toString());
+                        }
                     }
                 }
             }
