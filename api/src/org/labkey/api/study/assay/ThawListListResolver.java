@@ -97,7 +97,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
         Object convertedID;
         try
         {
-            convertedID = ConvertUtils.convert(specimenID, col.getJavaObjectClass());
+            convertedID = col.convert(specimenID);
         }
         catch (ConversionException e)
         {

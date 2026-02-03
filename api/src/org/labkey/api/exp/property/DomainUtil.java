@@ -178,7 +178,7 @@ public class DomainUtil
                     {
                         ColumnInfo pkColumnInfo = table.getColumn(pkCol);
                         if (!pkColumnInfo.getClass().equals(defaultValue.getClass()))
-                            defaultValue = ConvertUtils.convert(defaultValue.toString(), pkColumnInfo.getJavaClass());
+                            defaultValue = pkColumnInfo.convert(defaultValue.toString());
 
                         if (!validateOnly)
                         {

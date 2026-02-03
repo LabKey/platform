@@ -2545,7 +2545,7 @@ public class ExpDataIterators
             if (index != null)
             {
                 ColumnInfo column = di.getColumnInfo(index);
-                validate.addValidator(index, new RequiredValidator(column.getColumnName(), false, false, "Sample name cannot be blank"));
+                validate.addValidator(index, new RequiredValidator(column.getColumnName(), column.getJdbcType(), false, false, "Sample name cannot be blank"));
             }
 
             // Add other column validators here...

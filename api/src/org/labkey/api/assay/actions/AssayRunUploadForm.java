@@ -509,7 +509,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                     ColumnInfo pk = pks.get(0);
                     try
                     {
-                        Object filterValue = ConvertUtils.convert(value, pk.getJavaClass());
+                        Object filterValue = pk.convert(value);
                         SimpleFilter filter = new SimpleFilter(pk.getFieldKey(), filterValue);
                         Set<String> cols = new HashSet<>();
                         cols.add(lookupTable.getTitleColumn());

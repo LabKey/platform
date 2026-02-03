@@ -125,7 +125,7 @@ public class MultiValuedRenderContext extends RenderContextDecorator
                 // Do conversion to switch it back to the expected type.
                 if (value != null && columnInfo != null && !columnInfo.getJavaClass().isInstance(value))
                 {
-                    value = ConvertUtils.convert(value.toString(), columnInfo.getJavaClass());
+                    value = columnInfo.convert(value);
                 }
             }
         }
