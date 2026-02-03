@@ -103,7 +103,7 @@ public interface QueryChangeListener
         Hidden(Boolean.class),
         SchemaName(String.class),
         ColumnName(String.class),
-        ColumnType(PropertyType.class),;
+        ColumnType(PropertyDescriptor.class),;
 
         private final Class<?> _klass;
 
