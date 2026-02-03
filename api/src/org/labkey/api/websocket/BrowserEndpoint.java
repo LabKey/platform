@@ -149,6 +149,36 @@ public abstract class BrowserEndpoint extends Endpoint
                         public void beforeRequest(Map<String, List<String>> headers)
                         {
                             headers.putAll(proxyHeaders);
+                            // Tomcat 11 requires these headers for WebSocket upgrade, but they may be filtered out by some proxy code
+                            headers.put("Upgrade", List.of("websocket"));
+                            headers.put("Connection", List.of("upgrade"));
+
+                            // Also pass through other WebSocket headers that might have been filtered out by proxy code
+                            for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet())
+                            {
+                                String name = entry.getKey();
+                                if (name.regionMatches(true, 0, "Sec-WebSocket-", 0, "Sec-WebSocket-".length()) &&
+                                    !name.equalsIgnoreCase("Sec-WebSocket-Key"))
+                                {
+                                    headers.put(name, entry.getValue());
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void afterResponse(HandshakeResponse hr)
+                        {
+                            // After the handshake, we might need to transfer headers back to the browser session,
+                            // but the Jakarta WebSocket API doesn't give us an easy way to set headers on the
+                            // already-opened browser session from here.
+                            // However, we can log them for debugging if needed.
+                            if (LOG.isTraceEnabled())
+                            {
+                                for (Map.Entry<String, List<String>> entry : hr.getHeaders().entrySet())
+                                {
+                                    LOG.trace("Response header: " + entry.getKey() + " = " + entry.getValue());
+                                }
+                            }
                         }
                     })
                     .build();
