@@ -55,6 +55,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -798,6 +799,10 @@ public class DomainUtil
             validationException.addError(new SimpleValidationError("Domain not found: " + update.getDomainURI()));
             return validationException;
         }
+
+        var lockSchema = ExperimentService.get().getSchema();
+        if (lockSchema.getScope().isTransactionActive())
+            d.lockForUpdateDelete(lockSchema);
 
         DomainKind<?> kind = d.getDomainKind();
         ValidationException validationException = validateProperties(d, update, kind, orig, user);
