@@ -123,7 +123,7 @@ public class MailHelper
 
     public static void init()
     {
-        // Invoked just to initialize DEFAULT_SESSION
+        // Invoked to trigger static initialization which loads email transport providers
     }
 
     public static void setSession(Session session)
@@ -137,8 +137,7 @@ public class MailHelper
     }
 
     /**
-     * Returns the session that will be used for all messages.
-     * Returns SMTP session if configured, otherwise a default session.
+     * Returns the SMTP session for creating messages, or null if SMTP is not configured.
      */
     public static Session getSession()
     {
@@ -191,7 +190,10 @@ public class MailHelper
     }
 
     /**
-     * Sends an email message using the configured transport provider.
+     * Sends an email message using the configured transport provider. This method logs
+     * exceptions before throwing them to the caller. The caller should avoid double-logging
+     * the failure but may want to handle the exception in some other way, e.g., displaying
+     * a message to the user.
      *
      * @param m    the message to send
      * @param user for auditing purposes, the user who originated the message
