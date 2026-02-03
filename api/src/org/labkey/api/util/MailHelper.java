@@ -21,6 +21,7 @@ import jakarta.mail.Message;
 import jakarta.mail.Message.RecipientType;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Multipart;
+import jakarta.mail.Part;
 import jakarta.mail.Session;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
@@ -39,6 +40,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -416,6 +418,41 @@ public class MailHelper
         public void setEncodedHtmlContent(String encodedHtml) throws MessagingException
         {
             setBodyContent(encodedHtml, "text/html; charset=UTF-8");
+        }
+
+        public void addAttachment(File file) throws MessagingException, IOException
+        {
+            Object content;
+            try
+            {
+                content = getContent();
+            }
+            catch (Exception e)
+            {
+                content = null;
+            }
+
+            MimeMultipart mixed;
+            if (content instanceof MimeMultipart existingMultipart)
+            {
+                // Wrap existing content in a mixed multipart
+                mixed = new MimeMultipart("mixed");
+                MimeBodyPart existingPart = new MimeBodyPart();
+                existingPart.setContent(existingMultipart);
+                mixed.addBodyPart(existingPart);
+                setContent(mixed);
+            }
+            else
+            {
+                mixed = new MimeMultipart("mixed");
+                setContent(mixed);
+            }
+
+            MimeBodyPart attachment = new MimeBodyPart();
+            attachment.setDataHandler(new jakarta.activation.DataHandler(new jakarta.activation.FileDataSource(file)));
+            attachment.setFileName(file.getName());
+            attachment.setDisposition(Part.ATTACHMENT);
+            mixed.addBodyPart(attachment);
         }
 
         public void setTemplate(EmailTemplate template, Container c) throws MessagingException
