@@ -16,6 +16,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.converters.StringConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -190,7 +191,7 @@ public class ReturnURLString
 
     public static class Converter implements org.apache.commons.beanutils.Converter
     {
-        private static final ConvertHelper.DateFriendlyStringConverter _impl = new ConvertHelper.DateFriendlyStringConverter();
+        private static final StringConverter _impl = new StringConverter();
 
         @Override
         public Object convert(Class type, Object value)

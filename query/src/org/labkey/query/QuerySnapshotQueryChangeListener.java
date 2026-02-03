@@ -44,7 +44,7 @@ public class QuerySnapshotQueryChangeListener implements QueryChangeListener
     }
 
     @Override
-    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, String queryName, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
     {
         if (property.equals(QueryProperty.Name))
         {

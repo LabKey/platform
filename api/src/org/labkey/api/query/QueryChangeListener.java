@@ -65,11 +65,10 @@ public interface QueryChangeListener
      * @param container The container the tables or queries are changed in.
      * @param scope The scope of containers that the tables or queries affect.
      * @param schema The schema of the tables or queries.
-     * @param queryName The query name if the change is specific to a single query.
      * @param property The QueryProperty that has changed.
      * @param changes The set of change events.  Each QueryPropertyChange is associated with a single table or query.
      */
-    void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @Nullable String queryName, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes);
+    void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes);
 
     /**
      * This method is called when a set of tables or queries are deleted from the given container and schema.
@@ -122,7 +121,7 @@ public interface QueryChangeListener
     /**
      * A change event for a single property of a single table or query.
      * If multiple properties have been changed, QueryChangeListener will
-     * fire {@link QueryChangeListener#queryChanged(User, Container, ContainerFilter, SchemaKey, String, QueryChangeListener.QueryProperty, Collection)}
+     * fire {@link QueryChangeListener#queryChanged(User, Container, ContainerFilter, SchemaKey, QueryChangeListener.QueryProperty, Collection)}
      * for each property that has changed.
      *
      * @param <V> The property type.
@@ -187,13 +186,13 @@ public interface QueryChangeListener
                 return;
 
             QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
-                    null,
+                    QueryService.get().getUserSchema(user, container, schemaPath).getQueryDefForTable(queryName),
                     QueryChangeListener.QueryProperty.ColumnType,
                     oldValue,
                     newValue
             );
 
-            QueryService.get().fireQueryColumnChanged(user, container, schemaPath, queryName,
+            QueryService.get().fireQueryColumnChanged(user, container, schemaPath,
                     QueryProperty.ColumnType, Collections.singleton(change));
         }
 

@@ -118,14 +118,13 @@ public class MultiValuedRenderContext extends RenderContextDecorator
                 {
                     // Multi-choice values array is converted to string: "{value1,value2,...}", so strip off the braces before converting
                     if (strVal.startsWith("{") && strVal.endsWith("}"))
-                        return ConvertUtils.convert(strVal.substring(1, strVal.length() - 1), columnInfo.getJavaClass());
-                    // TODO: return columnInfo.convert(strVal.substring(1, strVal.length() - 1));
+                        return columnInfo.convert(strVal.substring(1, strVal.length() - 1));
                 }
                 // The value was concatenated with others, so it's become a string.
                 // Do conversion to switch it back to the expected type.
                 if (value != null && columnInfo != null && !columnInfo.getJavaClass().isInstance(value))
                 {
-                    value = ConvertUtils.convert(value.toString(), columnInfo.getJavaClass());
+                    value = columnInfo.convert(value);
                 }
             }
         }

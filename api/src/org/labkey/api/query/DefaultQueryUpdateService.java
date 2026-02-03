@@ -746,7 +746,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             {
                 try
                 {
-                    pkValue = ConvertUtils.convert(pkValue.toString(), pk.getJavaObjectClass());
+                    pkValue = pk.convert(pkValue);
                 }
                 catch (ConversionException ignored) { /* Maybe the database can do the conversion */ }
             }
@@ -846,7 +846,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 }
                 return ExpDataFileConverter.convert(value);
             }
-            return col.getConvertFn().apply(value);
+            return col.getConvertFn().convert(value);
         }
         catch (ConvertHelper.FileConversionException e)
         {

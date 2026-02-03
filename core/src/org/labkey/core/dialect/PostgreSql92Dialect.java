@@ -1041,7 +1041,11 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             colSpec.append(DEFAULT_DECIMAL_SCALE_PRECISION);
         }
 
-        if (prop.isPrimaryKey() || !prop.isNullable())
+        // CONSIDER let the PropertyType to modify PropertyStorageSpec in the cosntructor
+        // For now we have hard-coded some behavior for PropertyType.MULTI_CHOICE
+        boolean isMultiChoice = PropertyType.MULTI_CHOICE.getTypeUri().equals(prop.getTypeURI());
+
+        if (prop.isPrimaryKey() || !prop.isNullable() || isMultiChoice)
             colSpec.append(" NOT NULL");
 
         if (null != prop.getDefaultValue())
@@ -1060,6 +1064,10 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             {
                 throw new IllegalArgumentException("Default value on type " + prop.getJdbcType().name() + " is not supported.");
             }
+        }
+        else if (isMultiChoice)
+        {
+            colSpec.append(" DEFAULT '{}'::text[]");
         }
         return colSpec;
     }

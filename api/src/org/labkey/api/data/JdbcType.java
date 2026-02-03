@@ -16,12 +16,8 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.beanutils.Converter;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.IntHashMap;
@@ -32,37 +28,50 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.sql.Array;
+import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.util.IntegerUtils.isIntegral;
 
 /**
  * ENUM version of java.sql.Types
+ *
+ * Note convert() methods tend to "fall-through" on errors
+ * to get consistent Exceptions reported by CovertHelper.convert().
  */
 
-public enum JdbcType
+public enum JdbcType implements SimpleConvert
 {
     BIGINT(Types.BIGINT, Long.class, Long.TYPE)
     {
         @Override
         protected Object _fromNumber(Number n)
         {
-            return n.longValue();
+            if (n.doubleValue() == (double) n.longValue())
+                return n.longValue();
+            return null; // fallback
         }
 
         @Override
         protected Object _fromString(String s)
         {
             // Be tolerant of trailing decimal zeros like "39.0", which Long.parseLong() is not
-            return new BigDecimal(s.trim()).longValueExact();
+            try
+            {
+                return new BigDecimal(s.trim()).longValueExact();
+            }
+            catch (NumberFormatException|ArithmeticException ex)
+            {
+                return null;
+            }
         }
     },
 
@@ -93,9 +102,21 @@ public enum JdbcType
         }
 
         @Override
+        public boolean isEmpty(Object value)
+        {
+            return VARCHAR.isEmpty(value);
+        }
+
+        @Override
         public Object convert(Object o) throws ConversionException
         {
             return VARCHAR.convert(o);
+        }
+
+        @Override
+        public Object convert(CharSequence cs)
+        {
+            return VARCHAR.convert(cs);
         }
     },
 
@@ -116,7 +137,14 @@ public enum JdbcType
         @Override
         protected Object _fromString(String s)
         {
-            return new BigDecimal(s.trim());
+            try
+            {
+                return new BigDecimal(s.trim());
+            }
+            catch (NumberFormatException|ArithmeticException ex)
+            {
+                return null;
+            }
         }
     },
 
@@ -153,8 +181,15 @@ public enum JdbcType
         @Override
         protected Object _fromString(String s)
         {
-            // Be tolerant of trailing decimal zeros like "39.0", which Integer.parseInt() is not
-            return new BigDecimal(s.trim()).intValueExact();
+            try
+            {
+                // Be tolerant of trailing decimal zeros like "39.0", which Integer.parseInt() is not
+                return new BigDecimal(s.trim()).intValueExact();
+            }
+            catch (NumberFormatException x)
+            {
+                return null;
+            }
         }
     },
 
@@ -177,9 +212,21 @@ public enum JdbcType
         }
 
         @Override
+        public boolean isEmpty(Object value)
+        {
+            return VARCHAR.isEmpty(value);
+        }
+
+        @Override
         public Object convert(Object o) throws ConversionException
         {
             return VARCHAR.convert(o);
+        }
+
+        @Override
+        public Object convert(CharSequence cs)
+        {
+            return VARCHAR.convert(cs);
         }
     },
 
@@ -285,16 +332,28 @@ public enum JdbcType
         }
 
         @Override
-        public Object convert(Object o) throws ConversionException
+        public boolean isEmpty(Object value)
         {
-            String s = (String)super.convert(o);
-            return null==s || s.isEmpty() ? null : s;
+            return null==value || "".equals(value);
         }
 
         @Override
-        protected Object _fromDate(Date d)
+        public Object convert(Object o) throws ConversionException
         {
-            return DateUtil.toISO(d);   // don't shorten
+            if (null == o)
+                return null;
+            if (o instanceof String s)
+                return s.isEmpty() ? null : s;
+            var ret = converter.convert(o);
+            return "".equals(ret) ? null : ret;
+        }
+
+        @Override
+        public Object convert(CharSequence cs) throws ConversionException
+        {
+            if (null == cs || cs.isEmpty())
+                return null;
+            return cs.toString();
         }
     },
 
@@ -308,12 +367,45 @@ public enum JdbcType
         }
     },
 
-    ARRAY(Types.ARRAY, Array.class),
+    ARRAY(Types.ARRAY, Array.class)
+    {
+        @Override
+        public boolean isEmpty(Object value)
+        {
+            if (null == value)
+                return true;
+            if (value instanceof String s)
+                return isBlank(s);
+            if (value instanceof Object[] arr)
+                return 0==arr.length;
+            else if (value instanceof Collection coll)
+                return coll.isEmpty();
+            else if (value instanceof java.sql.Array sqlArray)
+            {
+                try
+                {
+                    Object[] arr = (Object[]) sqlArray.getArray();
+                    return null == arr || 0==arr.length;
+                }
+                catch (SQLException sqlx)
+                {
+                    throw new RuntimeSQLException(sqlx);
+                }
+            }
+            throw new IllegalArgumentException("illegal value " + value.getClass());
+        }
+    },
 
     NULL(Types.NULL, Object.class),
 
-    OTHER(Types.OTHER, Object.class);
-
+    OTHER(Types.OTHER, Object.class)
+    {
+        @Override
+        public boolean isEmpty(Object value)
+        {
+            return null==value || "".equals(value);
+        }
+    };
 
     public final int sqlType;
     public final Class<?> cls;
@@ -321,7 +413,7 @@ public enum JdbcType
     public final String json;
 
     private final Class<?> typeCls;
-    private final Converter converter;
+    protected final SimpleConvert converter;
 
 
     JdbcType(int type, @NotNull Class<?> cls)
@@ -344,7 +436,7 @@ public enum JdbcType
         this.typeCls = typeCls;
         this.xtype = xtype;
         this.json = DisplayColumn.getJsonTypeName(cls);
-        this.converter = ConvertUtils.lookup(cls);
+        this.converter = ConvertHelper.getSimpleConvert(cls);
     }
 
     private static final HashMap<Class<?>, JdbcType> classMap = new HashMap<>();
@@ -458,12 +550,19 @@ public enum JdbcType
         return OTHER;
     }
 
+    /**
+     * returns true if value should be considered to fail an isRequired() check.
+     * value should be already be coverted (e.g. via JdbcType.convert())
+     */
+    public boolean isEmpty(Object value)
+    {
+        return null == value;
+    }
 
     public boolean isText()
     {
         return this.cls == String.class;
     }
-
 
     public boolean isNumeric()
     {
@@ -509,6 +608,7 @@ public enum JdbcType
         return isNullable || null == typeCls ? cls : typeCls;
     }
 
+    @Override
     public Object convert(Object o) throws ConversionException
     {
         // Unwrap first
@@ -537,31 +637,54 @@ public enum JdbcType
                 return r;
         }
 
-        String s = o instanceof String ? (String)o : ConvertUtils.convert(o);
-        if (cls == String.class)
-            return s;
-        if (StringUtils.isEmpty(s))
-            return null;
-
-        try
+        if (o instanceof CharSequence s)
         {
-            Object r = _fromString(s);
+            Object r = _fromString(s.toString());
             if (null != r)
                 return r;
         }
-        catch (NumberFormatException | ArithmeticException x)
-        {
-            throw new ConversionException("Expected decimal value", x);
-        }
 
-        if (converter == null)
-        {
-            throw new ConversionException("Unable to find converter for data class " + this.cls + ", unable to convert value: " + s);
-        }
-
-        // CONSIDER: convert may return default values instead of ConversionException
-        return converter.convert(cls, s);
+        return converter.convert(o);
     }
+
+    /* convert() overrides let the compiler do some of the work */
+    public Object convert(Number n) throws ConversionException
+    {
+        if (null == n)
+            return null;
+
+        Object r = _fromNumber(n);
+        if (null != r)
+            return r;
+
+        return converter.convert(n);
+    }
+
+    public Object convert(Date o) throws ConversionException
+    {
+        if (null == o)
+            return null;
+
+        Object r = _fromDate(o);
+        if (null != r)
+            return r;
+
+        return converter.convert(o);
+    }
+
+
+    public Object convert(CharSequence cs) throws ConversionException
+    {
+        if (null == cs)
+            return null;
+
+        Object r = _fromString(cs.toString());
+        if (null != r)
+            return r;
+
+        return converter.convert(cs);
+    }
+
 
     public static Object add(@NotNull Object obj1, @NotNull Object obj2, JdbcType type)
     {
@@ -643,6 +766,9 @@ public enum JdbcType
         @Test
         public void testConvert()
         {
+            assertNull(BOOLEAN.convert(""));
+            assertNull(BOOLEAN.convert((Object)null));
+            assertNull(BOOLEAN.convert((String)null));
             assertEquals("JdbcType.convert produced wrong type.", Boolean.class, BOOLEAN.convert(true).getClass());
             assertEquals("JdbcType.convert produced wrong type.", Boolean.class, BOOLEAN.convert(false).getClass());
             assertEquals("JdbcType.convert produced wrong type.", Boolean.class, BOOLEAN.convert("true").getClass());

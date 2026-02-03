@@ -844,7 +844,6 @@ public abstract class CompareType
         }
     };
 
-
     public static final CompareType ARRAY_IS_NOT_EMPTY = new CompareType("Is Not Empty", "arrayisnotempty", "ARRAYISNOTEMPTY", false, null, OperatorType.ARRAYISNOTEMPTY)
     {
         @Override
