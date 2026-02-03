@@ -1319,7 +1319,7 @@ public class IssueManager
             return null;
         }
 
-        final IssueObject issue = getIssue(null, User.getSearchUser(), issueId);
+        final IssueObject issue = getIssue(null, User.getSearchUser(), issueId, false);
         if (null == issue)
             return null;
 
