@@ -518,12 +518,12 @@ public class QueryManager
             l.queryCreated(user, container, scope, schema, queries);
     }
 
-    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @Nullable String queryName, @NotNull QueryChangeListener.QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
+    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryChangeListener.QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
     {
         QueryService.get().updateLastModified();
         assert checkChanges(property, changes);
         for (QueryChangeListener l : QUERY_LISTENERS)
-            l.queryChanged(user, container, scope, schema, queryName, property, changes);
+            l.queryChanged(user, container, scope, schema, property, changes);
     }
 
     // Checks all changes have the correct property and type.

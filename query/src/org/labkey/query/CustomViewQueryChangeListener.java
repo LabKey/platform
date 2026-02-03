@@ -27,6 +27,7 @@ import org.labkey.api.query.CustomViewChangeListener;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
@@ -61,7 +62,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
     }
 
     @Override
-    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, String queryName, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
     {
         if (property.equals(QueryProperty.Name))
         {
@@ -73,15 +74,19 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
         }
         if (property.equals(QueryProperty.ColumnType))
         {
-            _updateCustomViewColumnTypeChange(user, container, schema, queryName, changes);
+            _updateCustomViewColumnTypeChange(user, container, schema, changes);
         }
     }
 
 
-    private void _updateCustomViewColumnTypeChange(User user, Container container, SchemaKey schema, String queryName, @NotNull Collection<QueryPropertyChange<?>> changes)
+    private void _updateCustomViewColumnTypeChange(User user, Container container, SchemaKey schema, @NotNull Collection<QueryPropertyChange<?>> changes)
     {
         for (QueryPropertyChange<?> qpc : changes)
         {
+            QueryDefinition queryDefinition = qpc.getSource();
+            if (queryDefinition == null)
+                continue;
+            String queryName = queryDefinition.getName();
 
             PropertyDescriptor oldDp = (PropertyDescriptor) qpc.getOldValue();
             PropertyDescriptor newDp = (PropertyDescriptor) qpc.getNewValue();

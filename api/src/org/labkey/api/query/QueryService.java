@@ -491,7 +491,7 @@ public interface QueryService
     void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
     void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange<?>> changes);
     void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
-    void fireQueryColumnChanged(User user, Container container, @NotNull SchemaKey schemaPath, @NotNull String queryName, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange<?>> changes);
+    void fireQueryColumnChanged(User user, Container container, @NotNull SchemaKey schemaPath, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange<?>> changes);
 
     /** OLAP **/
     // could make this a separate service
