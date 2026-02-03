@@ -22,12 +22,12 @@ import jakarta.mail.PasswordAuthentication;
 import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import jakarta.servlet.ServletContext;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Collection;
 import java.util.Enumeration;
@@ -40,7 +40,7 @@ import java.util.Properties;
  */
 public class SmtpTransportProvider implements EmailTransportProvider
 {
-    private static final Logger LOG = LogManager.getLogger(SmtpTransportProvider.class);
+    private static final Logger LOG = LogHelper.getLogger(SmtpTransportProvider.class, "SMTP Transport Provider");
 
     private final Properties _properties = new Properties();
     private Session _session = null;

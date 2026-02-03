@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8535,6 +8536,7 @@ public class AdminController extends SpringActionController
         private String _body;
         private ConfigurationException _exception;
         private boolean _success;
+        private boolean _attachmentSuccess;
 
         public boolean isSuccess()
         {
@@ -8544,6 +8546,16 @@ public class AdminController extends SpringActionController
         public void setSuccess(boolean success)
         {
             _success = success;
+        }
+
+        public boolean isAttachmentSuccess()
+        {
+            return _attachmentSuccess;
+        }
+
+        public void setAttachmentSuccess(boolean attachmentSuccess)
+        {
+            _attachmentSuccess = attachmentSuccess;
         }
 
         public String getTo()
@@ -8619,6 +8631,17 @@ public class AdminController extends SpringActionController
                 getViewContext().getSession().removeAttribute(EMAIL_TEST_SUCCESS_KEY);
                 form.setSuccess(true);
             }
+            if (Boolean.TRUE.equals(getViewContext().getSession().getAttribute(EmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_SUCCESS_KEY)))
+            {
+                getViewContext().getSession().removeAttribute(EmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_SUCCESS_KEY);
+                form.setAttachmentSuccess(true);
+            }
+            String attachmentError = (String) getViewContext().getSession().getAttribute(EmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_ERROR_KEY);
+            if (attachmentError != null)
+            {
+                getViewContext().getSession().removeAttribute(EmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_ERROR_KEY);
+                form.setException(new ConfigurationException(attachmentError));
+            }
 
             JspView<EmailTestForm> testView = new JspView<>("/org/labkey/core/admin/emailTest.jsp", form);
             testView.setTitle("Send a Test Email");
@@ -8683,6 +8706,83 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             addAdminNavTrail(root, "Test Email Configuration", getClass());
+        }
+    }
+
+    @AdminConsoleAction
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class EmailTestWithAttachmentAction extends FormHandlerAction<EmailTestForm>
+    {
+        private static final String EMAIL_TEST_ATTACHMENT_SUCCESS_KEY = "EmailTestWithAttachmentAction.success";
+        private static final String EMAIL_TEST_ATTACHMENT_ERROR_KEY = "EmailTestWithAttachmentAction.error";
+
+        @Override
+        public void validateCommand(EmailTestForm form, Errors errors)
+        {
+            if (form.getTo() == null || form.getTo().isEmpty())
+            {
+                errors.reject(ERROR_MSG, "To field cannot be blank.");
+            }
+        }
+
+        @Override
+        public boolean handlePost(EmailTestForm form, BindException errors) throws Exception
+        {
+            if (errors.hasErrors())
+                return false;
+
+            if (!MailHelper.hasActiveProvider())
+            {
+                form.setException(new ConfigurationException("No email provider configured"));
+                return false;
+            }
+
+            ValidEmail recipient = new ValidEmail(form.getTo());
+
+            // Create a temp file for attachment, deleting any leftover from previous test
+            File tempFile = FileUtil.appendPath(FileUtil.getTempDirectory(), org.labkey.api.util.Path.parse("email_test_attachment.txt"));
+            FileUtil.deleteTempFile(tempFile);
+
+            // Generate ~4MB of content to test Graph API upload session chunked upload
+            StringBuilder sb = new StringBuilder();
+            sb.append("LabKey Server Email Attachment Test\n");
+            sb.append("Provider: ").append(MailHelper.getActiveProvider().getName()).append("\n");
+            sb.append("Timestamp: ").append(java.time.Instant.now()).append("\n\n");
+            String line = "This is test data for email attachment upload testing. ";
+            while (sb.length() < 4 * 1024 * 1024)
+            {
+                sb.append(line);
+            }
+            java.nio.file.Files.writeString(tempFile.toPath(), sb.toString());//creates the actual file and writes the content
+
+            try
+            {
+                // Use the Graph provider's configured from address
+                String fromAddress = MailHelper.getActiveProvider().getProperties().getProperty("mail.graph.fromAddress");
+                MailHelper.MultipartMessage msg = MailHelper.createMultipartMessage();
+                msg.setFrom(fromAddress);
+                msg.addRecipient(Message.RecipientType.TO, recipient.getAddress());
+                msg.setSubject("Test Email with HTML and Attachment");
+                msg.setEncodedHtmlContent("<html><body><p>This is a <strong>test email</strong> with HTML content and attachment.</p><p>Sent via " +
+                    MailHelper.getActiveProvider().getName() + ".</p></body></html>");
+                msg.addAttachment(tempFile);
+
+                MailHelper.send(msg, getUser(), getContainer());
+                getViewContext().getSession().setAttribute(EMAIL_TEST_ATTACHMENT_SUCCESS_KEY, Boolean.TRUE);
+            }
+            catch (Exception e)
+            {
+                getViewContext().getSession().setAttribute(EMAIL_TEST_ATTACHMENT_ERROR_KEY, e.getMessage());
+                return true;
+            }
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(EmailTestForm form)
+        {
+            return new ActionURL(EmailTestAction.class, getContainer());
         }
     }
 
