@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
@@ -28,12 +29,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
-
-/*
-* User: Dave
-* Date: Sep 3, 2008
-* Time: 11:03:32 AM
-*/
 
 /**
  * This writer extends ApiJsonWriter by writing validation errors in the format
@@ -93,6 +88,25 @@ public class ExtFormResponseWriter extends ApiJsonWriter
     }
 
     @Override
+    public void writeProperty(String name, Object value) throws IOException
+    {
+        super.writeProperty(sendHtmlJsonResponse ? PageFlowUtil.filter(name) : name, value);
+    }
+
+    @Override
+    protected void writeObject(Object value) throws IOException
+    {
+        if (value instanceof String s && sendHtmlJsonResponse)
+        {
+            super.writeObject(PageFlowUtil.filter(s));
+        }
+        else
+        {
+            super.writeObject(value);
+        }
+    }
+
+    @Override
     public JSONObject toJSON(ValidationException e)
     {
         String message = null;
@@ -121,8 +135,8 @@ public class ExtFormResponseWriter extends ApiJsonWriter
     {
         String msg = error.getMessage();
         String key = "_form";
-        if (error instanceof PropertyValidationError)
-            key = ((PropertyValidationError)error).getProperty();
+        if (error instanceof PropertyValidationError pve)
+            key = pve.getProperty();
         if (jsonErrors.has(key))
             msg = jsonErrors.get(key) + "; " + msg;
         jsonErrors.put(key, msg);
@@ -139,8 +153,8 @@ public class ExtFormResponseWriter extends ApiJsonWriter
             if (message == null)
                 message = msg;
             String key = "_form";
-            if (error instanceof FieldError)
-                key = ((FieldError)error).getField();
+            if (error instanceof FieldError fieldError)
+                key = fieldError.getField();
             if (jsonErrors.has(key))
                 msg = jsonErrors.get(key) + "; " + msg;
             jsonErrors.put(key, msg);
@@ -174,10 +188,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
             {
             w.write("<html><body><textarea>");
             }
-            catch (IOException x)
-            {
-                
-            }
+            catch (IOException ignored) {}
         }
         return w;
     }
