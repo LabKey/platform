@@ -8709,6 +8709,11 @@ public class AdminController extends SpringActionController
         }
     }
 
+    /**
+     * Tests the Microsoft Graph API email transport with HTML content and a large attachment.
+     * This action is specifically for testing the Graph API upload session workflow for attachments
+     * over 3MB. Use {@link EmailTestAction} for general email testing for both SMTP and Graph API.
+     */
     @AdminConsoleAction
     @RequiresPermission(AdminOperationsPermission.class)
     public class EmailTestWithAttachmentAction extends FormHandlerAction<EmailTestForm>
