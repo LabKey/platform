@@ -808,7 +808,7 @@ public class DomainImpl implements Domain
                     impl.save(user, _dd, sortOrder++);  // Automatically preserve order
 
                     String defaultValue = impl.getDefaultValue();
-                    Object converted = null != defaultValue ? ConvertUtils.convert(defaultValue, impl.getPropertyDescriptor().getJavaClass()) : null;
+                    Object converted = null != defaultValue ? impl.getPropertyType().convert(defaultValue) : null;
                     defaultValueMap.put(impl, converted);
 
                     if (isImplNew)

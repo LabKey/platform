@@ -275,6 +275,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         {
             PropertyDescriptor pd = pair.dp == null ? null : pair.dp.getPropertyDescriptor();
             PropertyType pt = pd == null ? null : pd.getPropertyType();
+            assert null == pt || null == pair.getTarget().getPropertyType() || pair.getTarget().getPropertyType() == pt;
             boolean isAttachment = pt == PropertyType.ATTACHMENT || pt == PropertyType.FILE_LINK;
 
             if (null == pair.target)
@@ -282,7 +283,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
             else if (isAttachment) // Issue 53498: attachment is blank after update from file, if the field name contains underscore
                 convert.addColumn(pair.target, pair.indexFrom);
             else
-                convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, pd, pt, pair.target.getRemapMissingBehavior(), context.isWithLookupRemapping());
+                convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, pair.target.getRemapMissingBehavior(), context.isWithLookupRemapping());
         }
 
         //
@@ -318,9 +319,9 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                 {
                     if (additionalRequiredCols.contains(col.getColumnName()))
                     {
-                        List<ColumnValidator> validators = new ArrayList<>();
-                        validators.add(new RequiredValidator(col.getColumnName(), false, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString)));
-                        validate.addValidators(index, validators);
+                        var reqd = ColumnValidators.createRequiredValidator(col, null, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString));
+                        if (null != reqd)
+                            validate.addValidator(index, reqd);
                     }
                     continue;
                 }
