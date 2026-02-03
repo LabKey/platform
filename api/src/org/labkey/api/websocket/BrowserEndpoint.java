@@ -17,7 +17,6 @@ package org.labkey.api.websocket;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpSession;
-import jakarta.websocket.ClientEndpoint;
 import jakarta.websocket.ClientEndpointConfig;
 import jakarta.websocket.CloseReason;
 import jakarta.websocket.ContainerProvider;
@@ -35,7 +34,6 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
@@ -90,10 +88,11 @@ public abstract class BrowserEndpoint extends Endpoint
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig)
     {
+        String uri = null;
         try
         {
-            String uri = getWSRemoteUri(session, endpointConfig);
-            LOG.debug("BrowserEndpoint.onOpen( " + session.getRequestURI() + " -> " + uri);
+            uri = getWSRemoteUri(session, endpointConfig);
+            LOG.info("BrowserEndpoint.onOpen( " + session.getRequestURI() + " -> " + uri);
             Map<String, List<String>> requestHeaders = (Map<String, List<String>>) endpointConfig.getUserProperties().get("requestHeaders");
             this.browserSession = session;
             this.serverEndpoint = new ServerEndpoint(new URI(uri), requestHeaders, endpointConfig.getUserProperties());
@@ -103,8 +102,13 @@ public abstract class BrowserEndpoint extends Endpoint
         }
         catch (URISyntaxException | IOException | DeploymentException | ServletException ex)
         {
-            LOG.debug("BrowserEndpoint.onOpen", ex);
-            UnexpectedException.rethrow(ex);
+            LOG.warn("BrowserEndpoint.onOpen failed to proxy " + session.getRequestURI() + " -> " + uri, ex);
+            try
+            {
+                session.close(new CloseReason(CloseReason.CloseCodes.UNEXPECTED_CONDITION,
+                        "Failed to connect to remote WebSocket server"));
+            }
+            catch (IOException ignored) {}
         }
     }
 
@@ -125,7 +129,6 @@ public abstract class BrowserEndpoint extends Endpoint
 
     public abstract Map<String,List<String>> prepareProxyHeaders(URI remoteURI, Map<String,List<String>> requestHeaders, Map<String,Object> properties);
 
-    @ClientEndpoint
     class ServerEndpoint extends Endpoint
     {
         final Session serverSession;
