@@ -75,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -1461,7 +1462,10 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     @Override
     public boolean isRequiredForInsert(@Nullable DomainProperty dp)
     {
-        if (isCalculated() || !isUserEditable() || isAutoIncrement() || isVersionColumn() || null != getJdbcDefaultValue())
+        if (isCalculated() || !isUserEditable() || isAutoIncrement() || isVersionColumn())
+            return false;
+        // ARRAY may have DEFAULT [] which does not satisfy our isRequired() constraint
+        if (!JdbcType.ARRAY.equals(getJdbcType()) && null != getJdbcDefaultValue())
             return false;
         return !isNullable() || (null != dp && dp.isRequired());
     }
@@ -2228,5 +2232,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public void setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior missingBehavior)
     {
         _remapMissingBehavior = missingBehavior;
+    }
+
+    @Override @Transient
+    public final SimpleConvert getConvertFn()
+    {
+        return ColumnRenderProperties.getDefaultConvertFn(this);
     }
 }

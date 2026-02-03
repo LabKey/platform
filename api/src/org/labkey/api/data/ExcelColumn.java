@@ -833,8 +833,8 @@ public class ExcelColumn extends RenderColumn
                         String actual = formatter.formatCellValue(cell);
                         assertEquals("Incorrect Excel Value", expected, actual);
 
-                        Object expectedObj = ConvertHelper.convert(expected, ci.getJavaClass());
-                        Object actualObj = ConvertHelper.convert(actual, ci.getJavaClass());
+                        Object expectedObj = ci.convert(expected);
+                        Object actualObj = ci.convert(actual);
                         assertEquals("Incorrect Parsed Excel Value", expectedObj, actualObj);
                     }
                 }
@@ -846,7 +846,7 @@ public class ExcelColumn extends RenderColumn
             Format fmt = ci.getDisplayColumnFactory().createRenderer(ci).getFormat();
             if (fmt != null)
             {
-                value = ConvertHelper.convert(value, ci.getJavaClass());
+                value = ci.convert(value);
                 return fmt.format(value);
             }
 

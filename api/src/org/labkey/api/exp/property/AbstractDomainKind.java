@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -31,6 +32,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
@@ -167,8 +169,14 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
     @Override
     public boolean hasNullValues(Domain domain, DomainProperty prop)
     {
+        SQLFragment blankRowsSQL = new SQLFragment();
         SQLFragment allRowsSQL = new SQLFragment();
         SQLFragment nonBlankRowsSQL = new SQLFragment();
+
+        if (getBlanksSql(domain, prop, blankRowsSQL))
+        {
+            return new SqlSelector(ExperimentService.get().getSchema(), blankRowsSQL).exists();
+        }
 
         if (getTotalAndNonBlankSql(domain, prop, allRowsSQL, nonBlankRowsSQL))
         {
@@ -178,6 +186,36 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
         }
 
         return false;
+    }
+
+    /* Does not work on non-provisioned domains */
+    protected boolean getBlanksSql(Domain domain, DomainProperty prop, SQLFragment blankRowsSQL)
+    {
+        if (getStorageSchemaName() == null || domain.getStorageTableName() == null)
+            return false;
+
+        SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+        String table = domain.getStorageTableName();
+        DatabaseIdentifier columnId = prop.getPropertyDescriptor().getLegalSelectName(dialect);
+        blankRowsSQL.append("SELECT * FROM ").appendDottedIdentifiers(getStorageSchemaName(),table).append(" WHERE ");
+
+        if (PropertyType.MULTI_CHOICE == prop.getPropertyType())
+        {
+            blankRowsSQL.append("(").appendIdentifier(columnId).append(" IS NULL OR cardinality(").appendIdentifier(columnId).append(")=0)");
+        }
+        else
+        {
+            // Issue 29047
+            blankRowsSQL.appendIdentifier(columnId).append(" IS NOT NULL");
+        }
+        if (prop.isMvEnabled())
+        {
+            TableInfo storageTable = DbSchema.get(getStorageSchemaName(), DbSchemaType.Provisioned).getTable(table);
+            ColumnInfo mvColumn = StorageProvisioner.get().getMvIndicatorColumn(storageTable, prop.getPropertyDescriptor(), "No MV column found for" + prop.getName());
+            String mvId = dialect.makeLegalIdentifier(mvColumn.getName());
+            blankRowsSQL.append(" AND ").appendIdentifier(mvId).append(" IS NULL");
+        }
+        return true;
     }
 
     protected boolean getTotalAndNonBlankSql(Domain domain, DomainProperty prop, SQLFragment allRowsSQL, SQLFragment nonBlankRowsSQL)
@@ -193,30 +231,34 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
             nonBlankRowsSQL.append("(op.StringValue IS NOT NULL OR op.FloatValue IS NOT NULL OR ");
             nonBlankRowsSQL.append("op.DateTimeValue IS NOT NULL OR op.MVIndicator IS NULL) AND op.objectid IN (");
             nonBlankRowsSQL.append(sqlObjectIds);
-            nonBlankRowsSQL.append(") AND op.PropertyId = ?");
-            nonBlankRowsSQL.add(prop.getPropertyId());
+            nonBlankRowsSQL.append(") AND op.PropertyId = ").appendValue(prop.getPropertyId());
 
             return true;
         }
 
         if (domain.getStorageTableName() != null)
         {
-            String table = domain.getStorageTableName();
-            allRowsSQL.append("SELECT * FROM ").append(getStorageSchemaName()).append(".").append(table);
-            nonBlankRowsSQL.append("SELECT * FROM ").append(getStorageSchemaName()).append(".").append(table).append(" x WHERE ");
             SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
-            // Issue 17183 - Postgres uses lower case column names when quoting is required
-            nonBlankRowsSQL.append("x.");
-            // Issue 29047
-            nonBlankRowsSQL.appendIdentifier(prop.getPropertyDescriptor().getLegalSelectName(dialect));
-            nonBlankRowsSQL.append(" IS NOT NULL");
+            String table = domain.getStorageTableName();
+            DatabaseIdentifier columnId = prop.getPropertyDescriptor().getLegalSelectName(dialect);
+            allRowsSQL.append("SELECT * FROM ").appendDottedIdentifiers(getStorageSchemaName(),table);
+            nonBlankRowsSQL.append("SELECT * FROM ").appendDottedIdentifiers(getStorageSchemaName(),table).append(" WHERE ");
+
+            if (PropertyType.MULTI_CHOICE == prop.getPropertyType())
+            {
+                nonBlankRowsSQL.append("cardinality(").appendIdentifier(columnId).append(")>0");
+            }
+            else
+            {
+                // Issue 29047
+                nonBlankRowsSQL.appendIdentifier(columnId).append(" IS NOT NULL");
+            }
             if (prop.isMvEnabled())
             {
                 TableInfo storageTable = DbSchema.get(getStorageSchemaName(), DbSchemaType.Provisioned).getTable(table);
                 ColumnInfo mvColumn = StorageProvisioner.get().getMvIndicatorColumn(storageTable, prop.getPropertyDescriptor(), "No MV column found for" + prop.getName());
-                nonBlankRowsSQL.append(" OR x.");
-                nonBlankRowsSQL.appendIdentifier(dialect.makeLegalIdentifier(mvColumn.getName()));
-                nonBlankRowsSQL.append(" IS NOT NULL");
+                String mvId = dialect.makeLegalIdentifier(mvColumn.getName());
+                nonBlankRowsSQL.append(" OR ").appendIdentifier(mvId).append(" IS NOT NULL");
             }
 
             return true;
