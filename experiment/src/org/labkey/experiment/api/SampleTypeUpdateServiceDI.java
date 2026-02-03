@@ -1889,7 +1889,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             var col = new BaseColumnInfo(getInput().getColumnInfo(fromIndex));
             col.setName(name);
             col.setJdbcType(toType);
-            if (PropertyType.MULTI_CHOICE.equals(pt)) // TODO: should this be applied to all column types?
+            if (null != pt)
                 col.setPropertyType(pt);
             if (toFk != null)
                 col.setFk(toFk);

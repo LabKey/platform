@@ -415,7 +415,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
             {
                 try
                 {
-                    Object converted = ConvertUtils.convert(value, type.getJavaType());
+                    Object converted = type.convert(value);
                     values.put(property, converted);
                 }
                 catch (ConversionException e)

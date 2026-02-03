@@ -405,7 +405,7 @@ public class DomainImpl implements Domain
         ExperimentService exp = ExperimentService.get();
         try (DbScope.Transaction transaction = exp.getSchema().getScope().ensureTransaction())
         {
-            lockForDelete(exp.getSchema());
+            lockForUpdateDelete(exp.getSchema());
             DefaultValueService.get().clearDefaultValues(getContainer(), this);
             OntologyManager.deleteDomain(getTypeURI(), getContainer());
             StorageProvisioner.get().drop(this);
@@ -434,19 +434,19 @@ public class DomainImpl implements Domain
     }
 
     @Override
-    public void lockForDelete(DbSchema expSchema)
+    public void lockForUpdateDelete(DbSchema lockSchema)
     {
         // NOTE code relies on the lock returned from Domain.getLock() does not require unlock().
         var lock = getDatabaseLock();
         assert lock instanceof DbScope.ServerLock;
-        assert ExperimentService.get().getSchema().getScope().isTransactionActive();
+        assert lockSchema.getScope().isTransactionActive();
         lock.lock();
 
         // CONSIDER verify table exists: SELECT 1 FROM pg_tables WHERE schemaname = ? AND tablename = ?
-        if (null != getStorageTableName() && expSchema.getSqlDialect().isPostgreSQL())
+        if (null != getStorageTableName() && lockSchema.getSqlDialect().isPostgreSQL())
         {
-            SQLFragment lockSQL = new SQLFragment().append("LOCK TABLE ").appendDottedIdentifiers(getDomainKind().getStorageSchemaName(), getStorageTableName()).append(" IN EXCLUSIVE MODE").appendEOS().append("\n");
-            new SqlExecutor(expSchema).execute(lockSQL);
+            SQLFragment lockSQL = new SQLFragment().append("LOCK TABLE ").appendDottedIdentifiers(getDomainKind().getStorageSchemaName(), getStorageTableName()).append(" IN ACCESS EXCLUSIVE MODE").appendEOS().append("\n");
+            new SqlExecutor(lockSchema).execute(lockSQL);
         }
     }
 
@@ -808,7 +808,7 @@ public class DomainImpl implements Domain
                     impl.save(user, _dd, sortOrder++);  // Automatically preserve order
 
                     String defaultValue = impl.getDefaultValue();
-                    Object converted = null != defaultValue ? ConvertUtils.convert(defaultValue, impl.getPropertyDescriptor().getJavaClass()) : null;
+                    Object converted = null != defaultValue ? impl.getPropertyType().convert(defaultValue) : null;
                     defaultValueMap.put(impl, converted);
 
                     if (isImplNew)

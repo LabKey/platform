@@ -71,7 +71,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
+import static org.labkey.api.data.MultiChoice.ARRAY_MARKER;
 
 
 /**
@@ -773,10 +775,23 @@ public class ViewServlet extends HttpServlet
         return true;
     }
 
+    // NOTE: The usages of this method seem a bit unorthodox.  It might be better to try to align them with more
+    // usual form-binding code-paths.  e.g. use ViewActionParameterPropertyValues and maybe TableViewForm.preprocessPropertyValues()
+    //
     // Adapt Map<String, String[]> returned by getParameterMap() to match InsertView.setInitialValues(Map<String, Object>).
     // This makes it possible to upgrade our version of servlet-api.jar without a major overhaul. See #25941.
     public static Map<String, Object> adaptParameterMap(Map<String, String[]> parameterMap)
     {
-        return new HashMap<>(parameterMap);
+        // unwraps single element arrays unless parameter is marked as an array
+        HashMap<String,Object> ret = new HashMap<>();
+        for (var entry : parameterMap.entrySet())
+        {
+            String[] a = entry.getValue();
+            Object v = a;
+            if (null != a && 1 == a.length && !startsWith(entry.getKey(), ARRAY_MARKER))
+                v = a[0];
+            ret.put(entry.getKey(), v);
+        }
+        return ret;
     }
 }

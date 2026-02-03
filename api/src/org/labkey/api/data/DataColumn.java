@@ -649,7 +649,13 @@ public class DataColumn extends DisplayColumn
                 }
             }
             else
+            {
+                // TODO: We currently rely on the behavior of DateFriendlyDateConverter.convert(String.class, dateObject);
+                // TODO: This logic really belongs in LenientDateConverter.convert(String.class, dateObject)
+                // To force the desired behavior here we need to call ConvertUtils.convert(object)
+                // strVal = ConvertHelper.convert(value, String.class);
                 strVal = ConvertUtils.convert(value);
+            }
         }
         return strVal;
     }

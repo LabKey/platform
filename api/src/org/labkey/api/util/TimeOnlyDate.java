@@ -21,6 +21,7 @@ package org.labkey.api.util;
  * Time: 4:14:31 PM
  *
  * Marker class to allow TabLoader and ConvertHelper to identify and parse time/duration objects.
+ * TODO: Why does this class exists??? What's wrong with java.sql.Time??? (or maybe LocalTime)
  */
 public class TimeOnlyDate extends java.util.Date
 {

@@ -697,7 +697,7 @@ public class NameGeneratorState implements AutoCloseable
                     {
                         try
                         {
-                            rootValue = ConvertUtils.convert((String)rootValue, pkCol.getJavaClass());
+                            rootValue = pkCol.convert(rootValue);
                         }
                         catch (ConversionException x)
                         {
