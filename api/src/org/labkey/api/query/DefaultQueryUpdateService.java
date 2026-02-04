@@ -780,7 +780,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
     final protected void convertTypes(User user, Container c, Map<String,Object> row) throws ValidationException
     {
-        convertTypes(user, c, row,  getDbTable(), null);
+        convertTypes(user, c, row,  getQueryTable(), null);
     }
 
     // TODO Path->FileObject
@@ -826,7 +826,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 row.put(col.getMvColumnName().getName(), mv);
             }
 
-            value = null==value ? null : convertColumnValue(col, value, user, c, fileLinkDirPath);
+            value = convertColumnValue(col, value, user, c, fileLinkDirPath);
             row.put(col.getName(), value);
         }
     }
