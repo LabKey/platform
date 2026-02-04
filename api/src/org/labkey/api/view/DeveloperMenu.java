@@ -54,7 +54,7 @@ public class DeveloperMenu
         registerMenuProvider((c, user, items) -> {
             if (c.hasPermission(user, ReadPermission.class))
             {
-                items.add(DeveloperMenuNavTrees.Section.tools, new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c)));
+                items.add(DeveloperMenuNavTrees.Section.query, new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c)));
             }
 
             if (user.isPlatformDeveloper())
