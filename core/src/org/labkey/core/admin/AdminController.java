@@ -8711,8 +8711,9 @@ public class AdminController extends SpringActionController
 
     /**
      * Tests the Microsoft Graph API email transport with HTML content and a large attachment.
-     * This action is specifically for testing the Graph API upload session workflow for attachments
-     * over 3MB. Use {@link EmailTestAction} for general email testing for both SMTP and Graph API.
+     * This action tests the Graph API upload session workflow for attachments over 3MB,
+     * and data URI to CID attachment conversion (embedded base64 images in HTML).
+     * Use {@link EmailTestAction} for general email testing for both SMTP and Graph API.
      */
     @AdminConsoleAction
     @RequiresPermission(AdminOperationsPermission.class)
@@ -8768,8 +8769,41 @@ public class AdminController extends SpringActionController
                 msg.setFrom(fromAddress);
                 msg.addRecipient(Message.RecipientType.TO, recipient.getAddress());
                 msg.setSubject("Test Email with HTML and Attachment");
-                msg.setEncodedHtmlContent("<html><body><p>This is a <strong>test email</strong> with HTML content and attachment.</p><p>Sent via " +
-                    MailHelper.getActiveProvider().getName() + ".</p></body></html>");
+                // Test both external URL images and data URI images.
+                // External URLs should be left unchanged, while data URIs should be converted to CID attachments.
+
+                // External image reference (should NOT be converted - left as-is)
+                String externalImage = "https://www.labkey.com/wp-content/uploads/2023/07/LK-Logo.png";
+
+                // Data URI images (should be converted to CID attachments by GraphTransportProvider)
+                // 8x8 red PNG (simulates a small icon)
+                String pngDataUri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAADklEQVQI12P4z8DAwMAAAw4B/xnq5sUAAAAASUVORK5CYII=";
+
+                // 8x8 blue GIF (simulates a decorative element)
+                String gifDataUri = "data:image/gif;base64,R0lGODlhCAAIAIAAAAAAAP///yH5BAEAAAEALAAAAAAIAAgAAAIKjI+py+0Po5yUFQA7";
+
+                // 4x4 green JPEG (simulates a small logo)
+                String jpegDataUri = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAEAAQDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBEQCEAwEPwAB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBEQCEAwEPwAB//9k=";
+
+                msg.setEncodedHtmlContent("<html><body>" +
+                    "<table width='100%' style='max-width:600px;'>" +
+                    "<tr><td style='background:#f0f0f0; padding:20px; text-align:center;'>" +
+                    "<img src=\"" + externalImage + "\" alt=\"LabKey Logo\" height='40' /> " +
+                    "</td></tr>" +
+                    "<tr><td style='padding:20px;'>" +
+                    "<p>This is a <strong>test email</strong> with HTML content, attachment, and multiple images.</p>" +
+                    "<p><strong>External URL image</strong> (should remain unchanged):</p>" +
+                    "<img src=\"" + externalImage + "\" alt=\"External\" height='30' />" +
+                    "<p><strong>Data URI images</strong> (should be converted to CID attachments):</p>" +
+                    "<table>" +
+                    "<tr><td>PNG:</td><td><img src=\"" + pngDataUri + "\" alt=\"PNG\" /></td></tr>" +
+                    "<tr><td>GIF:</td><td><img src=\"" + gifDataUri + "\" alt=\"GIF\" /></td></tr>" +
+                    "<tr><td>JPEG:</td><td><img src=\"" + jpegDataUri + "\" alt=\"JPEG\" /></td></tr>" +
+                    "</table>" +
+                    "<p>Sent via " + MailHelper.getActiveProvider().getName() + ".</p>" +
+                    "</td></tr>" +
+                    "</table>" +
+                    "</body></html>");
                 msg.addAttachment(tempFile);
 
                 MailHelper.send(msg, getUser(), getContainer());

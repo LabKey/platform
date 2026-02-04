@@ -77,6 +77,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -95,12 +96,25 @@ public class GraphTransportProvider implements EmailTransportProvider
 {
     private static final org.apache.logging.log4j.Logger LOG = LogHelper.getLogger(GraphTransportProvider.class, "Microsoft Graph Transport Provider");
 
+    // Graph API has a hard ~4MB limit on request body size. Unlike SMTP (which typically allows 10-25MB),
+    // this means we must handle large content differently: attachments over 3MB require upload sessions,
+    // and data URIs in HTML must be converted to CID attachments to avoid exceeding the limit.
+    // See: https://learn.microsoft.com/en-us/graph/outlook-large-attachments
+
     // Size threshold for using upload sessions (3MB) - smaller attachments use inline base64 encoding
     private static final int LARGE_ATTACHMENT_THRESHOLD = 3 * 1024 * 1024;
 
+    // Maximum body size limit (3.5MB) - leaves room for other message JSON content within Graph API's ~4MB limit
+    private static final int MAX_BODY_SIZE = (int) (3.5 * 1024 * 1024);
+
+    // Note: Retry logic for transient failures (429, 503, 504) is handled automatically by the
+    // Graph SDK's built-in RetryHandler middleware. No custom retry logic needed here.
+
     private final Properties _properties = new Properties();
 
-    // Lazily initialized Graph client - created on first use after configuration is loaded
+    // GraphServiceClient is the SDK's entry point that translates fluent method calls into HTTP
+    // requests to Microsoft Graph API endpoints like /users/{id}/sendMail and /users/{id}/messages.
+    // Lazily initialized - created on first use after configuration is loaded.
     private volatile GraphServiceClient _graphClient = null;
     private final Object _clientLock = new Object();
 
@@ -223,26 +237,33 @@ public class GraphTransportProvider implements EmailTransportProvider
 
     /**
      * Send email via Graph API using the SDK.
-     * For messages with large attachments, uses draft + upload session approach.
-     * For messages without attachments or with small attachments, uses direct sendMail.
+     * For messages with large attachments, use the draft and upload session approach.
+     * For messages without attachments or with small attachments, use direct sendMail.
      */
     private void sendMessage(MimeMessage mm) throws IOException, MessagingException
     {
+        // Step 1: Extract MIME attachments from the message structure
         List<AttachmentInfo> attachments = extractAttachments(mm);
 
-        // Check if any attachment exceeds the threshold for inline encoding
+        // Step 2: Build the Graph message. This also scans the HTML body for data URIs and converts
+        // them to CID attachments, adding them to the attachment list.
+        com.microsoft.graph.models.Message graphMessage = buildGraphMessage(mm, attachments);
+
+        // Step 3: Check if any attachment (including converted data URIs) exceeds the threshold.
+        // This check must happen AFTER buildGraphMessage because data URI conversion may add
+        // large attachments that weren't in the original MIME structure.
         boolean hasLargeAttachments = attachments.stream()
                 .anyMatch(a -> a.content().length > LARGE_ATTACHMENT_THRESHOLD);
 
         if (hasLargeAttachments)
         {
             // Has large attachments - create draft, upload via upload sessions, then send
-            sendWithLargeAttachments(mm, attachments);
+            sendWithLargeAttachments(graphMessage, attachments);
         }
         else
         {
             // No attachments or small attachments - send directly via sendMail
-            sendViaSdk(mm, attachments);
+            sendViaSdk(graphMessage, attachments);
         }
     }
 
@@ -318,31 +339,23 @@ public class GraphTransportProvider implements EmailTransportProvider
      */
     private byte[] readPartContent(BodyPart part) throws IOException, MessagingException
     {
-        try (InputStream is = part.getInputStream();
-             ByteArrayOutputStream baos = new ByteArrayOutputStream())
+        try (InputStream is = part.getInputStream())
         {
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = is.read(buffer)) != -1)
-            {
-                baos.write(buffer, 0, bytesRead);
-            }
-            return baos.toByteArray();
+            return is.readAllBytes();
         }
     }
 
     /**
      * Send email using the Graph SDK with inline attachments (for messages without attachments
      * or with attachments smaller than 3MB).
+     *
+     * @param graphMessage the already-built Graph message (from buildGraphMessage)
+     * @param attachments all attachments including any converted from data URIs
      */
-    private void sendViaSdk(MimeMessage mm, List<AttachmentInfo> attachments)
-            throws IOException, MessagingException
+    private void sendViaSdk(com.microsoft.graph.models.Message graphMessage, List<AttachmentInfo> attachments)
     {
         GraphServiceClient client = getGraphClient();
         String fromAddress = getFromAddress();
-
-        // Build the Graph Message object
-        com.microsoft.graph.models.Message graphMessage = buildGraphMessage(mm);
 
         // Add small attachments inline (base64 encoded)
         if (!attachments.isEmpty())
@@ -389,15 +402,17 @@ public class GraphTransportProvider implements EmailTransportProvider
      * Send email with large attachments: create draft, upload via upload sessions, then send.
      * This approach is required for attachments over 3MB as Graph API doesn't support
      * inline base64 encoding for large files.
+     *
+     * @param graphMessage the already-built Graph message (from buildGraphMessage)
+     * @param attachments all attachments including any converted from data URIs
      */
-    private void sendWithLargeAttachments(MimeMessage mm, List<AttachmentInfo> attachments)
-            throws IOException, MessagingException
+    private void sendWithLargeAttachments(com.microsoft.graph.models.Message graphMessage, List<AttachmentInfo> attachments)
+            throws IOException
     {
         GraphServiceClient client = getGraphClient();
         String fromAddress = getFromAddress();
 
-        // Step 1: Create draft message
-        com.microsoft.graph.models.Message graphMessage = buildGraphMessage(mm);
+        // Step 1: Create draft message from the pre-built Graph message
         com.microsoft.graph.models.Message draft = client.users().byUserId(fromAddress)
                 .messages()
                 .post(graphMessage);
@@ -456,8 +471,22 @@ public class GraphTransportProvider implements EmailTransportProvider
 
     /**
      * Build a Graph Message object from a MimeMessage.
+     * <p>
+     * If the HTML body contains data URIs (e.g., {@code <img src="data:image/png;base64,...">}),
+     * they are converted to CID attachments following email industry best practices. The data URI
+     * is decoded, added to the attachments list, and replaced with a cid: reference in the HTML.
+     * <p>
+     * Why we handle this ourselves: The Microsoft Graph SDK is a REST API wrapper that sends
+     * whatever content you provide - it doesn't parse or transform HTML bodies. Data URIs embedded
+     * in HTML can cause issues: (1) they bloat the message body and may exceed Graph API's ~4MB
+     * request limit, (2) some email clients (e.g., Gmail) block base64 data URIs for security
+     * reasons. The proper email standard is to use CID (Content-ID) attachments with
+     * {@code <img src="cid:...">} references, which this method implements.
+     *
+     * @param mm the MimeMessage to convert
+     * @param attachments list of attachments; any data URIs converted from the HTML body are added here
      */
-    private com.microsoft.graph.models.Message buildGraphMessage(MimeMessage mm)
+    private com.microsoft.graph.models.Message buildGraphMessage(MimeMessage mm, List<AttachmentInfo> attachments)
             throws MessagingException, IOException
     {
         com.microsoft.graph.models.Message message = new com.microsoft.graph.models.Message();
@@ -470,13 +499,18 @@ public class GraphTransportProvider implements EmailTransportProvider
         String[] bodyContent = extractBodyContent(mm);
         if (bodyContent[0] != null)
         {
-            // HTML content
+            // HTML content - scan for data URIs and convert them to CID attachments.
+            // Data URIs like "data:image/png;base64,..." are decoded and added to attachments list,
+            // then replaced with "cid:<generated-id>" references in the HTML.
+            String html = convertDataUrisToCidAttachments(bodyContent[0], attachments);
+            validateBodySize(html);
             body.setContentType(BodyType.Html);
-            body.setContent(bodyContent[0]);
+            body.setContent(html);
         }
         else if (bodyContent[1] != null)
         {
-            // Text content
+            // Plain text content - no data URI conversion needed
+            validateBodySize(bodyContent[1]);
             body.setContentType(BodyType.Text);
             body.setContent(bodyContent[1]);
         }
@@ -567,7 +601,8 @@ public class GraphTransportProvider implements EmailTransportProvider
 
             LOG.debug("Part {}: disposition={}, contentType={}", i, disposition, contentType);
 
-            // Skip attachments
+            // Skip attachments - this method only extracts body content (text/html or text/plain).
+            // Attachments are handled separately by extractAttachments() in sendMessage().
             if (Part.ATTACHMENT.equalsIgnoreCase(disposition))
             {
                 continue;
@@ -613,6 +648,116 @@ public class GraphTransportProvider implements EmailTransportProvider
     private boolean containsHtmlTags(String content)
     {
         return content != null && HTML_TAG_PATTERN.matcher(content).find();
+    }
+
+    // Pattern to match data URIs in HTML (e.g., src="data:image/png;base64,...")
+    // Captures: group 1 = quote char, group 2 = MIME type, group 3 = base64 data
+    private static final java.util.regex.Pattern DATA_URI_PATTERN =
+            java.util.regex.Pattern.compile(
+                    "([\"'])data:([^;]+);base64,([^\"']+)\\1",
+                    java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    // Counter for generating unique Content-IDs for converted data URIs.
+    // Uses AtomicInteger for thread safety since multiple threads may send emails concurrently.
+    private final AtomicInteger _dataUriCounter = new AtomicInteger(0);
+
+    /**
+     * Scan HTML content for base64 data URIs and convert them to CID attachments.
+     * This follows email industry best practices - embedded images should be sent as
+     * MIME attachments with Content-ID references rather than inline data URIs.
+     *
+     * @param html the HTML content to scan
+     * @param attachments list to add converted attachments to
+     * @return updated HTML with data URIs replaced by cid: references
+     */
+    private String convertDataUrisToCidAttachments(String html, List<AttachmentInfo> attachments)
+    {
+        if (html == null || !html.contains("data:"))
+        {
+            return html;
+        }
+
+        java.util.regex.Matcher matcher = DATA_URI_PATTERN.matcher(html);
+        StringBuilder result = new StringBuilder();
+
+        while (matcher.find())
+        {
+            String quote = matcher.group(1);
+            String mimeType = matcher.group(2);
+            String base64Data = matcher.group(3);
+
+            try
+            {
+                // Decode the base64 content
+                byte[] content = java.util.Base64.getDecoder().decode(base64Data);
+
+                // Generate a unique Content-ID
+                String contentId = "datauri-" + System.currentTimeMillis() + "-" + _dataUriCounter.incrementAndGet();
+
+                // Determine file extension from MIME type
+                String extension = getExtensionForMimeType(mimeType);
+                String fileName = contentId + extension;
+
+                // Create attachment info and add to list
+                attachments.add(new AttachmentInfo(fileName, mimeType, content, contentId));
+
+                // Replace data URI with cid: reference
+                matcher.appendReplacement(result, quote + "cid:" + contentId + quote);
+
+                LOG.debug("Converted data URI to CID attachment: {} ({} bytes, type: {})",
+                        contentId, content.length, mimeType);
+            }
+            catch (IllegalArgumentException e)
+            {
+                // Invalid base64 - leave the data URI as-is
+                LOG.warn("Failed to decode base64 data URI, leaving as-is: {}", e.getMessage());
+                matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(matcher.group(0)));
+            }
+        }
+        matcher.appendTail(result);
+
+        return result.toString();
+    }
+
+    /**
+     * Get file extension for common MIME types.
+     */
+    private String getExtensionForMimeType(String mimeType)
+    {
+        if (mimeType == null) return "";
+        return switch (mimeType.toLowerCase())
+        {
+            case "image/png" -> ".png";
+            case "image/jpeg", "image/jpg" -> ".jpg";
+            case "image/gif" -> ".gif";
+            case "image/webp" -> ".webp";
+            case "image/svg+xml" -> ".svg";
+            case "image/bmp" -> ".bmp";
+            case "image/tiff" -> ".tiff";
+            case "application/pdf" -> ".pdf";
+            default -> "";
+        };
+    }
+
+    /**
+     * Validate that body content doesn't exceed the Graph API size limit.
+     *
+     * @param bodyContent the body content (HTML or text)
+     * @throws MessagingException if body exceeds MAX_BODY_SIZE
+     */
+    private void validateBodySize(String bodyContent) throws MessagingException
+    {
+        if (bodyContent != null)
+        {
+            int bodySize = bodyContent.getBytes(StandardCharsets.UTF_8).length;
+            if (bodySize > MAX_BODY_SIZE)
+            {
+                throw new MessagingException(String.format(
+                        "Email body size (%d bytes) exceeds maximum allowed size (%d bytes). " +
+                        "Consider moving large embedded content to attachments.",
+                        bodySize, MAX_BODY_SIZE));
+            }
+        }
     }
 
     /**
@@ -1155,6 +1300,51 @@ public class GraphTransportProvider implements EmailTransportProvider
             message.setSubject("Test email with HTML body");
             message.setContent("<html><body><h1>Hello</h1><p>This is an HTML email.</p></body></html>", "text/html");
             return message;
+        }
+
+        private MimeMessage createTestMessageWithDataUri() throws Exception
+        {
+            Properties props = new Properties();
+            Session session = Session.getDefaultInstance(props);
+            MimeMessage message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(TEST_FROM_ADDRESS));
+            message.setRecipient(Message.RecipientType.TO, new InternetAddress(TEST_TO_ADDRESS));
+            message.setSubject("Test email with data URI");
+            // Small PNG: 1x1 red pixel
+            String base64Png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==";
+            String html = "<html><body><p>Image:</p><img src=\"data:image/png;base64," + base64Png + "\"/></body></html>";
+            message.setContent(html, "text/html");
+            return message;
+        }
+
+        @Test
+        public void testDataUriConvertedToCidAttachment() throws Exception
+        {
+            doNothing().when(mockSendMailRequestBuilder).post(any(SendMailPostRequestBody.class));
+
+            GraphTransportProvider provider = createTestProvider();
+            provider.send(createTestMessageWithDataUri());
+
+            ArgumentCaptor<SendMailPostRequestBody> captor = ArgumentCaptor.forClass(SendMailPostRequestBody.class);
+            verify(mockSendMailRequestBuilder).post(captor.capture());
+
+            com.microsoft.graph.models.Message message = captor.getValue().getMessage();
+
+            // Verify HTML body now has cid: reference instead of data URI
+            assertNotNull("Body should not be null", message.getBody());
+            assertEquals(BodyType.Html, message.getBody().getContentType());
+            String bodyContent = message.getBody().getContent();
+            assertTrue("Body should contain cid: reference", bodyContent.contains("cid:"));
+            assertFalse("Body should not contain data URI", bodyContent.contains("data:image/png;base64"));
+
+            // Verify attachment was created from the data URI
+            assertNotNull("Attachments should not be null", message.getAttachments());
+            assertEquals("Should have one attachment (converted from data URI)", 1, message.getAttachments().size());
+
+            FileAttachment attachment = (FileAttachment) message.getAttachments().get(0);
+            assertTrue("Attachment should be inline", attachment.getIsInline());
+            assertNotNull("Attachment should have content ID", attachment.getContentId());
+            assertEquals("image/png", attachment.getContentType());
         }
     }
 }
