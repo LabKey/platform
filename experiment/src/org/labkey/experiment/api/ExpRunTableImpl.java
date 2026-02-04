@@ -1055,7 +1055,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         {
                             try
                             {
-                                value = ConvertUtils.convert(String.valueOf(value), col.getJavaClass());
+                                value = col.convert(value);
                             }
                             catch (ConversionException e)
                             {
@@ -1079,11 +1079,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                             Class<?> keyColumnType = lookupColumn.getJavaClass();
                             if (newValue != null && !keyColumnType.isAssignableFrom(newValue.getClass()))
                             {
-                                newValue = ConvertUtils.convert(newValue.toString(), keyColumnType);
+                                newValue = lookupColumn.convert(newValue);
                             }
                             if (oldValue != null && !keyColumnType.isAssignableFrom(oldValue.getClass()))
                             {
-                                oldValue = ConvertUtils.convert(oldValue.toString(), keyColumnType);
+                                oldValue = lookupColumn.convert(oldValue);
                             }
                             Map<String, Object> oldLookupTarget = new TableSelector(fkTableInfo).getMap(oldValue);
                             if (oldLookupTarget != null)

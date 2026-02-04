@@ -28,6 +28,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.SimpleConvert;
 import org.labkey.api.exp.OntologyManager.PropertyRow;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.util.DateUtil;
@@ -36,8 +37,6 @@ import org.labkey.vfs.FileLike;
 import java.io.File;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
-import java.sql.Array;
-import java.sql.SQLException;
 import java.sql.Time;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -55,7 +54,7 @@ import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 /**
  * TODO: Add more types? Entity, Lsid, User, ...
  */
-public enum PropertyType
+public enum PropertyType implements SimpleConvert
 {
     BOOLEAN("http://www.w3.org/2001/XMLSchema#boolean", "Boolean", 'f', JdbcType.BOOLEAN, 10, null, CellType.BOOLEAN, Boolean.class, Boolean.TYPE)
     {
@@ -68,7 +67,7 @@ public enum PropertyType
         @Override
         public Object convert(Object value) throws ConversionException
         {
-            boolean boolValue = false;
+            Boolean boolValue = null;
             if (value instanceof Boolean)
                 boolValue = (Boolean)value;
             else if (null != value && !"".equals(value))
@@ -123,10 +122,11 @@ public enum PropertyType
         @Override
         public Object convert(Object value) throws ConversionException
         {
-            if (value instanceof String)
+            if (null == value)
                 return value;
-            else
-                return ConvertUtils.convert(value);
+            if (value instanceof CharSequence cs)
+                return cs.isEmpty() ? null : cs.toString();
+            return ConvertUtils.convert(value, String.class);
         }
 
         @Override
@@ -171,10 +171,7 @@ public enum PropertyType
         @Override
         public Object convert(Object value) throws ConversionException
         {
-            if (value instanceof String)
-                return value;
-            else
-                return ConvertUtils.convert(value);
+            return STRING.convert(value);
         }
 
         @Override
@@ -934,10 +931,7 @@ public enum PropertyType
         @Override
         public Object convert(Object value) throws ConversionException
         {
-            if (value instanceof String)
-                return value;
-            else
-                return ConvertUtils.convert(value);
+            return STRING.convert(value);
         }
 
         @Override
@@ -1004,6 +998,10 @@ public enum PropertyType
         this.excelCellType = excelCellType;
         this.additionalTypes = additionalTypes;
     }
+
+    /**
+     * The returned Function&lt;Object,Object> should throw ConversionException (undeclared RuntimeException)
+     */
 
     public String getTypeUri()
     {
@@ -1181,8 +1179,6 @@ public enum PropertyType
     public abstract SimpleTypeNames.Enum getXmlBeanType();
 
     protected abstract Object convertExcelValue(Cell cell) throws ConversionException;
-
-    public abstract Object convert(Object value) throws ConversionException;
 
     public static Object getFromExcelCell(Cell cell) throws ConversionException
     {

@@ -6,12 +6,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.data.ConversionExceptionWithMessage;
+import org.labkey.api.data.SimpleConvert;
 
 import java.util.HashMap;
 import java.util.function.Function;
 
-public enum Unit
+public enum Unit implements SimpleConvert
 {
     unit(KindOfQuantity.Count, null, 1.0, 2, "unit",
             Quantity.class,
@@ -217,6 +217,7 @@ public enum Unit
         return from==to ? value : to.fromBaseUnitValue(from.toBaseUnitValue(value));
     }
 
+    @Override
     public Quantity convert(@Nullable Object value)
     {
         return Quantity.convert(value, this);
@@ -255,6 +256,7 @@ public enum Unit
             assertTrue(Unit.cells.isCompatible(Unit.unit));
             assertFalse(Unit.unit.isCompatible(Unit.mL));
             assertFalse(Unit.bottles.isCompatible(Unit.mL));
+            //noinspection ConstantValue
             assertFalse(Unit.mL.isCompatible(null));
         }
 

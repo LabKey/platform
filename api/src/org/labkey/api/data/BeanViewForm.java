@@ -124,12 +124,14 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean, HasBindP
     }
 
     @Override
-    protected Class<?> getTruePropType(String propName)
+    protected SimpleConvert getSimpleConvert(String propName)
     {
-        var ret = _dynaClass.getTruePropType(propName);
-        if (null == ret)
-            ret = super.getTruePropType(propName);
-        return ret;
+        var type = _dynaClass.getTruePropType(propName);
+        if (null != type)
+        {
+            return ConvertHelper.getSimpleConvert(type);
+        }
+        return super.getSimpleConvert(propName);
     }
 
     // DynaBean

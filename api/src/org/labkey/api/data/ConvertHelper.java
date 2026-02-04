@@ -175,7 +175,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new NullSafeConverter(new ShortConverter()), Short.class);
         _register(new ShortConverter(), Short.TYPE);
         _register(new NullSafeConverter(new ShortArrayConverter()), short[].class);
-        _register(new NullSafeConverter(new DateFriendlyStringConverter()), String.class);
+        _register(new DateFriendlyStringConverter(), String.class);
         _register(new StringArrayConverter(), String[].class);
         _register(new URLHelper.Converter(), URLHelper.class);
         _register(new StringExpressionFactory.Converter(), StringExpression.class);
@@ -224,17 +224,10 @@ public class ConvertHelper implements PropertyEditorRegistrar
         @Override
         public <T> T convert(Class<T> clss, Object o)
         {
-            if (o instanceof String s)
-            {
-                // 2956 : AbstractConvertHelper shouldn't trim Strings
-                //o = ((String) o).trim();
-                if (s.isEmpty())
-                    return null;
-            }
-
-            return null == o ? null : _converter.convert(clss, o);
+            return null == o || "".equals(o) ? null : _converter.convert(clss, o);
         }
     }
+
 
     // Issue 34334: Add 't' and 'f' to BooleanConverter in order to support PostgreSQL array_to_string of booleans array.
     // For example, array_to_string(array_agg(array[true, false]), '|') ==> returns 't|f'
@@ -267,7 +260,6 @@ public class ConvertHelper implements PropertyEditorRegistrar
      */
     public static class LenientTimeOnlyConverter implements Converter
     {
-
         @Override
         public Object convert(Class clss, Object o)
         {
@@ -277,7 +269,10 @@ public class ConvertHelper implements PropertyEditorRegistrar
             if (o instanceof Time || o instanceof TimeOnlyDate)
                 return o;
 
-            return new TimeOnlyDate(DateUtil.parseSimpleTime(o).getTime());
+            var d = DateUtil.parseSimpleTime(o.toString());
+            if (null == d)
+                throw new ConversionException("Could not convert \"" + o + "\" to time.");
+            return new TimeOnlyDate(d.getTime());
         }
     }
 
@@ -406,8 +401,13 @@ public class ConvertHelper implements PropertyEditorRegistrar
         @Override
         public Object convert(Class clss, Object o)
         {
-            if (o instanceof String)
-                return o;
+            if (null == o)
+                return null;
+
+            // MAB I think there's an argument that ""->null conversion should be left to more specific converters
+            // e.g. ColumnInfo.convert(), PropertyType.convert(), or class SimpleConvertColumn
+            if (o instanceof String s)
+                return s.isEmpty() ? null : s;
 
             if (o instanceof Container)
                 return ((Container)o).getId();
@@ -601,7 +601,6 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
             this.defaultValue = defaultValue;
             this.useDefault = true;
-
         }
 
         // ----------------------------------------------------- Instance Variables
@@ -802,6 +801,22 @@ public class ConvertHelper implements PropertyEditorRegistrar
         return (T)ConvertUtils.convert(value.toString(), cl);
     }
 
+    public static SimpleConvert getSimpleConvert(Class<?> targetType)
+    {
+        // ConvertUtils handling String.class and String[].class depends on the source type,
+        // for these we want the full ConvertUtils.convert().
+        Converter converterLookup;
+        if (targetType == String.class || targetType == String[].class || null == (converterLookup = ConvertUtils.lookup(targetType)))
+            return (value) -> ConvertUtils.convert(value, targetType);
+
+        // For other usages we can call our registered converter directly.
+        final Converter converterFinal = converterLookup;
+        if (converterFinal instanceof SimpleConvert simple)
+            return simple;
+
+        return (value) -> converterFinal.convert(targetType, value);
+    }
+
     public static class ConvertUtilsEditor extends PropertyEditorSupport
     {
         private final Class<?> _class;
@@ -935,6 +950,9 @@ public class ConvertHelper implements PropertyEditorRegistrar
             if (value.getClass() == type)
                 return value;
 
+            if (value instanceof JSONObject)
+                return value;
+
             if (value instanceof Map)
                 return new JSONObject((Map<?, ?>)value);
 
@@ -1008,7 +1026,11 @@ public class ConvertHelper implements PropertyEditorRegistrar
         public Object convert(Class type, Object value)
         {
             if (!type.isEnum())
+            {
+                if (type == String.class)
+                    return value;
                 throw new IllegalArgumentException();
+            }
 
             if (value == null)
                 return null;
@@ -1217,15 +1239,17 @@ public class ConvertHelper implements PropertyEditorRegistrar
         @Test
         public void testEmpty()
         {
+            assertNull(JdbcType.BOOLEAN.convert(""));
+            assertNull(JdbcType.INTEGER.convert(""));
             assertNull(JdbcType.CHAR.convert(""));
             assertNull(JdbcType.VARCHAR.convert(""));
             assertNull(JdbcType.LONGVARCHAR.convert(""));
 
-            // PropertyType is used for domain defined tables.
-            // I would expect these to return null.
-            assertEquals("", PropertyType.STRING.convert(""));
-            assertEquals("", PropertyType.MULTI_LINE.convert(""));
-            assertEquals("", PropertyType.XML_TEXT.convert(""));
+            assertNull(PropertyType.BOOLEAN.convert(""));
+            assertNull(PropertyType.INTEGER.convert(""));
+            assertNull(PropertyType.STRING.convert(""));
+            assertNull(PropertyType.MULTI_LINE.convert(""));
+            assertNull(PropertyType.XML_TEXT.convert(""));
 
             // Since we often convert "through" string, I'm not sure this low-level
             // method should modify "".  This could potentially mess up
@@ -1233,6 +1257,8 @@ public class ConvertHelper implements PropertyEditorRegistrar
             // [] -> "" -> null
             // vs
             // [] -> "" -> []
+            assertNull(ConvertHelper.convert("", Boolean.class));
+            assertNull(ConvertHelper.convert("", Integer.class));
             assertNull(ConvertHelper.convert("", String.class));
             assertNull(ConvertUtils.convert(""));
             assertNull(ConvertUtils.convert("", String.class));
@@ -1268,6 +1294,44 @@ public class ConvertHelper implements PropertyEditorRegistrar
             assertEquals(" x ", ConvertUtils.convert(" x "));
             assertEquals(" x ", ConvertUtils.convert(" x ", String.class));
         }
+
+        @Test
+        public void testMiscConversions()
+        {
+            // Container, java.sql.Time, java.util.Date, java.sql.Clob all had special cases coded into
+            // the registered String.class converter (DateFriendlyStringConverter).  These conversions
+            // should be handled in the registered converters for each class e.g. LenientTimeConverter for java.sql.Time
+            // Test that this works after (and before) refactoring.
+
+            // there are date/time converters for :
+            //      java.sql.Date, java.sql.Time, java.sql.Timestamp,
+            //      java.util.Date,
+            //      org.labkey.api.util.TimeOnlyDate, org.labkey.api.util.SimpleTime
+
+            java.util.Date utilDate = (java.util.Date)ConvertUtils.convert("2 Jan 2024 01:02:03.005", java.util.Date.class);
+            assertEquals("2024-01-02 01:02:03.005", ConvertUtils.convert(utilDate, String.class));
+
+            Timestamp timestamp = (Timestamp)ConvertUtils.convert("2 Jan 2024 01:02:03.005", Timestamp.class);
+            assertEquals("2024-01-02 01:02:03.005", ConvertUtils.convert(timestamp, String.class));
+
+            Time time = (Time)ConvertUtils.convert("01:02:03.500", Time.class);
+            assertEquals("01:02:03.500", ConvertUtils.convert(time, String.class));
+//            BUG handle in TimeOnlyDateCoverter or since this is a LabKey class in TimeOnlyDate.toString()
+//            assertEquals("01:02:03.500", ConvertUtils.convert(new TimeOnlyDate(time.getTime()), String.class));
+            assertEquals("01:02:03.500", ConvertUtils.convert(new SimpleTime(time.getTime()), String.class));
+
+            time = (Time)ConvertUtils.convert("01:02:03", Time.class);
+            assertEquals("01:02:03", ConvertUtils.convert(time, String.class));
+//            assertEquals("01:02:03", ConvertUtils.convert(new TimeOnlyDate(time.getTime()), String.class));
+            assertEquals("01:02:03", ConvertUtils.convert(new SimpleTime(time.getTime()), String.class));
+
+            java.sql.Date sqlDate = (java.sql.Date)ConvertUtils.convert("2 Jan 2024", java.sql.Date.class);
+            assertEquals("2024-01-02", ConvertUtils.convert(sqlDate, String.class));
+
+            Container home = ContainerManager.getHomeContainer();
+            assertEquals(home.getRowId(), ((Container)ConvertUtils.convert(home.getId(), Container.class)).getRowId());
+            assertEquals(home.getId(), ConvertUtils.convert(home, String.class));
+        }
     }
 
     // Note: Keep in sync with LabKeySiteWrapper.getConversionErrorMessage()
@@ -1280,6 +1344,6 @@ public class ConvertHelper implements PropertyEditorRegistrar
         if (fieldType.equalsIgnoreCase("date") || fieldType.equalsIgnoreCase("datetime") || fieldType.equalsIgnoreCase("timestamp"))
             return "'" + value + "' is not a valid " + fieldType + " for " + fieldName + " using " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode().getDisplayString();
 
-        return "Could not convert value '" + value + "' (" + value.getClass().getSimpleName() + ") for " + fieldType + " field '" + fieldName + "'" ;
+        return "Could not convert value '" + value + "' (" + value.getClass().getSimpleName() + ") for " + fieldType + (null==fieldName ? "" : " field '" + fieldName + "'");
     }
 }

@@ -438,7 +438,7 @@ public class CoreController extends SpringActionController
 
                 try
                 {
-                    Object pkVal = ConvertUtils.convert(form.getPk(), pkCol.getJavaClass());
+                    Object pkVal = pkCol.convert(form.getPk());
                     SimpleFilter filter = new SimpleFilter(pkCol.getFieldKey(), pkVal);
                     var select = QueryService.get().getSelectBuilder(table)
                             .columns(col)

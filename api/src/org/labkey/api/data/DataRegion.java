@@ -2076,7 +2076,7 @@ public class DataRegion extends DisplayElement
                     throw new UnauthorizedException();
 
                 // For update the Results holds the current version of the data.
-                // The posted values (for reshow) are help by TableViewForm (RenderContext.getForm()). see DisplayColumn.getInputValue()
+                // The posted values (for reshow) are held by TableViewForm (RenderContext.getForm()). see DisplayColumn.getInputValue()
                 TableInfo tinfoMain = getTable();
                 var results = new TableSelector(tinfoMain, selectKeyMap.values(), new PkFilter(tinfoMain, viewForm.getPkVals()), null).getResults(true);
                 // NOTE MissingValueDisplayColumn does not work without Results, it relies on using .get(FieldKey) that it enables

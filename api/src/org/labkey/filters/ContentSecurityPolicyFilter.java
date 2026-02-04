@@ -11,9 +11,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.security.Directive;
@@ -36,6 +39,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -64,8 +68,14 @@ public class ContentSecurityPolicyFilter implements Filter
 
     // Per-filter-instance parameters that are set in init() and never changed
     private ContentSecurityPolicyType _type = ContentSecurityPolicyType.Enforce;
-    private String _policyTemplate = null;
-    private String _cspVersion = "Unknown";
+    private @NotNull String _cspVersion = "Unknown";
+    private String _stashedTemplate = null;
+    private String _reportToEndpointName = null;
+
+    // Per-filter-instance parameters that are set at first request and reset if base server URL changes
+    private volatile String _previousBaseServerUrl = null;
+    private volatile String _policyTemplate = null;
+    private volatile String _reportingEndpointsHeaderValue = null;
 
     // Updated after every change to "allowed sources"
     private StringExpression _policyExpression = null;
@@ -104,7 +114,6 @@ public class ContentSecurityPolicyFilter implements Filter
     public void init(FilterConfig filterConfig) throws ServletException
     {
         LogHelper.getLogger(ContentSecurityPolicyFilter.class, "CSP filter initialization").info("Initializing {}", filterConfig.getFilterName());
-
         Enumeration<String> paramNames = filterConfig.getInitParameterNames();
         while (paramNames.hasMoreElements())
         {
@@ -115,10 +124,9 @@ public class ContentSecurityPolicyFilter implements Filter
                 String s = filterPolicy(paramValue);
 
                 // Replace REPORT_PARAMETER_SUBSTITUTION now since its value is static
-                s = StringExpressionFactory.create(s, false, NullValueBehavior.KeepSubstitution)
-                    .eval(Map.of(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())));
+                s = substituteReportParams(s);
 
-                _policyTemplate = s;
+                _policyTemplate = _stashedTemplate = s;
 
                 extractCspVersion(s);
             }
@@ -139,7 +147,16 @@ public class ContentSecurityPolicyFilter implements Filter
         if (CSP_FILTERS.put(_type, this) != null)
             throw new ServletException("ContentSecurityPolicyFilter is misconfigured, duplicate policies of type: " + _type);
 
+        // configure a different endpoint for each type to convey the correct csp version (eXX vs. rXX)
+        _reportToEndpointName = "csp-" + _type.name().toLowerCase();
+
         regeneratePolicyExpression();
+    }
+
+    private String substituteReportParams(String expression)
+    {
+        return StringExpressionFactory.create(expression, false, NullValueBehavior.KeepSubstitution)
+            .eval(Map.of(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())));
     }
 
     /** Filter out block comments and replace special characters in the provided policy */
@@ -199,7 +216,8 @@ public class ContentSecurityPolicyFilter implements Filter
         LOG.debug("CspVersion: {}", _cspVersion);
     }
 
-    // Make all the "allowed sources" substitutions at init() and whenever the allowed sources map changes. With this,
+    // Make all the "allowed sources" substitutions at init(), whenever the allowed sources map changes, or whenever the
+    // policy template changes (e.g., base server URL change that causes report-to to be added or removed). With this,
     // the only substitution needed on a per-request basis is the nonce value.
     private void regeneratePolicyExpression()
     {
@@ -219,14 +237,55 @@ public class ContentSecurityPolicyFilter implements Filter
     {
         if (request instanceof HttpServletRequest req && response instanceof HttpServletResponse resp && null != _policyExpression)
         {
+            ensurePolicy();
+
             if (_type != ContentSecurityPolicyType.Enforce || !OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_DISABLE_ENFORCE_CSP))
             {
                 Map<String, String> map = Map.of(NONCE_SUBST, getScriptNonceHeader(req));
                 var csp = _policyExpression.eval(map);
                 resp.setHeader(_type.getHeaderName(), csp);
+
+                // null if https: is not configured on this server
+                if (_reportingEndpointsHeaderValue != null)
+                    resp.addHeader("Reporting-Endpoints", _reportingEndpointsHeaderValue);
             }
         }
         chain.doFilter(request, response);
+    }
+
+    private void ensurePolicy()
+    {
+        String baseServerUrl = AppProps.getInstance().getBaseServerUrl();
+
+        // Reconsider "report-to" directive and "Reporting-Endpoints" header if base server URL has changed
+        if (!Objects.equals(baseServerUrl, _previousBaseServerUrl))
+        {
+            synchronized (SUBSTITUTION_LOCK)
+            {
+                _previousBaseServerUrl = baseServerUrl;
+
+                // Add "Reporting-Endpoints" header and "report-to" directive only if https: is configured on this
+                // server. This ensures that browsers fall-back on report-uri if https: isn't configured.
+                if (Strings.CI.startsWith(baseServerUrl, "https://"))
+                {
+                    // Each filter adds its own "Reporting-Endpoints" header since we want to convey the correct version (eXX vs. rXX)
+                    @SuppressWarnings("DataFlowIssue")
+                    ActionURL violationUrl = PageFlowUtil.urlProvider(AdminUrls.class).getCspReportToURL(_cspVersion);
+                    // Use an absolute URL so we always post to https:, even if the violating request uses http:
+                    _reportingEndpointsHeaderValue = _reportToEndpointName + "=\"" + substituteReportParams(violationUrl.getURIString() + "&${CSP.REPORT.PARAMS}") + "\"";
+
+                    // Add "report-to" directive to the policy
+                    _policyTemplate = _stashedTemplate + " report-to " + _reportToEndpointName + " ;";
+                }
+                else
+                {
+                    _reportingEndpointsHeaderValue = null;
+                    _policyTemplate = _stashedTemplate;
+                }
+
+                regeneratePolicyExpression();
+            }
+        }
     }
 
     public static String getScriptNonceHeader(HttpServletRequest request)
