@@ -14,11 +14,11 @@
     "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile"
   },
   "dependencies": {
-    "@labkey/components": "7.14.1-fb-package-updates-0226.0"
+    "@labkey/components": "7.15.0"
   },
   "devDependencies": {
-    "@labkey/build": "8.7.1-fb-package-updates-0226.0",
-    "@labkey/eslint-config": "1.1.2-package-updates-0226.0",
+    "@labkey/build": "8.8.0",
+    "@labkey/eslint-config": "1.1.2",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7"
