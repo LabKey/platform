@@ -44,6 +44,6 @@ public class PkMetaDataReader
 
     public String getKeyName() throws SQLException
     {
-        return _rsCols.getString("pk_name");
+        return _rsCols.getString("PK_NAME");
     }
 }
