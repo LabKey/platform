@@ -82,8 +82,16 @@ public class SubstitutionFormat
                 return defaultTimeFormat.format(value);
             else if (value instanceof java.sql.Date)
                 return date.format(value);
-            else if (value instanceof Date)
-                return defaultDateTimeFormat.format(value).replace('T', ' '); // replace T with whitespace for human readability
+            else if (value instanceof Date dateVal)
+            {
+                LocalDateTime ldt = LocalDateTime.ofInstant(dateVal.toInstant(), ZoneId.systemDefault());
+                boolean isDateOnly = ldt.toLocalTime().equals(java.time.LocalTime.MIDNIGHT);
+
+                if (isDateOnly)
+                    return date.format(value);
+                else
+                    return defaultDateTimeFormat.format(value).replace('T', ' '); // replace T with whitespace for human readability
+            }
 
             return value;
         }
