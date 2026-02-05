@@ -155,6 +155,7 @@ import org.labkey.api.util.ExtUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GraphTransportProvider;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.JobRunner;
@@ -397,6 +398,7 @@ public class ApiModule extends CodeOnlyModule
             FileType.TestCase.class,
             FileUtil.TestCase.class,
             GenerateUniqueDataIterator.TestCase.class,
+            GraphTransportProvider.TestCase.class,
             HelpTopic.TestCase.class,
             InlineInClauseGenerator.TestCase.class,
             JSONDataLoader.HeaderMatchTest.class,
