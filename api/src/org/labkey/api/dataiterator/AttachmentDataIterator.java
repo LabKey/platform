@@ -172,7 +172,7 @@ public class AttachmentDataIterator extends WrapperDataIterator
 
     private ValidationException propertyValidationException(DomainProperty property, Object value)
     {
-        return rowValidationException(String.format("Can't upload '%s' to field %s with type %s.", value, property.getName(), property.getType().getLabel()));
+        return rowValidationException(String.format("Cannot upload '%s' to %s type field '%s'.", value, property.getType().getLabel(), property.getName()));
     }
 
     private ValidationException rowValidationException(String message)
