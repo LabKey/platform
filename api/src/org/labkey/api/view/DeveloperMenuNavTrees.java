@@ -13,6 +13,7 @@ public class DeveloperMenuNavTrees
     /** Groupings for menu items, ordered based on their desired sequence (roughly in terms of usage) */
     public enum Section
     {
+        query,
         tools,
         monitoring,
         referenceDocs,
