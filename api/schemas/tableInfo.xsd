@@ -321,7 +321,7 @@
 			<xs:annotation>
 				<xs:documentation>
                     The four recognized values for the tableDbType attribute are TABLE, VIEW, NOT_IN_DB, UNKNOWN.
-                    The TABLE and VIEW values correspond to their SQL definitions.
+                    The TABLE, VIEW, and MATERIALIZED_VIEW values correspond to their SQL definitions.
                     NOT_IN_DB type is used for objects that are defined by SQL strings in code, rather than by named objects in the database.
                     UNKNOWN is used in cases where the type differs between database types.
                     Supported for SQL metadata.
@@ -329,7 +329,7 @@
 			</xs:annotation>
 			<xs:simpleType>
 				<xs:restriction base="xs:string">
-					<xs:pattern value="TABLE|VIEW|NOT_IN_DB|UNKNOWN"/>
+					<xs:pattern value="TABLE|VIEW|MATERIALIZED_VIEW|NOT_IN_DB|UNKNOWN"/>
 				</xs:restriction>
 			</xs:simpleType>
 		</xs:attribute>
