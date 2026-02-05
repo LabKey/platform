@@ -141,6 +141,13 @@ public abstract class BrowserEndpoint extends Endpoint
         {
             final Map<String,List<String>> proxyHeaders = prepareProxyHeaders(remoteURI, requestHeaders, properties);
 
+            // Log what the subclass's prepareProxyHeaders returned
+            LOG.info("=== WebSocket proxy: proxyHeaders from prepareProxyHeaders ===");
+            for (Map.Entry<String, List<String>> entry : proxyHeaders.entrySet())
+            {
+                LOG.info("  proxyHeaders: " + entry.getKey() + " = " + entry.getValue());
+            }
+
             WebSocketContainer clientEndPoint = ContainerProvider.getWebSocketContainer();
             ClientEndpointConfig config = ClientEndpointConfig.Builder.create()
                     .configurator(new ClientEndpointConfig.Configurator()
@@ -148,36 +155,63 @@ public abstract class BrowserEndpoint extends Endpoint
                         @Override
                         public void beforeRequest(Map<String, List<String>> headers)
                         {
+                            // Log incoming browser headers for debugging
+                            LOG.info("=== WebSocket proxy: browser request headers ===");
+                            for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet())
+                            {
+                                LOG.info("  Browser header: " + entry.getKey() + " = " + entry.getValue());
+                            }
+
                             headers.putAll(proxyHeaders);
                             // Tomcat 11 requires these headers for WebSocket upgrade, but they may be filtered out by some proxy code
                             headers.put("Upgrade", List.of("websocket"));
                             headers.put("Connection", List.of("upgrade"));
 
-                            // Also pass through other WebSocket headers that might have been filtered out by proxy code
+                            // Pass through Sec-WebSocket-Protocol if present (for subprotocol negotiation)
+                            // NOTE: Do NOT copy Sec-WebSocket-Extensions - Tomcat 11 changed how extension negotiation works
+                            // and copying browser extensions can cause the handshake to fail.
+                            // Also do NOT copy Sec-WebSocket-Key - each connection needs its own unique key.
+                            // Sec-WebSocket-Version is set by Tomcat's client.
                             for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet())
                             {
                                 String name = entry.getKey();
-                                if (name.regionMatches(true, 0, "Sec-WebSocket-", 0, "Sec-WebSocket-".length()) &&
-                                    !name.equalsIgnoreCase("Sec-WebSocket-Key"))
+                                if (name.equalsIgnoreCase("Sec-WebSocket-Protocol"))
                                 {
-                                    headers.put(name, entry.getValue());
+                                    headers.put("Sec-WebSocket-Protocol", entry.getValue());
                                 }
+                            }
+
+                            // Ensure User-Agent is set - Tomcat's WebSocket client doesn't send one by default,
+                            // and some servers (like RStudio) check for browser-like User-Agent
+                            if (!headers.containsKey("User-Agent"))
+                            {
+                                // Try to get from browser request headers (may be lowercase)
+                                for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet())
+                                {
+                                    if (entry.getKey().equalsIgnoreCase("User-Agent"))
+                                    {
+                                        headers.put("User-Agent", entry.getValue());
+                                        break;
+                                    }
+                                }
+                            }
+
+                            // Log outgoing headers to backend server
+                            LOG.info("=== WebSocket proxy: headers being sent to backend (" + remoteURI + ") ===");
+                            for (Map.Entry<String, List<String>> entry : headers.entrySet())
+                            {
+                                LOG.info("  Backend header: " + entry.getKey() + " = " + entry.getValue());
                             }
                         }
 
                         @Override
                         public void afterResponse(HandshakeResponse hr)
                         {
-                            // After the handshake, we might need to transfer headers back to the browser session,
-                            // but the Jakarta WebSocket API doesn't give us an easy way to set headers on the
-                            // already-opened browser session from here.
-                            // However, we can log them for debugging if needed.
-                            if (LOG.isTraceEnabled())
+                            // Log response headers from backend server for debugging
+                            LOG.info("=== WebSocket proxy: response headers from backend ===");
+                            for (Map.Entry<String, List<String>> entry : hr.getHeaders().entrySet())
                             {
-                                for (Map.Entry<String, List<String>> entry : hr.getHeaders().entrySet())
-                                {
-                                    LOG.trace("Response header: " + entry.getKey() + " = " + entry.getValue());
-                                }
+                                LOG.info("  Response header: " + entry.getKey() + " = " + entry.getValue());
                             }
                         }
                     })
