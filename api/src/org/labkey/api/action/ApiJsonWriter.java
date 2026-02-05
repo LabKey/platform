@@ -181,7 +181,7 @@ public class ApiJsonWriter extends ApiResponseWriter
         ensureNotClosed();
         if (value instanceof String s)
         {
-            writeString(value);
+            writeString(s);
         }
         else if (value instanceof Number || value instanceof Boolean || value == null)
         {
