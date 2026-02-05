@@ -4634,7 +4634,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 for (var domain : provider.getDomains(expProtocol))
                 {
-                    domain.lockForDelete(expSchema);
+                    domain.lockForUpdateDelete(expSchema);
                 }
             }
         }
@@ -8056,7 +8056,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!errors.hasErrors())
             {
                 transaction.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-                transaction.addCommitTask(() -> indexDataClass(getDataClass(c, dataClass.getName()), SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified)), POSTCOMMIT);
+                transaction.addCommitTask(() -> indexDataClass(dataClass, SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified)), POSTCOMMIT);
                 transaction.commit();
             }
         }

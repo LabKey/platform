@@ -3128,7 +3128,7 @@ public class QueryController extends SpringActionController
                 for (int idx = 0; idx < numPks; ++idx)
                 {
                     ColumnInfo keyColumn = pks.get(idx);
-                    Object keyValue = keyColumn.getJavaClass() == String.class ? stringValues[idx] : ConvertUtils.convert(stringValues[idx], keyColumn.getJavaClass());
+                    Object keyValue = keyColumn.getJavaClass() == String.class ? stringValues[idx] : keyColumn.convert(stringValues[idx]);
                     rowKeyValues.put(keyColumn.getName(), keyValue);
                 }
                 keyValues.add(rowKeyValues);

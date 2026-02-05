@@ -25,11 +25,17 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.springframework.util.MimeType;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -243,5 +249,108 @@ public interface WebdavResource extends Resource
     default DavPath toDavPath()
     {
         return new DavPath(getPath());
+    }
+
+    default org.springframework.core.io.Resource getSpringResource(User user) throws IOException
+    {
+        WebdavResource r = this;
+
+        final FileStream fs = r.isFile() ? getFileStream(user) : null;
+
+        return new org.springframework.core.io.Resource()
+        {
+            @Override
+            public long contentLength() throws IOException
+            {
+                if (null != fs)
+                    return fs.getSize();
+                throw new FileNotFoundException(r.getPath().toString());
+            }
+
+            @Override
+            public boolean exists()
+            {
+                return r.exists();
+            }
+
+            @Override
+            public URL getURL() throws IOException
+            {
+                // Nnot sure why getExceuteHref() takes a view context. We ay not need for the moment.
+                var href = r.getExecuteHref(null);
+                if (null == href)
+                    return null;
+                return new URL(href);
+            }
+
+            @Override
+            public URI getURI() throws IOException
+            {
+                // Not sure why getExecuteHref() takes a view context. We ay not need for the moment.
+                var href = r.getExecuteHref(null);
+                if (null == href)
+                    return null;
+                try
+                {
+                    return new URI(href);
+                }
+                catch (URISyntaxException x)
+                {
+                    throw new IOException(x.getMessage(), x);
+                }
+            }
+
+            @Override
+            public File getFile() throws IOException
+            {
+//                UnsupportedOperationException – if the resource is a file but cannot be exposed as a java.io.File; an alternative to FileNotFoundException
+//                FileNotFoundException – if the resource cannot be resolved as a file
+//                IOException – in case of general resolution/reading failures
+                if (!isFile())
+                    throw new FileNotFoundException(r.getPath().toString());
+                File f = r.getFile();
+                if (null == f)
+                    throw new UnsupportedOperationException(r.getPath().toString() + " is not in default file-system");
+                return f;
+            }
+
+            @Override
+            public long lastModified() throws IOException
+            {
+                Date d = null==fs ? null : fs.getLastModified();
+                if (null != d)
+                    return d.getTime();
+                throw new UnsupportedOperationException(r.getPath().toString() + " does not provide lastModified");
+            }
+
+            @Override
+            public org.springframework.core.io.Resource createRelative(String relativePath) throws IOException
+            {
+                // do we need this?
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public String getFilename()
+            {
+                return r.getName();
+            }
+
+            @Override
+            public String getDescription()
+            {
+                return r.getDescription();
+            }
+
+            @Override
+            public InputStream getInputStream() throws IOException
+            {
+                // FileStream.openInputStream() enforces one stream per instance, so don't use 'fs'
+                var filestream = r.getFileStream(user);
+                if (null != filestream)
+                    return filestream.openInputStream();
+                throw new UnsupportedOperationException(r.getPath().toString());
+            }
+        };
     }
 }

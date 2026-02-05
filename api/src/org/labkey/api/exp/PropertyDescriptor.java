@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
@@ -31,6 +32,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleConvert;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Transient;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -590,6 +592,11 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         return map;
     }
 
+    @Override @Transient
+    public final SimpleConvert getConvertFn()
+    {
+        return ColumnRenderProperties.getDefaultConvertFn(this);
+    }
 }
 
 
