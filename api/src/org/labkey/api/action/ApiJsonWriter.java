@@ -169,11 +169,21 @@ public class ApiJsonWriter extends ApiResponseWriter
         writeObject(value);
     }
 
+    /** Let subclasses have a chance to do special handling on String values in the response */
+    protected void writeString(String value) throws IOException
+    {
+        jg.writeString(value);
+    }
+
     @Override
     protected void writeObject(Object value) throws IOException
     {
         ensureNotClosed();
-        if (value instanceof String || value instanceof Number || value instanceof Boolean || value == null)
+        if (value instanceof String s)
+        {
+            writeString(value);
+        }
+        else if (value instanceof Number || value instanceof Boolean || value == null)
         {
             jg.writeObject(value);
         }
@@ -224,9 +234,9 @@ public class ApiJsonWriter extends ApiResponseWriter
                 jg.writeEndArray();
             }
         }
-        else if (value instanceof Date)
+        else if (value instanceof Date d)
         {
-            jg.writeString(DateUtil.formatJsonDateTime((Date) value));
+            writeString(DateUtil.formatJsonDateTime(d));
         }
         // Always use Jackson serialization for SimpleResponse, Issue 47216
         else if (isSerializeViaJacksonAnnotations() || value instanceof SimpleResponse<?>)
@@ -239,7 +249,7 @@ public class ApiJsonWriter extends ApiResponseWriter
         }
         else
         {
-            jg.writeString(value.toString());
+            writeString(value.toString());
         }
     }
 

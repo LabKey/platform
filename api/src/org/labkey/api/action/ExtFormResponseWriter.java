@@ -90,20 +90,14 @@ public class ExtFormResponseWriter extends ApiJsonWriter
     @Override
     public void writeProperty(String name, Object value) throws IOException
     {
+        // writeObject() will have a chance to encode the value
         super.writeProperty(sendHtmlJsonResponse ? PageFlowUtil.filter(name) : name, value);
     }
 
     @Override
-    protected void writeObject(Object value) throws IOException
+    protected void writeString(String value) throws IOException
     {
-        if (value instanceof String s && sendHtmlJsonResponse)
-        {
-            super.writeObject(PageFlowUtil.filter(s));
-        }
-        else
-        {
-            super.writeObject(value);
-        }
+        super.writeString(sendHtmlJsonResponse ? PageFlowUtil.filter(value) : value);
     }
 
     @Override
