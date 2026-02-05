@@ -157,19 +157,6 @@ dependencies {
     )
 
     BuildUtils.addExternalDependency(
-            project,
-            new ExternalDependency(
-                    "org.mockito:mockito-core:${mockitoVersion}",
-                    "Mockito",
-                    "Mockito",
-                    "https://site.mockito.org/",
-                    ExternalDependency.MIT_LICENSE_NAME,
-                    ExternalDependency.MIT_LICENSE_URL,
-                    "Mocking framework for unit tests",
-            )
-    )
-
-    BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
             "org.jetbrains:annotations:${annotationsVersion}",
