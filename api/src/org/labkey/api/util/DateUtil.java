@@ -809,18 +809,17 @@ public class DateUtil
         }
     }
 
-    public static @Nullable Date parseSimpleTime(@NotNull Object o)
+    public static @Nullable Date parseSimpleTime(@NotNull String s)
     {
         Date duration = null;
         ParseException parseException = null;
-        String s = (String) o;
         boolean hasAMPM = s.toLowerCase().endsWith(" am") || s.toLowerCase().endsWith(" pm");
         String[] validFormats = hasAMPM ? SIMPLE_TIME_FORMATS_WITH_AMPM : SIMPLE_TIME_FORMATS_NO_AMPM;
         for (int i = 0; i < validFormats.length && duration == null; i++)
         {
             try
             {
-                duration = DateUtil.parseDateTime(o.toString(), validFormats[i]);
+                duration = DateUtil.parseDateTime(s, validFormats[i]);
             }
             catch (ParseException ignore)
             {
@@ -830,7 +829,7 @@ public class DateUtil
             }
         }
         if (duration == null)
-            throw new ConversionException("Could not convert \"" + o + "\" to duration.", parseException);
+            throw new ConversionException("Could not convert \"" + s + "\" to time.", parseException);
         return duration;
     }
 

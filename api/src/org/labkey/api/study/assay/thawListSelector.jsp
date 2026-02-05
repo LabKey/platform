@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -43,7 +44,7 @@
     boolean textType = !listType;
 
     String containerPath = ctx.getForm().getAsString(ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME);
-    Container container = containerPath == null ? null : ContainerManager.getForPath(containerPath);
+    Container container = StringUtils.isEmpty(containerPath) /* TODO, why is this "" instead of null on re-show. AssayTest.testAssaySecurity */ ? null : ContainerManager.getForPath(containerPath);
 
     String textTypeId = "RadioBtn-" + ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME + "-" + ThawListResolverType.TEXT_NAMESPACE_SUFFIX;
     String listTypeId = "RadioBtn-" + ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME + "-" + ThawListResolverType.LIST_NAMESPACE_SUFFIX;
