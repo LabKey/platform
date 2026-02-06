@@ -1,5 +1,6 @@
 package org.labkey.query.sql;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
@@ -371,6 +372,11 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         return _boundExpr;
     }
 
+    @Override
+    public Object convert(Object o) throws ConversionException
+    {
+        return o;
+    }
 
     /*
      * TESTS
