@@ -134,6 +134,7 @@ import org.labkey.experiment.lineage.LineageMethod;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1429,6 +1430,17 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         }
 
+        // DataClassDataUpdateService needs to skip Attachment column convert before _update
+        // TODO: move override when implementing consolidating dataclass update methods
+        @Override
+        protected Object convertColumnValue(ColumnInfo col, Object value, User user, Container c, @Nullable Path fileLinkDirPath) throws ValidationException
+        {
+            if (PropertyType.ATTACHMENT == col.getPropertyType())
+                return value;
+
+            return super.convertColumnValue(col, value, user, c, fileLinkDirPath);
+        }
+
         @Override
         protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
         {
@@ -1461,7 +1473,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     else if (value != null && !StringUtils.isEmpty(String.valueOf(value)))
                     {
                         // Issue 53498: string value for attachment field is not allowed
-                        throw new ValidationException("Can't upload '" + value + "' to field " + name + " with type Attachment.");
+                        throw new ValidationException("Cannot upload '" + value + "' to Attachment type field '" + name + "'.");
                     }
                     else
                         rowStripped.put(name, value); // if null or empty, remove attachment

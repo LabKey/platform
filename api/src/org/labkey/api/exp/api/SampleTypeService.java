@@ -55,9 +55,9 @@ import java.util.function.Function;
 
 public interface SampleTypeService
 {
-    String MISSING_AMOUNT_ERROR_MESSAGE = "An Amount value must be provided when Units are provided.";
-    String MISSING_UNITS_ERROR_MESSAGE = "A Units value must be provided when Amounts are provided.";
-    String UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN = "No %s value provided for %s %s.";
+    String MISSING_AMOUNT_ERROR_MESSAGE = "An 'Amount' value must be provided when 'Units' are provided.";
+    String MISSING_UNITS_ERROR_MESSAGE = "A 'Units' value must be provided when 'Amounts' are provided.";
+    String UNPROVIDED_VALUE_ERROR_MESSAGE_PATTERN = "No '%s' value provided for %s '%s'.";
     String NEW_SAMPLE_TYPE_ALIAS_VALUE = "{{this_sample_set}}";
     String MATERIAL_INPUTS_PREFIX = "MaterialInputs/";
     String MODULE_NAME = "Experiment";
