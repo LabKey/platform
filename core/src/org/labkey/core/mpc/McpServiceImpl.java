@@ -65,7 +65,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ConcurrentModificationException;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -335,23 +337,33 @@ public class McpServiceImpl implements McpService
     @Override
     public MessageResponse sendMessage(ChatClient chatSession, String message)
     {
-        var callResponse = chatSession
-                .prompt(message)
-                .toolContext(McpContext.get().getToolContext().getContext())
-                .call();
-        StringBuilder sb = new StringBuilder();
-        for (Generation result : callResponse.chatResponse().getResults())
+        try
         {
-            var output = result.getOutput();
-            if (ASSISTANT == output.getMessageType())
+            var callResponse = chatSession
+                    .prompt(message)
+                    .toolContext(McpContext.get().getToolContext().getContext())
+                    .call();
+            StringBuilder sb = new StringBuilder();
+            for (Generation result : callResponse.chatResponse().getResults())
             {
-                sb.append(output.getText());
-                sb.append("\n\n");
+                var output = result.getOutput();
+                if (ASSISTANT == output.getMessageType())
+                {
+                    sb.append(output.getText());
+                    sb.append("\n\n");
+                }
             }
+            String md = sb.toString().strip();
+            HtmlString html = HtmlString.unsafe(MarkdownService.get().toHtml(md));
+            return new MessageResponse("text/markdown", md, html);
         }
-        String md = sb.toString().strip();
-        HtmlString html = HtmlString.unsafe(MarkdownService.get().toHtml(md));
-        return new MessageResponse("text/markdown", md, html);
+        catch (java.util.NoSuchElementException x)
+        {
+            // Spring AI GoogleGenAiChatModel bug: empty candidates cause NoSuchElementException
+            // https://github.com/spring-projects/spring-ai/issues/4556
+            LOG.warn("Empty response from chat model (likely a filtered or empty candidate)", x);
+            return new MessageResponse("text/plain", "The model returned an empty response. Please try rephrasing your question.", HtmlString.of("The model returned an empty response. Please try rephrasing your question."));
+        }
     }
 
     @Override
@@ -359,22 +371,39 @@ public class McpServiceImpl implements McpService
     {
         if (isBlank(message))
             return List.of();
-        var callResponse = chatSession
-                .prompt(message)
-                .toolContext(McpContext.get().getToolContext().getContext())
-                .call();
-        List<MessageResponse> ret = new ArrayList<>();
-        for (Generation result : callResponse.chatResponse().getResults())
+        try
         {
-            var output = result.getOutput();
-            if (ASSISTANT == output.getMessageType())
+            var callResponse = chatSession
+                    .prompt(message)
+                    .toolContext(McpContext.get().getToolContext().getContext())
+                    .call();
+            List<MessageResponse> ret = new ArrayList<>();
+            for (Generation result : callResponse.chatResponse().getResults())
             {
-                String md = output.getText();
-                HtmlString html = HtmlString.unsafe(MarkdownService.get().toHtml(md));
-                ret.add(new MessageResponse("text/markdown", md, html));
+                var output = result.getOutput();
+                if (ASSISTANT == output.getMessageType())
+                {
+                    String md = output.getText();
+                    HtmlString html = HtmlString.unsafe(MarkdownService.get().toHtml(md));
+                    ret.add(new MessageResponse("text/markdown", md, html));
+                }
             }
+            return ret;
         }
-        return ret;
+        catch (NoSuchElementException x)
+        {
+            // Spring AI GoogleGenAiChatModel bug: empty candidates cause NoSuchElementException
+            // https://github.com/spring-projects/spring-ai/issues/4556
+            LOG.warn("Empty response from chat model (likely a filtered or empty candidate)", x);
+            return List.of(new MessageResponse("text/plain", "The model returned an empty response. Please try rephrasing your question.", HtmlString.of("The model returned an empty response. Please try rephrasing your question.")));
+        }
+        catch (ConcurrentModificationException x)
+        {
+            // This can happen when the vector store is still loading, typically a problem shortly after startup
+            // Should do better synchronization or state checking
+            LOG.warn("Vector store not ready", x);
+            return List.of(new MessageResponse("text/plain", "Vector store likely not ready yet. Try again.", HtmlString.of("Vector store likely not ready yet. Try again.")));
+        }
     }
 
 
@@ -464,6 +493,7 @@ public class McpServiceImpl implements McpService
             // gemini-2.5-flash
             // gemini-2.5-pro
             // gemini-3-flash-preview
+            // gemini-3-pro-preview
         }
 
         @Override
