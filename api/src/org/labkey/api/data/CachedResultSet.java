@@ -17,9 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import java.lang.ref.Cleaner;
 import org.apache.commons.collections4.IteratorUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,11 +27,13 @@ import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
 
 import java.io.InputStream;
 import java.io.Reader;
+import java.lang.ref.Cleaner;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Array;
@@ -68,7 +68,7 @@ import static org.labkey.api.util.IntegerUtils.asInteger;
  */
 public class CachedResultSet implements ResultSet, TableResultSet
 {
-    private static final Logger _log = LogManager.getLogger(CachedResultSet.class);
+    private static final Logger _log = LogHelper.getLogger(CachedResultSet.class, "Unclosed CachedResultSets");
 
     // metadata
     private final ResultSetMetaData _md;
@@ -173,12 +173,12 @@ public class CachedResultSet implements ResultSet, TableResultSet
 
         String url = null;
         String threadName = null;
-        if (MiniProfiler.isCollectTroubleshootingStackTraces())
+        if (true) //MiniProfiler.isCollectTroubleshootingStackTraces()) // TODO: Restore check before 26.3
         {
             // Stash stack trace that created this CachedRowSet
             if (null == stackTrace)
             {
-                stackTrace = MiniProfiler.getTroubleshootingStackTrace();
+                stackTrace = MiniProfiler.getTroubleshootingStackTraceUnconditionally(); // TODO: Switch to conditional method before 26.3
             }
 
             threadName = Thread.currentThread().getName();
