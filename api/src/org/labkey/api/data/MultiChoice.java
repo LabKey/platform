@@ -44,6 +44,7 @@ import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.SortHelpers.CASE_INSENSITIVE_UPPERCASE_FIRST;
 
 public class MultiChoice
 {
@@ -213,7 +214,7 @@ public class MultiChoice
 
         protected Array(Stream<Object> str)
         {
-            TreeSet<String> setCaseSensitive = new TreeSet<>();
+            TreeSet<String> setCaseSensitive = new TreeSet<>(CASE_INSENSITIVE_UPPERCASE_FIRST);
             str.filter(Objects::nonNull)
                     .map(s -> StringUtils.trimToNull(s.toString()))
                     .filter(Objects::nonNull)
