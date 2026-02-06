@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ResultSetUtil;
@@ -173,7 +174,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
 
         String url = null;
         String threadName = null;
-        if (true) //MiniProfiler.isCollectTroubleshootingStackTraces()) // TODO: Restore check before 26.3
+        if (AppProps.getInstance().isDevMode()) //MiniProfiler.isCollectTroubleshootingStackTraces()) // TODO: Restore check before 26.3
         {
             // Stash stack trace that created this CachedRowSet
             if (null == stackTrace)
