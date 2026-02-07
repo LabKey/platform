@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.AdminUrls;
@@ -76,8 +77,9 @@ public class ContentSecurityPolicyFilter implements Filter
     private String _stashedTemplate = null;
     private String _reportToEndpointName = null;
 
-    // Per-filter-instance settings are initialized on first request and reset when base server URL or allowed sources change
-    private volatile CspFilterSettings _settings = null;
+    // Per-filter-instance settings are initialized on first request and reset when base server URL or allowed sources
+    // change. Don't reference this directly; always use ensureSettings().
+    private volatile @Nullable CspFilterSettings _settings = null;
 
     public enum ContentSecurityPolicyType
     {
@@ -253,30 +255,20 @@ public class ContentSecurityPolicyFilter implements Filter
         return _reportToEndpointName;
     }
 
-    private CspFilterSettings getSettings()
-    {
-        return _settings;
-    }
-
-    private CspFilterSettings setSettings(CspFilterSettings settings)
-    {
-        return _settings = settings;
-    }
-
     private void clearSettings()
     {
         _settings = null;
     }
 
-    private CspFilterSettings ensureSettings()
+    private @NotNull CspFilterSettings ensureSettings()
     {
         String baseServerUrl = AppProps.getInstance().getBaseServerUrl();
-        CspFilterSettings settings = getSettings();
+        CspFilterSettings settings = _settings; // Stash a local copy to ensure consistency in the checks below
 
         // Reset settings if null or if base server URL has changed
         if (null == settings || !Objects.equals(baseServerUrl, settings.getPreviousBaseServerUrl()))
         {
-            settings = setSettings(new CspFilterSettings(this, baseServerUrl));
+            settings = _settings = new CspFilterSettings(this, baseServerUrl);
         }
 
         return settings;
@@ -437,7 +429,7 @@ public class ContentSecurityPolicyFilter implements Filter
         }
         else
         {
-            String template = filter.getSettings().getPolicyTemplate();
+            String template = filter.ensureSettings().getPolicyTemplate();
             ret = Arrays.stream(Directive.values())
                 .map(dir -> "${" + dir.getSubstitutionKey() + "}")
                 .filter(key -> !template.contains(key))
@@ -451,7 +443,14 @@ public class ContentSecurityPolicyFilter implements Filter
     {
         UsageMetricsService.get().registerUsageMetrics("API", () -> Map.of("cspFilters", CSP_FILTERS.values().stream()
             .collect(Collectors.toMap(ContentSecurityPolicyFilter::getType,
-                filter -> Map.of("version", filter.getCspVersion(), "csp", filter.getSettings().getPolicyTemplate(), "cspSubstituted", filter.getSettings().getPolicyExpression().getSource())))));
+                filter -> {
+                    CspFilterSettings settings = filter.ensureSettings();
+                    return Map.of(
+                        "version", filter.getCspVersion(),
+                        "csp", settings.getPolicyTemplate(),
+                        "cspSubstituted", settings.getPolicyExpression().getSource()
+                    );
+                }))));
     }
 
     public static class TestCase extends Assert
