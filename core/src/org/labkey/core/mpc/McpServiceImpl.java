@@ -317,10 +317,6 @@ public class McpServiceImpl implements McpService
                     .chatMemoryRepository(chatMemoryRepository)
                     .build();
 
-            // Filter empty messages to work around Spring AI GoogleGenAiChatModel bug
-            // https://github.com/spring-projects/spring-ai/issues/4556
-            advisors.add(new EmptyMessageFilterAdvisor());
-
             MessageChatMemoryAdvisor chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory)
                     .conversationId(conversationId)
                     .build();
