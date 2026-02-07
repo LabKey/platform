@@ -316,6 +316,11 @@ public class McpServiceImpl implements McpService
                     .maxMessages(100)
                     .chatMemoryRepository(chatMemoryRepository)
                     .build();
+
+            // Filter empty messages to work around Spring AI GoogleGenAiChatModel bug
+            // https://github.com/spring-projects/spring-ai/issues/4556
+            advisors.add(new EmptyMessageFilterAdvisor());
+
             MessageChatMemoryAdvisor chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory)
                     .conversationId(conversationId)
                     .build();
@@ -362,7 +367,7 @@ public class McpServiceImpl implements McpService
             // Spring AI GoogleGenAiChatModel bug: empty candidates cause NoSuchElementException
             // https://github.com/spring-projects/spring-ai/issues/4556
             LOG.warn("Empty response from chat model (likely a filtered or empty candidate)", x);
-            return new MessageResponse("text/plain", "The model returned an empty response. Please try rephrasing your question.", HtmlString.of("The model returned an empty response. Please try rephrasing your question."));
+            return new MessageResponse("text/plain", "The model returned an empty response. Please try resubmitting and the problem continues, rephrase your question/prompt.", HtmlString.of("The model returned an empty response. Please try rephrasing your question."));
         }
     }
 
