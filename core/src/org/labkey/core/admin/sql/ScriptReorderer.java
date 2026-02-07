@@ -100,15 +100,15 @@ public class ScriptReorderer
             patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, Operation.Other));
 
             // Specific sp_rename pattern for table rename
-            patterns.add(new SqlPattern("(EXEC(UTE)? )?sp_rename (@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + "',\\s*'" + TABLE_NAME2_REGEX + "'" + STATEMENT_ENDING_REGEX, Type.Table, Operation.RenameTable));
+            patterns.add(new SqlPattern("(EXEC(UTE)? )?sp_rename (@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + "'\\s*,\\s*'" + TABLE_NAME2_REGEX + "'" + STATEMENT_ENDING_REGEX, Type.Table, Operation.RenameTable));
 
             // All other sp_renames
             patterns.add(new SqlPattern("(EXEC(UTE)? )?sp_rename (@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + ".*?'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("EXEC(UTE)? core\\.fn_dropifexists\\s*'(?<table>\\w+)',\\s*'(?<schema>\\w+)',\\s*'(TABLE|COLUMN|INDEX|DEFAULT|CONSTRAINT)'.*?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("EXEC(UTE)? core\\.fn_dropifexists\\s*'(\\w+)',\\s*'(?<schema>\\w+)'.*?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
+            patterns.add(new SqlPattern("EXEC(UTE)? core\\.fn_dropifexists\\s*'(?<table>\\w+)'\\s*,\\s*'(?<schema>\\w+)'\\s*,\\s*'(TABLE|COLUMN|INDEX|DEFAULT|CONSTRAINT)'.*?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("EXEC(UTE)? core\\.fn_dropifexists\\s*'(\\w+)'\\s*,\\s*'(?<schema>\\w+)'.*?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
 
-            // Index names are prefixed with their associated table names on SQL Server
-            patterns.add(new SqlPattern(getRegExWithPrefix("DROP INDEX (IF EXISTS )?"), Type.Table, Operation.Other));
+            // DROP INDEX on SQL Server follows a similar pattern to CREATE INDEX (above)
+            patterns.add(new SqlPattern("DROP INDEX (IF EXISTS )?\\w+ ON " + TABLE_NAME_REGEX + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
 
             patterns.add(new SqlPattern("(CREATE|ALTER) PROCEDURE .+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
         }
@@ -116,8 +116,8 @@ public class ScriptReorderer
         {
             patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " RENAME TO " + TABLE_NAME2_REGEX + STATEMENT_ENDING_REGEX, Type.Table, Operation.RenameTable));
             patterns.add(new SqlPattern(getRegExWithPrefix("CREATE (TEMPORARY )?TABLE "), Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(?<table>\\w+)',\\s*'(?<schema>\\w+)',\\s*'(TABLE|COLUMN|INDEX|DEFAULT|CONSTRAINT)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(\\w+)',\\s*'(?<schema>\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
+            patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(?<table>\\w+)'\\s*,\\s*'(?<schema>\\w+)'\\s*,\\s*'(TABLE|COLUMN|INDEX|DEFAULT|CONSTRAINT)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(\\w+)'\\s*,\\s*'(?<schema>\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
             patterns.add(new SqlPattern("SELECT SETVAL\\('" + TABLE_NAME_NO_UNDERSCORE_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
             patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER \\w+ ON "), Type.Table, Operation.Other));   // e.g. CLUSTER PK_Keyword ON flow.Keyword
             patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER "), Type.Table, Operation.Other));
@@ -135,7 +135,7 @@ public class ScriptReorderer
         }
 
         patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " ADD CONSTRAINT \\w+ FOREIGN KEY \\([^\\)]+?\\) REFERENCES " + TABLE_NAME2_REGEX + " \\([^\\)]+?\\).*?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-        // Put this at the end to catch all other ALTER TABLE statements (i.e., not RENAMEs)
+        // Put this at the end to capture all other ALTER TABLE statements (i.e., not RENAMEs)
         patterns.add(new SqlPattern(getRegExWithPrefix("ALTER TABLE (IF EXISTS )?(ONLY )?"), Type.Table, Operation.Other));
 
         Pattern commentPattern = compile(COMMENT_REGEX);
