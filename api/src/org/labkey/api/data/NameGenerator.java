@@ -51,6 +51,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior;
 import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SubstitutionFormat;
 
 import java.io.IOException;
@@ -745,9 +746,7 @@ public class NameGenerator
             {
                 boolean isQuoted = (valueStr.contains(",") || valueStr.contains("\n") || valueStr.contains("\r")) && (valueStr.startsWith("\"") && valueStr.endsWith("\""))
                 if (isQuoted)
-                {
-                    valueStr = valueStr.substring(1, valueStr.length() - 1);
-                }
+                    valueStr = StringUtilsLabKey.unquoteString(valueStr).trim();
                 return Stream.of(valueStr);
             }
 
