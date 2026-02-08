@@ -8769,37 +8769,32 @@ public class AdminController extends SpringActionController
                 msg.setFrom(fromAddress);
                 msg.addRecipient(Message.RecipientType.TO, recipient.getAddress());
                 msg.setSubject("Test Email with HTML and Attachment");
+
                 // Test both external URL images and data URI images.
                 // External URLs should be left unchanged, while data URIs should be converted to CID attachments.
 
-                // External image reference (should NOT be converted - left as-is)
-                String externalImage = "https://www.labkey.com/wp-content/uploads/2023/07/LK-Logo.png";
+                // External image URL served by the running LabKey server (should NOT be converted - left as-is)
+                String logoUrl = "https://www.labkey.org/_webdav/Documentation/%40files/badge.png";
 
-                // Data URI images (should be converted to CID attachments by GraphTransportProvider)
-                // 8x8 red PNG (simulates a small icon)
-                String pngDataUri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAADklEQVQI12P4z8DAwMAAAw4B/xnq5sUAAAAASUVORK5CYII=";
-
-                // 8x8 blue GIF (simulates a decorative element)
-                String gifDataUri = "data:image/gif;base64,R0lGODlhCAAIAIAAAAAAAP///yH5BAEAAAEALAAAAAAIAAgAAAIKjI+py+0Po5yUFQA7";
-
-                // 4x4 green JPEG (simulates a small logo)
-                String jpegDataUri = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAEAAQDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBEQCEAwEPwAB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBEQCEAwEPwAB//9k=";
+                // Data URI image built from actual webapp image (should be converted to CID attachment by GraphTransportProvider)
+                FileLike imagesDir = ModuleLoader.getInstance().getModule("Core").getStaticFileDirectories().stream()
+                    .map(dir -> dir.resolveChild("_images"))
+                    .filter(FileLike::isDirectory)
+                    .findFirst()
+                    .orElseThrow(() -> new ConfigurationException("Could not find _images directory in core module"));
+                String gifDataUri = "data:image/png;base64," + java.util.Base64.getEncoder().encodeToString(java.nio.file.Files.readAllBytes(imagesDir.resolveChild("paperclip.gif").toNioPathForRead()));
 
                 msg.setEncodedHtmlContent("<html><body>" +
                     "<table width='100%' style='max-width:600px;'>" +
                     "<tr><td style='background:#f0f0f0; padding:20px; text-align:center;'>" +
-                    "<img src=\"" + externalImage + "\" alt=\"LabKey Logo\" height='40' /> " +
+                    "<img src=\"" + logoUrl + "\" alt=\"LabKey Logo\" height='40' />" +
                     "</td></tr>" +
                     "<tr><td style='padding:20px;'>" +
                     "<p>This is a <strong>test email</strong> with HTML content, attachment, and multiple images.</p>" +
                     "<p><strong>External URL image</strong> (should remain unchanged):</p>" +
-                    "<img src=\"" + externalImage + "\" alt=\"External\" height='30' />" +
-                    "<p><strong>Data URI images</strong> (should be converted to CID attachments):</p>" +
-                    "<table>" +
-                    "<tr><td>PNG:</td><td><img src=\"" + pngDataUri + "\" alt=\"PNG\" /></td></tr>" +
-                    "<tr><td>GIF:</td><td><img src=\"" + gifDataUri + "\" alt=\"GIF\" /></td></tr>" +
-                    "<tr><td>JPEG:</td><td><img src=\"" + jpegDataUri + "\" alt=\"JPEG\" /></td></tr>" +
-                    "</table>" +
+                    "<img src=\"" + logoUrl + "\" alt=\"LabKey Logo\" height='30' />" +
+                    "<p><strong>Data URI image</strong> (should be converted to CID attachment):</p>" +
+                    "<img src=\"" + gifDataUri + "\" alt=\"Paperclip\" height='30' />" +
                     "<p>Sent via " + MailHelper.getActiveProvider().getName() + ".</p>" +
                     "</td></tr>" +
                     "</table>" +

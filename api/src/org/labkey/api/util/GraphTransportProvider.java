@@ -568,11 +568,8 @@ public class GraphTransportProvider implements EmailTransportProvider
         }
         else if (content instanceof String str)
         {
-            String contentType = mm.getContentType();
-            // Check content type header first, but also detect HTML by content since
-            // MimeMessage.setContent(obj, type) doesn't always set the Content-Type header properly
-            boolean isHtml = (contentType != null && contentType.toLowerCase().contains("text/html"))
-                    || containsHtmlTags(str);
+            String contentType = getEffectiveContentType(mm);
+            boolean isHtml = contentType != null && contentType.toLowerCase().contains("text/html");
             if (isHtml)
             {
                 bodyContent[0] = str;
@@ -598,7 +595,7 @@ public class GraphTransportProvider implements EmailTransportProvider
         {
             BodyPart part = multipart.getBodyPart(i);
             String disposition = part.getDisposition();
-            String contentType = part.getContentType();
+            String contentType = getEffectiveContentType(part);
 
             LOG.debug("Part {}: disposition={}, contentType={}", i, disposition, contentType);
 
@@ -618,10 +615,7 @@ public class GraphTransportProvider implements EmailTransportProvider
             }
             else if (partContent instanceof String str)
             {
-                // Check content type header first, but also detect HTML by content since
-                // MimeBodyPart.setContent(obj, type) doesn't always set the Content-Type header properly
-                boolean isHtml = (contentType != null && contentType.toLowerCase().contains("text/html"))
-                        || containsHtmlTags(str);
+                boolean isHtml = contentType != null && contentType.toLowerCase().contains("text/html");
 
                 if (isHtml)
                 {
@@ -637,18 +631,24 @@ public class GraphTransportProvider implements EmailTransportProvider
         }
     }
 
-    // Pattern to detect common HTML tags
-    private static final java.util.regex.Pattern HTML_TAG_PATTERN =
-            java.util.regex.Pattern.compile("<(br|p|div|table|a|span|img|b|i|strong|em|html|head|body|ul|ol|li|h[1-6])[\\s>/]",
-                    java.util.regex.Pattern.CASE_INSENSITIVE);
-
     /**
-     * Detect if content contains HTML tags.
-     * Needed because MimeBodyPart.setContent(obj, "text/html") doesn't always set the Content-Type header correctly.
+     * Get the effective content type of Part. {@code MimeBodyPart.getContentType()} reads from the
+     * Content-Type header, which may not be set after {@code setContent(obj, type)} — that method stores
+     * the type on the DataHandler but clears the header, causing {@code getContentType()} to default to
+     * "text/plain". The DataHandler always preserves the actual content type.
      */
-    private boolean containsHtmlTags(String content)
+    private String getEffectiveContentType(Part part) throws MessagingException
     {
-        return content != null && HTML_TAG_PATTERN.matcher(content).find();
+        try
+        {
+            jakarta.activation.DataHandler dh = part.getDataHandler();
+            if (dh != null)
+            {
+                return dh.getContentType();
+            }
+        }
+        catch (MessagingException ignored) {}
+        return part.getContentType();
     }
 
     // Pattern to match data URIs in HTML (e.g., src="data:image/png;base64,...")
@@ -689,8 +689,9 @@ public class GraphTransportProvider implements EmailTransportProvider
 
             try
             {
-                // Decode the base64 content
-                byte[] content = java.util.Base64.getDecoder().decode(base64Data);
+                // Decode the base64 content. Use MIME decoder which is lenient about
+                // padding and whitespace, as real-world data URIs may not be strictly formatted.
+                byte[] content = java.util.Base64.getMimeDecoder().decode(base64Data);
 
                 // Generate a unique Content-ID
                 String contentId = "datauri-" + System.currentTimeMillis() + "-" + _dataUriCounter.incrementAndGet();
