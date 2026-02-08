@@ -78,6 +78,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.labkey.api.exp.api.ExpMaterial.ALIQUOTED_FROM_INPUT;
+import static org.labkey.api.exp.api.ExpMaterial.ALIQUOTED_FROM_INPUT_LABEL;
 import static org.labkey.api.exp.api.ExpRunItem.INPUT_PARENT;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS;
@@ -738,6 +739,17 @@ public class NameGenerator
             String valueStr = value instanceof String ? (String) value : value.toString();
             if (StringUtils.isEmpty((valueStr).trim()))
                 return Stream.empty();
+
+            // GitHub Issue 827: Cannot aliquot samples where parent sample has a comma in the name AND the aliquot naming pattern references ancestor lineage
+            if (ALIQUOTED_FROM_INPUT.equalsIgnoreCase(parentColName) || ALIQUOTED_FROM_INPUT_LABEL.equalsIgnoreCase(parentColName))
+            {
+                boolean isQuoted = (valueStr.contains(",") || valueStr.contains("\n") || valueStr.contains("\r")) && (valueStr.startsWith("\"") && valueStr.endsWith("\""))
+                if (isQuoted)
+                {
+                    valueStr = valueStr.substring(1, valueStr.length() - 1);
+                }
+                return Stream.of(valueStr);
+            }
 
             // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
             // using TabLoader instead of just splitting on the comma.
