@@ -269,20 +269,25 @@ public class MiniProfiler
     @Nullable
     public static StackTraceElement[] getTroubleshootingStackTrace()
     {
-        if (isCollectTroubleshootingStackTraces())
+        return isCollectTroubleshootingStackTraces() ? getTroubleshootingStackTraceUnconditionally() : null;
+    }
+
+    /**
+     * @return the stack of the calling thread regardless of the state of the "enable stack traces" setting.
+     */
+    @NotNull
+    public static StackTraceElement[] getTroubleshootingStackTraceUnconditionally()
+    {
+        StackTraceElement[] fullStack = Thread.currentThread().getStackTrace();
+        if (fullStack.length > 0)
         {
-            StackTraceElement[] fullStack = Thread.currentThread().getStackTrace();
-            if (fullStack.length > 0)
-            {
-                // Automatically omit this method from the stack
-                int callerFramesToOmit = 2;
-                StackTraceElement[] result = new StackTraceElement[fullStack.length - callerFramesToOmit];
-                System.arraycopy(fullStack, 1, result, 0, result.length);
-                return result;
-            }
-            return fullStack;
+            // Automatically omit this method from the stack
+            int callerFramesToOmit = 2;
+            StackTraceElement[] result = new StackTraceElement[fullStack.length - callerFramesToOmit];
+            System.arraycopy(fullStack, 1, result, 0, result.length);
+            return result;
         }
-        return null;
+        return fullStack;
     }
 
     /** This setting will be retained only for the current instance of the web app. Once the server is restarted, it will default to false again */

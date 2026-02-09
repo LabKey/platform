@@ -162,7 +162,7 @@ public class DebugInfoDumper
      * This is primarily intended to help understand deadlocks.  Developers are encouraged to
      * add information related to attaining locks or starting transactions.
      */
-    public static _PopAutoCloseable pushThreadDumpContext(String context)
+    public static QuietCloser pushThreadDumpContext(String context)
     {
         final var arr = _threadDumpExtraContext.computeIfAbsent(Thread.currentThread(), (_) -> Collections.synchronizedList(new ArrayList<>()));
         int size = arr.size();
@@ -178,7 +178,7 @@ public class DebugInfoDumper
     }
 
 
-    public static class _PopAutoCloseable implements AutoCloseable
+    public static class _PopAutoCloseable implements QuietCloser
     {
         final int _size;
 
@@ -193,7 +193,7 @@ public class DebugInfoDumper
             var arr = _threadDumpExtraContext.get(Thread.currentThread());
             assert null != arr;
             while (arr.size() > _size)
-                arr.remove(arr.size() - 1);
+                arr.removeLast();
         }
     }
 
@@ -407,7 +407,7 @@ public class DebugInfoDumper
             logWriter.debug("*********************************************");
         }
 
-        // GitHib Issue 713: Automatically include PG locks and active queries in thread dumps
+        // GitHub Issue 713: Automatically include PG locks and active queries in thread dumps
         UserSchema schema = QueryService.get().getUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot(), BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME);
         // Schema won't exist on SQLServer
         if (schema != null)
@@ -489,32 +489,46 @@ public class DebugInfoDumper
             // subtract 1 because dumpThreads includes Thread.run() in the stack trace
             logWriter.debug(String.format("%3d\t\t%s", stack.length-i-1, stack[i].toString()));
         }
-        var extraInfo = _threadDumpExtraContext.get(thread);
-        if (null != extraInfo && !extraInfo.isEmpty())
+        for (String line : getFormattedExtraContext(thread))
         {
-            logWriter.debug("extra stack context (may not match stacktrace if thread is not blocked)");
-            var messages = extraInfo.toArray(new ThreadExtraContext[0]);
-            for (var i = messages.length-1 ; i>= 0 ; i--)
-            {
-                logWriter.debug("\t" + messages[i].context.replace('\n',' ') + "\tage: " + (System.currentTimeMillis() - messages[i].startTime) + "ms");
-                var messageStack = messages[i].stack();
-                if (null != messageStack)
-                {
-                    for (int j=0, count=0 ; j<messageStack.length && count < 4; j++)
-                    {
-                        if (skipMethods.contains(messageStack[j].getMethodName()))
-                            continue;
-                        logWriter.debug(String.format("%3d\t\t%s", messageStack.length - j, messageStack[j].toString()));
-                        count++;
-                    }
-                }
-            }
+            logWriter.debug(line);
         }
 
         if (ConnectionWrapper.getProbableLeakCount() > 0)
         {
             ConnectionWrapper.dumpLeaksForThread(thread, logWriter);
         }
+    }
+
+    /**
+     * Returns formatted extra stack context lines for the given thread, suitable for display in thread dumps.
+     * Returns an empty list if the thread has no extra context.
+     */
+    public static List<String> getFormattedExtraContext(Thread thread)
+    {
+        var extraInfo = _threadDumpExtraContext.get(thread);
+        if (extraInfo == null || extraInfo.isEmpty())
+            return List.of();
+
+        List<String> result = new ArrayList<>();
+        result.add("extra stack context (may not match stacktrace if thread is not blocked)");
+        var messages = extraInfo.toArray(new ThreadExtraContext[0]);
+        for (int i = messages.length - 1; i >= 0; i--)
+        {
+            result.add("\t" + messages[i].context.replace('\n', ' ') + "\tage: " + (System.currentTimeMillis() - messages[i].startTime) + "ms");
+            var messageStack = messages[i].stack();
+            if (messageStack != null)
+            {
+                for (int j = 0, count = 0; j < messageStack.length && count < 4; j++)
+                {
+                    if (skipMethods.contains(messageStack[j].getMethodName()))
+                        continue;
+                    result.add(String.format("%3d\t\t%s", messageStack.length - j, messageStack[j].toString()));
+                    count++;
+                }
+            }
+        }
+        return result;
     }
 
     /**

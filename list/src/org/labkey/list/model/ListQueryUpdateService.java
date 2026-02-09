@@ -371,7 +371,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     }
                     else if (r.getValue() != null && !StringUtils.isEmpty(String.valueOf(r.getValue())))
                     {
-                        throw new ValidationException("Can't upload '" + r.getValue() + "' to field " + r.getKey() + " with type Attachment.");
+                        throw new ValidationException("Cannot upload '" + r.getValue() + "' to Attachment type field '" + r.getKey() + "'.");
                     }
                 }
             }

@@ -16,14 +16,24 @@
 
 package org.labkey.api.data;
 
-/*
-* User: adam
-* Date: Jul 7, 2011
-* Time: 4:30:16 AM
-*/
+// Database table types that we pass into JDBC metadata method getTables(). Some databases support a subset of these
+// types (e.g., SQL Server doesn't support materialized views), but getTables() just ignores types it doesn't know.
 public enum DatabaseTableType
 {
     TABLE,
     VIEW,
-    NOT_IN_DB
+    MATERIALIZED_VIEW
+    {
+        @Override
+        public String getJdbcTypeName()
+        {
+            return "MATERIALIZED VIEW";
+        }
+    },
+    NOT_IN_DB;
+
+    public String getJdbcTypeName()
+    {
+        return name();
+    }
 }

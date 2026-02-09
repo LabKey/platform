@@ -203,4 +203,25 @@
             <column columnName="LastActivity"/>
         </columns>
     </table>
+    <table tableName="MaterializedView" tableDbType="UNKNOWN">
+        <description>This is used to test materialized views on PostgreSQL</description>
+        <columns>
+            <column columnName="_ts"/>
+            <column columnName="RowId"/>
+            <column columnName="EntityId"/>
+            <column columnName="CreatedBy"/>
+            <column columnName="Created"/>
+            <column columnName="Parent"/>
+            <column columnName="Name"/>
+            <column columnName="SortOrder"/>
+            <column columnName="Description"/>
+            <column columnName="Type"/>
+            <column columnName="Title"/>
+            <column columnName="Searchable"/>
+            <column columnName="LockState"/>
+            <column columnName="ExpirationDate"/>
+            <column columnName="FileRootSize"/>
+            <column columnName="FileRootLastCrawled"/>
+        </columns>
+    </table>
 </tables>
