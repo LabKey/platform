@@ -192,6 +192,7 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Directive;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -3614,20 +3615,39 @@ public class AdminController extends SpringActionController
         abstract protected UserSchema getUserSchema();
     }
 
-    // This allows Troubleshooters to GET and POST to the action, supporting export to Excel and script, e.g.
-    @RequiresPermission(TroubleshooterPermission.class)
-    public class AttachmentsAction extends AbstractAdminQueryAction
+    private abstract static class AbstractAttachmentQueryAction extends AbstractAdminQueryAction
     {
-        @SuppressWarnings("unused") // Invoked via reflection
-        public AttachmentsAction()
+        public AbstractAttachmentQueryAction(String queryName)
         {
-            super("core", "DocumentsGroupedByParentTypeAdmin");
+            super("core", queryName);
+        }
+
+        @Override
+        public void setViewContext(ViewContext context)
+        {
+            // Give Troubleshooters (and ImpersonatingTroubleshooters) read permissions in all containers so they can
+            // see attachment counts by parent type plus details. I don't love poking an elevated user into the
+            // ViewContext, but this is the only way I could get DataRegion to see read permission on tables that are
+            // wrapped by a query (e.g., core.Documents used by DocumentsGroupedByParentType.sql).
+            context.setUser(ElevatedUser.getElevatedUser(context.getUser(), ReaderRole.class));
+            super.setViewContext(context);
         }
 
         @Override
         protected UserSchema getUserSchema()
         {
             return new CoreQuerySchema(getUser(), getContainer(), false);
+        }
+    }
+
+    // This allows Troubleshooters to GET and POST to the action, supporting export to Excel and script, e.g.
+    @RequiresPermission(TroubleshooterPermission.class)
+    public class AttachmentsAction extends AbstractAttachmentQueryAction
+    {
+        @SuppressWarnings("unused") // Invoked via reflection
+        public AttachmentsAction()
+        {
+            super("DocumentsGroupedByParentTypeAdmin");
         }
 
         @Override
@@ -3639,18 +3659,12 @@ public class AdminController extends SpringActionController
 
     @SuppressWarnings("unused") // Linked from core.DocumentsGroupedByParentTypeAdmin
     @RequiresPermission(TroubleshooterPermission.class)
-    public class AttachmentsForTypeAction extends AbstractAdminQueryAction
+    public class AttachmentsForTypeAction extends AbstractAttachmentQueryAction
     {
         @SuppressWarnings("unused") // Invoked via reflection
         public AttachmentsForTypeAction()
         {
-            super("core", "Documents");
-        }
-
-        @Override
-        protected UserSchema getUserSchema()
-        {
-            return new CoreQuerySchema(getUser(), getContainer(), false);
+            super("Documents");
         }
 
         @Override
