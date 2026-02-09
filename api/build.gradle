@@ -153,7 +153,13 @@ dependencies {
             "MIT License",
             "https://opensource.org/licenses/MIT",
             "Library to handle OAuth2 authentication with Microsoft’s identity platform",
-        )
+        ),
+        {
+            // This module pulls in JNA for native OS credential store access; but its not needed for
+            // client credentials flow as it uses in-memory token caching. The version of JNA that gets
+            // pulled in here conflicts with the JNA version used by the docker module.
+            exclude group: "com.microsoft.azure", module: "msal4j-persistence-extension"
+        }
     )
 
     BuildUtils.addExternalDependency(
