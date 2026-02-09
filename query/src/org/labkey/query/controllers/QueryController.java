@@ -714,7 +714,8 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors)
         {
             // Site Admin or Troubleshooter? Troubleshooters can see all the information but can't test data sources.
-            boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
+            // Dev mode only, since "Test" is meant for LabKey's own development and testing purposes.
+            boolean showTestButton = getContainer().hasPermission(getUser(), AdminOperationsPermission.class) && AppProps.getInstance().isDevMode();
             List<ExternalSchemaDef> allDefs = QueryManager.get().getExternalSchemaDefs(null);
 
             MultiValuedMap<String, ExternalSchemaDef> byDataSourceName = new ArrayListValuedHashMap<>();
@@ -729,7 +730,7 @@ public class QueryController extends SpringActionController
                 BR(),
                 TABLE(cl("labkey-data-region"),
                     TR(cl("labkey-show-borders"),
-                        hasAdminOpsPerms ? TD(cl("labkey-column-header"), "Test") : null,
+                        showTestButton ? TD(cl("labkey-column-header"), "Test") : null,
                         TD(cl("labkey-column-header"), "Data Source"),
                         TD(cl("labkey-column-header"), "Current Status"),
                         TD(cl("labkey-column-header"), "URL"),
@@ -759,7 +760,7 @@ public class QueryController extends SpringActionController
                             return Stream.of(
                                 TR(
                                     cl(rowStyle),
-                                    hasAdminOpsPerms ? TD(connected ? new ButtonBuilder("Test").href(new ActionURL(TestDataSourceConfirmAction.class, getContainer()).addParameter("dataSource", scope.getDataSourceName())) : "") : null,
+                                    showTestButton ? TD(connected ? new ButtonBuilder("Test").href(new ActionURL(TestDataSourceConfirmAction.class, getContainer()).addParameter("dataSource", scope.getDataSourceName())) : "") : null,
                                     TD(HtmlString.NBSP, scope.getDisplayName()),
                                     TD(status),
                                     TD(scope.getDatabaseUrl()),
