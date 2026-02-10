@@ -9,6 +9,7 @@ import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
@@ -90,6 +91,8 @@ public interface AuditHandler
             if (col != null && (col.isMultiValued() || col.getFk() instanceof MultiValuedForeignKey))
                 isMultiValued = true;
 
+            boolean isMultiChoice = col != null && col.getPropertyType() == PropertyType.MULTI_CHOICE;
+
             String nameFromAlias = key;
             if (null != col)
                 nameFromAlias = col.getName();
@@ -167,6 +170,16 @@ public interface AuditHandler
                         if ((oldValue == null && newValue != null) || (newValue == null && oldValue != null))
                         {
                             originalRow.put(nameFromAlias, oldValue);
+                            modifiedRow.put(nameFromAlias, newValue);
+                        }
+                    }
+                    else if (isMultiChoice)
+                    {
+                        Object convertedOldVal = col.convert(oldValue);
+                        Object convertedNewVal = col.convert(newValue);
+                        if (!Objects.equals(convertedOldVal, convertedNewVal))
+                        {
+                            originalRow.put(nameFromAlias, convertedOldVal); // use converted array instead of raw pgarray
                             modifiedRow.put(nameFromAlias, newValue);
                         }
                     }

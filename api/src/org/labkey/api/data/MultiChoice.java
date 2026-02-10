@@ -550,6 +550,8 @@ public class MultiChoice
                 return (T) Array.from((Object[]) o);
             if (o instanceof org.json.JSONArray json)
                 return (T) Array.from(json);
+            if (o instanceof java.sql.Array arr)
+                return (T) Array.from(arr);
             if (o instanceof List<?> list)
                 return (T) new Array(((List<Object>)list).stream());
             return (T) Array.from(o.toString());
