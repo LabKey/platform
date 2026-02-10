@@ -1061,8 +1061,8 @@ describe('Aliquot crud', () => {
 describe('Amount/Unit CRUD', () => {
     it ("Test Amounts/Units validation on insert/import/update/merge", async () => {
         const dataType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
-        const NO_UNIT_ERROR = 'A Units value must be provided when Amounts are provided.';
-        const NO_AMOUNT_ERROR = 'An Amount value must be provided when Units are provided.';
+        const NO_UNIT_ERROR = 'A \'Units\' value must be provided when \'Amounts\' are provided.';
+        const NO_AMOUNT_ERROR = 'An \'Amount\' value must be provided when \'Units\' are provided.';
         const INCOMPATIBLE_ERROR = 'Units value (L) is not compatible with the ' + dataType + ' display units (g).';
         const NEGATIVE_ERROR = "Value '-1.1' for field 'Amount' is invalid. Amounts must be non-negative.";
 
