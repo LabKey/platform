@@ -224,7 +224,7 @@ public interface QueryChangeListener
         if (oldType.getPropertyType() != PropertyType.MULTI_CHOICE || newType.getPropertyType() == PropertyType.MULTI_CHOICE)
             return filterStr;
 
-        String columnNameEncoded = PageFlowUtil.encodeURIComponent(columnName);
+        String columnNameEncoded = PageFlowUtil.encodeURIComponent(QueryKey.encodePart(columnName));
 
         String colLower = columnNameEncoded.toLowerCase();
         String sLower = filterStr.toLowerCase();
