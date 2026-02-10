@@ -593,8 +593,6 @@ public enum PropertyType implements SimpleConvert
                 {
                     throw new ConversionException(e);
                 }
-//                int offset = TimeZone.getDefault().getOffset(date.getTime());
-//                date.setTime(date.getTime() - offset);
             }
             return date;
         }
@@ -611,7 +609,7 @@ public enum PropertyType implements SimpleConvert
                 String strVal = value.toString();
                 if (DateUtil.isSignedDuration(strVal))
                     strVal = JdbcType.TIMESTAMP.convert(value).toString();
-                return ConvertUtils.convert(strVal, Date.class);
+                return ConvertUtils.convert(strVal, java.sql.Timestamp.class);
             }
         }
 

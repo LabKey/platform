@@ -1444,7 +1444,7 @@ Parse:
         int month = fullDate.getMonth();
         int date = fullDate.getDate();
 
-        return new Date(year, month, date);
+        return new java.sql.Date(year, month, date);
     }
 
     public static TimeZone getTimeZone()
