@@ -35,6 +35,7 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
+import org.springframework.ai.anthropic.api.AnthropicApi;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
@@ -567,7 +568,7 @@ public class McpServiceImpl implements McpService
         @Override
         public String getModel()
         {
-            return "claude-3-5-sonnet-20241022";
+            return "claude-sonnet-4-5-20250929";
         }
 
         @Override
@@ -582,6 +583,7 @@ public class McpServiceImpl implements McpService
         {
             AnthropicChatOptions chatOptions = AnthropicChatOptions.builder()
                     .model(getModel())
+                    .maxTokens(4096)
                     .toolCallbacks(getToolCallbacks())
                     .build();
             return chatOptions;
@@ -590,9 +592,11 @@ public class McpServiceImpl implements McpService
         public AnthropicChatModel getChatModel()
         {
             AnthropicChatOptions chatOptions = getChatOptions();
-
+            AnthropicApi api = AnthropicApi.builder()
+                    .apiKey(System.getenv("CLAUDE_API_KEY"))
+                    .build();
             AnthropicChatModel chatModel = AnthropicChatModel.builder()
-                    .defaultOptions(chatOptions)
+                    .anthropicApi(api)
                     .build();
             return chatModel;
         }
