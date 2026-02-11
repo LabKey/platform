@@ -519,32 +519,53 @@ public class GraphTransportProvider implements EmailTransportProvider
         message.setBody(body);
 
         // Recipients
-        Address[] toAddresses = mm.getRecipients(Message.RecipientType.TO);
-        if (toAddresses != null && toAddresses.length > 0)
+        message.setToRecipients(convertRecipients(mm.getRecipients(Message.RecipientType.TO)));
+        message.setCcRecipients(convertRecipients(mm.getRecipients(Message.RecipientType.CC)));
+        message.setBccRecipients(convertRecipients(mm.getRecipients(Message.RecipientType.BCC)));
+
+        // Reply-To (set by EmailTemplate via setHeader("Reply-To", ...))
+        Address[] replyTo = mm.getReplyTo();
+        Address[] from = mm.getFrom();
+        // MimeMessage.getReplyTo() falls back to getFrom() when no Reply-To header is set,
+        // so only map it when it differs from From (i.e., an explicit Reply-To was set).
+        if (replyTo != null && replyTo.length > 0 && !java.util.Arrays.equals(replyTo, from))
         {
-            List<Recipient> recipients = new ArrayList<>();
-            for (Address address : toAddresses)
-            {
-                Recipient recipient = new Recipient();
-                EmailAddress emailAddress = new EmailAddress();
-
-                if (address instanceof InternetAddress internetAddress)
-                {
-                    emailAddress.setAddress(internetAddress.getAddress());
-                    emailAddress.setName(internetAddress.getPersonal());
-                }
-                else
-                {
-                    emailAddress.setAddress(address.toString());
-                }
-
-                recipient.setEmailAddress(emailAddress);
-                recipients.add(recipient);
-            }
-            message.setToRecipients(recipients);
+            message.setReplyTo(convertRecipients(replyTo));
         }
 
         return message;
+    }
+
+    /**
+     * Convert an array of JavaMail addresses to a list of Graph Recipient objects.
+     */
+    private List<Recipient> convertRecipients(Address[] addresses)
+    {
+        if (addresses == null || addresses.length == 0)
+        {
+            return List.of();
+        }
+
+        List<Recipient> recipients = new ArrayList<>();
+        for (Address address : addresses)
+        {
+            Recipient recipient = new Recipient();
+            EmailAddress emailAddress = new EmailAddress();
+
+            if (address instanceof InternetAddress internetAddress)
+            {
+                emailAddress.setAddress(internetAddress.getAddress());
+                emailAddress.setName(internetAddress.getPersonal());
+            }
+            else
+            {
+                emailAddress.setAddress(address.toString());
+            }
+
+            recipient.setEmailAddress(emailAddress);
+            recipients.add(recipient);
+        }
+        return recipients;
     }
 
     /**
@@ -1055,6 +1076,95 @@ public class GraphTransportProvider implements EmailTransportProvider
             assertNotNull("To recipients should not be null", message.getToRecipients());
             assertEquals("Should have one recipient", 1, message.getToRecipients().size());
             assertEquals(TEST_TO_ADDRESS, message.getToRecipients().get(0).getEmailAddress().getAddress());
+        }
+
+        @Test
+        public void testEmailWithCcAndBccRecipients() throws Exception
+        {
+            setUpBasicExpectations();
+            mockery.checking(new Expectations() {{
+                oneOf(mockSendMailRequestBuilder).post(with(any(SendMailPostRequestBody.class)));
+                will(new CaptureSendMailAction());
+            }});
+
+            GraphTransportProvider provider = createTestProvider();
+
+            Properties props = new Properties();
+            Session session = Session.getDefaultInstance(props);
+            MimeMessage message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(TEST_FROM_ADDRESS));
+            message.setRecipient(Message.RecipientType.TO, new InternetAddress(TEST_TO_ADDRESS));
+            message.addRecipient(Message.RecipientType.CC, new InternetAddress("cc@example.com"));
+            message.addRecipient(Message.RecipientType.BCC, new InternetAddress("bcc@example.com"));
+            message.setSubject("Test email with CC and BCC");
+            message.setText("Body text.");
+
+            provider.send(message);
+
+            mockery.assertIsSatisfied();
+            com.microsoft.graph.models.Message graphMessage = capturedSendMailRequest.getMessage();
+
+            assertNotNull("To recipients should not be null", graphMessage.getToRecipients());
+            assertEquals(1, graphMessage.getToRecipients().size());
+            assertEquals(TEST_TO_ADDRESS, graphMessage.getToRecipients().get(0).getEmailAddress().getAddress());
+
+            assertNotNull("CC recipients should not be null", graphMessage.getCcRecipients());
+            assertEquals(1, graphMessage.getCcRecipients().size());
+            assertEquals("cc@example.com", graphMessage.getCcRecipients().get(0).getEmailAddress().getAddress());
+
+            assertNotNull("BCC recipients should not be null", graphMessage.getBccRecipients());
+            assertEquals(1, graphMessage.getBccRecipients().size());
+            assertEquals("bcc@example.com", graphMessage.getBccRecipients().get(0).getEmailAddress().getAddress());
+        }
+
+        @Test
+        public void testEmailWithReplyTo() throws Exception
+        {
+            setUpBasicExpectations();
+            mockery.checking(new Expectations() {{
+                oneOf(mockSendMailRequestBuilder).post(with(any(SendMailPostRequestBody.class)));
+                will(new CaptureSendMailAction());
+            }});
+
+            GraphTransportProvider provider = createTestProvider();
+
+            Properties props = new Properties();
+            Session session = Session.getDefaultInstance(props);
+            MimeMessage message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(TEST_FROM_ADDRESS));
+            message.setRecipient(Message.RecipientType.TO, new InternetAddress(TEST_TO_ADDRESS));
+            message.setSubject("Test email with Reply-To");
+            // Set Reply-To the same way EmailTemplate does
+            message.setHeader("Reply-To", "replyto@example.com");
+            message.setText("Body text.");
+
+            provider.send(message);
+
+            mockery.assertIsSatisfied();
+            com.microsoft.graph.models.Message graphMessage = capturedSendMailRequest.getMessage();
+
+            assertNotNull("ReplyTo should not be null", graphMessage.getReplyTo());
+            assertEquals(1, graphMessage.getReplyTo().size());
+            assertEquals("replyto@example.com", graphMessage.getReplyTo().get(0).getEmailAddress().getAddress());
+        }
+
+        @Test
+        public void testEmailWithoutExplicitReplyToOmitsIt() throws Exception
+        {
+            setUpBasicExpectations();
+            mockery.checking(new Expectations() {{
+                oneOf(mockSendMailRequestBuilder).post(with(any(SendMailPostRequestBody.class)));
+                will(new CaptureSendMailAction());
+            }});
+
+            GraphTransportProvider provider = createTestProvider();
+            provider.send(createTestMessage());
+
+            mockery.assertIsSatisfied();
+            com.microsoft.graph.models.Message graphMessage = capturedSendMailRequest.getMessage();
+
+            // When no explicit Reply-To is set, it should not be mapped (Graph defaults to From)
+            assertNull("ReplyTo should be null when not explicitly set", graphMessage.getReplyTo());
         }
 
         @Test
