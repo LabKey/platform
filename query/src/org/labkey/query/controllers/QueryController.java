@@ -8880,9 +8880,14 @@ public class QueryController extends SpringActionController
 
             try (var mcpPush = McpContext.withContext(getViewContext()))
             {
+                String prompt = form.getPrompt();
+
+                String replacePrompt = handleEscape(prompt);
+                if (null != replacePrompt)
+                    prompt = replacePrompt;
+
                 // TODO when/how to do we reset or isolate different chat sessions, e.g. if two SQL windows are open concurrently?
                 ChatClient chatSession = getChat();
-                String prompt = form.getPrompt();
                 List<McpService.MessageResponse> responses;
                 SqlResponse sqlResponse;
 

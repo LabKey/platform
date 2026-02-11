@@ -76,6 +76,8 @@ public interface McpService extends ToolCallbackProvider
 
     ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier);
 
+    void close(HttpSession session, ChatClient chat);
+
     record MessageResponse(String contentType, String text, HtmlString html) {}
 
     /** get consolidated response (good for many text oriented agents/use-cases) */

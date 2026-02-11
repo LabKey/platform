@@ -3,6 +3,7 @@ package org.labkey.api.mcp;
 import com.google.genai.errors.ClientException;
 import com.google.genai.errors.ServerException;
 import jakarta.servlet.http.HttpSession;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.util.HtmlString;
@@ -32,11 +33,39 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
         return chatSession;
     }
 
+    protected String handleEscape(String prompt)
+    {
+        prompt = StringUtils.trimToEmpty(prompt);
+        switch (prompt)
+        {
+            case "/clear" ->
+            {
+                ChatClient chatSession = getChat(); // CONSIDER: getChat(boolean ifStarted)
+                if (null != chatSession)
+                    McpService.get().close(getViewContext().getSession(), chatSession);
+                 return "OK, let's start over.";
+            }
+        }
+        return null;
+    }
+
     @Override
     public Object execute(PromptForm form, BindException errors) throws Exception
     {
         try (var mcpPush = McpContext.withContext(getViewContext()))
         {
+            String prompt = form.getPrompt();
+
+            String escapeResponse = handleEscape(prompt);
+            if (null != escapeResponse)
+            {
+                return new JSONObject(Map.of(
+                        "contentType", "text/plain",
+                        "response", escapeResponse,
+                        "success", Boolean.TRUE));
+            }
+
+            // call getChat() after handleEscape()
             ChatClient chatSession = getChat();
             if (null == chatSession)
                 return new JSONObject(Map.of(
@@ -44,7 +73,6 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
                         "response", "Service is not ready yet",
                         "success", Boolean.FALSE));
 
-            String prompt = form.getPrompt();
             McpService.MessageResponse response = McpService.get().sendMessage(chatSession, prompt);
             var ret = new JSONObject(Map.of("success", Boolean.TRUE));
             if (!HtmlString.isBlank(response.html()))
