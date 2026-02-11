@@ -8882,9 +8882,14 @@ public class QueryController extends SpringActionController
             {
                 String prompt = form.getPrompt();
 
-                String replacePrompt = handleEscape(prompt);
-                if (null != replacePrompt)
-                    prompt = replacePrompt;
+                String escapeResponse = handleEscape(prompt);
+                if (null != escapeResponse)
+                {
+                    return new JSONObject(Map.of(
+                            "contentType", "text/plain",
+                            "response", escapeResponse,
+                            "success", Boolean.TRUE));
+                }
 
                 // TODO when/how to do we reset or isolate different chat sessions, e.g. if two SQL windows are open concurrently?
                 ChatClient chatSession = getChat();
