@@ -16,7 +16,7 @@
 
 package org.labkey.core.admin.sql;
 
-import org.apache.logging.log4j.LogManager;
+import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,6 +25,7 @@ import org.json.JSONObject;
 import org.labkey.api.Constants;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.action.ReadOnlyApiAction;
@@ -32,11 +33,11 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
@@ -44,25 +45,32 @@ import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.mcp.McpContext;
+import org.labkey.api.mcp.McpService;
+import org.labkey.api.mcp.McpService.MessageResponse;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.Crypt;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ButtonBuilder;
+import org.labkey.api.util.CsrfInput;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.CsrfInput;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.vcs.Vcs;
 import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
@@ -72,9 +80,11 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
 import org.labkey.core.admin.AdminController;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
 import java.io.IOException;
@@ -99,7 +109,7 @@ import java.util.stream.Collectors;
 public class SqlScriptController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(SqlScriptController.class);
-    private static final Logger LOG = LogManager.getLogger(SqlScriptController.class);
+    private static final Logger LOG = LogHelper.getLogger(SqlScriptController.class, "Execution of upgrade code");
 
     public SqlScriptController()
     {
@@ -344,7 +354,6 @@ public class SqlScriptController extends SpringActionController
     // We sort the list of scripts, so insist on an ArrayList
     private void appendScripts(HtmlStringBuilder html, ArrayList<SqlScript> scripts)
     {
-        Container c = getContainer();
         html.unsafeAppend("<td>\n");
 
         if (scripts.isEmpty())
@@ -357,16 +366,10 @@ public class SqlScriptController extends SpringActionController
 
             for (SqlScript script : scripts)
             {
-                ActionURL url = new ActionURL(ScriptAction.class, c);
-                url.addParameter("moduleName", script.getProvider().getProviderName());
-                url.addParameter("filename", script.getDescription());
-
-                html.unsafeAppend("<a href=\"");
-                html.append(url.toString());
-                html.unsafeAppend("\">");
-                html.append(script.getDescription());
-
-                html.unsafeAppend("</a><br>\n");
+                ActionURL url = getScriptURL(ScriptAction.class, script);
+                html.append(new LinkBuilder(script.getDescription()).href(url).clearClasses())
+                    .append(HtmlString.BR)
+                    .append("\n");
             }
         }
 
@@ -1117,13 +1120,22 @@ public class SqlScriptController extends SpringActionController
 
         protected void renderButtons(SqlScript script, PrintWriter out)
         {
-            ActionURL url = new ActionURL(ReorderScriptAction.class, getViewContext().getContainer());
-            url.addParameter("moduleName", script.getProvider().getProviderName());
-            url.addParameter("filename", script.getDescription());
-            out.println(PageFlowUtil.button("Reorder Script").href(url));
+            out.println(PageFlowUtil.button("Reorder Script").href(getScriptURL(ReorderScriptAction.class, script)));
+            if (McpService.get().isReady())
+                out.println(
+                    PageFlowUtil.button("Clean Up Script")
+                        .href(getScriptURL(CleanUpScriptAction.class, script))
+                        .tooltip("Remove redundant and unnecessary statements. This uses AI, so it may take some time and its results must be carefully reviewed.")
+                );
         }
     }
 
+    private static ActionURL getScriptURL(Class<? extends Controller> actionClass, SqlScript script)
+    {
+        return new ActionURL(actionClass, ContainerManager.getRoot())
+            .addParameter("moduleName", script.getProvider().getProviderName())
+            .addParameter("filename", script.getDescription());
+    }
 
     @RequiresPermission(AdminOperationsPermission.class)
     public class ReorderScriptAction extends ScriptAction
@@ -1141,6 +1153,29 @@ public class SqlScriptController extends SpringActionController
         }
     }
 
+    private static class ReorderingScriptView extends ScriptView
+    {
+        private ReorderingScriptView(SqlScript script)
+        {
+            super(script);
+        }
+
+        @Override
+        protected void renderScript(SqlScript script, PrintWriter out)
+        {
+            out.println("<table>");
+            ScriptReorderer reorderer = new ScriptReorderer(script.getSchema(), script.getContents());
+            out.println(reorderer.getReorderedScript(true));
+            out.println("</table>");
+        }
+
+        @Override
+        protected void renderButtons(SqlScript script, PrintWriter out)
+        {
+            out.println(PageFlowUtil.button("Save Reordered Script to " + script.getDescription()).href(getScriptURL(SaveReorderedScriptAction.class, script)));
+            out.println(PageFlowUtil.button("Back").href(getScriptURL(ScriptAction.class, script)));
+        }
+    }
 
     @RequiresPermission(AdminOperationsPermission.class)
     public static class ReorderAllScriptsAction extends SimpleViewAction<Object>
@@ -1148,7 +1183,7 @@ public class SqlScriptController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new HttpView()
+            return new HttpView<>()
             {
                 @Override
                 protected void renderInternal(Object model, PrintWriter out)
@@ -1180,7 +1215,6 @@ public class SqlScriptController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminOperationsPermission.class)
     public class SaveReorderedScriptAction extends ScriptAction
     {
@@ -1189,48 +1223,132 @@ public class SqlScriptController extends SpringActionController
         {
             ScriptReorderer reorderer = new ScriptReorderer(script.getSchema(), script.getContents());
             String reorderedScript = reorderer.getReorderedScript(false);
-            ((FileSqlScriptProvider)script.getProvider()).saveScript(script.getSchema(), script.getDescription(), reorderedScript, true);
-            
-            final ActionURL url = new ActionURL(ScriptAction.class, getContainer());
-            url.addParameter("moduleName", script.getProvider().getProviderName());
-            url.addParameter("filename", script.getDescription());
-
-            throw new RedirectException(url);
+            throw new RedirectException(saveScript(script, reorderedScript));
         }
     }
 
-
-    private static class ReorderingScriptView extends ScriptView
+    // Save the new script contents to the specified script file and return an ActionURL to show it
+    private ActionURL saveScript(SqlScript script, String newContents) throws IOException
     {
-        private ReorderingScriptView(SqlScript script)
+        ((FileSqlScriptProvider)script.getProvider()).saveScript(script.getSchema(), script.getDescription(), newContents, true);
+        return getScriptURL(ScriptAction.class, script);
+    }
+
+    private static final String CLEAN_UP_PROMPT = """
+        Refactor the script to provide a clean, "final state" version, removing redundant and unnecessary statements.
+        
+        Note that the `core.fn_dropifexists` stored procedure is used to drop a TABLE, VIEW, COLUMN, or other database
+        object if it exists. In most cases, the first parameter specifies the table name, the second parameter specifies
+        the schema name, the third parameter specifies the object type, and the optional fourth parameter specifies
+        other details such as a column name. Here are some examples:
+        - `EXEC core.fn_dropifexists @objname = 'MyTable', @objschema = 'MySchema', @objtype = 'TABLE'` is the same as `DROP TABLE IF EXISTS MySchema.MyTable`
+        - `EXEC core.fn_dropifexists 'MyTable', 'MySchema', 'TABLE'` is the same as `DROP TABLE IF EXISTS MySchema.MyTable`
+        - `EXEC core.fn_dropifexists 'MyTable', 'MySchema', 'COLUMN', 'MyColumn` is the same as `ALTER TABLE TableName DROP COLUMN IF EXISTS ColumnName`
+        
+        Please do the following:
+        - Consolidate all iterative changes (column additions, PK changes, and renames) into the initial CREATE TABLE statements.
+        - Remove unnecessary DROP TABLE statements and core.fn_dropifexists calls, for example, those that come before a table has been created.
+        - Remove all intermediate DROP or ALTER statements that are superseded by later logic.
+        - Remove CREATE TABLE and ALTER TABLE statements followed by DROP TABLE or and core.fn_dropifexists 'TABLE' call on that same table.
+        
+        Include a summary of the changes you made.
+        """;
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class CleanUpScriptAction extends ScriptAction
+    {
+        @Override
+        protected ModelAndView getScriptView(SqlScript script)
         {
-            super(script);
+            McpService mcpService = McpService.get();
+            if (mcpService.isReady())
+            {
+                SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
+                String whoAreYou = "You are a " + dialect.getProductName() + (dialect.isSqlServer() ? " T-SQL" : " SQL") + " expert.\n";
+                String yourTask = "Your task is to clean up this SQL script" + (script.getFromVersion() == 0.0 ? ", which creates a brand new database schema and populates it with tables" : "") + ".\n";
+                ChatClient client = mcpService.getChat(getViewContext().getSession(), "SQL Script Cleaner", () -> whoAreYou + yourTask + CLEAN_UP_PROMPT);
+                try (QuietCloser _ = McpContext.withContext(getViewContext()))
+                {
+                    List<MessageResponse> responses = mcpService.sendMessageEx(client,"```sql\n" + script.getContents() + "```");
+                    HtmlStringBuilder viewBuilder = HtmlStringBuilder.of();
+                    StringBuilder newContents = new StringBuilder();
+                    responses
+                        .forEach(r -> {
+                            viewBuilder.append(r.html());
+                            String text = r.text();
+                            if (text.startsWith("```sql\n") && text.endsWith("```"))
+                            {
+                                newContents.append(text, 7, text.length() - 3); // Strip tick marks and language
+                            }
+                        });
+                    viewBuilder.append(new ButtonBuilder("Save Cleaned Script to " + script.getDescription()).href(getSaveScriptActionURL(script, newContents.toString())).usePost());
+                    return new HtmlView(viewBuilder);
+                }
+            }
+            return new HtmlView(HtmlString.of("McpService is not ready"));
         }
 
         @Override
-        protected void renderScript(SqlScript script, PrintWriter out)
+        protected String getActionDescription()
         {
-            out.println("<table>");
-            ScriptReorderer reorderer = new ScriptReorderer(script.getSchema(), script.getContents());
-            out.println(reorderer.getReorderedScript(true));
-            out.println("</table>");
-        }
-
-        @Override
-        protected void renderButtons(SqlScript script, PrintWriter out)
-        {
-            ActionURL reorderUrl = new ActionURL(SaveReorderedScriptAction.class, getViewContext().getContainer());
-            reorderUrl.addParameter("moduleName", script.getProvider().getProviderName());
-            reorderUrl.addParameter("filename", script.getDescription());
-            out.println(PageFlowUtil.button("Save Reordered Script to " + script.getDescription()).href(reorderUrl));
-
-            ActionURL backUrl = new ActionURL(ScriptAction.class, getViewContext().getContainer());
-            backUrl.addParameter("moduleName", script.getProvider().getProviderName());
-            backUrl.addParameter("filename", script.getDescription());
-            out.println(PageFlowUtil.button("Back").href(backUrl));
+            return "Clean Up " + super.getActionDescription();
         }
     }
 
+    private record ScriptToSave(SqlScript script, String contents) {}
+
+    // Stashes the script contents to session and returns an ActionURL that will save it
+    private ActionURL getSaveScriptActionURL(SqlScript script, String newContents)
+    {
+        HttpSession session = getViewContext().getSession();
+        String key = Crypt.SHA256.digest(script.getDescription() + newContents);
+        session.setAttribute(key, new ScriptToSave(script, newContents));
+
+        return new ActionURL(SaveScriptAction.class, ContainerManager.getRoot()).addParameter("key", key);
+    }
+
+    public static class SaveScriptForm
+    {
+        private String _key;
+
+        public String getKey()
+        {
+            return _key;
+        }
+
+        public void setKey(String key)
+        {
+            _key = key;
+        }
+    }
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class SaveScriptAction extends FormHandlerAction<SaveScriptForm>
+    {
+        private ScriptToSave _sts;
+        private ActionURL _redirectURL;
+
+        @Override
+        public void validateCommand(SaveScriptForm form, Errors errors)
+        {
+            _sts = (ScriptToSave)getViewContext().getSession().getAttribute(form.getKey());
+            if (null == _sts)
+                errors.reject(ERROR_GENERIC, "Script not found");
+        }
+
+        @Override
+        public boolean handlePost(SaveScriptForm form, BindException errors) throws Exception
+        {
+            _redirectURL = saveScript(_sts.script(), _sts.contents());
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(SaveScriptForm saveScriptForm)
+        {
+            return _redirectURL;
+        }
+    }
 
     @RequiresPermission(AdminOperationsPermission.class)
     public class UnreachableScriptsAction extends SimpleViewAction<ScriptRangeForm>
@@ -1400,7 +1518,7 @@ public class SqlScriptController extends SpringActionController
         @Override
         public boolean handlePost(UpgradeCodeForm form, BindException errors) throws Exception
         {
-            LOG.info("Executing " + _method.getDeclaringClass().getSimpleName() + "." + _method.getName() + "(ModuleContext moduleContext)");
+            LOG.info("Executing {}.{}(ModuleContext moduleContext)", _method.getDeclaringClass().getSimpleName(), _method.getName());
             _method.invoke(_code, _ctx);
             return true;
         }
