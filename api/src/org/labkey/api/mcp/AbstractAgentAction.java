@@ -26,10 +26,10 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
 
     protected abstract String getServicePrompt();
 
-    protected ChatClient getChat()
+    protected ChatClient getChat(boolean create)
     {
         HttpSession session = getViewContext().getRequest().getSession(true);
-        ChatClient chatSession = McpService.get().getChat(session, getAgentName(), this::getServicePrompt);
+        ChatClient chatSession = McpService.get().getChat(session, getAgentName(), this::getServicePrompt, create);
         return chatSession;
     }
 
@@ -40,7 +40,7 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
         {
             case "/clear" ->
             {
-                ChatClient chatSession = getChat(); // CONSIDER: getChat(boolean ifStarted)
+                ChatClient chatSession = getChat(false); // CONSIDER: getChat(boolean ifStarted)
                 if (null != chatSession)
                     McpService.get().close(getViewContext().getSession(), chatSession);
                  return "OK, let's start over.";
@@ -66,7 +66,7 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
             }
 
             // call getChat() after handleEscape()
-            ChatClient chatSession = getChat();
+            ChatClient chatSession = getChat(true);
             if (null == chatSession)
                 return new JSONObject(Map.of(
                         "contentType", "text/plain",

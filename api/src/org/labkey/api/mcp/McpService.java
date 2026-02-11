@@ -74,7 +74,12 @@ public interface McpService extends ToolCallbackProvider
     @Override
     ToolCallback @NonNull [] getToolCallbacks();
 
-    ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier);
+    default ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
+    {
+        return getChat(session, agentName, systemPromptSupplier, true);
+    }
+
+    ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier, boolean createIfNotExists);
 
     void close(HttpSession session, ChatClient chat);
 

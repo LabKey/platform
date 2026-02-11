@@ -300,41 +300,49 @@ public class McpServiceImpl implements McpService
         }
     }
 
-
     @Override
-    public ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
+    public ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier, boolean createIfNotExists)
     {
         if (!serverReady)
             return null;
 
         String sessionKey = ChatClient.class.getName() + "#" + agentName;
-        return SessionHelper.getAttribute(session, sessionKey, () ->
+        if (createIfNotExists)
         {
-            String systemPrompt = systemPromptSupplier.get();
-            String conversationId = session.getId() + ":" + agentName;
-            List<Advisor> advisors = new ArrayList<>();
+            return SessionHelper.getAttribute(session, sessionKey, () ->
+                    {
+                        var springClient = createSpringChat(session, agentName, systemPromptSupplier);
+                        return new _ChatClient(springClient, sessionKey);
+                    });
+        }
+        return SessionHelper.getAttribute(session, sessionKey, null);
+    }
 
-            ChatMemory chatMemory = MessageWindowChatMemory.builder()
-                    .maxMessages(100)
-                    .chatMemoryRepository(chatMemoryRepository)
-                    .build();
+    private ChatClient createSpringChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
+    {
+        String systemPrompt = systemPromptSupplier.get();
+        String conversationId = session.getId() + ":" + agentName;
+        List<Advisor> advisors = new ArrayList<>();
 
-            MessageChatMemoryAdvisor chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory)
-                    .conversationId(conversationId)
-                    .build();
-            advisors.add(chatMemoryAdvisor);
+        ChatMemory chatMemory = MessageWindowChatMemory.builder()
+                .maxMessages(100)
+                .chatMemoryRepository(chatMemoryRepository)
+                .build();
 
-            VectorStore vs = getVectorStore();
-            if (null != vs)
-                advisors.add(QuestionAnswerAdvisor.builder(vs).build());
+        MessageChatMemoryAdvisor chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory)
+                .conversationId(conversationId)
+                .build();
+        advisors.add(chatMemoryAdvisor);
 
-            ChatClient ret = ChatClient.builder(modelProvider.getChatModel())
-                    .defaultOptions(modelProvider.getChatOptions())
-                    .defaultAdvisors(advisors)
-                    .defaultSystem(systemPrompt)
-                    .build();
-            return new _ChatClient(ret, sessionKey);
-        });
+        VectorStore vs = getVectorStore();
+        if (null != vs)
+            advisors.add(QuestionAnswerAdvisor.builder(vs).build());
+
+        return ChatClient.builder(modelProvider.getChatModel())
+                .defaultOptions(modelProvider.getChatOptions())
+                .defaultAdvisors(advisors)
+                .defaultSystem(systemPrompt)
+                .build();
     }
 
     private class _ChatClient implements ChatClient
