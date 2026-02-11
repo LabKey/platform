@@ -1,0 +1,8 @@
+<view xmlns="http://labkey.org/data/xml/view" frame="none" title="Report Builder">
+    <permissionClasses>
+        <permissionClass name="org.labkey.api.security.permissions.AdminPermission"/>
+    </permissionClasses>
+    <dependencies>
+        <dependency path="vis/vis"/>
+    </dependencies>
+</view>

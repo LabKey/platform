@@ -29,11 +29,21 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
@@ -107,8 +117,10 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -156,6 +168,7 @@ import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.RequiresAllOf;
@@ -232,6 +245,9 @@ import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.MasterPatientIndexMaintenanceTask;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
+import org.labkey.study.ai.ClaudeTool;
+import org.labkey.study.ai.GetDatasetColumnsTool;
+import org.labkey.study.ai.GetDatasetsTool;
 import org.labkey.study.assay.AssayPublishConfirmAction;
 import org.labkey.study.assay.AssayPublishStartAction;
 import org.labkey.study.assay.StudyPublishManager;
@@ -263,7 +279,6 @@ import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
-import org.labkey.study.model.UploadLog;
 import org.labkey.study.model.VisitDataset;
 import org.labkey.study.model.VisitDatasetType;
 import org.labkey.study.model.VisitImpl;
@@ -293,6 +308,7 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
@@ -7817,6 +7833,276 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             root.addChild(_study != null ? "Overview: " + _study.getLabel() : "No Study");
+        }
+    }
+
+    public static class ClaudeReportsForm
+    {
+        private String _model;
+        private String _messages;
+        private String _system;
+
+        public String getModel()
+        {
+            return _model;
+        }
+
+        public void setModel(String model)
+        {
+            _model = model;
+        }
+
+        public String getMessages()
+        {
+            return _messages;
+        }
+
+        public void setMessages(String messages)
+        {
+            _messages = messages;
+        }
+
+        public String getSystem()
+        {
+            return _system;
+        }
+
+        public void setSystem(String system)
+        {
+            _system = system;
+        }
+    }
+
+    // Server-side proxy for the Anthropic Messages API that enables AI-assisted report generation.
+    // The client sends a conversation history (messages), and this action forwards it to Claude
+    // along with a system prompt and study-aware tools (dataset listing, column inspection).
+    // An agentic tool-use loop lets Claude autonomously query study metadata before producing
+    // its final response, which is returned to the client as JSON.
+    @RequiresPermission(AdminPermission.class)
+    public static class ClaudeReportsAction extends MutatingApiAction<ClaudeReportsForm>
+    {
+        private static final Logger LOG = LogManager.getLogger(ClaudeReportsAction.class);
+        // Validate that the incoming messages field is a well-formed JSON array of
+        // {role, content} objects. Only "user" and "assistant" roles are permitted
+        // to prevent injection of "system" messages from the client.
+        @Override
+        public void validateForm(ClaudeReportsForm form, Errors errors)
+        {
+            if (form.getMessages() == null || form.getMessages().isBlank())
+            {
+                errors.reject(ERROR_MSG, "No messages provided.");
+                return;
+            }
+
+            JSONArray parsedMessages;
+            try
+            {
+                parsedMessages = new JSONArray(form.getMessages());
+            }
+            catch (JSONException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid messages JSON: " + e.getMessage());
+                return;
+            }
+
+            for (int i = 0; i < parsedMessages.length(); i++)
+            {
+                JSONObject msg = parsedMessages.optJSONObject(i);
+                if (msg == null)
+                {
+                    errors.reject(ERROR_MSG, "Each message must be a JSON object.");
+                    return;
+                }
+                String role = msg.optString("role", "");
+                if (!"user".equals(role) && !"assistant".equals(role))
+                {
+                    errors.reject(ERROR_MSG, "Only messages with role \"user\" or \"assistant\" are allowed.");
+                    return;
+                }
+                if (!msg.has("content"))
+                {
+                    errors.reject(ERROR_MSG, "Each message must have a \"content\" field.");
+                    return;
+                }
+            }
+        }
+
+        @Override
+        public ApiResponse execute(ClaudeReportsForm form, BindException errors)
+        {
+            // TODO: Add per-user rate limiting keyed by user ID, to cap expensive API calls to the Anthropic service.
+
+            // Retrieve the Anthropic API key from the study module's admin-configured properties.
+            Module studyModule = ModuleLoader.getInstance().getModule(StudyModule.MODULE_NAME);
+            ModuleProperty mp = studyModule.getModuleProperties().get("ClaudeApiKey");
+            String apiKey = mp.getEffectiveValue(getContainer());
+
+            if (apiKey == null || apiKey.isBlank())
+            {
+                errors.reject(ERROR_MSG, "Claude API key is not configured. An admin must set the ClaudeApiKey module property.");
+                return null;
+            }
+
+            // Load the system prompt from a bundled module resource. This prompt instructs
+            // Claude on how to generate reports and use the available study-data tools.
+            Resource systemPromptResource = studyModule.getModuleResource("ai/reportAI.md");
+            if (systemPromptResource == null || !systemPromptResource.exists())
+            {
+                errors.reject(ERROR_MSG, "System prompt resource ai/reportAI.md not found.");
+                return null;
+            }
+
+            String systemPrompt;
+            try (InputStream is = systemPromptResource.getInputStream())
+            {
+                systemPrompt = PageFlowUtil.getStreamContentsAsString(is);
+            }
+            catch (IOException e)
+            {
+                errors.reject(
+                        ERROR_MSG, "Failed to read system prompt: " + e.getMessage());
+                return null;
+            }
+
+            // Build the Anthropic Messages API request payload with the client-supplied
+            // conversation, the server-side system prompt, and the available tools.
+            JSONObject requestBody = new JSONObject();
+            requestBody.put("model", form.getModel() != null ? form.getModel() : "claude-sonnet-4-5-20250929");
+            requestBody.put("max_tokens", 64000);
+            requestBody.put("messages", new JSONArray(form.getMessages()));
+            requestBody.put("system", systemPrompt);
+
+            // Register study-aware tools that let Claude query the current container's
+            // datasets and column metadata to inform report generation.
+            List<ClaudeTool> claudeTools = List.of(new GetDatasetsTool(), new GetDatasetColumnsTool());
+
+            Map<String, ClaudeTool> toolMap = new HashMap<>();
+            for (ClaudeTool tool : claudeTools)
+                toolMap.put(tool.getName(), tool);
+
+            JSONArray tools = new JSONArray();
+            for (ClaudeTool tool : claudeTools)
+                tools.put(tool.getToolDefinition());
+            requestBody.put("tools", tools);
+
+            // Agentic tool-use loop: send the request to Claude, and if the response asks
+            // to call tools (stop_reason == "tool_use"), execute them server-side and feed
+            // the results back as a follow-up user message. Repeat until Claude produces a
+            // final text response or we hit the safety cap of 5 iterations.
+            try (CloseableHttpClient httpClient = HttpClients.createDefault())
+            {
+                JSONArray messages = requestBody.getJSONArray("messages");
+                int maxIterations = 5;
+
+                for (int i = 0; i < maxIterations; i++)
+                {
+                    HttpPost httpPost = new HttpPost("https://api.anthropic.com/v1/messages");
+
+                    // TODO: Probably can tighten up these timeouts
+                    RequestConfig config = RequestConfig.custom()
+                        .setConnectTimeout(10, TimeUnit.SECONDS)
+                        .setResponseTimeout(360, TimeUnit.SECONDS)
+                        .build();
+                    httpPost.setConfig(config);
+                    httpPost.setHeader("Content-Type", "application/json");
+                    httpPost.setHeader("x-api-key", apiKey);
+                    httpPost.setHeader("anthropic-version", "2023-06-01");
+                    httpPost.setEntity(new StringEntity(requestBody.toString(), ContentType.APPLICATION_JSON));
+
+                    try (CloseableHttpResponse response = httpClient.execute(httpPost))
+                    {
+                        String responseBody = EntityUtils.toString(response.getEntity());
+                        JSONObject jsonResponse = new JSONObject(responseBody);
+
+                        int statusCode = response.getCode();
+                        if (statusCode != 200)
+                        {
+                            String detail = jsonResponse.optJSONObject("error") != null
+                                    ? jsonResponse.getJSONObject("error").optString("message", "unknown")
+                                    : "status " + statusCode;
+                            LOG.warn("Claude API request failed: {}", detail); // TODO: Need to ensure API key not exposed
+                            errors.reject(ERROR_MSG, "The AI service returned an error. Please try again or contact an administrator.");
+                            return null;
+                        }
+
+                        String stopReason = jsonResponse.optString("stop_reason", "end_turn");
+                        if ("refusal".equals(stopReason))
+                        {
+                            errors.reject(ERROR_MSG, "Report Builder was unable to answer the request. Try rephrasing your prompt.");
+                            return null;
+                        }
+                        if ("tool_use".equals(stopReason))
+                        {
+                            // Claude requested one or more tool calls. Execute each tool
+                            // server-side and collect results to send back in the next turn.
+                            JSONArray content = jsonResponse.getJSONArray("content");
+                            JSONArray toolResultBlocks = new JSONArray();
+
+                            for (int j = 0; j < content.length(); j++)
+                            {
+                                JSONObject block = content.getJSONObject(j);
+                                if (!"tool_use".equals(block.getString("type")))
+                                    continue;
+
+                                String toolUseId = block.getString("id");
+                                String toolName = block.getString("name");
+
+                                ClaudeTool tool = toolMap.get(toolName);
+                                JSONArray resultArray = (tool != null)
+                                        ? tool.execute(getUser(), getContainer(), block.optJSONObject("input"))
+                                        : new JSONArray();
+
+                                JSONObject toolResultBlock = new JSONObject();
+                                toolResultBlock.put("type", "tool_result");
+                                toolResultBlock.put("tool_use_id", toolUseId);
+                                JSONObject textBlock = new JSONObject();
+                                textBlock.put("type", "text");
+                                textBlock.put("text", resultArray.toString());
+                                toolResultBlock.put("content", new JSONArray().put(textBlock));
+                                toolResultBlocks.put(toolResultBlock);
+                            }
+
+                            // Per the Anthropic API contract, tool results must follow the
+                            // assistant's tool_use message as a "user" role message.
+                            JSONObject assistantMsg = new JSONObject();
+                            assistantMsg.put("role", "assistant");
+                            assistantMsg.put("content", content);
+                            messages.put(assistantMsg);
+
+                            JSONObject toolResultMsg = new JSONObject();
+                            toolResultMsg.put("role", "user");
+                            toolResultMsg.put("content", toolResultBlocks);
+                            messages.put(toolResultMsg);
+
+                            requestBody.put("messages", messages);
+                        }
+                        else
+                        {
+                            // Claude finished without requesting more tools — return
+                            // the final response payload to the client.
+                            Map<String, Object> result = new HashMap<>();
+                            result.put("success", true);
+                            result.put("data", jsonResponse.toMap());
+                            return new ApiSimpleResponse(result);
+                        }
+                    }
+                }
+
+                // Safety guard: if Claude keeps requesting tools beyond the cap, bail out
+                // rather than looping indefinitely.
+                errors.reject(ERROR_MSG, "Tool use loop exceeded maximum iterations.");
+                return null;
+            }
+            catch (IOException e)
+            {
+                errors.reject(ERROR_MSG, "Failed to call Claude API: " + e.getMessage());
+                return null;
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_MSG, "Failed to call Claude API: " + e.getMessage());
+                return null;
+            }
         }
     }
 }

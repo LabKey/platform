@@ -1,0 +1,606 @@
+    <title>Claude Terminal</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      .container {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+
+      h1 {
+        color: #00d9ff;
+        margin-bottom: 20px;
+        font-size: 1.5em;
+      }
+
+      .main-layout {
+        display: flex;
+        gap: 20px;
+        align-items: stretch;
+        max-height: calc(100vh - 220px);
+      }
+
+      .main-layout > .terminal-section {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .terminal-section > .terminal {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .main-layout > .preview-section {
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .terminal {
+        background: #0d0d1a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .terminal-header {
+        background: #252540;
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .terminal-header-controls {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .terminal-spacer {
+        height: 1.2em;
+        margin-bottom: 25px;
+      }
+
+      /*.terminal-dot {*/
+      /*  width: 12px;*/
+      /*  height: 12px;*/
+      /*  border-radius: 50%;*/
+      /*}*/
+
+      .dot-red { background: #ff5f56; }
+      .dot-yellow { background: #ffbd2e; }
+      .dot-green { background: #27ca40; }
+
+      .terminal-title {
+        color: #888;
+        font-size: 0.9em;
+      }
+
+      .terminal-body {
+        padding: 15px;
+        overflow-y: auto;
+        flex: 1;
+      }
+
+      .history-entry {
+        margin-bottom: 15px;
+      }
+
+      .prompt-line {
+        color: #27ca40;
+      }
+
+      .prompt-symbol {
+        color: #00d9ff;
+      }
+
+      .user-input {
+        color: #fff;
+      }
+
+      .response {
+        margin-top: 5px;
+        color: #ccc;
+        white-space: pre-wrap;
+        line-height: 1.5;
+      }
+
+      .error {
+        color: #ff5f56;
+      }
+
+      .input-area {
+        display: flex;
+        align-items: flex-start;
+        border-top: 1px solid #333;
+        padding: 15px;
+        background: #0a0a15;
+      }
+
+      .input-area .prompt-symbol {
+        margin-right: 10px;
+        padding-top: 2px;
+      }
+
+      #commandInput {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-family: inherit;
+        font-size: 1em;
+        outline: none;
+        resize: none;
+        overflow-y: hidden;
+        min-height: 1.4em;
+        max-height: 150px;
+        line-height: 1.4;
+      }
+
+      #commandInput::placeholder {
+        color: #555;
+      }
+
+      .loading {
+        color: #ffbd2e;
+      }
+
+      .loading::after {
+        content: '';
+        animation: dots 1.5s infinite;
+      }
+
+      @keyframes dots {
+        0%, 20% { content: '.'; }
+        40% { content: '..'; }
+        60%, 100% { content: '...'; }
+      }
+
+      /* HTML Preview Section */
+      .preview-section {
+        margin-top: 0;
+      }
+
+      .preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .preview-header h2 {
+        color: #00d9ff;
+        font-size: 1.2em;
+        margin: 0;
+      }
+
+      .preview-toggle {
+        background: #252540;
+        border: 1px solid #444;
+        color: #ccc;
+        padding: 5px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      .preview-toggle:hover {
+        background: #333355;
+      }
+
+      .preview-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr;
+        gap: 20px;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .preview-container.single {
+        grid-template-columns: 1fr;
+      }
+
+      .code-panel, .render-panel {
+        background: #0d0d1a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        max-height: 100%;
+      }
+
+      .panel-header {
+        background: #252540;
+        padding: 8px 15px;
+        color: #888;
+        font-size: 0.85em;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .copy-btn {
+        background: #333;
+        border: none;
+        color: #ccc;
+        padding: 3px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 0.85em;
+      }
+
+      .copy-btn:hover {
+        background: #444;
+      }
+
+      .code-content {
+        padding: 15px;
+        overflow: auto;
+        flex: 1;
+      }
+
+      #htmlCode {
+        color: #ccc;
+        white-space: pre;
+        margin: 0;
+        font-size: 0.9em;
+      }
+
+      .render-content {
+        padding: 15px;
+        background: #fff;
+        color: #000;
+        min-height: 200px;
+        overflow: auto;
+        flex: 1;
+      }
+
+      .preview-header select,
+      .terminal-header-controls select {
+        background: #1a1a2e;
+        border: 1px solid #444;
+        color: #fff;
+        padding: 5px 8px;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 0.85em;
+      }
+
+      .save-wiki-input {
+        background: #1a1a2e;
+        border: 1px solid #444;
+        color: #fff;
+        padding: 5px 12px;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 0.9em;
+      }
+
+      .save-wiki-btn {
+        background: #252540;
+        border: 1px solid #444;
+        color: #ccc;
+        padding: 5px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      .save-wiki-btn:hover:not(:disabled) {
+        background: #333355;
+      }
+
+      .save-wiki-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    </style>
+<div class="container">
+    <div class="main-layout">
+        <div class="terminal-section">
+            <div class="terminal-spacer"></div>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <div class="terminal-dot dot-red"></div>
+                    <div class="terminal-dot dot-yellow"></div>
+                    <div class="terminal-dot dot-green"></div>
+                    <span class="terminal-title">Report Builder Terminal</span>
+                    <div class="terminal-header-controls">
+                        <select id="modelSelect">
+                            <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5</option>
+                            <option value="claude-opus-4-5-20251101">Claude Opus 4.5</option>
+                            <option value="claude-opus-4-6" selected>Claude Opus 4.6</option>
+                            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+                        </select>
+                        <button class="preview-toggle" id="clearConversationBtn">Clear Conversation</button>
+                    </div>
+                </div>
+                <div class="terminal-body" id="terminalBody">
+                    <div class="history-entry">
+                        <span class="response">Welcome to the LabKey Report Builder. Describe the report you'd like to see below, or ask for recommended reports.</span>
+                    </div>
+                    <div class="history-entry">
+                        <span class="response">The Report Builder remembers the full conversation. Add follow-up questions or instructions to refine the report.</span>
+                    </div>
+                </div>
+                <div class="input-area">
+                    <span class="prompt-symbol">❯</span>
+                    <textarea id="commandInput" placeholder="Describe the report..." autofocus rows="1"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="preview-section">
+            <div class="preview-header">
+                <h2>HTML Preview</h2>
+                <div>
+                    <input type="text" id="wikiNameInput" class="save-wiki-input" placeholder="Wiki page name">
+                    <button class="save-wiki-btn" id="saveWikiBtn" disabled>Save to Wiki</button>
+                    <button class="preview-toggle" id="toggleViewBtn">Toggle View</button>
+                </div>
+            </div>
+            <div class="preview-container single" id="previewContainer">
+                <div class="code-panel" style="display:none">
+                    <div class="panel-header">
+                        <span>HTML Source</span>
+                        <button class="copy-btn" id="copyCodeBtn">Copy</button>
+                    </div>
+                    <div class="code-content">
+                        <pre id="htmlCode"><!-- HTML will appear here --></pre>
+                    </div>
+                </div>
+                <div class="render-panel">
+                    <div class="panel-header">
+                        <span>Rendered Output</span>
+                    </div>
+                    <div class="render-content" id="renderOutput">
+                        <!-- Rendered HTML will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script nonce="<%=scriptNonce%>">
+    const terminalBody = document.getElementById('terminalBody');
+    const commandInput = document.getElementById('commandInput');
+    const htmlCode = document.getElementById('htmlCode');
+    const renderOutput = document.getElementById('renderOutput');
+    const previewContainer = document.getElementById('previewContainer');
+    const wikiNameInput = document.getElementById('wikiNameInput');
+    const saveWikiBtn = document.getElementById('saveWikiBtn');
+
+    let viewMode = 'render'; // 'both', 'code', 'render'
+    let conversationHistory = []; // Stores the full conversation
+
+    document.getElementById('clearConversationBtn').addEventListener('click', clearConversation);
+    document.getElementById('toggleViewBtn').addEventListener('click', toggleView);
+    document.getElementById('copyCodeBtn').addEventListener('click', copyCode);
+    saveWikiBtn.addEventListener('click', saveToWiki);
+
+    commandInput.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter' && !e.shiftKey && commandInput.value.trim()) {
+            e.preventDefault();
+            const userInput = commandInput.value.trim();
+            commandInput.value = '';
+            commandInput.style.height = 'auto';
+            await sendMessage(userInput);
+        }
+    });
+
+    commandInput.addEventListener('input', () => {
+        commandInput.style.height = 'auto';
+        commandInput.style.height = commandInput.scrollHeight + 'px';
+    });
+
+    async function sendMessage(message) {
+        const model = document.getElementById('modelSelect').value;
+
+        // Add user message to conversation history
+        conversationHistory.push({ role: 'user', content: message });
+
+        // Add user message to terminal
+        const entryDiv = document.createElement('div');
+        entryDiv.className = 'history-entry';
+        entryDiv.innerHTML = `
+        <div class="prompt-line">
+          <span class="prompt-symbol">❯</span>
+          <span class="user-input">${escapeHtml(message)}</span>
+        </div>
+        <div class="response loading">Thinking</div>
+      `;
+        terminalBody.appendChild(entryDiv);
+        terminalBody.scrollTop = terminalBody.scrollHeight;
+
+        const responseDiv = entryDiv.querySelector('.response');
+
+        try {
+            const response = await fetch(LABKEY.ActionURL.buildURL('study', 'claudeReports.api'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-LABKEY-CSRF': LABKEY.CSRF
+                },
+                body: JSON.stringify({
+                    model: model,
+                    messages: JSON.stringify(conversationHistory)
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                // Remove the failed message from history
+                conversationHistory.pop();
+                const errorMsg = (data.exception) || 'API request failed';
+                throw new Error(errorMsg);
+            }
+
+            const textBlock = (data.data.content || []).find(b => b.type === 'text');
+            if (!textBlock) {
+                throw new Error('No text response received from Claude.');
+            }
+            const text = textBlock.text;
+
+            // Add assistant response to conversation history
+            conversationHistory.push({ role: 'assistant', content: text });
+
+            responseDiv.className = 'response';
+
+            // Extract and render HTML if present
+            // Try complete fenced block first, then fall back to unclosed block (truncated response)
+            const htmlMatch = text.match(/```html\n?([\s\S]*?)```/) || text.match(/```html\n?([\s\S]+)$/);
+            if (htmlMatch) {
+                const extractedHtml = htmlMatch[1].trim();
+                htmlCode.textContent = extractedHtml;
+                renderOutput.innerHTML = extractedHtml;
+                saveWikiBtn.disabled = false;
+
+                // Show only the non-code prose in the terminal
+                const terminalText = text.replace(/```html\n?[\s\S]*?```/, '').trim();
+                responseDiv.textContent = terminalText || 'HTML rendered below.';
+
+                // innerHTML does not execute <script> tags, so re-create them as DOM elements
+                renderOutput.querySelectorAll('script').forEach(function(oldScript) {
+                    var newScript = document.createElement('script');
+                    newScript.textContent = oldScript.textContent;
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                });
+            } else {
+                responseDiv.textContent = text;
+            }
+
+        } catch (error) {
+            responseDiv.className = 'response error';
+            responseDiv.textContent = `Error: ${error.message}`;
+        }
+
+        terminalBody.scrollTop = terminalBody.scrollHeight;
+    }
+
+    function addEntry(input, response, isError = false) {
+        const entryDiv = document.createElement('div');
+        entryDiv.className = 'history-entry';
+        entryDiv.innerHTML = `
+        <div class="prompt-line">
+          <span class="prompt-symbol">❯</span>
+          <span class="user-input">${escapeHtml(input)}</span>
+        </div>
+        <div class="response ${isError ? 'error' : ''}">${escapeHtml(response)}</div>
+      `;
+        terminalBody.appendChild(entryDiv);
+        terminalBody.scrollTop = terminalBody.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function toggleView() {
+        if (viewMode === 'both') {
+            viewMode = 'render';
+            previewContainer.classList.add('single');
+            previewContainer.querySelector('.code-panel').style.display = 'none';
+            previewContainer.querySelector('.render-panel').style.display = 'block';
+        } else if (viewMode === 'render') {
+            viewMode = 'code';
+            previewContainer.querySelector('.code-panel').style.display = 'block';
+            previewContainer.querySelector('.render-panel').style.display = 'none';
+        } else {
+            viewMode = 'both';
+            previewContainer.classList.remove('single');
+            previewContainer.querySelector('.code-panel').style.display = 'block';
+            previewContainer.querySelector('.render-panel').style.display = 'block';
+        }
+    }
+
+    function copyCode() {
+        navigator.clipboard.writeText(htmlCode.textContent).then(() => {
+            const btn = document.querySelector('.copy-btn');
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = 'Copy', 2000);
+        });
+    }
+
+    function clearConversation() {
+    conversationHistory = [];
+        terminalBody.innerHTML = `
+        <div class="history-entry">
+          <span class="response">Conversation cleared. Start a new conversation.</span>
+        </div>
+      `;
+        htmlCode.textContent = '<!-- HTML will appear here -->';
+        renderOutput.innerHTML = '';
+        saveWikiBtn.disabled = true;
+        wikiNameInput.value = '';
+    }
+
+    async function saveToWiki() {
+        const name = wikiNameInput.value.trim();
+        if (!name) { alert('Enter a wiki page name'); return; }
+        const body = htmlCode.textContent;
+        if (!body || body === '<!-- HTML will appear here -->') { return; }
+
+        saveWikiBtn.disabled = true;
+        try {
+            const resp = await fetch(
+                LABKEY.ActionURL.buildURL('wiki', 'saveWiki.api'),
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-LABKEY-CSRF': LABKEY.CSRF
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        title: name,
+                        body: body,
+                        rendererType: 'HTML'
+                    })
+                }
+            );
+            const data = await resp.json();
+            if (data.success) {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'history-entry';
+                msgDiv.innerHTML = '<span class="response" style="color:#27ca40;">Wiki page "' + escapeHtml(name) + '" saved successfully.</span>';
+                terminalBody.appendChild(msgDiv);
+                terminalBody.scrollTop = terminalBody.scrollHeight;
+            } else {
+                const errorMsg = data.exception || 'Failed to save wiki page';
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'history-entry';
+                msgDiv.innerHTML = '<span class="response error">Error saving wiki: ' + escapeHtml(errorMsg) + '</span>';
+                terminalBody.appendChild(msgDiv);
+                terminalBody.scrollTop = terminalBody.scrollHeight;
+            }
+        } catch (e) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'history-entry';
+            msgDiv.innerHTML = '<span class="response error">Error saving wiki: ' + escapeHtml(e.message) + '</span>';
+            terminalBody.appendChild(msgDiv);
+            terminalBody.scrollTop = terminalBody.scrollHeight;
+        } finally {
+            saveWikiBtn.disabled = false;
+        }
+    }
+</script>
