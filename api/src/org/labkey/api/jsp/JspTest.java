@@ -19,7 +19,33 @@ package org.labkey.api.jsp;
 import org.labkey.api.util.TestContext;
 
 /**
- * Base class for junit tests implemented in a JSP
+ * Base class for junit tests implemented in a JSP.
+ * <p>
+ * Example minimal JSP test (MyTestCase.jsp):
+ * <pre>{@code
+ * <%@ page import="org.junit.After" %>
+ * <%@ page import="org.junit.Before" %>
+ * <%@ page import="org.junit.Test" %>
+ * <%@ page import="static org.junit.Assert.assertTrue" %>
+ * <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
+ * <%!
+ *     @Before
+ *     public void setUp()
+ *     {
+ *     }
+ *
+ *     @After
+ *     public void tearDown()
+ *     {
+ *     }
+ *
+ *     @Test
+ *     public void testExample()
+ *     {
+ *         assertTrue(true);
+ *     }
+ * %>
+ * }</pre>
  */
 public abstract class JspTest extends JspContext
 {
