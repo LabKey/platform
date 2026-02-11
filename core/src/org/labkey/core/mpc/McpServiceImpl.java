@@ -35,6 +35,12 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
+import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.ai.openai.OpenAiEmbeddingModel;
+import org.springframework.ai.openai.OpenAiEmbeddingOptions;
+import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
@@ -108,9 +114,16 @@ public class McpServiceImpl implements McpService
         {
             model = new _ClaudeProvider();
         }
+        if (isNotBlank(System.getenv("OPENAI_API_KEY")))
+        {
+            embedding = new _ChatGptProvider();
+            if (null == model)
+                model = embedding;
+        }
         if (isNotBlank(System.getenv("GEMINI_API_KEY")))
         {
-            embedding = new _GeminiProvider();
+            if (null == embedding)
+                embedding = new _GeminiProvider();
             if (null == model)
                 model = new _GeminiProvider();
         }
@@ -601,6 +614,57 @@ public class McpServiceImpl implements McpService
         public EmbeddingModel createEmbeddingModel()
         {
             return null;
+        }
+    }
+
+    class _ChatGptProvider implements _ModelProvider
+    {
+        @Override
+        public String getModel()
+        {
+            return "gpt-4o";
+        }
+
+        @Override
+        public String getEmbeddingModel()
+        {
+            return "text-embedding-3-small";
+        }
+
+        @Override
+        public OpenAiChatOptions getChatOptions()
+        {
+            return OpenAiChatOptions.builder()
+                    .model(getModel())
+                    .toolCallbacks(getToolCallbacks())
+                    .build();
+        }
+
+        @Override
+        public OpenAiChatModel getChatModel()
+        {
+            OpenAiApi openAiApi = OpenAiApi.builder()
+                    .apiKey(System.getenv("OPENAI_API_KEY"))
+                    .build();
+
+            return OpenAiChatModel.builder()
+                    .openAiApi(openAiApi)
+                    .defaultOptions(getChatOptions())
+                    .build();
+        }
+
+        @Override
+        public EmbeddingModel createEmbeddingModel()
+        {
+            OpenAiApi openAiApi = OpenAiApi.builder()
+                    .apiKey(System.getenv("OPENAI_API_KEY"))
+                    .build();
+
+            OpenAiEmbeddingOptions embeddingOptions = OpenAiEmbeddingOptions.builder()
+                    .model(getEmbeddingModel())
+                    .build();
+
+            return new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED, embeddingOptions);
         }
     }
 }
