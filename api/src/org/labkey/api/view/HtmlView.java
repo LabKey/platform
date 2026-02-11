@@ -21,7 +21,24 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.writer.HtmlWriter;
 
-/** Renders a fixed set of HTML at the content of the view */
+/// A view that renders a fixed block of HTML content. Accepts either an [HtmlString] or a [DOM.Renderable].
+///
+/// ```java
+/// // From safe, pre-encoded HTML
+/// HtmlView view = new HtmlView(HtmlString.of("Hello, world!"));
+///
+/// // With a title (automatically uses PORTAL frame)
+/// HtmlView view = new HtmlView("My Section", HtmlString.of("Some content"));
+///
+/// // From a DOM renderable
+/// HtmlView view = new HtmlView(DOM.DIV("Hello"));
+///
+/// // Plain text (auto-escaped)
+/// HtmlView view = HtmlView.of("User-supplied text");
+///
+/// // Error message styled with labkey-error
+/// HtmlView view = HtmlView.err("Something went wrong");
+/// ```
 public class HtmlView extends WebPartView<Object>
 {
     private String _contentType = null;
