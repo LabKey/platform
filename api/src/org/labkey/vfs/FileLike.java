@@ -26,6 +26,23 @@ import java.nio.file.InvalidPathException;
 import java.util.List;
 import java.util.function.Predicate;
 
+/// A file or directory within a [FileSystemLike]. All paths are relative to the file system root,
+/// ensuring that access stays within the scoped boundary.
+///
+/// ```java
+/// FileLike root = new FileSystemLike.Builder(dir).readwrite().root();
+/// FileLike child = root.resolveChild("data.tsv");
+///
+/// // Read/write via streams
+/// try (OutputStream out = child.openOutputStream()) { ... }
+/// try (InputStream in = child.openInputStream()) { ... }
+///
+/// // Navigate to a nested path
+/// FileLike nested = root.resolveFile(Path.parse("subdir/file.txt"));
+///
+/// // Convert to java.nio.file.Path when needed (local file systems only)
+/// java.nio.file.Path nioPath = child.toNioPathForRead();
+/// ```
 @JsonSerialize(using = FileLike.FileLikeSerializer.class)
 @JsonDeserialize(using = FileLike.FileLikeDeserializer.class)
 public interface FileLike extends Comparable<FileLike>
