@@ -116,16 +116,19 @@ public class McpServiceImpl implements McpService
         }
         if (isNotBlank(System.getenv("OPENAI_API_KEY")))
         {
-            embedding = new _ChatGptProvider();
+            var openai = new _ChatGptProvider();
+            if (null == embedding)
+                embedding = openai;
             if (null == model)
-                model = embedding;
+                model = openai;
         }
         if (isNotBlank(System.getenv("GEMINI_API_KEY")))
         {
+            var gemini = new _GeminiProvider();
             if (null == embedding)
-                embedding = new _GeminiProvider();
+                embedding = gemini;
             if (null == model)
-                model = new _GeminiProvider();
+                model = gemini;
         }
         modelProvider = model;
         embeddingProvider = embedding;
