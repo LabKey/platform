@@ -2,9 +2,11 @@ package org.labkey.api.mcp;
 
 import com.google.genai.errors.ClientException;
 import com.google.genai.errors.ServerException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.json.JSONObject;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.util.HtmlString;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.validation.BindException;
@@ -14,11 +16,11 @@ import java.util.Map;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
- * "agent" it is too strong a word, but if you want to create a tools specific chat endpoint then
- * start here.
- * First implement getServicePrompt() to tell your "agent its mission.  You can also listen in on the
- * conversation to help you user get the right results.
+ * If you want to create a tools specific chat endpoint then start here.
+ * First implement getServicePrompt() to tell your "agent" its mission.  You can also listen in on the
+ * conversation to help the user get the right results.
  */
+@CSRF(CSRF.Method.ALL)
 public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnlyApiAction<F>
 {
     protected abstract String getAgentName();
@@ -27,15 +29,17 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
 
     protected ChatClient getChat()
     {
-        HttpSession session = getViewContext().getRequest().getSession(true);
-        ChatClient chatSession = McpService.get().getChat(session, getAgentName(), this::getServicePrompt);
-        return chatSession;
+        HttpServletRequest request = getViewContext().getRequest();
+        if (request == null)
+            throw new IllegalStateException("No request");
+        HttpSession session = request.getSession(true);
+        return McpService.get().getChat(session, getAgentName(), this::getServicePrompt);
     }
 
     @Override
-    public Object execute(PromptForm form, BindException errors) throws Exception
+    public Object execute(F form, BindException errors) throws Exception
     {
-        try (var mcpPush = McpContext.withContext(getViewContext()))
+        try (var _ = McpContext.withContext(getViewContext()))
         {
             ChatClient chatSession = getChat();
             if (null == chatSession)
@@ -73,11 +77,10 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
         }
         catch (ClientException ex)
         {
-            var ret = new JSONObject(Map.of(
+            return new JSONObject(Map.of(
                     "text", ex.getMessage(),
                     "user", getViewContext().getUser().getName(),
                     "success", Boolean.FALSE));
-            return ret;
         }
     }
 }

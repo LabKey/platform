@@ -19,7 +19,6 @@ package org.labkey.query.controllers;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.genai.Chat;
 import com.google.genai.errors.ClientException;
 import com.google.genai.errors.ServerException;
 import jakarta.servlet.ServletException;
@@ -28,7 +27,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
@@ -8878,7 +8876,7 @@ public class QueryController extends SpringActionController
             // save form here for context in getServicePrompt()
             _form = form;
 
-            try (var mcpPush = McpContext.withContext(getViewContext()))
+            try (var _ = McpContext.withContext(getViewContext()))
             {
                 // TODO when/how to do we reset or isolate different chat sessions, e.g. if two SQL windows are open concurrently?
                 ChatClient chatSession = getChat();
@@ -8941,11 +8939,10 @@ public class QueryController extends SpringActionController
             }
             catch (ClientException ex)
             {
-                var ret = new JSONObject(Map.of(
+                return new JSONObject(Map.of(
                         "text", ex.getMessage(),
                         "user", getViewContext().getUser().getName(),
                         "success", Boolean.FALSE));
-                return ret;
             }
         }
     }

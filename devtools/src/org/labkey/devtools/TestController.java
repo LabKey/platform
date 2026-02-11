@@ -32,6 +32,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpService;
+import org.labkey.api.mcp.PromptForm;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresLogin;
@@ -1308,7 +1309,7 @@ public class TestController extends SpringActionController
 
 
     @RequiresLogin
-    public static class ChatEndpointAction extends AbstractAgentAction
+    public static class ChatEndpointAction extends AbstractAgentAction<PromptForm>
     {
         @Override
         protected String getAgentName()

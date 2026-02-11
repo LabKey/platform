@@ -7,6 +7,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.ai.chat.model.ToolContext;
+
 import java.util.Map;
 
 /**
@@ -57,7 +58,7 @@ public class McpContext implements ContainerUser
     // researched if there are other ways to pass context around to Tools registerd by McpService
     //
 
-    private static final ThreadLocal<McpContext> contexts = new ThreadLocal();
+    private static final ThreadLocal<McpContext> contexts = new ThreadLocal<>();
 
     public static @NotNull McpContext get()
     {
@@ -67,7 +68,7 @@ public class McpContext implements ContainerUser
         return ret;
     }
 
-        public static AutoCloseable withContext(ContainerUser ctx)
+    public static AutoCloseable withContext(ContainerUser ctx)
     {
         return with(new McpContext(ctx));
     }

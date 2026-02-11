@@ -1,5 +1,3 @@
-<%@ page import="org.labkey.api.util.DOM" %>
-<%@ page import="java.util.stream.Stream" %>
 <%@ page import="static org.labkey.api.util.DOM.*" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -75,9 +73,8 @@ function startChatting(chatEndpoint)
         scrollToBottom();
     }
 
-    function handleChatResponse(event)
+    function handleChatResponse(req)
     {
-        const req = event.target;
         if (req.readyState === 4) {
             if (req.status >= 200 && req.status < 300)
             {
@@ -95,12 +92,13 @@ function startChatting(chatEndpoint)
 
     function sendMessage(prompt)
     {
-        var url = new URL(chatEndpoint);
-        url.searchParams.set('prompt', prompt);
-        var req = new XMLHttpRequest();
-        req.open('GET', url.toString(), true);
-        req.onreadystatechange = handleChatResponse;
-        req.send();
+        LABKEY.Ajax.request({
+            url: chatEndpoint,
+            method: 'POST',
+            params: {prompt: prompt},
+            success: handleChatResponse,
+            failure: handleChatResponse
+        });
         const loadingSpinner = document.querySelector('.loading-spinner');
         loadingSpinner.classList.remove('loading-spinner--hidden');
     }
