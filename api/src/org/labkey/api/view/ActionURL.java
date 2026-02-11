@@ -42,10 +42,32 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.containsString;
 
-/**
- * Encapsulates URL generation and parsing based on controller/container/action conventions.
- * This class has to be kept in sync with ViewServlet.
- */
+/// Represents a URL that follows LabKey's container/action routing conventions.
+/// Extends [URLHelper] with structured access to the controller name, action name, and
+/// container path, generating URLs in the format: `/contextPath/containerPath/controller-action.view`
+///
+/// Scheme, host, and port are lazily initialized from [AppProps] and only needed when
+/// generating absolute URLs.
+///
+/// ### Examples
+///
+/// ```java
+/// // From an action class (preferred)
+/// ActionURL url = new ActionURL(MyAction.class, container);
+///
+/// // From controller/action strings
+/// ActionURL url = new ActionURL("core", "login", container);
+///
+/// // Parsed from a URL string
+/// ActionURL url = new ActionURL("/containerPath/core-login.view?returnUrl=...");
+///
+/// // Adding parameters (fluent API)
+/// url.addParameter("key", "value")
+///    .addReturnUrl(returnUrl);
+/// ```
+///
+/// @see URLHelper
+/// @see ViewServlet
 public class ActionURL extends URLHelper implements Cloneable
 {
     private static boolean useContainerRelativeURL()
