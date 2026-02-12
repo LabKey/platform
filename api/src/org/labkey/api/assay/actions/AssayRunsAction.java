@@ -27,8 +27,11 @@ import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -102,7 +105,15 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
 
         if (resultsView != null)
             return resultsView;
-        return new AssayRunsView(_protocol, false, errors);
+        resultsView = new AssayRunsView(_protocol, false, errors);
+        VBox view = new VBox(resultsView);
+
+        JspView jspView = new JspView<>("/org/labkey/assay/view/chat.jsp", new TransformForm(_protocol.getRowId()), errors);
+        jspView.setFrame(WebPartView.FrameType.PORTAL);
+        view.addView(jspView);
+
+        return view;
+
     }
 
     @Override
@@ -111,5 +122,20 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
         super.addNavTrail(root);
         root.addChild(_protocol.getName() + " Batches", PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(getContainer(), _protocol, null));
         root.addChild(_protocol.getName() + " Runs");
+    }
+
+    public static class TransformForm
+    {
+        private long _protocolId;
+
+        public TransformForm(long protocolId)
+        {
+            _protocolId = protocolId;
+        }
+
+        public long getProtocolId()
+        {
+            return _protocolId;
+        }
     }
 }

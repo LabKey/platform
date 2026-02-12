@@ -83,6 +83,8 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
@@ -147,6 +149,8 @@ import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceRecordingParams;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.list.ListDefinition;
@@ -154,6 +158,7 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -9004,5 +9009,242 @@ public class QueryController extends SpringActionController
                 return text.substring(sql+7,end);
         }
         return null;
+    }
+
+    public static class TransformPrompt extends PromptForm
+    {
+        private long protocolId;
+        public String cols;
+
+        public long getProtocolId()
+        {
+            return protocolId;
+        }
+
+        public void setProtocolId(long protocolId)
+        {
+            this.protocolId = protocolId;
+        }
+
+        public String getCols()
+        {
+            return cols;
+        }
+
+        public void setCols(String cols)
+        {
+            this.cols = cols;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    @RequiresLogin
+    public static class TransformAgentAction extends AbstractAgentAction<TransformPrompt>
+    {
+        TransformPrompt _form;
+
+        @Override
+        public void validateForm(TransformPrompt form, Errors errors)
+        {
+            _form = form;
+        }
+
+        @Override
+        protected String getAgentName()
+        {
+            return TransformAgentAction.class.getName();
+        }
+
+        @Override
+        protected String getServicePrompt()
+        {
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(_form.getProtocolId());
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+
+            Domain results = provider.getResultsDomain(protocol);
+
+            JSONArray cols = new JSONArray();
+            for (DomainProperty prop : results.getProperties())
+            {
+                Map<String, String> row = Map.of(
+                        "name", prop.getName(),
+                        "type", prop.getJdbcType().toString()
+                );
+                cols.put(row);
+            }
+
+            StringBuilder serviceMessage = new StringBuilder();
+            serviceMessage.append("Your job is to generate a transform script in R.  Here is some reference material formatted as markdown:\n").append(getRHelp()).append("\n\n");
+            serviceMessage.append("Use the following columns for the transform script:\n").append(cols.toString()).append("\n\n");
+
+            return serviceMessage.toString();
+        }
+
+        String getRHelp()
+        {
+            //try
+            {
+                return "## LabKey Transform Scripts Generation Instructions\n" +
+                        "Prefer writing them using the R language\n" +
+                        "Use the Rlabkey functions defined below to help process the run properties file\n" +
+                        "\n" +
+                        "### **LabKey RLabkey library Documentation**\n" +
+                        "# labkey.transform.getRunPropertyValue - Function Summary\n" +
+                        "\n" +
+                        "## **Overview**\n" +
+                        "\n" +
+                        "`labkey.transform.getRunPropertyValue` is a helper function designed specifically for use within LabKey assay transformation scripts in R. [[1]](https://www.rdocumentation.org/packages/Rlabkey/versions/3.4.4/topics/labkey.transform.getRunPropertyValue)\n" +
+                        "\n" +
+                        "## **Purpose**\n" +
+                        "\n" +
+                        "Extracts and returns the value of a specific run property from a data frame containing run properties information during assay transform script execution. [[1]](https://www.rdocumentation.org/packages/Rlabkey/versions/3.4.4/topics/labkey.transform.getRunPropertyValue)\n" +
+                        "\n" +
+                        "## **Parameters**\n" +
+                        "\n" +
+                        "| Parameter | Description |\n" +
+                        "|-----------|-------------|\n" +
+                        "| `run.props` | Data frame containing run properties information for the current assay transform script execution |\n" +
+                        "| `property_name` | String name of the specific property value to retrieve |\n" +
+                        "\n" +
+                        "## **Return Value**\n" +
+                        "\n" +
+                        "Returns the value of the requested property as extracted from the run properties data frame.\n" +
+                        "\n" +
+                        "## **Use Case Example**\n" +
+                        "\n" +
+                        "[[6]](https://www.labkey.org/Documentation/wiki-page.view?name=transformScriptR) This function is commonly used to retrieve run-level metadata, such as:\n" +
+                        "\n" +
+                        "```textmate\n" +
+                        "file = labkey.transform.getRunPropertyValue(run.props, \"runDataUploadedFile\")\n" +
+                        "```\n" +
+                        "\n" +
+                        "\n" +
+                        "This retrieves the uploaded file path that was processed by the LabKey assay framework.\n" +
+                        "\n" +
+                        "## **Context**\n" +
+                        "\n" +
+                        "[[3]](https://www.labkey.org/Documentation/wiki-page.view?name=releasenotes183) This function was introduced as part of the LabKey assay transform script helper functions. It works alongside `labkey.transform.readRunPropertiesFile` to enable efficient property value access during data transformation operations.\n" +
+                        "\n" +
+                        "---\n" +
+                        "\n" +
+                        "**Primary Use:** Data transformation scripts within LabKey Server assays that need to access and utilize run-level properties programmatically.\n" +
+                        "\n" +
+                        "# labkey.transform.readRunPropertiesFile - Function Summary\n" +
+                        "\n" +
+                        "## **Overview**\n" +
+                        "\n" +
+                        "`labkey.transform.readRunPropertiesFile` is a helper function designed for use within LabKey assay transformation scripts in R. It reads and parses LabKey-generated run properties files. [[2]](https://www.rdocumentation.org/packages/Rlabkey/versions/2.8.4/topics/labkey.transform.readRunPropertiesFile)\n" +
+                        "\n" +
+                        "## **Purpose**\n" +
+                        "\n" +
+                        "Reads a run properties file generated by LabKey and converts it into a structured data frame containing key-value pairs from the file. [[2]](https://www.rdocumentation.org/packages/Rlabkey/versions/2.8.4/topics/labkey.transform.readRunPropertiesFile)\n" +
+                        "\n" +
+                        "## **Parameters**\n" +
+                        "\n" +
+                        "| Parameter | Description |\n" +
+                        "|-----------|-------------|\n" +
+                        "| `file_path` | Full path to the LabKey-generated run properties file (typically provided as `\"${runInfo}\"` template variable) |\n" +
+                        "\n" +
+                        "## **Return Value**\n" +
+                        "\n" +
+                        "Returns a data frame with key-value pairs extracted from the run properties file, which can then be queried using `labkey.transform.getRunPropertyValue()`.\n" +
+                        "\n" +
+                        "## **Usage Example**\n" +
+                        "\n" +
+                        "[[4]](https://www.labkey.org/Documentation/wiki-page.view?name=transformScriptR) [[5]](https://cran.r-project.org/web/packages/Rlabkey/Rlabkey.pdf)\n" +
+                        "\n" +
+                        "```textmate\n" +
+                        "# Read the run properties file\n" +
+                        "run.props = labkey.transform.readRunPropertiesFile(\"${runInfo}\")\n" +
+                        "\n" +
+                        "# Then extract specific property values\n" +
+                        "run.data.file = labkey.transform.getRunPropertyValue(run.props, \"runDataUploadedFile\")\n" +
+                        "```\n" +
+                        "\n" +
+                        "\n" +
+                        "## **Typical Workflow**\n" +
+                        "\n" +
+                        "1. **Load Properties**: Call `labkey.transform.readRunPropertiesFile()` with the run info path\n" +
+                        "2. **Extract Values**: Use `labkey.transform.getRunPropertyValue()` on the returned data frame to access specific properties\n" +
+                        "3. **Transform Data**: Use the extracted properties to configure data transformation logic\n" +
+                        "\n" +
+                        "## **Context**\n" +
+                        "\n" +
+                        "[[3]](https://www.labkey.org/Documentation/wiki-page.view?name=releasenotes183) This function works as a companion to `labkey.transform.getRunPropertyValue`, providing a two-step process for accessing run properties during assay transformations.\n" +
+                        "\n" +
+                        "---\n" +
+                        "\n" +
+                        "**Primary Use:** Reading and parsing LabKey run metadata files within assay transformation scripts to enable property-driven data processing.";
+                //return IOUtils.resourceToString("org/labkey/query/controllers/LabKeyTransform.md", null, QueryController.class.getClassLoader());
+            }
+/*
+            catch (IOException x)
+            {
+                throw new ConfigurationException("error loading resource", x);
+            }
+*/
+        }
+
+        @Override
+        public Object execute(TransformPrompt form, BindException errors) throws Exception
+        {
+            try (var mcpPush = McpContext.withContext(getViewContext()))
+            {
+                String prompt = form.getPrompt();
+
+                String escapeResponse = handleEscape(prompt);
+                if (null != escapeResponse)
+                {
+                    return new JSONObject(Map.of(
+                            "contentType", "text/plain",
+                            "text", escapeResponse,
+                            "success", Boolean.TRUE));
+                }
+
+                // TODO when/how to do we reset or isolate different chat sessions, e.g. if two SQL windows are open concurrently?
+                ChatClient chatSession = getChat(true);
+                List<McpService.MessageResponse> responses;
+
+                if (isBlank(prompt))
+                {
+                    return new JSONObject(Map.of(
+                            "contentType", "text/plain",
+                            "text", "🤷",
+                            "success", Boolean.TRUE));
+                }
+
+                try
+                {
+                    responses = McpService.get().sendMessageEx(chatSession, prompt);
+                }
+                catch (ServerException x)
+                {
+                    return new JSONObject(Map.of(
+                            "error", x.getMessage(),
+                            "text", "ERROR: " + x.getMessage(),
+                            "success", Boolean.FALSE));
+                }
+
+                var ret = new JSONObject(Map.of(
+                        "success", Boolean.TRUE));
+
+                HtmlStringBuilder html = HtmlStringBuilder.of();
+                for (McpService.MessageResponse resp : responses)
+                {
+                    html.append(resp.html());
+                }
+                ret.put("html", html.getHtmlString());
+
+                return ret;
+            }
+            catch (ClientException ex)
+            {
+                var ret = new JSONObject(Map.of(
+                        "text", ex.getMessage(),
+                        "user", getViewContext().getUser().getName(),
+                        "success", Boolean.FALSE));
+                return ret;
+            }
+        }
     }
 }
