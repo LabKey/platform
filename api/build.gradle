@@ -466,6 +466,7 @@ dependencies {
         )
     )
 
+    // Jackson 2
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
