@@ -107,6 +107,8 @@ public class CoreQuerySchema extends UserSchema
     public static final String VIEW_CATEGORY_TABLE_NAME = "ViewCategory";
     public static final String SHORT_URL_TABLE_NAME = "ShortURL";
     public static final String DOCUMENTS_TABLE_NAME = "Documents";
+    public static final String CHAT_CONVERSATION = "ChatConversation";
+    public static final String CHAT_MESSAGE = "ChatMessage";
 
     public CoreQuerySchema(User user, Container c)
     {
@@ -140,7 +142,7 @@ public class CoreQuerySchema extends UserSchema
         Set<String> names = PageFlowUtil.set(
             USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME, MODULES_TABLE_NAME, MEMBERS_TABLE_NAME,
             CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, DATA_STATES_TABLE_NAME,
-            VIEW_CATEGORY_TABLE_NAME, MISSING_VALUE_INDICATOR_TABLE_NAME);
+            VIEW_CATEGORY_TABLE_NAME, MISSING_VALUE_INDICATOR_TABLE_NAME, CHAT_CONVERSATION, CHAT_MESSAGE);
 
         if (getUser().hasRootPermission(TroubleshooterPermission.class))
             names.add(DOCUMENTS_TABLE_NAME);
@@ -205,6 +207,10 @@ public class CoreQuerySchema extends UserSchema
             return new ShortUrlTableInfo(this);
         if (DOCUMENTS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(TroubleshooterPermission.class))
             return new DocumentsTable(this, cf);
+        if (CHAT_CONVERSATION.equalsIgnoreCase(name))
+            return new ChatConversationTable(this, cf).init();
+        if (CHAT_MESSAGE.equalsIgnoreCase(name))
+            return new ChatMessageTable(this).init();
 
         return null;
     }

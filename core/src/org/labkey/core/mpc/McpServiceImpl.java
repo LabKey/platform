@@ -35,6 +35,7 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
@@ -100,7 +101,8 @@ public class McpServiceImpl implements McpService
     private final CopyOnWriteHashMap<String, McpServerFeatures.SyncResourceSpecification> resourceMap = new CopyOnWriteHashMap<>();
 
     private final _McpServlet mcpServlet = new _McpServlet(JsonUtil.DEFAULT_MAPPER, MESSAGE_ENDPOINT, SSE_ENDPOINT);
-    private final ChatMemoryRepository chatMemoryRepository = new InMemoryChatMemoryRepository();
+//    private final ChatMemoryRepository chatMemoryRepository = new InMemoryChatMemoryRepository();
+    private final ChatMemoryRepository chatMemoryRepository = new DatabaseChatMemoryRepository();
     private VectorStore vectorStore = null;
     private boolean serverReady = false;
 
@@ -354,7 +356,7 @@ public class McpServiceImpl implements McpService
         @Override
         public List<Document> similaritySearch(SearchRequest request)
         {
-            LOG.info("Vector store search: query=\"{}\"", request.getQuery());
+//            LOG.info("Vector store search: query=\"{}\"", request.getQuery());
             List<Document> results = delegate.similaritySearch(request);
             if (results.isEmpty())
             {
@@ -624,10 +626,9 @@ public class McpServiceImpl implements McpService
         public String getModel()
         {
 //            return "gemini-2.5-flash";
-            // gemini-2.5-flash
-            // gemini-2.5-pro
-            // gemini-3-flash-preview
-            return "gemini-3-pro-preview";
+//            return "gemini-2.5-pro";
+            return "gemini-3-flash-preview";
+//            return "gemini-3-pro-preview";
         }
 
         @Override

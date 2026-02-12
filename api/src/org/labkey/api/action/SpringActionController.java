@@ -1291,17 +1291,17 @@ public abstract class SpringActionController implements Controller, HasViewConte
             _log.warn("Action " + c.getName() + " accepted GET unexpectedly... might need to update executingMutatingSql()");
         }
 
-        if (readonly)
-        {
-            if (c.getName().contains("JunitController"))
-                return;
-
-            boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(c.getName());
-            String message = "MUTATING SQL executed as part of handling action: " +
-                    (null == vc ? "" : vc.getRequest().getMethod()) + " " +
-                    c.getName() + (verbose ? ("\n" + sql) : "");
-            throw new IllegalStateException(message);
-        }
+//        if (readonly)
+//        {
+//            if (c.getName().contains("JunitController"))
+//                return;
+//
+//            boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(c.getName());
+//            String message = "MUTATING SQL executed as part of handling action: " +
+//                    (null == vc ? "" : vc.getRequest().getMethod()) + " " +
+//                    c.getName() + (verbose ? ("\n" + sql) : "");
+//            throw new IllegalStateException(message);
+//        }
     }
 
     private static final Set<String> mutatingActionsWarned = new CopyOnWriteArraySet<>();

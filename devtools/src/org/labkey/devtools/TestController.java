@@ -32,6 +32,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpService;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresLogin;
@@ -1402,6 +1403,25 @@ public class TestController extends SpringActionController
                 errors.addError(new ObjectError("form", "error saving vectordb: " + x.getMessage()));
                 return false;
             }
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class ConversationDetailAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            return new JspView<>("/org/labkey/devtools/view/conversationDetails.jsp");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            var urlProvider = Objects.requireNonNull(PageFlowUtil.urlProvider(QueryUrls.class));
+            root.addChild("Query Schema Browser", urlProvider.urlSchemaBrowser(getContainer()));
+            root.addChild("Conversations", urlProvider.urlExecuteQuery(getContainer(), "core", "ChatConversation"));
+            root.addChild("Conversation Details");
         }
     }
 }

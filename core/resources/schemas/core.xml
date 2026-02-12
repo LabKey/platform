@@ -785,4 +785,25 @@
       <column columnName="Executed"/>
     </columns>
   </table>
+  <table tableName="ChatConversation" tableDbType="TABLE">
+    <columns>
+      <column columnName="ConversationId"/>
+      <column columnName="Container"/>
+      <column columnName="Created"/>
+      <column columnName="CreatedBy"/>
+      <column columnName="Referer"/>
+    </columns>
+  </table>
+  <table tableName="ChatMessage" tableDbType="TABLE">
+    <columns>
+      <column columnName="ConversationId"/>
+      <column columnName="ContentType"/>
+      <column columnName="Created"/>
+      <column columnName="MessageMetadata"/>
+      <column columnName="MessageText"/>
+      <column columnName="MessageTextFormatted"/>
+      <column columnName="MessageType"/>
+      <column columnName="RowId"/>
+    </columns>
+  </table>
 </tables>

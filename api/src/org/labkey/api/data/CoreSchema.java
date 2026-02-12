@@ -191,4 +191,14 @@ public class CoreSchema
     {
         return getSchema().getTable("EmailOptions");
     }
+
+    public TableInfo getTableInfoChatConversation()
+    {
+        return getSchema().getTable("ChatConversation");
+    }
+
+    public TableInfo getTableInfoChatMessages()
+    {
+        return getSchema().getTable("ChatMessage");
+    }
 }
