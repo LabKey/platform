@@ -53,9 +53,15 @@ import org.springframework.ai.google.genai.GoogleGenAiEmbeddingConnectionDetails
 import org.springframework.ai.google.genai.text.GoogleGenAiTextEmbeddingModel;
 import org.springframework.ai.google.genai.text.GoogleGenAiTextEmbeddingOptions;
 import org.springframework.ai.mcp.McpToolUtils;
+import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.definition.ToolDefinition;
+import org.springframework.ai.tool.metadata.ToolMetadata;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import reactor.core.publisher.Mono;
@@ -154,7 +160,7 @@ public class McpServiceImpl implements McpService
     @Override
     public void registerTools(@NotNull List<ToolCallback> tools)
     {
-        tools.forEach(tool -> toolMap.put(tool.getToolDefinition().name(), tool));
+        tools.forEach(tool -> toolMap.put(tool.getToolDefinition().name(), new _LoggingToolCallback(tool)));
     }
 
     @Override
@@ -300,6 +306,64 @@ public class McpServiceImpl implements McpService
     }
 
 
+    /** Delegating wrapper that logs vector store similarity searches */
+    private static class _LoggingVectorStore implements VectorStore
+    {
+        private final VectorStore delegate;
+
+        _LoggingVectorStore(VectorStore delegate)
+        {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void add(List<Document> documents)
+        {
+            delegate.add(documents);
+        }
+
+        @Override
+        public void delete(Filter.Expression filterExpression)
+        {
+            delegate.delete(filterExpression);
+        }
+
+        @Override
+        public void delete(List<String> idList)
+        {
+            delegate.delete(idList);
+        }
+
+        @Override
+        public List<Document> similaritySearch(SearchRequest request)
+        {
+            LOG.info("Vector store search: query=\"{}\"", request.getQuery());
+            List<Document> results = delegate.similaritySearch(request);
+            if (results.isEmpty())
+            {
+                LOG.info("Vector store search returned no results");
+            }
+            else
+            {
+                LOG.info("Vector store search returned {} result(s):", results.size());
+                for (Document doc : results)
+                {
+                    String content = doc.getText();
+                    String snippet = content.length() > 200 ? content.substring(0, 200) + "..." : content;
+                    LOG.info("  - [{}] {}", doc.getMetadata(), snippet);
+                }
+            }
+            return results;
+        }
+
+        @Override
+        public String getName()
+        {
+            return delegate.getName();
+        }
+    }
+
+
     @Override
     public ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
     {
@@ -324,7 +388,7 @@ public class McpServiceImpl implements McpService
 
             VectorStore vs = getVectorStore();
             if (null != vs)
-                advisors.add(QuestionAnswerAdvisor.builder(vs).build());
+                advisors.add(QuestionAnswerAdvisor.builder(new _LoggingVectorStore(vs)).build());
 
             return ChatClient.builder(modelProvider.getChatModel())
                     .defaultOptions(modelProvider.getChatOptions())
@@ -490,11 +554,11 @@ public class McpServiceImpl implements McpService
         @Override
         public String getModel()
         {
-            return "gemini-2.5-flash";
+//            return "gemini-2.5-flash";
             // gemini-2.5-flash
             // gemini-2.5-pro
             // gemini-3-flash-preview
-            // gemini-3-pro-preview
+            return "gemini-3-pro-preview";
         }
 
         @Override
@@ -558,6 +622,43 @@ public class McpServiceImpl implements McpService
             EmbeddingModel embeddingModel;
             embeddingModel = new GoogleGenAiTextEmbeddingModel(connectionDetails, embeddingOptions);
             return embeddingModel;
+        }
+    }
+
+
+    private static class _LoggingToolCallback implements ToolCallback
+    {
+        private final ToolCallback delegate;
+
+        _LoggingToolCallback(ToolCallback delegate)
+        {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public ToolDefinition getToolDefinition()
+        {
+            return delegate.getToolDefinition();
+        }
+
+        @Override
+        public ToolMetadata getToolMetadata()
+        {
+            return delegate.getToolMetadata();
+        }
+
+        @Override
+        public String call(String toolInput)
+        {
+            LOG.info("MCP tool invoked: {}", delegate.getToolDefinition().name());
+            return delegate.call(toolInput);
+        }
+
+        @Override
+        public String call(String toolInput, ToolContext toolContext)
+        {
+            LOG.info("MCP tool invoked: {}", delegate.getToolDefinition().name());
+            return delegate.call(toolInput, toolContext);
         }
     }
 
