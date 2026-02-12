@@ -33,7 +33,7 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
     @Override
     public void validateForm(F form, Errors errors)
     {
-        if (form.getPrompt() == null)
+        if (StringUtils.isBlank(form.getPrompt()))
             errors.rejectValue("prompt", ERROR_MSG, "Please enter a prompt");
     }
 

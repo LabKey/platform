@@ -8068,6 +8068,7 @@ public class QueryController extends SpringActionController
         String expression = "";
         Map<FieldKey,JdbcType> columnMap = new HashMap<>();
         List<FieldKey> phiColumns = new ArrayList<>();
+        Boolean clearChat = false;
 
         Map<FieldKey, JdbcType> getColumnMap()
         {
@@ -8990,9 +8991,7 @@ public class QueryController extends SpringActionController
             return "Your job is to generate a SQL expression for a calculated column. Here is some reference material formatted as markdown:\n" + getSQLHelp() + "\n\n" +
                     "Always refer to the available tools for retrieving database metadata.\n" +
                     "Don't include an alias for the calculated column expression\n" +
-                    "Keep your responses brief.\n" +
-                    "The following JSON blob enumerates the available columns and their types:\n" +
-                    new JSONObject(_form.getColumnMap()).toString(2);
+                    "Keep your responses brief.";
         }
 
         String getSQLHelp()
@@ -9019,13 +9018,22 @@ public class QueryController extends SpringActionController
 
             try (var _ = McpContext.withContext(getViewContext()))
             {
-                ChatClient chatSession = getChat();
-                String prompt = form.getPrompt();
-                McpService.MessageResponse fullResponse;
-                McpService.MessageResponse expressionResponse;
+                String escapeResponse = handleEscape(form.getPrompt());
+                if (null != escapeResponse)
+                {
+                    return new JSONObject(Map.of(
+                            "html", "<span>" + escapeResponse + "</span>",
+                            "success", Boolean.TRUE));
+                }
 
-                fullResponse = McpService.get().sendMessage(chatSession, prompt);
-                expressionResponse = McpService.get().sendMessage(chatSession, "Give me just the expression in plain text");
+                ChatClient chatSession = getChat(true);
+                String prompt = "The following JSON blob enumerates the available columns and their types:\n" +
+                        new JSONObject(_form.getColumnMap()).toString(2) +
+                        "\nGenerate a calculated column expression that matches the following description:\n" +
+                        form.getPrompt();
+
+                McpService.MessageResponse fullResponse = McpService.get().sendMessage(chatSession, prompt);
+                McpService.MessageResponse expressionResponse = McpService.get().sendMessage(chatSession, "Give me just the expression in plain text");
 
                 form.setExpression(expressionResponse.text());
 
@@ -9035,7 +9043,7 @@ public class QueryController extends SpringActionController
                 }
                 catch (QueryException x)
                 {
-                    String validationPrompt = "That SQL caused the error below, can you attempt to fix this?\n```\n" + x.toJSON(expressionResponse.text()) + "\n```\nGive me just the updated expression in plain text.";
+                    String validationPrompt = "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below, can you attempt to fix this?\n```\n" + x.getMessage() + "\n```\nGive me just the updated expression in plain text.";
                     expressionResponse = McpService.get().sendMessage(chatSession, validationPrompt);
                 }
 
