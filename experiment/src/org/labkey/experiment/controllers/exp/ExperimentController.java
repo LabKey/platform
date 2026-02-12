@@ -16,11 +16,13 @@
 
 package org.labkey.experiment.controllers.exp;
 
+import com.google.genai.errors.ServerException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
@@ -151,6 +153,10 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.mcp.AbstractAgentAction;
+import org.labkey.api.mcp.McpContext;
+import org.labkey.api.mcp.McpService;
+import org.labkey.api.mcp.PromptForm;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -185,6 +191,7 @@ import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresAnyOf;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurableResource;
@@ -208,6 +215,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.CsrfInput;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.LK;
@@ -300,6 +308,7 @@ import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -8342,4 +8351,125 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    @RequiresLogin
+    public static class NamingPatternChatAction extends AbstractAgentAction<NamingPatternPromptForm>
+    {
+        NamingPatternPromptForm _form;
+
+        @Override
+        protected String getAgentName()
+        {
+            return NamingPatternChatAction.class.getName();
+        }
+
+        @Override
+        protected String getServicePrompt()
+        {
+            StringBuilder servicePrompt =  new StringBuilder("Your job is to generate naming patterns.");
+            servicePrompt.append("\nRespond with just the naming pattern and remove surrounding quotes.");
+//            if (!StringUtils.isBlank(_form.getDomainType()) && _form.getRowId() != null)
+//            {
+//                if (_form.getDomainType().equals("SampleSet"))
+//                {
+//                    ExpSampleType sampleType = SampleTypeService.get().getSampleType(_form.getRowId());
+//                    if (sampleType != null)
+//                    {
+//                        servicePrompt.append("\n\nThe current schema is samples.").append(sampleType.getName());
+//                    }
+//                }
+//            }
+            return servicePrompt.toString();
+        }
+
+
+        @Override
+        public Object execute(NamingPatternPromptForm form, BindException errors) throws Exception
+        {
+            // save form here for context in getServicePrompt()??
+            _form = form;
+            try (var _ = McpContext.withContext(getViewContext()))
+            {
+                ChatClient chatClient = getChat(true);
+                String prompt = form.getPrompt();
+//                prompt = "Generate a naming pattern for this sample type ";
+//                if (_form.getRowId() != null && _form.getDomainType() != null && _form.getDomainType().equals("SampleSet"))
+//                {
+//                    ExpSampleType sampleType = SampleTypeService.get().getSampleType(_form.getRowId());
+//                    if (sampleType != null)
+//                        prompt += " samples." + sampleType.getName() + " ";
+//                }
+//                prompt += " that has ";
+                List<McpService.MessageResponse> responses;
+                try
+                {
+                    responses = McpService.get().sendMessageEx(chatClient, prompt);
+                    if (!responses.isEmpty())
+                        return new JSONObject(Map.of(
+                                "success", Boolean.TRUE,
+                                "suggestion", getNamingPatternResponse(responses)
+                        ));
+                    else
+                        return new JSONObject(Map.of(
+                                "success", Boolean.FALSE,
+                                "suggestion", "Sorry, I can't help you.",
+                                "error", "No responses?"
+                        ));
+                }
+                catch (ServerException x)
+                {
+                    return new JSONObject(Map.of(
+                            "error", x.getMessage(),
+                            "text", "ERROR: " + x.getMessage(),
+                            "success", Boolean.FALSE));
+                }
+            }
+        }
+
+
+        String getNamingPatternResponse(List<McpService.MessageResponse> responses)
+        {
+            if (responses.isEmpty())
+                return "";
+            return responses.getFirst().text();
+        }
+
+        String getNamingPatternHelp()
+        {
+            try
+            {
+                return IOUtils.resourceToString("org/labkey/experiment/controllers/exp/namingPatterns.md", null, ExperimentController.class.getClassLoader());
+            }
+            catch (IOException x)
+            {
+                throw new ConfigurationException("error loading resource", x);
+            }
+        }
+    }
+
+    public static class NamingPatternPromptForm extends PromptForm
+    {
+        private String _domainType;
+        private Integer _rowId;
+
+        public String getDomainType()
+        {
+            return _domainType;
+        }
+
+        public void setDomainType(String domainType)
+        {
+            _domainType = domainType;
+        }
+
+        public Integer getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            _rowId = rowId;
+        }
+    }
 }
