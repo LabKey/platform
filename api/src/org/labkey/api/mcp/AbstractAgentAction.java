@@ -4,6 +4,7 @@ import com.google.genai.errors.ClientException;
 import com.google.genai.errors.ServerException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.security.CSRF;
@@ -36,13 +37,29 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
             errors.rejectValue("prompt", ERROR_MSG, "Please enter a prompt");
     }
 
-    protected ChatClient getChat()
+    protected ChatClient getChat(boolean create)
     {
         HttpServletRequest request = getViewContext().getRequest();
         if (request == null)
             throw new IllegalStateException("No request");
         HttpSession session = request.getSession(true);
-        return McpService.get().getChat(session, getAgentName(), this::getServicePrompt);
+        return McpService.get().getChat(session, getAgentName(), this::getServicePrompt, create);
+    }
+
+    protected String handleEscape(String prompt)
+    {
+        prompt = StringUtils.trimToEmpty(prompt);
+        switch (prompt)
+        {
+            case "/clear" ->
+            {
+                ChatClient chatSession = getChat(false); // CONSIDER: getChat(boolean ifStarted)
+                if (null != chatSession)
+                    McpService.get().close(getViewContext().getSession(), chatSession);
+                 return "OK, let's start over.";
+            }
+        }
+        return null;
     }
 
     @Override
@@ -50,14 +67,25 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
     {
         try (var _ = McpContext.withContext(getViewContext()))
         {
-            ChatClient chatSession = getChat();
+            String prompt = form.getPrompt();
+
+            String escapeResponse = handleEscape(prompt);
+            if (null != escapeResponse)
+            {
+                return new JSONObject(Map.of(
+                        "contentType", "text/plain",
+                        "response", escapeResponse,
+                        "success", Boolean.TRUE));
+            }
+
+            // call getChat() after handleEscape()
+            ChatClient chatSession = getChat(true);
             if (null == chatSession)
                 return new JSONObject(Map.of(
                         "contentType", "text/plain",
                         "response", "Service is not ready yet",
                         "success", Boolean.FALSE));
 
-            String prompt = form.getPrompt();
             McpService.MessageResponse response = McpService.get().sendMessage(chatSession, prompt);
             var ret = new JSONObject(Map.of("success", Boolean.TRUE));
             if (!HtmlString.isBlank(response.html()))
