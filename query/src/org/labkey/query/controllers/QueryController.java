@@ -132,6 +132,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
@@ -8920,9 +8921,17 @@ public class QueryController extends SpringActionController
                             if (warning.isPresent())
                                 throw warning.get();
                         }
+                        // if that worked, let have the DB check it too
+                        if (ti.getSqlDialect().isPostgreSQL())
+                        {
+                            // CONSIDER: will this work with LabKey SQL named parameters?
+                            SQLFragment sql = new SQLFragment("PREPARE validate AS SELECT * FROM ").append(ti.getFromSQL("MYVALIDATEQUERY__"));
+                            new SqlExecutor(ti.getSchema().getScope()).execute(sql);
+                        }
                     }
-                    catch (QueryException x)
+                    catch (Exception x)
                     {
+                        // CONSIDER remove line line/character information from DB errors as they won't match the LabKey SQL
                         String validationPrompt = "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below, can you attempt to fix this?\n```" + x.getMessage() + "```";
                         responses = McpService.get().sendMessageEx(chatSession, validationPrompt);
                         var newSqlResponse = extractSql(responses);
