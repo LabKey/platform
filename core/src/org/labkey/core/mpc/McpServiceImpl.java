@@ -35,6 +35,12 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
+import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.ai.openai.OpenAiEmbeddingModel;
+import org.springframework.ai.openai.OpenAiEmbeddingOptions;
+import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
@@ -46,6 +52,7 @@ import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
@@ -114,11 +121,21 @@ public class McpServiceImpl implements McpService
         {
             model = new _ClaudeProvider();
         }
+        if (isNotBlank(System.getenv("OPENAI_API_KEY")))
+        {
+            var openai = new _ChatGptProvider();
+            if (null == embedding)
+                embedding = openai;
+            if (null == model)
+                model = openai;
+        }
         if (isNotBlank(System.getenv("GEMINI_API_KEY")))
         {
-            embedding = new _GeminiProvider();
+            var gemini = new _GeminiProvider();
+            if (null == embedding)
+                embedding = gemini;
             if (null == model)
-                model = new _GeminiProvider();
+                model = gemini;
         }
         modelProvider = model;
         embeddingProvider = embedding;
@@ -365,39 +382,92 @@ public class McpServiceImpl implements McpService
 
 
     @Override
-    public ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
+    public ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier, boolean createIfNotExists)
     {
         if (!serverReady)
             return null;
 
-        return SessionHelper.getAttribute(session, ChatClient.class.getName() + "#" + agentName, () ->
+        String sessionKey = ChatClient.class.getName() + "#" + agentName;
+        if (createIfNotExists)
         {
-            String systemPrompt = systemPromptSupplier.get();
-            String conversationId = session.getId() + ":" + agentName;
-            List<Advisor> advisors = new ArrayList<>();
-
-            ChatMemory chatMemory = MessageWindowChatMemory.builder()
-                    .maxMessages(100)
-                    .chatMemoryRepository(chatMemoryRepository)
-                    .build();
-
-            MessageChatMemoryAdvisor chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory)
-                    .conversationId(conversationId)
-                    .build();
-            advisors.add(chatMemoryAdvisor);
-
-            VectorStore vs = getVectorStore();
-            if (null != vs)
-                advisors.add(QuestionAnswerAdvisor.builder(new _LoggingVectorStore(vs)).build());
-
-            return ChatClient.builder(modelProvider.getChatModel())
-                    .defaultOptions(modelProvider.getChatOptions())
-                    .defaultAdvisors(advisors)
-                    .defaultSystem(systemPrompt)
-                    .build();
-        });
+            return SessionHelper.getAttribute(session, sessionKey, () ->
+                    {
+                        var springClient = createSpringChat(session, agentName, systemPromptSupplier);
+                        return new _ChatClient(springClient, sessionKey);
+                    });
+        }
+        return SessionHelper.getAttribute(session, sessionKey, null);
     }
 
+    private ChatClient createSpringChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
+    {
+        String systemPrompt = systemPromptSupplier.get();
+        String conversationId = session.getId() + ":" + agentName;
+        List<Advisor> advisors = new ArrayList<>();
+
+        ChatMemory chatMemory = MessageWindowChatMemory.builder()
+                .maxMessages(100)
+                .chatMemoryRepository(chatMemoryRepository)
+                .build();
+
+        MessageChatMemoryAdvisor chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory)
+                .conversationId(conversationId)
+                .build();
+        advisors.add(chatMemoryAdvisor);
+
+        VectorStore vs = getVectorStore();
+        if (null != vs)
+            advisors.add(QuestionAnswerAdvisor.builder(new _LoggingVectorStore(vs)).build());
+
+        return ChatClient.builder(modelProvider.getChatModel())
+                .defaultOptions(modelProvider.getChatOptions())
+                .defaultAdvisors(advisors)
+                .defaultSystem(systemPrompt)
+                .build();
+    }
+
+    private class _ChatClient implements ChatClient
+    {
+        final ChatClient springClient;
+        final String key;
+        _ChatClient(ChatClient client, String key)
+        {
+            this.springClient = client;
+            this.key = key;
+        }
+
+        @Override
+        public ChatClientRequestSpec prompt()
+        {
+            return springClient.prompt();
+        }
+
+        @Override
+        public ChatClientRequestSpec prompt(String content)
+        {
+            return springClient.prompt(content);
+        }
+
+        @Override
+        public ChatClientRequestSpec prompt(Prompt prompt)
+        {
+            return springClient.prompt(prompt);
+        }
+
+        @Override
+        public Builder mutate()
+        {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    @Override
+    public void close(HttpSession session, ChatClient chat)
+    {
+        if (null == chat)
+            return;
+        session.removeAttribute(((_ChatClient)chat).key);
+    }
 
     @Override
     public MessageResponse sendMessage(ChatClient chatSession, String message)
@@ -541,7 +611,6 @@ public class McpServiceImpl implements McpService
 
         ChatModel getChatModel();
 
-//        ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier);
         EmbeddingModel createEmbeddingModel();
     }
 
@@ -702,6 +771,57 @@ public class McpServiceImpl implements McpService
         public EmbeddingModel createEmbeddingModel()
         {
             return null;
+        }
+    }
+
+    class _ChatGptProvider implements _ModelProvider
+    {
+        @Override
+        public String getModel()
+        {
+            return "gpt-4o";
+        }
+
+        @Override
+        public String getEmbeddingModel()
+        {
+            return "text-embedding-3-small";
+        }
+
+        @Override
+        public OpenAiChatOptions getChatOptions()
+        {
+            return OpenAiChatOptions.builder()
+                    .model(getModel())
+                    .toolCallbacks(getToolCallbacks())
+                    .build();
+        }
+
+        @Override
+        public OpenAiChatModel getChatModel()
+        {
+            OpenAiApi openAiApi = OpenAiApi.builder()
+                    .apiKey(System.getenv("OPENAI_API_KEY"))
+                    .build();
+
+            return OpenAiChatModel.builder()
+                    .openAiApi(openAiApi)
+                    .defaultOptions(getChatOptions())
+                    .build();
+        }
+
+        @Override
+        public EmbeddingModel createEmbeddingModel()
+        {
+            OpenAiApi openAiApi = OpenAiApi.builder()
+                    .apiKey(System.getenv("OPENAI_API_KEY"))
+                    .build();
+
+            OpenAiEmbeddingOptions embeddingOptions = OpenAiEmbeddingOptions.builder()
+                    .model(getEmbeddingModel())
+                    .build();
+
+            return new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED, embeddingOptions);
         }
     }
 }
