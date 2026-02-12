@@ -473,7 +473,7 @@ public class SqlScriptController extends SpringActionController
                     else if (includeSingleScripts)
                     {
                         String filename = consolidator.getFilename();
-                        SqlScript script = scripts.get(0);
+                        SqlScript script = scripts.getFirst();
 
                         // Skip if the single script in this range is the consolidation script
                         if (!script.getDescription().equalsIgnoreCase(filename) && 0.0 != script.getFromVersion())
@@ -610,7 +610,7 @@ public class SqlScriptController extends SpringActionController
             _targetFrom = targetFrom;
             _targetTo = targetTo;
             _scripts = SqlScriptManager.get(provider, schema).getRecommendedScripts(provider.getScripts(schema), targetFrom, targetTo);
-            _actualTo = _scripts.isEmpty() ? -1 : _scripts.get(_scripts.size() - 1).getToVersion();
+            _actualTo = _scripts.isEmpty() ? -1 : _scripts.getLast().getToVersion();
         }
 
         private List<SqlScript> getScripts()
@@ -866,7 +866,7 @@ public class SqlScriptController extends SpringActionController
             return getConsolidator(provider, DbSchema.get(form.getSchema(), DbSchemaType.Module), form.getFromVersion(), form.getToVersion());
         }
 
-        protected ScriptConsolidator getConsolidator(FileSqlScriptProvider provider, DbSchema schema, double fromVersion, double toVersion)
+        private ScriptConsolidator getConsolidator(FileSqlScriptProvider provider, DbSchema schema, double fromVersion, double toVersion)
         {
             return new ScriptConsolidator(provider, schema, fromVersion, toVersion);
         }
@@ -1234,6 +1234,44 @@ public class SqlScriptController extends SpringActionController
         return getScriptURL(ScriptAction.class, script);
     }
 
+    protected abstract class BaseAIScriptAction extends ScriptAction
+    {
+        @Override
+        protected ModelAndView getScriptView(SqlScript script)
+        {
+            McpService mcpService = McpService.get();
+            if (mcpService.isReady())
+            {
+                String prompt = getPrompt(DbScope.getLabKeyScope().getSqlDialect(), script);
+                HttpSession session = getViewContext().getSession();
+                ChatClient client = mcpService.getChat(session, getChatName(), () -> prompt);
+                try (QuietCloser _ = McpContext.withContext(getViewContext()))
+                {
+                    List<MessageResponse> responses = mcpService.sendMessageEx(client,"```sql\n" + script.getContents() + "```");
+                    McpService.get().close(session, client);
+                    HtmlStringBuilder viewBuilder = HtmlStringBuilder.of();
+                    StringBuilder newContents = new StringBuilder();
+                    responses
+                        .forEach(r -> {
+                            viewBuilder.append(r.html());
+                            String text = r.text();
+                            if (text.startsWith("```sql\n") && text.endsWith("```"))
+                            {
+                                newContents.append(text, 7, text.length() - 3); // Strip tick marks and language
+                            }
+                        });
+                    viewBuilder.append(new ButtonBuilder("Save Updated Script to " + script.getDescription()).href(getSaveScriptActionURL(script, newContents.toString())).usePost());
+                    return new HtmlView(viewBuilder);
+                }
+            }
+            return new HtmlView(HtmlString.of("McpService is not ready"));
+        }
+
+        abstract protected String getPrompt(SqlDialect dialect, SqlScript script);
+
+        abstract protected String getChatName();
+    }
+
     private static final String CLEAN_UP_PROMPT = """
         Refactor the script to provide a clean, "final state" version, removing redundant and unnecessary statements.
         
@@ -1255,37 +1293,20 @@ public class SqlScriptController extends SpringActionController
         """;
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class CleanUpScriptAction extends ScriptAction
+    public class CleanUpScriptAction extends BaseAIScriptAction
     {
         @Override
-        protected ModelAndView getScriptView(SqlScript script)
+        protected String getPrompt(SqlDialect dialect, SqlScript script)
         {
-            McpService mcpService = McpService.get();
-            if (mcpService.isReady())
-            {
-                String prompt = getPrompt(DbScope.getLabKeyScope().getSqlDialect(), script);
-                HttpSession session = getViewContext().getSession();
-                ChatClient client = mcpService.getChat(session, "SQL Script Cleaner", () -> prompt);
-                try (QuietCloser _ = McpContext.withContext(getViewContext()))
-                {
-                    List<MessageResponse> responses = mcpService.sendMessageEx(client,"```sql\n" + script.getContents() + "```");
-                    McpService.get().close(session, client);
-                    HtmlStringBuilder viewBuilder = HtmlStringBuilder.of();
-                    StringBuilder newContents = new StringBuilder();
-                    responses
-                        .forEach(r -> {
-                            viewBuilder.append(r.html());
-                            String text = r.text();
-                            if (text.startsWith("```sql\n") && text.endsWith("```"))
-                            {
-                                newContents.append(text, 7, text.length() - 3); // Strip tick marks and language
-                            }
-                        });
-                    viewBuilder.append(new ButtonBuilder("Save Cleaned Script to " + script.getDescription()).href(getSaveScriptActionURL(script, newContents.toString())).usePost());
-                    return new HtmlView(viewBuilder);
-                }
-            }
-            return new HtmlView(HtmlString.of("McpService is not ready"));
+            String youAre = "You are a " + dialect.getProductName() + (dialect.isSqlServer() ? " T-SQL" : " SQL") + " expert.\n";
+            String yourTask = "Your task is to clean up this " + dialect.getProductName() + " SQL script" + (script.getFromVersion() == 0.0 ? ", which creates a brand new database schema and populates it with tables" : "") + ".\n";
+            return youAre + yourTask + CLEAN_UP_PROMPT;
+        }
+
+        @Override
+        protected String getChatName()
+        {
+            return "SQL Script Cleaner";
         }
 
         @Override
@@ -1293,18 +1314,11 @@ public class SqlScriptController extends SpringActionController
         {
             return "Clean Up " + super.getActionDescription();
         }
-
-        protected String getPrompt(SqlDialect dialect, SqlScript script)
-        {
-            String whoAreYou = "You are a " + dialect.getProductName() + (dialect.isSqlServer() ? " T-SQL" : " SQL") + " expert.\n";
-            String yourTask = "Your task is to clean up this " + dialect.getProductName() + " SQL script" + (script.getFromVersion() == 0.0 ? ", which creates a brand new database schema and populates it with tables" : "") + ".\n";
-            return whoAreYou + yourTask + CLEAN_UP_PROMPT;
-        }
     }
 
     private record ScriptToSave(SqlScript script, String contents) {}
 
-    // Stashes the script contents to session and returns an ActionURL that will save it
+    // Stashes the script contents in session and returns an ActionURL to the save action
     private ActionURL getSaveScriptActionURL(SqlScript script, String newContents)
     {
         HttpSession session = getViewContext().getSession();
@@ -1490,14 +1504,14 @@ public class SqlScriptController extends SpringActionController
             Module module = ModuleLoader.getInstance().getModule(form.getModule());
             if (null == module)
             {
-                errors.reject(ERROR_MSG, "Module not found");
+                errors.reject(ERROR_GENERIC, "Module not found");
             }
             else
             {
                 _code = module.getUpgradeCode();
                 if (null == _code)
                 {
-                    errors.reject(ERROR_MSG, "Module doesn't have UpgradeCode");
+                    errors.reject(ERROR_GENERIC, "Module doesn't have UpgradeCode");
                 }
                 else
                 {
@@ -1506,11 +1520,11 @@ public class SqlScriptController extends SpringActionController
                         _method = _code.getClass().getDeclaredMethod(form.getMethod(), ModuleContext.class);
                         _ctx = ModuleLoader.getInstance().getModuleContextFromDatabase(form.getModule());
                         if (null == _ctx)
-                            errors.reject(ERROR_MSG, "ModuleContext not found");
+                            errors.reject(ERROR_GENERIC, "ModuleContext not found");
                     }
                     catch (NoSuchMethodException e)
                     {
-                        errors.reject(ERROR_MSG, "Method doesn't exist");
+                        errors.reject(ERROR_GENERIC, "Method doesn't exist");
                     }
                 }
             }
