@@ -523,33 +523,6 @@ dependencies {
         }
     )
 
-    // Jackson 3
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "tools.jackson.core:jackson-core:${jacksonVersion3}",
-            "Jackson Core Library",
-            "Jackson",
-            "https://github.com/FasterXML/jackson",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "JSON de/serialization, reporting API dependency",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "tools.jackson.core:jackson-databind:${jacksonDatabindVersion3}",
-            "Jackson Databind Library",
-            "Jackson",
-            "https://github.com/FasterXML/jackson",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "JSON de/serialization, reporting API dependency",
-        )
-    )
-
 // added because otherwise we get this error: Java 8 date/time type `java.time.LocalDate` not supported by default
     BuildUtils.addExternalDependency(
         project,
