@@ -8392,14 +8392,18 @@ public class ExperimentController extends SpringActionController
             {
                 ChatClient chatClient = getChat(true);
                 String prompt = form.getPrompt();
-//                prompt = "Generate a naming pattern for this sample type ";
-//                if (_form.getRowId() != null && _form.getDomainType() != null && _form.getDomainType().equals("SampleSet"))
-//                {
-//                    ExpSampleType sampleType = SampleTypeService.get().getSampleType(_form.getRowId());
-//                    if (sampleType != null)
-//                        prompt += " samples." + sampleType.getName() + " ";
-//                }
-//                prompt += " that has ";
+                if (!prompt.startsWith("What is wrong") && (!prompt.startsWith("Generate") || !prompt.startsWith("Create")))
+                    prompt = "Generate a naming pattern for samples " + prompt;
+                if (_form.getRowId() != null && _form.getDomainType() != null && _form.getDomainType().equals("SampleSet"))
+                {
+                    ExpSampleType sampleType = SampleTypeService.get().getSampleType(_form.getRowId());
+                    prompt += " The current table is samples." + sampleType.getName();
+                    JSONObject jsonObject = new JSONObject();
+                    sampleType.getDomain().getProperties().forEach(property -> {
+                        jsonObject.put(property.getName(), property.getType().getLabel());
+                    });
+                    prompt += " The fields for this table as a JSON object are\n" + jsonObject.toString();
+                }
                 List<McpService.MessageResponse> responses;
                 try
                 {
