@@ -10,10 +10,12 @@ import org.labkey.api.security.CSRF;
 import org.labkey.api.util.HtmlString;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 /**
  * If you want to create a tools specific chat endpoint then start here.
@@ -26,6 +28,13 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
     protected abstract String getAgentName();
 
     protected abstract String getServicePrompt();
+
+    @Override
+    public void validateForm(F form, Errors errors)
+    {
+        if (form.getPrompt() == null)
+            errors.rejectValue("prompt", ERROR_MSG, "Please enter a prompt");
+    }
 
     protected ChatClient getChat()
     {

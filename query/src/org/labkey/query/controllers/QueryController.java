@@ -8063,7 +8063,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public static class ParseForm implements ApiJsonForm
+    public static class ParseForm extends PromptForm implements ApiJsonForm
     {
         String expression = "";
         Map<FieldKey,JdbcType> columnMap = new HashMap<>();
@@ -8116,6 +8116,8 @@ public class QueryController extends SpringActionController
                     }
                 }
             }
+            if (json.has("prompt"))
+                setPrompt(json.getString("prompt"));
         }
     }
 
@@ -8824,17 +8826,28 @@ public class QueryController extends SpringActionController
     public static class QueryAgentAction extends AbstractAgentAction<SqlPromptForm>
     {
         SqlPromptForm _form;
+        String _defaultSchema;
 
         @Override
         public void validateForm(SqlPromptForm sqlPromptForm, Errors errors)
         {
+            super.validateForm(sqlPromptForm, errors);
             _form = sqlPromptForm;
+
+            if (!isBlank(_form.getSchemaName()))
+            {
+                var schema = DefaultSchema.get(getUser(), getContainer()).getSchema(_form.getSchemaName());
+                if (null != schema)
+                {
+                    _defaultSchema = schema.getSchemaPath().toSQLString();
+                }
+            }
         }
 
         @Override
         protected String getAgentName()
         {
-            return QueryAgentAction.class.getName();
+            return QueryAgentAction.class.getName() + (_defaultSchema != null ? "." + _defaultSchema : "");
         }
 
         @Override
@@ -8844,16 +8857,9 @@ public class QueryController extends SpringActionController
             serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(getSQLHelp()).append("\n\n");
             serviceMessage.append("NOTE: Prefer using lookup syntax rather than JOIN where possible.\n");
             serviceMessage.append("NOTE: When helping generate SQL please don't use names of tables and columns from documentation examples. Always refer to the available tools for retrieving database metadata.\n");
-
-            DefaultSchema defaultSchema = DefaultSchema.get(getUser(), getContainer());
-
-            if (!isBlank(_form.getSchemaName()))
+            if (!isBlank(_defaultSchema))
             {
-                var schema = defaultSchema.getSchema(_form.getSchemaName());
-                if (null != schema)
-                {
-                    serviceMessage.append("\n\nCurrent default schema is " + schema.getSchemaPath().toSQLString() + ".");
-                }
+                serviceMessage.append("\n\nCurrent default schema is ").append(_defaultSchema).append(".");
             }
             return serviceMessage.toString();
         }
@@ -8944,6 +8950,114 @@ public class QueryController extends SpringActionController
                         "user", getViewContext().getUser().getName(),
                         "success", Boolean.FALSE));
             }
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    @RequiresLogin
+    public static class CalculatedColumnAgentAction extends AbstractAgentAction<ParseForm>
+    {
+        ParseForm _form;
+
+        @Override
+        public void validateForm(ParseForm form, Errors errors)
+        {
+            _form = form;
+
+            super.validateForm(form, errors);
+        }
+
+        @Override
+        protected String getAgentName()
+        {
+            return this.getClass().getName();
+        }
+
+        @Override
+        protected String getServicePrompt()
+        {
+            return "Your job is to generate a SQL expression for a calculated column. Here is some reference material formatted as markdown:\n" + getSQLHelp() + "\n\n" +
+                    "Always refer to the available tools for retrieving database metadata.\n" +
+                    "Don't include an alias for the calculated column expression\n" +
+                    "Keep your responses brief.\n" +
+                    "The following JSON blob enumerates the available columns and their types:\n" +
+                    new JSONObject(_form.getColumnMap()).toString(2);
+        }
+
+        String getSQLHelp()
+        {
+            try
+            {
+                return IOUtils.resourceToString("org/labkey/query/controllers/LabKeySql.md", null, QueryController.class.getClassLoader());
+            }
+            catch (IOException x)
+            {
+                throw new ConfigurationException("error loading resource", x);
+            }
+        }
+
+        @Override
+        public Object execute(ParseForm form, BindException errors) throws Exception
+        {
+            if (errors.hasErrors())
+            {
+                return new JSONObject(Map.of(
+                        "error", errors.getMessage(),
+                        "success", Boolean.FALSE));
+            }
+
+            try (var _ = McpContext.withContext(getViewContext()))
+            {
+                ChatClient chatSession = getChat();
+                String prompt = form.getPrompt();
+                McpService.MessageResponse fullResponse;
+                McpService.MessageResponse expressionResponse;
+
+                fullResponse = McpService.get().sendMessage(chatSession, prompt);
+                expressionResponse = McpService.get().sendMessage(chatSession, "Give me just the expression in plain text");
+
+                form.setExpression(expressionResponse.text());
+
+                try
+                {
+                    validateExpression(form);
+                }
+                catch (QueryException x)
+                {
+                    String validationPrompt = "That SQL caused the error below, can you attempt to fix this?\n```\n" + x.toJSON(expressionResponse.text()) + "\n```\nGive me just the updated expression in plain text.";
+                    expressionResponse = McpService.get().sendMessage(chatSession, validationPrompt);
+                }
+
+                var ret = new JSONObject(Map.of("success", Boolean.TRUE));
+                ret.put("sql", expressionResponse.text());
+                ret.put("html", fullResponse.html());
+                return ret;
+            }
+            catch (ServerException | ClientException x)
+            {
+                return new JSONObject(Map.of(
+                        "error", x.getMessage(),
+                        "success", Boolean.FALSE));
+            }
+        }
+
+        private void validateExpression(ParseForm form)
+        {
+            var schema = DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()).getUserSchema("core");
+            var table = new VirtualTable<>(schema.getDbSchema(), "EXPR", schema){};
+            ColumnInfo calculatedCol = QueryServiceImpl.get().createQueryExpressionColumn(table, new FieldKey(null, "expr"), form.getExpression(), null);
+            Map<FieldKey,ColumnInfo> columns = new HashMap<>();
+            for (var entry : form.getColumnMap().entrySet())
+            {
+                BaseColumnInfo entryCol = new BaseColumnInfo(entry.getKey(), entry.getValue());
+                // bindQueryExpressionColumn has a check that restricts PHI columns from being used in expressions
+                // so we need to set the PHI level to something other than NotPHI on these fake BaseColumnInfo objects
+                if (form.getPhiColumns().contains(entry.getKey()))
+                    entryCol.setPHI(PHI.PHI);
+                columns.put(entry.getKey(), entryCol);
+                table.addColumn(entryCol);
+            }
+            QueryServiceImpl.get().bindQueryExpressionColumn(calculatedCol, columns, false, new HashSet<>());
         }
     }
 
