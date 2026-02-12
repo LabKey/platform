@@ -263,13 +263,9 @@
 <%  if (isChatReady) { %>
     const isChatReady = <%=JavaScriptFragment.bool(isChatReady)%>;
 
-     const resizeFn = function(evt)
-    {
-        // console.log(evt);
-        // console.log("window " + window.innerHeight + " " + window.innerWidth);
+    const resizeFn = function() {
         var el = document.getElementById("querySourceLayout");
-        if (el)
-        {
+        if (el) {
             const rect = document.getElementById("querySourceLayout").getBoundingClientRect();
             const width = Math.max(600, window.innerWidth-rect.left-40)
             const height = Math.max(400, window.innerHeight-rect.top-40);
@@ -285,39 +281,59 @@
     window.onresize = resizeFn;
     resizeFn({});
 
-    var elPrompt = document.getElementById('geminiPrompt');
-
-    function scrollToBottom()
-    {
+    function scrollToBottom() {
         const div = document.getElementById("chatHistory");
         div.scrollTo({ top: div.scrollHeight, behavior: "smooth" });
     }
-    function appendUserPrompt(text)
-    {
+
+    function addChatItem(item) {
+        document.getElementById('chatHistory').appendChild(item);
+        scrollToBottom();
+    }
+
+    function endLoading() {
+        const el = document.getElementById('loadingPrompt');
+        if (el) {
+            el.remove();
+        }
+    }
+
+    function startLoading() {
+        const chatItem = document.createElement('div');
+        chatItem.id = 'loadingPrompt';
+        chatItem.className = 'chatItem genaiResponse';
+        const text = document.createElement('span');
+        const spinner = document.createElement('i');
+        spinner.className = 'fa fa-spinner fa-spin';
+        text.appendChild(spinner);
+        text.appendChild(document.createTextNode(' Loading...'));
+
+        chatItem.appendChild(text);
+        addChatItem(chatItem);
+    }
+
+    function appendUserPrompt(text) {
         const chatItem = document.createElement('div');
         chatItem.className = 'chatItem userPrompt';
         chatItem.innerText = text;
-        document.getElementById('chatHistory').appendChild(chatItem);
-        scrollToBottom();
+        addChatItem(chatItem);
     }
-    function appendTextResponse(text)
-    {
+
+    function appendTextResponse(text) {
         const chatItem = document.createElement('div');
         chatItem.className = 'chatItem genaiResponse';
         chatItem.innerText = text;
-        document.getElementById('chatHistory').appendChild(chatItem);
-        scrollToBottom();
+        addChatItem(chatItem);
     }
-    function appendHtmlResponse(html)
-    {
+
+    function appendHtmlResponse(html) {
         const chatItem = document.createElement('div');
         chatItem.className = 'chatItem genaiResponse';
         chatItem.innerHTML = html;
-        document.getElementById('chatHistory').appendChild(chatItem);
-        scrollToBottom();
+        addChatItem(chatItem);
     }
-    function appendSqlResponse(text)
-    {
+
+    function appendSqlResponse(text) {
         const chatItem = document.createElement('div');
         chatItem.className = 'chatItem sqlResponse';
         const copy = document.createElement("i");
@@ -326,104 +342,105 @@
         const pre = document.createElement('pre');
         pre.innerText = text;
         chatItem.appendChild(pre);
-        chatItem.onclick = function(evt)
-        {
+        chatItem.onclick = function(evt) {
             navigator.clipboard.writeText(evt.target.parentElement.innerText);
             return false;
         };
-        document.getElementById('chatHistory').appendChild(chatItem);
-        scrollToBottom();
+        addChatItem(chatItem);
     }
 
-    function initChat()
-    {
-        if (!isChatReady)
-            return;
-
-        // initialize conversation with the current SQL
-        // CONSIDER: update before every prompt if the SQL has changed
-        var schemaName = <%=q(queryDef.getSchemaPath().getName())%>;
-        var queryText = null;
-        try
-        {
-            queryText = Ext4.getCmp("qep").getSourceEditor().getValue();
-        }
-        catch(ex)
-        {
-            // pass;
-        }
-
-        var initPrompt = '';
-        if (schemaName)
-            initPrompt += "The current schema is " + schemaName + ".\n";
-
-        if (queryText)
-            initPrompt += "This is my current SQL query, this may be relevant to subsequent prompts:\n```" + queryText + "```\n";
-
-        if (initPrompt)
-        {
-            var url = new URL('./query-queryagent.api', window.location.href);
-            url.searchParams.set('schemaName', schemaName || '');
-            url.searchParams.set('prompt', initPrompt);
-            var req = new XMLHttpRequest();
-            req.open('GET', url.toString(), true);
-            req.send();
-        }
+    async function queryAgent(prompt) {
+        return new Promise((resolve, reject) => {
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('query', 'queryagent.api', undefined, { prompt: prompt }),
+                success: LABKEY.Utils.getCallbackWrapper(response => {
+                    resolve(response);
+                }),
+                failure: LABKEY.Utils.getCallbackWrapper((_, req) => {
+                    reject(req);
+                }, undefined, true),
+            });
+        });
     }
 
     let firstChat = true;
-    if (isChatReady)
-    {
-        elPrompt.addEventListener('keydown', function (ev)
-        {
-            var isEnter = (ev.key === 'Enter') || (ev.keyCode === 13);
-            if (ev.shiftKey && isEnter)
-            {
-                const prompt = elPrompt.value;
-                if (!prompt)
-                    return;
-                if (firstChat)
-                {
-                    firstChat = false;
-                    initChat();
-                }
-                appendUserPrompt(prompt);
-                elPrompt.value = '';
-                // TODO waiting/thinking UI
-                // Build URL with same base as current document, endpoint /query-queryagent.api and prompt parameter
-                var url = new URL('./query-queryagent.api', window.location.href);
-                url.searchParams.set('prompt', prompt);
-                var req = new XMLHttpRequest();
-                req.open('GET', url.toString(), true);
-                req.onreadystatechange = function () {
-                    if (req.readyState === 4) {
-                        if (req.status >= 200 && req.status < 300) {
-                            var responseJson = JSON.parse(req.responseText);
-                            var responseText = responseJson['text'];
-                            var responseHtml = responseJson['html'];
-                            var responseSql = responseJson['sql'];
-                            if (responseSql) {
-                                Ext4.getCmp("qep").getSourceEditor().setValue(responseSql);
-                                appendSqlResponse(responseSql);
-                            }
-                            if (responseHtml) {
-                                appendHtmlResponse(responseHtml);
-                            }
-                            if (responseText) {
-                                appendTextResponse(responseText);
-                            }
-                        } else {
-                            appendTextResponse('Request failed: ' + req.status + ' ' + (req.statusText || ''));
-                        }
-                    }
-                };
-                req.send();
-                ev.preventDefault();
-                ev.stopPropagation();
-                return false;
+
+    function initialPrompt() {
+        if (!isChatReady || !firstChat)
+            return '';
+
+        firstChat = false;
+
+        // initialize conversation with the current SQL
+        // CONSIDER: update before every prompt if the SQL has changed
+        const schemaName = <%=q(queryDef.getSchemaPath().getName())%>;
+        let queryText;
+        try {
+            queryText = Ext4.getCmp('qep').getSourceEditor().getValue();
+        }
+        catch (ex) {
+            // pass;
+        }
+
+        let initPrompt = '';
+        if (schemaName) {
+            initPrompt += "The current schema is " + schemaName + ".\n";
+        }
+
+        if (queryText) {
+            initPrompt += "This is my current SQL query, this may be relevant to subsequent prompts:\n```" + queryText + "```\n";
+        }
+
+        if (initPrompt) {
+            initPrompt += '\n';
+        }
+
+        return initPrompt;
+    }
+
+    async function executePrompt(prompt) {
+        if (!prompt) return;
+        appendUserPrompt(prompt);
+
+        try {
+            startLoading();
+
+            const response = await queryAgent(initialPrompt() + prompt);
+
+            if (response.sql) {
+                Ext4.getCmp('qep').getSourceEditor().setValue(response.sql);
+                appendSqlResponse(response.sql);
+            } else if (response.html) {
+                appendHtmlResponse(response.html);
+            } else if (response.text) {
+                appendTextResponse(response.text);
             }
-            return true;
-        });
+        } catch (req) {
+            appendTextResponse('Request failed: ' + req.status + ' ' + (req.statusText || ''));
+        } finally {
+            endLoading();
+        }
+    }
+
+    function onKeyDown(evt) {
+        const isShiftEnter = evt.shiftKey && ((evt.key === 'Enter') || (evt.keyCode === 13));
+        if (!isShiftEnter) return true;
+
+        const prompt = evt.target.value;
+        if (!prompt)
+            return;
+
+        // Do not await
+        executePrompt(prompt);
+        evt.target.value = '';
+
+        evt.preventDefault();
+        evt.stopPropagation();
+        return false;
+    }
+
+    if (isChatReady) {
+        document.getElementById('geminiPrompt').addEventListener('keydown', onKeyDown);
     }
 <%  } %>
 });
