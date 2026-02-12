@@ -1263,13 +1263,13 @@ public class SqlScriptController extends SpringActionController
             McpService mcpService = McpService.get();
             if (mcpService.isReady())
             {
-                SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
-                String whoAreYou = "You are a " + dialect.getProductName() + (dialect.isSqlServer() ? " T-SQL" : " SQL") + " expert.\n";
-                String yourTask = "Your task is to clean up this SQL script" + (script.getFromVersion() == 0.0 ? ", which creates a brand new database schema and populates it with tables" : "") + ".\n";
-                ChatClient client = mcpService.getChat(getViewContext().getSession(), "SQL Script Cleaner", () -> whoAreYou + yourTask + CLEAN_UP_PROMPT);
+                String prompt = getPrompt(DbScope.getLabKeyScope().getSqlDialect(), script);
+                HttpSession session = getViewContext().getSession();
+                ChatClient client = mcpService.getChat(session, "SQL Script Cleaner", () -> prompt);
                 try (QuietCloser _ = McpContext.withContext(getViewContext()))
                 {
                     List<MessageResponse> responses = mcpService.sendMessageEx(client,"```sql\n" + script.getContents() + "```");
+                    McpService.get().close(session, client);
                     HtmlStringBuilder viewBuilder = HtmlStringBuilder.of();
                     StringBuilder newContents = new StringBuilder();
                     responses
@@ -1292,6 +1292,13 @@ public class SqlScriptController extends SpringActionController
         protected String getActionDescription()
         {
             return "Clean Up " + super.getActionDescription();
+        }
+
+        protected String getPrompt(SqlDialect dialect, SqlScript script)
+        {
+            String whoAreYou = "You are a " + dialect.getProductName() + (dialect.isSqlServer() ? " T-SQL" : " SQL") + " expert.\n";
+            String yourTask = "Your task is to clean up this " + dialect.getProductName() + " SQL script" + (script.getFromVersion() == 0.0 ? ", which creates a brand new database schema and populates it with tables" : "") + ".\n";
+            return whoAreYou + yourTask + CLEAN_UP_PROMPT;
         }
     }
 
