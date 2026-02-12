@@ -9005,4 +9005,43 @@ public class QueryController extends SpringActionController
         }
         return null;
     }
+
+    @RequiresPermission(ReadPermission.class)
+    @RequiresLogin
+    public static class ChartBuilderAgentAction extends AbstractAgentAction<PromptForm>
+    {
+        @Override
+        protected String getAgentName()
+        {
+            return ChartBuilderAgentAction.class.getName();
+        }
+
+        @Override
+        protected String getServicePrompt()
+        {
+            StringBuilder serviceMessage = new StringBuilder();
+            serviceMessage.append("Your job is to help generate Vega-Lite spec configs that will be used to render charts within a web application. \n" +
+                    "Each prompt will be asking you to build a Vega-Lite spec for a chart or set of charts. \n" +
+                    "You can ignore any of the information that you know about LabKey chart types and its visualization \n" +
+                    "library since we are creating Vega-Lite charts here (which are unrelated to the LabKey charting types and charting wizard.");
+            serviceMessage.append("Here is some reference material formatted as markdown:\n").append(getChartBuilderAgentHelp()).append("\n\n");
+            serviceMessage.append("Please be sure to include the generated spec object in a code tag so that I can find it and parse it from the response.\n");
+            serviceMessage.append("The actual data object/array will be provided on the client side before the chart is rendered. " +
+                    "So when you generate temp data for your spec, you can fake it using the fieldKeys and types in the QueryInfo object that will be provide, " +
+                    "but make sure to use the same fieldKey names and data types in your generated spec as the ones in the QueryInfo object.\n");
+            return serviceMessage.toString();
+        }
+
+        String getChartBuilderAgentHelp()
+        {
+            try
+            {
+                return IOUtils.resourceToString("org/labkey/query/controllers/ChartBuilderAgentHelp.md", null, QueryController.class.getClassLoader());
+            }
+            catch (IOException x)
+            {
+                throw new ConfigurationException("error loading resource", x);
+            }
+        }
+    }
 }
