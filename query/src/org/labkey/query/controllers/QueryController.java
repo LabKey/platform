@@ -9025,10 +9025,6 @@ public class QueryController extends SpringActionController
                     "You can ignore any of the information that you know about LabKey chart types and its visualization \n" +
                     "library since we are creating Vega-Lite charts here (which are unrelated to the LabKey charting types and charting wizard.");
             serviceMessage.append("Here is some reference material formatted as markdown:\n").append(getChartBuilderAgentHelp()).append("\n\n");
-            serviceMessage.append("Please be sure to include the generated spec object in a code tag so that I can find it and parse it from the response.\n");
-            serviceMessage.append("The actual data object/array will be provided on the client side before the chart is rendered. " +
-                    "So when you generate temp data for your spec, you can fake it using the fieldKeys and types in the QueryInfo object that will be provide, " +
-                    "but make sure to use the same fieldKey names and data types in your generated spec as the ones in the QueryInfo object.\n");
             return serviceMessage.toString();
         }
 
