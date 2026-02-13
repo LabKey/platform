@@ -50,9 +50,22 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
-/**
- * Holds both the SQL text and JDBC parameter values to use during invocation.
- */
+/// A composable SQL builder that pairs SQL text with its JDBC parameter values, ensuring
+/// they travel together through query construction. Implements [Appendable] and
+/// [CharSequence] for fluent assembly of SQL statements.
+///
+/// Provides type-safe `appendValue()` methods for inlining literals of common
+/// types (integers, strings, dates, GUIDs, etc.) and `add()` methods for binding
+/// JDBC `?` parameters. Fragments can be composed via `append(SQLFragment)` to
+/// merge both SQL text and parameter lists.
+///
+/// Supports Common Table Expressions (CTEs) through
+/// [#addCommonTableExpression(SqlDialect, Object, String, SQLFragment)], which
+/// manages deduplication, token substitution, and correct ordering of WITH clauses
+/// across nested and combined fragments.
+///
+/// Enforces basic SQL injection safeguards by rejecting unmatched quotes and
+/// semicolons in appended text.
 public class SQLFragment implements Appendable, CharSequence
 {
     public static final String FEATUREFLAG_DISABLE_STRICT_CHECKS  = "sqlfragment-disable-strict-checks";

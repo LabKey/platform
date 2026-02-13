@@ -26,14 +26,20 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-/**
- * User: matthewb
- * Date: May 16, 2011
- *
- *  Sticking with the jdbc style 1-based indexing
- *
- *  Column 0 is the row number, used for error reporting
- */
+/// A cursor-style interface for iterating over tabular row data, analogous to
+/// [java.sql.ResultSet] but designed for LabKey's ETL and import pipelines.
+/// Extends [DataIteratorBuilder] (so it can return itself) and [Closeable].
+///
+/// Columns use JDBC-style **1-based indexing**. Column 0 is reserved for the
+/// row number, used for error reporting. Call `next()` to advance the cursor,
+/// then `getSupplier(int)` to obtain a `Supplier` for retrieving column values.
+/// Prefer `getSupplier(int)` over `get(int)`. Values may be `null`,
+/// a real value, or an `MvFieldWrapper` for missing-value indicators.
+///
+/// Implementations are typically composed into a processing pipeline where each
+/// `DataIterator` wraps another, adding transformations such as coercion,
+/// validation, deduplication, or auditing (see [WrapperDataIterator],
+/// [CoerceDataIterator], [DetailedAuditLogDataIterator], etc.).
 public interface DataIterator extends DataIteratorBuilder, Closeable
 {
     String ROWNUMBER_COLUMNNAME = "_rowNumber";        // TODO change to something like DataIterator.class().getName() + "#_rowNumber"
