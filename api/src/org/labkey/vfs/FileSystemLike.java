@@ -28,38 +28,50 @@ import java.util.Map;
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 import static org.labkey.api.util.FileUtil.FILE_SCHEME;
 
-/**
- * In LabKey most files are accessed within a directory with a particular role.  For instance, a directory might be:
- * <br>
- *  - a pipeline root used for storing assay files
- * <br>
- *  - a temporary working directory used for assay import or a report
- * <br>
- *  - a directory with configuration files
- * <p/>
- * In any of these scenarios the code using that directory usually does not need access to files _outside_ that directory.
- * Using java.io.File makes it difficult to enforce this.  Instead of this common pattern
- * <pre>
- *      File workingdir = new File("tempdir");
- *      File file = new File(workingdir, anypath))
- * </pre>
- * We can now follow this pattern, which validates the scope of the resolved path.
- * <pre>
- *     FileLike workingdir = new FileSystemLike.Builder("tempdir").readwrite().root();
- *     FileLike file = workingdir.resolveFile(anypath);
- * </pre>
- *
- * <p/>
- * implementation notes:
- * - This is meant to be a wrapper over java.nio.file.Path, java.io.File or org.apache.commons.vfs2.FileObject or other implementations.
- *   However, it is still lower level than Resource.  For instance, it does not know about Permissions or ContentType, etc.
- * <br>
- * - FileLike objects always present String path and util.Path relative to the FileSystemLike root.
- *   If the FileLike wraps a local path, toNioPath() can be used.
- * <br>
- * - These classes generally do not cache metadata, but the wrapped impl might.  This is why FileLike has a reset() method.
- * - Caching versions can be explicitly requested.
- */
+/// A scoped virtual file system that constrains file access to a particular root directory.
+///
+/// In LabKey, files are typically accessed within a directory that has a specific role, such as:
+/// - A pipeline root for storing assay files
+/// - A temporary working directory for assay import or a report
+/// - A directory containing configuration files
+///
+/// Code working within these directories usually does not need access to files outside the root.
+/// Using `java.io.File` makes it difficult to enforce this boundary. Instead of:
+///
+/// ```java
+/// File workingdir = new File("tempdir");
+/// File file = new File(workingdir, anypath);  // no path validation!
+/// ```
+///
+/// Use `FileSystemLike`, which validates that resolved paths stay within scope:
+///
+/// ```java
+/// FileLike workingdir = new FileSystemLike.Builder("tempdir").readwrite().root();
+/// FileLike file = workingdir.resolveFile(anypath);  // throws if path escapes root
+/// ```
+///
+/// ### Builder examples
+///
+/// ```java
+/// // Read-only access to a directory
+/// FileLike root = new FileSystemLike.Builder(path).readonly().root();
+///
+/// // Temporary working directory (read-write, root is deletable)
+/// FileLike tmp = new FileSystemLike.Builder(tempDir).tempDir().root();
+///
+/// // Caching file system (caches metadata like type and children)
+/// FileLike root = new FileSystemLike.Builder(path).readonly().caching().root();
+/// ```
+///
+/// ### Implementation notes
+///
+/// - Wraps `java.nio.file.Path`, `java.io.File`, `org.apache.commons.vfs2.FileObject`, or other
+///   backends. Lower level than `Resource` — has no concept of Permissions or ContentType.
+/// - [FileLike] objects present paths relative to the `FileSystemLike` root.
+///   Use `toNioPath()` to obtain a local path when the backing store is local.
+/// - Metadata is generally not cached, but the underlying implementation may cache.
+///   Use [FileLike#refresh] to force a reload. Caching can be explicitly requested
+///   via [Builder#caching] or [#getCachingFileSystem].
 public interface FileSystemLike
 {
     // NOTE: a full webdav path consist of case-sensitive and case-insensitive parts

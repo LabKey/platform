@@ -145,7 +145,7 @@ public class Sort
 
         public String toUrlString()
         {
-            return (_dir == SortDirection.ASC ? "" : "-") + _fieldKey.toString();
+            return (_dir == SortDirection.ASC ? "+" : "-") + _fieldKey.toString();
         }
 
         private SQLFragment toOrderByFragment(SqlDialect dialect, DatabaseIdentifier alias)
