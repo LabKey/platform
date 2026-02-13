@@ -27,6 +27,14 @@
       background-color: lightgray;
     }
 
+    .loading-spinner {
+      margin: 8px 0;
+    }
+
+    .loading-spinner--hidden {
+      display: none;
+    }
+
 </style>
 <labkey:script>
 function startChatting(chatEndpoint)
@@ -79,18 +87,23 @@ function startChatting(chatEndpoint)
             {
                 appendTextResponse('Request failed: ' + req.status + ' ' + (req.statusText || ''));
             }
+
+            const loadingSpinner = document.querySelector('.loading-spinner');
+            loadingSpinner.classList.add('loading-spinner--hidden');
         }
     }
 
     function sendMessage(prompt)
     {
-            var url = new URL(chatEndpoint);
-            url.searchParams.set('prompt', prompt);
-            var req = new XMLHttpRequest();
-            req.open('GET', url.toString(), true);
-            req.onreadystatechange = handleChatResponse;
-            req.send();
-        }
+        var url = new URL(chatEndpoint);
+        url.searchParams.set('prompt', prompt);
+        var req = new XMLHttpRequest();
+        req.open('GET', url.toString(), true);
+        req.onreadystatechange = handleChatResponse;
+        req.send();
+        const loadingSpinner = document.querySelector('.loading-spinner');
+        loadingSpinner.classList.remove('loading-spinner--hidden');
+    }
 
     let firstChat = true;
     elPrompt.addEventListener('keydown', function (ev)
@@ -120,4 +133,9 @@ LABKEY.Utils.onReady(function()
 </labkey:script>
 
 <div id="chatHistory"></div>
+
+<div class="loading-spinner loading-spinner--hidden">
+    <span aria-hidden="true" class="fa fa-spinner fa-pulse"></span>
+</div>
+
 <textarea id="chatPrompt" style="height:100px; width:100%;" placeholder="Shift-Enter to submit"></textarea>

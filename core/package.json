@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.16.1-fb-mvtc-convert.2",
+    "@labkey/components": "7.16.1",
     "@labkey/themes": "1.6.0"
   },
   "devDependencies": {
