@@ -466,6 +466,7 @@ dependencies {
         )
     )
 
+    // Jackson 2
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
@@ -1078,6 +1079,19 @@ dependencies {
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "LLM Chat Client integration for Claude"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.springframework.ai:spring-ai-openai:${springAiVersion}",
+            "spring-ai-openai",
+            "spring-ai",
+            "https://github.com/spring-projects/spring-ai",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "LLM Chat Client integration for ChatGPT"
         )
     )
 

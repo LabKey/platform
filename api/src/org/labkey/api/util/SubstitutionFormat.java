@@ -84,6 +84,7 @@ public class SubstitutionFormat
                 return date.format(value);
             else if (value instanceof Date dateVal)
             {
+                // both date and datetime column type are of type Date, format based on time portion of the date value
                 LocalDateTime ldt = LocalDateTime.ofInstant(dateVal.toInstant(), ZoneId.systemDefault());
                 boolean isDateOnly = ldt.toLocalTime().equals(java.time.LocalTime.MIDNIGHT);
 

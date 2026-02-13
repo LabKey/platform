@@ -40,6 +40,14 @@ import jakarta.servlet.jsp.HttpJspPage;
 import java.util.Map;
 
 
+/// A view that renders a JSP page, optionally with a typed model object and validation errors.
+///
+/// ```java
+/// // Render a JSP with a model bean
+/// JspView<MyForm> view = new JspView<>("/org/labkey/mymodule/view/myPage.jsp", form);
+/// ```
+///
+/// @param <ModelClass> the type of the model object accessible from the JSP via `getModelBean()`
 public class JspView<ModelClass> extends WebPartView<ModelClass>
 {
     protected String _path;

@@ -23,10 +23,15 @@ import org.commonmark.ext.heading.anchor.HeadingAnchorExtension;
 import org.commonmark.ext.image.attributes.ImageAttributesExtension;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlNodeRendererContext;
 import org.commonmark.renderer.html.HtmlRenderer;
+import org.commonmark.renderer.html.CoreHtmlNodeRenderer;
+import org.commonmark.node.HtmlInline;
+import org.commonmark.node.HtmlBlock;
 import org.labkey.api.markdown.MarkdownService;
 
 import java.util.List;
+import java.util.Set;
 
 public class MarkdownServiceImpl implements MarkdownService
 {
@@ -55,8 +60,63 @@ public class MarkdownServiceImpl implements MarkdownService
             .softbreak("<br>\n")  // See Issue #34169
             .sanitizeUrls(true)
             .escapeHtml(true)
+            .nodeRendererFactory(CommentNodeRenderer::new)
             .extensions(extensions)
             .build();
+    }
+
+    private static class CommentNodeRenderer extends CoreHtmlNodeRenderer
+    {
+        private final HtmlNodeRendererContext _context;
+
+        public CommentNodeRenderer(HtmlNodeRendererContext context)
+        {
+            super(context);
+            _context = context;
+        }
+
+        @Override
+        public Set<Class<? extends Node>> getNodeTypes()
+        {
+            return Set.of(HtmlInline.class, HtmlBlock.class);
+        }
+
+        @Override
+        public void render(Node node)
+        {
+            if (node instanceof HtmlInline inline)
+            {
+                String literal = inline.getLiteral();
+                if (isComment(literal))
+                {
+                    _context.getWriter().raw(literal);
+                }
+                else
+                {
+                    _context.getWriter().text(literal);
+                }
+            }
+            else if (node instanceof HtmlBlock block)
+            {
+                String literal = block.getLiteral();
+                if (isComment(literal))
+                {
+                    _context.getWriter().raw(literal);
+                }
+                else
+                {
+                    _context.getWriter().tag("p");
+                    _context.getWriter().text(literal);
+                    _context.getWriter().tag("/p");
+                    _context.getWriter().line();
+                }
+            }
+        }
+
+        private boolean isComment(String literal)
+        {
+            return literal != null && literal.trim().startsWith("<!--") && literal.trim().endsWith("-->");
+        }
     }
 
     @Override

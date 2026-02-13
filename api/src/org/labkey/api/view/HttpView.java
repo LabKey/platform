@@ -52,11 +52,54 @@ import java.util.Stack;
 import java.util.function.Supplier;
 
 
-/**
- * BEWARE: Our shorts are showing a bit here. Our primary HTML components (aka views) are not spring Views.
- * Architecturally, they act like ModelAndView. We may want to fix this in the future, but we're moving forward with
- * this conceptual co-mingling for now.
- */
+/// Base class for LabKey's server-side HTML rendering components (views).
+///
+/// `HttpView` serves a dual role: it is both a Spring [View] (capable of rendering a response)
+/// and a [ModelAndView][org.springframework.web.servlet.ModelAndView] (carrying its own model bean
+/// of type `ModelBean`). This dual nature means an `HttpView` can be rendered directly by Spring's
+/// `DispatcherServlet` and can also be composed inside other views via [#include(ModelAndView)].
+///
+/// ## Subclassing
+///
+/// Subclasses typically override one of the `renderInternal` methods:
+///
+/// - [#renderInternal(Object, PrintWriter)] — for simple HTML output via a `PrintWriter`.
+/// - [#renderInternal(Object, HttpServletRequest, HttpServletResponse)] — when full access to the
+///   servlet request/response is needed (e.g., [JspView]).
+///
+/// ## View stack and thread-local context
+///
+/// During rendering, `HttpView` maintains a thread-local stack of active views
+/// ([ViewStackEntry] records). This allows any code running on the render thread to access
+/// the current request, response, [ViewContext], and [PageConfig] via static helpers:
+///
+/// - [#currentRequest()] / [#currentResponse()]
+/// - [#currentContext()] — the [ViewContext] of the innermost `HttpView` on the stack.
+/// - [#currentPageConfig()] — the active page configuration.
+/// - [#currentView()] / [#currentModel()]
+///
+/// The stack is pushed automatically in [#render] and can be initialized for non-view
+/// contexts (e.g., filters, servlets) via [#initForRequest].
+///
+/// ## Composition
+///
+/// Views can be nested using named child views stored in [#_views]:
+///
+/// - [#setBody] / [#getBody] — convenience accessors for the well-known `BODY` slot.
+/// - [#setView(String, ModelAndView)] / [#getView(String)] — arbitrary named slots.
+/// - [#include(ModelAndView)] — renders a child view inline within the current response.
+///
+/// ## Client dependencies
+///
+/// Each view can declare CSS/JS dependencies via [#addClientDependency]. These are
+/// aggregated recursively over the view tree by [#getClientDependencies()] so that page
+/// templates can emit the full set of required resources.
+///
+/// @param <ModelBean> the type of the model object this view renders
+/// @see WebPartView
+/// @see JspView
+/// @see HtmlView
+/// @see org.labkey.api.query.QueryView
 public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean> implements View, HasViewContext
 {
     private static final int _debug = Debug.getLevel(HttpView.class);

@@ -35,6 +35,13 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
+import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.ai.openai.OpenAiEmbeddingModel;
+import org.springframework.ai.openai.OpenAiEmbeddingOptions;
+import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.ai.document.MetadataMode;
+import org.springframework.ai.anthropic.api.AnthropicApi;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
@@ -46,6 +53,7 @@ import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
@@ -53,9 +61,15 @@ import org.springframework.ai.google.genai.GoogleGenAiEmbeddingConnectionDetails
 import org.springframework.ai.google.genai.text.GoogleGenAiTextEmbeddingModel;
 import org.springframework.ai.google.genai.text.GoogleGenAiTextEmbeddingOptions;
 import org.springframework.ai.mcp.McpToolUtils;
+import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.definition.ToolDefinition;
+import org.springframework.ai.tool.metadata.ToolMetadata;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import reactor.core.publisher.Mono;
@@ -108,11 +122,21 @@ public class McpServiceImpl implements McpService
         {
             model = new _ClaudeProvider();
         }
+        if (isNotBlank(System.getenv("OPENAI_API_KEY")))
+        {
+            var openai = new _ChatGptProvider();
+            if (null == embedding)
+                embedding = openai;
+            if (null == model)
+                model = openai;
+        }
         if (isNotBlank(System.getenv("GEMINI_API_KEY")))
         {
-            embedding = new _GeminiProvider();
+            var gemini = new _GeminiProvider();
+            if (null == embedding)
+                embedding = gemini;
             if (null == model)
-                model = new _GeminiProvider();
+                model = gemini;
         }
         modelProvider = model;
         embeddingProvider = embedding;
@@ -154,7 +178,7 @@ public class McpServiceImpl implements McpService
     @Override
     public void registerTools(@NotNull List<ToolCallback> tools)
     {
-        tools.forEach(tool -> toolMap.put(tool.getToolDefinition().name(), tool));
+        tools.forEach(tool -> toolMap.put(tool.getToolDefinition().name(), new _LoggingToolCallback(tool)));
     }
 
     @Override
@@ -300,40 +324,151 @@ public class McpServiceImpl implements McpService
     }
 
 
+    /** Delegating wrapper that logs vector store similarity searches */
+    private static class _LoggingVectorStore implements VectorStore
+    {
+        private final VectorStore delegate;
+
+        _LoggingVectorStore(VectorStore delegate)
+        {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void add(List<Document> documents)
+        {
+            delegate.add(documents);
+        }
+
+        @Override
+        public void delete(Filter.Expression filterExpression)
+        {
+            delegate.delete(filterExpression);
+        }
+
+        @Override
+        public void delete(List<String> idList)
+        {
+            delegate.delete(idList);
+        }
+
+        @Override
+        public List<Document> similaritySearch(SearchRequest request)
+        {
+            LOG.info("Vector store search: query=\"{}\"", request.getQuery());
+            List<Document> results = delegate.similaritySearch(request);
+            if (results.isEmpty())
+            {
+                LOG.info("Vector store search returned no results");
+            }
+            else
+            {
+                LOG.info("Vector store search returned {} result(s):", results.size());
+                for (Document doc : results)
+                {
+                    String content = doc.getText();
+                    String snippet = content.length() > 200 ? content.substring(0, 200) + "..." : content;
+                    LOG.info("  - [{}] {}", doc.getMetadata(), snippet);
+                }
+            }
+            return results;
+        }
+
+        @Override
+        public String getName()
+        {
+            return delegate.getName();
+        }
+    }
+
+
     @Override
-    public ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
+    public ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier, boolean createIfNotExists)
     {
         if (!serverReady)
             return null;
 
-        return SessionHelper.getAttribute(session, ChatClient.class.getName() + "#" + agentName, () ->
+        String sessionKey = ChatClient.class.getName() + "#" + agentName;
+        if (createIfNotExists)
         {
-            String systemPrompt = systemPromptSupplier.get();
-            String conversationId = session.getId() + ":" + agentName;
-            List<Advisor> advisors = new ArrayList<>();
-
-            ChatMemory chatMemory = MessageWindowChatMemory.builder()
-                    .maxMessages(100)
-                    .chatMemoryRepository(chatMemoryRepository)
-                    .build();
-
-            MessageChatMemoryAdvisor chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory)
-                    .conversationId(conversationId)
-                    .build();
-            advisors.add(chatMemoryAdvisor);
-
-            VectorStore vs = getVectorStore();
-            if (null != vs)
-                advisors.add(QuestionAnswerAdvisor.builder(vs).build());
-
-            return ChatClient.builder(modelProvider.getChatModel())
-                    .defaultOptions(modelProvider.getChatOptions())
-                    .defaultAdvisors(advisors)
-                    .defaultSystem(systemPrompt)
-                    .build();
-        });
+            return SessionHelper.getAttribute(session, sessionKey, () ->
+                    {
+                        var springClient = createSpringChat(session, agentName, systemPromptSupplier);
+                        return new _ChatClient(springClient, sessionKey);
+                    });
+        }
+        return SessionHelper.getAttribute(session, sessionKey, null);
     }
 
+    private ChatClient createSpringChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
+    {
+        String systemPrompt = systemPromptSupplier.get();
+        String conversationId = session.getId() + ":" + agentName;
+        List<Advisor> advisors = new ArrayList<>();
+
+        ChatMemory chatMemory = MessageWindowChatMemory.builder()
+                .maxMessages(100)
+                .chatMemoryRepository(chatMemoryRepository)
+                .build();
+
+        MessageChatMemoryAdvisor chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory)
+                .conversationId(conversationId)
+                .build();
+        advisors.add(chatMemoryAdvisor);
+
+        VectorStore vs = getVectorStore();
+        if (null != vs)
+            advisors.add(QuestionAnswerAdvisor.builder(new _LoggingVectorStore(vs)).build());
+
+        return ChatClient.builder(modelProvider.getChatModel())
+                .defaultOptions(modelProvider.getChatOptions())
+                .defaultAdvisors(advisors)
+                .defaultSystem(systemPrompt)
+                .build();
+    }
+
+    private class _ChatClient implements ChatClient
+    {
+        final ChatClient springClient;
+        final String key;
+        _ChatClient(ChatClient client, String key)
+        {
+            this.springClient = client;
+            this.key = key;
+        }
+
+        @Override
+        public ChatClientRequestSpec prompt()
+        {
+            return springClient.prompt();
+        }
+
+        @Override
+        public ChatClientRequestSpec prompt(String content)
+        {
+            return springClient.prompt(content);
+        }
+
+        @Override
+        public ChatClientRequestSpec prompt(Prompt prompt)
+        {
+            return springClient.prompt(prompt);
+        }
+
+        @Override
+        public Builder mutate()
+        {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    @Override
+    public void close(HttpSession session, ChatClient chat)
+    {
+        if (null == chat)
+            return;
+        session.removeAttribute(((_ChatClient)chat).key);
+    }
 
     @Override
     public MessageResponse sendMessage(ChatClient chatSession, String message)
@@ -477,7 +612,6 @@ public class McpServiceImpl implements McpService
 
         ChatModel getChatModel();
 
-//        ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier);
         EmbeddingModel createEmbeddingModel();
     }
 
@@ -490,11 +624,11 @@ public class McpServiceImpl implements McpService
         @Override
         public String getModel()
         {
-            return "gemini-2.5-flash";
+//            return "gemini-2.5-flash";
             // gemini-2.5-flash
             // gemini-2.5-pro
             // gemini-3-flash-preview
-            // gemini-3-pro-preview
+            return "gemini-3-pro-preview";
         }
 
         @Override
@@ -562,12 +696,49 @@ public class McpServiceImpl implements McpService
     }
 
 
+    private static class _LoggingToolCallback implements ToolCallback
+    {
+        private final ToolCallback delegate;
+
+        _LoggingToolCallback(ToolCallback delegate)
+        {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public ToolDefinition getToolDefinition()
+        {
+            return delegate.getToolDefinition();
+        }
+
+        @Override
+        public ToolMetadata getToolMetadata()
+        {
+            return delegate.getToolMetadata();
+        }
+
+        @Override
+        public String call(String toolInput)
+        {
+            LOG.info("MCP tool invoked: {}", delegate.getToolDefinition().name());
+            return delegate.call(toolInput);
+        }
+
+        @Override
+        public String call(String toolInput, ToolContext toolContext)
+        {
+            LOG.info("MCP tool invoked: {}", delegate.getToolDefinition().name());
+            return delegate.call(toolInput, toolContext);
+        }
+    }
+
+
     class _ClaudeProvider implements _ModelProvider
     {
         @Override
         public String getModel()
         {
-            return "claude-3-5-sonnet-20241022";
+            return "claude-sonnet-4-5-20250929";
         }
 
         @Override
@@ -590,9 +761,11 @@ public class McpServiceImpl implements McpService
         public AnthropicChatModel getChatModel()
         {
             AnthropicChatOptions chatOptions = getChatOptions();
-
+            AnthropicApi api = AnthropicApi.builder()
+                    .apiKey(System.getenv("CLAUDE_API_KEY"))
+                    .build();
             AnthropicChatModel chatModel = AnthropicChatModel.builder()
-                    .defaultOptions(chatOptions)
+                    .anthropicApi(api)
                     .build();
             return chatModel;
         }
@@ -601,6 +774,57 @@ public class McpServiceImpl implements McpService
         public EmbeddingModel createEmbeddingModel()
         {
             return null;
+        }
+    }
+
+    class _ChatGptProvider implements _ModelProvider
+    {
+        @Override
+        public String getModel()
+        {
+            return "gpt-4o";
+        }
+
+        @Override
+        public String getEmbeddingModel()
+        {
+            return "text-embedding-3-small";
+        }
+
+        @Override
+        public OpenAiChatOptions getChatOptions()
+        {
+            return OpenAiChatOptions.builder()
+                    .model(getModel())
+                    .toolCallbacks(getToolCallbacks())
+                    .build();
+        }
+
+        @Override
+        public OpenAiChatModel getChatModel()
+        {
+            OpenAiApi openAiApi = OpenAiApi.builder()
+                    .apiKey(System.getenv("OPENAI_API_KEY"))
+                    .build();
+
+            return OpenAiChatModel.builder()
+                    .openAiApi(openAiApi)
+                    .defaultOptions(getChatOptions())
+                    .build();
+        }
+
+        @Override
+        public EmbeddingModel createEmbeddingModel()
+        {
+            OpenAiApi openAiApi = OpenAiApi.builder()
+                    .apiKey(System.getenv("OPENAI_API_KEY"))
+                    .build();
+
+            OpenAiEmbeddingOptions embeddingOptions = OpenAiEmbeddingOptions.builder()
+                    .model(getEmbeddingModel())
+                    .build();
+
+            return new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED, embeddingOptions);
         }
     }
 }

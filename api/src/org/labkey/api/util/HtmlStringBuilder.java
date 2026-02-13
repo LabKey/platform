@@ -19,6 +19,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.regex.Pattern;
 
+/// A mutable builder for constructing an [HtmlString] incrementally. Plain `String` arguments
+/// passed to [#append(String)] are automatically HTML-encoded; pre-encoded [HtmlString] values
+/// are appended as-is. Call [#getHtmlString()] to obtain the final immutable [HtmlString].
+///
+/// For structured HTML with elements and attributes, prefer the [DOM] DSL instead.
+///
+/// @see HtmlString
+/// @see DOM
 public class HtmlStringBuilder implements HasHtmlString, SafeToRender
 {
     private final StringBuilder _sb = new StringBuilder();
