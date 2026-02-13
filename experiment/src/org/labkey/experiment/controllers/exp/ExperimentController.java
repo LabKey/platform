@@ -8392,6 +8392,8 @@ public class ExperimentController extends SpringActionController
             {
                 ChatClient chatClient = getChat(true);
                 String prompt = form.getPrompt();
+                if (prompt == null)
+                    prompt = "";
                 if (!prompt.startsWith("What is wrong") && (!prompt.startsWith("Generate") || !prompt.startsWith("Create")))
                     prompt = "Generate a naming pattern for samples " + prompt;
                 if (_form.getRowId() != null && _form.getDomainType() != null && _form.getDomainType().equals("SampleSet"))
