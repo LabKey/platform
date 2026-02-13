@@ -8821,6 +8821,109 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    @RequiresLogin
+    public static class SampleFinderAgentAction extends AbstractAgentAction
+    {
+        @Override
+        protected String getAgentName()
+        {
+            return SampleFinderAgentAction.class.getName();
+        }
+
+        @Override
+        protected String getServicePrompt()
+        {
+            StringBuilder serviceMessage = new StringBuilder();
+            serviceMessage.append("Your job is to convert user entered search text to formatted JSON object that can be used by LabKey Server to construct Sample Finder searches.  Here is some reference material formatted as markdown:\n").append(getHelp()).append("\n\n");
+            serviceMessage.append("NOTE: Please return response in JSON format.\n");
+
+            return serviceMessage.toString();
+        }
+
+        String getHelp()
+        {
+            try
+            {
+                return IOUtils.resourceToString("org/labkey/query/controllers/SampleFinderPromptGuide.md", null, QueryController.class.getClassLoader());
+            }
+            catch (IOException x)
+            {
+                throw new ConfigurationException("error loading resource", x);
+            }
+        }
+
+
+        @Override
+        public Object execute(PromptForm form, BindException errors) throws Exception
+        {
+            try (var mcpPush = McpContext.withContext(getViewContext()))
+            {
+                ChatClient chatSession = getChat();
+                if (null == chatSession)
+                    return new JSONObject(Map.of(
+                            "contentType", "text/plain",
+                            "response", "Service is not ready yet",
+                            "success", Boolean.FALSE));
+
+                String prompt = form.getPrompt();
+                McpService.MessageResponse response = McpService.get().sendMessage(chatSession, prompt);
+                var ret = new JSONObject(Map.of("success", Boolean.TRUE));
+
+                if (isNotBlank(response.text()))
+                {
+                    // validate response.text() is parseable JSON and contains expected keys before returning success=true
+                    String responseText = null;
+                    try
+                    {
+                        responseText = response.text();
+
+                        if (responseText.startsWith("```json") && responseText.endsWith("```"))
+                            responseText = responseText.substring(7, responseText.length() - 3);
+
+                        JSONObject json = new JSONObject(responseText);
+                        if (!json.has("filters") || !json.has("filters"))
+                            throw new IllegalArgumentException("Invalid Sample Finder config.");
+                    }
+                    catch (JSONException x)
+                    {
+                        ret.put("success", Boolean.FALSE);
+                        ret.put("contentType", "text/plain");
+                        ret.put("response", responseText);
+                        return ret;
+                    }
+
+                    ret.put("contentType", "application/json");
+                    ret.put("response", responseText);
+                }
+                else
+                {
+                    ret.put("success", Boolean.FALSE);
+                    ret.put("contentType", "text/plain");
+                    ret.put("response", "Unable to generate Sample Finder query.");
+                }
+                return ret;
+
+            }
+            catch (ServerException x)
+            {
+                return new JSONObject(Map.of(
+                        "error", x.getMessage(),
+                        "text", "ERROR: " + x.getMessage(),
+                        "success", Boolean.FALSE));
+            }
+            catch (ClientException ex)
+            {
+                var ret = new JSONObject(Map.of(
+                        "text", ex.getMessage(),
+                        "user", getViewContext().getUser().getName(),
+                        "success", Boolean.FALSE));
+                return ret;
+            }
+        }
+
+    }
+
 
     @RequiresPermission(ReadPermission.class)
     @RequiresLogin
