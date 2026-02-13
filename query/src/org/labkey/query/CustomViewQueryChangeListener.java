@@ -15,13 +15,13 @@
  */
 package org.labkey.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewChangeListener;
 import org.labkey.api.query.CustomViewInfo;
@@ -31,10 +31,7 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
-import org.labkey.api.exp.PropertyType;
 
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -117,8 +114,11 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                     for (String filterPart : filterComponents)
                     {
                         String updatedPart = QueryChangeListener.getUpdatedFilterStrOnColumnTypeUpdate(filterPart, "filter", columnName, oldDp, newDp);
-                        updatedFilterAndSort.append(sep).append(updatedPart);
-                        sep = "&";
+                        if (!StringUtils.isEmpty(updatedPart))
+                        {
+                            updatedFilterAndSort.append(sep).append(updatedPart);
+                            sep = "&";
+                        }
                     }
 
                     String updatedFilterAndSortStr = updatedFilterAndSort.toString();
