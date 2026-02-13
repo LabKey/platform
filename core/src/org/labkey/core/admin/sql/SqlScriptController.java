@@ -62,12 +62,15 @@ import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.CsrfInput;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.QuietCloser;
+import org.labkey.api.util.SqlUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
@@ -599,7 +602,6 @@ public class SqlScriptController extends SpringActionController
         private final List<SqlScript> _scripts;
         private final double _targetFrom;
         private final double _targetTo;
-        private final double _actualTo;
 
         private Collection<String> _errors = null;
 
@@ -610,7 +612,6 @@ public class SqlScriptController extends SpringActionController
             _targetFrom = targetFrom;
             _targetTo = targetTo;
             _scripts = SqlScriptManager.get(provider, schema).getRecommendedScripts(provider.getScripts(schema), targetFrom, targetTo);
-            _actualTo = _scripts.isEmpty() ? -1 : _scripts.getLast().getToVersion();
         }
 
         private List<SqlScript> getScripts()
@@ -1122,11 +1123,20 @@ public class SqlScriptController extends SpringActionController
         {
             out.println(PageFlowUtil.button("Reorder Script").href(getScriptURL(ReorderScriptAction.class, script)));
             if (McpService.get().isReady())
+            {
                 out.println(
                     PageFlowUtil.button("Clean Up Script")
                         .href(getScriptURL(CleanUpScriptAction.class, script))
                         .tooltip("Remove redundant and unnecessary statements. This uses AI, so it may take some time and its results must be carefully reviewed.")
                 );
+                SqlDialect dialect = script.getSchema().getSqlDialect();
+                String theOther = getTheOtherDialectDescription(script.getSchema().getSqlDialect());
+                out.println(
+                    PageFlowUtil.button("Migrate to " + theOther)
+                        .href(getScriptURL(MigrateScriptAction.class, script))
+                        .tooltip("Migrate this " + dialect.getProductName() + " SQL script to " + theOther + " syntax. This uses AI, so it may take some time and its results must be carefully reviewed.")
+                );
+            }
         }
     }
 
@@ -1223,14 +1233,23 @@ public class SqlScriptController extends SpringActionController
         {
             ScriptReorderer reorderer = new ScriptReorderer(script.getSchema(), script.getContents());
             String reorderedScript = reorderer.getReorderedScript(false);
-            throw new RedirectException(saveScript(script, reorderedScript));
+            throw new RedirectException(saveScript(script, reorderedScript, null));
         }
     }
 
     // Save the new script contents to the specified script file and return an ActionURL to show it
-    private ActionURL saveScript(SqlScript script, String newContents) throws IOException
+    private ActionURL saveScript(SqlScript script, String newContents, @Nullable File scriptDir) throws IOException
     {
-        ((FileSqlScriptProvider)script.getProvider()).saveScript(script.getSchema(), script.getDescription(), newContents, true);
+        FileSqlScriptProvider provider = (FileSqlScriptProvider) script.getProvider();
+        if (scriptDir == null)
+        {
+            scriptDir = provider.getScriptDirectory(script.getSchema().getSqlDialect());
+        }
+        else if (!scriptDir.exists())
+        {
+            FileUtil.mkdir(scriptDir);
+        }
+        provider.saveScript(script.getDescription(), newContents, scriptDir, true);
         return getScriptURL(ScriptAction.class, script);
     }
 
@@ -1254,17 +1273,25 @@ public class SqlScriptController extends SpringActionController
                     responses
                         .forEach(r -> {
                             viewBuilder.append(r.html());
-                            String text = r.text();
-                            if (text.startsWith("```sql\n") && text.endsWith("```"))
-                            {
-                                newContents.append(text, 7, text.length() - 3); // Strip tick marks and language
-                            }
+                            String sql = SqlUtil.extractSql(r.text());
+                            if (sql != null)
+                                newContents.append(sql);
                         });
-                    viewBuilder.append(new ButtonBuilder("Save Updated Script to " + script.getDescription()).href(getSaveScriptActionURL(script, newContents.toString())).usePost());
+                    viewBuilder.append(new ButtonBuilder("Save Updated Script to " + script.getDescription()).href(getSaveScriptActionURL(script, newContents.toString(), null)).usePost());
                     return new HtmlView(viewBuilder);
                 }
             }
             return new HtmlView(HtmlString.of("McpService is not ready"));
+        }
+
+        // Stashes the script contents in session and returns an ActionURL to the save action
+        protected ActionURL getSaveScriptActionURL(SqlScript script, String newContents, @Nullable File scriptsDir)
+        {
+            HttpSession session = getViewContext().getSession();
+            String key = Crypt.SHA256.digest(script.getDescription() + newContents);
+            session.setAttribute(key, new ScriptToSave(script, newContents, scriptsDir));
+
+            return new ActionURL(SaveScriptAction.class, ContainerManager.getRoot()).addParameter("key", key);
         }
 
         abstract protected String getPrompt(SqlDialect dialect, SqlScript script);
@@ -1286,10 +1313,10 @@ public class SqlScriptController extends SpringActionController
         Please do the following:
         - Consolidate all iterative changes (column additions, PK changes, and renames) into the initial CREATE TABLE statements.
         - Remove unnecessary DROP TABLE statements and core.fn_dropifexists calls, for example, those that come before a table has been created.
-        - Remove all intermediate DROP or ALTER statements that are superseded by later logic.
+        - Remove all intermediate DROP and ALTER statements that are superseded by later logic.
         - Remove CREATE TABLE and ALTER TABLE statements followed by DROP TABLE or and core.fn_dropifexists 'TABLE' call on that same table.
         
-        Include a summary of the changes you made.
+        Include a summary of the changes you made at the end.
         """;
 
     @RequiresPermission(AdminOperationsPermission.class)
@@ -1316,17 +1343,54 @@ public class SqlScriptController extends SpringActionController
         }
     }
 
-    private record ScriptToSave(SqlScript script, String contents) {}
-
-    // Stashes the script contents in session and returns an ActionURL to the save action
-    private ActionURL getSaveScriptActionURL(SqlScript script, String newContents)
+    private static String getTheOtherDialectDescription(SqlDialect dialect)
     {
-        HttpSession session = getViewContext().getSession();
-        String key = Crypt.SHA256.digest(script.getDescription() + newContents);
-        session.setAttribute(key, new ScriptToSave(script, newContents));
-
-        return new ActionURL(SaveScriptAction.class, ContainerManager.getRoot()).addParameter("key", key);
+        return dialect.isPostgreSQL() ? "Microsoft SQL Server" : "PostgreSQL";
     }
+
+    private static String getTheOtherScriptDir(SqlDialect dialect)
+    {
+        return dialect.isPostgreSQL() ? "sqlserver" : "postgresql";
+    }
+
+    private static final String MIGRATE_TO_PG_PROMPT = """
+        Include a summary of the changes you made at the end.
+        """;
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class MigrateScriptAction extends BaseAIScriptAction
+    {
+        @Override
+        protected String getPrompt(SqlDialect dialect, SqlScript script)
+        {
+            String youAre = "You are an expert in Microsoft SQL Server T-SQL and PostgreSQL SQL.\n";
+            String yourTask = "Given this " + dialect.getProductName() + " SQL script, create an equivalent SQL script that's compatible with " + getTheOtherDialectDescription(dialect) + ".\n";
+            return youAre + yourTask + MIGRATE_TO_PG_PROMPT;
+        }
+
+        @Override
+        protected String getChatName()
+        {
+            return "SQL Script Migrator";
+        }
+
+        @Override
+        protected String getActionDescription()
+        {
+            return "Migrate " + super.getActionDescription();
+        }
+
+        @Override
+        protected ActionURL getSaveScriptActionURL(SqlScript script, String newContents, @Nullable File scriptDir)
+        {
+            SqlDialect dialect = script.getSchema().getSqlDialect();
+            File dbscripts = ((FileSqlScriptProvider)script.getProvider()).getScriptDirectory(dialect).getParentFile();
+            scriptDir = FileUtil.appendPath(dbscripts, Path.parse(getTheOtherScriptDir(dialect)));
+            return super.getSaveScriptActionURL(script, newContents, scriptDir);
+        }
+    }
+
+    private record ScriptToSave(SqlScript script, String contents, @Nullable File scriptsDir) {}
 
     public static class SaveScriptForm
     {
@@ -1360,7 +1424,7 @@ public class SqlScriptController extends SpringActionController
         @Override
         public boolean handlePost(SaveScriptForm form, BindException errors) throws Exception
         {
-            _redirectURL = saveScript(_sts.script(), _sts.contents());
+            _redirectURL = saveScript(_sts.script(), _sts.contents(), _sts.scriptsDir());
             return true;
         }
 
