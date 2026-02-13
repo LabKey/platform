@@ -753,7 +753,6 @@ public class McpServiceImpl implements McpService
         {
             AnthropicChatOptions chatOptions = AnthropicChatOptions.builder()
                     .model(getModel())
-                    .maxTokens(4096)
                     .toolCallbacks(getToolCallbacks())
                     .build();
             return chatOptions;
