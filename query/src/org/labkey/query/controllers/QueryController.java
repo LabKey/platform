@@ -8878,15 +8878,26 @@ public class QueryController extends SpringActionController
 
             try (var _ = McpContext.withContext(getViewContext()))
             {
-                // TODO when/how to do we reset or isolate different chat sessions, e.g. if two SQL windows are open concurrently?
-                ChatClient chatSession = getChat();
                 String prompt = form.getPrompt();
+
+                String escapeResponse = handleEscape(prompt);
+                if (null != escapeResponse)
+                {
+                    return new JSONObject(Map.of(
+                            "contentType", "text/plain",
+                            "text", escapeResponse,
+                            "success", Boolean.TRUE));
+                }
+
+                // TODO when/how to do we reset or isolate different chat sessions, e.g. if two SQL windows are open concurrently?
+                ChatClient chatSession = getChat(true);
                 List<McpService.MessageResponse> responses;
                 SqlResponse sqlResponse;
 
                 if (isBlank(prompt))
                 {
                     return new JSONObject(Map.of(
+                        "contentType", "text/plain",
                         "text", "🤷",
                         "success", Boolean.TRUE));
                 }
