@@ -744,6 +744,7 @@ public class NameGenerator
             // GitHub Issue 827: Cannot aliquot samples where parent sample has a comma in the name AND the aliquot naming pattern references ancestor lineage
             if (ALIQUOTED_FROM_INPUT.equalsIgnoreCase(parentColName) || ALIQUOTED_FROM_INPUT_LABEL.equalsIgnoreCase(parentColName))
             {
+                // quotes might have already stripped at this point due to fix for issue 45563
                 boolean isQuoted = (valueStr.contains(",") || valueStr.contains("\n") || valueStr.contains("\r")) && (valueStr.startsWith("\"") && valueStr.endsWith("\""));
                 if (isQuoted)
                     valueStr = StringUtilsLabKey.unquoteString(valueStr).trim();
