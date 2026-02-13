@@ -26,10 +26,15 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
 
     protected abstract String getServicePrompt();
 
+    protected boolean useVectorStore()
+    {
+        return true;
+    }
+
     protected ChatClient getChat(boolean create)
     {
         HttpSession session = getViewContext().getRequest().getSession(true);
-        ChatClient chatSession = McpService.get().getChat(session, getAgentName(), this::getServicePrompt, create);
+        ChatClient chatSession = McpService.get().getChat(session, getAgentName(), this::getServicePrompt, create, useVectorStore());
         return chatSession;
     }
 

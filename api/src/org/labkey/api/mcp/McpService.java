@@ -81,6 +81,11 @@ public interface McpService extends ToolCallbackProvider
 
     ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier, boolean createIfNotExists);
 
+    default ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier, boolean createIfNotExists, boolean useVectorStore)
+    {
+        return getChat(session, agentName, systemPromptSupplier, createIfNotExists);
+    }
+
     void close(HttpSession session, ChatClient chat);
 
     record MessageResponse(String contentType, String text, HtmlString html) {}

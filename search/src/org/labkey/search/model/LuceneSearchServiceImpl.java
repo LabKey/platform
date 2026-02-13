@@ -867,9 +867,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             addTerms(doc, FIELD_NAME.keywordsMed, PROPERTY.keywordsMed, props, keywordsMed.toString());
             addTerms(doc, FIELD_NAME.keywordsHi, PROPERTY.keywordsHi, props, null);
 
-            // === Don't index, store ===
+            // === Index and store ===
+            // Title uses TextField (not StoredField) so it's both indexed and stored. This allows
+            // queries to match against the title directly, not just when it's copied into keywordsMed.
+            doc.add(new TextField(FIELD_NAME.title.toString(), title, Field.Store.YES));
 
-            doc.add(new StoredField(FIELD_NAME.title.toString(), title));
+            // === Don't index, store only ===
             doc.add(new StoredField(FIELD_NAME.summary.toString(), summary));
             doc.add(new StoredField(FIELD_NAME.url.toString(), url));
             if (null != props.get(PROPERTY.navtrail.toString()))
@@ -1641,6 +1644,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
         enumMap.put(FIELD_NAME.keywordsMed, 2.0f);
         enumMap.put(FIELD_NAME.identifiersMed, 2.0f);
+
+        enumMap.put(FIELD_NAME.title, 3.0f);
 
         enumMap.put(FIELD_NAME.keywordsHi, 4.0f);
         enumMap.put(FIELD_NAME.identifiersHi, 4.0f);

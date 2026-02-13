@@ -5,9 +5,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.TableDescription;
@@ -19,16 +21,21 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleSchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.query.sql.SqlParser;
 import org.springaicommunity.mcp.annotation.McpResource;
+import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
 import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,10 +43,9 @@ import java.util.TreeMap;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-/* TODO: integrate ToolContext support */
-
 public class QueryMcp implements McpService.McpImpl
 {
+    private static final Logger LOG = LogHelper.getLogger(QueryMcp.class, "MCP query tools");
     @McpResource(
             uri = "resource://org/labkey/query/controllers/LabKeySql.md",
             mimeType = "application/markdown",
@@ -57,44 +63,223 @@ public class QueryMcp implements McpService.McpImpl
     }
 
 
-    @Tool(description = "Provide column metadata for a sql table.  This tool will also return SQL source for saved queries.")
-    String listColumnMetaData(@ToolParam(description = "Fully qualified table name as it would appear in SQL e.g. \"schema\".\"table\"") String fullQuotedTableName)
+    private static String checkReadPermission(McpContext context)
     {
-        var json = _listColumnsForTable(fullQuotedTableName);
-        // can I just return a JSONObject
+        Container container = context.getContainer();
+        if (!container.hasPermission(context.getUser(), ReadPermission.class))
+            return new JSONObject(Map.of("success", Boolean.FALSE, "error", "You don't have read access to the folder: " + container.getPath())).toString();
+        return null;
+    }
+
+    @Tool(description = "Provide column metadata for a sql table.  This tool will also return SQL source for saved queries.")
+    String listColumnMetaData(@ToolParam(description = "Fully qualified table name as it would appear in SQL e.g. \"schema\".\"table\"") String fullQuotedTableName, ToolContext toolContext)
+    {
+        McpContext context = getContext(toolContext);
+        String permError = checkReadPermission(context);
+        if (null != permError)
+            return permError;
+        var json = _listColumnsForTable(context, fullQuotedTableName);
         return json.toString();
     }
 
     @Tool(description = "Provide list of tables within the provided schema.")
-    String listTablesForSchema(@ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. \"schema\"") String quotedSchemaName)
+    String listTablesForSchema(@ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. \"schema\"") String quotedSchemaName, ToolContext toolContext)
     {
-        var json = _listTablesForSchema(quotedSchemaName);
-        // can I just return a JSONObject
+        McpContext context = getContext(toolContext);
+        String permError = checkReadPermission(context);
+        if (null != permError)
+            return permError;
+        var json = _listTablesForSchema(context, quotedSchemaName);
         return json.toString();
     }
 
     @Tool(description = "Provide list of database schemas")
-    String listSchemas()
+    String listSchemas(ToolContext toolContext)
     {
-        McpContext context = getContext();
+        McpContext context = getContext(toolContext);
+        String permError = checkReadPermission(context);
+        if (null != permError)
+            return permError;
         var map = _listAllSchemas(DefaultSchema.get(context.getUser(), context.getContainer()));
         var array = new JSONArray();
         for (var entry : map.entrySet())
         {
+                UserSchema schema = entry.getValue();
+                if (!schema.canReadSchema())
+                    continue;
                 array.put(new JSONObject(Map.of(
                         "name", entry.getKey().getName(),
                         "quotedName", entry.getKey().toSQLString(),
-                        "description", StringUtils.trimToEmpty(entry.getValue().getDescription())
+                        "description", StringUtils.trimToEmpty(schema.getDescription())
                 )));
         }
         return new JSONObject(Map.of("success", "true", "schemas", array)).toString();
     }
 
 
-    @Tool(description = "Provide the SQL source for a saved query.")
-    String getSourceForSavedQuery(@ToolParam(description = "Fully qualified query name as it would appear in SQL e.g. \"schema\".\"table or query\"") String fullQuotedTableName)
+    @Tool(description = """
+            List database schemas across all containers (projects and folders) on the server that the current user \
+            has access to. By default, this lists schemas for all containers on the server. \
+            Provide a containerPath to query a specific subtree. Each container can have its own \
+            set of schemas and tables. Use listTablesForSchema with the schema names returned here \
+            to drill deeper. Note: the current folder's schemas are also available via the listSchemas tool.""")
+    String listSchemasAcrossServer(
+            @ToolParam(required = false, description = "Optional container path to query schemas for (e.g. '/MyProject' or '/MyProject/SubFolder'). If not provided, schemas are listed for all containers on the server.") String containerPath,
+            ToolContext toolContext
+    )
     {
-        var json = _listTablesForSchema(fullQuotedTableName);
+        McpContext context = getContext(toolContext);
+
+        List<Container> containers;
+        if (isNotBlank(containerPath))
+        {
+            Container c = ContainerManager.getForPath(containerPath);
+            if (null == c)
+                return new JSONObject(Map.of("success", Boolean.FALSE, "error", "Container not found: " + containerPath)).toString();
+            if (!c.hasPermission(context.getUser(), ReadPermission.class))
+                return new JSONObject(Map.of("success", Boolean.FALSE, "error", "You don't have read access to the folder: " + containerPath)).toString();
+            containers = ContainerManager.getAllChildren(c, context.getUser(), ReadPermission.class);
+        }
+        else
+        {
+            Container root = ContainerManager.getRoot();
+            containers = ContainerManager.getAllChildren(root, context.getUser(), ReadPermission.class);
+        }
+
+        //LOG.info("listSchemasAcrossServer: user={}, isAdmin={}, containers found with ReadPermission={}",
+        //        context.getUser().getEmail(), context.getUser().hasSiteAdminPermission(), containers.size());
+        LOG.info("listSchemasAcrossServer: container paths={}", containers.stream().map(Container::getPath).toList());
+
+        JSONArray containerArray = new JSONArray();
+        for (Container c : containers)
+        {
+            DefaultSchema defaultSchema = DefaultSchema.get(context.getUser(), c);
+            var schemaMap = _listAllSchemas(defaultSchema);
+            if (schemaMap.isEmpty())
+                continue;
+
+            JSONArray schemas = new JSONArray();
+            for (var entry : schemaMap.entrySet())
+            {
+                UserSchema schema = entry.getValue();
+                if (!schema.canReadSchema())
+                    continue;
+                schemas.put(new JSONObject(Map.of(
+                        "name", entry.getKey().getName(),
+                        "quotedName", entry.getKey().toSQLString(),
+                        "description", StringUtils.trimToEmpty(schema.getDescription())
+                )));
+            }
+            if (schemas.isEmpty())
+                continue;
+
+            JSONObject containerObj = new JSONObject();
+            containerObj.put("containerPath", c.getPath());
+            containerObj.put("containerName", c.getName());
+            containerObj.put("schemas", schemas);
+            containerArray.put(containerObj);
+        }
+
+        return new JSONObject(Map.of(
+                "success", Boolean.TRUE,
+                "containers", containerArray,
+                "totalContainers", containerArray.length()
+        )).toString();
+    }
+
+    private static final int MAX_ROWS = 100;
+
+    @Tool(description = """
+            Execute a LabKey SQL query against a schema and return the result rows as JSON. \
+            Use the listSchemas and listTablesForSchema tools first to discover available schemas and tables. \
+            Use the listColumnMetaData tool to understand column types before writing your query. \
+            The SQL dialect is LabKey SQL (similar to standard SQL with some extensions). \
+            Results are capped at 100 rows. Use LIMIT in your SQL if you need fewer rows. \
+            For aggregate questions (counts, sums, averages), use GROUP BY and aggregate functions in the SQL.""")
+    String executeQuery(
+            @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. \"study\" or \"lists\"") String quotedSchemaName,
+            @ToolParam(description = "LabKey SQL query to execute e.g. SELECT ParticipantId, COUNT(*) as cnt FROM Demographics GROUP BY ParticipantId") String sql,
+            ToolContext toolContext
+    )
+    {
+        McpContext context = getContext(toolContext);
+        String permError = checkReadPermission(context);
+        if (null != permError)
+            return permError;
+        if (isNotBlank(quotedSchemaName))
+            quotedSchemaName = quotedSchemaName.strip();
+        if (StringUtils.isBlank(sql))
+            return new JSONObject(Map.of("success", Boolean.FALSE, "error", "SQL query is required")).toString();
+
+        SchemaKey schemaKey;
+        if (quotedSchemaName.startsWith("\"") && quotedSchemaName.endsWith("\""))
+        {
+            String[] parts = StringUtils.strip(quotedSchemaName, "\"").split("\"\\.\"");
+            schemaKey = SchemaKey.fromParts(parts);
+        }
+        else
+        {
+            String[] parts = StringUtils.split(quotedSchemaName, ".");
+            schemaKey = SchemaKey.fromParts(parts);
+        }
+
+        var defaultSchema = DefaultSchema.get(context.getUser(), context.getContainer());
+        var schema = DefaultSchema.resolve(defaultSchema, schemaKey);
+        if (null == schema)
+            return new JSONObject(Map.of("success", Boolean.FALSE, "error", "Could not find schema: " + quotedSchemaName)).toString();
+
+        try (ResultSet rs = QueryService.get().select(schema, sql))
+        {
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
+
+            JSONArray columns = new JSONArray();
+            for (int i = 1; i <= columnCount; i++)
+                columns.put(metaData.getColumnName(i));
+
+            JSONArray rows = new JSONArray();
+            int rowCount = 0;
+            while (rs.next() && rowCount < MAX_ROWS)
+            {
+                JSONObject row = new JSONObject();
+                for (int i = 1; i <= columnCount; i++)
+                {
+                    String colName = metaData.getColumnName(i);
+                    Object value = rs.getObject(i);
+                    row.put(colName, null != value ? value : JSONObject.NULL);
+                }
+                rows.put(row);
+                rowCount++;
+            }
+
+            boolean truncated = !rs.isAfterLast() && rowCount >= MAX_ROWS;
+
+            var ret = new JSONObject();
+            ret.put("success", Boolean.TRUE);
+            ret.put("columns", columns);
+            ret.put("rows", rows);
+            ret.put("rowCount", rowCount);
+            if (truncated)
+                ret.put("truncated", Boolean.TRUE);
+            return ret.toString();
+        }
+        catch (Exception e)
+        {
+            return new JSONObject(Map.of(
+                    "success", Boolean.FALSE,
+                    "error", "Query execution failed: " + e.getMessage()
+            )).toString();
+        }
+    }
+
+    @Tool(description = "Provide the SQL source for a saved query.")
+    String getSourceForSavedQuery(@ToolParam(description = "Fully qualified query name as it would appear in SQL e.g. \"schema\".\"table or query\"") String fullQuotedTableName, ToolContext toolContext)
+    {
+        McpContext context = getContext(toolContext);
+        String permError = checkReadPermission(context);
+        if (null != permError)
+            return permError;
+        var json = _listTablesForSchema(context, fullQuotedTableName);
         if (json.has("sql"))
             return "```sql\n" + json.getString("sql") + "\n```\n";
         else
@@ -112,10 +297,11 @@ public class QueryMcp implements McpService.McpImpl
             @ToolParam(description = "Quoted column name as it would appear in SQL e.g. \"column name\"")
                 String quotedColumnName,
             @ToolParam(description = "Additional metadata to remember for future use.  This will replace any currently saved value")
-                String columnMetadata
+                String columnMetadata,
+            ToolContext toolContext
     )
     {
-        McpContext context = McpContext.get();
+        McpContext context = getContext(toolContext);
         var map = PropertyManager.getWritableProperties(context.getContainer(), "QueryMCP.annotations", true);
         String fullPath = normalizeIdentifier(fullQuotedTableName + "." + quotedColumnName);
         map.put(fullPath, columnMetadata);
@@ -126,18 +312,17 @@ public class QueryMcp implements McpService.McpImpl
         return new JSONObject(Map.of("success",Boolean.TRUE)).toString();
     }
 
-    /* TODO  McpContext setup */
-
-    static McpContext getContext()
+    static McpContext getContext(ToolContext toolContext)
     {
-        try
+        McpContext ctx = McpContext.fromToolContext(toolContext);
+        if (null != ctx)
         {
-            return McpContext.get();
+            //LOG.info("MCP tool context resolved from ToolContext: user={}, container={}", ctx.getUser().getEmail(), ctx.getContainer().getPath());
+            return ctx;
         }
-        catch (Exception x)
-        {
-            return new McpContext(ContainerManager.getHomeContainer(), UserManager.getGuestUser());
-        }
+        ctx = McpContext.get();
+        //LOG.info("MCP tool context resolved from ThreadLocal: user={}, container={}", ctx.getUser().getEmail(), ctx.getContainer().getPath());
+        return ctx;
     }
 
     /* For now, list all schemas.  CONSIDER support incremental querying. */
@@ -179,7 +364,7 @@ public class QueryMcp implements McpService.McpImpl
     }
 
 
-    public static JSONObject _listTablesForSchema(String fullQuotedName)
+    public static JSONObject _listTablesForSchema(McpContext context, String fullQuotedName)
     {
         SchemaKey fullKey;
 
@@ -195,7 +380,6 @@ public class QueryMcp implements McpService.McpImpl
             fullKey = SchemaKey.fromParts(parts);
         }
 
-        McpContext context = getContext();
         var defaultSchema = DefaultSchema.get(context.getUser(), context.getContainer());
         var schema = DefaultSchema.resolve(defaultSchema, fullKey);
         if (!(schema instanceof UserSchema userSchema))
@@ -239,9 +423,8 @@ public class QueryMcp implements McpService.McpImpl
         return ret;
     }
 
-    public static JSONObject _listColumnsForTable(String fullQuotedName)
+    public static JSONObject _listColumnsForTable(McpContext context, String fullQuotedName)
     {
-        McpContext context = McpContext.get();
         QueryKey fullKey = dottedIdentifier(fullQuotedName);
         SchemaKey schemaKey;
 

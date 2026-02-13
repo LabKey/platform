@@ -81,6 +81,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Gatherers;
 
@@ -1311,6 +1312,12 @@ public class TestController extends SpringActionController
     public static class ChatEndpointAction extends AbstractAgentAction
     {
         @Override
+        protected boolean useVectorStore()
+        {
+            return false;
+        }
+
+        @Override
         protected String getAgentName()
         {
             return "TestController.chat";
@@ -1319,7 +1326,24 @@ public class TestController extends SpringActionController
         @Override
         protected String getServicePrompt()
         {
-            return "You are the generic LabKey agent.  Good luck.";
+            return """
+                    You are a LabKey Server assistant.
+
+                    IMPORTANT: When the user asks about data, datasets, folders, studies, samples, assays, lists, \
+                    or anything that might exist on this server, you MUST call the siteSearch tool. Do NOT answer \
+                    from provided context alone — context documents may be incomplete or outdated. Always verify \
+                    by searching the live server index.
+
+                    Understand the user's intent before responding:
+                    - If they are looking for something on this server (e.g. "where is the Demographics dataset", \
+                    "find the sample list", "show me studies"), call siteSearch and present results with links.
+                    - If they are asking a how-to or documentation question (e.g. "how do I import data", \
+                    "what are assay designs"), answer using documentation context and your knowledge.
+                    - If the question could benefit from both, call siteSearch AND provide a brief explanation.
+
+                    Keep responses concise. When showing search results, format as:
+                    - [Title](full URL) — container — short summary
+                    """;
         }
     }
 
@@ -1334,8 +1358,8 @@ public class TestController extends SpringActionController
         {
             var db = FileUtil.getTempDirectoryFileLike().resolveChild("VectorStore.database");
             HtmlStringBuilder message = HtmlStringBuilder.of();
-            message.append("This will add the contents of /Documention wikis to the vector store.").append(HtmlString.BR);
-            message.append("This may take a few minutes.");
+            message.append("This will add wiki content from all containers to the vector store.").append(HtmlString.BR);
+            message.append("This may take several minutes depending on the number of wikis.");
             if (db.exists())
                 message.unsafeAppend("<p/><p/>").append("I see a vector store file already exists. Just FYI.");
             return new HtmlView(message);
@@ -1363,30 +1387,35 @@ public class TestController extends SpringActionController
         @Override
         public boolean handlePost(Object o, BindException errors)
         {
-            Container documentsContainer = ContainerManager.getForPath("/Documentation");
-            if (null == documentsContainer)
-                throw new NotFoundException();
             VectorStore vs = McpService.get().getVectorStore();
             if (null == vs)
-                throw new NotFoundException("/Documentation project was not found");
-
-            ActionURL wikiBase = new ActionURL("wiki","page",documentsContainer);
+                throw new NotFoundException("Vector store is not available");
 
             WikiService service = Objects.requireNonNull(WikiService.get());
-            List<String> all = service.getNames(documentsContainer);
-            all.stream()
-                    .map(name -> service.getRenderedWiki(documentsContainer, name))
-                    .filter(Objects::nonNull)
-                    .map(wiki ->
+            Container root = ContainerManager.getRoot();
+
+            // Index wikis from all containers
+            Set<Container> allContainers = new java.util.HashSet<>(ContainerManager.getAllChildren(root));
+            allContainers.add(root);
+
+            allContainers.stream()
+                    .flatMap(container ->
                     {
-                        count.incrementAndGet();
-                        var metadata = Map.of(
-                                "Content-Type", "text/html",
-                                "filename", wiki.name() + ".html",
-                                "title", (Object)wiki.title(),
-                                "source", wikiBase.clone().addParameter("name",wiki.name()).getURIString()
-                        );
-                        return new Document(wiki.entityId(), wiki.html().toString(), metadata);
+                        ActionURL wikiBase = new ActionURL("wiki", "page", container);
+                        return service.getNames(container).stream()
+                                .map(name -> service.getRenderedWiki(container, name))
+                                .filter(Objects::nonNull)
+                                .map(wiki ->
+                                {
+                                    count.incrementAndGet();
+                                    var metadata = Map.of(
+                                            "Content-Type", "text/html",
+                                            "filename", wiki.name() + ".html",
+                                            "title", (Object) wiki.title(),
+                                            "source", wikiBase.clone().addParameter("name", wiki.name()).getURIString()
+                                    );
+                                    return new Document(wiki.entityId(), wiki.html().toString(), metadata);
+                                });
                     })
                     .gather(Gatherers.windowFixed(50))
                     .forEach(vs);

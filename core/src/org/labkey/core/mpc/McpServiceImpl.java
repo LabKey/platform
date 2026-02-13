@@ -177,7 +177,7 @@ public class McpServiceImpl implements McpService
     @Override
     public void registerTools(@NotNull List<ToolCallback> tools)
     {
-        tools.forEach(tool -> toolMap.put(tool.getToolDefinition().name(), new _LoggingToolCallback(tool)));
+        tools.forEach(tool -> toolMap.put(tool.getToolDefinition().name(), tool));
     }
 
     @Override
@@ -384,6 +384,12 @@ public class McpServiceImpl implements McpService
     @Override
     public ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier, boolean createIfNotExists)
     {
+        return getChat(session, agentName, systemPromptSupplier, createIfNotExists, true);
+    }
+
+    @Override
+    public ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier, boolean createIfNotExists, boolean useVectorStore)
+    {
         if (!serverReady)
             return null;
 
@@ -392,14 +398,14 @@ public class McpServiceImpl implements McpService
         {
             return SessionHelper.getAttribute(session, sessionKey, () ->
                     {
-                        var springClient = createSpringChat(session, agentName, systemPromptSupplier);
+                        var springClient = createSpringChat(session, agentName, systemPromptSupplier, useVectorStore);
                         return new _ChatClient(springClient, sessionKey);
                     });
         }
         return SessionHelper.getAttribute(session, sessionKey, null);
     }
 
-    private ChatClient createSpringChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
+    private ChatClient createSpringChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier, boolean useVectorStore)
     {
         String systemPrompt = systemPromptSupplier.get();
         String conversationId = session.getId() + ":" + agentName;
@@ -415,9 +421,12 @@ public class McpServiceImpl implements McpService
                 .build();
         advisors.add(chatMemoryAdvisor);
 
-        VectorStore vs = getVectorStore();
-        if (null != vs)
-            advisors.add(QuestionAnswerAdvisor.builder(new _LoggingVectorStore(vs)).build());
+        if (useVectorStore)
+        {
+            VectorStore vs = getVectorStore();
+            if (null != vs)
+                advisors.add(QuestionAnswerAdvisor.builder(new _LoggingVectorStore(vs)).build());
+        }
 
         return ChatClient.builder(modelProvider.getChatModel())
                 .defaultOptions(modelProvider.getChatOptions())

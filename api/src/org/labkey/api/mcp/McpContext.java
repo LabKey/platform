@@ -1,6 +1,7 @@
 package org.labkey.api.mcp;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -9,11 +10,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.springframework.ai.chat.model.ToolContext;
 import java.util.Map;
 
-/**
- *  TODO MCP tool calling supports passing along a ToolContext.  And most all
- *  interesting tools probably need a User and Container.  This is not all hooked-up
- *  yet.  This is an area for further investiation.
- */
 public class McpContext implements ContainerUser
 {
     final User user;
@@ -38,6 +34,20 @@ public class McpContext implements ContainerUser
         return new ToolContext(Map.of("container", getContainer(), "user", getUser()));
     }
 
+    /**
+     * Reconstruct an McpContext from a Spring AI ToolContext.
+     * Returns null if toolContext is null or missing required user/container entries.
+     */
+    public static @Nullable McpContext fromToolContext(@Nullable ToolContext toolContext)
+    {
+        if (null == toolContext)
+            return null;
+        Object containerObj = toolContext.getContext().get("container");
+        Object userObj = toolContext.getContext().get("user");
+        if (!(containerObj instanceof Container container) || !(userObj instanceof User user))
+            return null;
+        return new McpContext(container, user);
+    }
 
     @Override
     public Container getContainer()

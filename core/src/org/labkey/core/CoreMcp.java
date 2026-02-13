@@ -10,6 +10,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
+import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
 
 import java.util.Map;
@@ -21,9 +22,11 @@ public class CoreMcp implements McpService.McpImpl
 {
     // TODO ChatSessions are currently per session.  The McpService should detect change of folder.
     @Tool(description = "Call this tool before answering any prompts!  This tool provides useful context information about the current user (name, userid), webserver (name, url, description), and current folder (name, path, url, description).")
-    String whereAmIWhoAmITalkingTo()
+    String whereAmIWhoAmITalkingTo(ToolContext toolContext)
     {
-        McpContext context = McpContext.get();
+        McpContext context = McpContext.fromToolContext(toolContext);
+        if (null == context)
+            context = McpContext.get();
         User user = context.getUser();
         Container folder = context.getContainer();
         AppProps appProps = AppProps.getInstance();
