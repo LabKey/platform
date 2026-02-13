@@ -111,11 +111,6 @@ public class DatabaseChatMemoryRepository implements ChatMemoryRepository
         return Collections.unmodifiableList(messages);
     }
 
-    /**
-     * Saves messages for the given conversation ID, preserving existing messages that
-     * already match by MessageText and MessageType (keeping their original timestamps).
-     * Only deletes/inserts messages where the sequence diverges from what's already stored.
-     */
     @Override
     public void saveAll(@NotNull String conversationId, @NotNull List<Message> messages)
     {

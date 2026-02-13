@@ -93,10 +93,17 @@
       background-color: #4CAF50;
       border-radius: 15px;
       border : solid 1px darkgray;
-      display: flex;
-      align-items: center;
+      position: relative;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
    }
+
+    .chatTimestamp {
+      position: absolute;
+      top: 6px;
+      right: 12px;
+      font-size: 11px;
+      opacity: 0.5;
+    }
 
     DIV.userPrompt {
       margin: 5px;
@@ -312,30 +319,41 @@
         addChatItem(chatItem);
     }
 
+    function createTimestamp() {
+        const span = document.createElement('span');
+        span.className = 'chatTimestamp';
+        span.textContent = new Date().toLocaleString();
+        return span;
+    }
+
     function appendUserPrompt(text) {
         const chatItem = document.createElement('div');
         chatItem.className = 'chatItem userPrompt';
-        chatItem.innerText = text;
+        chatItem.appendChild(createTimestamp());
+        chatItem.appendChild(document.createTextNode(text));
         addChatItem(chatItem);
     }
 
     function appendTextResponse(text) {
         const chatItem = document.createElement('div');
         chatItem.className = 'chatItem genaiResponse';
-        chatItem.innerText = text;
+        chatItem.appendChild(createTimestamp());
+        chatItem.appendChild(document.createTextNode(text));
         addChatItem(chatItem);
     }
 
     function appendHtmlResponse(html) {
         const chatItem = document.createElement('div');
         chatItem.className = 'chatItem genaiResponse';
-        chatItem.innerHTML = html;
+        chatItem.appendChild(createTimestamp());
+        chatItem.insertAdjacentHTML('beforeend', html);
         addChatItem(chatItem);
     }
 
     function appendSqlResponse(text) {
         const chatItem = document.createElement('div');
         chatItem.className = 'chatItem sqlResponse';
+        chatItem.appendChild(createTimestamp());
         const copy = document.createElement("i");
         copy.className = "fa fa-copy";
         chatItem.appendChild(copy);

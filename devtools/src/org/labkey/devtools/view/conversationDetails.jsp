@@ -19,9 +19,16 @@
     background-color: #4CAF50;
     border-radius: 15px;
     border : solid 1px darkgray;
-    display: flex;
-    align-items: center;
+    position: relative;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .chatTimestamp {
+    position: absolute;
+    top: 6px;
+    right: 12px;
+    font-size: 11px;
+    opacity: 0.5;
   }
 
   DIV.userPrompt {
@@ -60,24 +67,34 @@
             document.getElementById('chatHistory').appendChild(item);
         }
 
-        function appendHtmlResponse(html) {
+        function createTimestamp(created) {
+            const span = document.createElement('span');
+            span.className = 'chatTimestamp';
+            span.textContent = created ? new Date(created).toLocaleString() : '';
+            return span;
+        }
+
+        function appendHtmlResponse(html, created) {
             const chatItem = document.createElement('div');
             chatItem.className = 'chatItem genaiResponse';
-            chatItem.innerHTML = html;
+            chatItem.appendChild(createTimestamp(created));
+            chatItem.insertAdjacentHTML('beforeend', html);
             addChatItem(chatItem);
         }
 
-        function appendTextResponse(text) {
+        function appendTextResponse(text, created) {
             const chatItem = document.createElement('div');
             chatItem.className = 'chatItem genaiResponse';
-            chatItem.innerText = text;
+            chatItem.appendChild(createTimestamp(created));
+            chatItem.appendChild(document.createTextNode(text));
             addChatItem(chatItem);
         }
 
-        function appendUserPrompt(text) {
+        function appendUserPrompt(text, created) {
             const chatItem = document.createElement('div');
             chatItem.className = 'chatItem userPrompt';
-            chatItem.innerText = text;
+            chatItem.appendChild(createTimestamp(created));
+            chatItem.appendChild(document.createTextNode(text));
             addChatItem(chatItem);
         }
 
@@ -135,15 +152,15 @@
                             }
                             firstUser = false;
                         }
-                        appendUserPrompt(text);
+                        appendUserPrompt(text, row.Created);
                     } else if (row.MessageType === 'assistant') {
                         if (row.ContentType === 'text/markdown') {
-                            appendHtmlResponse(row.MessageTextFormatted);
+                            appendHtmlResponse(row.MessageTextFormatted, row.Created);
                         } else {
-                            appendHtmlResponse(row.MessageTextFormatted);
+                            appendHtmlResponse(row.MessageTextFormatted, row.Created);
                         }
                     } else {
-                        appendTextResponse(row.MessageText);
+                        appendTextResponse(row.MessageText, row.Created);
                     }
                 });
             },
