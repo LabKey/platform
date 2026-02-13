@@ -64,7 +64,6 @@ import java.io.Writer;
  */
 public class ExtFormResponseWriter extends ApiJsonWriter
 {
-    boolean htmlWriterInitialized;
     private Writer _encodingWriter;
     private boolean _closed;
 
@@ -167,7 +166,6 @@ public class ExtFormResponseWriter extends ApiJsonWriter
             Writer w = super.getWriter();
             if (w != null)
             {
-                w.write("</textarea></body></html>");
                 w.flush();
             }
         }
@@ -180,17 +178,11 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         Writer w = super.getWriter();
         if (null == w)
             return null;
-        if (isHtml() && !htmlWriterInitialized)
+        if (isHtml() && _encodingWriter == null)
         {
-            htmlWriterInitialized = true;
-            try
-            {
-                w.write("<html><body><textarea>");
-            }
-            catch (IOException _) {}
             _encodingWriter = new HtmlEncodingWriter(w);
         }
-        return isHtml() && _encodingWriter != null ? _encodingWriter : w;
+        return _encodingWriter != null ? _encodingWriter : w;
     }
 
     /** Wraps a Writer to HTML-encode all output, so JSON can be safely embedded inside a &lt;textarea&gt; element. */
