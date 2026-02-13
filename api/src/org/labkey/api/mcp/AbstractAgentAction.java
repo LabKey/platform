@@ -6,8 +6,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
-import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HttpUtil.Method;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.validation.BindException;
 
@@ -20,7 +22,8 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * First implement getServicePrompt() to tell your "agent" its mission.  You can also listen in on the
  * conversation to help the user get the right results.
  */
-public abstract class AbstractAgentAction<F extends PromptForm> extends MutatingApiAction<F>
+@MethodsAllowed({Method.POST})
+public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnlyApiAction<F>
 {
     protected abstract String getAgentName();
 
