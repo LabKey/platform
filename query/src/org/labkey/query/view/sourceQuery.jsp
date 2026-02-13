@@ -24,6 +24,9 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
+<%@ page import="java.lang.Exception" %>
+<%@ page import="java.lang.Override" %>
+<%@ page import="java.lang.String" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -399,9 +402,9 @@
                     url: url,
                     method: 'POST',
                     params: {prompt: prompt},
-                    callback: function (config, success, xhr) {
+                    callback: function (config, success, req) {
                         if (success) {
-                            var responseJson = JSON.parse(xhr.responseText);
+                            var responseJson = JSON.parse(req.responseText);
                             var responseText = responseJson['text'];
                             var responseHtml = responseJson['html'];
                             var responseSql = responseJson['sql'];
@@ -416,7 +419,7 @@
                                 appendTextResponse(responseText);
                             }
                         } else {
-                            appendTextResponse('Request failed: ' + xhr.status + ' ' + (xhr.statusText || ''));
+                            appendTextResponse('Request failed: ' + req.status + ' ' + (req.statusText || ''));
                         }
                     }
                 });
