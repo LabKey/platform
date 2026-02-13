@@ -6,8 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.security.CSRF;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.util.HtmlString;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.validation.BindException;
@@ -17,12 +16,11 @@ import java.util.Map;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
- * If you want to create a tools specific chat endpoint then start here.
+ * If you want to create a tools-specific chat endpoint, then start here.
  * First implement getServicePrompt() to tell your "agent" its mission.  You can also listen in on the
  * conversation to help the user get the right results.
  */
-@CSRF(CSRF.Method.ALL)
-public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnlyApiAction<F>
+public abstract class AbstractAgentAction<F extends PromptForm> extends MutatingApiAction<F>
 {
     protected abstract String getAgentName();
 

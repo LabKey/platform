@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.mcp.McpService"%>
 <%@ page import="org.labkey.api.query.QueryAction"%>
-<%@ page import="org.labkey.api.query.QueryDefinition"%>
+<%@ page import="org.labkey.api.query.QueryDefinition" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
-<%@ page import="org.labkey.api.mcp.McpService" %>
-<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -363,11 +363,14 @@
         if (initPrompt)
         {
             var url = new URL('./query-queryagent.api', window.location.href);
-            url.searchParams.set('schemaName', schemaName || '');
-            url.searchParams.set('prompt', initPrompt);
-            var req = new XMLHttpRequest();
-            req.open('GET', url.toString(), true);
-            req.send();
+            LABKEY.Ajax.request({
+                url: url,
+                method: 'POST',
+                params: {
+                    prompt: initPrompt,
+                    schemaName: schemaName || ''
+                }
+            });
         }
     }
 
@@ -392,13 +395,13 @@
                 // TODO waiting/thinking UI
                 // Build URL with same base as current document, endpoint /query-queryagent.api and prompt parameter
                 var url = new URL('./query-queryagent.api', window.location.href);
-                url.searchParams.set('prompt', prompt);
-                var req = new XMLHttpRequest();
-                req.open('GET', url.toString(), true);
-                req.onreadystatechange = function () {
-                    if (req.readyState === 4) {
-                        if (req.status >= 200 && req.status < 300) {
-                            var responseJson = JSON.parse(req.responseText);
+                LABKEY.Ajax.request({
+                    url: url,
+                    method: 'POST',
+                    params: {prompt: prompt},
+                    callback: function (config, success, xhr) {
+                        if (success) {
+                            var responseJson = JSON.parse(xhr.responseText);
                             var responseText = responseJson['text'];
                             var responseHtml = responseJson['html'];
                             var responseSql = responseJson['sql'];
@@ -413,11 +416,10 @@
                                 appendTextResponse(responseText);
                             }
                         } else {
-                            appendTextResponse('Request failed: ' + req.status + ' ' + (req.statusText || ''));
+                            appendTextResponse('Request failed: ' + xhr.status + ' ' + (xhr.statusText || ''));
                         }
                     }
-                };
-                req.send();
+                });
                 ev.preventDefault();
                 ev.stopPropagation();
                 return false;
