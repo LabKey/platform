@@ -203,11 +203,28 @@ public class ScriptReorderer
                     }
 
                     String tableName2 = null;
+                    String constraintKey = null;
 
                     if (m.pattern().pattern().contains("(?<table2>"))
                     {
                         tableName2 = m.group("table2");
                         assert tableName2 != null;
+                    }
+
+                    if (m.pattern().pattern().contains("(?<constraint>"))
+                    {
+                        // Stash a normalized version of the constraint name so we can save it to the map associated
+                        // with its table (below). Also, if a second table is not specified and we can determine the
+                        // constraint's table from the map, then set it as tableName2. This ensures the statement is
+                        // output after its CREATE statement. For example, a SQL Server statement like ALTER TABLE
+                        // MyTable CHECK CONSTRAINT MyConstraint may need to be output after the second table from the
+                        // original CREATE statement.
+                        String constraintName = m.group("constraint");
+                        assert constraintName != null;
+                        constraintKey = normalizeName(constraintName);
+
+                        if (tableName2 == null)
+                            tableName2 = _constraintTables.get(constraintKey); // Could be null
                     }
 
                     if (pattern.getOperation() == Operation.RenameTable)
@@ -226,15 +243,9 @@ public class ScriptReorderer
 
                     String tableKey = addStatement(tableName, tableName2, comments + m.group());
 
-                    if (m.pattern().pattern().contains("(?<constraint>"))
+                    if (constraintKey != null && !_constraintTables.containsKey(constraintKey))
                     {
-                        String constraintName = m.group("constraint");
-                        assert constraintName != null;
-                        String constraintKey = normalizeName(constraintName);
-                        if (!_constraintTables.containsKey(constraintKey))
-                        {
-                            _constraintTables.put(constraintKey, tableKey);
-                        }
+                        _constraintTables.put(constraintKey, tableKey);
                     }
 
                     _contents = _contents.substring(m.end());
