@@ -77,9 +77,9 @@ public class ApiJsonWriter extends ApiResponseWriter
 
     public ApiJsonWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper mapper, boolean prettyPrint) throws IOException
     {
-        super(response);
         response.setContentType(null == contentTypeOverride ? CONTENT_TYPE_JSON : contentTypeOverride);
         response.setCharacterEncoding("utf-8");
+        super(response);
         if (prettyPrint)
         {
             jg.useDefaultPrettyPrinter();
