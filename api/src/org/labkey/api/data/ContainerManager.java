@@ -971,11 +971,12 @@ public class ContainerManager
     }
 
     public static final String SHARED_CONTAINER_PATH = "/Shared";
+    private static final Path SHARED_CONTAINER_PATH_OBJECT = Path.parse(SHARED_CONTAINER_PATH);
 
     @NotNull
     public static Container getSharedContainer()
     {
-        return ensureContainer(Path.parse(SHARED_CONTAINER_PATH), User.getAdminServiceUser());
+        return ensureContainer(SHARED_CONTAINER_PATH_OBJECT, User.getAdminServiceUser());
     }
 
     public static List<Container> getChildren(Container parent)
