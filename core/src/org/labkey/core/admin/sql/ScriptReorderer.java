@@ -18,6 +18,7 @@ package org.labkey.core.admin.sql;
 
 import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -36,6 +37,7 @@ public class ScriptReorderer
 
     private final List<Map<String, Collection<Statement>>> _statementLists = new LinkedList<>();
     private final List<String> _endingStatements = new LinkedList<>();
+    private final Map<String, String> _constraintTables = CaseInsensitiveHashMap.of(); // Track tables associated with constraints
 
     private Map<String, Collection<Statement>> _currentStatements;
 
@@ -61,7 +63,7 @@ public class ScriptReorderer
             TABLE_NAME_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "((#?\\w+)|(\\[#?\\w+\\])))";  // # allows for temp table names, optional [] around table name
             TABLE_NAME_NO_UNDERSCORE_REGEX = null;
             STATEMENT_ENDING_REGEX = "((; GO\\s*$)|(;\\s*$)|( GO\\s*$))\\s*";       // Semicolon, GO, or both
-            CONSTRAINT_NAME_REGEX = "((\\w+)|(\\[\\w+\\]))"; // optional [] around name
+            CONSTRAINT_NAME_REGEX = "(?<constraint>((\\w+)|(\\[\\w+\\])))"; // optional [] around name
         }
         else
         {
@@ -69,7 +71,7 @@ public class ScriptReorderer
             TABLE_NAME_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "(\\w+))";
             TABLE_NAME_NO_UNDERSCORE_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "([[a-zA-Z0-9]]+))";
             STATEMENT_ENDING_REGEX = ";(\\s*?)((--)[^\\n]*)?$(\\s*)";
-            CONSTRAINT_NAME_REGEX = "(\\w+)";
+            CONSTRAINT_NAME_REGEX = "(?<constraint>(\\w+))";
         }
 
         TABLE_NAME2_REGEX = TABLE_NAME_REGEX.replace("table", "table2");
@@ -116,6 +118,7 @@ public class ScriptReorderer
             patterns.add(new SqlPattern("DROP INDEX (IF EXISTS )?\\w+ ON " + TABLE_NAME_REGEX + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
 
             patterns.add(new SqlPattern("(CREATE|ALTER) PROCEDURE .+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
+            patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " CHECK CONSTRAINT " + CONSTRAINT_NAME_REGEX + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
         }
         else
         {
@@ -204,6 +207,7 @@ public class ScriptReorderer
                     if (m.pattern().pattern().contains("(?<table2>"))
                     {
                         tableName2 = m.group("table2");
+                        assert tableName2 != null;
                     }
 
                     if (pattern.getOperation() == Operation.RenameTable)
@@ -220,7 +224,19 @@ public class ScriptReorderer
                         newStatementList();
                     }
 
-                    addStatement(tableName, tableName2, comments + m.group());
+                    String tableKey = addStatement(tableName, tableName2, comments + m.group());
+
+                    if (m.pattern().pattern().contains("(?<constraint>"))
+                    {
+                        String constraintName = m.group("constraint");
+                        assert constraintName != null;
+                        String constraintKey = normalizeName(constraintName);
+                        if (!_constraintTables.containsKey(constraintKey))
+                        {
+                            _constraintTables.put(constraintKey, tableKey);
+                        }
+                    }
+
                     _contents = _contents.substring(m.end());
                     recognized = true;
                     break;
@@ -318,18 +334,32 @@ public class ScriptReorderer
         return Pattern.compile(regEx.replaceAll(" ", "\\\\s+"), Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.MULTILINE);
     }
 
-    private void addStatement(String tableName, @Nullable String tableName2, String statement)
+    // Return table key that's associated with this statement
+    private String addStatement(String tableName, @Nullable String tableName2, String statement)
     {
+        // Remove brackets for map key
+        String key = normalizeName(tableName);
+        String key2 = normalizeName(tableName2);
+
         // If there's a second table in the statement that's referenced later in the script then associate the statement
         // with the second table. For example, an FK definition will end up after BOTH tables have been created.
-        if (null != tableName2 && index(tableName2) > index(tableName))
+        if (null != key2 && index(key2) > index(key))
+        {
             tableName = tableName2;
-
-        String key = tableName.replace("[", "").replace("]", "").toLowerCase();
+            key = key2;
+        }
 
         Collection<Statement> tableStatements = _currentStatements.computeIfAbsent(key, k -> new LinkedList<>());
 
         tableStatements.add(new Statement(tableName, statement));
+
+        return key;
+    }
+
+    // Remove brackets and lower case
+    private @Nullable String normalizeName(@Nullable String name)
+    {
+        return name != null ? name.replace("[", "").replace("]", "").toLowerCase() : null;
     }
 
     private int index(String tableName)
@@ -369,14 +399,14 @@ public class ScriptReorderer
         }
         else
         {
-            sb.append(statement.getSql());
+            sb.append(statement.sql());
         }
     }
 
     private void appendStatement(StringBuilder sb, Statement statement)
     {
-        String sql = PageFlowUtil.filter(statement.getSql(), true);
-        String tableName = statement.getTableName();
+        String sql = PageFlowUtil.filter(statement.sql(), true);
+        String tableName = statement.tableName();
 
         // If we have a table name then try to highlight the first occurrence in statement
         if (null != tableName)
@@ -441,25 +471,5 @@ public class ScriptReorderer
     }
 
     // Saving the original table name helps with highlighting, especially in the case of a table rename
-    private static class Statement
-    {
-        private final @Nullable String _tableName;
-        private final String _sql;
-
-        private Statement(@Nullable String tableName, String sql)
-        {
-            _tableName = tableName;
-            _sql = sql;
-        }
-
-        public @Nullable String getTableName()
-        {
-            return _tableName;
-        }
-
-        public String getSql()
-        {
-            return _sql;
-        }
-    }
+    private record Statement(@Nullable String tableName, String sql) {}
 }
