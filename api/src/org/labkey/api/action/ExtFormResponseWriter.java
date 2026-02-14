@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.MimeMap;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
@@ -26,14 +27,9 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.FilterWriter;
 import java.io.IOException;
 import java.io.Writer;
-
-/*
-* User: Dave
-* Date: Sep 3, 2008
-* Time: 11:03:32 AM
-*/
 
 /**
  * This writer extends ApiJsonWriter by writing validation errors in the format
@@ -68,27 +64,26 @@ import java.io.Writer;
  */
 public class ExtFormResponseWriter extends ApiJsonWriter
 {
-    boolean sendHtmlJsonResponse = false;
-    boolean startResponse = true;
-    
-    public ExtFormResponseWriter(HttpServletResponse response) throws IOException
-    {
-        super(response);
-        setErrorResponseStatus(HttpServletResponse.SC_OK);
-    }
+    private Writer _encodingWriter;
+    private boolean _closed;
 
     public ExtFormResponseWriter(HttpServletRequest request, HttpServletResponse response) throws IOException
     {
-        this(response);
-        if (!"XMLHttpRequest".equals(request.getHeader("X-Requested-With")) && (request instanceof MultipartHttpServletRequest))
-            sendHtmlJsonResponse = true;
-        response.setContentType(sendHtmlJsonResponse ? "text/html" : CONTENT_TYPE_JSON);
+        boolean sendHtml = !"XMLHttpRequest".equals(request.getHeader("X-Requested-With")) &&
+                request instanceof MultipartHttpServletRequest;
+        super(response, sendHtml ? MimeMap.MimeType.HTML.getContentType() : CONTENT_TYPE_JSON);
+        setErrorResponseStatus(HttpServletResponse.SC_OK);
+    }
+
+    private boolean isHtml()
+    {
+        return getResponse().getContentType().startsWith(MimeMap.MimeType.HTML.getContentType());
     }
 
     public ExtFormResponseWriter(HttpServletRequest request, HttpServletResponse response, String contentTypeOverride) throws IOException
     {
         this(request, response);
-        if (!sendHtmlJsonResponse && null != contentTypeOverride)
+        if (!isHtml() && null != contentTypeOverride)
             response.setContentType(contentTypeOverride);
     }
 
@@ -121,8 +116,8 @@ public class ExtFormResponseWriter extends ApiJsonWriter
     {
         String msg = error.getMessage();
         String key = "_form";
-        if (error instanceof PropertyValidationError)
-            key = ((PropertyValidationError)error).getProperty();
+        if (error instanceof PropertyValidationError pve)
+            key = pve.getProperty();
         if (jsonErrors.has(key))
             msg = jsonErrors.get(key) + "; " + msg;
         jsonErrors.put(key, msg);
@@ -139,8 +134,8 @@ public class ExtFormResponseWriter extends ApiJsonWriter
             if (message == null)
                 message = msg;
             String key = "_form";
-            if (error instanceof FieldError)
-                key = ((FieldError)error).getField();
+            if (error instanceof FieldError fieldError)
+                key = fieldError.getField();
             if (jsonErrors.has(key))
                 msg = jsonErrors.get(key) + "; " + msg;
             jsonErrors.put(key, msg);
@@ -162,23 +157,68 @@ public class ExtFormResponseWriter extends ApiJsonWriter
     }
 
     @Override
+    public void close() throws IOException
+    {
+        super.close();
+        if (isHtml() && !_closed)
+        {
+            _encodingWriter.flush();
+            Writer w = super.getWriter();
+            if (w != null)
+            {
+                w.flush();
+            }
+        }
+        _closed = true;
+    }
+
+    @Override
     protected Writer getWriter()
     {
         Writer w = super.getWriter();
         if (null == w)
             return null;
-        if (sendHtmlJsonResponse && startResponse)
+        if (isHtml() && _encodingWriter == null)
         {
-            startResponse = false;
-            try
+            _encodingWriter = new HtmlEncodingWriter(w);
+        }
+        return _encodingWriter != null ? _encodingWriter : w;
+    }
+
+    /** Wraps a Writer to HTML-encode all output, so JSON can be safely embedded inside a &lt;textarea&gt; element. */
+    private static class HtmlEncodingWriter extends FilterWriter
+    {
+        HtmlEncodingWriter(Writer out)
+        {
+            super(out);
+        }
+
+        @Override
+        public void write(int c) throws IOException
+        {
+            switch (c)
             {
-            w.write("<html><body><textarea>");
-            }
-            catch (IOException x)
-            {
-                
+                case '&' -> out.write("&amp;");
+                case '<' -> out.write("&lt;");
+                case '>' -> out.write("&gt;");
+                case '"' -> out.write("&quot;");
+                case '\'' -> out.write("&#39;");
+                default -> out.write(c);
             }
         }
-        return w;
+
+        @Override
+        public void write(char[] cbuf, int off, int len) throws IOException
+        {
+            for (int i = off; i < off + len; i++)
+                write(cbuf[i]);
+        }
+
+        @Override
+        public void write(String str, int off, int len) throws IOException
+        {
+            for (int i = off; i < off + len; i++)
+                write(str.charAt(i));
+        }
     }
 }
