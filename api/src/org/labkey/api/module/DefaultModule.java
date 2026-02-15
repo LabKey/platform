@@ -353,6 +353,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             if (null == _webPartFactories)
             {
+                // We promise that this method is not called until upgrade is complete. Enforce that to (for example)
+                // prevent memory leaks associated with modules removed due to missing dependencies.
+                if (ModuleLoader.getInstance().isUpgradeRequired())
+                    throw new IllegalStateException("getWebPartFactories() is being called before upgrade is complete");
+
                 Collection<WebPartFactory> wpf = new ArrayList<>();
 
                 // Get all the Java webpart factories
