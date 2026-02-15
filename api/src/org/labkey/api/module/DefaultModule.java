@@ -21,7 +21,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -65,6 +64,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -107,7 +107,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 {
     public static final String CORE_MODULE_NAME = "Core";
 
-    private static final Logger _log = LogManager.getLogger(DefaultModule.class);
+    private static final Logger _log = LogHelper.getLogger(DefaultModule.class, "Module issues");
     private static final Set<Pair<Class<? extends DefaultModule>, String>> INSTANTIATED_MODULES = new HashSet<>();
 
     static final ModuleResourceCache<ModuleXml> MODULE_XML_CACHE = ModuleResourceCaches.create("module.xml files", new ModuleXmlCacheHandler(), ResourceRootProvider.getStandard(new Path()));
@@ -341,9 +341,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
     }
 
-    // TODO: Move getWebPartFactories() and _webPartFactories into Portal... shouldn't be the module's responsibility
-    // This should also allow moving SimpleWebPartFactoryCache and dependencies into Internal
-
     private final Object FACTORY_LOCK = new Object();
 
     @Override
@@ -353,6 +350,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             if (null == _webPartFactories)
             {
+                // We promise that this method is called after upgrade is complete. Enforce that.
+                if (ModuleLoader.getInstance().isUpgradeRequired())
+                    throw new IllegalStateException("getWebPartFactories() is being called before upgrade is complete");
+
                 Collection<WebPartFactory> wpf = new ArrayList<>();
 
                 // Get all the Java webpart factories
