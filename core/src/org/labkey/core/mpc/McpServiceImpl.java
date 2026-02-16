@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.markdown.MarkdownService;
@@ -38,7 +39,6 @@ import org.springframework.ai.anthropic.AnthropicChatOptions;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
-import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
@@ -320,8 +320,16 @@ public class McpServiceImpl implements McpService
 
     private ChatClient createSpringChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
     {
+        return createSpringChat(session, agentName, systemPromptSupplier, null, true);
+    }
+
+    private ChatClient createSpringChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier, @Nullable String conversationIdPostFix, boolean enableVectorStore)
+    {
         String systemPrompt = systemPromptSupplier.get();
         String conversationId = session.getId() + ":" + agentName;
+
+        if (conversationIdPostFix != null) conversationId += ":" + conversationIdPostFix;
+
         List<Advisor> advisors = new ArrayList<>();
 
         ChatMemory chatMemory = MessageWindowChatMemory.builder()
@@ -334,9 +342,9 @@ public class McpServiceImpl implements McpService
                 .build();
         advisors.add(chatMemoryAdvisor);
 
-        VectorStore vs = getVectorStore();
-        if (null != vs)
-            advisors.add(QuestionAnswerAdvisor.builder(vs).build());
+//        VectorStore vs = getVectorStore();
+//        if (null != vs)
+//                advisors.add(QuestionAnswerAdvisor.builder(vs).build());
 
         return ChatClient.builder(modelProvider.getChatModel())
                 .defaultOptions(modelProvider.getChatOptions())
@@ -577,6 +585,7 @@ public class McpServiceImpl implements McpService
             GoogleGenAiChatOptions chatOptions = GoogleGenAiChatOptions.builder()
                     .model(getModel())
                     .toolCallbacks(getToolCallbacks())
+                    .useCachedContent(true)
                     .build();
             return chatOptions;
         }
