@@ -666,7 +666,7 @@ public class ViewServiceImpl implements ViewService
 
         public void renderCustomDropDown(String title, NavTree current, PrintWriter out)
         {
-            renderMenuWithFontImage(null, current, out, null, false);
+            renderMenuWithFontImage(title, current, out, null, false);
         }
     }
 
@@ -750,7 +750,9 @@ public class ViewServiceImpl implements ViewService
             if (rightAlign)
                 out.print(" pull-right");
             out.print("\">");
-            out.print("<a href=\"#\" data-toggle=\"dropdown\" class=\"dropdown-toggle ");
+            out.print("<a href=\"#\" aria-label=\"");
+            out.print(filter(title) + " webpart options");
+            out.print("\" data-toggle=\"dropdown\" class=\"dropdown-toggle ");
             out.print(!StringUtils.isEmpty(imageCls) ? imageCls : !StringUtils.isEmpty(menu.getImageCls()) ? menu.getImageCls() : "");
             out.print("\">");
             out.print("</a>");
