@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.MimeMap;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -70,7 +71,8 @@ public class ExtFormResponseWriter extends ApiJsonWriter
     public ExtFormResponseWriter(HttpServletRequest request, HttpServletResponse response) throws IOException
     {
         boolean sendHtml = !"XMLHttpRequest".equals(request.getHeader("X-Requested-With")) &&
-                request instanceof MultipartHttpServletRequest;
+                request instanceof MultipartHttpServletRequest &&
+                HttpUtil.isBrowser(request);
         super(response, sendHtml ? MimeMap.MimeType.HTML.getContentType() : CONTENT_TYPE_JSON);
         setErrorResponseStatus(HttpServletResponse.SC_OK);
     }
