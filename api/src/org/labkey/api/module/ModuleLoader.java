@@ -996,7 +996,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         initControllerToModule();
     }
 
-    // Check a module's dependencies and throw on the first one that's not present (i.e., it was removed because its initialize() failed)
+    // Check a module's dependencies and throw on the first one that's not present (i.e., dependency is not present or was removed because its initialize() failed)
     private void verifyDependencies(Module module)
     {
         synchronized (_modulesLock)
