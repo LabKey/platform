@@ -227,6 +227,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
                     drt.getDataAsText(0, "MCF"));
         checker().verifyEquals("Field data didn't import as expected", values.get("CF"),
                 drt.getDataAsText(0, "CF"));
+        checker().screenShotIfNewError("Create_Dataset_With_Multi_Choice");
 
         Map<String, Object> updatedValues = new HashMap<>();
         updatedValues.put("MCF", tcValues.subList(1, 3));
@@ -240,6 +241,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
                 drt.getDataAsText(0, "MCF"));
         checker().verifyEquals("Field data didn't import as expected", updatedValues.get("CF"),
                 drt.getDataAsText(0, "CF"));
+        checker().screenShotIfNewError("Update_Dataset_With_Multi_Choice");
     }
 
     @Test
