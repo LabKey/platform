@@ -248,7 +248,7 @@ public interface QueryChangeListener
             }
             if (containsOp(updated, prefix, columnNameEncoded, "arraynotmatches"))
             {
-                return replaceOp(updated, prefix, columnNameEncoded, "arraynotmatches", "neq");
+                return replaceOp(updated, prefix, columnNameEncoded, "arraynotmatches", "neqornull");
             }
         }
 
@@ -285,7 +285,7 @@ public interface QueryChangeListener
         if (oldType.getPropertyType() == PropertyType.MULTI_CHOICE || newType.getPropertyType() != PropertyType.MULTI_CHOICE)
             return filterStr;
 
-        String columnNameEncoded = PageFlowUtil.encodeURIComponent(columnName);
+        String columnNameEncoded = PageFlowUtil.encodeURIComponent(QueryKey.encodePart(columnName));
 
         String colLower = columnNameEncoded.toLowerCase();
         String sLower = filterStr.toLowerCase();
@@ -300,6 +300,10 @@ public interface QueryChangeListener
         if (containsOp(updated, prefix, columnNameEncoded, "eq"))
         {
             return replaceOp(updated, prefix, columnNameEncoded, "eq", "arraymatches");
+        }
+        if (containsOp(updated, prefix, columnNameEncoded, "neqornull"))
+        {
+            return replaceOp(updated, prefix, columnNameEncoded, "neqornull", "arraycontainsnone");
         }
         if (containsOp(updated, prefix, columnNameEncoded, "neq"))
         {
