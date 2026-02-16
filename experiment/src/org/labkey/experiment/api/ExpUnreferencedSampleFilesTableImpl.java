@@ -48,38 +48,42 @@ public class ExpUnreferencedSampleFilesTableImpl extends FilteredTable<ExpSchema
             FileContentService svc = FileContentService.get();
 
             _query = new SQLFragment();
-            if (svc == null)
-                return;
-
-            SQLFragment listQuery = svc.listSampleFilesQuery(schema.getUser());
-            if (StringUtils.isEmpty(listQuery))
-                return;
-
-            TableInfo expDataTable = ExperimentService.get().getTinfoData();
-            TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
+            SQLFragment listQuery = new SQLFragment();
+            if (svc != null)
+                listQuery = svc.listSampleFilesQuery(schema.getUser());
 
             _query.appendComment("<SampleFileListTableInfo>", getSchema().getSqlDialect());
 
-            SQLFragment sampleFileSql = new SQLFragment("SELECT m.Container, if.FilePathShort \n")
-                    .append("FROM (")
-                    .append(svc.listSampleFilesQuery(schema.getUser()))
-                    .append(") AS if \n")
-                    .append("JOIN ")
-                    .append(materialTable, "m")
-                    .append(" ON if.SourceKey = m.RowId");
+            TableInfo expDataTable = ExperimentService.get().getTinfoData();
+            if (!StringUtils.isEmpty(listQuery))
+            {
+                TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
 
-            SQLFragment unreferencedFileSql = new SQLFragment("SELECT ed.rowId, ed.name as filename, ed.container, ed.created, ed.createdBy, ed.DataFileUrl FROM ")
-                    .append(expDataTable, "ed")
-                    .append(" LEFT JOIN (")
-                    .append(sampleFileSql)
-                    .append(" ) sf\n")
-                    .append(" ON ed.name = sf.FilePathShort AND ed.container = sf.container\n")
-                    .append(" WHERE ed.datafileurl LIKE ")
-                    .appendValue("%@files/sampletype/%")
-                    .append(" AND sf.FilePathShort IS NULL");
+                SQLFragment sampleFileSql = new SQLFragment("SELECT m.Container, if.FilePathShort \n")
+                        .append("FROM (")
+                        .append(listQuery)
+                        .append(") AS if \n")
+                        .append("JOIN ")
+                        .append(materialTable, "m")
+                        .append(" ON if.SourceKey = m.RowId");
 
-            _query.append(unreferencedFileSql);
+                SQLFragment unreferencedFileSql = new SQLFragment("SELECT ed.rowId, ed.name as filename, ed.container, ed.created, ed.createdBy, ed.DataFileUrl FROM ")
+                        .append(expDataTable, "ed")
+                        .append(" LEFT JOIN (")
+                        .append(sampleFileSql)
+                        .append(" ) sf\n")
+                        .append(" ON ed.name = sf.FilePathShort AND ed.container = sf.container\n")
+                        .append(" WHERE ed.datafileurl LIKE ")
+                        .appendValue("%@files/sampletype/%")
+                        .append(" AND sf.FilePathShort IS NULL");
 
+                _query.append(unreferencedFileSql);
+
+            }
+            else
+            {
+                _query.append("SELECT RowId, FileName, Container, Created, CreatedBy, DataFileUrl FROM ").append(expDataTable).append(" WHERE (1=0)");
+            }
             _query.appendComment("</SampleFileListTableInfo>", getSchema().getSqlDialect());
 
             var rowIdCol = new BaseColumnInfo("RowId", this, JdbcType.INTEGER);
