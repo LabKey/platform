@@ -139,7 +139,13 @@ public class XmlBeansUtil
             SAX_PARSER_FACTORY.setNamespaceAware(true);
             SAX_PARSER_FACTORY.setFeature("http://xml.org/sax/features/validation", false);
             SAX_PARSER_FACTORY.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+
+            // Disable features that could lead to XXE or other vulnerabilities
+            // Keep in sync with ModuleArchive.nameFromModuleXML()
             SAX_PARSER_FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            SAX_PARSER_FACTORY.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            SAX_PARSER_FACTORY.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            SAX_PARSER_FACTORY.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
 
             DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
             DOCUMENT_BUILDER_FACTORY.setNamespaceAware(true);
