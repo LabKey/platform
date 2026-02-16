@@ -6373,7 +6373,7 @@ public class QueryController extends SpringActionController
         public boolean handlePost(InternalViewForm form, BindException errors)
         {
             CstmView view = form.getViewAndCheckPermission();
-            QueryManager.get().delete(view);
+            QueryManager.get().delete(getUser(), view);
             return true;
         }
 
