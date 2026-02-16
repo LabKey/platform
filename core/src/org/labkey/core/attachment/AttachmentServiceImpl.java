@@ -289,7 +289,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
 
         Set<String> filesToSkip = new TreeSet<>();
-        File fileLocation = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
+        File fileLocation = parent instanceof AttachmentDirectory dir ? dir.getFileSystemDirectory() : null;
 
         for (AttachmentFile file : files)
         {
