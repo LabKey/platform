@@ -195,7 +195,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         tcValues.add("Blue");
         tcValues.add("Green");
 
-        FieldDefinition fieldDefinition = new FieldDefinition("MCF", FieldDefinition.ColumnType.TextChoice);
+        FieldDefinition fieldDefinition = new FieldDefinition("MCF", FieldDefinition.ColumnType.MultiValueTextChoice);
         fieldDefinition.setMultiChoiceValues(tcValues);
         FieldDefinition textChoice = new FieldDefinition("CF", FieldDefinition.ColumnType.TextChoice);
         textChoice.setTextChoiceValues(tcValues);
@@ -205,13 +205,11 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         panel.addField(textChoice);
         definitionPage.clickSave();
 
-        Map<String, String> values = new HashMap<>();
+        Map<String, Object> values = new HashMap<>();
         values.put("MouseId", "999320016");
         values.put("SequenceNum", "0.1");
         values.put("date", DateTime.now().toString());
-        values.put("MCF", tcValues.subList(0, 2).stream()
-                .sorted()
-                .collect(Collectors.joining(" ")));
+        values.put("MCF", tcValues.subList(0, 2));
         values.put("CF", tcValues.get(1));
 
         navigateToFolder(getProjectName(), getFolderName());
@@ -222,20 +220,23 @@ public class StudyDatasetsTest extends BaseWebDriverTest
                 .insert(values);
 
         DataRegionTable drt = new DataRegionTable("Dataset", getDriver());
-        checker().verifyEquals("Field data didn't import as expected", values.get("MCF"),
+        String expectedList = ((List<String>) values.get("MCF")).stream()
+                .sorted()
+                .collect(Collectors.joining(" "));
+        checker().verifyEquals("Field data didn't import as expected", expectedList,
                     drt.getDataAsText(0, "MCF"));
         checker().verifyEquals("Field data didn't import as expected", values.get("CF"),
                 drt.getDataAsText(0, "CF"));
 
-        Map<String, String> updatedValues = new HashMap<>();
-        updatedValues.put("MCF", tcValues.subList(1, 3).stream()
-                .sorted()
-                .collect(Collectors.joining(" ")));
-        updatedValues.put("CF", tcValues.get(2));
+        Map<String, Object> updatedValues = new HashMap<>();
+        updatedValues.put("MCF", tcValues.subList(1, 3));
+        updatedValues.put("CF", (String) tcValues.get(2));
         drt.clickEditRow(0)
                 .update(updatedValues);
-
-        checker().verifyEquals("Field data didn't import as expected", updatedValues.get("MCF"),
+        expectedList = ((List<String>) updatedValues.get("MCF")).stream()
+                .sorted()
+                .collect(Collectors.joining(" "));
+        checker().verifyEquals("Field data didn't import as expected", expectedList,
                 drt.getDataAsText(0, "MCF"));
         checker().verifyEquals("Field data didn't import as expected", updatedValues.get("CF"),
                 drt.getDataAsText(0, "CF"));
