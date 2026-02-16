@@ -341,6 +341,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
     }
 
+    // TODO: Move getWebPartFactories() and _webPartFactories into Portal... shouldn't be the module's responsibility
+    // This should also allow moving SimpleWebPartFactoryCache and dependencies into Internal
+
     private final Object FACTORY_LOCK = new Object();
 
     @Override
@@ -350,10 +353,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             if (null == _webPartFactories)
             {
-                // We promise that this method is called after upgrade is complete. Enforce that.
-                if (ModuleLoader.getInstance().isUpgradeRequired())
-                    throw new IllegalStateException("getWebPartFactories() is being called before upgrade is complete");
-
                 Collection<WebPartFactory> wpf = new ArrayList<>();
 
                 // Get all the Java webpart factories
