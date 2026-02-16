@@ -82,7 +82,7 @@ public class ExpUnreferencedSampleFilesTableImpl extends FilteredTable<ExpSchema
             }
             else
             {
-                _query.append("SELECT RowId, Name AS FileName, Container, Created, CreatedBy, DataFileUrl FROM ").append(expDataTable).append(" WHERE (1=0)");
+                _query.append("SELECT RowId, FileName, Container, Created, CreatedBy, DataFileUrl FROM ").append(expDataTable).append(" WHERE (1=0)");
             }
             _query.appendComment("</SampleFileListTableInfo>", getSchema().getSqlDialect());
 
