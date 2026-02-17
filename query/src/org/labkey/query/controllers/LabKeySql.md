@@ -57,16 +57,16 @@ A `PIVOT` query helps you summarize and re-visualize data by transforming rows i
   PIVOT new_column_name BY pivoting_column IN ('value1', 'value2')
   ```
   Note that pivot column names are case-sensitive. You may need to use `LOWER()` or `UPPER()` in your query to work around this issue.
-* **Pivoting by Two Columns:**
-  Two levels of `PIVOT` are not directly supported. However, you can achieve a similar result by concatenating the two values together and pivoting on that "calculated" column.
-  ```sql
-  SELECT
-    Run.SampleCondition || ' ' || PeakLabel AS ConditionPeak,
-    AVG(Data.PercTimeCorrArea) AS AvgPercTimeCorrArea
-  FROM Data
-  GROUP BY Run.SampleCondition || ' ' || PeakLabel
-  PIVOT AvgPercTimeCorrArea BY ConditionPeak
-  ```
+  * **Pivoting by Two Columns:**
+    Two levels of `PIVOT` are not directly supported. However, you can achieve a similar result by concatenating the two values together and pivoting on that "calculated" column.
+    ```sql
+    SELECT
+      Run.SampleCondition || ' ' || PeakLabel AS ConditionPeak,
+      AVG(Data.PercTimeCorrArea) AS AvgPercTimeCorrArea
+    FROM Data
+    GROUP BY Run.SampleCondition || ' ' || PeakLabel
+    PIVOT AvgPercTimeCorrArea BY ConditionPeak
+    ```
 
 -----
 
@@ -94,12 +94,13 @@ You can write queries that access data from different folders within the LabKey 
 LabKey SQL supports **parameterized queries** to improve security and reusability.
 
 * **Syntax:**
-  `PARAMETERS(param1, param2) SELECT * FROM table WHERE column = param1`
+  `PARAMETERS(param1 type, param2 type DEFAULT value) SELECT * FROM table WHERE column = param1`
 * **Functionality:**
-  The `PARAMETERS` keyword declares parameters that can be passed into the query.
+  The `PARAMETERS` keyword declares parameters that can be passed into the query.  If a DEFAULT is
+  not specified, the value will default to NULL.
 * **Example:** A query with two parameters, `MinTemp` and `MinWeight`:
   ```sql
-  PARAMETERS(MinTemp double, MinWeight double)
+  PARAMETERS(MinTemp double, MinWeight double DEFAULT 0.0)
   SELECT
     ParticipantID,
     temperature_C,
@@ -130,7 +131,26 @@ LabKey SQL allows you to directly annotate your SQL statements to override how c
 
 -----
 
-### **7. Available Methods**
+### **7. Container Filters**
+
+In addition to targeting a container by its path, LabKey SQL supports container filters to alter the scope
+of a query. Annotate tables in the FROM clause with an optional container filter. Syntax:
+
+SELECT * FROM Issues [ContainerFilter='CurrentAndSubfolders'] alias
+
+Possible values include:
+- AllFolders
+- AllInProject
+- AllInProjectPlusShared
+- Current
+- CurrentAndFirstChildren
+- CurrentAndParents
+- CurrentAndSubfolders
+- CurrentAndSubfoldersPlusShared
+- CurrentPlusProject
+- CurrentPlusProjectAndShared.
+
+### **8. Available Methods**
 
 Here is a summary of the available functions and methods in LabKey SQL.
 

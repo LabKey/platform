@@ -1461,7 +1461,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     else if (value != null && !StringUtils.isEmpty(String.valueOf(value)))
                     {
                         // Issue 53498: string value for attachment field is not allowed
-                        throw new ValidationException("Can't upload '" + value + "' to field " + name + " with type Attachment.");
+                        throw new ValidationException("Cannot upload '" + value + "' to Attachment type field '" + name + "'.");
                     }
                     else
                         rowStripped.put(name, value); // if null or empty, remove attachment

@@ -18,12 +18,9 @@ package org.labkey.api.audit;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-
-import java.util.Map;
 
 public interface AuditTypeProvider
 {

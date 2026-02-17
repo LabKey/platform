@@ -28,7 +28,6 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.mcp.AbstractAgentAction;
@@ -1292,7 +1291,7 @@ public class TestController extends SpringActionController
     public static class ChatAction extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             if (null == McpService.get() || !McpService.get().isReady())
                 return HtmlView.of("Service is not ready yet.");
@@ -1331,14 +1330,14 @@ public class TestController extends SpringActionController
         AtomicInteger count = new AtomicInteger();
 
         @Override
-        public ModelAndView getConfirmView(Object o, BindException errors) throws Exception
+        public ModelAndView getConfirmView(Object o, BindException errors)
         {
             var db = FileUtil.getTempDirectoryFileLike().resolveChild("VectorStore.database");
             HtmlStringBuilder message = HtmlStringBuilder.of();
             message.append("This will add the contents of /Documention wikis to the vector store.").append(HtmlString.BR);
             message.append("This may take a few minutes.");
             if (db.exists())
-                message.unsafeAppend("<p/><p/>").append("I see a vector store file already exists.  Just FYI.");
+                message.unsafeAppend("<p/><p/>").append("I see a vector store file already exists. Just FYI.");
             return new HtmlView(message);
         }
 
@@ -1355,20 +1354,21 @@ public class TestController extends SpringActionController
 
 
         // not usually used but some actions return views that close the current window etc...
+        @Override
         public ModelAndView getSuccessView(Object form)
         {
             return HtmlView.of(count.get() + " documents added to vector store");
         }
 
         @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(Object o, BindException errors)
         {
             Container documentsContainer = ContainerManager.getForPath("/Documentation");
             if (null == documentsContainer)
                 throw new NotFoundException();
             VectorStore vs = McpService.get().getVectorStore();
             if (null == vs)
-                throw new NotFoundException();
+                throw new NotFoundException("/Documentation project was not found");
 
             ActionURL wikiBase = new ActionURL("wiki","page",documentsContainer);
 

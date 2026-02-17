@@ -132,6 +132,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
@@ -246,6 +247,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.SqlUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
@@ -8880,15 +8882,26 @@ public class QueryController extends SpringActionController
 
             try (var mcpPush = McpContext.withContext(getViewContext()))
             {
-                // TODO when/how to do we reset or isolate different chat sessions, e.g. if two SQL windows are open concurrently?
-                ChatClient chatSession = getChat();
                 String prompt = form.getPrompt();
+
+                String escapeResponse = handleEscape(prompt);
+                if (null != escapeResponse)
+                {
+                    return new JSONObject(Map.of(
+                            "contentType", "text/plain",
+                            "text", escapeResponse,
+                            "success", Boolean.TRUE));
+                }
+
+                // TODO when/how to do we reset or isolate different chat sessions, e.g. if two SQL windows are open concurrently?
+                ChatClient chatSession = getChat(true);
                 List<McpService.MessageResponse> responses;
                 SqlResponse sqlResponse;
 
                 if (isBlank(prompt))
                 {
                     return new JSONObject(Map.of(
+                        "contentType", "text/plain",
                         "text", "🤷",
                         "success", Boolean.TRUE));
                 }
@@ -8920,9 +8933,17 @@ public class QueryController extends SpringActionController
                             if (warning.isPresent())
                                 throw warning.get();
                         }
+                        // if that worked, let have the DB check it too
+                        if (ti.getSqlDialect().isPostgreSQL())
+                        {
+                            // CONSIDER: will this work with LabKey SQL named parameters?
+                            SQLFragment sql = new SQLFragment("PREPARE validate AS SELECT * FROM ").append(ti.getFromSQL("MYVALIDATEQUERY__"));
+                            new SqlExecutor(ti.getSchema().getScope()).execute(sql);
+                        }
                     }
-                    catch (QueryException x)
+                    catch (Exception x)
                     {
+                        // CONSIDER remove line line/character information from DB errors as they won't match the LabKey SQL
                         String validationPrompt = "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below, can you attempt to fix this?\n```" + x.getMessage() + "```";
                         responses = McpService.get().sendMessageEx(chatSession, validationPrompt);
                         var newSqlResponse = extractSql(responses);
@@ -8964,7 +8985,7 @@ public class QueryController extends SpringActionController
             if (null == sql)
             {
                 var text = response.text();
-                String sqlFind = extractSql(text);
+                String sqlFind = SqlUtil.extractSql(text);
                 if (null != sqlFind)
                 {
                     sql = sqlFind;
@@ -8975,23 +8996,5 @@ public class QueryController extends SpringActionController
             html.append(response.html());
         }
         return new SqlResponse(html.getHtmlString(), sql);
-    }
-
-    static String extractSql(String text)
-    {
-        if (text.startsWith("SELECT "))
-            return text;
-        if (text.startsWith("WITH ") && text.contains("SELECT "))
-            return text;
-        if (text.startsWith("PARAMETERS ") && text.contains("SELECT "))
-            return text;
-        var sql = text.indexOf("```sql\n");
-        if (sql >= 0)
-        {
-            var end = text.indexOf("```", sql+7);
-            if (end >= 0)
-                return text.substring(sql+7,end);
-        }
-        return null;
     }
 }

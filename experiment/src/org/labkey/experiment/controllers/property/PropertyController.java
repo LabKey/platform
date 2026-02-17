@@ -126,6 +126,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1215,7 +1216,7 @@ public class PropertyController extends SpringActionController
                     throw new IllegalArgumentException("Unable to find a posted file or the file for the posted id/path.");
                 }
 
-                return getInferDomainResponse(loader, form.getNumLinesToInclude(), form.isCheckCommentLineCount(), form.getDomainKindName());
+                return getInferDomainResponse(loader, form);
             }
             finally
             {
@@ -1223,9 +1224,13 @@ public class PropertyController extends SpringActionController
             }
         }
 
-        private ApiSimpleResponse getInferDomainResponse(DataLoader loader, Integer numLinesToInclude, boolean checkCommentLineCount, String domainKindName) throws IOException
+        private ApiSimpleResponse getInferDomainResponse(DataLoader loader, InferDomainForm form) throws IOException
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
+            Integer numLinesToInclude = form.getNumLinesToInclude();
+            boolean checkCommentLineCount = form.isCheckCommentLineCount();
+            String domainKindName = form.getDomainKindName();
+            Collection<String> distinctValueColumns = form.getDistinctValueColumns();
 
             List<GWTPropertyDescriptor> fields = new ArrayList<>();
             List<GWTPropertyDescriptor> reservedFields = new ArrayList<>();
@@ -1258,11 +1263,44 @@ public class PropertyController extends SpringActionController
                 {
                     response.put("commentLineCount", loader.getCommentLineCount());
                 }
+                if (distinctValueColumns != null && !distinctValueColumns.isEmpty())
+                {
+                    response.put("distinctValues", getDistinctValues(loader, distinctValueColumns));
+                }
             }
 
             response.put("fields", fields);
             response.put("reservedFields", reservedFields);
             return response;
+        }
+
+        /**
+         * Iterate through the data and get the distinct values for the specified columns.
+         * Response is a map of column name to set of distinct string values, for those columns
+         * that have at least one non-null value.
+         */
+        private Map<String, Set<String>> getDistinctValues(DataLoader loader, Collection<String> colKeys) throws IOException
+        {
+            Map<String, Set<String>> distinctValuesMap = new HashMap<>();
+            try (var iter = loader.iterator())
+            {
+                while (iter.hasNext())
+                {
+                    Map<String, Object> values = iter.next();
+                    if (values == null)
+                        continue;
+
+                    for (String key : colKeys)
+                    {
+                        if (values.containsKey(key))
+                        {
+                            Object val = values.get(key);
+                            distinctValuesMap.computeIfAbsent(key, k -> new CaseInsensitiveHashSet()).add(val == null ? null : val.toString());
+                        }
+                    }
+                }
+            }
+            return distinctValuesMap;
         }
     }
 
@@ -1274,6 +1312,7 @@ public class PropertyController extends SpringActionController
         private String _domainKindName;
         private boolean _guessFormatAsTSV;
         private boolean _checkCommentLineCount;
+        private @Nullable Collection<String> _distinctValueColumns;
 
         public Integer getNumLinesToInclude()
         {
@@ -1323,6 +1362,16 @@ public class PropertyController extends SpringActionController
         public void setCheckCommentLineCount(boolean checkCommentLineCount)
         {
             _checkCommentLineCount = checkCommentLineCount;
+        }
+
+        public Collection<String> getDistinctValueColumns()
+        {
+            return _distinctValueColumns;
+        }
+
+        public void setDistinctValueColumns(Collection<String> distinctValueColumns)
+        {
+            _distinctValueColumns = distinctValueColumns;
         }
     }
 
