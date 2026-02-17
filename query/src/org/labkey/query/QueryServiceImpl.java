@@ -1413,7 +1413,7 @@ public class QueryServiceImpl implements QueryService
 
             // Delete them
             for (CstmView view : views)
-                mgr.delete(view);
+                mgr.delete(user, view);
 
             // owner == null since we're exporting/importing only shared views
             CustomView cv = qd.createSharedCustomView(reader.getName());

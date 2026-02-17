@@ -90,6 +90,7 @@ import org.labkey.query.analytics.AggregatesMinAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesSumAnalyticsProvider;
 import org.labkey.query.analytics.RemoveColumnAnalyticsProvider;
 import org.labkey.query.analytics.SummaryStatisticsAnalyticsProvider;
+import org.labkey.query.audit.GridViewAuditProvider;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.OlapController;
@@ -292,6 +293,7 @@ public class QueryModule extends DefaultModule
         {
             AuditLogService.get().registerAuditType(new QueryExportAuditProvider());
             AuditLogService.get().registerAuditType(new QueryUpdateAuditProvider());
+            AuditLogService.get().registerAuditType(new GridViewAuditProvider());
         }
         AuditLogService.get().registerAuditType(new ReportAuditProvider());
 
