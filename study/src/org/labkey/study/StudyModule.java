@@ -59,6 +59,8 @@ import org.labkey.api.qc.export.DataStateImportExportHelper;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ai.ClaudeGuidelinesService;
+import org.labkey.api.query.ai.ClaudeToolService;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.ReportContentEmailManager;
 import org.labkey.api.reports.ReportService;
@@ -126,6 +128,8 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.study.ai.GetDatasetColumnsTool;
+import org.labkey.study.ai.GetDatasetsTool;
 import org.labkey.study.assay.ExperimentListenerImpl;
 import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.assay.query.PublishAuditProvider;
@@ -289,6 +293,19 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         RoleManager.registerPermission(new ManageStudyPermission());
 
         QueryService.get().addQueryListener(new QueryDatasetQueryChangeListener());
+
+        ClaudeToolService claudeToolService = ClaudeToolService.get();
+        if (claudeToolService != null)
+        {
+            claudeToolService.registerTool(this, new GetDatasetsTool());
+            claudeToolService.registerTool(this, new GetDatasetColumnsTool());
+        }
+
+        ClaudeGuidelinesService guidelinesService = ClaudeGuidelinesService.get();
+        if (guidelinesService != null)
+        {
+            guidelinesService.registerGuidelines(this, "ai/studyReportAI.md");
+        }
     }
 
     @Override

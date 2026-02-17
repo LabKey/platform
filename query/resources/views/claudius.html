@@ -12,7 +12,7 @@
       }
 
       h1 {
-        color: #00d9ff;
+        color: #0066cc;
         margin-bottom: 20px;
         font-size: 1.5em;
       }
@@ -47,14 +47,14 @@
       }
 
       .terminal {
-        background: #0d0d1a;
-        border: 1px solid #333;
+        background: #ffffff;
+        border: 1px solid #d0d0d0;
         border-radius: 8px;
         overflow: hidden;
       }
 
       .terminal-header {
-        background: #252540;
+        background: #f0f0f5;
         padding: 10px 15px;
         display: flex;
         align-items: center;
@@ -84,7 +84,7 @@
       .dot-green { background: #27ca40; }
 
       .terminal-title {
-        color: #888;
+        color: #555;
         font-size: 0.9em;
       }
 
@@ -99,20 +99,20 @@
       }
 
       .prompt-line {
-        color: #27ca40;
+        color: #1a8a30;
       }
 
       .prompt-symbol {
-        color: #00d9ff;
+        color: #0066cc;
       }
 
       .user-input {
-        color: #fff;
+        color: #1a1a1a;
       }
 
       .response {
         margin-top: 5px;
-        color: #ccc;
+        color: #333;
         white-space: pre-wrap;
         line-height: 1.5;
       }
@@ -124,9 +124,9 @@
       .input-area {
         display: flex;
         align-items: flex-start;
-        border-top: 1px solid #333;
+        border-top: 1px solid #d0d0d0;
         padding: 15px;
-        background: #0a0a15;
+        background: #f5f5fa;
       }
 
       .input-area .prompt-symbol {
@@ -138,7 +138,7 @@
         flex: 1;
         background: transparent;
         border: none;
-        color: #fff;
+        color: #1a1a1a;
         font-family: inherit;
         font-size: 1em;
         outline: none;
@@ -150,11 +150,11 @@
       }
 
       #commandInput::placeholder {
-        color: #555;
+        color: #999;
       }
 
       .loading {
-        color: #ffbd2e;
+        color: #cc8800;
       }
 
       .loading::after {
@@ -181,15 +181,15 @@
       }
 
       .preview-header h2 {
-        color: #00d9ff;
+        color: #0066cc;
         font-size: 1.2em;
         margin: 0;
       }
 
       .preview-toggle {
-        background: #252540;
-        border: 1px solid #444;
-        color: #ccc;
+        background: #f0f0f5;
+        border: 1px solid #ccc;
+        color: #333;
         padding: 5px 15px;
         border-radius: 4px;
         cursor: pointer;
@@ -197,7 +197,7 @@
       }
 
       .preview-toggle:hover {
-        background: #333355;
+        background: #e0e0eb;
       }
 
       .preview-container {
@@ -215,8 +215,8 @@
       }
 
       .code-panel, .render-panel {
-        background: #0d0d1a;
-        border: 1px solid #333;
+        background: #ffffff;
+        border: 1px solid #d0d0d0;
         border-radius: 8px;
         overflow: hidden;
         display: flex;
@@ -226,9 +226,9 @@
       }
 
       .panel-header {
-        background: #252540;
+        background: #f0f0f5;
         padding: 8px 15px;
-        color: #888;
+        color: #555;
         font-size: 0.85em;
         display: flex;
         justify-content: space-between;
@@ -236,9 +236,9 @@
       }
 
       .copy-btn {
-        background: #333;
+        background: #e0e0e0;
         border: none;
-        color: #ccc;
+        color: #333;
         padding: 3px 10px;
         border-radius: 3px;
         cursor: pointer;
@@ -246,7 +246,7 @@
       }
 
       .copy-btn:hover {
-        background: #444;
+        background: #d0d0d0;
       }
 
       .code-content {
@@ -256,7 +256,7 @@
       }
 
       #htmlCode {
-        color: #ccc;
+        color: #333;
         white-space: pre;
         margin: 0;
         font-size: 0.9em;
@@ -273,9 +273,9 @@
 
       .preview-header select,
       .terminal-header-controls select {
-        background: #1a1a2e;
-        border: 1px solid #444;
-        color: #fff;
+        background: #ffffff;
+        border: 1px solid #ccc;
+        color: #333;
         padding: 5px 8px;
         border-radius: 4px;
         font-family: inherit;
@@ -283,9 +283,9 @@
       }
 
       .save-wiki-input {
-        background: #1a1a2e;
-        border: 1px solid #444;
-        color: #fff;
+        background: #ffffff;
+        border: 1px solid #ccc;
+        color: #333;
         padding: 5px 12px;
         border-radius: 4px;
         font-family: inherit;
@@ -293,9 +293,9 @@
       }
 
       .save-wiki-btn {
-        background: #252540;
-        border: 1px solid #444;
-        color: #ccc;
+        background: #f0f0f5;
+        border: 1px solid #ccc;
+        color: #333;
         padding: 5px 15px;
         border-radius: 4px;
         cursor: pointer;
@@ -303,7 +303,7 @@
       }
 
       .save-wiki-btn:hover:not(:disabled) {
-        background: #333355;
+        background: #e0e0eb;
       }
 
       .save-wiki-btn:disabled {
@@ -320,7 +320,7 @@
                     <div class="terminal-dot dot-red"></div>
                     <div class="terminal-dot dot-yellow"></div>
                     <div class="terminal-dot dot-green"></div>
-                    <span class="terminal-title">Report Builder Terminal</span>
+                    <span class="terminal-title">Conversation</span>
                     <div class="terminal-header-controls">
                         <select id="modelSelect">
                             <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5</option>
@@ -340,7 +340,7 @@
                     </div>
                 </div>
                 <div class="input-area">
-                    <span class="prompt-symbol">❯</span>
+                    <span class="prompt-symbol">&#10095;</span>
                     <textarea id="commandInput" placeholder="Describe the report..." autofocus rows="1"></textarea>
                 </div>
             </div>
@@ -421,7 +421,7 @@
         entryDiv.className = 'history-entry';
         entryDiv.innerHTML = `
         <div class="prompt-line">
-          <span class="prompt-symbol">❯</span>
+          <span class="prompt-symbol">&#10095;</span>
           <span class="user-input">${escapeHtml(message)}</span>
         </div>
         <div class="response loading">Thinking</div>
@@ -432,7 +432,7 @@
         const responseDiv = entryDiv.querySelector('.response');
 
         try {
-            const response = await fetch(LABKEY.ActionURL.buildURL('study', 'claudeReports.api'), {
+            const response = await fetch(LABKEY.ActionURL.buildURL('query', 'claudeReports.api'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -500,7 +500,7 @@
         entryDiv.className = 'history-entry';
         entryDiv.innerHTML = `
         <div class="prompt-line">
-          <span class="prompt-symbol">❯</span>
+          <span class="prompt-symbol">&#10095;</span>
           <span class="user-input">${escapeHtml(input)}</span>
         </div>
         <div class="response ${isError ? 'error' : ''}">${escapeHtml(response)}</div>

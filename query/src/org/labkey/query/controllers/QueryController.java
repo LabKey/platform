@@ -19,7 +19,6 @@ package org.labkey.query.controllers;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.genai.Chat;
 import com.google.genai.errors.ClientException;
 import com.google.genai.errors.ServerException;
 import jakarta.servlet.ServletException;
@@ -28,7 +27,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
@@ -36,6 +34,14 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -162,8 +168,10 @@ import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.mcp.PromptForm;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -199,7 +207,11 @@ import org.labkey.api.query.TempQuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.ai.ClaudeGuidelinesService;
+import org.labkey.api.query.ai.ClaudeTool;
+import org.labkey.api.query.ai.ClaudeToolService;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
@@ -327,6 +339,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.file.Path;
@@ -349,6 +362,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -8993,5 +9007,363 @@ public class QueryController extends SpringActionController
                 return text.substring(sql+7,end);
         }
         return null;
+    }
+
+    public static class ClaudeReportsForm
+    {
+        private String _model;
+        private String _messages;
+        private String _system;
+
+        public String getModel()
+        {
+            return _model;
+        }
+
+        public void setModel(String model)
+        {
+            _model = model;
+        }
+
+        public String getMessages()
+        {
+            return _messages;
+        }
+
+        public void setMessages(String messages)
+        {
+            _messages = messages;
+        }
+
+        public String getSystem()
+        {
+            return _system;
+        }
+
+        public void setSystem(String system)
+        {
+            _system = system;
+        }
+    }
+
+    // Server-side proxy for the Anthropic Messages API that enables AI-assisted report generation.
+    // The client sends a conversation history (messages), and this action forwards it to Claude
+    // along with a system prompt and study-aware tools (dataset listing, column inspection).
+    // An agentic tool-use loop lets Claude autonomously query study metadata before producing
+    // its final response, which is returned to the client as JSON.
+    @RequiresPermission(AdminPermission.class)
+    public static class ClaudeReportsAction extends MutatingApiAction<ClaudeReportsForm>
+    {
+        private static final Logger LOG = LogManager.getLogger(ClaudeReportsAction.class);
+        private static final int TOKEN_BUDGET = 80_000;
+        private static final int CHARS_PER_TOKEN = 4;
+        private static final int RECENT_MESSAGES_TO_PRESERVE = 4; // last 2 user/assistant pairs
+        /**
+         * Trims conversation history to fit within the token budget. Two passes:
+         * 1) Strip HTML code blocks from older assistant messages to reduce size.
+         * 2) Drop oldest messages if estimated tokens still exceed the budget.
+         */
+        private JSONArray trimConversationHistory(JSONArray messages)
+        {
+            // Pass 1: Strip HTML code blocks from older assistant messages
+            int preserveFrom = Math.max(0, messages.length() - RECENT_MESSAGES_TO_PRESERVE);
+            for (int i = 0; i < preserveFrom; i++)
+            {
+                JSONObject msg = messages.getJSONObject(i);
+                if ("assistant".equals(msg.optString("role")))
+                {
+                    String content = msg.optString("content", "");
+                    String stripped = content.replaceAll("```html\\n?[\\s\\S]*?```",
+                        "[HTML report omitted for brevity]");
+                    msg.put("content", stripped);
+                }
+            }
+
+            // Pass 2: Token-budget truncation from newest to oldest
+            int estimatedTokens = 0;
+            int cutIndex = 0;
+            for (int i = messages.length() - 1; i >= 0; i--)
+            {
+                String content = messages.getJSONObject(i).optString("content", "");
+                estimatedTokens += content.length() / CHARS_PER_TOKEN;
+                if (estimatedTokens > TOKEN_BUDGET)
+                {
+                    cutIndex = i + 1;
+                    break;
+                }
+            }
+
+            // Anthropic API requires the first message to have role "user"
+            while (cutIndex < messages.length() &&
+                   !"user".equals(messages.getJSONObject(cutIndex).optString("role")))
+            {
+                cutIndex++;
+            }
+
+            if (cutIndex == 0)
+                return messages;
+
+            JSONArray trimmed = new JSONArray();
+            for (int i = cutIndex; i < messages.length(); i++)
+                trimmed.put(messages.getJSONObject(i));
+            return trimmed;
+        }
+
+        // Validate that the incoming messages field is a well-formed JSON array of
+        // {role, content} objects. Only "user" and "assistant" roles are permitted
+        // to prevent injection of "system" messages from the client.
+        @Override
+        public void validateForm(ClaudeReportsForm form, Errors errors)
+        {
+            if (form.getMessages() == null || form.getMessages().isBlank())
+            {
+                errors.reject(ERROR_MSG, "No messages provided.");
+                return;
+            }
+
+            JSONArray parsedMessages;
+            try
+            {
+                parsedMessages = new JSONArray(form.getMessages());
+            }
+            catch (JSONException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid messages JSON: " + e.getMessage());
+                return;
+            }
+
+            for (int i = 0; i < parsedMessages.length(); i++)
+            {
+                JSONObject msg = parsedMessages.optJSONObject(i);
+                if (msg == null)
+                {
+                    errors.reject(ERROR_MSG, "Each message must be a JSON object.");
+                    return;
+                }
+                String role = msg.optString("role", "");
+                if (!"user".equals(role) && !"assistant".equals(role))
+                {
+                    errors.reject(ERROR_MSG, "Only messages with role \"user\" or \"assistant\" are allowed.");
+                    return;
+                }
+                if (!msg.has("content"))
+                {
+                    errors.reject(ERROR_MSG, "Each message must have a \"content\" field.");
+                    return;
+                }
+            }
+        }
+
+        @Override
+        public ApiResponse execute(ClaudeReportsForm form, BindException errors)
+        {
+            // TODO: Add per-user rate limiting keyed by user ID, to cap expensive API calls to the Anthropic service.
+
+            // Retrieve the Anthropic API key from the query module's admin-configured properties.
+            Module queryModule = ModuleLoader.getInstance().getModule("Query");
+            ModuleProperty mp = queryModule.getModuleProperties().get("ClaudeApiKey");
+            String apiKey = mp.getEffectiveValue(getContainer());
+
+            if (apiKey == null || apiKey.isBlank())
+            {
+                errors.reject(ERROR_MSG, "Claude API key is not configured. An admin must set the ClaudeApiKey module property.");
+                return null;
+            }
+
+            // Load the system prompt from a bundled module resource. This prompt instructs
+            // Claude on how to generate reports and use the available study-data tools.
+            Resource systemPromptResource = queryModule.getModuleResource("ai/reportAI.md");
+            if (systemPromptResource == null || !systemPromptResource.exists())
+            {
+                errors.reject(ERROR_MSG, "System prompt resource ai/reportAI.md not found.");
+                return null;
+            }
+
+            String systemPrompt;
+            try (InputStream is = systemPromptResource.getInputStream())
+            {
+                systemPrompt = PageFlowUtil.getStreamContentsAsString(is);
+            }
+            catch (IOException e)
+            {
+                errors.reject(
+                        ERROR_MSG, "Failed to read system prompt: " + e.getMessage());
+                return null;
+            }
+
+            ClaudeGuidelinesService guidelinesService = ClaudeGuidelinesService.get();
+            if (guidelinesService != null)
+            {
+                String additionalGuidelines = guidelinesService.getGuidelines(getContainer());
+                if (!additionalGuidelines.isEmpty())
+                {
+                    systemPrompt = systemPrompt + "\n\n" + additionalGuidelines;
+                }
+            }
+
+            // Build the Anthropic Messages API request payload with the client-supplied
+            // conversation, the server-side system prompt, and the available tools.
+            JSONArray conversationMessages = new JSONArray(form.getMessages());
+            int originalCount = conversationMessages.length();
+            conversationMessages = trimConversationHistory(conversationMessages);
+            int trimmedCount = conversationMessages.length();
+
+            if (LOG.isDebugEnabled())
+            {
+                int trimmedTokenEstimate = 0;
+                for (int i = 0; i < conversationMessages.length(); i++)
+                    trimmedTokenEstimate += conversationMessages.getJSONObject(i).optString("content", "").length() / CHARS_PER_TOKEN;
+                LOG.debug("Conversation history: {} messages before trimming, {} messages after (~{} estimated tokens)",
+                    originalCount, trimmedCount, trimmedTokenEstimate);
+            }
+
+            JSONObject requestBody = new JSONObject();
+            requestBody.put("model", form.getModel() != null ? form.getModel() : "claude-sonnet-4-5-20250929");
+            requestBody.put("max_tokens", 64000);
+            requestBody.put("messages", conversationMessages);
+            requestBody.put("system", systemPrompt);
+
+            // Retrieve registered tools that are active in this container.
+            ClaudeToolService toolService = ClaudeToolService.get();
+            if (toolService == null)
+            {
+                errors.reject(ERROR_MSG, "Claude tool service is not available.");
+                return null;
+            }
+            List<ClaudeTool> claudeTools = toolService.getTools(getContainer());
+            if (claudeTools.isEmpty())
+            {
+                errors.reject(ERROR_MSG, "No Claude tools are available in this folder. Ensure the appropriate modules are active.");
+                return null;
+            }
+
+            Map<String, ClaudeTool> toolMap = new HashMap<>();
+            for (ClaudeTool tool : claudeTools)
+                toolMap.put(tool.getName(), tool);
+
+            JSONArray tools = new JSONArray();
+            for (ClaudeTool tool : claudeTools)
+                tools.put(tool.getToolDefinition());
+            requestBody.put("tools", tools);
+
+            // Agentic tool-use loop: send the request to Claude, and if the response asks
+            // to call tools (stop_reason == "tool_use"), execute them server-side and feed
+            // the results back as a follow-up user message. Repeat until Claude produces a
+            // final text response or we hit the safety cap of 5 iterations.
+            try (CloseableHttpClient httpClient = HttpClients.createDefault())
+            {
+                JSONArray messages = conversationMessages;
+                int maxIterations = 10;
+
+                for (int i = 0; i < maxIterations; i++)
+                {
+                    HttpPost httpPost = new HttpPost("https://api.anthropic.com/v1/messages");
+
+                    // TODO: Probably can tighten up these timeouts
+                    RequestConfig config = RequestConfig.custom()
+                        .setConnectTimeout(10, TimeUnit.SECONDS)
+                        .setResponseTimeout(360, TimeUnit.SECONDS)
+                        .build();
+                    httpPost.setConfig(config);
+                    httpPost.setHeader("Content-Type", "application/json");
+                    httpPost.setHeader("x-api-key", apiKey);
+                    httpPost.setHeader("anthropic-version", "2023-06-01");
+                    httpPost.setEntity(new StringEntity(requestBody.toString(), ContentType.APPLICATION_JSON));
+
+                    try (CloseableHttpResponse response = httpClient.execute(httpPost))
+                    {
+                        String responseBody = EntityUtils.toString(response.getEntity());
+                        JSONObject jsonResponse = new JSONObject(responseBody);
+
+                        int statusCode = response.getCode();
+                        if (statusCode != 200)
+                        {
+                            String detail = jsonResponse.optJSONObject("error") != null
+                                    ? jsonResponse.getJSONObject("error").optString("message", "unknown")
+                                    : "status " + statusCode;
+                            LOG.warn("Claude API request failed: {}", detail); // TODO: Need to ensure API key not exposed
+                            errors.reject(ERROR_MSG, "The AI service returned an error. Please try again or contact an administrator.");
+                            return null;
+                        }
+
+                        String stopReason = jsonResponse.optString("stop_reason", "end_turn");
+                        if ("refusal".equals(stopReason))
+                        {
+                            errors.reject(ERROR_MSG, "Report Builder was unable to answer the request. Try rephrasing your prompt.");
+                            return null;
+                        }
+                        if ("tool_use".equals(stopReason))
+                        {
+                            // Claude requested one or more tool calls. Execute each tool
+                            // server-side and collect results to send back in the next turn.
+                            JSONArray content = jsonResponse.getJSONArray("content");
+                            JSONArray toolResultBlocks = new JSONArray();
+
+                            for (int j = 0; j < content.length(); j++)
+                            {
+                                JSONObject block = content.getJSONObject(j);
+                                if (!"tool_use".equals(block.getString("type")))
+                                    continue;
+
+                                String toolUseId = block.getString("id");
+                                String toolName = block.getString("name");
+
+                                ClaudeTool tool = toolMap.get(toolName);
+                                JSONArray resultArray = (tool != null)
+                                        ? tool.execute(getUser(), getContainer(), block.optJSONObject("input"))
+                                        : new JSONArray();
+
+                                JSONObject toolResultBlock = new JSONObject();
+                                toolResultBlock.put("type", "tool_result");
+                                toolResultBlock.put("tool_use_id", toolUseId);
+                                JSONObject textBlock = new JSONObject();
+                                textBlock.put("type", "text");
+                                textBlock.put("text", resultArray.toString());
+                                toolResultBlock.put("content", new JSONArray().put(textBlock));
+                                toolResultBlocks.put(toolResultBlock);
+                            }
+
+                            // Per the Anthropic API contract, tool results must follow the
+                            // assistant's tool_use message as a "user" role message.
+                            JSONObject assistantMsg = new JSONObject();
+                            assistantMsg.put("role", "assistant");
+                            assistantMsg.put("content", content);
+                            messages.put(assistantMsg);
+
+                            JSONObject toolResultMsg = new JSONObject();
+                            toolResultMsg.put("role", "user");
+                            toolResultMsg.put("content", toolResultBlocks);
+                            messages.put(toolResultMsg);
+
+                            requestBody.put("messages", messages);
+                        }
+                        else
+                        {
+                            // Claude finished without requesting more tools — return
+                            // the final response payload to the client.
+                            Map<String, Object> result = new HashMap<>();
+                            result.put("success", true);
+                            result.put("data", jsonResponse.toMap());
+                            return new ApiSimpleResponse(result);
+                        }
+                    }
+                }
+
+                // Safety guard: if Claude keeps requesting tools beyond the cap, bail out
+                // rather than looping indefinitely.
+                errors.reject(ERROR_MSG, "Tool use loop exceeded maximum iterations.");
+                return null;
+            }
+            catch (IOException e)
+            {
+                errors.reject(ERROR_MSG, "Failed to call Claude API: " + e.getMessage());
+                return null;
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_MSG, "Failed to call Claude API: " + e.getMessage());
+                return null;
+            }
+        }
     }
 }

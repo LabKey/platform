@@ -36,6 +36,8 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.mcp.McpService;
+import org.labkey.api.query.ai.ClaudeGuidelinesService;
+import org.labkey.api.query.ai.ClaudeToolService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.JavaExportScriptFactory;
@@ -83,6 +85,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.query.ai.ClaudeGuidelinesServiceImpl;
+import org.labkey.query.ai.ClaudeToolServiceImpl;
 import org.labkey.query.analytics.AggregatesCountNonBlankAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesMaxAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesMeanAnalyticsProvider;
@@ -145,6 +149,8 @@ public class QueryModule extends DefaultModule
     public QueryModule()
     {
         QueryService.setInstance(new QueryServiceImpl());
+        ClaudeToolService.setInstance(new ClaudeToolServiceImpl());
+        ClaudeGuidelinesService.setInstance(new ClaudeGuidelinesServiceImpl());
         BuiltInColumnTypes.registerStandardColumnTransformers();
 
         QueryDriver.register();

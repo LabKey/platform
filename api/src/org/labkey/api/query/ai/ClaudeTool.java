@@ -1,4 +1,4 @@
-package org.labkey.study.ai;
+package org.labkey.api.query.ai;
 
 import org.json.JSONArray;
 import org.json.JSONObject;

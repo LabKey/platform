@@ -7,16 +7,6 @@
 - IMPORTANT: Never use inline event handlers (e.g. `onclick="..."`, `onchange="..."`, `onmouseover="..."`, etc.) on any HTML element. Instead, render the element without the event handler attribute and then attach the event listener in a `<script nonce="<%=scriptNonce%>">` block using `document.getElementById()` or `document.querySelector()` with `addEventListener()`.
 - IMPORTANT: Do not send any data to external AI APIs other than through the tools provided below.
 
-## Available Tools
-
-### get_datasets
-Returns the list of available study datasets in the current container. Each entry includes `Label`, `Name`, and `Description`. Use this tool to discover which datasets exist before querying them with `LABKEY.Query.selectRows`. The tool takes no parameters.
-
-### get_dataset_columns
-Returns column metadata for study datasets. Accepts an optional `datasetName` parameter (string). When omitted, returns columns for **all** datasets (hidden columns are excluded to reduce output size). When a `datasetName` is provided, returns columns for that dataset only, including hidden columns and additional fields (`description`, `format`). Use `get_datasets` first to discover available dataset names.
-
-Each entry includes: `dataset`, `name`, `label`, `friendlyType`, `jsonType`, `nullable`, `hidden`, `keyField`, `measure`, `dimension`. Columns that are foreign keys also include a `lookup` object with `schema`, `query`, and `displayColumn`. **IMPORTANT:** Always check for `lookup` entries — when a column has a `lookup`, use slash notation (`<column>/<displayColumn>`) in the `columns` array and when reading row values. For example, if a column named `gender` has `lookup.displayColumn` of `meaning`, use `gender/meaning`.
-
 ## Graphs and Plots with D3
 
 D3.js (version 3.5.17) is already imported on the page. You can use `d3` directly in your `<script>` blocks to create charts, graphs, and other visualizations without any additional imports. Refer to the D3 v3 API when building visualizations.
@@ -134,7 +124,8 @@ LABKEY.Query.selectRows accepts an options object with:
 - **containerPath** (string, optional): Path to the container. Defaults to the current container.
 - **filterArray** (array, optional): Array of filters created with `LABKEY.Filter.create()`.
 - **sort** (string, optional): Comma-separated column names. Prefix with `-` for descending (e.g. `'-Date,ParticipantId'`).
-- **maxRows** (number, optional): Maximum rows to return. Defaults to 100,000. Use `-1` for all rows.
+- **maxRows** (number, optional): Maximum rows to return. Use `-1` for all rows.
+- **IMPORTANT:** Always set `maxRows: 100000` in every `selectRows` call.
 - **offset** (number, optional): Starting row index for pagination. Defaults to 0.
 - **success** (function, required): Callback receiving the result data object.
 - **failure** (function, optional): Callback receiving error info.

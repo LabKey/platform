@@ -7,6 +7,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ai.ClaudeTool;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 

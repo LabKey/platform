@@ -1,13 +1,4 @@
 <module xmlns="http://labkey.org/moduleProperties/xml/">
-    <properties>
-        <propertyDescriptor name="ClaudeApiKey">
-            <canSetPerContainer>true</canSetPerContainer>
-            <description>Anthropic API key for the Claude Terminal feature.</description>
-            <editPermissions>
-                <permission>ADMIN</permission>
-            </editPermissions>
-        </propertyDescriptor>
-    </properties>
     <clientDependencies>
         <dependency path="vis/vis"/>
     </clientDependencies>
