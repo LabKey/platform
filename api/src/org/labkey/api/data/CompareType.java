@@ -1167,13 +1167,6 @@ public abstract class CompareType
         }
 
         @Override
-        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
-        {
-            Object[] params = getParamVals();
-            sb.append("contains at least one of ").append(Arrays.toString(params));
-        }
-
-        @Override
         public String getFilterOpText()
         {
             return "CONTAINS AT LEAST ONE OF ";
