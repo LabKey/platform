@@ -80,8 +80,8 @@ import static org.junit.Assert.assertTrue;
  * - java: Filter.java
  * - js: Filter.js
  * - R: makeFilter.R, makeFilter.Rd
- * - SAS: labkeymakefilter.sas, labkey.org SAS docs
- * - Python & Perl don't have a filter operator enum
+ * - Python: query.py
+ * - Perl doesn't have a filter operator enum
  */
 public abstract class CompareType
 {
