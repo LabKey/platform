@@ -1011,6 +1011,17 @@ public abstract class CompareType
             return new Pair<>(valuesFragment, columnFragment);
         }
 
+        @Override
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        {
+            sb.append(formatter.format(_fieldKey));
+            sb.append(" ");
+            Object[] params = getParamVals();
+            sb.append(getFilterOpText()).append(Arrays.toString(params));
+        }
+
+        abstract String getFilterOpText();
+
     }
 
     private static class ArrayIsEmptyClause extends ArrayClause
@@ -1048,7 +1059,15 @@ public abstract class CompareType
         @Override
         public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
-            sb.append("is empty");
+            sb.append(formatter.format(_fieldKey));
+            sb.append(" ");
+            sb.append("IS EMPTY");
+        }
+
+        @Override
+        public String getFilterOpText()
+        {
+            return null;
         }
 
     }
@@ -1070,7 +1089,15 @@ public abstract class CompareType
         @Override
         public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
-            sb.append("is not empty");
+            sb.append(formatter.format(_fieldKey));
+            sb.append(" ");
+            sb.append("IS NOT EMPTY");
+        }
+
+        @Override
+        public String getFilterOpText()
+        {
+            return null;
         }
 
     }
@@ -1100,10 +1127,9 @@ public abstract class CompareType
         }
 
         @Override
-        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public String getFilterOpText()
         {
-            Object[] params = getParamVals();
-            sb.append("contains all of ").append(Arrays.toString(params));
+            return "CONTAINS ALL OF ";
         }
 
     }
@@ -1147,6 +1173,12 @@ public abstract class CompareType
             sb.append("contains at least one of ").append(Arrays.toString(params));
         }
 
+        @Override
+        public String getFilterOpText()
+        {
+            return "CONTAINS AT LEAST ONE OF ";
+        }
+
     }
 
     private static class ArrayContainsNoneClause extends ArrayContainsAnyClause
@@ -1162,12 +1194,10 @@ public abstract class CompareType
         {
             return "array_contains_none(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")";
         }
-
         @Override
-        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public String getFilterOpText()
         {
-            Object[] params = getParamVals();
-            sb.append("contains none of ").append(Arrays.toString(params));
+            return "CONTAINS NONE OF ";
         }
 
     }
@@ -1205,10 +1235,9 @@ public abstract class CompareType
         }
 
         @Override
-        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public String getFilterOpText()
         {
-            Object[] params = getParamVals();
-            sb.append("contains the same elements as ").append(Arrays.toString(params));
+            return "CONTAINS THE SAME ELEMENTS AS ";
         }
 
     }
@@ -1228,10 +1257,9 @@ public abstract class CompareType
         }
 
         @Override
-        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public String getFilterOpText()
         {
-            Object[] params = getParamVals();
-            sb.append("does not contain the same elements as ").append(Arrays.toString(params));
+            return "DOES NOT CONTAIN THE SAME ELEMENTS AS ";
         }
 
     }
