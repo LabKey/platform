@@ -308,7 +308,7 @@ public class QueryManager
         Container container = ContainerManager.getForId(cstmView.getContainerId());
         CustomViewCache.uncache(container);
 
-        addGridViewAuditEvent(user, container, "Grid view updated: " + GridViewAuditProvider.getGridViewNameForAudit(cstmView.getName()), cstmView, oldView, cstmView);
+        addGridViewAuditEvent(user, container, "Grid view updated: ", cstmView, oldView, cstmView);
 
         return cstmView;
     }
@@ -319,7 +319,7 @@ public class QueryManager
         Container container = ContainerManager.getForId(cstmView.getContainerId());
         CustomViewCache.uncache(container);
 
-        addGridViewAuditEvent(user, container, "Grid view created: " + GridViewAuditProvider.getGridViewNameForAudit(cstmView.getName()), cstmView, null, cstmView);
+        addGridViewAuditEvent(user, container, "Grid view created: ", cstmView, null, cstmView);
 
         return cstmView;
     }
@@ -327,15 +327,16 @@ public class QueryManager
     public void delete(User user, CstmView view)
     {
         Container container = ContainerManager.getForId(view.getContainerId());
-        addGridViewAuditEvent(user, container, "Grid view deleted: " + GridViewAuditProvider.getGridViewNameForAudit(view.getName()), view, view, null);
+        addGridViewAuditEvent(user, container, "Grid view deleted: ", view, view, null);
 
         Table.delete(getTableInfoCustomView(), view.getCustomViewId());
         CustomViewCache.uncache(container);
     }
 
-    private void addGridViewAuditEvent(User user, Container container, String comment, CstmView view, @Nullable CstmView oldView, @Nullable CstmView newView)
+    private void addGridViewAuditEvent(User user, Container container, String commentPrefix, CstmView view, @Nullable CstmView oldView, @Nullable CstmView newView)
     {
-        GridViewAuditEvent event = new GridViewAuditEvent(container, comment);
+        String viewName = GridViewAuditProvider.getGridViewNameForAudit(view.getName());
+        GridViewAuditEvent event = new GridViewAuditEvent(container, commentPrefix + viewName);
         event.setCustomViewId(view.getCustomViewId());
         event.setViewName(GridViewAuditProvider.getGridViewNameForAudit(view.getName()));
         event.setSchemaName(view.getSchema());
