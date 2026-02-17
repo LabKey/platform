@@ -67,6 +67,7 @@ import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
+import org.labkey.query.audit.GridViewAuditProvider;
 import org.labkey.query.audit.GridViewAuditProvider.GridViewAuditEvent;
 import org.springframework.jdbc.BadSqlGrammarException;
 
@@ -307,7 +308,7 @@ public class QueryManager
         Container container = ContainerManager.getForId(cstmView.getContainerId());
         CustomViewCache.uncache(container);
 
-        addGridViewAuditEvent(user, container, "Grid view updated: " + cstmView.getName(), cstmView, oldView, cstmView);
+        addGridViewAuditEvent(user, container, "Grid view updated: " + GridViewAuditProvider.getGridViewNameForAudit(cstmView.getName()), cstmView, oldView, cstmView);
 
         return cstmView;
     }
@@ -318,7 +319,7 @@ public class QueryManager
         Container container = ContainerManager.getForId(cstmView.getContainerId());
         CustomViewCache.uncache(container);
 
-        addGridViewAuditEvent(user, container, "Grid view created: " + cstmView.getName(), cstmView, null, cstmView);
+        addGridViewAuditEvent(user, container, "Grid view created: " + GridViewAuditProvider.getGridViewNameForAudit(cstmView.getName()), cstmView, null, cstmView);
 
         return cstmView;
     }
@@ -326,7 +327,7 @@ public class QueryManager
     public void delete(User user, CstmView view)
     {
         Container container = ContainerManager.getForId(view.getContainerId());
-        addGridViewAuditEvent(user, container, "Grid view deleted: " + view.getName(), view, view, null);
+        addGridViewAuditEvent(user, container, "Grid view deleted: " + GridViewAuditProvider.getGridViewNameForAudit(view.getName()), view, view, null);
 
         Table.delete(getTableInfoCustomView(), view.getCustomViewId());
         CustomViewCache.uncache(container);
@@ -336,7 +337,7 @@ public class QueryManager
     {
         GridViewAuditEvent event = new GridViewAuditEvent(container, comment);
         event.setCustomViewId(view.getCustomViewId());
-        event.setViewName(view.getName());
+        event.setViewName(GridViewAuditProvider.getGridViewNameForAudit(view.getName()));
         event.setSchemaName(view.getSchema());
         event.setQueryName(view.getQueryName());
         event.setCustomViewOwner(view.getCustomViewOwner());

@@ -77,6 +77,11 @@ public class GridViewAuditProvider extends AbstractAuditTypeProvider implements 
         return (Class<K>) GridViewAuditEvent.class;
     }
 
+    public static String getGridViewNameForAudit(String viewName)
+    {
+        return StringUtils.isEmpty(viewName) ? "Default" : viewName;
+    }
+
     @Override
     public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
@@ -211,7 +216,7 @@ public class GridViewAuditProvider extends AbstractAuditTypeProvider implements 
         {
             Map<String, Object> elements = new LinkedHashMap<>();
             elements.put("customViewId", getCustomViewId());
-            elements.put("viewName", StringUtils.isEmpty(getViewName()) ? "default" : getViewName());
+            elements.put("viewName", getGridViewNameForAudit(getViewName()));
             elements.put("schemaName", getSchemaName());
             elements.put("queryName", getQueryName());
             elements.put("customViewOwner", getCustomViewOwner());
