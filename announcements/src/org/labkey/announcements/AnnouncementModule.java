@@ -175,9 +175,13 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         {
             fsr.addFactories(new NotificationSettingsWriterFactory(), new NotificationSettingsImporterFactory());
         }
+    }
 
+    @Override
+    public void registerMigrationHandlers(@NotNull DatabaseMigrationService service)
+    {
         // AnnouncementModule owns the schema, so it registers the schema handler... even though it's mostly about wiki
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(CommSchema.getInstance().getSchema())
+        service.registerSchemaHandler(new DefaultMigrationSchemaHandler(CommSchema.getInstance().getSchema())
         {
             @Override
             public void beforeSchema()
@@ -212,7 +216,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
             }
         });
 
-        DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
+        service.registerTableHandler(new MigrationTableHandler()
         {
             @Override
             public TableInfo getTableInfo()
@@ -227,7 +231,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
             }
         });
     }
-
 
     @Override
     public void startBackgroundThreads()

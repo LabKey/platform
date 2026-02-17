@@ -344,8 +344,12 @@ public class QueryModule extends DefaultModule
         Role trustedAnalystRole = RoleManager.getRole("org.labkey.api.security.roles.TrustedAnalystRole");
         if (null != trustedAnalystRole)
             trustedAnalystRole.addPermission(EditQueriesPermission.class);
+    }
 
-        DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
+    @Override
+    public void registerMigrationHandlers(@NotNull DatabaseMigrationService service)
+    {
+        service.registerTableHandler(new MigrationTableHandler()
         {
             @Override
             public TableInfo getTableInfo()
