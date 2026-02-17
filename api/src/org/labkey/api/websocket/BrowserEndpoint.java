@@ -17,6 +17,7 @@ package org.labkey.api.websocket;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.ClientEndpoint;
 import jakarta.websocket.ClientEndpointConfig;
 import jakarta.websocket.CloseReason;
 import jakarta.websocket.ContainerProvider;
@@ -34,6 +35,7 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
@@ -92,7 +94,7 @@ public abstract class BrowserEndpoint extends Endpoint
         try
         {
             uri = getWSRemoteUri(session, endpointConfig);
-            LOG.info("BrowserEndpoint.onOpen( " + session.getRequestURI() + " -> " + uri);
+            LOG.debug("BrowserEndpoint.onOpen( {} -> {}", session.getRequestURI(), uri);
             Map<String, List<String>> requestHeaders = (Map<String, List<String>>) endpointConfig.getUserProperties().get("requestHeaders");
             this.browserSession = session;
             this.serverEndpoint = new ServerEndpoint(new URI(uri), requestHeaders, endpointConfig.getUserProperties());
@@ -102,13 +104,8 @@ public abstract class BrowserEndpoint extends Endpoint
         }
         catch (URISyntaxException | IOException | DeploymentException | ServletException ex)
         {
-            LOG.warn("BrowserEndpoint.onOpen failed to proxy " + session.getRequestURI() + " -> " + uri, ex);
-            try
-            {
-                session.close(new CloseReason(CloseReason.CloseCodes.UNEXPECTED_CONDITION,
-                        "Failed to connect to remote WebSocket server"));
-            }
-            catch (IOException ignored) {}
+            LOG.debug("BrowserEndpoint.onOpen failed to proxy {} -> {}", session.getRequestURI(), uri, ex);
+            UnexpectedException.rethrow(ex);
         }
     }
 
@@ -129,6 +126,7 @@ public abstract class BrowserEndpoint extends Endpoint
 
     public abstract Map<String,List<String>> prepareProxyHeaders(URI remoteURI, Map<String,List<String>> requestHeaders, Map<String,Object> properties);
 
+    @ClientEndpoint
     class ServerEndpoint extends Endpoint
     {
         final Session serverSession;
@@ -142,10 +140,10 @@ public abstract class BrowserEndpoint extends Endpoint
             final Map<String,List<String>> proxyHeaders = prepareProxyHeaders(remoteURI, requestHeaders, properties);
 
             // Log what the subclass's prepareProxyHeaders returned
-            LOG.info("=== WebSocket proxy: proxyHeaders from prepareProxyHeaders ===");
+            LOG.trace("=== WebSocket proxy: proxyHeaders from prepareProxyHeaders ===");
             for (Map.Entry<String, List<String>> entry : proxyHeaders.entrySet())
             {
-                LOG.info("  proxyHeaders: " + entry.getKey() + " = " + entry.getValue());
+                LOG.trace("  proxyHeaders: {} = {}", entry.getKey(), entry.getValue());
             }
 
             WebSocketContainer clientEndPoint = ContainerProvider.getWebSocketContainer();
@@ -156,62 +154,23 @@ public abstract class BrowserEndpoint extends Endpoint
                         public void beforeRequest(Map<String, List<String>> headers)
                         {
                             // Log incoming browser headers for debugging
-                            LOG.info("=== WebSocket proxy: browser request headers ===");
+                            LOG.trace("=== WebSocket proxy: browser request headers ===");
                             for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet())
                             {
-                                LOG.info("  Browser header: " + entry.getKey() + " = " + entry.getValue());
+                                LOG.trace("  Browser header: {} = {}", entry.getKey(), entry.getValue());
                             }
 
                             headers.putAll(proxyHeaders);
-                            // Tomcat 11 requires these headers for WebSocket upgrade, but they may be filtered out by some proxy code
-                            headers.put("Upgrade", List.of("websocket"));
-                            headers.put("Connection", List.of("upgrade"));
-
-                            // Pass through Sec-WebSocket-Protocol if present (for subprotocol negotiation)
-                            // NOTE: Do NOT copy Sec-WebSocket-Extensions - Tomcat 11 changed how extension negotiation works
-                            // and copying browser extensions can cause the handshake to fail.
-                            // Also do NOT copy Sec-WebSocket-Key - each connection needs its own unique key.
-                            // Sec-WebSocket-Version is set by Tomcat's client.
-                            for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet())
-                            {
-                                String name = entry.getKey();
-                                if (name.equalsIgnoreCase("Sec-WebSocket-Protocol"))
-                                {
-                                    headers.put("Sec-WebSocket-Protocol", entry.getValue());
-                                }
-                            }
-
-                            // Ensure User-Agent is set - Tomcat's WebSocket client doesn't send one by default,
-                            // and some servers (like RStudio) check for browser-like User-Agent
-                            if (!headers.containsKey("User-Agent"))
-                            {
-                                // Try to get from browser request headers (may be lowercase)
-                                for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet())
-                                {
-                                    if (entry.getKey().equalsIgnoreCase("User-Agent"))
-                                    {
-                                        headers.put("User-Agent", entry.getValue());
-                                        break;
-                                    }
-                                }
-                            }
-
-                            // Log outgoing headers to backend server
-                            LOG.info("=== WebSocket proxy: headers being sent to backend (" + remoteURI + ") ===");
-                            for (Map.Entry<String, List<String>> entry : headers.entrySet())
-                            {
-                                LOG.info("  Backend header: " + entry.getKey() + " = " + entry.getValue());
-                            }
                         }
 
                         @Override
                         public void afterResponse(HandshakeResponse hr)
                         {
                             // Log response headers from backend server for debugging
-                            LOG.info("=== WebSocket proxy: response headers from backend ===");
+                            LOG.trace("=== WebSocket proxy: response headers from backend ===");
                             for (Map.Entry<String, List<String>> entry : hr.getHeaders().entrySet())
                             {
-                                LOG.info("  Response header: " + entry.getKey() + " = " + entry.getValue());
+                                LOG.trace("  Response header: {} = {}", entry.getKey(), entry.getValue());
                             }
                         }
                     })
