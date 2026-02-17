@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.16.1",
+    "@labkey/components": "7.18.0-fb-transormSubfolder.0",
     "@labkey/themes": "1.6.0"
   },
   "devDependencies": {
