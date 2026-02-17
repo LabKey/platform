@@ -17,7 +17,6 @@
 package org.labkey.test.tests.study;
 
 import org.jetbrains.annotations.Nullable;
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -55,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.time.LocalDate.now;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -208,7 +208,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         Map<String, Object> values = new HashMap<>();
         values.put("MouseId", "999320016");
         values.put("SequenceNum", "0.1");
-        values.put("date", DateTime.now().toString());
+        values.put("date", now());
         values.put("MCF", tcValues.subList(0, 2));
         values.put("CF", tcValues.get(1));
 
