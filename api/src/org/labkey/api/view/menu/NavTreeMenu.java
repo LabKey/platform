@@ -201,10 +201,11 @@ public class NavTreeMenu extends WebPartView<Object> implements Collapsible
                 ActionURL expandCollapseUrl = Objects.requireNonNull(PageFlowUtil.urlProvider(ProjectUrls.class)).getExpandCollapseURL(getViewContext().getContainer(), pathToHere, rootId);
 
                 String image = collapsed ? "plus.gif" : "minus.gif";
+                String altPrefix = collapsed ? "Expand" : "Collapse";
                 id = config.makeId("navtree");
                 oldWriter.printf("<a id=\"%s\" href=\"%s\">", id, filter(expandCollapseUrl));
                 config.addHandler(id, "click", "return LABKEY.Utils.toggleLink(this,true);");
-                oldWriter.printf("<img src=\"%s/_images/%s\" width=9 height=9></a>", context.getContextPath(), image);
+                oldWriter.printf("<img src=\"%s/_images/%s\" width=9 height=9 alt=\"%s %s\"></a>", filter(context.getContextPath()), filter(image), filter(altPrefix), filter(nav.getText()));
             }
             else if (indentForExpansionGifs)
                 oldWriter.printf("<div class=\"labkey-nav-tree-indenter\"></div>");

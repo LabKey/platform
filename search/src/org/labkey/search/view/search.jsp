@@ -292,7 +292,7 @@
     <div style="position:relative;">
         <labkey:form id="<%=searchFormId%>" className="lk-search-form" action="<%=searchConfig.getPostURL(c)%>">
             <labkey:input type="text" name="q" placeholder="<%=form.isWebPart() ? \"\" : SearchUtils.getPlaceholder(c)%>" formGroup="false" value="<%=queryString%>"/>
-            <a class="search-overlay fa fa-search"></a>
+            <a class="search-overlay fa fa-search" aria-label="<%= h(SearchUtils.getPlaceholder(c)) %>"></a>
             <% if (showAdvancedUI) { %>
             <small>
                 <a class="search-advanced-toggle">advanced options</a>
