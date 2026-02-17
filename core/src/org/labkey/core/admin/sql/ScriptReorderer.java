@@ -16,7 +16,7 @@
 
 package org.labkey.core.admin.sql;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.util.PageFlowUtil;
@@ -33,7 +33,6 @@ import java.util.regex.Pattern;
 public class ScriptReorderer
 {
     public static final String COMMENT_REGEX = "((/\\*.+?\\*/)|(^[ \\t]*--.*?$))\\s*";   // Single-line or block comment, followed by white space
-    private static final String SCHEMA_NAME_REGEX = "((\\w+)\\.)?";
 
     private final List<Map<String, Collection<Statement>>> _statementLists = new LinkedList<>();
     private final List<String> _endingStatements = new LinkedList<>();
@@ -41,10 +40,12 @@ public class ScriptReorderer
     private Map<String, Collection<Statement>> _currentStatements;
 
     private final DbSchema _schema;
+    private final String SCHEMA_NAME_REGEX;
     private final String TABLE_NAME_REGEX;
     private final String TABLE_NAME2_REGEX;
     private final String TABLE_NAME_NO_UNDERSCORE_REGEX;
     private final String STATEMENT_ENDING_REGEX;
+    private final String CONSTRAINT_NAME_REGEX;
 
     private String _contents;
     private int _row = 0;
@@ -56,15 +57,19 @@ public class ScriptReorderer
 
         if (_schema.getSqlDialect().isSqlServer())
         {
-            TABLE_NAME_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "(#?\\w+))";  // # allows for temp table names
+            SCHEMA_NAME_REGEX = "(((\\w+)|(\\[\\w+\\]))\\.)?"; // optional [] around schema name
+            TABLE_NAME_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "((#?\\w+)|(\\[#?\\w+\\])))";  // # allows for temp table names, optional [] around table name
             TABLE_NAME_NO_UNDERSCORE_REGEX = null;
             STATEMENT_ENDING_REGEX = "((; GO\\s*$)|(;\\s*$)|( GO\\s*$))\\s*";       // Semicolon, GO, or both
+            CONSTRAINT_NAME_REGEX = "((\\w+)|(\\[\\w+\\]))"; // optional [] around name
         }
         else
         {
+            SCHEMA_NAME_REGEX = "((\\w+)\\.)?";
             TABLE_NAME_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "(\\w+))";
             TABLE_NAME_NO_UNDERSCORE_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "([[a-zA-Z0-9]]+))";
             STATEMENT_ENDING_REGEX = ";(\\s*?)((--)[^\\n]*)?$(\\s*)";
+            CONSTRAINT_NAME_REGEX = "(\\w+)";
         }
 
         TABLE_NAME2_REGEX = TABLE_NAME_REGEX.replace("table", "table2");
@@ -89,7 +94,7 @@ public class ScriptReorderer
         patterns.add(new SqlPattern(getRegExWithPrefix("UPDATE (ON )?"), Type.Table, Operation.AlterRows));
         patterns.add(new SqlPattern(getRegExWithPrefix("DELETE FROM "), Type.Table, Operation.AlterRows));
 
-        patterns.add(new SqlPattern("CREATE (UNIQUE )?((NON)?CLUSTERED )?INDEX (IF NOT EXISTS )?\\w+? ON " + TABLE_NAME_REGEX + ".+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+        patterns.add(new SqlPattern("CREATE (UNIQUE )?((NON)?CLUSTERED )?INDEX (IF NOT EXISTS )?\\[?(\\w+?)\\]? ON " + TABLE_NAME_REGEX + ".+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
         patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, Operation.Other));
         patterns.add(new SqlPattern(getRegExWithPrefix("TRUNCATE( TABLE)? "), Type.Table, Operation.Other));
 
@@ -104,7 +109,7 @@ public class ScriptReorderer
 
             // All other sp_renames
             patterns.add(new SqlPattern("(EXEC(UTE)? )?sp_rename (@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + ".*?'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("EXEC(UTE)? core\\.fn_dropifexists\\s*'(?<table>\\w+)'\\s*,\\s*'(?<schema>\\w+)'\\s*,\\s*'(TABLE|COLUMN|INDEX|DEFAULT|CONSTRAINT)'.*?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("EXEC(UTE)? core\\.fn_dropifexists\\s*(@objname\\s*=\\s*)?'(?<table>\\w+)'\\s*,\\s*(@objschema\\s*=\\s*)?'(?<schema>\\w+)'\\s*,\\s*(@objtype\\s*=\\s*)?'(TABLE|COLUMN|INDEX|DEFAULT|CONSTRAINT)'.*?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
             patterns.add(new SqlPattern("EXEC(UTE)? core\\.fn_dropifexists\\s*'(\\w+)'\\s*,\\s*'(?<schema>\\w+)'.*?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
 
             // DROP INDEX on SQL Server follows a similar pattern to CREATE INDEX (above)
@@ -134,7 +139,7 @@ public class ScriptReorderer
             patterns.add(new SqlPattern("DO (\\S+) (.+?) END \\1" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
         }
 
-        patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " ADD CONSTRAINT \\w+ FOREIGN KEY \\([^\\)]+?\\) REFERENCES " + TABLE_NAME2_REGEX + " \\([^\\)]+?\\).*?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+        patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " (WITH CHECK )?ADD CONSTRAINT " + CONSTRAINT_NAME_REGEX + " FOREIGN KEY\\s*\\([^\\)]+?\\) REFERENCES " + TABLE_NAME2_REGEX + " \\([^\\)]+?\\).*?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
         // Put this at the end to capture all other ALTER TABLE statements (i.e., not RENAMEs)
         patterns.add(new SqlPattern(getRegExWithPrefix("ALTER TABLE (IF EXISTS )?(ONLY )?"), Type.Table, Operation.Other));
 
@@ -320,7 +325,7 @@ public class ScriptReorderer
         if (null != tableName2 && index(tableName2) > index(tableName))
             tableName = tableName2;
 
-        String key = tableName.toLowerCase();
+        String key = tableName.replace("[", "").replace("]", "").toLowerCase();
 
         Collection<Statement> tableStatements = _currentStatements.computeIfAbsent(key, k -> new LinkedList<>());
 
@@ -377,14 +382,14 @@ public class ScriptReorderer
         if (null != tableName)
         {
             String schemaName = null;
-            boolean containsTableName = StringUtils.containsIgnoreCase(sql, tableName);
+            boolean containsTableName = Strings.CI.contains(sql, tableName);
 
             if (!containsTableName && tableName.contains("."))
             {
                 String[] parts = tableName.split("\\.");
                 tableName = parts[0];
                 schemaName = parts[1];
-                containsTableName = StringUtils.containsIgnoreCase(sql, tableName);
+                containsTableName = Strings.CI.contains(sql, tableName);
             }
 
             if (containsTableName)

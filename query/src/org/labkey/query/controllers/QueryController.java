@@ -247,6 +247,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.SqlUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
@@ -8984,7 +8985,7 @@ public class QueryController extends SpringActionController
             if (null == sql)
             {
                 var text = response.text();
-                String sqlFind = extractSql(text);
+                String sqlFind = SqlUtil.extractSql(text);
                 if (null != sqlFind)
                 {
                     sql = sqlFind;
@@ -8995,23 +8996,5 @@ public class QueryController extends SpringActionController
             html.append(response.html());
         }
         return new SqlResponse(html.getHtmlString(), sql);
-    }
-
-    static String extractSql(String text)
-    {
-        if (text.startsWith("SELECT "))
-            return text;
-        if (text.startsWith("WITH ") && text.contains("SELECT "))
-            return text;
-        if (text.startsWith("PARAMETERS ") && text.contains("SELECT "))
-            return text;
-        var sql = text.indexOf("```sql\n");
-        if (sql >= 0)
-        {
-            var end = text.indexOf("```", sql+7);
-            if (end >= 0)
-                return text.substring(sql+7,end);
-        }
-        return null;
     }
 }
