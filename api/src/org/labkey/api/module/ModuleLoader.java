@@ -479,8 +479,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                 // avoid error in startup, DefaultModule does not expect to see module with same name initialized again
                 ((DefaultModule) moduleCreated).unregister();
                 _moduleFailures.remove(moduleCreated.getName());
-                ensureModulesSupportLabKeyDatabase(moduleList);
-                initializeModules(moduleList);
+                pruneModulesForDatabaseSupport(moduleList);
+                initializeAndPruneModules(moduleList);
 
                 Throwable t = _moduleFailures.get(moduleCreated.getName());
                 if (null != t)
@@ -622,8 +622,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         synchronized (_modulesLock)
         {
             // _modules is in dependency order
-            ensureModulesSupportLabKeyDatabase(_modules);
-            verifyDependencies(_modules);
+            pruneModulesForDatabaseSupport(_modules);
+            pruneModulesForDependencies(_modules);
         }
 
         if (getTableInfoModules().getTableType() == DatabaseTableType.NOT_IN_DB)
@@ -679,7 +679,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         synchronized (_modulesLock)
         {
             checkForRenamedModules();
-            initializeModules(_modules);
+            initializeAndPruneModules(_modules);
         }
 
         if (!_duplicateModuleErrors.isEmpty())
@@ -922,7 +922,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     /**
      * Enumerates all the modules, removing the ones that don't support the primary database
      */
-    private void ensureModulesSupportLabKeyDatabase(List<Module> modules)
+    private void pruneModulesForDatabaseSupport(List<Module> modules)
     {
         SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
         SupportedDatabase primaryType = SupportedDatabase.get(dialect);
@@ -942,13 +942,13 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     /**
      * Remove modules if any of their module dependencies are missing
      */
-    private void verifyDependencies(List<Module> modules)
+    private void pruneModulesForDependencies(List<Module> modules)
     {
         for (Module module : modules)
         {
             try
             {
-                verifyDependencies(module);
+                pruneModuleForDependencies(module);
             }
             catch (ModuleDependencyException e)
             {
@@ -962,7 +962,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     /**
      * Enumerates all remaining modules, initializing them and removing any that fail to initialize
      */
-    private void initializeModules(List<Module> modules)
+    private void initializeAndPruneModules(List<Module> modules)
     {
         Module core = getCoreModule();
 
@@ -982,7 +982,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             try
             {
                 // Make sure all its dependencies initialized successfully
-                verifyDependencies(module);
+                pruneModuleForDependencies(module);
                 module.initialize();
             }
             catch (Throwable t)
@@ -996,8 +996,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         initControllerToModule();
     }
 
-    // Check a module's dependencies and throw on the first one that's not present (i.e., dependency is not present or was removed because its initialize() failed)
-    private void verifyDependencies(Module module)
+    // Check a single module's dependencies and throw on the first one that's not present (i.e., dependency is not present or its init() threw)
+    private void pruneModuleForDependencies(Module module)
     {
         synchronized (_modulesLock)
         {
