@@ -934,7 +934,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                 var e = new DatabaseNotSupportedException("This module does not support " + dialect.getProductName());
                 // In production mode, treat these exceptions as a module initialization error
                 // In dev mode, make them warnings so devs can easily switch databases
-                removeModule(modules, module, !AppProps.getInstance().isDevMode(), e);
+                removeModule(modules, module, !AppProps.getInstance().isDevMode(), e, "load");
             }
         }
     }
@@ -948,13 +948,13 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         {
             try
             {
-                pruneModuleForDependencies(module);
+                pruneModuleForDependencies(module, "load");
             }
             catch (ModuleDependencyException e)
             {
                 // In production mode, treat module dependency exceptions as errors
                 // In dev mode, make them warnings so devs can easily switch databases
-                removeModule(modules, module, !AppProps.getInstance().isDevMode(), e);
+                removeModule(modules, module, !AppProps.getInstance().isDevMode(), e, "load");
             }
         }
     }
@@ -982,12 +982,21 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             try
             {
                 // Make sure all its dependencies initialized successfully
-                pruneModuleForDependencies(module);
+                pruneModuleForDependencies(module, "initialize");
+            }
+            catch (ModuleDependencyException mde)
+            {
+                removeModule(modules, module, !AppProps.getInstance().isDevMode(), mde, "load");
+                continue;
+            }
+
+            try
+            {
                 module.initialize();
             }
             catch (Throwable t)
             {
-                removeModule(modules, module, true, t);
+                removeModule(modules, module, true, t, "initialize");
             }
         }
 
@@ -997,37 +1006,37 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     }
 
     // Check a single module's dependencies and throw on the first one that's not present (i.e., dependency is not present or its init() threw)
-    private void pruneModuleForDependencies(Module module)
+    private void pruneModuleForDependencies(Module module, String action)
     {
         synchronized (_modulesLock)
         {
             for (String dependency : module.getModuleDependenciesAsSet())
                 if (!_moduleMap.containsKey(dependency))
-                    throw new ModuleDependencyException(dependency);
+                    throw new ModuleDependencyException(dependency, action);
         }
     }
 
     private static class ModuleDependencyException extends ConfigurationException
     {
-        public ModuleDependencyException(String dependencyName)
+        public ModuleDependencyException(String dependencyName, String action)
         {
-            super("This module depends on the \"" + dependencyName + "\" module, which failed to initialize");
+            super("This module depends on the \"" + dependencyName + "\" module, which failed to " + action);
         }
     }
 
-    private void removeModule(List<Module> modules, Module current, boolean treatAsError, Throwable t)
+    private void removeModule(List<Module> modules, Module current, boolean treatAsError, Throwable t, String action)
     {
         String name = current.getName();
 
         if (treatAsError)
         {
-            _log.error("Unable to initialize module {}", name, t);
+            _log.error("Unable to {} module {}", action, name, t);
             //noinspection ThrowableResultOfMethodCallIgnored
             _moduleFailures.put(name, t);
         }
         else
         {
-            _log.warn("Unable to initialize module {} due to: {}", name, t.getMessage());
+            _log.warn("Unable to {} module {} due to: {}", action, name, t.getMessage());
         }
 
         synchronized (_modulesLock)
