@@ -1,5 +1,6 @@
 package org.labkey.query.audit;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
@@ -33,6 +34,7 @@ public class GridViewAuditProvider extends AbstractAuditTypeProvider implements 
     public static final String COLUMN_NAME_QUERY_NAME = "QueryName";
     public static final String COLUMN_NAME_CUSTOM_VIEW_OWNER = "CustomViewOwner";
     public static final String COLUMN_NAME_INHERITABLE = "Inheritable";
+    public static final String COLUMN_NAME_HIDDEN = "Hidden";
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
@@ -120,6 +122,7 @@ public class GridViewAuditProvider extends AbstractAuditTypeProvider implements 
         private String _queryName;
         private Integer _customViewOwner;
         private boolean _inheritable;
+        private boolean _hidden;
 
         /** Important for reflection-based instantiation */
         @SuppressWarnings("unused")
@@ -193,16 +196,27 @@ public class GridViewAuditProvider extends AbstractAuditTypeProvider implements 
             _inheritable = inheritable;
         }
 
+        public boolean isHidden()
+        {
+            return _hidden;
+        }
+
+        public void setHidden(boolean hidden)
+        {
+            _hidden = hidden;
+        }
+
         @Override
         public Map<String, Object> getAuditLogMessageElements()
         {
             Map<String, Object> elements = new LinkedHashMap<>();
             elements.put("customViewId", getCustomViewId());
-            elements.put("viewName", getViewName());
+            elements.put("viewName", StringUtils.isEmpty(getViewName()) ? "default" : getViewName());
             elements.put("schemaName", getSchemaName());
             elements.put("queryName", getQueryName());
             elements.put("customViewOwner", getCustomViewOwner());
             elements.put("inheritable", isInheritable());
+            elements.put("hidden", isHidden());
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
         }
@@ -226,6 +240,7 @@ public class GridViewAuditProvider extends AbstractAuditTypeProvider implements 
             fields.add(createPropertyDescriptor(COLUMN_NAME_QUERY_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_CUSTOM_VIEW_OWNER, PropertyType.INTEGER));
             fields.add(createPropertyDescriptor(COLUMN_NAME_INHERITABLE, PropertyType.BOOLEAN));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_HIDDEN, PropertyType.BOOLEAN));
             fields.add(createOldDataMapPropertyDescriptor());
             fields.add(createNewDataMapPropertyDescriptor());
             _fields = Collections.unmodifiableSet(fields);

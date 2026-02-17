@@ -340,7 +340,8 @@ public class QueryManager
         event.setSchemaName(view.getSchema());
         event.setQueryName(view.getQueryName());
         event.setCustomViewOwner(view.getCustomViewOwner());
-        event.setInheritable((view.getFlags() & FLAG_INHERITABLE) != 0);
+        event.setInheritable(canInherit(view.getFlags()));
+        event.setHidden(isHidden(view.getFlags()));
 
         if (oldView != null)
             event.setOldRecordMap(encodeViewDataMap(oldView));
