@@ -1542,7 +1542,7 @@ public class DbScope
         public void testSchemaNames()
         {
             ModuleLoader.getInstance().getModules()
-                    .forEach(m -> assertEquals(getSchemaNames(m, true), getSchemaNames(m, false)));
+                .forEach(m -> assertEquals(getSchemaNames(m, true), getSchemaNames(m, false)));
         }
     }
 

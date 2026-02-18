@@ -162,8 +162,12 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
                 return metric;
             });
         }
+    }
 
-        DatabaseMigrationService.get().registerSchemaHandler(new IssueMigrationSchemaHandler());
+    @Override
+    public void registerMigrationHandlers(@NotNull DatabaseMigrationService service)
+    {
+        service.registerSchemaHandler(new IssueMigrationSchemaHandler());
     }
 
     @NotNull
