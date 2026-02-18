@@ -778,9 +778,14 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return _missingValues.containsKey(mv);
     }
 
+    protected TableInfo getTableInfoForConversion()
+    {
+        return getDbTable();
+    }
+
     final protected void convertTypes(User user, Container c, Map<String,Object> row) throws ValidationException
     {
-        convertTypes(user, c, row,  getQueryTable(), null);
+        convertTypes(user, c, row,  getTableInfoForConversion(), null);
     }
 
     // TODO Path->FileObject

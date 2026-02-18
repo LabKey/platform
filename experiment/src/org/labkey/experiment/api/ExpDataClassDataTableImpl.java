@@ -1442,6 +1442,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
         @Override
+        protected TableInfo getTableInfoForConversion()
+        {
+            // getDBTable() returns exp.data table, which lacks properties fields.
+            // TODO: this method can be removed when implementing consolidating dataclass update methods
+            return getQueryTable();
+        }
+
+        @Override
         protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
         {
             // LSID was stripped by super.updateRows() and is needed to insert into the dataclass provisioned table
