@@ -1438,6 +1438,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (PropertyType.ATTACHMENT == col.getPropertyType())
                 return value;
 
+            if (ALIAS_CONCEPT_URI.equals(col.getConceptURI()))
+                return value;
+
             return super.convertColumnValue(col, value, user, c, fileLinkDirPath);
         }
 
