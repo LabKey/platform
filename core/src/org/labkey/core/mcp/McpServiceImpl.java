@@ -1,4 +1,4 @@
-package org.labkey.core.mpc;
+package org.labkey.core.mcp;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
