@@ -143,7 +143,7 @@
     {
 %>
             <li class="navbar-search hidden-xs">
-                <a class="fa fa-search" id="global-search-trigger"></a>
+                <a class="fa fa-search" id="global-search-trigger" aria-label="<%=h(SearchUtils.getPlaceholder(c))%>"></a>
                 <div id="global-search" class="global-search">
                     <labkey:form id="global-search-form" action="<%=urlProvider(SearchUrls.class).getSearchURL(c, null)%>" method="GET">
                         <input type="text" class="search-box" name="q" placeholder="<%=h(SearchUtils.getPlaceholder(c))%>" value="">
