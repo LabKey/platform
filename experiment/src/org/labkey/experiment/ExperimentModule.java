@@ -907,10 +907,14 @@ public class ExperimentModule extends SpringModule
                 return results;
             });
         }
+    }
 
+    @Override
+    public void registerMigrationHandlers(@NotNull DatabaseMigrationService service)
+    {
         ExperimentMigrationSchemaHandler handler = new ExperimentMigrationSchemaHandler();
-        DatabaseMigrationService.get().registerSchemaHandler(handler);
-        DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
+        service.registerSchemaHandler(handler);
+        service.registerTableHandler(new MigrationTableHandler()
         {
             @Override
             public TableInfo getTableInfo()
@@ -927,7 +931,7 @@ public class ExperimentModule extends SpringModule
                     filter.addClause(includedClause);
             }
         });
-        DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
+        service.registerTableHandler(new MigrationTableHandler()
         {
             @Override
             public TableInfo getTableInfo()
@@ -944,7 +948,7 @@ public class ExperimentModule extends SpringModule
                     filter.addClause(includedClause);
             }
         });
-        DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
+        service.registerTableHandler(new MigrationTableHandler()
         {
             @Override
             public TableInfo getTableInfo()
@@ -961,9 +965,9 @@ public class ExperimentModule extends SpringModule
                     filter.addClause(includedClause);
             }
         });
-        DatabaseMigrationService.get().registerSchemaHandler(new SampleTypeMigrationSchemaHandler());
+        service.registerSchemaHandler(new SampleTypeMigrationSchemaHandler());
         DataClassMigrationSchemaHandler dcHandler = new DataClassMigrationSchemaHandler();
-        DatabaseMigrationService.get().registerSchemaHandler(dcHandler);
+        service.registerSchemaHandler(dcHandler);
         ExperimentDeleteService.setInstance(dcHandler);
     }
 

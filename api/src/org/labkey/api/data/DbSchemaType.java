@@ -73,7 +73,7 @@ public enum DbSchemaType
         @Override
         DbSchema createDbSchema(DbScope scope, String metaDataName, Module module) throws SQLException
         {
-            Map<String, SchemaTableInfoFactory> metaDataTableNames = DbSchema.loadTableMetaData(DbScope.getLabKeyScope(), metaDataName);
+            Map<String, SchemaTableInfoFactory> metaDataTableNames = DbSchema.loadTableMetaData(scope, metaDataName);
 
             return new MigrationDbSchema(metaDataName, this, scope, metaDataTableNames, module);
         }

@@ -45,12 +45,12 @@ import java.util.Set;
 
 class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implements MigrationFilter
 {
-    static void register()
+    static void register(@NotNull DatabaseMigrationService service)
     {
         CoreMigrationSchemaHandler schemaHandler = new CoreMigrationSchemaHandler();
-        DatabaseMigrationService.get().registerSchemaHandler(schemaHandler);
-        DatabaseMigrationService.get().registerMigrationFilter(schemaHandler);
-        DatabaseMigrationService.get().registerTableHandler(new MigrationTableHandler()
+        service.registerSchemaHandler(schemaHandler);
+        service.registerMigrationFilter(schemaHandler);
+        service.registerTableHandler(new MigrationTableHandler()
         {
             @Override
             public TableInfo getTableInfo()
@@ -65,7 +65,7 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
             }
         });
 
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(PropertySchema.getInstance().getSchema()){
+        service.registerSchemaHandler(new DefaultMigrationSchemaHandler(PropertySchema.getInstance().getSchema()){
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
             {
@@ -73,7 +73,7 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
             }
         });
 
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(TestSchema.getInstance().getSchema()){
+        service.registerSchemaHandler(new DefaultMigrationSchemaHandler(TestSchema.getInstance().getSchema()){
             @Override
             public List<TableInfo> getTablesToCopy()
             {
@@ -83,7 +83,7 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
 
         if (ModuleLoader.getInstance().getModule(DbScope.getLabKeyScope(), "vehicle") != null)
         {
-            DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(DbSchema.get("vehicle", DbSchemaType.Module))
+            service.registerSchemaHandler(new DefaultMigrationSchemaHandler(DbSchema.get("vehicle", DbSchemaType.Module))
             {
                 @Override
                 public List<TableInfo> getTablesToCopy()
