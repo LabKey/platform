@@ -985,7 +985,8 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 return "Value is too long";
         }
         else {
-            console.log('Unrecognized type: ' + this.jsonType);
+            if (this.jsonType.toLowerCase() !== 'array')
+                console.log('Unrecognized type: ' + this.jsonType);
         }
 
         return true;

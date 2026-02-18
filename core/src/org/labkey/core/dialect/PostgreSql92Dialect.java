@@ -631,6 +631,9 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
 
         for (PropertyStorageSpec column : change.getColumns())
         {
+            PropertyType oldPropertyType = null;
+            if (change.getOldPropTypes() != null)
+                oldPropertyType = change.getOldPropTypes().get(column.getName());
             DatabaseIdentifier columnIdent = makePropertyIdentifier(column.getName());
             if (column.getJdbcType().isDateOrTime())
             {
@@ -648,6 +651,76 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                 update.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
                 update.append(" SET ").appendIdentifier(tempColumnIdent);
                 update.append(" = CAST(").appendIdentifier(columnIdent).append(" AS ").append(getSqlTypeName(column)).append(")");
+                statements.add(update);
+
+                // 3) DROP original column
+                SQLFragment drop = new SQLFragment("ALTER TABLE ");
+                drop.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
+                drop.append(" DROP COLUMN ").appendIdentifier(columnIdent);
+                statements.add(drop);
+
+                // 4) RENAME temp column to original column name
+                SQLFragment rename = new SQLFragment("ALTER TABLE ");
+                rename.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
+                rename.append(" RENAME COLUMN ").appendIdentifier(tempColumnIdent).append(" TO ").appendIdentifier(columnIdent);
+                statements.add(rename);
+            }
+            else if (oldPropertyType == PropertyType.MULTI_CHOICE && column.getJdbcType().isText())
+            {
+                // Converting from text[] (array) to text requires an intermediate column and transformation
+                String tempColumnName = column.getName() + "~~temp~~";
+                DatabaseIdentifier tempColumnIdent = makePropertyIdentifier(tempColumnName);
+
+                // 1) ADD temp column of text type
+                SQLFragment addTemp = new SQLFragment("ALTER TABLE ");
+                addTemp.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
+                addTemp.append(" ADD COLUMN ").append(getSqlColumnSpec(column, tempColumnName));
+                statements.add(addTemp);
+
+                // 2) UPDATE: convert and copy value to temp column
+                //    - NULL array -> NULL
+                //    - empty array -> NULL
+                //    - non-empty array -> concatenate array elements with comma (', ')
+                SQLFragment update = new SQLFragment("UPDATE ");
+                update.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
+                update.append(" SET ").appendIdentifier(tempColumnIdent).append(" = CASE ");
+                update.append(" WHEN ").appendIdentifier(columnIdent).append(" IS NULL THEN NULL ");
+                update.append(" WHEN COALESCE(array_length(").appendIdentifier(columnIdent).append(", 1), 0) = 0 THEN NULL ");
+                update.append(" ELSE array_to_string(").appendIdentifier(columnIdent).append(", ', ') END");
+                statements.add(update);
+
+                // 3) DROP original column
+                SQLFragment drop = new SQLFragment("ALTER TABLE ");
+                drop.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
+                drop.append(" DROP COLUMN ").appendIdentifier(columnIdent);
+                statements.add(drop);
+
+                // 4) RENAME temp column to original column name
+                SQLFragment rename = new SQLFragment("ALTER TABLE ");
+                rename.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
+                rename.append(" RENAME COLUMN ").appendIdentifier(tempColumnIdent).append(" TO ").appendIdentifier(columnIdent);
+                statements.add(rename);
+            }
+            else if (column.getJdbcType() == JdbcType.ARRAY)
+            {
+                // Converting from text to text[] requires an intermediate column and transformation
+                String tempColumnName = column.getName() + "~~temp~~";
+                DatabaseIdentifier tempColumnIdent = makePropertyIdentifier(tempColumnName);
+
+                // 1) ADD temp column of array type (e.g., text[])
+                SQLFragment addTemp = new SQLFragment("ALTER TABLE ");
+                addTemp.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
+                addTemp.append(" ADD COLUMN ").append(getSqlColumnSpec(column, tempColumnName));
+                statements.add(addTemp);
+
+                // 2) UPDATE: copy converted value to temp column as single-element array
+                //    - NULL or blank ('') -> empty array []
+                //    - otherwise -> single-element array [text]
+                SQLFragment update = new SQLFragment("UPDATE ");
+                update.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
+                update.append(" SET ").appendIdentifier(tempColumnIdent);
+                update.append(" = CASE WHEN ").appendIdentifier(columnIdent).append(" IS NULL OR ").appendIdentifier(columnIdent).append(" = '' THEN ARRAY[]::text[] ELSE ARRAY[");
+                update.appendIdentifier(columnIdent).append("]::text[] END");
                 statements.add(update);
 
                 // 3) DROP original column

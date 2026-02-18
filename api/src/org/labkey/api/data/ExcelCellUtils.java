@@ -17,6 +17,7 @@ import java.text.Format;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 
 /**
  * This is a utility class that contains the necessary methods for writing properly formatted values to Excel cells.
@@ -68,6 +69,8 @@ public class ExcelCellUtils
             return TYPE_BOOLEAN;
         else if (File.class.isAssignableFrom(valueClass))
             return TYPE_FILE;
+        else if (List.class.isAssignableFrom(valueClass) || valueClass.isArray())
+            return TYPE_MULTILINE_STRING;
         else
         {
             return TYPE_UNKNOWN;

@@ -19,6 +19,58 @@ import java.util.Comparator;
 
 public class SortHelpers
 {
+
+    /**
+     * Comparator that orders strings case-insensitively, but when two strings are equal ignoring case
+     * breaks ties by preferring uppercase characters before lowercase characters.
+     *
+     * Example ordering: "Ab", "a", "B", "b"
+     */
+    public static final Comparator<String> CASE_INSENSITIVE_UPPERCASE_FIRST = new Comparator<>()
+    {
+        @Override
+        public int compare(String s1, String s2)
+        {
+            if (s1 == s2) return 0;
+            if (s1 == null) return -1;
+            if (s2 == null) return 1;
+
+            int len1 = s1.length();
+            int len2 = s2.length();
+            int min = Math.min(len1, len2);
+
+            // Compare character-by-character using lowercased characters for primary ordering,
+            // but if the lowercased chars are equal and the raw chars differ in case, prefer uppercase.
+            for (int i = 0; i < min; i++)
+            {
+                char c1 = s1.charAt(i);
+                char c2 = s2.charAt(i);
+                char lc1 = Character.toLowerCase(c1);
+                char lc2 = Character.toLowerCase(c2);
+
+                // Primary: case-insensitive ordering
+                if (lc1 != lc2)
+                    return lc1 - lc2;
+
+                // If same ignoring case but raw chars differ, prefer uppercase
+                if (c1 != c2)
+                {
+                    boolean u1 = Character.isUpperCase(c1);
+                    boolean u2 = Character.isUpperCase(c2);
+                    if (u1 != u2)
+                        return u1 ? -1 : 1;
+
+                    // Fallback deterministic tie-breaker if necessary
+                    int diff = c1 - c2;
+                    if (diff != 0) return diff;
+                }
+            }
+
+            // If identical up to min length, shorter string first (keeps deterministic ordering)
+            return len1 - len2;
+        }
+    };
+
     // Natural sort ordering
     public static int compareNatural(Object obj1, Object obj2)
     {
