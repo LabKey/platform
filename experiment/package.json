@@ -13,7 +13,7 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "7.18.2-fb-mvtc-convert.1"
+    "@labkey/components": "7.19.1-fb-mvtc-convert.0"
   },
   "devDependencies": {
     "@labkey/build": "8.8.0",
