@@ -171,25 +171,20 @@ public class OntologyManager
             proj = c;
 
         String sql = " SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE " + (isName ? "Name" : "DomainURI") + " = ? AND Project IN (?,?) ";
-        List<DomainDescriptor> ddArray = new SqlSelector(getExpSchema(), sql, uriOrName,
+        List<DomainDescriptor> ddList = new SqlSelector(getExpSchema(), sql, uriOrName,
                 proj,
                 ContainerManager.getSharedContainer().getId()).getArrayList(DomainDescriptor.class);
-        DomainDescriptor dd = null;
-        if (!ddArray.isEmpty())
-        {
-            dd = ddArray.getFirst();
 
-            // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
-            // and one of the two is in the shared project, use the project-level descriptor.
-            if (ddArray.size() > 1)
-            {
-                _log.debug("Multiple DomainDescriptors found for " + uriOrName);
-                // TODO: This check and assignment look wrong. We always return the first element.
-                if (dd.getProject().equals(ContainerManager.getSharedContainer()))
-                    dd = ddArray.getFirst();
-            }
+        if (ddList.size() > 1)
+        {
+            // if there are multiple descriptors with the same URI, prefer the first one that's not in the shared project
+            _log.debug("Multiple DomainDescriptors found for {}", uriOrName);
+            for (DomainDescriptor dd : ddList)
+                if (!ContainerManager.getSharedContainer().equals(dd.getProject()))
+                    return dd;
         }
-        return dd;
+
+        return ddList.isEmpty() ? null : ddList.getFirst();
     }
 
     private static final BlockingCache<Integer, DomainDescriptor> DOMAIN_DESC_BY_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(),2000, CacheManager.UNLIMITED,"Domain descriptors by ID", new DomainDescriptorLoader());

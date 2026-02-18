@@ -147,7 +147,7 @@ public interface Module
     /** License name: e.g. "Apache 2.0", "LabKey Software License" */
     @Nullable String getLicense();
 
-    /** License URL: e.g. "http://www.apache.org/licenses/LICENSE-2.0" */
+    /** License URL: e.g. "https://www.apache.org/licenses/LICENSE-2.0" */
     @Nullable String getLicenseUrl();
 
     /**
@@ -183,7 +183,7 @@ public interface Module
 
     /**
      * The application is shutting down "gracefully". Module
-     * should do any cleanup (file handles etc) that is required.
+     * should do any cleanup (file handles, etc.) that is required.
      * Note: There is no guarantee that this will run if the server
      * process is without a nice shutdown.
      */
@@ -191,8 +191,7 @@ public interface Module
 
     /**
      * Return Collection of WebPartFactory objects for this module.
-     * NOTE: This may be called before startup, but will never be called
-     * before upgrade is complete.
+     * NOTE: This may be called early, before init() and startup(), but after core upgrade.
      *
      * @return Collection of WebPartFactory (empty collection if none)
      */

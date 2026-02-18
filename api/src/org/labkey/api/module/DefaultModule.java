@@ -341,9 +341,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
     }
 
-    // TODO: Move getWebPartFactories() and _webPartFactories into Portal... shouldn't be the module's responsibility
-    // This should also allow moving SimpleWebPartFactoryCache and dependencies into Internal
-
     private final Object FACTORY_LOCK = new Object();
 
     @Override
