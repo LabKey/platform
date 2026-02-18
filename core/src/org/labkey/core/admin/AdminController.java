@@ -12125,6 +12125,7 @@ public class AdminController extends SpringActionController
                             boolean forwarded = jsonObj.optBoolean("forwarded", false);
                             if (!forwarded)
                             {
+                                jsonObj.put("labkeyVersion", AppProps.getInstance().getReleaseVersion());
                                 User user = getUser();
                                 String email = null;
                                 // If the user is not logged in, we may still be able to snag the email address from our cookie
@@ -12139,9 +12140,6 @@ public class AdminController extends SpringActionController
                                 jsonObj.put("ip", ipAddress);
                                 if (isNotBlank(userAgent) && !jsonObj.has("user_agent"))
                                     jsonObj.put("user_agent", userAgent);
-                                String labkeyVersion = request.getParameter("labkeyVersion");
-                                if (null != labkeyVersion)
-                                    jsonObj.put("labkeyVersion", labkeyVersion);
                                 String cspVersion = request.getParameter("cspVersion");
                                 if (null != cspVersion)
                                     jsonObj.put("cspVersion", cspVersion);

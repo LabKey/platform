@@ -53,7 +53,6 @@ public class ContentSecurityPolicyFilter implements Filter
     private static final Logger LOG = LogHelper.getLogger(ContentSecurityPolicyFilter.class, "Register/unregister allowed resource hosts");
 
     private static final String NONCE_SUBST = "REQUEST.SCRIPT.NONCE";
-    private static final String REPORT_PARAMETER_SUBSTITUTION = "CSP.REPORT.PARAMS";
     private static final String UPGRADE_INSECURE_REQUESTS_SUBSTITUTION = "UPGRADE.INSECURE.REQUESTS";
     private static final String HEADER_NONCE = "org.labkey.filters.ContentSecurityPolicyFilter#NONCE";  // needs to match PageConfig.HEADER_NONCE
 
@@ -120,14 +119,8 @@ public class ContentSecurityPolicyFilter implements Filter
             String paramValue = filterConfig.getInitParameter(paramName);
             if ("policy".equalsIgnoreCase(paramName))
             {
-                String s = filterPolicy(paramValue);
-
-                // Replace REPORT_PARAMETER_SUBSTITUTION now since its value is static
-                s = substituteReportParams(s);
-
-                _stashedTemplate = s;
-
-                extractCspVersion(s);
+                _stashedTemplate = filterPolicy(paramValue);
+                extractCspVersion(_stashedTemplate);
             }
             else if ("disposition".equalsIgnoreCase(paramName))
             {
@@ -148,12 +141,6 @@ public class ContentSecurityPolicyFilter implements Filter
 
         // configure a different endpoint for each type to convey the correct csp version (eXX vs. rXX)
         _reportToEndpointName = "csp-" + getType().name().toLowerCase();
-    }
-
-    private String substituteReportParams(String expression)
-    {
-        return StringExpressionFactory.create(expression, false, NullValueBehavior.KeepSubstitution)
-            .eval(Map.of(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())));
     }
 
     /** Filter out block comments and replace special characters in the provided policy */
@@ -292,7 +279,7 @@ public class ContentSecurityPolicyFilter implements Filter
                 @SuppressWarnings("DataFlowIssue")
                 ActionURL violationUrl = PageFlowUtil.urlProvider(AdminUrls.class).getCspReportToURL(filter.getCspVersion());
                 // Use an absolute URL so we always post to https:, even if the violating request uses http:
-                _reportingEndpointsHeaderValue = filter.getReportToEndpointName() + "=\"" + filter.substituteReportParams(violationUrl.getURIString() + "&${CSP.REPORT.PARAMS}") + "\"";
+                _reportingEndpointsHeaderValue = filter.getReportToEndpointName() + "=\"" + violationUrl.getURIString() + "\"";
 
                 // Add "report-to" directive to the policy
                 _policyTemplate = filter.getStashedTemplate() + " report-to " + filter.getReportToEndpointName() + " ;";
