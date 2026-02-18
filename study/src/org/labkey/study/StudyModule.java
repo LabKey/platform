@@ -529,8 +529,12 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()), AdminPermission.class);
         DataStateImportExportHelper.registerProvider(new StudyQCImportExportHelper());
+    }
 
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(StudySchema.getInstance().getSchema())
+    @Override
+    public void registerMigrationHandlers(@NotNull DatabaseMigrationService service)
+    {
+        service.registerSchemaHandler(new DefaultMigrationSchemaHandler(StudySchema.getInstance().getSchema())
         {
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
@@ -552,7 +556,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             }
         });
 
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(StudySchema.getInstance().getDatasetSchema())
+        service.registerSchemaHandler(new DefaultMigrationSchemaHandler(StudySchema.getInstance().getDatasetSchema())
         {
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
@@ -562,7 +566,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             }
         });
 
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(DbSchema.get(SpecimenTablesProvider.SCHEMA_NAME, DbSchemaType.Provisioned))
+        service.registerSchemaHandler(new DefaultMigrationSchemaHandler(DbSchema.get(SpecimenTablesProvider.SCHEMA_NAME, DbSchemaType.Provisioned))
         {
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)

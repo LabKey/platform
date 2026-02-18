@@ -436,6 +436,8 @@ public class DomainUtil
     {
         if (!kind.allowMultiChoiceProperties())
             return false;
+        if (!OptionalFeatureService.get().isFeatureEnabled(AppProps.MULTI_VALUE_TEXT_CHOICE))
+            return false;
         return CoreSchema.getInstance().getSqlDialect().isPostgreSQL();
     }
 

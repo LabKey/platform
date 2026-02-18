@@ -1438,7 +1438,18 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (PropertyType.ATTACHMENT == col.getPropertyType())
                 return value;
 
+            if (ALIAS_CONCEPT_URI.equals(col.getConceptURI()))
+                return value;
+
             return super.convertColumnValue(col, value, user, c, fileLinkDirPath);
+        }
+
+        @Override
+        protected TableInfo getTableInfoForConversion()
+        {
+            // getDBTable() returns exp.data table, which lacks properties fields.
+            // TODO: this method can be removed when implementing consolidating dataclass update methods
+            return getQueryTable();
         }
 
         @Override
