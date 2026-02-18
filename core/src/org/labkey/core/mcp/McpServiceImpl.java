@@ -745,9 +745,6 @@ public class McpServiceImpl implements McpService
             GoogleGenAiChatOptions chatOptions = GoogleGenAiChatOptions.builder()
                     .model(getModel())
                     .toolCallbacks(getToolCallbacks())
-//                    .includeThoughts(true)
-                    .thinkingLevel(GoogleGenAiThinkingLevel.HIGH)
-//                    .googleSearchRetrieval(true)
                     .build();
             return chatOptions;
         }
