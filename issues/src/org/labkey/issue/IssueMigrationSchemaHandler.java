@@ -32,7 +32,7 @@ public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 
     private final Set<Integer> COPIED_ISSUE_IDS = new HashSet<>();
 
-    private boolean _filtered = false;
+    private boolean _filtered;
 
     public IssueMigrationSchemaHandler()
     {
@@ -40,9 +40,16 @@ public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     }
 
     @Override
+    public void beforeSchema()
+    {
+        _filtered = false;
+    }
+
+    @Override
     public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
     {
-        // Remember that issues tables are being filtered so afterSchema() can clean up associated tables (or not)
+        // afterTable() is called only when rows are filtered (i.e., a DomainDataFilter is configured). Remember this so
+        // afterSchema() can clean up associated tables (or not).
         _filtered = true;
 
         // Collect the issue IDs that were copied into the target table. We're assuming this set is much smaller than

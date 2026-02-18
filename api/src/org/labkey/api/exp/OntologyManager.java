@@ -184,6 +184,7 @@ public class OntologyManager
             if (ddArray.size() > 1)
             {
                 _log.debug("Multiple DomainDescriptors found for " + uriOrName);
+                // TODO: This check and assignment look wrong. We always return the first element.
                 if (dd.getProject().equals(ContainerManager.getSharedContainer()))
                     dd = ddArray.getFirst();
             }
