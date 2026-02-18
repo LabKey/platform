@@ -30,6 +30,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.module.DefaultModule.UpgradeMethod;
 import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.resource.Resource;
@@ -438,4 +439,10 @@ public interface Module
      */
     void lock();
 
+    /**
+     * Register MigrationSchemaHandlers, MigrationTableHandlers, and MigrationFilters
+     */
+    default void registerMigrationHandlers(@NotNull DatabaseMigrationService service)
+    {
+    }
 }

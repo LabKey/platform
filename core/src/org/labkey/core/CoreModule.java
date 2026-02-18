@@ -89,6 +89,7 @@ import org.labkey.api.files.FileBrowserConfigWriter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -1287,7 +1288,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
 
-        CoreMigrationSchemaHandler.register();
         Encryption.checkMigration();
 
         McpServiceImpl.get().startMpcServer();
@@ -1308,6 +1308,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 LOG.warn("At least one database view was not as expected in the {} schema. Attempting to recreate views automatically", schema.getName());
                 ModuleLoader.getInstance().recreateViews();
             });
+    }
+
+    @Override
+    public void registerMigrationHandlers(@NotNull DatabaseMigrationService service)
+    {
+        CoreMigrationSchemaHandler.register(service);
     }
 
     @Override

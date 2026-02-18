@@ -174,7 +174,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
     @Override
     public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
     {
-        // Experiment shouldn't mess with Biologics tables, but it gets the job done
+        // Experiment shouldn't really mess with Biologics tables, but it gets the job done
 
         DbScope sourceScope = configuration.getSourceScope();
         DbScope targetScope = configuration.getTargetScope();

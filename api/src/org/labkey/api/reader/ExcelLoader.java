@@ -46,6 +46,7 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 import org.xml.sax.Attributes;
@@ -540,7 +541,7 @@ public class ExcelLoader extends DataLoader
                         if (sheetMatches(sheetIndex, iter.getSheetName()))
                         {
                             InputSource sheetSource = new InputSource(stream);
-                            SAXParserFactory saxFactory = SAXParserFactory.newInstance();
+                            SAXParserFactory saxFactory = XmlBeansUtil.SAX_PARSER_FACTORY;
                             try
                             {
                                 SAXParser saxParser = saxFactory.newSAXParser();
