@@ -25,7 +25,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.model.StudyImpl;
 
-public class VisualizationVisitTagTable extends VirtualTable
+public class VisualizationVisitTagTable extends VirtualTable<StudyQuerySchema>
 {
     private final StudyImpl _study;
     private final User _user;
@@ -78,11 +78,11 @@ public class VisualizationVisitTagTable extends VirtualTable
 
             SQLFragment from = new SQLFragment("(SELECT VisitId, " + _dayString + ", " + innerAlias + ".ParticipantId, Container " + " FROM (SELECT ParticipantId, ");
             from.append("COALESCE(CohortVisitTag.VisitId, NoCohortTag.VisitId) As VisitId, CurrentCohortId FROM study.Participant\n")
-                    .append("LEFT OUTER JOIN study.VisitTagMap CohortVisitTag ON study.Participant.CurrentCohortId = CohortVisitTag.CohortID AND CohortVisitTag.VisitTag=")
-                    .append("'" + _visitTagName + "'\n")
+                    .append("LEFT OUTER JOIN study.VisitTagMap CohortVisitTag ON study.Participant.CurrentCohortId = CohortVisitTag.CohortID AND CohortVisitTag.VisitTag=?\n")
+                    .add(_visitTagName)
                     .append("AND CohortVisitTag.Container = Participant.Container");
-            from.append("\nLEFT OUTER JOIN study.VisitTagMap NoCohortTag ON NoCohortTag.VisitTag =")
-                    .append("'" + _visitTagName + "' AND NoCohortTag.CohortID IS NULL\n")
+            from.append("\nLEFT OUTER JOIN study.VisitTagMap NoCohortTag ON NoCohortTag.VisitTag = ? AND NoCohortTag.CohortID IS NULL\n")
+                    .add(_visitTagName)
                     .append("AND NoCohortTag.Container = Participant.Container");
             from.append("\nWHERE ");
 
@@ -98,7 +98,7 @@ public class VisualizationVisitTagTable extends VirtualTable
         {
             // allow caller to pass in their own query to use for the SQL to get the participant-to-zero day map (used for CDS study axis alignment by visit tag)
             // NOTE: it is assumed that the query will have the expected columns plus a column for VisitTagMap to filter on
-            return new SQLFragment("(SELECT * FROM " + _altQueryName + " WHERE VisitTagName = '" + _visitTagName + "')").appendIdentifier(alias);
+            return new SQLFragment("(SELECT * FROM ").appendIdentifier(_altQueryName).append(" WHERE VisitTagName = ?)").add(_visitTagName).appendIdentifier(alias);
         }
     }
 }

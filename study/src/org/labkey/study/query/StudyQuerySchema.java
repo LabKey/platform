@@ -646,22 +646,26 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         {
             // Name is encoded with useProtocolDay boolean, tagName, and altQueryName
             String params = name.substring(VISUALIZATION_VISIT_TAG_TABLE_NAME.length());
-            boolean useProtocolDay;
+            Boolean useProtocolDay = null;
             if (params.startsWith("-true"))
             {
-                params = params.substring(params.indexOf("-true") + 6);
+                // Trim the prefix (which may or may not include a trailing hyphen)
+                params = params.substring(Math.min(params.length(), 6));
                 useProtocolDay = true;
             }
-            else
+            else if (params.startsWith("-false"))
             {
-                params = params.substring(params.indexOf("-false") + 7);
+                // Trim the prefix (which may or may not include a trailing hyphen)
+                params = params.substring(Math.min(params.length(), 7));
                 useProtocolDay = false;
             }
-            int hyphenIndex = params.indexOf("-");
-            String tagName = hyphenIndex > -1 ? params.substring(0, hyphenIndex) : params;
-            String altQueryName = hyphenIndex > -1 ? params.substring(hyphenIndex + 1) : null;
-
-            return new VisualizationVisitTagTable(this, cf, getStudy(), getUser(), tagName, useProtocolDay, altQueryName);
+            if (useProtocolDay != null)
+            {
+                int hyphenIndex = params.indexOf("-");
+                String tagName = hyphenIndex > -1 ? params.substring(0, hyphenIndex) : params;
+                String altQueryName = hyphenIndex > -1 ? params.substring(hyphenIndex + 1) : null;
+                return new VisualizationVisitTagTable(this, cf, getStudy(), getUser(), tagName, useProtocolDay, altQueryName);
+            }
         }
 
         // Might be a dataset
