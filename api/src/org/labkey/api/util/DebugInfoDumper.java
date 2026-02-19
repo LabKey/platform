@@ -316,118 +316,135 @@ public class DebugInfoDumper
         // OK probably just waiting for work.  We could check for common tomcat/labkey patterns here to be more conservative.
     }
 
+    /** Prevent reentrancy when we get SQLException trying to grab locks from Postgres */
+    private static final ThreadLocal<Boolean> DUMPING_THREADS = ThreadLocal.withInitial(() -> false);
+
     /**
      * Writes the thread dump into threads.txt
      * */
     public static synchronized void dumpThreads(LoggerWriter logWriter)
     {
-        logWriter.debug("*********************************************");
-        logWriter.debug("Starting thread dump - " + LocalDateTime.now());
-        long used = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed();
-        long max = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax();
-        logWriter.debug("Heap usage at " + DecimalFormat.getPercentInstance().format(((double)used / (double)max)) + " - " +
-                FileUtils.byteCountToDisplaySize(used) + " from a max of " +
-                FileUtils.byteCountToDisplaySize(max) + " (" + DecimalFormat.getInstance().format(used) + " / " + DecimalFormat.getInstance().format(max) + " bytes)");
-
-        OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-        if (osBean != null)
+        if (DUMPING_THREADS.get() == true)
         {
-            DecimalFormat f3 = new DecimalFormat("0.000");
-
-            if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean)
-            {
-                logWriter.debug("Total OS memory (bytes): " + DecimalFormat.getInstance().format(sunOsBean.getTotalMemorySize()));
-                logWriter.debug("Free OS memory (bytes): " + DecimalFormat.getInstance().format(sunOsBean.getFreeMemorySize()));
-                logWriter.debug("OS CPU load: " + f3.format(sunOsBean.getCpuLoad()));
-                logWriter.debug("JVM CPU load: " + f3.format(sunOsBean.getProcessCpuLoad()));
-            }
-            logWriter.debug("CPU count: " + osBean.getAvailableProcessors());
+            return;
         }
 
-        logWriter.debug("*********************************************");
-
-        Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
-        var spidsByThread = ConnectionWrapper.getSPIDsForThreads();
-
-        ArrayList<Thread> threadsToDump = new ArrayList<>();
-        ArrayList<Thread> boringThreads = new ArrayList<>();
-
-        for (Thread thread : stackTraces.keySet())
+        try
         {
-            Set<Integer> spids = Objects.requireNonNullElse(spidsByThread.get(thread), Set.of());
-            var stack = stackTraces.get(thread);
+            DUMPING_THREADS.set(true);
 
-            if (spids.isEmpty() && justWaiting(stack))
-                boringThreads.add(thread);
-            else
-                threadsToDump.add(thread);
-        }
-
-        if (!threadsToDump.isEmpty())
-        {
-            logWriter.debug("");
-            logWriter.debug("  ----- active threads -----");
-
-            threadsToDump.sort(Comparator.comparing(Thread::getName, String.CASE_INSENSITIVE_ORDER));
-            for (Thread thread : threadsToDump)
-            {
-                dumpOneThread(thread, logWriter, stackTraces, spidsByThread);
-            }
-        }
-
-        if (!boringThreads.isEmpty())
-        {
-            logWriter.debug("");
-            logWriter.debug("  ----- waiting threads -----");
-
-            boringThreads.sort(Comparator.comparing(Thread::getName, String.CASE_INSENSITIVE_ORDER));
-            for (Thread thread : boringThreads)
-            {
-                dumpOneThread(thread, logWriter, stackTraces, spidsByThread);
-            }
-        }
-
-        logWriter.debug("*********************************************");
-        logWriter.debug("Completed thread dump");
-        logWriter.debug("*********************************************");
-
-        for (DbScope dbScope : DbScope.getDbScopes())
-        {
-            dbScope.logCurrentConnectionState(logWriter);
-        }
-
-        if (ConnectionWrapper.getActiveConnectionCount() > 0)
-        {
             logWriter.debug("*********************************************");
-            logWriter.debug("Start dump of all open connections");
-            logWriter.debug("*********************************************");
-            ConnectionWrapper.dumpOpenConnections(logWriter, null);
-            logWriter.debug("*********************************************");
-            logWriter.debug("Completed dump of all open connections");
-            logWriter.debug("*********************************************");
-        }
+            logWriter.debug("Starting thread dump - " + LocalDateTime.now());
+            long used = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed();
+            long max = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax();
+            logWriter.debug("Heap usage at " + DecimalFormat.getPercentInstance().format(((double) used / (double) max)) + " - " +
+                    FileUtils.byteCountToDisplaySize(used) + " from a max of " +
+                    FileUtils.byteCountToDisplaySize(max) + " (" + DecimalFormat.getInstance().format(used) + " / " + DecimalFormat.getInstance().format(max) + " bytes)");
 
-        // GitHub Issue 713: Automatically include PG locks and active queries in thread dumps
-        UserSchema schema = QueryService.get().getUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot(), BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME);
-        // Schema won't exist on SQLServer
-        if (schema != null)
+            OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
+            if (osBean != null)
+            {
+                DecimalFormat f3 = new DecimalFormat("0.000");
+
+                if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean)
+                {
+                    logWriter.debug("Total OS memory (bytes): " + DecimalFormat.getInstance().format(sunOsBean.getTotalMemorySize()));
+                    logWriter.debug("Free OS memory (bytes): " + DecimalFormat.getInstance().format(sunOsBean.getFreeMemorySize()));
+                    logWriter.debug("OS CPU load: " + f3.format(sunOsBean.getCpuLoad()));
+                    logWriter.debug("JVM CPU load: " + f3.format(sunOsBean.getProcessCpuLoad()));
+                }
+                logWriter.debug("CPU count: " + osBean.getAvailableProcessors());
+            }
+
+            logWriter.debug("*********************************************");
+
+            Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
+            var spidsByThread = ConnectionWrapper.getSPIDsForThreads();
+
+            ArrayList<Thread> threadsToDump = new ArrayList<>();
+            ArrayList<Thread> boringThreads = new ArrayList<>();
+
+            for (Thread thread : stackTraces.keySet())
+            {
+                Set<Integer> spids = Objects.requireNonNullElse(spidsByThread.get(thread), Set.of());
+                var stack = stackTraces.get(thread);
+
+                if (spids.isEmpty() && justWaiting(stack))
+                    boringThreads.add(thread);
+                else
+                    threadsToDump.add(thread);
+            }
+
+            if (!threadsToDump.isEmpty())
+            {
+                logWriter.debug("");
+                logWriter.debug("  ----- active threads -----");
+
+                threadsToDump.sort(Comparator.comparing(Thread::getName, String.CASE_INSENSITIVE_ORDER));
+                for (Thread thread : threadsToDump)
+                {
+                    dumpOneThread(thread, logWriter, stackTraces, spidsByThread);
+                }
+            }
+
+            if (!boringThreads.isEmpty())
+            {
+                logWriter.debug("");
+                logWriter.debug("  ----- waiting threads -----");
+
+                boringThreads.sort(Comparator.comparing(Thread::getName, String.CASE_INSENSITIVE_ORDER));
+                for (Thread thread : boringThreads)
+                {
+                    dumpOneThread(thread, logWriter, stackTraces, spidsByThread);
+                }
+            }
+
+            logWriter.debug("*********************************************");
+            logWriter.debug("Completed thread dump");
+            logWriter.debug("*********************************************");
+
+            for (DbScope dbScope : DbScope.getDbScopes())
+            {
+                dbScope.logCurrentConnectionState(logWriter);
+            }
+
+            if (ConnectionWrapper.getActiveConnectionCount() > 0)
+            {
+                logWriter.debug("*********************************************");
+                logWriter.debug("Start dump of all open connections");
+                logWriter.debug("*********************************************");
+                ConnectionWrapper.dumpOpenConnections(logWriter, null);
+                logWriter.debug("*********************************************");
+                logWriter.debug("Completed dump of all open connections");
+                logWriter.debug("*********************************************");
+            }
+
+            // GitHub Issue 713: Automatically include PG locks and active queries in thread dumps
+            UserSchema schema = QueryService.get().getUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot(), BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME);
+            // Schema won't exist on SQLServer
+            if (schema != null)
+            {
+                try
+                {
+                    writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_LOCKS_TABLE_NAME, "Postgres locks");
+                }
+                catch (RuntimeException e)
+                {
+                    logWriter.debug("Failed to write Postgres locks table:" + e);
+                }
+                try
+                {
+                    writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_TABLE_NAME, "Postgres activity");
+                }
+                catch (RuntimeException e)
+                {
+                    logWriter.debug("Failed to write Postgres activity table:" + e);
+                }
+            }
+        }
+        finally
         {
-            try
-            {
-                writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_LOCKS_TABLE_NAME, "Postgres locks");
-            }
-            catch (RuntimeException e)
-            {
-                logWriter.debug("Failed to write Postgres locks table:" + e);
-            }
-            try
-            {
-                writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_TABLE_NAME, "Postgres activity");
-            }
-            catch (RuntimeException e)
-            {
-                logWriter.debug("Failed to write Postgres activity table:" + e);
-            }
+            DUMPING_THREADS.set(false);
         }
     }
 
