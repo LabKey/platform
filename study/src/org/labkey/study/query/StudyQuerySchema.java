@@ -124,7 +124,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     public static final String VISIT_TAG_TABLE_NAME = "VisitTag";
     public static final String VISIT_TAG_MAP_TABLE_NAME = "VisitTagMap";
     public static final String VISIT_ALIASES = "VisitAliases";
-    public static final String VISUALIZATION_VISIT_TAG_TABLE_NAME = "VisualizationVisitTag";
     public static final String VISIT_MAP_TABLE_NAME = "VisitMap";
 
     public static final String STUDY_DATA_TABLE_NAME = "StudyData";
@@ -641,31 +640,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         if (VISIT_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new VisitMapTable(this, cf);
-        }
-        if (name.startsWith(VISUALIZATION_VISIT_TAG_TABLE_NAME))
-        {
-            // Name is encoded with useProtocolDay boolean, tagName, and altQueryName
-            String params = name.substring(VISUALIZATION_VISIT_TAG_TABLE_NAME.length());
-            Boolean useProtocolDay = null;
-            if (params.startsWith("-true"))
-            {
-                // Trim the prefix (which may or may not include a trailing hyphen)
-                params = params.substring(Math.min(params.length(), 6));
-                useProtocolDay = true;
-            }
-            else if (params.startsWith("-false"))
-            {
-                // Trim the prefix (which may or may not include a trailing hyphen)
-                params = params.substring(Math.min(params.length(), 7));
-                useProtocolDay = false;
-            }
-            if (useProtocolDay != null)
-            {
-                int hyphenIndex = params.indexOf("-");
-                String tagName = hyphenIndex > -1 ? params.substring(0, hyphenIndex) : params;
-                String altQueryName = hyphenIndex > -1 ? params.substring(hyphenIndex + 1) : null;
-                return new VisualizationVisitTagTable(this, cf, getStudy(), getUser(), tagName, useProtocolDay, altQueryName);
-            }
         }
 
         // Might be a dataset
