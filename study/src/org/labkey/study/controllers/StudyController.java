@@ -232,6 +232,7 @@ import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.MasterPatientIndexMaintenanceTask;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
+import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishConfirmAction;
 import org.labkey.study.assay.AssayPublishStartAction;
 import org.labkey.study.assay.StudyPublishManager;
@@ -263,7 +264,6 @@ import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
-import org.labkey.study.model.UploadLog;
 import org.labkey.study.model.VisitDataset;
 import org.labkey.study.model.VisitDatasetType;
 import org.labkey.study.model.VisitImpl;
@@ -7817,6 +7817,17 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             root.addChild(_study != null ? "Overview: " + _study.getLabel() : "No Study");
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class ImportFHIRData extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            StudyServiceImpl.get().importFHIRData(getContainer(), getUser());
+            return null;
         }
     }
 }

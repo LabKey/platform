@@ -104,7 +104,8 @@ public class FolderWriterImpl extends BaseFolderWriter
         if (ctx.isAddExportComment())
             XmlBeansUtil.addStandardExportComment(folderXml, c, ctx.getUser());
 
-        folderXml.setArchiveVersion(AppProps.getInstance().getSchemaVersion());
+//        folderXml.setArchiveVersion(AppProps.getInstance().getSchemaVersion());
+        folderXml.setArchiveVersion(25.007);
         folderXml.setLabel(c.getName());
 
         folderXml.setType(c.getContainerType().getName());

@@ -57,7 +57,8 @@ class StudyXmlWriter implements InternalStudyWriter
         XmlBeansUtil.addStandardExportComment(studyXml, ctx.getContainer(), ctx.getUser());
 
         // Archive version
-        studyXml.setArchiveVersion(AppProps.getInstance().getSchemaVersion());
+//        studyXml.setArchiveVersion(AppProps.getInstance().getSchemaVersion());
+        studyXml.setArchiveVersion(25.007);
 
         // Study attributes
         studyXml.setLabel(study.getLabel());

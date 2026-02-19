@@ -1,4 +1,6 @@
 import org.labkey.gradle.util.BuildUtils
+import org.labkey.gradle.util.ExternalDependency
+
 plugins {
     id 'org.labkey.build.module'
 }
@@ -12,6 +14,32 @@ sourceSets {
         }
     }
 }
+
+BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+                "ca.uhn.hapi.fhir:hapi-fhir-base:8.6.1",
+                "FHIR base",
+                "Eclipse",
+                "https://eclipse-ee4j.github.io/jaxb-ri/",
+                "Eclipse Distribution License v1.0",
+                "http://www.eclipse.org/org/documents/edl-v10.php",
+                "Parsing XML"
+        )
+)
+
+BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+                "ca.uhn.hapi.fhir:hapi-fhir-structures-r4:8.6.1",
+                "FHIR base",
+                "Eclipse",
+                "https://eclipse-ee4j.github.io/jaxb-ri/",
+                "Eclipse Distribution License v1.0",
+                "http://www.eclipse.org/org/documents/edl-v10.php",
+                "Parsing XML"
+        )
+)
 
 dependencies {
     implementation "org.eclipse.angus:angus-mail:${angusMailVersion}"

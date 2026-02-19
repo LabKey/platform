@@ -91,6 +91,10 @@
         <td>Dataset audit logs can be viewed for all datasets in this folder.</td>
         <td><%= link("View Audit Events ", PageFlowUtil.urlProvider(AuditUrls.class).getAuditLog(getContainer(), DatasetAuditProvider.DATASET_AUDIT_EVENT, null, null))%></td>
     </tr>
+    <tr>
+        <td>Import sample FHIR Data from module resources</td>
+        <td><%= link("Import HL7 FHIR Data", StudyController.ImportFHIRData.class)%></td>
+    </tr>
 </table>
 <%
     FrameFactoryClassic.startTitleFrame(out, "Datasets", null, null, "datasets");

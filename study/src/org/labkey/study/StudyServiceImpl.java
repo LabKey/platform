@@ -16,11 +16,28 @@
 
 package org.labkey.study;
 
+import ca.uhn.fhir.context.FhirContext;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.exceptions.FHIRException;
+import org.hl7.fhir.r4.model.Address;
+import org.hl7.fhir.r4.model.AllergyIntolerance;
+import org.hl7.fhir.r4.model.CarePlan;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.Encounter;
+import org.hl7.fhir.r4.model.Immunization;
+import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Procedure;
+import org.hl7.fhir.r4.model.Quantity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -46,18 +63,22 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -79,6 +100,9 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.studydesign.query.StudyDesignSchema;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.study.assay.StudyPublishManager;
@@ -110,6 +134,7 @@ import org.labkey.study.query.VialTable;
 import org.labkey.study.query.VisitTable;
 import org.labkey.study.reports.ReportManager;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -145,6 +170,254 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
     public Class<? extends Module> getStudyModuleClass()
     {
         return StudyModule.class;
+    }
+
+    public void importFHIRData(Container container, User user)
+    {
+        FhirContext ctx = FhirContext.forR4();
+        Module module = ModuleLoader.getInstance().getModule(StudyModule.MODULE_NAME);
+        Resource resource = module.getModuleResource(Path.parse("FHIR"));
+        if (resource.exists() && resource.isCollection())
+        {
+            Map<String, List<Map<String, Object>>> datasetData = new HashMap<>();
+            Map<String, List<Map<String, Object>>> listData = new HashMap<>();
+            Set<String> orgIds = new HashSet<>();
+
+            for (String name : resource.listNames())
+            {
+                Resource jsonFile = module.getModuleResource(Path.parse("FHIR/" + name));
+                if (jsonFile.exists() && jsonFile.isFile())
+                {
+                    try
+                    {
+                        JSONObject json = new JSONObject(PageFlowUtil.getStreamContentsAsString(jsonFile.getInputStream()));
+                        JSONArray entries = json.getJSONArray("entry");
+                        for (int i=0; i < entries.length(); i++)
+                        {
+                            JSONObject entry = entries.getJSONObject(i);
+                            JSONObject resourceObj = entry.getJSONObject("resource");
+                            String resourceType = resourceObj.getString("resourceType");
+
+                            switch (resourceType)
+                            {
+                                case "Patient":
+                                    Patient patient = ctx.newJsonParser().parseResource(Patient.class, resourceObj.toString());
+                                    if (patient != null)
+                                    {
+                                        List<Map<String, Object>> rows = datasetData.computeIfAbsent(resourceType, k -> new ArrayList<>());
+                                        rows.add(Map.of("ptid", getFHIR_id(patient.getId()),
+                                                "name", patient.getName().get(0).getFamily(),
+                                                "gender", patient.getGender().getDisplay(),
+                                                "birthdate", patient.getBirthDate(),
+                                                "startDate", patient.getBirthDate()
+                                        ));
+                                    }
+                                    break;
+                                case "Procedure":
+                                    Procedure procedure = ctx.newJsonParser().parseResource(Procedure.class, resourceObj.toString());
+                                    if (procedure != null)
+                                    {
+                                        List<Map<String, Object>> rows = datasetData.computeIfAbsent(resourceType, k -> new ArrayList<>());
+                                        Coding code = procedure.getCode().getCoding().get(0);
+                                        rows.add(Map.of("ptid", getFHIR_id(procedure.getSubject().getReference()),
+                                                "id", procedure.getId(),
+                                                "system", code.getSystem(),
+                                                "display", code.getDisplay(),
+                                                "code", code.getCode(),
+                                                "date", procedure.getPerformedPeriod().getStart()
+                                        ));
+
+                                    }
+                                    break;
+                                case "Encounter":
+                                    Encounter encounter = ctx.newJsonParser().parseResource(Encounter.class, resourceObj.toString());
+                                    if (encounter != null)
+                                    {
+                                        List<Map<String, Object>> rows = datasetData.computeIfAbsent(resourceType, k -> new ArrayList<>());
+                                        Map<String, Object> row = new HashMap<>();
+                                        rows.add(row);
+
+                                        row.put("ptid", getFHIR_id(encounter.getSubject().getReference()));
+                                        row.put("id", encounter.getId());
+                                        row.put("type", encounter.getType().get(0).getText());
+                                        if (encounter.hasServiceProvider())
+                                            row.put("serviceProvider", getFHIR_id(encounter.getServiceProvider().getReference()));
+                                        row.put("date", encounter.getPeriod().getStart());
+                                    }
+                                    break;
+                                case "Observation":
+                                    Observation observation = ctx.newJsonParser().parseResource(Observation.class, resourceObj.toString());
+                                    if (observation != null)
+                                    {
+                                        List<Map<String, Object>> rows = datasetData.computeIfAbsent(resourceType, k -> new ArrayList<>());
+                                        Coding code = observation.getCode().getCoding().get(0);
+                                        Map<String, Object> row = new HashMap<>();
+                                        rows.add(row);
+
+                                        row.put("ptid", getFHIR_id(observation.getSubject().getReference()));
+                                        row.put("id", observation.getId());
+                                        row.put("system", code.getSystem());
+                                        row.put("display", code.getDisplay());
+                                        row.put("code", code.getCode());
+                                        row.put("date", observation.getEffectiveDateTimeType().getValue());
+                                        if (observation.hasValueQuantity())
+                                        {
+                                            Quantity quantity = observation.getValueQuantity();
+                                            row.put("unit", quantity.getUnit());
+                                            row.put("value", quantity.getValue());
+                                        }
+                                    }
+                                    break;
+                                case "Immunization":
+                                    Immunization immunization = ctx.newJsonParser().parseResource(Immunization.class, resourceObj.toString());
+                                    if (immunization != null)
+                                    {
+                                        List<Map<String, Object>> rows = datasetData.computeIfAbsent(resourceType, k -> new ArrayList<>());
+                                        Coding code = immunization.getVaccineCode().getCoding().get(0);
+                                        Map<String, Object> row = new HashMap<>();
+                                        rows.add(row);
+
+                                        row.put("ptid", getFHIR_id(immunization.getPatient().getReference()));
+                                        row.put("id", immunization.getId());
+                                        row.put("system", code.getSystem());
+                                        row.put("display", code.getDisplay());
+                                        row.put("code", code.getCode());
+                                        row.put("date", immunization.getOccurrenceDateTimeType().getValue());
+                                    }
+                                    break;
+                                case "CarePlan":
+                                    CarePlan plan = ctx.newJsonParser().parseResource(CarePlan.class, resourceObj.toString());
+                                    if (plan != null)
+                                    {
+                                        List<Map<String, Object>> rows = datasetData.computeIfAbsent(resourceType, k -> new ArrayList<>());
+                                        Coding code = plan.getCategory().get(0).getCoding().get(0);
+                                        Map<String, Object> row = new HashMap<>();
+                                        rows.add(row);
+
+                                        row.put("ptid", getFHIR_id(plan.getSubject().getReference()));
+                                        row.put("id", plan.getId());
+                                        row.put("system", code.getSystem());
+                                        row.put("display", code.getDisplay());
+                                        row.put("code", code.getCode());
+                                        row.put("status", plan.getStatus().getDisplay());
+                                        row.put("intent", plan.getIntent().getDisplay());
+                                        row.put("date", plan.getPeriod().getStart());
+                                        if (plan.hasActivity())
+                                        {
+                                            Coding activityCode = plan.getActivity().get(0).getDetail().getCode().getCoding().get(0);
+                                            row.put("detailCode", activityCode.getCode());
+                                            row.put("detail", activityCode.getDisplay());
+                                        }
+                                    }
+                                    break;
+                                case "Organization":
+                                    Organization org = ctx.newJsonParser().parseResource(Organization.class, resourceObj.toString());
+                                    if (org != null)
+                                    {
+                                        List<Map<String, Object>> rows = listData.computeIfAbsent(resourceType, k -> new ArrayList<>());
+                                        Coding code = org.getType().get(0).getCoding().get(0);
+                                        Address address = org.getAddress().get(0);
+
+                                        String id = getFHIR_id(org.getId());
+                                        if (!orgIds.contains(id))
+                                        {
+                                            orgIds.add(id);
+                                            Map<String, Object> row = new HashMap<>();
+                                            rows.add(row);
+
+                                            row.put("id", id);
+                                            row.put("name", org.getName());
+                                            row.put("system", code.getSystem());
+                                            row.put("display", code.getDisplay());
+                                            row.put("code", code.getCode());
+                                            row.put("street", address.getLine().get(0));
+                                            row.put("city", address.getCity());
+                                            row.put("state", address.getState());
+                                            row.put("postal", address.getPostalCode());
+                                        }
+                                    }
+                                    break;
+                            }
+                        }
+                    }
+                    catch (IOException e)
+                    {
+                        throw UnexpectedException.wrap(e);
+                    }
+                }
+            }
+            // import list data
+            for (Map.Entry<String, List<Map<String, Object>>> entry : listData.entrySet())
+            {
+                importListData(container, user, entry.getKey(), entry.getValue());
+            }
+
+            // import into datasets
+            for (Map.Entry<String, List<Map<String, Object>>> entry : datasetData.entrySet())
+            {
+                importDatasetData(container, user, entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    private String getFHIR_id(String id)
+    {
+        String ptid = id;
+        if (id.indexOf('/') != -1)
+            ptid = id.substring(id.lastIndexOf('/') + 1);
+        else if (id.indexOf(':') != -1)
+            ptid = id.substring(id.lastIndexOf(':') + 1);
+
+        return ptid.substring(0, 31);
+    }
+
+    private void importListData(Container c, User user, String tableName, List<Map<String, Object>> rows)
+    {
+        QueryService qs = QueryService.get();
+        UserSchema schema = qs.getUserSchema(user, c, "lists");
+        TableInfo table = schema.createTable(tableName, null);
+        if (table != null)
+        {
+            try (var ignored = SpringActionController.ignoreSqlUpdates())
+            {
+                QueryUpdateService qus = table.getUpdateService();
+                BatchValidationException errors = new BatchValidationException();
+
+                // truncate the table first
+                qus.truncateRows(user, c, null, null);
+                qus.insertRows(user, c, rows, errors, null, null);
+                if (errors.hasErrors())
+                    throw errors;
+            }
+            catch (Exception e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
+        }
+    }
+
+    private void importDatasetData(Container c, User user, String tableName, List<Map<String, Object>> rows)
+    {
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(c), user);
+        TableInfo table = schema.createTable(tableName, null);
+        if (table != null)
+        {
+            try (var ignored = SpringActionController.ignoreSqlUpdates())
+            {
+                QueryUpdateService qus = table.getUpdateService();
+                BatchValidationException errors = new BatchValidationException();
+
+                // truncate the table first
+                qus.truncateRows(user, c, null, null);
+                qus.insertRows(user, c, rows, errors, null, null);
+                if (errors.hasErrors())
+                    throw errors;
+            }
+            catch (Exception e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
+        }
     }
 
     @Override
