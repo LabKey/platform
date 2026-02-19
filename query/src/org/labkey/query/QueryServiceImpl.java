@@ -1413,7 +1413,7 @@ public class QueryServiceImpl implements QueryService
 
             // Delete them
             for (CstmView view : views)
-                mgr.delete(view);
+                mgr.delete(user, view);
 
             // owner == null since we're exporting/importing only shared views
             CustomView cv = qd.createSharedCustomView(reader.getName());
@@ -3271,6 +3271,12 @@ public class QueryServiceImpl implements QueryService
     public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryPropertyChange<?>> changes)
     {
         QueryManager.get().fireQueryChanged(user, container, scope, schema, property, changes);
+    }
+
+    @Override
+    public void fireQueryColumnChanged(User user, Container container, @NotNull SchemaKey schemaPath, QueryChangeListener.QueryProperty property, Collection<QueryPropertyChange<?>> changes)
+    {
+        QueryManager.get().fireQueryChanged(user, container, null, schemaPath, property, changes);
     }
 
     @Override

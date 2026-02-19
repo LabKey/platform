@@ -1446,6 +1446,7 @@ public class DomainUtil
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
 
+        boolean allowMultiChoice = domainKind != null ? allowMultiChoice(domainKind) : updates.isAllowMultiChoiceProperties();
         for (GWTPropertyDescriptor field : updates.getFields(true))
         {
             String name = field.getName();
@@ -1459,6 +1460,12 @@ public class DomainUtil
             if (ILLEGAL_PROPERTY_NAMES.contains(name.trim()))
             {
                 exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "The field name '" + name + "' is not allowed.")));
+            }
+
+            if (!allowMultiChoice && PropertyType.MULTI_CHOICE.getTypeUri().equals(field.getRangeURI()))
+            {
+                exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "The field '" + name + "' does not support multiple values.")));
+                continue;
             }
 
             Matcher expMatcher = SUBSTITUTION_EXP_PATTERN.matcher(name);
