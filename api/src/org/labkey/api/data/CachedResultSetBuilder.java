@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
+import org.labkey.api.data.ResultSetMetaDataImpl.ColumnMetaData;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -39,9 +40,9 @@ public abstract class CachedResultSetBuilder<C extends CachedResultSetBuilder<C>
         return new FromResultSet(rs);
     }
 
-    public static FromListOfMaps create(List<Map<String, Object>> maps)
+    public static FromListOfMaps create(List<Map<String, Object>> maps, ResultSetMetaData md)
     {
-        return create(maps, maps.get(0).keySet());
+        return new FromListOfMaps(maps, md);
     }
 
     /**
@@ -49,15 +50,26 @@ public abstract class CachedResultSetBuilder<C extends CachedResultSetBuilder<C>
      * maps may need to be case-insensitive. How do you tell? If the maps have data and the keys match the columnNames,
      * but the ResultSet rowMap values are all null.
      * @param maps List of row data, possibly case-insensitive maps
-     * @param columnNames Collection of column names
+     * @param columns Collection of ColumnInfos populated with name and JdbcType at a minimum
      *
      * TODO: A case-insensitive option for the builder, but there may be performance impact for very large result sets
      * if the implementation were simply to wrap each incoming map with CaseInsensitiveHashMap. For now, onus is on the
      * caller to provide case insensitive maps when necessary.
      */
-    public static FromListOfMaps create(List<Map<String, Object>> maps, Collection<String> columnNames)
+    public static FromListOfMaps create(List<Map<String, Object>> maps, Collection<? extends ColumnInfo> columns)
     {
-        return new FromListOfMaps(maps, columnNames);
+        ResultSetMetaDataImpl md = new ResultSetMetaDataImpl(columns.size());
+
+        for (ColumnInfo column : columns)
+        {
+            ColumnMetaData col = new ColumnMetaData();
+            col.columnName = column.getColumnName();
+            col.columnLabel = column.getColumnName();
+            col.columnType = column.getJdbcType().sqlType;
+            md.addColumn(col);
+        }
+
+        return create(maps, md);
     }
 
     public abstract C getThis();
@@ -133,26 +145,19 @@ public abstract class CachedResultSetBuilder<C extends CachedResultSetBuilder<C>
     public final static class FromListOfMaps extends CachedResultSetBuilder<FromListOfMaps>
     {
         private final List<Map<String, Object>> _maps;
-        private final Collection<String> _columnNames;
+        private final ResultSetMetaData _md;
 
-        private ResultSetMetaData _md = null;
         private boolean _isComplete = true;
 
-        private FromListOfMaps(List<Map<String, Object>> maps, Collection<String> columnNames)
+        private FromListOfMaps(List<Map<String, Object>> maps, ResultSetMetaData md)
         {
             _maps = maps;
-            _columnNames = columnNames;
+            _md = md;
         }
 
         @Override
         public FromListOfMaps getThis()
         {
-            return this;
-        }
-
-        public FromListOfMaps setMetaData(ResultSetMetaData md)
-        {
-            _md = md;
             return this;
         }
 
@@ -164,19 +169,16 @@ public abstract class CachedResultSetBuilder<C extends CachedResultSetBuilder<C>
 
         public CachedResultSet build()
         {
-            if (_md == null)
-                _md = createMetaData(_columnNames);
-
             return new CachedResultSet(_md, convertToRowMaps(_md, _maps), _isComplete, _requireClose, _stackTrace);
         }
     }
 
-    private static ResultSetMetaData createMetaData(Collection<String> columnNames)
+    public static ResultSetMetaData createMetaData(Collection<String> columnNames)
     {
         ResultSetMetaDataImpl md = new ResultSetMetaDataImpl(columnNames.size());
         for (String columnName : columnNames)
         {
-            ResultSetMetaDataImpl.ColumnMetaData col = new ResultSetMetaDataImpl.ColumnMetaData();
+            ColumnMetaData col = new ColumnMetaData();
             col.columnName = columnName;
             col.columnLabel = columnName;
             md.addColumn(col);
