@@ -236,12 +236,6 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     }
 
     @Override
-    public boolean isVisitTagQuery()
-    {
-        return false;
-    }
-
-    @Override
     public boolean isRequireLeftJoin()
     {
         return false;
