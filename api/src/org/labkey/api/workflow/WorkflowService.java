@@ -7,7 +7,10 @@ public interface WorkflowService
 {
     enum ActionType
     {
-        AssayImport("assay types", "Imported assay data");
+        AssayImport("assay types", "Imported assay data"),
+        DeriveSamples("sample type parameters", "Derived samples"),
+        AliquotSamples("sample type parameters", "Aliquot samples"),
+        PoolSamples("sample type parameters", "Pooled samples");
 
         private final String _inputDescription;
         private final String _auditMessage;
