@@ -206,7 +206,7 @@ public class GraphTransportProvider implements EmailTransportProvider
         {
             sendMessage(mm);
         }
-        catch (IOException e)
+        catch (IOException | RuntimeException e)
         {
             throw new MessagingException("Failed sending mail via Microsoft Graph", e);
         }
@@ -297,15 +297,27 @@ public class GraphTransportProvider implements EmailTransportProvider
             BodyPart part = multipart.getBodyPart(i);
             String disposition = part.getDisposition();
             String fileName = part.getFileName();
+            String contentId = null;
+            if (part instanceof MimeBodyPart mimeBodyPart)
+            {
+                contentId = mimeBodyPart.getContentID();
+                // Remove angle brackets if present (e.g., "<image001>" -> "image001")
+                if (contentId != null && contentId.startsWith("<") && contentId.endsWith(">"))
+                {
+                    contentId = contentId.substring(1, contentId.length() - 1);
+                }
+            }
 
             // Check for nested multipart
             if (part.getContent() instanceof Multipart nestedMultipart)
             {
                 extractAttachmentsFromMultipart(nestedMultipart, attachments);
             }
-            // Parts with ATTACHMENT disposition or INLINE with filename are attachments
+            // Parts with ATTACHMENT, INLINE, or Content-ID are attachments.
+            // Inline CID resources may omit filename but must still be sent as attachments.
             else if (Part.ATTACHMENT.equalsIgnoreCase(disposition) ||
-                    (Part.INLINE.equalsIgnoreCase(disposition) && fileName != null))
+                    Part.INLINE.equalsIgnoreCase(disposition) ||
+                    StringUtils.isNotBlank(contentId))
             {
                 byte[] contentBytes = readPartContent(part);
                 String contentType = part.getContentType();
@@ -314,17 +326,16 @@ public class GraphTransportProvider implements EmailTransportProvider
                 {
                     contentType = contentType.substring(0, contentType.indexOf(";")).trim();
                 }
-                // Extract Content-ID for inline attachments (used for cid: references in HTML)
-                String contentId = null;
-                if (part instanceof MimeBodyPart mimeBodyPart)
+
+                // Graph file attachments need a name. Fallback for CID-only inline parts.
+                if (StringUtils.isBlank(fileName))
                 {
-                    contentId = mimeBodyPart.getContentID();
-                    // Remove angle brackets if present (e.g., "<image001>" -> "image001")
-                    if (contentId != null && contentId.startsWith("<") && contentId.endsWith(">"))
-                    {
-                        contentId = contentId.substring(1, contentId.length() - 1);
-                    }
+                    if (StringUtils.isNotBlank(contentId))
+                        fileName = contentId + getExtensionForMimeType(contentType);
+                    else
+                        fileName = "attachment-" + (attachments.size() + 1) + getExtensionForMimeType(contentType);
                 }
+
                 attachments.add(new AttachmentInfo(fileName, contentType, contentBytes, contentId));
                 LOG.debug("Extracted attachment: {} ({} bytes, type: {}, contentId: {})", fileName, contentBytes.length, contentType, contentId);
             }
@@ -1285,6 +1296,30 @@ public class GraphTransportProvider implements EmailTransportProvider
         }
 
         @Test
+        public void testEmailWithInlineAttachmentNoFilename() throws Exception
+        {
+            setUpBasicExpectations();
+            mockery.checking(new Expectations() {{
+                oneOf(mockSendMailRequestBuilder).post(with(any(SendMailPostRequestBody.class)));
+                will(new CaptureSendMailAction());
+            }});
+
+            GraphTransportProvider provider = createTestProvider();
+            provider.send(createTestMessageWithInlineAttachmentNoFilename());
+
+            mockery.assertIsSatisfied();
+            com.microsoft.graph.models.Message message = capturedSendMailRequest.getMessage();
+            assertNotNull("Attachments should not be null", message.getAttachments());
+            assertEquals("Should have one attachment", 1, message.getAttachments().size());
+
+            FileAttachment attachment = (FileAttachment) message.getAttachments().get(0);
+            assertTrue("Attachment should be marked as inline", attachment.getIsInline());
+            assertEquals("image-nofilename", attachment.getContentId());
+            assertNotNull("Attachment name should be populated", attachment.getName());
+            assertTrue("Attachment name should contain content id", attachment.getName().contains("image-nofilename"));
+        }
+
+        @Test
         public void testEmailWithMultipleAttachments() throws Exception
         {
             setUpBasicExpectations();
@@ -1441,6 +1476,33 @@ public class GraphTransportProvider implements EmailTransportProvider
             imagePart.setFileName("image.png");
             imagePart.setDisposition(MimeBodyPart.INLINE);
             imagePart.setContentID("<image001>");
+            multipart.addBodyPart(imagePart);
+
+            message.setContent(multipart);
+            return message;
+        }
+
+        private MimeMessage createTestMessageWithInlineAttachmentNoFilename() throws Exception
+        {
+            Properties props = new Properties();
+            Session session = Session.getDefaultInstance(props);
+            MimeMessage message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(TEST_FROM_ADDRESS));
+            message.setRecipient(Message.RecipientType.TO, new InternetAddress(TEST_TO_ADDRESS));
+            message.setSubject("Test email with inline attachment and no filename");
+
+            Multipart multipart = new MimeMultipart("related");
+
+            MimeBodyPart htmlPart = new MimeBodyPart();
+            htmlPart.setContent("<html><body><p>See image:</p><img src=\"cid:image-nofilename\"/></body></html>", "text/html");
+            multipart.addBodyPart(htmlPart);
+
+            MimeBodyPart imagePart = new MimeBodyPart();
+            byte[] pngData = new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+            DataSource dataSource = new ByteArrayDataSource(pngData, "image/png");
+            imagePart.setDataHandler(new DataHandler(dataSource));
+            imagePart.setDisposition(MimeBodyPart.INLINE);
+            imagePart.setContentID("<image-nofilename>");
             multipart.addBodyPart(imagePart);
 
             message.setContent(multipart);

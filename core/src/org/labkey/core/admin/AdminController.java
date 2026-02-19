@@ -8796,7 +8796,7 @@ public class AdminController extends SpringActionController
                     .filter(FileLike::isDirectory)
                     .findFirst()
                     .orElseThrow(() -> new ConfigurationException("Could not find _images directory in core module"));
-                String gifDataUri = "data:image/png;base64," + java.util.Base64.getEncoder().encodeToString(java.nio.file.Files.readAllBytes(imagesDir.resolveChild("paperclip.gif").toNioPathForRead()));
+                String gifDataUri = "data:image/gif;base64," + java.util.Base64.getEncoder().encodeToString(java.nio.file.Files.readAllBytes(imagesDir.resolveChild("paperclip.gif").toNioPathForRead()));
 
                 msg.setEncodedHtmlContent("<html><body>" +
                     "<table width='100%' style='max-width:600px;'>" +
