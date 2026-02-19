@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "7.18.0-fb-transormSubfolder.0"
+    "@labkey/components": "7.20.0-fb-transformSubfolder.1"
   },
   "devDependencies": {
     "@labkey/build": "8.8.0",
