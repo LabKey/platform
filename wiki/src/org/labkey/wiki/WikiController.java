@@ -427,7 +427,7 @@ public class WikiController extends SpringActionController
         @Override
         public ActionURL getFailURL(WikiNameForm wikiNameForm, BindException errors)
         {
-            return new ManageAction(getViewContext(), _wiki).getUrl();
+            return _wiki != null ? new ManageAction(getViewContext(), _wiki).getUrl() : null;
         }
     }
 

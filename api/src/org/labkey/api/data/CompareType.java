@@ -80,8 +80,8 @@ import static org.junit.Assert.assertTrue;
  * - java: Filter.java
  * - js: Filter.js
  * - R: makeFilter.R, makeFilter.Rd
- * - SAS: labkeymakefilter.sas, labkey.org SAS docs
- * - Python & Perl don't have a filter operator enum
+ * - Python: query.py
+ * - Perl doesn't have a filter operator enum
  */
 public abstract class CompareType
 {
@@ -829,7 +829,7 @@ public abstract class CompareType
      */
 
 
-    public static final CompareType ARRAY_IS_EMPTY = new CompareType("Is Empty", "arrayisempty", "ARRAYISEMPTY", false, null, OperatorType.ARRAYISEMPTY)
+    public static final CompareType ARRAY_IS_EMPTY = new CompareType("Is Empty", "arrayisempty", "ARRAY_ISEMPTY", false, null, OperatorType.ARRAYISEMPTY)
     {
         @Override
         public ArrayIsEmptyClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -844,7 +844,7 @@ public abstract class CompareType
         }
     };
 
-    public static final CompareType ARRAY_IS_NOT_EMPTY = new CompareType("Is Not Empty", "arrayisnotempty", "ARRAYISNOTEMPTY", false, null, OperatorType.ARRAYISNOTEMPTY)
+    public static final CompareType ARRAY_IS_NOT_EMPTY = new CompareType("Is Not Empty", "arrayisnotempty", "ARRAY_ISNOTEMPTY", false, null, OperatorType.ARRAYISNOTEMPTY)
     {
         @Override
         public ArrayIsEmptyClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -859,7 +859,7 @@ public abstract class CompareType
         }
     };
 
-    public static final CompareType ARRAY_CONTAINS_ALL = new CompareType("Contains All", "arraycontainsall", "ARRAYCONTAINSALL", true, null, OperatorType.ARRAYCONTAINSALL)
+    public static final CompareType ARRAY_CONTAINS_ALL = new CompareType("Contains All", "arraycontainsall", "ARRAY_CONTAINS_ALL", true, null, OperatorType.ARRAYCONTAINSALL)
     {
         @Override
         public ArrayContainsAllClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -880,7 +880,7 @@ public abstract class CompareType
         }
     };
 
-    public static final CompareType ARRAY_CONTAINS_ANY = new CompareType("Contains Any", "arraycontainsany", "ARRAYCONTAINSANY", true, null, OperatorType.ARRAYCONTAINSANY)
+    public static final CompareType ARRAY_CONTAINS_ANY = new CompareType("Contains Any", "arraycontainsany", "ARRAY_CONTAINS_ANY", true, null, OperatorType.ARRAYCONTAINSANY)
     {
         @Override
         public ArrayContainsAnyClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -901,7 +901,7 @@ public abstract class CompareType
         }
     };
 
-    public static final CompareType ARRAY_CONTAINS_NONE = new CompareType("Contains None", "arraycontainsnone", "ARRAYCONTAINSNONE", true, null, OperatorType.ARRAYCONTAINSNONE)
+    public static final CompareType ARRAY_CONTAINS_NONE = new CompareType("Contains None", "arraycontainsnone", "ARRAY_CONTAINS_NONE", true, null, OperatorType.ARRAYCONTAINSNONE)
     {
         @Override
         public ArrayContainsNoneClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -922,7 +922,7 @@ public abstract class CompareType
         }
     };
 
-    public static final CompareType ARRAY_MATCHES = new CompareType("Contains Exactly", "arraymatches", "ARRAYMATCHES", true, null, OperatorType.ARRAYMATCHES)
+    public static final CompareType ARRAY_MATCHES = new CompareType("Contains Exactly", "arraymatches", "ARRAY_CONTAINS_EXACT", true, null, OperatorType.ARRAYMATCHES)
     {
         @Override
         public ArrayMatchesClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -943,7 +943,7 @@ public abstract class CompareType
         }
     };
 
-    public static final CompareType ARRAY_NOT_MATCHES = new CompareType("Does Not Contain Exactly", "arraynotmatches", "ARRAYNOTMATCHES", true, null, OperatorType.ARRAYNOTMATCHES)
+    public static final CompareType ARRAY_NOT_MATCHES = new CompareType("Does Not Contain Exactly", "arraynotmatches", "ARRAY_CONTAINS_NOT_EXACT", true, null, OperatorType.ARRAYNOTMATCHES)
     {
         @Override
         public ArrayNotMatchesClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -966,7 +966,7 @@ public abstract class CompareType
 
     public static abstract class ArrayClause extends SimpleFilter.MultiValuedFilterClause
     {
-        public static final String ARRAY_VALUE_SEPARATOR = ",";
+        public static final String ARRAY_VALUE_SEPARATOR = ";";
 
         public ArrayClause(@NotNull FieldKey fieldKey, CompareType comparison, Collection<?> params, boolean negated)
         {
@@ -990,7 +990,7 @@ public abstract class CompareType
             }
 
             for (int i = 0; i < params.length; i++)
-                fragments[i] = new SQLFragment().append(escapeLabKeySqlValue(params[i], type));
+                fragments[i] = SQLFragment.unsafe(escapeLabKeySqlValue(params[i], type));
 
             return fragments;
         }
@@ -1010,6 +1010,17 @@ public abstract class CompareType
 
             return new Pair<>(valuesFragment, columnFragment);
         }
+
+        @Override
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        {
+            sb.append(formatter.format(_fieldKey));
+            sb.append(" ");
+            Object[] params = getParamVals();
+            sb.append(getFilterOpText()).append(Arrays.toString(params));
+        }
+
+        abstract String getFilterOpText();
 
     }
 
@@ -1048,7 +1059,15 @@ public abstract class CompareType
         @Override
         public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
-            sb.append("is empty");
+            sb.append(formatter.format(_fieldKey));
+            sb.append(" ");
+            sb.append("IS EMPTY");
+        }
+
+        @Override
+        public String getFilterOpText()
+        {
+            return null;
         }
 
     }
@@ -1070,7 +1089,15 @@ public abstract class CompareType
         @Override
         public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
-            sb.append("is not empty");
+            sb.append(formatter.format(_fieldKey));
+            sb.append(" ");
+            sb.append("IS NOT EMPTY");
+        }
+
+        @Override
+        public String getFilterOpText()
+        {
+            return null;
         }
 
     }
@@ -1100,10 +1127,9 @@ public abstract class CompareType
         }
 
         @Override
-        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public String getFilterOpText()
         {
-            Object[] params = getParamVals();
-            sb.append("contains all of ").append(Arrays.toString(params));
+            return "CONTAINS ALL OF ";
         }
 
     }
@@ -1141,10 +1167,9 @@ public abstract class CompareType
         }
 
         @Override
-        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public String getFilterOpText()
         {
-            Object[] params = getParamVals();
-            sb.append("contains at least one of ").append(Arrays.toString(params));
+            return "CONTAINS AT LEAST ONE OF ";
         }
 
     }
@@ -1162,12 +1187,10 @@ public abstract class CompareType
         {
             return "array_contains_none(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")";
         }
-
         @Override
-        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public String getFilterOpText()
         {
-            Object[] params = getParamVals();
-            sb.append("contains none of ").append(Arrays.toString(params));
+            return "CONTAINS NONE OF ";
         }
 
     }
@@ -1205,10 +1228,9 @@ public abstract class CompareType
         }
 
         @Override
-        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public String getFilterOpText()
         {
-            Object[] params = getParamVals();
-            sb.append("contains the same elements as ").append(Arrays.toString(params));
+            return "CONTAINS THE SAME ELEMENTS AS ";
         }
 
     }
@@ -1228,10 +1250,9 @@ public abstract class CompareType
         }
 
         @Override
-        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public String getFilterOpText()
         {
-            Object[] params = getParamVals();
-            sb.append("does not contain the same elements as ").append(Arrays.toString(params));
+            return "DOES NOT CONTAIN THE SAME ELEMENTS AS ";
         }
 
     }

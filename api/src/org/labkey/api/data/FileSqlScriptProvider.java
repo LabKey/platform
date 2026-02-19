@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import org.apache.commons.collections4.ComparatorUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +33,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.vcs.Vcs;
 import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.JspTemplate;
@@ -57,14 +57,9 @@ import java.util.regex.Pattern;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-/**
- * User: adam
- * Date: Sep 18, 2007
- * Time: 10:26:29 AM
- */
 public class FileSqlScriptProvider implements SqlScriptProvider
 {
-    private static final Logger _log = LogManager.getLogger(FileSqlScriptProvider.class);
+    private static final Logger _log = LogHelper.getLogger(FileSqlScriptProvider.class, "SQL script issues");
 
     private final Module _module;
 
@@ -237,15 +232,13 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
     public void saveScript(DbSchema schema, String description, String contents) throws IOException
     {
-        saveScript(schema, description, contents, false);
+        saveScript(description, contents, getScriptDirectory(schema.getSqlDialect()), false);
     }
 
-    public void saveScript(DbSchema schema, String description, String contents, boolean overwrite) throws IOException
+    public void saveScript(String description, String contents, File scriptsDir, boolean overwrite) throws IOException
     {
         if (!AppProps.getInstance().isDevMode())
             throw new IllegalStateException("Can't save scripts while in production mode");
-
-        File scriptsDir = getScriptDirectory(schema.getSqlDialect());
 
         if (!scriptsDir.exists())
             throw new IllegalStateException("SQL scripts directory not found");

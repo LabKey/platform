@@ -90,10 +90,11 @@ public abstract class BrowserEndpoint extends Endpoint
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig)
     {
+        String uri = null;
         try
         {
-            String uri = getWSRemoteUri(session, endpointConfig);
-            LOG.debug("BrowserEndpoint.onOpen( " + session.getRequestURI() + " -> " + uri);
+            uri = getWSRemoteUri(session, endpointConfig);
+            LOG.debug("BrowserEndpoint.onOpen( {} -> {}", session.getRequestURI(), uri);
             Map<String, List<String>> requestHeaders = (Map<String, List<String>>) endpointConfig.getUserProperties().get("requestHeaders");
             this.browserSession = session;
             this.serverEndpoint = new ServerEndpoint(new URI(uri), requestHeaders, endpointConfig.getUserProperties());
@@ -103,7 +104,7 @@ public abstract class BrowserEndpoint extends Endpoint
         }
         catch (URISyntaxException | IOException | DeploymentException | ServletException ex)
         {
-            LOG.debug("BrowserEndpoint.onOpen", ex);
+            LOG.debug("BrowserEndpoint.onOpen failed to proxy {} -> {}", session.getRequestURI(), uri, ex);
             UnexpectedException.rethrow(ex);
         }
     }
@@ -138,6 +139,13 @@ public abstract class BrowserEndpoint extends Endpoint
         {
             final Map<String,List<String>> proxyHeaders = prepareProxyHeaders(remoteURI, requestHeaders, properties);
 
+            // Log what the subclass's prepareProxyHeaders returned
+            LOG.trace("=== WebSocket proxy: proxyHeaders from prepareProxyHeaders ===");
+            for (Map.Entry<String, List<String>> entry : proxyHeaders.entrySet())
+            {
+                LOG.trace("  proxyHeaders: {} = {}", entry.getKey(), entry.getValue());
+            }
+
             WebSocketContainer clientEndPoint = ContainerProvider.getWebSocketContainer();
             ClientEndpointConfig config = ClientEndpointConfig.Builder.create()
                     .configurator(new ClientEndpointConfig.Configurator()
@@ -145,7 +153,25 @@ public abstract class BrowserEndpoint extends Endpoint
                         @Override
                         public void beforeRequest(Map<String, List<String>> headers)
                         {
+                            // Log incoming browser headers for debugging
+                            LOG.trace("=== WebSocket proxy: browser request headers ===");
+                            for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet())
+                            {
+                                LOG.trace("  Browser header: {} = {}", entry.getKey(), entry.getValue());
+                            }
+
                             headers.putAll(proxyHeaders);
+                        }
+
+                        @Override
+                        public void afterResponse(HandshakeResponse hr)
+                        {
+                            // Log response headers from backend server for debugging
+                            LOG.trace("=== WebSocket proxy: response headers from backend ===");
+                            for (Map.Entry<String, List<String>> entry : hr.getHeaders().entrySet())
+                            {
+                                LOG.trace("  Response header: {} = {}", entry.getKey(), entry.getValue());
+                            }
                         }
                     })
                     .build();

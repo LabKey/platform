@@ -4,15 +4,16 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.QuietCloser;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.ai.chat.model.ToolContext;
 import java.util.Map;
 
 /**
- *  TODO MCP tool calling supports passing along a ToolContext.  And most all
- *  interesting tools probably need a User and Container.  This is not all hooked-up
- *  yet.  This is an area for further investiation.
+ *  TODO MCP tool calling supports passing along a ToolContext. And most all
+ *  interesting tools probably need a User and Container. This is not all hooked-up
+ *  yet. This is an area for further investigation.
  */
 public class McpContext implements ContainerUser
 {
@@ -67,17 +68,17 @@ public class McpContext implements ContainerUser
         return ret;
     }
 
-        public static AutoCloseable withContext(ContainerUser ctx)
+    public static QuietCloser withContext(ContainerUser ctx)
     {
         return with(new McpContext(ctx));
     }
 
-    public static AutoCloseable withContext(Container container, User user)
+    public static QuietCloser withContext(Container container, User user)
     {
         return with(new McpContext(container, user));
     }
 
-    private static AutoCloseable with(McpContext ctx)
+    private static QuietCloser with(McpContext ctx)
     {
         final McpContext prev = contexts.get();
         contexts.set(ctx);

@@ -293,8 +293,12 @@ public class AssayModule extends SpringModule
         {
             svc.registerUsageMetrics(getName(), new PlateMetricsProvider());
         }
+    }
 
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(AssayDbSchema.getInstance().getSchema())
+    @Override
+    public void registerMigrationHandlers(@NotNull DatabaseMigrationService service)
+    {
+        service.registerSchemaHandler(new DefaultMigrationSchemaHandler(AssayDbSchema.getInstance().getSchema())
         {
             @Override
             public @Nullable FieldKey getContainerFieldKey(TableInfo sourceTable)
@@ -311,7 +315,7 @@ public class AssayModule extends SpringModule
         });
 
         // Tables in the "assaywell" provisioned schema join to assay.Well to find their container
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(PlateMetadataDomainKind.getSchema())
+        service.registerSchemaHandler(new DefaultMigrationSchemaHandler(PlateMetadataDomainKind.getSchema())
         {
             @Override
             public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
@@ -324,7 +328,7 @@ public class AssayModule extends SpringModule
             }
         });
 
-        DatabaseMigrationService.get().registerSchemaHandler(new AssayResultMigrationSchemaHandler());
+        service.registerSchemaHandler(new AssayResultMigrationSchemaHandler());
     }
 
     @Override

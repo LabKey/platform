@@ -232,6 +232,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         return "   " + StringUtilsLabKey.pluralize(count, "row") + " not copied";
     }
 
+    // afterTable() is called only if the table was filtered by a configuration filter
     @Override
     public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
     {

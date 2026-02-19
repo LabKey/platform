@@ -1,4 +1,11 @@
-import { ExperimentCRUDUtils, hookServer, RequestOptions, successfulResponse } from '@labkey/test';
+import {
+    ExperimentCRUDUtils,
+    generateFieldName,
+    getEscapedNameExpression,
+    hookServer,
+    RequestOptions,
+    successfulResponse
+} from '@labkey/test';
 import mock from 'mock-fs';
 import {
     checkDomainName,
@@ -68,6 +75,41 @@ afterAll(async () => {
 afterEach(() => {
     mock.restore();
 });
+
+
+// TODO: move utils to ExperimentCRUDUtils
+export async function insertDataClassData(
+    rows: Record<string, any>[],
+    dataType: string,
+    folderOptions: RequestOptions = topFolderOptions,
+): Promise<{ lsid: string; name: string; rowId: number }[]> {
+    const resultRows = await ExperimentCRUDUtils.insertRows(
+        server,
+        rows,
+        'exp.data',
+        dataType,
+        folderOptions,
+        editorUserOptions,
+    );
+
+    return resultRows.map(row => ({
+        lsid: caseInsensitive(row, 'lsid'),
+        name: caseInsensitive(row, 'name'),
+        rowId: caseInsensitive(row, 'rowId'),
+    }));
+}
+export async function getDataClassDataByName(dataName: string, queryName: string, columns: string = 'Name, RowId', folderOptions: RequestOptions , userOptions: RequestOptions, debug?: boolean) : Promise<any> {
+    const response = await server.post('query', 'selectRows', {
+        schemaName: 'exp.data',
+        queryName,
+        'query.Name~eq': dataName,
+        'query.columns': columns,
+    }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
+    if (debug)
+        console.log(response);
+    return response.body.rows[0];
+}
+
 
 describe('Data Class Designer', () => {
     it('Lack designer or Reader permission', async () => {
@@ -433,4 +475,347 @@ describe('Duplicate IDs', () => {
         expect(caseInsensitive(dataResults[1], 'description')).toBe('created');
 
     });
+});
+
+
+describe('Multi Value Text Choice', () => {
+
+    const mvtcFieldProp = {
+        "propertyId": -1,
+        "propertyValidators": [
+            {
+                "type": "TextChoice",
+                "name": "Text Choice Validator",
+                "new": true,
+                "expression": "Abnormal|agent|cDNA|Plasma"
+            }
+        ],
+        "rangeURI": "http://cpas.fhcrc.org/exp/xml#multiChoice",
+    };
+
+    const tcFieldProp = {
+        ...mvtcFieldProp,
+        rangeURI: 'http://www.w3.org/2001/XMLSchema#string',
+        conceptURI: 'http://www.labkey.org/types#textChoice',
+    }
+
+
+    it("MVTC CRUD", async () => {
+        let supportMultiChoice = false;
+        const createTestPayload = {
+            kind: 'DataClass',
+            domainDesign: { name: 'Test_mvtc_support_check', fields: [{ name: 'Prop' }] },
+            options: {
+                name: "Test_mvtc_support_check",
+            }
+        };
+
+        await server.post('property', 'createDomain', createTestPayload,
+            {...topFolderOptions, ...designerReaderOptions}).expect((result) => {
+            const domain = JSON.parse(result.text);
+            supportMultiChoice = domain.allowMultiChoiceProperties;
+            return true;
+        });
+
+        const dataType = 'MVTCReq Source Type';
+        const fieldName = generateFieldName();
+        const fieldNameInExpression = getEscapedNameExpression((fieldName));
+        console.log("Selected Required MVTC dataclass name: " + dataType + ", field name: " + fieldName);
+
+        const fields = [
+            {
+                ...mvtcFieldProp,
+                name: fieldName
+            }
+        ];
+
+        let domainId = -1, domainURI = '', propertyId, propertyURI;
+        const createPayload = {
+            kind: 'DataClass',
+            domainDesign: { name: dataType, fields },
+            options: {
+                name: dataType,
+                nameExpression: 'Src-${' + fieldNameInExpression + '}'
+            }
+        };
+
+        if (!supportMultiChoice) {
+            const failedCreateDomain = await server.post('property', 'createDomain', createPayload,
+                {...topFolderOptions, ...adminOptions});
+
+            expect(failedCreateDomain?.['body']?.['exception']).toContain('does not support multiple values.');
+
+            console.warn("Multi Value Text Choice not supported, skipping test");
+            return;
+        }
+
+        await server.post('property', 'createDomain', createPayload, {...topFolderOptions, ...designerReaderOptions}).expect((result) => {
+            const domain = JSON.parse(result.text);
+            domainId = domain.domainId;
+            domainURI = domain.domainURI;
+            const field = domain.fields[0];
+            propertyId = field.propertyId;
+            propertyURI = field.propertyURI;
+            return true;
+        });
+
+        let dataCount = 0;
+
+        // import invalid mvtc values, verify import should fail
+        let errorResp = await ExperimentCRUDUtils.importData(server, "Name\t" + fieldName + "\tDescription\nS-" + dataCount++ + "\ta,x\timport invalid mvtc", dataType, "IMPORT", topFolderOptions, editorUserOptions);
+        expect(errorResp.text.indexOf("Value 'a, x' for field") > -1).toBeTruthy();
+        errorResp = await ExperimentCRUDUtils.importData(server, "Name\t" + fieldName + "\tDescription\nS-" + dataCount++ + "\tabc\timport invalid mvtc", dataType, "IMPORT", topFolderOptions, editorUserOptions);
+        expect(errorResp.text.indexOf("Value 'abc' for field") > -1).toBeTruthy();
+
+        // insert data using insertRows api, with invalid mvtc value
+        const invalidValues = ['x', 'a, x', 'x, y', ['x'], ['agent', 'x'], ['x', 'y']];
+        invalidValues.forEach( async (val) => {
+            await server.post('query', 'insertRows', {
+                schemaName: 'exp.data',
+                queryName: dataType,
+                rows: [{
+                    name: 'invalid',
+                    [fieldName]: val
+                }]
+            }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+                const errorResp = JSON.parse(result.text);
+                expect(errorResp['exception']).toContain('is invalid.');
+            });
+        });
+
+        // insert data using insertRows api, with no mvtc value
+        let inserted = await insertDataClassData(
+            [
+                { 'name': 'S-' + dataCount++, 'description': 'no column' },
+                { 'name': 'S-' + dataCount++, 'description': 'null column', [fieldName]: null },
+                { 'name': 'S-' + dataCount++, 'description': 'blank column', [fieldName]: '' },
+                { 'name': 'S-' + dataCount++, 'description': 'empty array', [fieldName]: [] },
+            ], dataType, topFolderOptions
+        );
+        inserted.forEach(async (row) => {
+            let res = await ExperimentCRUDUtils.getRows(server, [caseInsensitive(row, 'RowId')], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
+            expect(caseInsensitive(res[0], fieldName)).toEqual([]);
+        });
+
+        // import data with no mvtc column
+        let importText = "Name\tDescription\n";
+        let dataNameImported = ["S-" + dataCount++];
+        importText += dataNameImported + "\timport no column\n";
+        await ExperimentCRUDUtils.importData(server, importText, dataType, "IMPORT", topFolderOptions, editorUserOptions);
+        let result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual([]);
+
+        // import data with mvtc fieldname column header, with blank, single, multi values
+        dataNameImported = ["S-" + dataCount++, "S-" + dataCount++, "S-" + dataCount++];
+        importText = "Name\t" + fieldName + "\tDescription\n";
+        importText += dataNameImported[0] + "\t\timport blank column\n";
+        importText += dataNameImported[1] + "\tagent\timport single value\n";
+        importText += dataNameImported[2] + "\tPlasma, agent, cDNA, Abnormal\timport multi values\n";
+        await ExperimentCRUDUtils.importData(server, importText, dataType, "IMPORT", topFolderOptions, editorUserOptions);
+        const dataImportedRowIds = [];
+        // verify imported data mvtc
+        result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual([]);
+        dataImportedRowIds.push(caseInsensitive(result, 'rowId'));
+        result = await getDataClassDataByName(dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual(['agent']);
+        dataImportedRowIds.push(caseInsensitive(result, 'rowId'));
+        result = await getDataClassDataByName(dataNameImported[2], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual(['Abnormal', 'agent', 'cDNA', 'Plasma']);
+        dataImportedRowIds.push(caseInsensitive(result, 'rowId'));
+
+        // update data using updateRows api, mvtc column absent from update
+        await ExperimentCRUDUtils.updateRows(server, [
+            { 'rowId': dataImportedRowIds[0], 'description': 'no update' },
+            { 'rowId': dataImportedRowIds[1], 'description': 'null column' },
+            { 'rowId': dataImportedRowIds[2], 'description': 'blank column' },
+        ], 'exp.data', dataType, topFolderOptions, editorUserOptions);
+
+        result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual([]);
+        result = await getDataClassDataByName(dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual(['agent']);
+        result = await getDataClassDataByName(dataNameImported[2], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual(['Abnormal', 'agent', 'cDNA', 'Plasma']);
+
+        // update data using updateRows api, mvtc column blank or empty or empty array
+        await ExperimentCRUDUtils.updateRows(server, [
+            { 'rowId': dataImportedRowIds[0], [fieldName]: '' },
+            { 'rowId': dataImportedRowIds[1], [fieldName]: null },
+            { 'rowId': dataImportedRowIds[2], [fieldName]: [] },
+        ], 'exp.data', dataType, topFolderOptions, editorUserOptions);
+
+        result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual([]);
+        result = await getDataClassDataByName(dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual([]);
+        result = await getDataClassDataByName(dataNameImported[2], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual([]);
+
+        // values are Abnormal|agent|cDNA|Plasma
+        const singleValues = ['Abnormal', 'cDNA', ['Abnormal'], ['cDNA']];
+        const expectedSingleResults = [['Abnormal'], ['cDNA'], ['Abnormal'], ['cDNA']];
+        for (let i = 0; i < singleValues.length; i++) {
+            const val = singleValues[i];
+            const expected = expectedSingleResults[i];
+            await ExperimentCRUDUtils.updateRows(server, [
+                    { 'rowId': dataImportedRowIds[0], [fieldName]: val },
+                ], 'exp.data', dataType, topFolderOptions, editorUserOptions
+            );
+            result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+            expect(caseInsensitive(result, fieldName)).toEqual(expected);
+        }
+
+        const multiValues = ['agent, cDNA', 'cDNA, Plasma, Abnormal', ['agent', 'cDNA'], ['agent', 'Abnormal', 'cDNA']];
+        const expectedMultiResults = [['agent', 'cDNA'], ['Abnormal', 'cDNA', 'Plasma'], ['agent', 'cDNA'], ['Abnormal', 'agent', 'cDNA']];
+        for (let i = 0; i < multiValues.length; i++) {
+            const val = multiValues[i];
+            const expected = expectedMultiResults[i];
+            await ExperimentCRUDUtils.updateRows(server, [
+                    { 'rowId': dataImportedRowIds[1], [fieldName]: val },
+                ], 'exp.data', dataType, topFolderOptions, editorUserOptions
+            );
+            result = await getDataClassDataByName(dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
+            expect(caseInsensitive(result, fieldName)).toEqual(expected);
+        }
+
+        // update with import to set mvtc from non blank to blank
+        importText = "Name\t" + fieldName + "\tDescription\n";
+        importText += dataNameImported[0] + "\t\timport blank column\n";
+        importText += dataNameImported[1] + "\t\timport single value\n";
+        await ExperimentCRUDUtils.importData(server, importText, dataType, "UPDATE", topFolderOptions, editorUserOptions);
+        result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual([]);
+        result = await getDataClassDataByName(dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual([]);
+
+        // update with import to set mvtc from blank to multi values
+        importText = "Name\t" + fieldName + "\tDescription\n";
+        importText += dataNameImported[0] + "\tAbnormal, agent\timport multi value\n";
+        importText += dataNameImported[1] + "\tcDNA, Plasma, Abnormal\timport multi values\n";
+        await ExperimentCRUDUtils.importData(server, importText, dataType, "UPDATE", topFolderOptions, editorUserOptions);
+        result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual(['Abnormal', 'agent']);
+        result = await getDataClassDataByName(dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual(['Abnormal', 'cDNA', 'Plasma']);
+
+        // merge with import to change mvtc and create new data
+        const newMerged = 'S-' + dataCount++;
+        importText = "Name\t" + fieldName + "\tDescription\n";
+        importText += dataNameImported[0] + "\tPlasma, Abnormal\timport multi value\n";
+        importText += newMerged + "\tagent, cDNA\timport multi values\n";
+        await ExperimentCRUDUtils.importData(server, importText, dataType, "MERGE", topFolderOptions, editorUserOptions);
+        result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual(['Abnormal', 'Plasma']);
+        result = await getDataClassDataByName(newMerged, dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual(['agent', 'cDNA']);
+
+        // insert using insertRows api, with single mvtc value
+        let toInsert = [];
+        for (let i = 0; i < singleValues.length; i++) {
+            const val = singleValues[i];
+            toInsert.push({ 'name': 'S-' + dataCount++, [fieldName]: val , 'description': 'insert single value' });
+        }
+
+        inserted = await ExperimentCRUDUtils.insertRows(server, toInsert, 'exp.data', dataType, topFolderOptions, editorUserOptions);
+
+        for (let i = 0; i < singleValues.length; i++) {
+            const expected = expectedSingleResults[i];
+            let res = await ExperimentCRUDUtils.getSourcesData(server, [caseInsensitive(inserted[i], 'RowId')], dataType, '*', topFolderOptions, adminOptions);
+            expect(caseInsensitive(res[0], fieldName)).toEqual(expected);
+        }
+
+        // insert using insertRows api, with multi mvtc values
+        toInsert = [];
+        for (let i = 0; i < multiValues.length; i++) {
+            const val = multiValues[i];
+            toInsert.push({ 'name': 'S-' + dataCount++, [fieldName]: val , 'description': 'insert multi values' });
+        }
+
+        inserted = await ExperimentCRUDUtils.insertRows(server, toInsert, 'exp.data', dataType, topFolderOptions, editorUserOptions);
+
+        for (let i = 0; i < multiValues.length; i++) {
+            const expected = expectedMultiResults[i];
+            let res = await ExperimentCRUDUtils.getSourcesData(server, [caseInsensitive(inserted[i], 'RowId')], dataType, '*', topFolderOptions, adminOptions);
+            expect(caseInsensitive(res[0], fieldName)).toEqual(expected);
+        }
+
+        // verify convert to required column fails with existing blank values
+        let dataClassRowId = await getDataClassRowIdByName(server, dataType, topFolderOptions)
+
+        let updatePayload: any = {
+            domainId,
+            domainDesign: {
+                name: dataType,
+                fields: [
+                    {
+                        ...mvtcFieldProp,
+                        name: fieldName,
+                        required: true
+                    }
+                ],
+                domainId,
+                domainURI
+            },
+            options: {
+                rowId: dataClassRowId,
+                name: dataType,
+                nameExpression: 'Src-${' + fieldNameInExpression + '}'
+            }
+        };
+        let failedUpdate = await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...adminOptions});
+        expect(failedUpdate?.['body']?.['exception']).toContain('cannot be required when it contains rows with blank values.');
+
+        // verify convert to single value text choice fails with existing multiple values
+        updatePayload = {
+            domainId,
+            domainDesign: {
+                name: dataType,
+                fields: [
+                    {
+                        ...tcFieldProp,
+                        name: fieldName,
+                        propertyId,
+                        propertyURI
+                    }
+                ],
+                domainId,
+                domainURI
+            },
+            options: {
+                rowId: dataClassRowId,
+                name: dataType,
+                nameExpression: 'S-${' + fieldNameInExpression + '}'
+            }
+        };
+        failedUpdate = await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...adminOptions});
+        expect(failedUpdate?.['body']?.['exception']).toContain('Unable to change property type. There are rows with multiple values stored for');
+
+        // verify can convert to Text field type
+        updatePayload = {
+            domainId,
+            domainDesign: {
+                name: dataType,
+                fields: [
+                    {
+                        name: fieldName,
+                        propertyId,
+                        propertyURI
+                    }
+                ],
+                domainId,
+                domainURI
+            },
+            options: {
+                rowId: dataClassRowId,
+                name: dataType,
+                nameExpression: 'S-${' + fieldNameInExpression + '}'
+            }
+        };
+        await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...adminOptions}).expect(successfulResponse);
+        result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(result, fieldName)).toEqual('Abnormal, Plasma'); // convert from ['Abnormal', 'Plasma'] to 'Abnormal, Plasma'
+
+    });
+
 });

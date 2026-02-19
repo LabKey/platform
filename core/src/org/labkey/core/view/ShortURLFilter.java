@@ -31,17 +31,9 @@ import java.io.IOException;
 /**
  * Looks for incoming URLs that match a short URL registered with ShortURLService. If so, the filter will bounce the
  * browser to the target URL.
- * User: jeckels
- * Date: 1/31/14
  */
 public class ShortURLFilter implements Filter
 {
-    @Override
-    public void destroy()
-    {
-
-    }
-
     @Override
     public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain) throws IOException, ServletException
     {

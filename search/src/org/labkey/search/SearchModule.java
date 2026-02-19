@@ -195,8 +195,12 @@ public class SearchModule extends DefaultModule
             long count = new TableSelector(auditTable).getRowCount();
             return Collections.singletonMap("fullTextSearches", count);
         });
+    }
 
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(SearchSchema.getInstance().getSchema())
+    @Override
+    public void registerMigrationHandlers(@NotNull DatabaseMigrationService service)
+    {
+        service.registerSchemaHandler(new DefaultMigrationSchemaHandler(SearchSchema.getInstance().getSchema())
         {
             @Override
             public List<TableInfo> getTablesToCopy()

@@ -134,6 +134,7 @@ import org.labkey.experiment.lineage.LineageMethod;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1427,6 +1428,28 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             return result;
 
+        }
+
+        // DataClassDataUpdateService needs to skip Attachment column convert before _update
+        // TODO: move override when implementing consolidating dataclass update methods
+        @Override
+        protected Object convertColumnValue(ColumnInfo col, Object value, User user, Container c, @Nullable Path fileLinkDirPath) throws ValidationException
+        {
+            if (PropertyType.ATTACHMENT == col.getPropertyType())
+                return value;
+
+            if (ALIAS_CONCEPT_URI.equals(col.getConceptURI()))
+                return value;
+
+            return super.convertColumnValue(col, value, user, c, fileLinkDirPath);
+        }
+
+        @Override
+        protected TableInfo getTableInfoForConversion()
+        {
+            // getDBTable() returns exp.data table, which lacks properties fields.
+            // TODO: this method can be removed when implementing consolidating dataclass update methods
+            return getQueryTable();
         }
 
         @Override

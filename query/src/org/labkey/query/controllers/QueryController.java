@@ -247,6 +247,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.SqlUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
@@ -730,7 +731,8 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors)
         {
             // Site Admin or Troubleshooter? Troubleshooters can see all the information but can't test data sources.
-            boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
+            // Dev mode only, since "Test" is meant for LabKey's own development and testing purposes.
+            boolean showTestButton = getContainer().hasPermission(getUser(), AdminOperationsPermission.class) && AppProps.getInstance().isDevMode();
             List<ExternalSchemaDef> allDefs = QueryManager.get().getExternalSchemaDefs(null);
 
             MultiValuedMap<String, ExternalSchemaDef> byDataSourceName = new ArrayListValuedHashMap<>();
@@ -745,7 +747,7 @@ public class QueryController extends SpringActionController
                 BR(),
                 TABLE(cl("labkey-data-region"),
                     TR(cl("labkey-show-borders"),
-                        hasAdminOpsPerms ? TD(cl("labkey-column-header"), "Test") : null,
+                        showTestButton ? TD(cl("labkey-column-header"), "Test") : null,
                         TD(cl("labkey-column-header"), "Data Source"),
                         TD(cl("labkey-column-header"), "Current Status"),
                         TD(cl("labkey-column-header"), "URL"),
@@ -775,7 +777,7 @@ public class QueryController extends SpringActionController
                             return Stream.of(
                                 TR(
                                     cl(rowStyle),
-                                    hasAdminOpsPerms ? TD(connected ? new ButtonBuilder("Test").href(new ActionURL(TestDataSourceConfirmAction.class, getContainer()).addParameter("dataSource", scope.getDataSourceName())) : "") : null,
+                                    showTestButton ? TD(connected ? new ButtonBuilder("Test").href(new ActionURL(TestDataSourceConfirmAction.class, getContainer()).addParameter("dataSource", scope.getDataSourceName())) : "") : null,
                                     TD(HtmlString.NBSP, scope.getDisplayName()),
                                     TD(status),
                                     TD(scope.getDatabaseUrl()),
@@ -6372,7 +6374,7 @@ public class QueryController extends SpringActionController
         public boolean handlePost(InternalViewForm form, BindException errors)
         {
             CstmView view = form.getViewAndCheckPermission();
-            QueryManager.get().delete(view);
+            QueryManager.get().delete(getUser(), view);
             return true;
         }
 
@@ -8984,7 +8986,7 @@ public class QueryController extends SpringActionController
             if (null == sql)
             {
                 var text = response.text();
-                String sqlFind = extractSql(text);
+                String sqlFind = SqlUtil.extractSql(text);
                 if (null != sqlFind)
                 {
                     sql = sqlFind;
@@ -8995,23 +8997,5 @@ public class QueryController extends SpringActionController
             html.append(response.html());
         }
         return new SqlResponse(html.getHtmlString(), sql);
-    }
-
-    static String extractSql(String text)
-    {
-        if (text.startsWith("SELECT "))
-            return text;
-        if (text.startsWith("WITH ") && text.contains("SELECT "))
-            return text;
-        if (text.startsWith("PARAMETERS ") && text.contains("SELECT "))
-            return text;
-        var sql = text.indexOf("```sql\n");
-        if (sql >= 0)
-        {
-            var end = text.indexOf("```", sql+7);
-            if (end >= 0)
-                return text.substring(sql+7,end);
-        }
-        return null;
     }
 }

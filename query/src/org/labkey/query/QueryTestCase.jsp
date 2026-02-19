@@ -1954,6 +1954,10 @@ d,seven,twelve,day,month,date,duration,guid
                 SELECT 'f' as test, true as expected,  array_contains_element( ARRAY['A','B'], 'B') as result
                 UNION ALL
                 SELECT 'g' as test, false as expected, array_contains_element( ARRAY['A','B'], 'X') as result
+                UNION ALL
+                SELECT 'h' as test, true as expected, array_contains_any(    ARRAY['\"A','X'], ARRAY['\"A','B'] ) as result
+                UNION ALL
+                SELECT 'i' as test, true as expected, array_is_same(          ARRAY['A;','X'], ARRAY['A;','X'] ) as result
                 """;
 
         Container container = JunitUtil.getTestContainer();

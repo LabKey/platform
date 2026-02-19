@@ -752,7 +752,7 @@ public class DataColumn extends DisplayColumn
         List<OptionBuilder.Option> options = new ArrayList<>();
 
         // add empty option
-        if (!isMultiple)
+        if (!_boundColumn.isRequired() || !isMultiple)
             options.add(new OptionBuilder().build());
 
         Set<String> selectedValues = strValues.isEmpty() ? Set.of() :
