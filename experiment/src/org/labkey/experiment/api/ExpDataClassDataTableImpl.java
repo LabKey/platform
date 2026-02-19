@@ -167,7 +167,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     private static final Set<String> ALLOWED_IMPORT_HEADERS;
     static {
         DATA_CLASS_ALT_MERGE_KEYS = new HashSet<>(Arrays.asList(Column.ClassId.name(), Name.name()));
-        DATA_CLASS_ALT_UPDATE_KEYS = new HashSet<>(Arrays.asList(Column.LSID.name()));
+        DATA_CLASS_ALT_UPDATE_KEYS = new HashSet<>(Arrays.asList(Column.LSID.name(), Column.RowId.name()));
         ALLOWED_IMPORT_HEADERS = new HashSet<>(Arrays.asList("name", "description", "flag", "comment", "alias", "datafileurl"));
     }
 
@@ -411,7 +411,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         if (null != getDomain())
         {
             TableInfo extTable = _dataClassDataTableSupplier.get();
-            Set<String> skipCols = CaseInsensitiveHashSet.of("lsid", "rowid", "name", "classid");
+            Set<String> skipCols = CaseInsensitiveHashSet.of("lsid", "rowid", "name");
             for (ColumnInfo col : extTable.getColumns())
             {
                 // Don't include PHI columns in full text search index
@@ -686,11 +686,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
 
-        // all columns from dataclass property table except name, lsid, and classid
+        // all columns from dataclass property table except name, lsid
         Set<String> pCols = new CaseInsensitiveHashSet(provisioned.getColumnNameSet());
         pCols.remove("name");
         pCols.remove("lsid");
-        pCols.remove("classid");
+        pCols.remove("rowId");
 
         boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, pCols);
 
@@ -716,7 +716,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         sql.append(" FROM ");
         sql.append(_rootTable, "d");
         if (hasProvisionedColumns)
-            sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid");
+            sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.RowId = p.rowId");
         String subAlias = getSqlDialect().truncate(alias + "_dc_sub", 0);
         sql.append(") ").appendIdentifier(subAlias);
         sql.append("\n");
@@ -792,32 +792,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     {
         List<IndexDefinition> indices = new ArrayList<>(super.getUniqueIndices());
         indices.addAll(wrapTableIndices(_dataClassDataTableSupplier.get()));
-
-        // Issue 46948: RemapCache unable to resolve ExpData objects with addition of ClassId column
-        // RemapCache is used to findExpData using name/rowId remap.
-        // The addition of "ClassId" column to the TableInfo is causing violation of RemapCache's requirement of "unique index over a single column that isn't the primary key".
-        // Because this is a joined table between exp.data and the dataclass provisioned table, it's safe to ignore "ClassId" as part of the unique key.
-        List<IndexDefinition> filteredIndices = new ArrayList<>();
-        for (IndexDefinition def : indices)
-        {
-            IndexType type = def.indexType();
-            List<ColumnInfo> columns = def.columns();
-
-            List<ColumnInfo> filteredColumns = new ArrayList<>();
-            if (type == IndexType.Unique && columns.size() > 1)
-            {
-                for (ColumnInfo columnInfo : columns)
-                {
-                    if (Column.ClassId.name().equalsIgnoreCase(columnInfo.getName()))
-                        continue;
-
-                    filteredColumns.add(columnInfo);
-                }
-            }
-
-            filteredIndices.add(new IndexDefinition(def.name(), def.indexType(), filteredColumns.isEmpty() ? columns : filteredColumns, def.filterCondition()));
-        }
-        return Collections.unmodifiableList(filteredIndices);
+        return Collections.unmodifiableList(indices);
     }
 
     @NotNull
@@ -908,7 +883,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
 
             if (isUpdateUsingLsid)
+            {
                 keyColumnNames.add(Column.LSID.name());
+                keyColumnNames.add(Column.RowId.name());
+            }
             else
             {
                 Set<String> altMergeKeys = getAltMergeKeys(context);
@@ -916,8 +894,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     keyColumnNames.addAll(altMergeKeys);
             }
         }
-        else
-            keyColumnNames.add(Column.LSID.name());
 
         return keyColumnNames.isEmpty() ? null : keyColumnNames;
     }
@@ -1054,8 +1030,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             TableInfo expData = svc.getTinfoData();
 
             // Ensure we have a dataClass column and it is of the right value
-            // use materialized classId so that parameter binding works for both exp.data as well as materialized table
-            ColumnInfo classIdCol = _dataClassDataTableSupplier.get().getColumn("classId");
+            ColumnInfo classIdCol = expData.getColumn("classId");
             step0.addColumn(classIdCol, new SimpleTranslator.ConstantColumn(_dataClass.getRowId()));
 
             // Ensure we have a cpasType column and it is of the right value
@@ -1505,12 +1480,15 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             // update exp.data
             Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowStripped, oldRow, keys));
 
-            // update provisioned table -- note that LSID isn't the PK so we need to use the filter to update the correct row instead
-            keys = new Object[] {lsid};
+            // update provisioned table using rowId
+            Integer rowId = (Integer) oldRow.get("RowId");
+            if (rowId == null)
+                throw new ValidationException("RowId required to update row");
+            keys = new Object[] {rowId};
             TableInfo t = _dataClassDataTableSupplier.get();
             if (t.getColumnNameSet().stream().anyMatch(rowStripped::containsKey))
             {
-                ret.putAll(Table.update(user, t, rowStripped, t.getColumn("lsid"), keys, null, Level.DEBUG));
+                ret.putAll(Table.update(user, t, rowStripped, t.getColumn("rowId"), keys, null, Level.DEBUG));
             }
 
             ExpDataImpl data = null;

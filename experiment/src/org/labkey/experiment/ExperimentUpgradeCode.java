@@ -30,6 +30,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
@@ -64,6 +65,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.experiment.api.DataClass;
+import org.labkey.experiment.api.DataClassDomainKind;
+import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
@@ -74,6 +78,7 @@ import org.labkey.experiment.api.property.StorageProvisionerImpl;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -508,5 +513,145 @@ public class ExperimentUpgradeCode implements UpgradeCode
             LOG.info("Fixed {} duplicate data files.", numDuplicates);
         }
     }
+
+    /**
+     * Called from exp-26.003-26.004.sql
+     * Drop the classid column and add a rowId column to existing provisioned DataClass tables.
+     */
+    @SuppressWarnings("unused")
+    @DeferredUpgrade
+    public static void addRowIdToProvisionedDataClassTables(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        {
+            TableInfo source = ExperimentServiceImpl.get().getTinfoDataClass();
+            new TableSelector(source, null, null).stream(DataClass.class)
+                    .map(ExpDataClassImpl::new)
+                    .forEach(ExperimentUpgradeCode::upgradeProvisionedDataClassTable);
+
+            tx.commit();
+        }
+    }
+
+    private static void upgradeProvisionedDataClassTable(ExpDataClassImpl dc)
+    {
+        Domain domain = dc.getDomain();
+        DataClassDomainKind kind = null;
+        try
+        {
+            kind = (DataClassDomainKind) domain.getDomainKind();
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
+        if (null == kind || null == kind.getStorageSchemaName())
+            return;
+
+        DbSchema schema = DataClassDomainKind.getSchema();
+        DbScope scope = schema.getScope();
+
+        StorageProvisioner storageProvisioner = StorageProvisioner.get();
+
+        storageProvisioner.ensureStorageTable(domain, kind, scope);
+        domain = PropertyService.get().getDomain(domain.getTypeId());
+        assert (null != domain && null != domain.getStorageTableName());
+
+        SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
+        if (provisionedTable == null)
+        {
+            LOG.error("DataClass '" + dc.getName() + "' (" + dc.getRowId() + ") has no provisioned table.");
+            return;
+        }
+
+        // Drop classid column if present
+        String classIdColumnName = "classid";
+        ColumnInfo classIdColumn = provisionedTable.getColumn(FieldKey.fromParts(classIdColumnName));
+        if (classIdColumn != null)
+        {
+            Set<String> indicesToRemove = new HashSet<>();
+            for (var index : provisionedTable.getAllIndices())
+            {
+                if (index.columns().contains(classIdColumn))
+                    indicesToRemove.add(index.name());
+            }
+
+            if (!indicesToRemove.isEmpty())
+                StorageProvisionerImpl.get().dropTableIndices(domain, indicesToRemove);
+
+            // Remanufacture a property descriptor that matches the original classid property descriptor.
+            var spec = new PropertyStorageSpec(classIdColumnName, JdbcType.INTEGER);
+            PropertyDescriptor pd = new PropertyDescriptor();
+            pd.setContainer(dc.getContainer());
+            pd.setDatabaseDefaultValue(spec.getDefaultValue());
+            pd.setName(spec.getName());
+            pd.setJdbcType(spec.getJdbcType(), spec.getSize());
+            pd.setNullable(spec.isNullable());
+            pd.setMvEnabled(spec.isMvEnabled());
+            pd.setPropertyURI(DomainUtil.createUniquePropertyURI(domain.getTypeURI(), null, new CaseInsensitiveHashSet()));
+            pd.setDescription(spec.getDescription());
+            pd.setImportAliases(spec.getImportAliases());
+            pd.setScale(spec.getSize());
+            DomainPropertyImpl dp = new DomainPropertyImpl((DomainImpl) domain, pd);
+
+            LOG.debug("Dropping classid column from table '{}' for data class '{}' in folder {}.", provisionedTable.getName(), dc.getName(), dc.getContainer().getPath());
+            StorageProvisionerImpl.get().dropProperties(domain, Set.of(dp));
+        }
+
+        // Add rowId column if not present
+        ColumnInfo rowIdCol = provisionedTable.getColumn("rowId");
+        if (rowIdCol != null)
+        {
+            LOG.info("DataClass '{}' ({}) already has 'rowId' column. Skipping.", dc.getName(), dc.getRowId());
+            return;
+        }
+
+        PropertyStorageSpec rowIdProp = new PropertyStorageSpec("rowId", JdbcType.INTEGER);  // nullable for initial add
+        storageProvisioner.addStorageProperties(domain, Collections.singletonList(rowIdProp), true);
+        LOG.info("DataClass '{}' ({}) added 'rowId' column", dc.getName(), dc.getRowId());
+
+        // Populate rowId from exp.data using lsid join
+        fillRowId(dc, domain, scope);
+
+        // Set NOT NULL constraint
+        SqlExecutor executor = new SqlExecutor(scope);
+        boolean isPostgreSQL = scope.getSqlDialect().isPostgreSQL();
+        if (isPostgreSQL)
+            executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(domain.getStorageTableName()).append(" ALTER COLUMN rowId SET NOT NULL"));
+        else
+            executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(domain.getStorageTableName()).append(" ALTER COLUMN rowId INT NOT NULL"));
+
+        // Add indexes back via StorageProvisioner
+        storageProvisioner.ensureTableIndices(domain);
+        LOG.info("DataClass '{}' ({}) added unique index on 'rowId'", dc.getName(), dc.getRowId());
+
+        // Add FK constraint (no StorageProvisioner API for FKs on existing tables)
+        String fkName = "FK_" + domain.getStorageTableName() + "_rowId";
+        executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(domain.getStorageTableName())
+                .append(" ADD CONSTRAINT ").append(fkName)
+                .append(" FOREIGN KEY (rowId) REFERENCES exp.Data(RowId)"));
+        LOG.info("DataClass '{}' ({}) added FK constraint on 'rowId'", dc.getName(), dc.getRowId());
+    }
+
+    private static void fillRowId(ExpDataClassImpl dc, Domain domain, DbScope scope)
+    {
+        String tableName = domain.getStorageTableName();
+        SQLFragment update = new SQLFragment()
+                .append("UPDATE expdataclass.").append(tableName).append("\n")
+                .append("SET rowId = i.rowid\n")
+                .append("FROM (\n")
+                .append("  SELECT d.lsid, d.RowId\n")
+                .append("  FROM exp.data d\n")
+                .append("  WHERE d.cpasType = ?\n").add(domain.getTypeURI())
+                .append(") AS i\n")
+                .append("WHERE i.lsid = ").append(tableName).append(".lsid");
+
+        int count = new SqlExecutor(scope).execute(update);
+        LOG.info("DataClass '{}' ({}) populated 'rowId' column, count={}", dc.getName(), dc.getRowId(), count);
+    }
+
 
 }
