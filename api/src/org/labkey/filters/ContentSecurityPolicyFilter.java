@@ -292,15 +292,15 @@ public class ContentSecurityPolicyFilter implements Filter
 
             _previousBaseServerUrl = baseServerUrl;
 
-            final String allowSubstitutedPolicy;
+            final String substitutedPolicy;
 
             synchronized (SUBSTITUTION_LOCK)
             {
-                allowSubstitutedPolicy = StringExpressionFactory.create(_policyTemplate, false, NullValueBehavior.KeepSubstitution)
+                substitutedPolicy = StringExpressionFactory.create(_policyTemplate, false, NullValueBehavior.KeepSubstitution)
                     .eval(SUBSTITUTION_MAP);
             }
 
-            _policyExpression = StringExpressionFactory.create(allowSubstitutedPolicy, false, NullValueBehavior.ReplaceNullAndMissingWithBlank);
+            _policyExpression = StringExpressionFactory.create(substitutedPolicy, false, NullValueBehavior.ReplaceNullAndMissingWithBlank);
         }
 
         public String getPolicyTemplate()
