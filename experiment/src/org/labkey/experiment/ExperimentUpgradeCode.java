@@ -515,7 +515,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from exp-26.003-26.004.sql
+     * Called from exp-26.002-26.003.sql
      * Drop the classid column and add a rowId column to existing provisioned DataClass tables.
      */
     @SuppressWarnings("unused")

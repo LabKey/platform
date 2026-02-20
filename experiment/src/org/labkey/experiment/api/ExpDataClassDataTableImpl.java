@@ -885,7 +885,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (isUpdateUsingLsid)
             {
                 keyColumnNames.add(Column.LSID.name());
-                keyColumnNames.add(Column.RowId.name());
             }
             else
             {
@@ -1480,7 +1479,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             // update exp.data
             Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowStripped, oldRow, keys));
 
-            // update provisioned table using rowId
             Integer rowId = (Integer) oldRow.get("RowId");
             if (rowId == null)
                 throw new ValidationException("RowId required to update row");
@@ -1657,11 +1655,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (context.getInsertOption().allowUpdate)
                 context.putConfigParameter(QueryUpdateService.ConfigParameters.CheckForCrossProjectData, true);
             if (context.getInsertOption() == InsertOption.IMPORT || context.getInsertOption() == InsertOption.MERGE)
-            {
-                AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
-                if (auditType != null && auditType != AuditBehaviorType.NONE)
-                    context.setSelectIds(true); // select rowId for QueryUpdateAuditEvent.rowPk
-            }
+                context.setSelectIds(true); // select rowId because provisioned expdataclass.rowId and QueryUpdateAuditEvent.rowPk needs actual rowId
         }
 
         @Override

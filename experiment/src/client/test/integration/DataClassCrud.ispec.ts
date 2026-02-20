@@ -1,6 +1,6 @@
 import {
     ExperimentCRUDUtils,
-    generateFieldName,
+    generateDomainName,
     getEscapedNameExpression,
     hookServer,
     RequestOptions,
@@ -12,6 +12,7 @@ import {
     checkLackDesignerOrReaderPerm,
     createSource,
     deleteSourceType,
+    generateFieldNameForImport,
     getDataClassRowIdByName,
     initProject,
     verifyRequiredLineageInsertUpdate,
@@ -518,7 +519,7 @@ describe('Multi Value Text Choice', () => {
         });
 
         const dataType = 'MVTCReq Source Type';
-        const fieldName = generateFieldName();
+        const fieldName = generateFieldNameForImport();
         const fieldNameInExpression = getEscapedNameExpression((fieldName));
         console.log("Selected Required MVTC dataclass name: " + dataType + ", field name: " + fieldName);
 
@@ -816,6 +817,146 @@ describe('Multi Value Text Choice', () => {
         result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual('Abnormal, Plasma'); // convert from ['Abnormal', 'Plasma'] to 'Abnormal, Plasma'
 
+    });
+
+});
+
+describe('Data CRUD', () => {
+
+    it ("Update using different key fields", async () => {
+        const dataType = generateDomainName(3) + "UpdateKeyFields";
+        const fieldName = generateFieldNameForImport();
+        console.log("Selected dataclass name: " + dataType + ", field name: " + fieldName);
+
+        // create data class with one field
+        await server.post('property', 'createDomain', {
+            kind: 'DataClass',
+            domainDesign: { name: dataType, fields: [{ name: fieldName }] },
+            options: { name: dataType }
+        }, { ...topFolderOptions, ...designerReaderOptions }).expect(successfulResponse);
+
+        // insert 2 rows data, provide explicit names and a rowId = 1
+        const dataName1 = 'KeyData1';
+        const dataName2 = 'KeyData2';
+        const inserted = await insertDataClassData([
+            { name: dataName1, description: 'original1', [fieldName]: 'val1', rowId: 1 },
+            { name: dataName2, description: 'original2', [fieldName]: 'val2', rowId: 1 },
+        ], dataType, topFolderOptions);
+
+        // verify both rows are inserted with correct name and rowId is not 1 for both rows, record the rowId and lsid for both rows
+        expect(inserted[0].name).toBe(dataName1);
+        expect(inserted[1].name).toBe(dataName2);
+        expect(inserted[0].rowId).not.toBe(1);
+        expect(inserted[1].rowId).not.toBe(1);
+        const row1RowId = inserted[0].rowId;
+        const row1Lsid = inserted[0].lsid;
+        const row2RowId = inserted[1].rowId;
+        const row2Lsid = inserted[1].lsid;
+
+        const findRow = (rows: any[], rowId: number) => rows.find(r => caseInsensitive(r, 'RowId') === rowId);
+
+        // update description and fieldName value for both rows using rowId as key, verify update is successful and data are updated correctly
+        await ExperimentCRUDUtils.updateRows(server, [
+            { rowId: row1RowId, description: 'updByRowId1', [fieldName]: 'rowIdVal1' },
+            { rowId: row2RowId, description: 'updByRowId2', [fieldName]: 'rowIdVal2' },
+        ], 'exp.data', dataType, topFolderOptions, editorUserOptions);
+
+        let rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
+        let row1 = findRow(rows, row1RowId);
+        let row2 = findRow(rows, row2RowId);
+        expect(caseInsensitive(row1, 'description')).toBe('updByRowId1');
+        expect(caseInsensitive(row1, fieldName)).toBe('rowIdVal1');
+        expect(caseInsensitive(row2, 'description')).toBe('updByRowId2');
+        expect(caseInsensitive(row2, fieldName)).toBe('rowIdVal2');
+
+        // update description and fieldName value for both rows using lsid as key, verify update is successful and data are updated correctly
+        await ExperimentCRUDUtils.updateRows(server, [
+            { lsid: row1Lsid, description: 'updByLsid1', [fieldName]: 'lsidVal1' },
+            { lsid: row2Lsid, description: 'updByLsid2', [fieldName]: 'lsidVal2' },
+        ], 'exp.data', dataType, topFolderOptions, editorUserOptions);
+
+        rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
+        row1 = findRow(rows, row1RowId);
+        row2 = findRow(rows, row2RowId);
+        expect(caseInsensitive(row1, 'description')).toBe('updByLsid1');
+        expect(caseInsensitive(row1, fieldName)).toBe('lsidVal1');
+        expect(caseInsensitive(row2, 'description')).toBe('updByLsid2');
+        expect(caseInsensitive(row2, fieldName)).toBe('lsidVal2');
+
+        // update description and fieldName value, one of the row use lsid as key, the other use rowId, verify update is successful and data are updated correctly
+        await ExperimentCRUDUtils.updateRows(server, [
+            { lsid: row1Lsid, description: 'updMixed1', [fieldName]: 'mixedVal1' },
+            { rowId: row2RowId, description: 'updMixed2', [fieldName]: 'mixedVal2' },
+        ], 'exp.data', dataType, topFolderOptions, editorUserOptions);
+
+        rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
+        row1 = findRow(rows, row1RowId);
+        row2 = findRow(rows, row2RowId);
+        expect(caseInsensitive(row1, 'description')).toBe('updMixed1');
+        expect(caseInsensitive(row1, fieldName)).toBe('mixedVal1');
+        expect(caseInsensitive(row2, 'description')).toBe('updMixed2');
+        expect(caseInsensitive(row2, fieldName)).toBe('mixedVal2');
+
+        // update names of both rows using lsid as key, verify update is successful and names are updated correctly
+        const newName1 = 'RenamedByLsid1';
+        const newName2 = 'RenamedByLsid2';
+        await ExperimentCRUDUtils.updateRows(server, [
+            { lsid: row1Lsid, name: newName1 },
+            { lsid: row2Lsid, name: newName2 },
+        ], 'exp.data', dataType, topFolderOptions, editorUserOptions);
+
+        rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId], 'exp.data', dataType, 'RowId,Name', topFolderOptions, adminOptions);
+        row1 = findRow(rows, row1RowId);
+        row2 = findRow(rows, row2RowId);
+        expect(caseInsensitive(row1, 'Name')).toBe(newName1);
+        expect(caseInsensitive(row2, 'Name')).toBe(newName2);
+
+        // update names of both rows using rowId as key, verify update is successful and names are updated correctly
+        const newName3 = 'RenamedByRowId1';
+        const newName4 = 'RenamedByRowId2';
+        await ExperimentCRUDUtils.updateRows(server, [
+            { rowId: row1RowId, name: newName3 },
+            { rowId: row2RowId, name: newName4 },
+        ], 'exp.data', dataType, topFolderOptions, editorUserOptions);
+
+        rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId], 'exp.data', dataType, 'RowId,Name', topFolderOptions, adminOptions);
+        row1 = findRow(rows, row1RowId);
+        row2 = findRow(rows, row2RowId);
+        expect(caseInsensitive(row1, 'Name')).toBe(newName3);
+        expect(caseInsensitive(row2, 'Name')).toBe(newName4);
+
+        // update description and fieldName value from Import with update, the import columns contains name field, verify update is successful and data are updated correctly
+        const importUpdateText = 'Name\tDescription\t' + fieldName + '\n' + newName3 + '\timportUpd1\timportVal1\n' + newName4 + '\timportUpd2\timportVal2';
+        const updateResp = await ExperimentCRUDUtils.importData(server, importUpdateText, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
+        expect(updateResp.text.indexOf('"success" : true') > -1).toBeTruthy();
+
+        rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
+        row1 = findRow(rows, row1RowId);
+        row2 = findRow(rows, row2RowId);
+        expect(caseInsensitive(row1, 'description')).toBe('importUpd1');
+        expect(caseInsensitive(row1, fieldName)).toBe('importVal1');
+        expect(caseInsensitive(row2, 'description')).toBe('importUpd2');
+        expect(caseInsensitive(row2, fieldName)).toBe('importVal2');
+
+        // update description and fieldName value from Import with merge. at the same time create a new data. the import columns contain name field, verify update and insert is successful
+        const newDataName = 'MergedNewData';
+        const importMergeText = 'Name\tDescription\t' + fieldName + '\n' + newName3 + '\tmergeUpd1\tmergeVal1\n' + newName4 + '\tmergeUpd2\tmergeVal2\n' + newDataName + '\tmergeNew\tmergeNewVal';
+        const mergeResp = await ExperimentCRUDUtils.importData(server, importMergeText, dataType, 'MERGE', topFolderOptions, editorUserOptions);
+        expect(mergeResp.text.indexOf('"success" : true') > -1).toBeTruthy();
+
+        rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
+        row1 = findRow(rows, row1RowId);
+        row2 = findRow(rows, row2RowId);
+        expect(caseInsensitive(row1, 'description')).toBe('mergeUpd1');
+        expect(caseInsensitive(row1, fieldName)).toBe('mergeVal1');
+        expect(caseInsensitive(row2, 'description')).toBe('mergeUpd2');
+        expect(caseInsensitive(row2, fieldName)).toBe('mergeVal2');
+
+        // verify new data was created by merge
+        const newDataRow = await getDataClassDataByName(newDataName, dataType, '*', topFolderOptions, adminOptions);
+        expect(caseInsensitive(newDataRow, 'Name')).toBe(newDataName);
+        expect(caseInsensitive(newDataRow, 'description')).toBe('mergeNew');
+        expect(caseInsensitive(newDataRow, fieldName)).toBe('mergeNewVal');
     });
 
 });
