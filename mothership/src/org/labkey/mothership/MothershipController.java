@@ -68,6 +68,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
@@ -88,6 +89,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.mothership.query.MothershipSchema;
 import org.labkey.mothership.view.ExceptionListWebPart;
 import org.labkey.mothership.view.LinkBar;
@@ -517,7 +519,7 @@ public class MothershipController extends SpringActionController
                 if (stackTraceIds.size() == 1)
                 {
                     url = new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer());
-                    url.addParameter("exceptionStackTraceId", stackTraceIds.get(0));
+                    url.addParameter("exceptionStackTraceId", stackTraceIds.getFirst());
                 }
                 else
                 {
@@ -1584,44 +1586,79 @@ public class MothershipController extends SpringActionController
         {
             super(new DataRegion(), form);
             getDataRegion().setTable(MothershipManager.get().getTableInfoServerSession());
-            getDataRegion().addColumns(MothershipManager.get().getTableInfoServerSession(), "ServerSessionId,ServerSessionGUID,ServerInstallationId,EarliestKnownTime,LastKnownTime,DatabaseProductName,DatabaseProductVersion,DatabaseDriverName,DatabaseDriverVersion,RuntimeOS,JavaVersion,SoftwareReleaseId,UserCount,ActiveUserCount,ProjectCount,ContainerCount,AdministratorEmail,Distribution,ServerIP,ServerHostName,ServletContainer,BuildTime");
-            final DisplayColumn defaultServerInstallationColumn = getDataRegion().getDisplayColumn("ServerInstallationId");
+            getDataRegion().addColumns(MothershipManager.get().getTableInfoServerSession(), "ServerSessionId,ServerSessionGUID,ServerInstallationId,EarliestKnownTime,LastKnownTime,DatabaseProductName,DatabaseProductVersion,DatabaseDriverName,DatabaseDriverVersion,RuntimeOS,JavaVersion,SoftwareReleaseId,UserCount,ActiveUserCount,ProjectCount,ContainerCount,AdministratorEmail,Distribution,ServerIP,ServerHostName,ServletContainer,BuildTime,JSONMetrics");
+
+            DisplayColumn defaultServerInstallationColumn = getDataRegion().getDisplayColumn("ServerInstallationId");
             defaultServerInstallationColumn.setVisible(false);
-            DataColumn replacementServerInstallationColumn = new DataColumn(defaultServerInstallationColumn.getColumnInfo())
-            {
-                @Override @NotNull
-                public HtmlString getFormattedHtml(RenderContext ctx)
-                {
-                    Map<String, Object> row = ctx.getRow();
-
-                    ServerInstallation si = MothershipManager.get().getServerInstallation(((Integer) row.get("ServerInstallationId")).intValue(), ctx.getContainer());
-                    if (si != null && si.getNote() != null && !si.getNote().trim().isEmpty())
-                    {
-                        return HtmlString.of(si.getNote());
-                    }
-                    else
-                    {
-                        if (si != null && si.getServerHostName() != null && !si.getServerHostName().trim().isEmpty())
-                        {
-                            return HtmlString.of(si.getServerHostName());
-                        }
-                        else
-                        {
-                            return HtmlString.of("[Unnamed]");
-                        }
-                    }
-                }
-            };
-
+            DataColumn replacementServerInstallationColumn = new ServerInstallationDisplayColumn(defaultServerInstallationColumn);
             replacementServerInstallationColumn.setCaption("Server Installation");
             replacementServerInstallationColumn.setURLExpression(new DetailsURL(
                     new ActionURL(ShowInstallationDetailAction.class, getViewContext().getContainer()),
                     Collections.singletonMap("serverInstallationId", "ServerInstallationId")));
             getDataRegion().addDisplayColumn(3, replacementServerInstallationColumn);
 
+            DisplayColumn defaultJsonMetricsColumn = getDataRegion().getDisplayColumn("JsonMetrics");
+            defaultJsonMetricsColumn.setVisible(false);
+            DataColumn replacementJsonMetricsColumn = new JsonMetricsDisplayColumn(defaultJsonMetricsColumn);
+            getDataRegion().addDisplayColumn(getDataRegion().getDisplayColumns().size(), replacementJsonMetricsColumn);
+
             ButtonBar bb = new ButtonBar();
             getDataRegion().setButtonBar(bb);
             setTitle("Server Session Details");
+        }
+
+        private static class JsonMetricsDisplayColumn extends DataColumn
+        {
+            public JsonMetricsDisplayColumn(DisplayColumn defaultCol)
+            {
+                super(defaultCol.getColumnInfo());
+            }
+
+            @Override
+            public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
+            {
+                String s = ctx.get(getColumnInfo().getFieldKey(), String.class);
+
+                if (s != null)
+                {
+                    JSONObject json = new JSONObject(s);
+                    out.write(DOM.PRE(json.toString(2)));
+                }
+                else
+                {
+                    out.write("No metrics");
+                }
+            }
+        }
+        private static class ServerInstallationDisplayColumn extends DataColumn
+        {
+            public ServerInstallationDisplayColumn(DisplayColumn defaultServerInstallationColumn)
+            {
+                super(defaultServerInstallationColumn.getColumnInfo());
+            }
+
+            @Override @NotNull
+            public HtmlString getFormattedHtml(RenderContext ctx)
+            {
+                Map<String, Object> row = ctx.getRow();
+
+                ServerInstallation si = MothershipManager.get().getServerInstallation(((Integer) row.get("ServerInstallationId")).intValue(), ctx.getContainer());
+                if (si != null && si.getNote() != null && !si.getNote().trim().isEmpty())
+                {
+                    return HtmlString.of(si.getNote());
+                }
+                else
+                {
+                    if (si != null && si.getServerHostName() != null && !si.getServerHostName().trim().isEmpty())
+                    {
+                        return HtmlString.of(si.getServerHostName());
+                    }
+                    else
+                    {
+                        return HtmlString.of("[Unnamed]");
+                    }
+                }
+            }
         }
     }
 
@@ -1716,22 +1753,10 @@ public class MothershipController extends SpringActionController
         {
             super(ExceptionStackTrace.class, MothershipManager.get().getTableInfoExceptionStackTrace());
         }
-
-        public ExceptionStackTraceForm(ExceptionStackTrace stackTrace)
-        {
-            this();
-            setBean(stackTrace);
-        }
     }
 
     public static class ServerInstallationForm extends BeanViewForm<ServerInstallation>
     {
-        public ServerInstallationForm(ServerInstallation installation)
-        {
-            this();
-            setBean(installation);
-        }
-
         public ServerInstallationForm()
         {
             super(ServerInstallation.class, MothershipManager.get().getTableInfoServerInstallation());
@@ -1740,12 +1765,6 @@ public class MothershipController extends SpringActionController
 
     public static class ServerSessionForm extends BeanViewForm<ServerSession>
     {
-        public ServerSessionForm(ServerSession session)
-        {
-            this();
-            setBean(session);
-        }
-
         public ServerSessionForm()
         {
             super(ServerSession.class, MothershipManager.get().getTableInfoServerSession());
@@ -1754,12 +1773,6 @@ public class MothershipController extends SpringActionController
 
     public static class SoftwareReleaseForm extends BeanViewForm<SoftwareRelease>
     {
-        public SoftwareReleaseForm(SoftwareRelease release)
-        {
-            this();
-            setBean(release);
-        }
-
         public SoftwareReleaseForm()
         {
             super(SoftwareRelease.class, MothershipManager.get().getTableInfoSoftwareRelease());

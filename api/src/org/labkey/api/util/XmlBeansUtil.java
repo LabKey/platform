@@ -117,22 +117,29 @@ public class XmlBeansUtil
 
     public static void addComment(XmlTokenSource doc, String comment)
     {
-        XmlCursor cursor = doc.newCursor();
-        cursor.insertComment(comment);
-        cursor.dispose();
+        try (XmlCursor cursor = doc.newCursor())
+        {
+            cursor.insertComment(comment);
+        }
     }
 
-    /** XML parsing factories preconfigured to prevent XML external entity references (XXE) */
+    /**
+     * XML parsing factories preconfigured to prevent XML external entity references (XXE).
+     * These are static and are unfortunately mutable. We could switch to a factory pattern to create
+     * freshly configured factories.
+     */
     public static final SAXParserFactory SAX_PARSER_FACTORY;
     public static final XMLInputFactory XML_INPUT_FACTORY;
     public static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY;
 
     static
     {
+        //noinspection XMLInputFactory
         XML_INPUT_FACTORY = XMLInputFactory.newInstance();
         XML_INPUT_FACTORY.setProperty(XMLInputFactory.SUPPORT_DTD, false);
         XML_INPUT_FACTORY.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 
+        //noinspection XMLInputFactory
         SAX_PARSER_FACTORY = SAXParserFactory.newInstance();
         try
         {
@@ -147,6 +154,7 @@ public class XmlBeansUtil
             SAX_PARSER_FACTORY.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
             SAX_PARSER_FACTORY.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
 
+            //noinspection XMLInputFactory
             DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
             DOCUMENT_BUILDER_FACTORY.setNamespaceAware(true);
             DOCUMENT_BUILDER_FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
