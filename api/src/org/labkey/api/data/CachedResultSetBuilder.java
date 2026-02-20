@@ -173,20 +173,6 @@ public abstract class CachedResultSetBuilder<C extends CachedResultSetBuilder<C>
         }
     }
 
-    public static ResultSetMetaData createMetaData(Collection<String> columnNames)
-    {
-        ResultSetMetaDataImpl md = new ResultSetMetaDataImpl(columnNames.size());
-        for (String columnName : columnNames)
-        {
-            ColumnMetaData col = new ColumnMetaData();
-            col.columnName = columnName;
-            col.columnLabel = columnName;
-            md.addColumn(col);
-        }
-
-        return md;
-    }
-
     private static ArrayList<RowMap<Object>> convertToRowMaps(ResultSetMetaData md, List<Map<String, Object>> maps)
     {
         ArrayList<RowMap<Object>> list = new ArrayList<>();
