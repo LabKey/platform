@@ -2999,10 +2999,6 @@ if (!LABKEY.DataRegions) {
             });
         }
 
-        if (!direction) {
-            direction = SORT_ASC;
-        }
-
         if (LABKEY.Utils.isString(direction)) {
             newSorts = [direction + columnName].concat(newSorts);
         }
