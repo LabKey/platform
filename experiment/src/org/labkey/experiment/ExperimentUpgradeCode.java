@@ -629,7 +629,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         LOG.info("DataClass '{}' ({}) added unique index on 'rowId'", dc.getName(), dc.getRowId());
 
         // Add FK constraint (no StorageProvisioner API for FKs on existing tables)
-        String fkName = "FK_" + domain.getStorageTableName() + "_rowId";
+        String fkName = "fk_rowid_" + domain.getStorageTableName() + "_data";
         executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(domain.getStorageTableName())
                 .append(" ADD CONSTRAINT ").append(fkName)
                 .append(" FOREIGN KEY (rowId) REFERENCES exp.Data(RowId)"));
