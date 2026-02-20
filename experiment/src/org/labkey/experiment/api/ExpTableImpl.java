@@ -22,12 +22,10 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.NullColumnInfo;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
@@ -287,8 +285,6 @@ abstract public class ExpTableImpl<C extends Enum>
         ret.setInputType("text");
         ret.setMeasure(false);
         ret.setDimension(false);
-        ret.setConceptURI(org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI());
-        ret.setPropertyURI(org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI());
         ret.setImportAliasesSet(Sets.newCaseInsensitiveHashSet("comment"));
         return ret;
     }

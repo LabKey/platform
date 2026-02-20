@@ -458,7 +458,6 @@ public class DomainUtil
         {
             gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
             gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
-            gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
             gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
             gwtDomain.setAllowMultiChoiceProperties(allowMultiChoice(kind));
             gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
@@ -478,7 +477,6 @@ public class DomainUtil
         gwtDomain.setDomainKindName(kind.getKindName());
         gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
         gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
-        gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
         gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
         gwtDomain.setAllowMultiChoiceProperties(allowMultiChoice(kind));
         gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
