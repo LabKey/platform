@@ -29,7 +29,6 @@ public class RedirectException extends RuntimeException implements SkipMothershi
 {
     private final String _url;
 
-    @Deprecated // Call the variant that takes allowAbsoluteUrl
     public RedirectException(@NotNull URLHelper url)
     {
         this(url, false);

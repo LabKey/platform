@@ -640,6 +640,11 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         throw new RedirectException(url, allowAbsoluteUrl);
     }
 
+    public static HttpView<?> redirect(URLHelper url)
+    {
+        throw new RedirectException(url);
+    }
+
     public static HttpView<?> redirect(ActionURL url)
     {
         throw new RedirectException(url);

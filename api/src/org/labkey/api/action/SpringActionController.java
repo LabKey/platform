@@ -439,9 +439,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             if (null != redirectURL)
             {
-                _log.debug("URL " + url + " was redirected to " + redirectURL + " instead");
-                response.sendRedirect(redirectURL.toString());
-                return null;
+                _log.debug("URL {} was redirected to {} instead", url, redirectURL);
+                throw new RedirectException(redirectURL);
             }
 
             // This container check used to be in checkPermissions(), but that meant actions with lenient permissions checking

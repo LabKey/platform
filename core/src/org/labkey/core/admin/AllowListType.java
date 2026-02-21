@@ -37,7 +37,7 @@ public enum AllowListType
                         By default, only redirects to the same LabKey instance are allowed.
                         Other server host names must be configured below to allow redirects to them.
                         For more information on the security concern, please refer to the
-                        <a href="https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html">OWASP cheat sheet</a>.
+                        <a href="https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html" target="owasp">OWASP cheat sheet</a>.
                     </p>
                     <p>
                         Add allowed hosts based on the server name or IP address, as they will be referenced in parameters

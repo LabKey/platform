@@ -54,7 +54,7 @@ public class ThumbnailCache
             URLHelper redirectURL = ThumbnailUtil.getStaticThumbnailURL(provider, imageType);
 
             if (null != redirectURL)
-                throw new RedirectException(redirectURL, false);
+                throw new RedirectException(redirectURL);
         }
 
         return dynamic;

@@ -2511,7 +2511,7 @@ public class ExperimentController extends SpringActionController
                     URLHelper url = h.getShowFileURL(_data);
                     if (url != null)
                     {
-                        throw new RedirectException(url, false);
+                        throw new RedirectException(url);
                     }
                 }
             }
