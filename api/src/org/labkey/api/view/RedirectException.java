@@ -23,6 +23,8 @@ import org.labkey.api.util.URLHelper;
 /**
  * When thrown in the context of an HTTP request, sends the client a *temporary* redirect in the HTTP response. Not
  * treated as a loggable error. See {@link PermanentRedirectException} if a permanent redirect is desired.
+ * Note: This always redirects to the local server. If an external redirect is needed (this is rare), use
+ * {@link ExternalRedirectException} or (even rarer) {@link UnsafeExternalRedirectException}.
  */
 public class RedirectException extends RuntimeException implements SkipMothershipLogging
 {
@@ -38,13 +40,6 @@ public class RedirectException extends RuntimeException implements SkipMothershi
     public RedirectException(@NotNull URLHelper url)
     {
         this(url.getLocalURIString());
-    }
-
-    // Redirects externally only if allowAbsoluteUrl is true, it's an absolute url, and the host is on the admin-configured allow list
-    public RedirectException(@NotNull URLHelper url, boolean allowAbsoluteUrl)
-    {
-        boolean redirectExternally = allowAbsoluteUrl && !url.isLocalUri(HttpView.getRootContext()) && url.isAllowableHost();
-        this(redirectExternally ? url.getURIString() : url.getLocalURIString());
     }
 
     @Deprecated // TODO: eliminate all outside callers and make this protected

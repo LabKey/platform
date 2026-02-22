@@ -103,6 +103,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
+import org.labkey.api.view.ExternalRedirectException;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -587,7 +588,7 @@ public class LoginController extends SpringActionController
             LoginReturnProperties properties = null != returnUrl || form.getSkipProfile()
                     ? new LoginReturnProperties(returnUrl, form.getUrlhash(), form.getSkipProfile()) : null;
 
-            throw new RedirectException(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()), true);
+            throw new ExternalRedirectException(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()));
         }
         return null;
     }
@@ -1777,7 +1778,7 @@ public class LoginController extends SpringActionController
                 _successUrl = AppProps.getInstance().getHomePageActionURL();
 
             // Issue 33599: allow the returnUrl for this action to redirect to an absolute URL (ex. labkey.org back to accounts.trial.labkey.host)
-            throw new RedirectException(_successUrl, true);
+            throw new ExternalRedirectException(_successUrl);
         }
     }
 
