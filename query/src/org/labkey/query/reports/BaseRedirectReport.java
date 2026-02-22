@@ -24,10 +24,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 
 import java.util.List;
 
-/**
- * User: kevink
- * Date: 6/21/12
- */
 public abstract class BaseRedirectReport extends RedirectReport
 {
     @Override

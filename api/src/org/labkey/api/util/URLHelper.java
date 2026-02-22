@@ -965,7 +965,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
                 // Server host name doesn't match base server URL; log and possibly reject based on config.
                 if (!isAllowedExternalHost(host, AppProps.getInstance().isDevMode(), ()->AppProps.getInstance().getExternalRedirectHosts()))
                 {
-                    String logMessageDetails = "returnUrl value: " + this;
+                    String logMessageDetails = "returnUrl value: " + getURIString(true);
                     HttpServletRequest request = HttpView.currentRequest();
                     if (request != null)
                     {

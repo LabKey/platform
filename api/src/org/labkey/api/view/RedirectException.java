@@ -15,11 +15,10 @@
  */
 package org.labkey.api.view;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.SkipMothershipLogging;
 import org.labkey.api.util.URLHelper;
-
-import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * When thrown in the context of an HTTP request, sends the client a *temporary* redirect in the HTTP response. Not
@@ -29,21 +28,26 @@ public class RedirectException extends RuntimeException implements SkipMothershi
 {
     private final String _url;
 
-    public RedirectException(@NotNull URLHelper url)
-    {
-        this(url, false);
-    }
-
-    public RedirectException(@NotNull URLHelper url, boolean allowAbsoluteUrl)
-    {
-        this(!allowAbsoluteUrl || url.isLocalUri(HttpView.getRootContext()) ? url.getLocalURIString() : url.getURIString());
-    }
-
+    // Never redirects externally
     public RedirectException(@NotNull ActionURL url)
     {
         this(url.getLocalURIString());
     }
 
+    // Never redirects externally
+    public RedirectException(@NotNull URLHelper url)
+    {
+        this(url.getLocalURIString());
+    }
+
+    // Redirects externally only if allowAbsoluteUrl is true, it's an absolute url, and the host is on the admin-configured allow list
+    public RedirectException(@NotNull URLHelper url, boolean allowAbsoluteUrl)
+    {
+        boolean redirectExternally = allowAbsoluteUrl && !url.isLocalUri(HttpView.getRootContext()) && url.isAllowableHost();
+        this(redirectExternally ? url.getURIString() : url.getLocalURIString());
+    }
+
+    @Deprecated // TODO: eliminate all outside callers and make this protected
     public RedirectException(String url)
     {
         _url = url;

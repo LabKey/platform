@@ -110,6 +110,7 @@ import org.labkey.api.view.LabKeyKaptchaServlet;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnsafeExternalRedirectException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
@@ -586,7 +587,7 @@ public class LoginController extends SpringActionController
             LoginReturnProperties properties = null != returnUrl || form.getSkipProfile()
                     ? new LoginReturnProperties(returnUrl, form.getUrlhash(), form.getSkipProfile()) : null;
 
-            return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()), true);
+            throw new RedirectException(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()), true);
         }
         return null;
     }
@@ -1562,19 +1563,18 @@ public class LoginController extends SpringActionController
                 AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), properties);
             }
 
-            String csrf = CSRFUtil.getExpectedToken(getViewContext());
-
             final URLHelper url;
             int rowId = form.getConfiguration();
-
             SSOAuthenticationConfiguration<?> configuration = AuthenticationManager.getActiveSSOConfiguration(rowId);
 
             if (null == configuration)
                 throw new NotFoundException("Authentication configuration is not valid");
 
-            url = configuration.getUrl(csrf, getViewContext());
+            url = configuration.getUrl(getViewContext());
 
-            return HttpView.redirect(url, true);
+            // It's safe to bypass checking the external redirect allow list in this case because we are redirecting to
+            // the administrator-provided URL from the SSO authentication configuration.
+            throw new UnsafeExternalRedirectException(url);
         }
 
         @Override
@@ -1777,7 +1777,7 @@ public class LoginController extends SpringActionController
                 _successUrl = AppProps.getInstance().getHomePageActionURL();
 
             // Issue 33599: allow the returnUrl for this action to redirect to an absolute URL (ex. labkey.org back to accounts.trial.labkey.host)
-            return HttpView.redirect(_successUrl, true);
+            throw new RedirectException(_successUrl, true);
         }
     }
 

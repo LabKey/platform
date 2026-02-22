@@ -110,11 +110,11 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.InputBuilder;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -1884,7 +1884,7 @@ public class IssuesController extends SpringActionController
     public class JumpToIssueAction extends SimpleRedirectAction
     {
         @Override
-        public URLHelper getRedirectURL(Object o)
+        public ActionURL getRedirectURL(Object o)
         {
             String issueId = (String)getProperty("issueId");
             if (issueId != null)
@@ -2077,7 +2077,7 @@ public class IssuesController extends SpringActionController
     public static class SearchAction extends SimpleRedirectAction<SearchForm>
     {
         @Override
-        public URLHelper getRedirectURL(SearchForm form)
+        public ActionURL getRedirectURL(SearchForm form)
         {
             return urlProvider(SearchUrls.class).getSearchURL(getContainer(), form.getQ(), IssueSearchResultTemplate.NAME);
         }

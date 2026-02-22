@@ -98,7 +98,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
     interface SSOAuthenticationConfiguration<AP extends SSOAuthenticationProvider<?>> extends PrimaryAuthenticationConfiguration<AP>
     {
         LinkFactory getLinkFactory();
-        URLHelper getUrl(String secret, ViewContext ctx);
+        URLHelper getUrl(ViewContext ctx);
 
         /**
          * Allows an SSO auth configuration to specify that it should be used automatically instead of showing the standard

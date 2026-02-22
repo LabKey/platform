@@ -844,7 +844,7 @@ public class FileContentController extends SpringActionController
     public static class DesignerAction extends SimpleRedirectAction<ReturnUrlForm>
     {
         @Override
-        public URLHelper getRedirectURL(ReturnUrlForm form)
+        public ActionURL getRedirectURL(ReturnUrlForm form)
         {
             ActionURL successUrl = null;
             FileContentService svc = FileContentService.get();

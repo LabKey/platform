@@ -95,7 +95,6 @@ import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
@@ -474,7 +473,7 @@ public class AuthenticationManager
                     AuthenticationManager.setPrimaryAuthenticationResult(request, primaryResult);
                     AuthenticationResult result = AuthenticationManager.handleAuthentication(request, getContainer());
 
-                    return HttpView.redirect(result.getRedirectURL(), true);
+                    throw new RedirectException(result.getRedirectURL(), true);
                 }
 
                 primaryResult.getStatus().addUserErrorMessage(errors, primaryResult, null, null);

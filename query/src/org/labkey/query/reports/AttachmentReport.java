@@ -45,7 +45,9 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
@@ -121,6 +123,16 @@ public class AttachmentReport extends BaseRedirectReport
         return null;
     }
 
+    @Override
+    protected void redirect(ViewContext context)
+    {
+        URLHelper url = getURLHelper(context);
+        if (url != null)
+        {
+            throw new RedirectException(url);
+        }
+    }
+
     public @Nullable Attachment getLatestVersion()
     {
         if (null == getEntityId())
@@ -142,7 +154,7 @@ public class AttachmentReport extends BaseRedirectReport
         }
 
         // Something went horribly wrong... I guess we only have thumbnails
-        return attachments.get(attachments.size() - 1);
+        return attachments.getLast();
     }
 
     public void setFilePath(String filePath)

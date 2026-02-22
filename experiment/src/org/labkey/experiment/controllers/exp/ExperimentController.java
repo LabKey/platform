@@ -6434,7 +6434,7 @@ public class ExperimentController extends SpringActionController
 
                     if (form.getReturnUrl() != null)
                     {
-                        throw new RedirectException(form.getReturnUrl());
+                        throw new RedirectException(form.getReturnActionURL());
                     }
                     throw new RedirectException(ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer()));
                 }
