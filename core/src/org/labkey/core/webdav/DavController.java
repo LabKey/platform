@@ -1274,8 +1274,15 @@ public class DavController extends SpringActionController
                 String returnUrl = getRequest().getParameter(ActionURL.Param.returnUrl.name());
                 if (null != StringUtils.trimToNull(returnUrl))
                 {
-                    String url = returnUrl + (returnUrl.indexOf('?')==-1 ? '?' : '&') + "status=" + status;
-                    throw new RedirectException(url);
+                    try
+                    {
+                        URLHelper url = new URLHelper(returnUrl + (returnUrl.indexOf('?')==-1 ? '?' : '&') + "status=" + status);
+                        throw new RedirectException(url);
+                    }
+                    catch (URISyntaxException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
                 }
 
                 if (status == WebdavStatus.SC_CREATED)

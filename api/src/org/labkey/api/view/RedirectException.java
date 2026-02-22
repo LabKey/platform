@@ -30,20 +30,17 @@ public class RedirectException extends RuntimeException implements SkipMothershi
 {
     private final String _url;
 
-    // Never redirects externally
     public RedirectException(@NotNull ActionURL url)
     {
         this(url.getLocalURIString());
     }
 
-    // Never redirects externally
     public RedirectException(@NotNull URLHelper url)
     {
         this(url.getLocalURIString());
     }
 
-    @Deprecated // TODO: eliminate all outside callers and make this protected
-    public RedirectException(String url)
+    protected RedirectException(String url)
     {
         _url = url;
     }
