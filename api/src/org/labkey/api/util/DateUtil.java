@@ -1427,7 +1427,7 @@ Parse:
             return date;
         if (null == date)
             return time;
-        Date newDate = (Date)date.clone();
+        Date newDate = new Date(date.getTime());
         newDate.setHours(time.getHours());
         newDate.setMinutes(time.getMinutes());
         newDate.setSeconds(time.getSeconds());
