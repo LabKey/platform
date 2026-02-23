@@ -332,9 +332,9 @@
             chatItem.className = 'chatItem genaiResponse';
             const text = document.createElement('span');
             const spinner = document.createElement('i');
-            spinner.className = 'fa fa-spinner fa-spin';
+            spinner.className = 'fa fa-spinner fa-pulse';
             text.appendChild(spinner);
-            text.appendChild(document.createTextNode(' Loading...'));
+            text.appendChild(document.createTextNode(' Thinking...'));
 
             chatItem.appendChild(text);
             addChatItem(chatItem);
