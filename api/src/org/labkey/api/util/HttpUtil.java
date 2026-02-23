@@ -336,7 +336,7 @@ public class HttpUtil
             try
             {
                 ActionURL url = new ActionURL(referer);
-                return url.toContainerRelativeURL();
+                return url.toRelativeURL();
             }
             catch (Exception e)
             {
