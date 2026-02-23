@@ -40,6 +40,7 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.DomainUtils;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
+import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.TestDataGenerator;
 import org.labkey.test.util.data.TestDataUtils;
@@ -185,6 +186,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @Test
     public void testDatasetWithMultiChoice()
     {
+        OptionalFeatureHelper.enableOptionalFeature(getCurrentTest().createDefaultConnection(), "multiChoiceDataType");
         String datasetName = "Test dataset";
         DatasetDesignerPage definitionPage = _studyHelper.goToManageDatasets()
                 .clickCreateNewDataset()
