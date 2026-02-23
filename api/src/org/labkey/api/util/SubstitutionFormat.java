@@ -82,6 +82,8 @@ public class SubstitutionFormat
                 return defaultTimeFormat.format(value);
             else if (value instanceof java.sql.Date)
                 return date.format(value);
+            else if (value instanceof java.sql.Timestamp)
+                return defaultDateTimeFormat.format(value).replace('T', ' '); // replace T with whitespace for human readability
             else if (value instanceof Date dateVal)
             {
                 // both date and datetime column type are of type Date, format based on time portion of the date value
