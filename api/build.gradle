@@ -49,6 +49,12 @@ List runtime = [
     "com.google.code.kaptcha:kaptcha:${kaptchaVersion}",
 ]
 
+configurations.configureEach {
+    // spring-ai pulls in spring-boot and tomcat-embed. We don't want multiple copies of these dependencies, especially
+    // versions that conflict with those in our embedded jar.
+    exclude group: "org.springframework.boot"
+}
+
 configurations {
     // Exclude the bundled org.json library from com.fasterxml.jackson.datatype:jackson-datatype-json-org dependency
     all*.exclude group: "org.apache.geronimo.bundles", module: "json"

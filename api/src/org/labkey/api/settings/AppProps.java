@@ -49,7 +49,6 @@ public interface AppProps
     String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
     String ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES = "allowedExternalResources";
     String QUANTITY_COLUMN_SUFFIX_TESTING = "quantityColumnSuffixTesting";
-    String GENERATE_CONTROLLER_FIRST_URLS = "generateControllerFirstUrls";
     String REJECT_CONTROLLER_FIRST_URLS = "rejectControllerFirstUrls";
     String MULTI_VALUE_TEXT_CHOICE = "multiChoiceDataType";
 
@@ -207,13 +206,6 @@ public interface AppProps
      * @return Email address of the primary site or application administrator
      */
     @Nullable String getAdministratorContactEmail(boolean includeAppAdmins);
-
-    /**
-     * Whether to use the newer, and preferred, container-relative style of URLs of the form
-     * /contextPath/container/controller-action.view, or the older controller-relative style like
-     * /contextPath/controller/container/action.view
-     */
-    boolean getUseContainerRelativeURL();
 
     boolean isAllowApiKeys();
 

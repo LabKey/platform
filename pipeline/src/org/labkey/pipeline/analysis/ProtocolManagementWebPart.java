@@ -21,9 +21,9 @@ import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.CachedResultSetBuilder;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ResultsImpl;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -42,7 +42,6 @@ import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -71,7 +70,6 @@ public class ProtocolManagementWebPart extends GridView
         super(new DataRegion(), (BindException) null);
         setViewContext(viewContext);
         setTitle(NAME);
-        createResults();
         getDataRegion().setSettings(new QuerySettings(getViewContext(), NAME));
         getDataRegion().setSortable(false);
         getDataRegion().setShowFilters(false);
@@ -81,6 +79,9 @@ public class ProtocolManagementWebPart extends GridView
             getDataRegion().setShowRecordSelectors(true);
         }
         getDataRegion().setRecordSelectorValueColumns("taskId", "name");
+
+        // Create results last since some statements above could throw on bad input, causing us to abandon an unclosed Results
+        createResults();
     }
 
     private ButtonBar createButtonBar()
@@ -101,27 +102,24 @@ public class ProtocolManagementWebPart extends GridView
     private void createResults() // Accept filter & sort ? Tough to use standard UI components the way this is wired in.
     {
         List<Map<String, Object>> rows = getProtocols().stream().map(Protocol::toMap).collect(Collectors.toList());
-        ResultSet rs = CachedResultSetBuilder.create(rows, Arrays.asList("taskId", "name", "pipeline", "archived")).build();
-        try
-        {
-            List<ColumnInfo> colInfos = DataRegion.colInfosFromMetaData(rs.getMetaData());
-
-            Map<String, String> params = new HashMap<>();
-            params.put("taskId", "taskId");
-            params.put("name", "name");
-            params.put("archived", "archived");
-            ActionURL actionURL = new ActionURL(AnalysisController.ProtocolDetailsAction.class, getViewContext().getContainer());
-            DetailsURL url = new DetailsURL(actionURL.addReturnUrl(getContextURLHelper()), params);
-            ((BaseColumnInfo)colInfos.get(1)).setURL(url);
-            setResults(new ResultsImpl(rs, colInfos));
-            getDataRegion().setColumns(colInfos);
-            getDataRegion().getDisplayColumn("taskId").setVisible(false);
-            getDataRegion().replaceDisplayColumn("archived", new ArchivedDisplayColumn());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        List<ColumnInfo> colInfos = List.of(
+            new BaseColumnInfo("taskId", JdbcType.VARCHAR),
+            new BaseColumnInfo("name", JdbcType.VARCHAR),
+            new BaseColumnInfo("pipeline", JdbcType.VARCHAR),
+            new BaseColumnInfo("archived", JdbcType.BOOLEAN)
+        );
+        ResultSet rs = CachedResultSetBuilder.create(rows, colInfos).build();
+        Map<String, String> params = new HashMap<>();
+        params.put("taskId", "taskId");
+        params.put("name", "name");
+        params.put("archived", "archived");
+        ActionURL actionURL = new ActionURL(AnalysisController.ProtocolDetailsAction.class, getViewContext().getContainer());
+        DetailsURL url = new DetailsURL(actionURL.addReturnUrl(getContextURLHelper()), params);
+        ((BaseColumnInfo)colInfos.get(1)).setURL(url);
+        setResults(new ResultsImpl(rs, colInfos));
+        getDataRegion().setColumns(colInfos);
+        getDataRegion().getDisplayColumn("taskId").setVisible(false);
+        getDataRegion().replaceDisplayColumn("archived", new ArchivedDisplayColumn());
     }
 
     private List<Protocol> getProtocols()

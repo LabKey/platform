@@ -2593,19 +2593,6 @@ public class DataRegion extends DisplayElement
         renderOldValues(out, map);
     }
 
-
-    public static List<ColumnInfo> colInfosFromMetaData(ResultSetMetaData md) throws SQLException
-    {
-        int columnCount = md.getColumnCount();
-        List<ColumnInfo> cols = new LinkedList<>();
-
-        for (int i = 1; i <= columnCount; i++)
-            cols.add(new BaseColumnInfo(md, i));
-
-        return cols;
-    }
-
-
     /**
      * Render the data region. All rendering SHOULD go through this function
      * public renderForm, renderTable methods actually all go through here
