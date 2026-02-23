@@ -35,14 +35,6 @@ public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
             }
         }
     },
-    useContainerRelativeURL("Use \"path first\" urls (/home/project-begin.view)")
-    {
-        @Override
-        public void setValue(WriteableAppProps writeable, String value)
-        {
-            writeable.setUseContainerRelativeURL(Boolean.parseBoolean(value));
-        }
-    },
     usageReportingLevel("Check for updates and report usage statistics to the LabKey team. Valid values: " + Arrays.toString(UsageReportingLevel.values()))
     {
         @Override

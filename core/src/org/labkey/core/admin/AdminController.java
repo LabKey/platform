@@ -18,6 +18,7 @@ package org.labkey.core.admin;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -12187,6 +12188,14 @@ public class AdminController extends SpringActionController
             if (!reportsToForward.isEmpty())
                 forwardReports(LABKEY_ORG_REPORT_TO_ACTION, request, reportsToForward.toString(2));
         }
+
+        @Override
+        protected ObjectMapper createRequestObjectMapper()
+        {
+            // Annoyingly, Chrome posts an array of JSON objects but Safari posts individual JSON objects. Set a flag
+            // that ensures both cases deserialize into List<JSONObject>.
+            return JsonUtil.DEFAULT_MAPPER.copy().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+        }
     }
 
     @RequiresNoPermission
@@ -12280,6 +12289,7 @@ public class AdminController extends SpringActionController
                             boolean forwarded = jsonObj.optBoolean("forwarded", false);
                             if (!forwarded)
                             {
+                                jsonObj.put("labkeyVersion", AppProps.getInstance().getReleaseVersion());
                                 User user = getUser();
                                 String email = null;
                                 // If the user is not logged in, we may still be able to snag the email address from our cookie
@@ -12294,9 +12304,6 @@ public class AdminController extends SpringActionController
                                 jsonObj.put("ip", ipAddress);
                                 if (isNotBlank(userAgent) && !jsonObj.has("user_agent"))
                                     jsonObj.put("user_agent", userAgent);
-                                String labkeyVersion = request.getParameter("labkeyVersion");
-                                if (null != labkeyVersion)
-                                    jsonObj.put("labkeyVersion", labkeyVersion);
                                 String cspVersion = request.getParameter("cspVersion");
                                 if (null != cspVersion)
                                     jsonObj.put("cspVersion", cspVersion);

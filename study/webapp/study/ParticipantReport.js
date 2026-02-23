@@ -679,9 +679,15 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             method  : 'GET',
             params  : {reportId : reportId},
             success : function(response) {
+                var reportConfig = Ext4.decode(response.responseText).reportConfig;
+                if (reportConfig.properties.reportType !== 'ReportService.ParticipantReport') {
+                    this.onFailure({ responseText: '{"exception": "The report specified is not a Participant Report and cannot be loaded."}' });
+                    return;
+                }
+
                 this.reportName.setReadOnly(true);
                 this.saveAsButton.setVisible(true);
-                this.loadSavedConfig(Ext4.decode(response.responseText).reportConfig);
+                this.loadSavedConfig(reportConfig);
             },
             failure : this.onFailure,
             scope   : this
@@ -1136,7 +1142,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             msg = "There was a failure. If the problem persists please contact your administrator.";
         }
         this.unmask();
-        Ext4.Msg.alert('Failure', msg);
+        Ext4.Msg.show({ title: "Failure", msg, icon: Ext4.Msg.ERROR, buttons: Ext4.Msg.OK });
     },
 
     // get the grid fields in a form that the visualization getData api can understand
