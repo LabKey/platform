@@ -1016,12 +1016,9 @@ public class GraphTransportProvider implements EmailTransportProvider
 
             // Reset captured values
             capturedSendMailRequest = null;
-        }
 
-        private void setUpBasicExpectations()
-        {
+            // Wire up the mock chain
             mockery.checking(new Expectations() {{
-                // Wire up the mock chain
                 allowing(mockGraphClient).getRequestAdapter();
                 will(returnValue(mockRequestAdapter));
 
@@ -1054,7 +1051,6 @@ public class GraphTransportProvider implements EmailTransportProvider
         @Test
         public void testSuccessfulEmailSend() throws Exception
         {
-            setUpBasicExpectations();
             mockery.checking(new Expectations() {{
                 oneOf(mockSendMailRequestBuilder).post(with(any(SendMailPostRequestBody.class)));
                 will(new CaptureSendMailAction());
@@ -1073,7 +1069,6 @@ public class GraphTransportProvider implements EmailTransportProvider
         @Test
         public void testEmailWithRecipients() throws Exception
         {
-            setUpBasicExpectations();
             mockery.checking(new Expectations() {{
                 oneOf(mockSendMailRequestBuilder).post(with(any(SendMailPostRequestBody.class)));
                 will(new CaptureSendMailAction());
@@ -1092,7 +1087,6 @@ public class GraphTransportProvider implements EmailTransportProvider
         @Test
         public void testEmailWithCcAndBccRecipients() throws Exception
         {
-            setUpBasicExpectations();
             mockery.checking(new Expectations() {{
                 oneOf(mockSendMailRequestBuilder).post(with(any(SendMailPostRequestBody.class)));
                 will(new CaptureSendMailAction());
@@ -1131,7 +1125,6 @@ public class GraphTransportProvider implements EmailTransportProvider
         @Test
         public void testEmailWithReplyTo() throws Exception
         {
-            setUpBasicExpectations();
             mockery.checking(new Expectations() {{
                 oneOf(mockSendMailRequestBuilder).post(with(any(SendMailPostRequestBody.class)));
                 will(new CaptureSendMailAction());
@@ -1162,7 +1155,6 @@ public class GraphTransportProvider implements EmailTransportProvider
         @Test
         public void testEmailWithoutExplicitReplyToOmitsIt() throws Exception
         {
-            setUpBasicExpectations();
             mockery.checking(new Expectations() {{
                 oneOf(mockSendMailRequestBuilder).post(with(any(SendMailPostRequestBody.class)));
                 will(new CaptureSendMailAction());
@@ -1181,7 +1173,6 @@ public class GraphTransportProvider implements EmailTransportProvider
         @Test
         public void testSuccessfulEmailWithSmallAttachment() throws Exception
         {
-            setUpBasicExpectations();
             mockery.checking(new Expectations() {{
                 oneOf(mockSendMailRequestBuilder).post(with(any(SendMailPostRequestBody.class)));
                 will(new CaptureSendMailAction());
@@ -1210,8 +1201,6 @@ public class GraphTransportProvider implements EmailTransportProvider
 
             UploadSession uploadSession = new UploadSession();
             uploadSession.setUploadUrl(TEST_UPLOAD_URL);
-
-            setUpBasicExpectations();
 
             mockery.checking(new Expectations() {{
                 // Mock draft creation
@@ -1244,7 +1233,6 @@ public class GraphTransportProvider implements EmailTransportProvider
             com.microsoft.graph.models.Message draftMessage = new com.microsoft.graph.models.Message();
             draftMessage.setId(TEST_MESSAGE_ID);
 
-            setUpBasicExpectations();
             mockery.checking(new Expectations() {{
                 // Mock draft creation
                 oneOf(mockMessagesRequestBuilder).post(with(any(com.microsoft.graph.models.Message.class)));
@@ -1276,7 +1264,6 @@ public class GraphTransportProvider implements EmailTransportProvider
         @Test
         public void testEmailWithInlineAttachment() throws Exception
         {
-            setUpBasicExpectations();
             mockery.checking(new Expectations() {{
                 oneOf(mockSendMailRequestBuilder).post(with(any(SendMailPostRequestBody.class)));
                 will(new CaptureSendMailAction());
@@ -1298,7 +1285,6 @@ public class GraphTransportProvider implements EmailTransportProvider
         @Test
         public void testEmailWithInlineAttachmentNoFilename() throws Exception
         {
-            setUpBasicExpectations();
             mockery.checking(new Expectations() {{
                 oneOf(mockSendMailRequestBuilder).post(with(any(SendMailPostRequestBody.class)));
                 will(new CaptureSendMailAction());
@@ -1322,7 +1308,6 @@ public class GraphTransportProvider implements EmailTransportProvider
         @Test
         public void testEmailWithMultipleAttachments() throws Exception
         {
-            setUpBasicExpectations();
             mockery.checking(new Expectations() {{
                 oneOf(mockSendMailRequestBuilder).post(with(any(SendMailPostRequestBody.class)));
                 will(new CaptureSendMailAction());
@@ -1340,7 +1325,6 @@ public class GraphTransportProvider implements EmailTransportProvider
         @Test
         public void testHtmlBodyContent() throws Exception
         {
-            setUpBasicExpectations();
             mockery.checking(new Expectations() {{
                 oneOf(mockSendMailRequestBuilder).post(with(any(SendMailPostRequestBody.class)));
                 will(new CaptureSendMailAction());
@@ -1574,7 +1558,6 @@ public class GraphTransportProvider implements EmailTransportProvider
         @Test
         public void testDataUriConvertedToCidAttachment() throws Exception
         {
-            setUpBasicExpectations();
             mockery.checking(new Expectations() {{
                 oneOf(mockSendMailRequestBuilder).post(with(any(SendMailPostRequestBody.class)));
                 will(new CaptureSendMailAction());
