@@ -15,6 +15,7 @@
  */
 package org.labkey.core.view;
 
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ShortURLRecord;
 import org.labkey.api.view.ShortURLService;
 
@@ -56,7 +57,7 @@ public class ShortURLFilter implements Filter
         if (fullURL != null)
         {
             // We found a match, do a redirect and bail out
-            response.sendRedirect(fullURL.getFullURL());
+            ExceptionUtil.unsafeRedirect(response, fullURL.toString());
         }
         else
         {

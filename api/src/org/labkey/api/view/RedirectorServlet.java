@@ -7,6 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.labkey.api.util.ExceptionUtil;
 
 /** Simple redirector to redirect and forward from legacy context paths to the root context */
 public class RedirectorServlet extends HttpServlet
@@ -40,8 +41,7 @@ public class RedirectorServlet extends HttpServlet
                     originalUrl.getPort(),
                     originalUrl.getFile().replaceFirst(_legacyContextPath, ""));
 
-            response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
-            response.setHeader("Location", redirectUrl.toString());
+            ExceptionUtil.unsafeRedirect(response, redirectUrl.toString(), HttpServletResponse.SC_MOVED_PERMANENTLY);
         }
         else
         {

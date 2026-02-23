@@ -597,14 +597,14 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (!"1".equals(getViewContext().getActionURL().getParameter("_retry_")))
             {
                 ActionURL url = getViewContext().cloneActionURL().addParameter("_retry_", "1");
-                ExceptionUtil.doErrorRedirect(response, url.getLocalURIString());
+                ExceptionUtil.unsafeRedirect(response, url.getLocalURIString());
                 return;
             }
         }
             
         ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false, context, pageConfig);
         if (null != errorURL)
-            ExceptionUtil.doErrorRedirect(response, errorURL.toString());
+            ExceptionUtil.unsafeRedirect(response, errorURL.toString());
     }
 
 

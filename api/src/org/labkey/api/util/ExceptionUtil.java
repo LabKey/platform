@@ -816,7 +816,7 @@ public class ExceptionUtil
         if (ex instanceof RedirectException rex)
         {
             String url = rex.getURL();
-            doErrorRedirect(response, url, rex.getHttpStatusCode());
+            unsafeRedirect(response, url, rex.getHttpStatusCode());
             return null;
         }
 
@@ -1207,18 +1207,19 @@ public class ExceptionUtil
         errorView.getView().render(errorView.getModel(), request, response);
     }
 
-    // Temporary redirect
-    public static void doErrorRedirect(HttpServletResponse response, String url)
+    // Temporary redirect. "Unsafe" in the sense that the URL is not checked against the admin-configured allow list.
+    // Callers are responsible for ensuring any external redirect is safe.
+    public static void unsafeRedirect(HttpServletResponse response, String url)
     {
-        doErrorRedirect(response, url, HttpServletResponse.SC_MOVED_TEMPORARILY);
+        unsafeRedirect(response, url, HttpServletResponse.SC_MOVED_TEMPORARILY);
     }
 
     // Pass in HTTP status code to designate temporary vs. permanent redirect
-    private static void doErrorRedirect(HttpServletResponse response, String url, int httpStatusCode)
+    public static void unsafeRedirect(HttpServletResponse response, String url, int httpStatusCode)
     {
         response.setStatus(httpStatusCode);
         response.setDateHeader("Expires", 0);
-        response.setHeader("Location", url);
+        response.setHeader("Location", response.encodeRedirectURL(url));
         response.setContentType("text/html; charset=UTF-8");
 
         // backup strategy!
@@ -1234,7 +1235,7 @@ public class ExceptionUtil
         }
         catch (IOException x)
         {
-            LOG.error("doErrorRedirect", x);
+            LOG.error("unsafeRedirect", x);
         }
     }
 

@@ -123,7 +123,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -1433,15 +1432,9 @@ public class LoginController extends SpringActionController
         {
             if (null != _redirectURL)
             {
-                try
-                {
-                    getViewContext().getResponse().sendRedirect(_redirectURL.getURIString());
-                    return null;
-                }
-                catch (IOException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                // It's safe to bypass checking the external redirect allow list in this case because we are redirecting
+                // to the administrator-provided URL from the SSO authentication configuration (e.g., CAS logout).
+                throw new UnsafeExternalRedirectException(_redirectURL);
             }
             return form.getReturnUrlHelper(AuthenticationManager.getWelcomeURL());
         }
