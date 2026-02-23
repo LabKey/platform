@@ -1588,7 +1588,7 @@ public class ExceptionUtil
         @Override
         public String encodeRedirectURL(String s)
         {
-            throw new IllegalStateException();
+            return s;
         }
 
         @Override

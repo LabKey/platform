@@ -57,7 +57,7 @@ public class ShortURLFilter implements Filter
         if (fullURL != null)
         {
             // We found a match, do a redirect and bail out
-            ExceptionUtil.unsafeRedirect(response, fullURL.toString());
+            ExceptionUtil.unsafeRedirect(response, fullURL.getFullURL());
         }
         else
         {

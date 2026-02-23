@@ -79,7 +79,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.mvc.Controller;
-import org.springframework.web.servlet.view.RedirectView;
 
 import java.io.File;
 import java.io.IOException;
@@ -533,13 +532,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
             ModelAndView mv = controller.handleRequest(request, response);
             if (mv != null)
             {
-                // TODO: Remove this -- I don't think we ever use or see RedirectView
-                if (mv.getView() instanceof RedirectView)
-                {
-                    // treat same as a throw redirect
-//                    throw new RedirectException(((RedirectView)mv.getView()).getUrl());
-                    throw new IllegalStateException("Unexpected use of RedirectView -- please report to Adam Rauch");
-                }
                 renderInTemplate(context, controller, pageConfig, mv);
             }
         }
