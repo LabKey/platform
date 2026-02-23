@@ -49,10 +49,22 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-/**
- *
- * @param <ModelBean> the class to use as the data model for configuration
- */
+/// An [HttpView] that wraps its content in a configurable frame (title bar, chrome, collapse controls).
+///
+/// The frame style is controlled by [FrameType]:
+///
+/// - [FrameType#PORTAL] — full portal chrome with title bar, customize/move widgets, and drag handles.
+/// - [FrameType#TITLE] — lightweight title with a horizontal rule, no portal controls.
+/// - [FrameType#DIALOG] — dialog-style frame.
+/// - [FrameType#DIV] — bare `<div>` wrapper with a CSS class, no title or chrome.
+/// - [FrameType#LEFT_NAVIGATION] — Only used by NavTreeMenu now
+/// - [FrameType#NONE] — no frame at all; content is rendered directly.
+/// - [FrameType#NOT_HTML] — same as `NONE`, used as a marker for non-HTML responses.
+///
+/// Subclasses override [#renderView] instead of `renderInternal`. The frame's start/end
+/// tags are emitted automatically around the subclass content.
+///
+/// @param <ModelBean> the class to use as the data model for configuration
 public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 {
     /**

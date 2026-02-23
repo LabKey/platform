@@ -22,7 +22,6 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
-import org.apache.xmlbeans.XmlBeans;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.Constants;
@@ -428,7 +427,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             {
                 throw new IllegalStateException("Not a valid module: " + archive.getName());
             }
-            moduleCreated = moduleList.get(0);
+            moduleCreated = moduleList.getFirst();
             if (null != archive)
                 moduleCreated.setZippedPath(archive);
 
@@ -480,8 +479,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                 // avoid error in startup, DefaultModule does not expect to see module with same name initialized again
                 ((DefaultModule) moduleCreated).unregister();
                 _moduleFailures.remove(moduleCreated.getName());
-                pruneModules(moduleList);
-                initializeModules(moduleList);
+                pruneModulesForDatabaseSupport(moduleList);
+                initializeAndPruneModules(moduleList);
 
                 Throwable t = _moduleFailures.get(moduleCreated.getName());
                 if (null != t)
@@ -576,7 +575,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
         // set the project source root before calling .initialize() on modules
         var modules = getModules();
-        Module coreModule = modules.isEmpty() ? null : modules.get(0);
+        Module coreModule = modules.isEmpty() ? null : modules.getFirst();
         if (coreModule == null || !DefaultModule.CORE_MODULE_NAME.equals(coreModule.getName()))
             throw new IllegalStateException("Core module was not first or could not find the Core module. Ensure that Tomcat user can create directories under the <LABKEY_HOME>/modules directory.");
         setProjectRoot(coreModule);
@@ -622,7 +621,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         // Prune modules before upgrading core module, see Issue 42150
         synchronized (_modulesLock)
         {
-            pruneModules(_modules);
+            // _modules is in dependency order
+            pruneModulesForDatabaseSupport(_modules);
+            pruneModulesForDependencies(_modules);
         }
 
         if (getTableInfoModules().getTableType() == DatabaseTableType.NOT_IN_DB)
@@ -678,8 +679,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         synchronized (_modulesLock)
         {
             checkForRenamedModules();
-            // use _modules here because this List<> needs to be modifiable
-            initializeModules(_modules);
+            initializeAndPruneModules(_modules);
         }
 
         if (!_duplicateModuleErrors.isEmpty())
@@ -920,24 +920,41 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     }
 
     /**
-     * Enumerates all the modules, removing the ones that don't support the core database
+     * Enumerates all the modules, removing the ones that don't support the primary database
      */
-    private void pruneModules(List<Module> modules)
+    private void pruneModulesForDatabaseSupport(List<Module> modules)
     {
-        Module core = getCoreModule();
-
-        SupportedDatabase coreType = SupportedDatabase.get(CoreSchema.getInstance().getSqlDialect());
-        // Need to enumerate a copy of the list to avoid ConcurrentModificationException
+        SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
+        SupportedDatabase primaryType = SupportedDatabase.get(dialect);
+        // Enumerate a copy of the list to avoid ConcurrentModificationException
         for (Module module : new ArrayList<>(modules))
         {
-            if (module == core)
-                continue;
-            if (!module.getSupportedDatabasesSet().contains(coreType))
+            if (!module.getSupportedDatabasesSet().contains(primaryType))
             {
-                var e = new DatabaseNotSupportedException("This module does not support " + CoreSchema.getInstance().getSqlDialect().getProductName());
+                var e = new DatabaseNotSupportedException("This module does not support " + dialect.getProductName());
                 // In production mode, treat these exceptions as a module initialization error
                 // In dev mode, make them warnings so devs can easily switch databases
-                removeModule(modules, module, !AppProps.getInstance().isDevMode(), e);
+                removeModule(modules, module, !AppProps.getInstance().isDevMode(), e, "load");
+            }
+        }
+    }
+
+    /**
+     * Remove modules if any of their module dependencies are missing
+     */
+    private void pruneModulesForDependencies(List<Module> modules)
+    {
+        for (Module module : modules)
+        {
+            try
+            {
+                pruneModuleForDependencies(module, "load");
+            }
+            catch (ModuleDependencyException e)
+            {
+                // In production mode, treat module dependency exceptions as errors
+                // In dev mode, make them warnings so devs can easily switch databases
+                removeModule(modules, module, !AppProps.getInstance().isDevMode(), e, "load");
             }
         }
     }
@@ -945,19 +962,15 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     /**
      * Enumerates all remaining modules, initializing them and removing any that fail to initialize
      */
-    private void initializeModules(List<Module> modules)
+    private void initializeAndPruneModules(List<Module> modules)
     {
         Module core = getCoreModule();
 
         /*
-         * NOTE: Module.initialize() really should not ask for resources from _other_ modules,
-         * as they may have not initialized themselves yet. However, we did not enforce that
-         * so this cross-module behavior may have crept in.
-         *
-         * To help mitigate this a little, we remove modules that do not support this DB type
-         * before calling initialize().
-         *
-         * NOTE: see FolderTypeManager.get().registerFolderType() for an example of enforcing this
+         * NOTE: Module.initialize() really should not ask for resources from _other_ modules, as they may have not
+         * initialized themselves yet. However, we did not enforce that so this cross-module behavior may have crept
+         * in. To help mitigate this a little, we previously removed modules based on supported DB type and missing
+         * dependencies. See FolderTypeManager.registerFolderType() for an example of enforcing this
          */
 
         //initialize each module in turn
@@ -968,25 +981,22 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
             try
             {
-                try
-                {
-                    // Make sure all its dependencies initialized successfully
-                    verifyDependencies(module);
-                    module.initialize();
-                }
-                catch (DatabaseNotSupportedException | ModuleDependencyException e)
-                {
-                    // In production mode, treat these exceptions as a module initialization error
-                    if (!AppProps.getInstance().isDevMode())
-                        throw e;
+                // Make sure all its dependencies initialized successfully
+                pruneModuleForDependencies(module, "initialize");
+            }
+            catch (ModuleDependencyException mde)
+            {
+                removeModule(modules, module, !AppProps.getInstance().isDevMode(), mde, "load");
+                continue;
+            }
 
-                    // In dev mode, make them warnings so devs can easily switch databases
-                    removeModule(modules, module, false, e);
-                }
+            try
+            {
+                module.initialize();
             }
             catch (Throwable t)
             {
-                removeModule(modules, module, true, t);
+                removeModule(modules, module, true, t, "initialize");
             }
         }
 
@@ -995,38 +1005,38 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         initControllerToModule();
     }
 
-    // Check a module's dependencies and throw on the first one that's not present (i.e., it was removed because its initialize() failed)
-    private void verifyDependencies(Module module)
+    // Check a single module's dependencies and throw on the first one that's not present (i.e., dependency is not present or its init() threw)
+    private void pruneModuleForDependencies(Module module, String action)
     {
         synchronized (_modulesLock)
         {
             for (String dependency : module.getModuleDependenciesAsSet())
                 if (!_moduleMap.containsKey(dependency))
-                    throw new ModuleDependencyException(dependency);
+                    throw new ModuleDependencyException(dependency, action);
         }
     }
 
     private static class ModuleDependencyException extends ConfigurationException
     {
-        public ModuleDependencyException(String dependencyName)
+        public ModuleDependencyException(String dependencyName, String action)
         {
-            super("This module depends on the \"" + dependencyName + "\" module, which failed to initialize");
+            super("This module depends on the \"" + dependencyName + "\" module, which failed to " + action);
         }
     }
 
-    private void removeModule(List<Module> modules, Module current, boolean treatAsError, Throwable t)
+    private void removeModule(List<Module> modules, Module current, boolean treatAsError, Throwable t, String action)
     {
         String name = current.getName();
 
         if (treatAsError)
         {
-            _log.error("Unable to initialize module {}", name, t);
+            _log.error("Unable to {} module {}", action, name, t);
             //noinspection ThrowableResultOfMethodCallIgnored
             _moduleFailures.put(name, t);
         }
         else
         {
-            _log.warn("Unable to initialize module {} due to: {}", name, t.getMessage());
+            _log.warn("Unable to {} module {} due to: {}", action, name, t.getMessage());
         }
 
         synchronized (_modulesLock)

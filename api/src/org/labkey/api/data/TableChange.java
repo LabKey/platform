@@ -20,6 +20,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.util.logging.LogHelper;
@@ -58,6 +59,7 @@ public class TableChange
     private Collection<Constraint> _constraints;
     private Set<String> _indicesToBeDroppedByName;
     private IndexSizeMode _sizeMode = IndexSizeMode.Auto;
+    private Map<String, PropertyType> _oldPropTypes;
 
     /** In most cases, domain knows the storage table name **/
     public TableChange(Domain domain, ChangeType changeType)
@@ -329,6 +331,11 @@ public class TableChange
         _foreignKeys = foreignKeys;
     }
 
+    public Map<String, PropertyType> getOldPropTypes()
+    {
+        return _oldPropTypes;
+    }
+
     public final List<PropertyStorageSpec> toSpecs(Collection<String> columnNames)
     {
         final Domain domain = _domain;
@@ -347,6 +354,11 @@ public class TableChange
                     return spec;
                 })
                 .collect(Collectors.toList());
+    }
+
+    public void setOldPropertyTypes(Map<String, PropertyType> oldPropTypes)
+    {
+        _oldPropTypes = oldPropTypes;
     }
 
     public enum ChangeType

@@ -694,6 +694,12 @@ public class PipelineStatusManager
                     PipelineStatusFileImpl sf = PipelineStatusManager.getStatusFile(rowId);
                     if (sf != null)
                     {
+                        Container container = sf.lookupContainer();
+                        if (container == null || !container.hasPermission(user, UpdatePermission.class))
+                        {
+                            throw new UnauthorizedException();
+                        }
+
                         LOG.info("Job " + sf.getFilePath() + " was marked as complete by " + user);
                         sf.setStatus(PipelineJob.TaskStatus.complete.toString());
                         sf.setInfo(null);

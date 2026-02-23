@@ -191,7 +191,7 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
     {
         Path fileLocation = getFileSystemDirectoryPath();
         InputStream is = file.openInputStream();
-        Path saveFile = fileLocation.resolve(file.getFilename());
+        Path saveFile = FileUtil.appendName(fileLocation, file.getFilename());
         try
         {
             Files.copy(is, saveFile);

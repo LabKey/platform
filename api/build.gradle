@@ -49,6 +49,12 @@ List runtime = [
     "com.google.code.kaptcha:kaptcha:${kaptchaVersion}",
 ]
 
+configurations.configureEach {
+    // spring-ai pulls in spring-boot and tomcat-embed. We don't want multiple copies of these dependencies, especially
+    // versions that conflict with those in our embedded jar.
+    exclude group: "org.springframework.boot"
+}
+
 configurations {
     // Exclude the bundled org.json library from com.fasterxml.jackson.datatype:jackson-datatype-json-org dependency
     all*.exclude group: "org.apache.geronimo.bundles", module: "json"
@@ -466,6 +472,7 @@ dependencies {
         )
     )
 
+    // Jackson 2
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
@@ -1078,6 +1085,19 @@ dependencies {
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "LLM Chat Client integration for Claude"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.springframework.ai:spring-ai-openai:${springAiVersion}",
+            "spring-ai-openai",
+            "spring-ai",
+            "https://github.com/spring-projects/spring-ai",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "LLM Chat Client integration for ChatGPT"
         )
     )
 

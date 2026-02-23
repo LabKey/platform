@@ -26,6 +26,21 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
 
+/// An immutable wrapper around a [String] known to contain safe, properly encoded HTML. Instances are
+/// created via the [#of] factory methods, which HTML-encode their input, or via [#unsafe],
+/// which trusts the caller to supply pre-encoded markup.
+///
+/// `HtmlString` is the fundamental unit of safe HTML in the LabKey API. It implements
+/// [DOM.Renderable], so it can be used as a child element in the [DOM] HTML-building DSL
+/// (e.g., `DIV(myHtmlString)`). When you need to build up HTML incrementally through concatenation,
+/// use [HtmlStringBuilder], which acts as a mutable builder and produces an `HtmlString` via
+/// [HtmlStringBuilder#getHtmlString()]. For constructing structured HTML trees with elements and
+/// attributes, prefer the [DOM] DSL instead.
+///
+/// @see HtmlStringBuilder
+/// @see DOM
+/// @see DOM.Renderable
+/// @see SafeToRender
 public final class HtmlString implements SafeToRender, DOM.Renderable, Comparable<HtmlString>, Serializable, JSONString
 {
     // Helpful constants for convenience (and efficiency)

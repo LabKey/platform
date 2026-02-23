@@ -2999,10 +2999,6 @@ if (!LABKEY.DataRegions) {
             });
         }
 
-        if (direction === SORT_ASC) { // Easier to read without the encoded + on the URL...
-            direction = '';
-        }
-
         if (LABKEY.Utils.isString(direction)) {
             newSorts = [direction + columnName].concat(newSorts);
         }

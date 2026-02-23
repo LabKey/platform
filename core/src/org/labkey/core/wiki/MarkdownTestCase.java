@@ -15,7 +15,7 @@ class MarkdownTestCase extends Assert
     @Test
     public void testMdHeadingToHtml()
     {
-        MarkdownService markdownService = MarkdownService.get();
+        MarkdownService markdownService = new MarkdownServiceImpl();
         String testMdText = "# This is a H1 header";
         String expectedHtmlText = "<div class=\"lk-markdown-container\"><h1 id=\"this-is-a-h1-header\">This is a H1 header</h1>\n</div>";
         String htmlText = markdownService.toHtml(testMdText);
@@ -28,7 +28,7 @@ class MarkdownTestCase extends Assert
     @Test
     public void testMdBoldToHtml()
     {
-        MarkdownService markdownService = MarkdownService.get();
+        MarkdownService markdownService = new MarkdownServiceImpl();
         String testMdText = "**This is bold text**";
         String expectedHtmlText = "<div class=\"lk-markdown-container\"><p><strong>This is bold text</strong></p>\n</div>";
         String htmlText = markdownService.toHtml(testMdText);
@@ -41,11 +41,10 @@ class MarkdownTestCase extends Assert
     @Test
     public void testMdHtmlTags()
     {
-        MarkdownService markdownService = MarkdownService.get();
-
+        MarkdownService markdownService = new MarkdownServiceImpl();
         String testMdText = "<h2>header</h2>";
-        String expectedHtmlText = "<div class=\"lk-markdown-container\"><p>&lt;h2&gt;header&lt;/h2&gt;</p>\n</div>";
         String htmlText = markdownService.toHtml(testMdText);
+        String expectedHtmlText = "<div class=\"lk-markdown-container\"><p>&lt;h2&gt;header&lt;/h2&gt;</p>\n</div>";
         assertEquals("The MarkdownService failed to correctly escape html tags.", expectedHtmlText, htmlText);
 
         testMdText = "<script>alert()</script>";
@@ -60,7 +59,7 @@ class MarkdownTestCase extends Assert
     @Test
     public void testMdComplexToHtml()
     {
-        MarkdownService markdownService = MarkdownService.get();
+        MarkdownService markdownService = new MarkdownServiceImpl();
         // this sample of markdown and translation taken from part of: https://markdown-it.github.io/
         String testMdText = """
                 ---
@@ -340,5 +339,21 @@ class MarkdownTestCase extends Assert
                 </div>""";
         String htmlText = markdownService.toHtml(testMdText);
         assertEquals("The MarkdownService failed to correctly translate complex markdown text to html.", expectedHtmlText, htmlText);
+    }
+    @Test
+    public void testHtmlComments()
+    {
+        MarkdownService markdownService = new MarkdownServiceImpl();
+
+        String testMdText = "Text before <!-- comment --> text after";
+        String htmlText = markdownService.toHtml(testMdText);
+
+        assertTrue("Comment was encoded: " + htmlText, htmlText.contains("<!-- comment -->"));
+        assertFalse("Comment should not be encoded: " + htmlText, htmlText.contains("&lt;!--"));
+
+        // Verification for <script> still being encoded
+        String scriptMd = "<script>alert('hi')</script>";
+        String scriptHtml = markdownService.toHtml(scriptMd);
+        assertTrue("Script tags should still be encoded: " + scriptHtml, scriptHtml.contains("&lt;script&gt;"));
     }
 }

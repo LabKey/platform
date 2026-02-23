@@ -69,8 +69,7 @@ public class FormTag extends BodyTagSupport
     @Deprecated // TODO: Eliminate all usages and remove
     public void setAction(String s)
     {
-        if (AppProps.getInstance().getUseContainerRelativeURL() &&
-                StringUtils.containsNone(s, "/-") && (StringUtils.endsWith(s, ".view") || StringUtils.endsWith(s, ".post")))
+        if (StringUtils.containsNone(s, "/-") && (StringUtils.endsWith(s, ".view") || StringUtils.endsWith(s, ".post")))
         {
             ViewContext ctx = HttpView.getRootContext();
             if (null != ctx)

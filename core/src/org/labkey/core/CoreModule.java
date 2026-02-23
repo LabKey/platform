@@ -89,6 +89,7 @@ import org.labkey.api.files.FileBrowserConfigWriter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -539,11 +540,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "Short-circuit robots",
             "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
             false);
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(AppProps.GENERATE_CONTROLLER_FIRST_URLS,
-            "Restore controller-first URLs",
-            "Generate URLs in a legacy format that puts the controller name before the folder path. This option will be removed in LabKey Server 26.3.",
-            false, false, OptionalFeatureService.FeatureType.Deprecated
-        ));
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.REJECT_CONTROLLER_FIRST_URLS,
             "Reject controller-first URLs",
             "Require standard path-first URLs. Note: This option will be ignored if the deprecated feature for generating controller-first URLs is enabled.",
@@ -1201,7 +1197,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 customLog4JConfig = Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter("org.labkey.customLog4JConfig"));
             }
             results.put("customLog4JConfig", customLog4JConfig);
-            results.put("containerRelativeURL", AppProps.getInstance().getUseContainerRelativeURL());
             results.put("runtimeMode", AppProps.getInstance().isDevMode() ? "development" : "production");
             Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
             deployedApps.remove(labkeyContextPath);
@@ -1287,7 +1282,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
 
-        CoreMigrationSchemaHandler.register();
         Encryption.checkMigration();
 
         McpServiceImpl.get().startMpcServer();
@@ -1308,6 +1302,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 LOG.warn("At least one database view was not as expected in the {} schema. Attempting to recreate views automatically", schema.getName());
                 ModuleLoader.getInstance().recreateViews();
             });
+    }
+
+    @Override
+    public void registerMigrationHandlers(@NotNull DatabaseMigrationService service)
+    {
+        CoreMigrationSchemaHandler.register(service);
     }
 
     @Override

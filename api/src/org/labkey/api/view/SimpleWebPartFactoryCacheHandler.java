@@ -29,9 +29,6 @@ import java.util.stream.Stream;
 
 /**
  * Creates and caches the file-based web parts defined by modules. File changes result in dynamic reloading and re-initialization of webpart-related maps.
- * User: adam
- * Date: 12/29/13
- * Time: 12:38 PM
  */
 public class SimpleWebPartFactoryCacheHandler implements ModuleResourceCacheHandler<Collection<SimpleWebPartFactory>>
 {

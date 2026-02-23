@@ -163,8 +163,12 @@ public class ListModule extends SpringModule
                 return metric;
             });
         }
+    }
 
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(ListSchema.getInstance().getSchema()){
+    @Override
+    public void registerMigrationHandlers(@NotNull DatabaseMigrationService service)
+    {
+        service.registerSchemaHandler(new DefaultMigrationSchemaHandler(ListSchema.getInstance().getSchema()){
             @Override
             public @NotNull Collection<AttachmentParentType> getAttachmentTypes()
             {
