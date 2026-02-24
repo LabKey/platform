@@ -40,6 +40,7 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.DomainUtils;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
+import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.TestDataGenerator;
 import org.labkey.test.util.data.TestDataUtils;
@@ -52,7 +53,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import static java.time.LocalDate.now;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -178,6 +181,69 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         // Bulk import using the merge option checkbox
         importDatasetData("B", DATASET_HEADER, DATASET_B_MERGE, true,"All data");
         checkDataElementsPresent("B", DATASET_B_MERGE.split("\t|\n"));
+    }
+
+    @Test
+    public void testDatasetWithMultiChoice()
+    {
+        OptionalFeatureHelper.enableOptionalFeature(getCurrentTest().createDefaultConnection(), "multiChoiceDataType");
+        String datasetName = "Test dataset";
+        DatasetDesignerPage definitionPage = _studyHelper.goToManageDatasets()
+                .clickCreateNewDataset()
+                .setName(datasetName);
+
+        List<String> tcValues = new ArrayList<>();
+        tcValues.add("~`!@#$%^&*()_+=[]{}\\|';:\"<>?,./");
+        tcValues.add("Blue");
+        tcValues.add("Green");
+
+        FieldDefinition fieldDefinition = new FieldDefinition("MCF", FieldDefinition.ColumnType.MultiValueTextChoice);
+        fieldDefinition.setMultiChoiceValues(tcValues);
+        FieldDefinition textChoice = new FieldDefinition("CF", FieldDefinition.ColumnType.TextChoice);
+        textChoice.setTextChoiceValues(tcValues);
+
+        DomainFormPanel panel = definitionPage.getFieldsPanel();
+        panel.addField(fieldDefinition);
+        panel.addField(textChoice);
+        definitionPage.clickSave();
+
+        Map<String, Object> values = new HashMap<>();
+        values.put("MouseId", "999320016");
+        values.put("SequenceNum", "0.1");
+        values.put("date", now());
+        values.put("MCF", tcValues.subList(0, 2));
+        values.put("CF", tcValues.get(1));
+
+        navigateToFolder(getProjectName(), getFolderName());
+        _studyHelper.goToManageDatasets()
+                .selectDatasetByName(datasetName)
+                .clickViewData()
+                .insertDatasetRow()
+                .insert(values);
+
+        DataRegionTable drt = new DataRegionTable("Dataset", getDriver());
+        String expectedList = ((List<String>) values.get("MCF")).stream()
+                .sorted()
+                .collect(Collectors.joining(" "));
+        checker().verifyEquals("Field data didn't import as expected", expectedList,
+                    drt.getDataAsText(0, "MCF"));
+        checker().verifyEquals("Field data didn't import as expected", values.get("CF"),
+                drt.getDataAsText(0, "CF"));
+        checker().screenShotIfNewError("Create_Dataset_With_Multi_Choice");
+
+        Map<String, Object> updatedValues = new HashMap<>();
+        updatedValues.put("MCF", tcValues.subList(1, 3));
+        updatedValues.put("CF", (String) tcValues.get(2));
+        drt.clickEditRow(0)
+                .update(updatedValues);
+        expectedList = ((List<String>) updatedValues.get("MCF")).stream()
+                .sorted()
+                .collect(Collectors.joining(" "));
+        checker().verifyEquals("Field data didn't import as expected", expectedList,
+                drt.getDataAsText(0, "MCF"));
+        checker().verifyEquals("Field data didn't import as expected", updatedValues.get("CF"),
+                drt.getDataAsText(0, "CF"));
+        checker().screenShotIfNewError("Update_Dataset_With_Multi_Choice");
     }
 
     @Test
