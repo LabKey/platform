@@ -475,16 +475,11 @@ public interface ColumnInfo extends ColumnRenderProperties
         return getConvertFn().convert(o);
     }
 
-    /// NOTE: This could be folded into ColumnRenderProperties if we moved .isMultiValued() and .getFk().
     static SimpleConvert getDefaultConvertFn(ColumnInfo col)
     {
-        if (col.isMultiValued() || col.getFk() instanceof MultiValuedForeignKey)
-        {
-            // The type for these columns is the element type (String, not String[]), and we do not want to convert to the element type.
-            // We could consider explicit convert to String[]. but MVFK handling is always a special-case in the UpdateService anyway.
-            // See also: CoerceDataIterator.init() which also just passes the value unmodified.
-            return SimpleConvert.identity;
-        }
+        // NOTE for MultiValued columns e.g. col.isMultiValued() || col.getFk() instanceof MultiValuedForeignKey
+        // MultiValuedDisplayColumn currently relies on the parent fk column hanldling convert from String to the element type (see MultiValuedRenderContext.get())
+        // However, This behavior is obviously wrong for MVFC that support insert/update, callers must be aware of this unfortunately (e.g. TableViewForm and CoerceDataIterator)
         return ColumnRenderProperties.getDefaultConvertFn(col);
     }
 }
