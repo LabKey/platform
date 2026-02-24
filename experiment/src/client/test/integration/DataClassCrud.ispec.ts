@@ -835,19 +835,19 @@ describe('Data CRUD', () => {
             options: { name: dataType }
         }, { ...topFolderOptions, ...designerReaderOptions }).expect(successfulResponse);
 
-        // insert 2 rows data, provide explicit names and a rowId = 1
+        // insert 2 rows data, provide explicit names and a rowId = -1
         const dataName1 = 'KeyData1';
         const dataName2 = 'KeyData2';
         const inserted = await insertDataClassData([
-            { name: dataName1, description: 'original1', [fieldName]: 'val1', rowId: 1 },
-            { name: dataName2, description: 'original2', [fieldName]: 'val2', rowId: 1 },
+            { name: dataName1, description: 'original1', [fieldName]: 'val1', rowId: -1 },
+            { name: dataName2, description: 'original2', [fieldName]: 'val2', rowId: -1 },
         ], dataType, topFolderOptions);
 
-        // verify both rows are inserted with correct name and rowId is not 1 for both rows, record the rowId and lsid for both rows
+        // verify both rows are inserted with correct name and rowId is not -1 for both rows, record the rowId and lsid for both rows
         expect(inserted[0].name).toBe(dataName1);
         expect(inserted[1].name).toBe(dataName2);
-        expect(inserted[0].rowId).not.toBe(1);
-        expect(inserted[1].rowId).not.toBe(1);
+        expect(inserted[0].rowId).not.toBe(-1);
+        expect(inserted[1].rowId).not.toBe(-1);
         const row1RowId = inserted[0].rowId;
         const row1Lsid = inserted[0].lsid;
         const row2RowId = inserted[1].rowId;
@@ -928,7 +928,7 @@ describe('Data CRUD', () => {
         // update description and fieldName value from Import with update, the import columns contains name field, verify update is successful and data are updated correctly
         const importUpdateText = 'Name\tDescription\t' + fieldName + '\n' + newName3 + '\timportUpd1\timportVal1\n' + newName4 + '\timportUpd2\timportVal2';
         const updateResp = await ExperimentCRUDUtils.importData(server, importUpdateText, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
-        expect(updateResp.text.indexOf('"success" : true') > -1).toBeTruthy();
+        expect(updateResp.body.success).toBe(true);
 
         rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
         row1 = findRow(rows, row1RowId);
@@ -942,7 +942,7 @@ describe('Data CRUD', () => {
         const newDataName = 'MergedNewData';
         const importMergeText = 'Name\tDescription\t' + fieldName + '\n' + newName3 + '\tmergeUpd1\tmergeVal1\n' + newName4 + '\tmergeUpd2\tmergeVal2\n' + newDataName + '\tmergeNew\tmergeNewVal';
         const mergeResp = await ExperimentCRUDUtils.importData(server, importMergeText, dataType, 'MERGE', topFolderOptions, editorUserOptions);
-        expect(mergeResp.text.indexOf('"success" : true') > -1).toBeTruthy();
+        expect(mergeResp.body.success).toBe(true);
 
         rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
         row1 = findRow(rows, row1RowId);

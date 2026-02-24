@@ -686,7 +686,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
 
-        // all columns from dataclass property table except name, lsid
+        // all columns from dataclass property table except key columns
         Set<String> pCols = new CaseInsensitiveHashSet(provisioned.getColumnNameSet());
         pCols.remove("name");
         pCols.remove("lsid");

@@ -519,7 +519,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
      * Drop the classid column and add a rowId column to existing provisioned DataClass tables.
      */
     @SuppressWarnings("unused")
-    @DeferredUpgrade
     public static void addRowIdToProvisionedDataClassTables(ModuleContext context)
     {
         if (context.isNewInstall())
@@ -549,7 +548,10 @@ public class ExperimentUpgradeCode implements UpgradeCode
             // pass
         }
         if (null == kind || null == kind.getStorageSchemaName())
+        {
+            LOG.error("DataClass '" + dc.getName() + "' (" + dc.getRowId() + ") has no provisioned storage schema.");
             return;
+        }
 
         DbSchema schema = DataClassDomainKind.getSchema();
         DbScope scope = schema.getScope();
@@ -620,9 +622,9 @@ public class ExperimentUpgradeCode implements UpgradeCode
         SqlExecutor executor = new SqlExecutor(scope);
         boolean isPostgreSQL = scope.getSqlDialect().isPostgreSQL();
         if (isPostgreSQL)
-            executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(domain.getStorageTableName()).append(" ALTER COLUMN rowId SET NOT NULL"));
+            executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(provisionedTable).append(" ALTER COLUMN rowId SET NOT NULL"));
         else
-            executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(domain.getStorageTableName()).append(" ALTER COLUMN rowId INT NOT NULL"));
+            executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(provisionedTable).append(" ALTER COLUMN rowId INT NOT NULL"));
 
         // Add indexes back via StorageProvisioner
         storageProvisioner.ensureTableIndices(domain);
@@ -630,7 +632,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         // Add FK constraint (no StorageProvisioner API for FKs on existing tables)
         String fkName = "fk_rowid_" + domain.getStorageTableName() + "_data";
-        executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(domain.getStorageTableName())
+        executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(provisionedTable)
                 .append(" ADD CONSTRAINT ").append(fkName)
                 .append(" FOREIGN KEY (rowId) REFERENCES exp.Data(RowId)"));
         LOG.info("DataClass '{}' ({}) added FK constraint on 'rowId'", dc.getName(), dc.getRowId());

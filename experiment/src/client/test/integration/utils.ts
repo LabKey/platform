@@ -913,7 +913,7 @@ export function generateFieldNameForImport(length: number = 10, charset?: string
     let fieldName = generateFieldName(length, charset);
     while (!canNameBeUsedInImport(fieldName))
     {
-        fieldName = generateFieldName();
+        fieldName = generateFieldName(length, charset);
     }
     return fieldName;
 }
