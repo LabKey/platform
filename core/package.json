@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.20.1",
+    "@labkey/components": "7.20.2-fb-container-first-clients.0",
     "@labkey/themes": "1.6.0"
   },
   "devDependencies": {
