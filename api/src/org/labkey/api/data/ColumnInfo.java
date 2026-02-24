@@ -459,11 +459,9 @@ public interface ColumnInfo extends ColumnRenderProperties
         return sb.toString();
     }
 
-    /**
-     * The returned Function&lt;Object,Object> should throw ConversionException (undeclared RuntimeException).
-     * This method does not handle compound conversions e.g. MissingValues or Out-of-range indicators.
-     * Also, converting the pieces of a MVFK column is handled by QUS.
-     */
+    /// The returned Function<Object,Object> should throw ConversionException (undeclared RuntimeException).
+    /// This method does not handle compound conversions e.g. MissingValues or Out-of-range indicators.
+    /// Also, converting the pieces of a MVFK column is handled by QUS.
     @Override
     @Transient
     default SimpleConvert getConvertFn()
@@ -471,22 +469,21 @@ public interface ColumnInfo extends ColumnRenderProperties
         return getDefaultConvertFn(this);
     }
 
-    /** see getConvertFn() */
     @Override
     default Object convert(Object o) throws ConversionException
     {
         return getConvertFn().convert(o);
     }
 
-    /* NOTE: This could be folded into ColumnRenderProperties if we moved .isMultiValued() and .getFk(). */
+    /// NOTE: This could be folded into ColumnRenderProperties if we moved .isMultiValued() and .getFk().
     static SimpleConvert getDefaultConvertFn(ColumnInfo col)
     {
         if (col.isMultiValued() || col.getFk() instanceof MultiValuedForeignKey)
         {
-            // See CoerceDataIterator.init() which just passes value unmodified.
-            // We could consider explicit convert to String[], but there is some argument for not doing nested
-            // conversion here (convert to Quatnity[]).
-            return (v) -> v;
+            // The type for these columns is the element type (String, not String[]), and we do not want to convert to the element type.
+            // We could consider explicit convert to String[]. but MVFK handling is always a special-case in the UpdateService anyway.
+            // See also: CoerceDataIterator.init() which also just passes the value unmodified.
+            return SimpleConvert.identity;
         }
         return ColumnRenderProperties.getDefaultConvertFn(col);
     }
