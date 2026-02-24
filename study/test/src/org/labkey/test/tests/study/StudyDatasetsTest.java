@@ -188,8 +188,8 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @Test
     public void testDatasetWithMultiChoice()
     {
-        OptionalFeatureHelper.enableOptionalFeature(getCurrentTest().createDefaultConnection(), "multiChoiceDataType");
         Assume.assumeTrue("Multi-choice text fields are only supported on PostgreSQL", WebTestHelper.getDatabaseType() == WebTestHelper.DatabaseType.PostgreSQL);
+        OptionalFeatureHelper.enableOptionalFeature(getCurrentTest().createDefaultConnection(), "multiChoiceDataType");
         String datasetName = "Test dataset";
         DatasetDesignerPage definitionPage = _studyHelper.goToManageDatasets()
                 .clickCreateNewDataset()
