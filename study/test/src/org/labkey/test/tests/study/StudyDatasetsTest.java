@@ -17,6 +17,7 @@
 package org.labkey.test.tests.study;
 
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -24,6 +25,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.LookAndFeelScatterPlot;
 import org.labkey.test.components.LookAndFeelTimeChart;
@@ -40,6 +42,7 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.DomainUtils;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
+import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.TestDataGenerator;
 import org.labkey.test.util.data.TestDataUtils;
@@ -185,6 +188,8 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @Test
     public void testDatasetWithMultiChoice()
     {
+        Assume.assumeTrue("Multi-choice text fields are only supported on PostgreSQL", WebTestHelper.getDatabaseType() == WebTestHelper.DatabaseType.PostgreSQL);
+        OptionalFeatureHelper.enableOptionalFeature(getCurrentTest().createDefaultConnection(), "multiChoiceDataType");
         String datasetName = "Test dataset";
         DatasetDesignerPage definitionPage = _studyHelper.goToManageDatasets()
                 .clickCreateNewDataset()
