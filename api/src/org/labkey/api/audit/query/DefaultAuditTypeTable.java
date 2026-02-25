@@ -34,14 +34,9 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.CanSeeAuditLogRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -119,9 +114,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        User user = (null == getUserSchema()) ? null : getUserSchema().getUser();
-        Set<Role> roles = SecurityManager.canSeeAuditLog(user) ? RoleManager.roleSet(CanSeeAuditLogRole.class) : null;
-        return filter.createFilterClause(getSchema(), fieldKey, CanSeeAuditLogPermission.class, roles);
+        return filter.createFilterClause(getSchema(), fieldKey, CanSeeAuditLogPermission.class, Set.of());
     }
 
     // Subclasses may override this to provide customizations to the column

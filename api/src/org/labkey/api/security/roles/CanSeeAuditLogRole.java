@@ -18,11 +18,16 @@ package org.labkey.api.security.roles;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 
+/**
+ * See {@link CanSeeAuditLogFolderRole}, the project/folder version of this role
+ */
 public class CanSeeAuditLogRole extends AbstractRootContainerRole
 {
     public CanSeeAuditLogRole()
     {
-        super("See Audit Log Events", "Allows non-administrators to view audit log events",
+        super("See Audit Log Events", "Allows non-administrators to view audit log events in the " +
+            "root, every project, and every folder on this site. This level of visibility is not generally recommended. " +
+            "For more granular control, assign this role at the project or folder level instead.",
             CanSeeAuditLogPermission.class,
             SeeUserDetailsPermission.class
         );
