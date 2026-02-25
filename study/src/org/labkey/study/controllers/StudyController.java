@@ -263,7 +263,6 @@ import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
-import org.labkey.study.model.UploadLog;
 import org.labkey.study.model.VisitDataset;
 import org.labkey.study.model.VisitDatasetType;
 import org.labkey.study.model.VisitImpl;
@@ -6315,7 +6314,7 @@ public class StudyController extends BaseStudyController
     public static class DatasetDetailRedirectAction extends SimpleRedirectAction<DatasetDetailRedirectForm>
     {
         @Override
-        public URLHelper getRedirectURL(DatasetDetailRedirectForm form)
+        public ActionURL getRedirectURL(DatasetDetailRedirectForm form)
         {
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (study == null)

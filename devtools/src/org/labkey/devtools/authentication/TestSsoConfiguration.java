@@ -30,7 +30,7 @@ public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration<Tes
     }
 
     @Override
-    public URLHelper getUrl(String secret, ViewContext ctx)
+    public URLHelper getUrl(ViewContext ctx)
     {
         ActionURL url = new ActionURL(TestSsoController.TestSsoAction.class, ContainerManager.getRoot());
         url.addParameter("configuration", getRowId());

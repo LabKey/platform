@@ -110,27 +110,6 @@ public class AuthFilter implements Filter
             return;
         }
 
-        // Versions of tomcat prior to 7.0.67 would automatically redirect if a URL with just a context path without
-        // a trailing slash was entered ie: http://www.labkey.org/labkey would automatically redirect to: http://www.labkey.org/labkey/
-        // We need to handle it here otherwise the begin page redirect in index.html will fail: issue 25395
-
-        // getServletPath() will return an empty String when a URL with a context path but no trailing slash is requested
-        if (req.getServletPath().isEmpty())
-        {
-            // now check if this is the case where the request URL contains only the context path
-            if (req.getContextPath() != null && req.getRequestURL().toString().endsWith(req.getContextPath()))
-            {
-                StringBuilder redirectURL = new StringBuilder();
-                redirectURL.append(req.getRequestURL()).append("/");
-                if (!StringUtils.isBlank(req.getQueryString()))
-                {
-                    redirectURL.append("?").append(req.getQueryString());
-                }
-                resp.sendRedirect(redirectURL.toString());
-                return;
-            }
-        }
-
         if (AppProps.getInstance().isSSLRequired())
         {
             // No startup failure, so check for SSL redirection
@@ -167,8 +146,7 @@ public class AuthFilter implements Filter
                 }
                 url = new URL("https", url.getHost(), port, url.getFile());
                 // Use 301 redirect instead of a 302 to indicate it's a permanent move
-                resp.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
-                resp.setHeader("Location", resp.encodeRedirectURL(url.toString()));
+                ExceptionUtil.unsafeRedirect(resp, url.toString(), HttpServletResponse.SC_MOVED_PERMANENTLY);
                 return;
             }
             else if (!AppProps.getInstance().isDevMode())
