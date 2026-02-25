@@ -53,7 +53,6 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -109,7 +108,7 @@ public class AuditController extends SpringActionController
     public class BeginAction extends SimpleRedirectAction
     {
         @Override
-        public URLHelper getRedirectURL(Object o)
+        public ActionURL getRedirectURL(Object o)
         {
             if (getContainer() != null && getContainer().isRoot())
                 return new ActionURL(ShowAuditLogAction.class, getContainer());
