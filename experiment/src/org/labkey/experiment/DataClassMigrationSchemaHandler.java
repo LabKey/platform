@@ -178,23 +178,27 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
 
         DbScope sourceScope = configuration.getSourceScope();
         DbScope targetScope = configuration.getTargetScope();
-        DbSchema biologicsSourceSchema = sourceScope.getSchema("biologics", DbSchemaType.Migration);
-        DbSchema biologicsTargetSchema = targetScope.getSchema("biologics", DbSchemaType.Module);
 
-        if (biologicsSourceSchema.existsInDatabase() && biologicsTargetSchema.existsInDatabase())
+        if (sourceScope.getSchemaNames().contains("biologics") && targetScope.getSchemaNames().contains("biologics"))
         {
-            TableInfo sourceTable = biologicsSourceSchema.getTable("SequenceIdentity");
-            TableInfo targetTable = biologicsTargetSchema.getTable("SequenceIdentity");
+            DbSchema biologicsSourceSchema = sourceScope.getSchema("biologics", DbSchemaType.Migration);
+            DbSchema biologicsTargetSchema = targetScope.getSchema("biologics", DbSchemaType.Module);
 
-            DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceTable, targetTable, DbSchemaType.Module, true, null, new DefaultMigrationSchemaHandler(biologicsTargetSchema)
+            if (biologicsSourceSchema.existsInDatabase() && biologicsTargetSchema.existsInDatabase())
             {
-                @Override
-                public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
+                TableInfo sourceTable = biologicsSourceSchema.getTable("SequenceIdentity");
+                TableInfo targetTable = biologicsTargetSchema.getTable("SequenceIdentity");
+
+                DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceTable, targetTable, DbSchemaType.Module, true, null, new DefaultMigrationSchemaHandler(biologicsTargetSchema)
                 {
-                    // This is a global table, so no container clause. Just query and copy the sequence IDs referenced by data class rows we copied.
-                    return new InClause(FieldKey.fromParts("SequenceId"), SEQUENCE_IDS);
-                }
-            });
+                    @Override
+                    public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
+                    {
+                        // This is a global table, so no container clause. Just query and copy the sequence IDs referenced by data class rows we copied.
+                        return new InClause(FieldKey.fromParts("SequenceId"), SEQUENCE_IDS);
+                    }
+                });
+            }
         }
     }
 

@@ -1605,6 +1605,7 @@ public class SqlScriptController extends SpringActionController
         {
             LOG.info("Executing {}.{}(ModuleContext moduleContext)", _method.getDeclaringClass().getSimpleName(), _method.getName());
             _method.invoke(_code, _ctx);
+            LOG.info("Finished executing {}.{}(ModuleContext moduleContext)", _method.getDeclaringClass().getSimpleName(), _method.getName());
             return true;
         }
 

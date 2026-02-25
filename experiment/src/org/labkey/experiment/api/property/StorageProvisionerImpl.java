@@ -615,8 +615,13 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
     public String makeTableName(DomainKind<?> kind, Domain domain)
     {
-        String rawTableName = String.format("c%sd%s_%s", domain.getContainer().getRowId(), domain.getTypeId(), domain.getName());
-        SqlDialect dialect = kind.getScope().getSqlDialect();
+        return makeTableName(kind.getScope().getSqlDialect(), domain.getContainer(), domain.getTypeId(), domain.getName());
+    }
+
+    // Needed by ExperimentUpgradeCode.shortenAllStorageNames(). When that code is removed, combine this with above variant.
+    public String makeTableName(SqlDialect dialect, Container c, int typeId, String domainName)
+    {
+        String rawTableName = String.format("c%sd%s_%s", c.getRowId(), typeId, domainName);
         return new StorageNameGenerator(dialect).generateTableName(rawTableName);
     }
 
