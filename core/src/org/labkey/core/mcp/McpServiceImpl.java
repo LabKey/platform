@@ -1,4 +1,4 @@
-package org.labkey.core.mpc;
+package org.labkey.core.mcp;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
@@ -35,6 +35,7 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
+import org.springframework.ai.google.genai.common.GoogleGenAiThinkingLevel;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
@@ -624,10 +625,6 @@ public class McpServiceImpl implements McpService
         @Override
         public String getModel()
         {
-//            return "gemini-2.5-flash";
-            // gemini-2.5-flash
-            // gemini-2.5-pro
-            // gemini-3-flash-preview
             return "gemini-3-pro-preview";
         }
 
@@ -654,6 +651,95 @@ public class McpServiceImpl implements McpService
             }
         }
 
+/*
+        Generation Options
+
+            ┌──────────────────┬──────────────┬─────────────────────────────────────────────────┐
+            │      Option      │     Type     │                   Description                   │
+            ├──────────────────┼──────────────┼─────────────────────────────────────────────────┤
+            │ model            │ String       │ Model name (e.g., gemini-2.5-pro-preview)       │
+            ├──────────────────┼──────────────┼─────────────────────────────────────────────────┤
+            │ temperature      │ Double       │ Randomness of predictions (0.0–2.0)             │
+            ├──────────────────┼──────────────┼─────────────────────────────────────────────────┤
+            │ topP             │ Double       │ Nucleus sampling threshold                      │
+            ├──────────────────┼──────────────┼─────────────────────────────────────────────────┤
+            │ topK             │ Integer      │ Top-k sampling parameter                        │
+            ├──────────────────┼──────────────┼─────────────────────────────────────────────────┤
+            │ candidateCount   │ Integer      │ Number of candidate responses to generate       │
+            ├──────────────────┼──────────────┼─────────────────────────────────────────────────┤
+            │ maxOutputTokens  │ Integer      │ Maximum tokens in the response                  │
+            ├──────────────────┼──────────────┼─────────────────────────────────────────────────┤
+            │ frequencyPenalty │ Double       │ Penalizes frequently used tokens                │
+            ├──────────────────┼──────────────┼─────────────────────────────────────────────────┤
+            │ presencePenalty  │ Double       │ Penalizes tokens already present in the output  │
+            ├──────────────────┼──────────────┼─────────────────────────────────────────────────┤
+            │ stopSequences    │ List<String> │ Sequences that stop generation when encountered │
+            └──────────────────┴──────────────┴─────────────────────────────────────────────────┘
+
+        Response Format
+
+            ┌──────────────────┬────────┬───────────────────────────────────┐
+            │      Option      │  Type  │            Description            │
+            ├──────────────────┼────────┼───────────────────────────────────┤
+            │ responseMimeType │ String │ text/plain or application/json    │
+            ├──────────────────┼────────┼───────────────────────────────────┤
+            │ responseSchema   │ String │ JSON schema for structured output │
+            └──────────────────┴────────┴───────────────────────────────────┘
+
+        Thinking (Extended Reasoning)
+
+            ┌──────────────────────────────┬──────────────────────────┬────────────────────────────────────────────────────┐
+            │            Option            │           Type           │                    Description                     │
+            ├──────────────────────────────┼──────────────────────────┼────────────────────────────────────────────────────┤
+            │ thinkingBudget               │ Integer                  │ Token budget for the thinking process              │
+            ├──────────────────────────────┼──────────────────────────┼────────────────────────────────────────────────────┤
+            │ includeThoughts              │ Boolean                  │ Whether to include reasoning steps in the response │
+            ├──────────────────────────────┼──────────────────────────┼────────────────────────────────────────────────────┤
+            │ thinkingLevel                │ GoogleGenAiThinkingLevel │ Enum: THINKING_LEVEL_UNSPECIFIED, LOW, HIGH        │
+            ├──────────────────────────────┼──────────────────────────┼────────────────────────────────────────────────────┤
+            │ includeExtendedUsageMetadata │ Boolean                  │ Include token-level usage details in the response  │
+            └──────────────────────────────┴──────────────────────────┴────────────────────────────────────────────────────┘
+
+        Caching
+
+            ┌────────────────────┬──────────┬───────────────────────────────────────────────┐
+            │       Option       │   Type   │                  Description                  │
+            ├────────────────────┼──────────┼───────────────────────────────────────────────┤
+            │ cachedContentName  │ String   │ Name of cached content to reuse               │
+            ├────────────────────┼──────────┼───────────────────────────────────────────────┤
+            │ useCachedContent   │ Boolean  │ Whether to use cached content if available    │
+            ├────────────────────┼──────────┼───────────────────────────────────────────────┤
+            │ autoCacheThreshold │ Integer  │ Auto-cache prompts exceeding this token count │
+            ├────────────────────┼──────────┼───────────────────────────────────────────────┤
+            │ autoCacheTtl       │ Duration │ TTL for auto-cached content                   │
+            └────────────────────┴──────────┴───────────────────────────────────────────────┘
+
+        Tools / Function Calling
+
+            ┌──────────────────────────────┬─────────────────────┬───────────────────────────────────────────────────┐
+            │            Option            │        Type         │                    Description                    │
+            ├──────────────────────────────┼─────────────────────┼───────────────────────────────────────────────────┤
+            │ toolCallbacks                │ List<ToolCallback>  │ Tool implementations for function calling         │
+            ├──────────────────────────────┼─────────────────────┼───────────────────────────────────────────────────┤
+            │ toolNames                    │ Set<String>         │ Tool names resolved at runtime                    │
+            ├──────────────────────────────┼─────────────────────┼───────────────────────────────────────────────────┤
+            │ internalToolExecutionEnabled │ Boolean             │ Whether Spring AI handles the tool execution loop │
+            ├──────────────────────────────┼─────────────────────┼───────────────────────────────────────────────────┤
+            │ toolContext                  │ Map<String, Object> │ Contextual data passed to tools                   │
+            └──────────────────────────────┴─────────────────────┴───────────────────────────────────────────────────┘
+
+        Safety & Search
+
+            ┌───────────────────────┬────────────────────────────────┬────────────────────────────────────┐
+            │        Option         │              Type              │            Description             │
+            ├───────────────────────┼────────────────────────────────┼────────────────────────────────────┤
+            │ safetySettings        │ List<GoogleGenAiSafetySetting> │ Safety filters and harm thresholds │
+            ├───────────────────────┼────────────────────────────────┼────────────────────────────────────┤
+            │ googleSearchRetrieval │ Boolean                        │ Enable Google Search grounding     │
+            ├───────────────────────┼────────────────────────────────┼────────────────────────────────────┤
+            │ labels                │ Map<String, String>            │ Custom labels attached to requests │
+            └───────────────────────┴────────────────────────────────┴────────────────────────────────────┘
+*/
         public GoogleGenAiChatOptions getChatOptions()
         {
             GoogleGenAiChatOptions chatOptions = GoogleGenAiChatOptions.builder()

@@ -525,7 +525,7 @@ public class MultiChoice
     }
 
 
-    public static class Converter implements org.apache.commons.beanutils.Converter, Function<Object,Object>
+    public static class Converter implements org.apache.commons.beanutils.Converter, SimpleConvert
     {
         private Converter()
         {
@@ -558,7 +558,7 @@ public class MultiChoice
         }
 
         @Override
-        final public Object apply(Object o)
+        final public Object convert(Object o)
         {
             return convert(MultiChoice.Array.class, o);
         }

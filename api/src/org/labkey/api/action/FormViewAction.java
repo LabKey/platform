@@ -95,7 +95,7 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
             {
                 URLHelper url = getSuccessURL(form);
                 if (null != url)
-                    return HttpView.redirect(url, false);
+                    return HttpView.redirect(url);
                 try (Timing ignored = MiniProfiler.step("createView"))
                 {
                     ModelAndView successView = getSuccessView(form);

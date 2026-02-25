@@ -14,6 +14,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
@@ -104,6 +105,7 @@ public class GridViewAuditProvider extends AbstractAuditTypeProvider implements 
                 }
                 else if (COLUMN_NAME_CUSTOM_VIEW_OWNER.equalsIgnoreCase(col.getName()))
                 {
+                    UserIdForeignKey.initColumn(col);
                     col.setLabel("View Owner");
                 }
             }

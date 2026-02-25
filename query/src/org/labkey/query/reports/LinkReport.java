@@ -15,25 +15,25 @@
  */
 package org.labkey.query.reports;
 
-import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ImageUtil;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnsafeExternalRedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
 import java.net.URL;
 import java.net.UnknownHostException;
 
-/**
- * User: kevink
- * Date: 6/21/12
- */
 public class LinkReport extends BaseRedirectReport
 {
+    private static final Logger LOG = LogHelper.getLogger(LinkReport.class, "Link report warnings");
     public static final String TYPE = ReportService.LINK_REPORT_TYPE;
 
     @Override
@@ -65,7 +65,7 @@ public class LinkReport extends BaseRedirectReport
         catch (UnknownHostException | ClassCastException e)
         {
             // ClassCastException is most likely a rendering error in flying saucer
-            LogManager.getLogger(LinkReport.class).warn("Error rendering link report thumbnail: " + e.getMessage());
+            LOG.warn("Error rendering link report thumbnail: {}", e.getMessage());
         }
         catch (Exception e)
         {
@@ -97,5 +97,18 @@ public class LinkReport extends BaseRedirectReport
     public boolean isSandboxed()
     {
         return true;
+    }
+
+    @Override
+    protected void redirect(ViewContext context)
+    {
+        URLHelper url = getURLHelper(context);
+        if (url != null)
+        {
+            // It's (relatively) safe to bypass the external redirect allow list here because a user who is Author or
+            // above has created and shared this link report. We should consider requiring higher permissions to create
+            // or edit a link report.
+            throw new UnsafeExternalRedirectException(url);
+        }
     }
 }

@@ -23,4 +23,6 @@ public interface SimpleConvert
     {
         return this;
     }
+
+    SimpleConvert identity = (v) -> v;
 }
