@@ -109,7 +109,7 @@ public class TestSecondaryController extends SpringActionController
         public ModelAndView getView(TestSecondaryForm form, boolean reshow, BindException errors)
         {
             if (!getUser().isGuest())
-                return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), null, getUser()), false);
+                return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), null, getUser()));
 
             PrimaryAuthenticationResult result = AuthenticationManager.getPrimaryAuthenticationResult(getViewContext().getSession());
 

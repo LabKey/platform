@@ -87,6 +87,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -493,7 +494,15 @@ public class StatusController extends SpringActionController
 
             if (sf.getDataUrl() != null)
             {
-                throw new RedirectException(sf.getDataUrl());
+                try
+                {
+                    URLHelper url = new URLHelper(sf.getDataUrl());
+                    throw new RedirectException(url);
+                }
+                catch (URISyntaxException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
 
             return urlDetails(c, form.getRowId());

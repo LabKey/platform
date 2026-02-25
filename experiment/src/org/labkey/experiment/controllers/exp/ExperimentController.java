@@ -1887,7 +1887,7 @@ public class ExperimentController extends SpringActionController
             }
             catch (FileNotFoundException e)
             {
-                getViewContext().getResponse().sendRedirect(getViewContext().getRequest().getContextPath() + "/experiment/ExperimentRunNotFound.gif");
+                throw new RedirectException(new URLHelper(getViewContext().getRequest().getContextPath() + "/experiment/ExperimentRunNotFound.gif"));
             }
             finally
             {
@@ -2511,7 +2511,7 @@ public class ExperimentController extends SpringActionController
                     URLHelper url = h.getShowFileURL(_data);
                     if (url != null)
                     {
-                        throw new RedirectException(url, false);
+                        throw new RedirectException(url);
                     }
                 }
             }
@@ -6434,7 +6434,7 @@ public class ExperimentController extends SpringActionController
 
                     if (form.getReturnUrl() != null)
                     {
-                        throw new RedirectException(form.getReturnUrl());
+                        throw new RedirectException(form.getReturnActionURL());
                     }
                     throw new RedirectException(ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer()));
                 }
