@@ -91,7 +91,7 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
                         sep = "\t";
                     }
                     pw.println();
-                    writeRow(row, columns, pw, tsvWriter);
+                    writeRow(row, columns, pw, tsvWriter); // GitHub Issue #875: write the first row regardless of whether we had a header or not
                 }
 
                 // write the remaining rows
