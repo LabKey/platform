@@ -101,6 +101,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }
 
         this.allowFacet = false;
+        if (this.column.inputType === 'file')
+            return this.allowFacet;
+
         switch (this.column.facetingBehaviorType) {
 
             case 'ALWAYS_ON':

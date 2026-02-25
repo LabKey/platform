@@ -466,12 +466,12 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     @Override
     public boolean isFilterable()
     {
-        return false;
+        return true;
     }
     @Override
     public boolean isSortable()
     {
-        return false;
+        return true;
     }
 
 }
