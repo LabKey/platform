@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -456,6 +457,30 @@ public interface ColumnInfo extends ColumnRenderProperties
         }
 
         return sb.toString();
+    }
+
+    /// The returned Function<Object,Object> should throw ConversionException (undeclared RuntimeException).
+    /// This method does not handle compound conversions e.g. MissingValues or Out-of-range indicators.
+    /// Also, converting the pieces of a MVFK column is handled by QUS.
+    @Override
+    @Transient
+    default SimpleConvert getConvertFn()
+    {
+        return getDefaultConvertFn(this);
+    }
+
+    @Override
+    default Object convert(Object o) throws ConversionException
+    {
+        return getConvertFn().convert(o);
+    }
+
+    static SimpleConvert getDefaultConvertFn(ColumnInfo col)
+    {
+        // NOTE for MultiValued columns e.g. col.isMultiValued() || col.getFk() instanceof MultiValuedForeignKey
+        // MultiValuedDisplayColumn currently relies on the parent fk column hanldling convert from String to the element type (see MultiValuedRenderContext.get())
+        // However, This behavior is obviously wrong for MVFC that support insert/update, callers must be aware of this unfortunately (e.g. TableViewForm and CoerceDataIterator)
+        return ColumnRenderProperties.getDefaultConvertFn(col);
     }
 }
 
