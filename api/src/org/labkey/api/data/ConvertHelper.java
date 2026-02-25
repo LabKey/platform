@@ -804,6 +804,9 @@ public class ConvertHelper implements PropertyEditorRegistrar
         }
         catch (ClassCastException ex)
         {
+            // for testing let's blow up dramatically here
+            if (cl.isPrimitive())
+                throw new IllegalArgumentException("primitive type is not allowed: " + cl.getName());
             throw new ConversionException("Could not convert value to " + cl.getSimpleName());
         }
     }
