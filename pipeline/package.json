@@ -14,7 +14,7 @@
     "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile"
   },
   "dependencies": {
-    "@labkey/components": "7.20.3-fb-package-updates-0226-deux.0"
+    "@labkey/components": "7.20.5-fb-package-updates-0226-deux.0"
   },
   "devDependencies": {
     "@labkey/build": "8.8.1-fb-package-updates-0226-deux.0",
