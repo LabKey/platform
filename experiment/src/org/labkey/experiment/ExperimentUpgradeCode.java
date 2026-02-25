@@ -519,6 +519,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
      * Drop the classid column and add a rowId column to existing provisioned DataClass tables.
      */
     @SuppressWarnings("unused")
+    @DeferredUpgrade
     public static void addRowIdToProvisionedDataClassTables(ModuleContext context)
     {
         if (context.isNewInstall())
