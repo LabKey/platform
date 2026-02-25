@@ -48,7 +48,6 @@ import org.labkey.test.util.StudyHelper;
 import org.labkey.test.util.TestDataGenerator;
 import org.labkey.test.util.data.TestDataUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -149,8 +148,11 @@ public class AssayTest extends AbstractAssayTest
         log("Starting Assay security scenario tests");
         setupEnvironment();
         setupPipeline(getProjectName());
-        SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(), StudyHelper.SPECIMEN_ARCHIVE_A, FileUtil.appendName(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
-        importer.importAndWaitForComplete();
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(), StudyHelper.SPECIMEN_ARCHIVE_A, FileUtil.appendName(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
+            importer.importAndWaitForComplete();
+        }
         defineAssay();
         uploadRuns(TEST_ASSAY_FLDR_LAB1, TEST_ASSAY_USR_TECH1);
         editResults();

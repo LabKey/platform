@@ -15,6 +15,7 @@
  */
 package org.labkey.test.tests.study;
 
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
@@ -104,6 +105,7 @@ public class SpecimenMergeTest extends BaseWebDriverTest
 
     protected void setUpSteps()
     {
+        Assume.assumeTrue("Specimen module not present", _studyHelper.isSpecimenModulePresent());
         _containerHelper.createProject(PROJECT_NAME, null);
         _containerHelper.createSubfolder(PROJECT_NAME, PROJECT_NAME, FOLDER_NAME, "Study", null);
         _containerHelper.enableModule("Specimen");
