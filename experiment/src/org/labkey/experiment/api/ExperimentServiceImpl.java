@@ -1289,7 +1289,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
                 .append(" INNER JOIN ").append(table, "t")
-                .append(" ON t.lsid = d.lsid")
+                .append(" ON t.rowId = d.RowId")
                 .append(" LEFT OUTER JOIN ").append(getTinfoDataIndexed(), "di")
                 .append(" ON d.RowId = di.DataId")
                 .append(" WHERE d.classId = ?").add(dataClass.getRowId())
@@ -1846,7 +1846,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
                 .append(", ").append(table, "t")
-                .append(" WHERE t.lsid = d.lsid")
+                .append(" WHERE t.rowId = d.RowId")
                 .append(" AND d.classId = ?").add(dataClass.getRowId());
 
         List<Data> datas = new SqlSelector(table.getSchema().getScope(), sql).getArrayList(Data.class);
@@ -1871,7 +1871,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
                 .append(", ").append(table, "t")
-                .append(" WHERE t.lsid = d.lsid")
+                .append(" WHERE t.rowId = d.RowId")
                 .append(" AND d.classId = ?").add(dataClass.getRowId())
                 .append(" AND d.Name = ?").add(name);
 
@@ -1889,7 +1889,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
                 .append(", ").append(table, "t")
-                .append(" WHERE t.lsid = d.lsid")
+                .append(" WHERE t.rowId = d.RowId")
                 .append(" AND d.classId = ?").add(dataClass.getRowId())
                 .append(" AND d.rowId = ?").add(rowId);
 
@@ -5307,7 +5307,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
 
             List<String> allLsids = new ArrayList<>(datas.size());
-            Map<Long, List<String>> lsidsByClass = new LinkedHashMap<>();
+            Map<Long, List<Long>> rowIdsByClass = new LinkedHashMap<>();
 
             for (Data data : datas)
             {
@@ -5340,8 +5340,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 if (data.getClassId() != null)
                 {
-                    List<String> byClass = lsidsByClass.computeIfAbsent(data.getClassId(), k -> new ArrayList<>(10));
-                    byClass.add(data.getLSID());
+                    List<Long> byClass = rowIdsByClass.computeIfAbsent(data.getClassId(), k -> new ArrayList<>(10));
+                    byClass.add(data.getRowId());
                 }
                 allLsids.add(data.getLSID());
             }
@@ -5368,18 +5368,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // exp.DataIndexed handled via a ON DELETE CASCADE foreign key
 
             // DELETE FROM provisioned dataclass tables
-            for (var classId : lsidsByClass.keySet())
+            for (var classId : rowIdsByClass.keySet())
             {
                 ExpDataClassImpl dataClass = getDataClass(classId);
                 if (dataClass == null)
                     throw new SQLException("DataClass not found '" + classId + "'");
 
-                List<String> lsids = lsidsByClass.get(classId);
-                if (!lsids.isEmpty())
+                List<Long> rowIds = rowIdsByClass.get(classId);
+                if (!rowIds.isEmpty())
                 {
                     TableInfo t = dataClass.getTinfo();
-                    SQLFragment sql = new SQLFragment("DELETE FROM ").append(t).append(" WHERE lsid ");
-                    dialect.appendInClauseSql(sql, lsids);
+                    SQLFragment sql = new SQLFragment("DELETE FROM ").append(t).append(" WHERE rowId ");
+                    dialect.appendInClauseSql(sql, rowIds);
                     executor.execute(sql);
                 }
             }
@@ -6098,9 +6098,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             TableInfo table = dataClass.getTinfo();
 
             SQLFragment sql = new SQLFragment()
-                    .append("SELECT t.lsid FROM ").append(getTinfoData(), "d")
+                    .append("SELECT d.lsid FROM ").append(getTinfoData(), "d")
                     .append(" LEFT OUTER JOIN ").append(table, "t")
-                    .append(" ON d.lsid = t.lsid")
+                    .append(" ON d.RowId = t.rowId")
                     .append(" WHERE d.Container = ?").add(dataClass.getContainer().getEntityId())
                     .append(" AND d.ClassId = ?").add(dataClass.getRowId());
 
