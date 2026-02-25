@@ -125,7 +125,7 @@ public class PlateController extends SpringActionController
     public static class BeginAction extends SimpleRedirectAction
     {
         @Override
-        public URLHelper getRedirectURL(Object o)
+        public ActionURL getRedirectURL(Object o)
         {
             return new ActionURL(PlateListAction.class, getContainer());
         }
@@ -198,7 +198,7 @@ public class PlateController extends SpringActionController
     public static class PlateDetailsAction extends SimpleRedirectAction<RowIdForm>
     {
         @Override
-        public URLHelper getRedirectURL(RowIdForm form)
+        public ActionURL getRedirectURL(RowIdForm form)
         {
             Plate plate = PlateManager.get().getPlate(getContainer(), form.getRowId());
             if (plate == null)

@@ -10,7 +10,7 @@ public class PermanentRedirectException extends RedirectException
 {
     public PermanentRedirectException(@NotNull URLHelper url)
     {
-        super(url, false);
+        super(url);
     }
 
     @Override

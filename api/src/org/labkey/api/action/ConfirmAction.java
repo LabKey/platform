@@ -77,7 +77,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
                     ModelAndView mv = getSuccessView(form);
                     if (null != mv)
                         return mv;
-                    throw new RedirectException(getSuccessURL(form), false);
+                    throw new RedirectException(getSuccessURL(form));
                 }
             }
             else
