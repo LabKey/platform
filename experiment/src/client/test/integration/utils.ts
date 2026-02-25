@@ -1,5 +1,6 @@
 import {
     ExperimentCRUDUtils,
+    generateFieldName,
     IntegrationTestServer,
     RequestOptions,
     selectRandomN,
@@ -902,4 +903,17 @@ export async function insertRowsExpectError(server: IntegrationTestServer, rows:
 
 export async function updateRowsExpectError(server: IntegrationTestServer, rows: any[], schemaName: string, queryName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
     return insertRowsExpectError(server, rows, schemaName, queryName, error, folderOptions, userOptions, true);
+}
+
+export function canNameBeUsedInImport(name: string) {
+    return name.indexOf(',') === -1 && name.indexOf('\t') === -1 && name.indexOf('"') === -1 && name.indexOf('\n') === -1;
+}
+
+export function generateFieldNameForImport(length: number = 10, charset?: string) {
+    let fieldName = generateFieldName(length, charset);
+    while (!canNameBeUsedInImport(fieldName))
+    {
+        fieldName = generateFieldName(length, charset);
+    }
+    return fieldName;
 }

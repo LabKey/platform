@@ -42,7 +42,7 @@
 
     // Redirect immediately if terms are blank or null
     if (HtmlString.isBlank(termsHtml))
-        throw new RedirectException(returnUrl, false);
+        throw new RedirectException(returnUrl);
 
     ActionURL formURL = urlFor(AgreeToTermsAction.class);
 %>

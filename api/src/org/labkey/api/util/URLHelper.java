@@ -18,12 +18,15 @@ package org.labkey.api.util;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.json.JSONString;
 import org.junit.Assert;
@@ -38,13 +41,10 @@ import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.lang.reflect.Array;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -56,6 +56,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 
 /**
  * Represents a URL, typically within this instance of LabKey Server.
@@ -128,7 +129,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
         }
 
         if (-1 != p.indexOf(' '))
-            p = StringUtils.replace(p, " ", "%20");
+            p = Strings.CS.replace(p, " ", "%20");
         if (!StringUtils.isEmpty(p))
             _setURI(new URI(p));
         assert _fragment == null : "The call to _setURI unexpectedly resulted in a fragment being set" ;
@@ -907,41 +908,64 @@ public class URLHelper implements Cloneable, Serializable, JSONString
         }
     }
 
-    public boolean isConfiguredExternalHost()
+    // Parameterized to allow unit testing. Caller has trimmed host and checked for null.
+    private static boolean isAllowedExternalHost(@NotNull String host, boolean devMode, Supplier<List<String>> allowedHostsSupplier)
     {
-        String requestedHost = this.getHost();
-        if (StringUtils.trimToNull(requestedHost) != null )
-            return AppProps.getInstance().getExternalRedirectHosts().stream().anyMatch(requestedHost::equalsIgnoreCase);
+        // Allow 'localhost' for servers in dev mode
+        if (devMode && "localhost".equalsIgnoreCase(host))
+            return true;
 
-        return false;
+        // Count the dots in case there's a wild card
+        int dotCount = StringUtils.countMatches(host, '.');
+
+        return allowedHostsSupplier.get().stream()
+            .anyMatch(allowedHost -> isMatch(host, dotCount, allowedHost));
+    }
+
+    private static boolean isMatch(@NotNull String host, int dotCount, @NotNull String allowedHost)
+    {
+        final boolean ret;
+
+        if (allowedHost.startsWith("*."))
+        {
+            // This wild-card pattern matches the host if 1) they have the same number of dots and 2) the host ends with
+            // the portion of the pattern after the wild card.
+            int expectedDotCount = StringUtils.countMatches(allowedHost, '.');
+            ret = (dotCount == expectedDotCount && Strings.CI.endsWith(host, allowedHost.substring(2)));
+        }
+        else
+        {
+            // Non-wild-card pattern must match the entire host
+            ret = Strings.CI.equals(host, allowedHost);
+        }
+
+        return ret;
     }
 
     // Issue 35896 - Disallow external redirects to URLs not on the allowlist
     public boolean isAllowableHost()
     {
-        String host = StringUtils.trimToNull(this.getHost());
+        String host = StringUtils.trimToNull(getHost());
 
         // We have a returnUrl that includes a server host name
         if (host != null)
         {
             // Check if it matches the current server's preferred host name, per the base server URL setting
-            String allowedHost = null;
+            String thisHost = null;
             try
             {
-                allowedHost = new URL(AppProps.getInstance().getBaseServerUrl()).getHost();
+                thisHost = new URI(AppProps.getInstance().getBaseServerUrl()).getHost();
             }
-            catch (MalformedURLException ignored) {}
-
-            if (!host.equalsIgnoreCase(allowedHost))
+            catch (URISyntaxException _)
             {
-                // Server host name that doesn't match, log and possibly reject based on config
-                // Allow 'localhost' for servers in dev mode
-                boolean isConfigured = AppProps.getInstance().isDevMode() && "localhost".equalsIgnoreCase(host);
-                isConfigured |= this.isConfiguredExternalHost();
+            }
 
-                if (!isConfigured)
+            if (!host.equalsIgnoreCase(thisHost))
+            {
+                // Server host name doesn't match base server URL; log and possibly reject based on config.
+                if (!isAllowedExternalHost(host, AppProps.getInstance().isDevMode(), ()->AppProps.getInstance().getExternalRedirectHosts()))
                 {
-                    String logMessageDetails = "returnUrl value: " + this;
+                    String logMessageDetails = "returnUrl value: " + getURIString(true);
                     HttpServletRequest request = HttpView.currentRequest();
                     if (request != null)
                     {
@@ -952,13 +976,12 @@ public class URLHelper implements Cloneable, Serializable, JSONString
                         }
                     }
 
-                    LOG.warn("Rejected external host redirect " + logMessageDetails +
-                            "\nPlease configure external redirect url host from: Admin gear --> Site --> Admin Console --> Settings --> External Redirect Hosts");
+                    LOG.warn("Rejected external host redirect {}\nIf this is a legitimate host that the server should redirect users to, please configure an external redirect host via: Admin gear --> Site --> Admin Console --> Settings --> Allowed External Redirect Hosts", logMessageDetails);
                     return false;
                 }
                 else
                 {
-                    LOG.debug("Detected configured external host returnUrl: " + this);
+                    LOG.debug("Detected configured external host returnUrl: {}", this);
                 }
             }
         }
@@ -1061,6 +1084,67 @@ public class URLHelper implements Cloneable, Serializable, JSONString
             expect("//labkey.test/index.html","//labkey.test/index.html");
             expect("/","/");
             expect("/home/project-begin.view","/home/project-begin.view");
+        }
+
+        @Test
+        public void testAllowedHosts()
+        {
+            // localhost
+            assertTrue(isAllowedExternalHost("localhost", true, List::of));
+            assertFalse(isAllowedExternalHost("localhost", false, List::of));
+            assertTrue(isAllowedExternalHost("localhost", true, ()->List.of("localhost")));
+            assertTrue(isAllowedExternalHost("localhost", true, ()->List.of("localhost")));
+
+            // simple hosts
+            List<String> allowedHosts = List.of(
+                "www.labkey.org",
+                "www.labkey.com",
+                "google.com"
+            );
+
+            // good
+            assertTrue(isAllowedExternalHost("localhost", true, ()->allowedHosts));
+            assertTrue(isAllowedExternalHost("www.labkey.org", true, ()->allowedHosts));
+            assertTrue(isAllowedExternalHost("www.labkey.com", true, ()->allowedHosts));
+            assertTrue(isAllowedExternalHost("google.com", true, ()->allowedHosts));
+
+            // bad
+            assertFalse(isAllowedExternalHost("labkey.org", true, ()->allowedHosts));
+            assertFalse(isAllowedExternalHost("labkey.com", true, ()->allowedHosts));
+            assertFalse(isAllowedExternalHost("sub.labkey.com", true, ()->allowedHosts));
+            assertFalse(isAllowedExternalHost("sub.www.labkey.com", true, ()->allowedHosts));
+            assertFalse(isAllowedExternalHost("www.google.com", true, ()->allowedHosts));
+
+            // add one more
+            List<String> allowedHosts2 = new ArrayList<>(allowedHosts);
+            allowedHosts2.add("www.google.com");
+            assertTrue(isAllowedExternalHost("www.google.com", true, ()->allowedHosts2));
+
+            // test wild cards
+            List<String> wildCardHosts = List.of(
+                "*.labkey.com",
+                "labkey.com",
+                "*.lkpoc.labkey.com",
+                "*.trial.labkey.host",
+                "*.google.com"
+            );
+
+            // good
+            assertTrue(isAllowedExternalHost("www.labkey.com", true, ()->wildCardHosts));
+            assertTrue(isAllowedExternalHost("lkpoc.labkey.com", true, ()->wildCardHosts));
+            assertTrue(isAllowedExternalHost("sub1.labkey.com", true, ()->wildCardHosts));
+            assertTrue(isAllowedExternalHost("sub2.labkey.com", true, ()->wildCardHosts));
+            assertTrue(isAllowedExternalHost("labkey.com", true, ()->wildCardHosts));
+            assertTrue(isAllowedExternalHost("sub1.lkpoc.labkey.com", true, ()->wildCardHosts));
+            assertTrue(isAllowedExternalHost("sub2.lkpoc.labkey.com", true, ()->wildCardHosts));
+            assertTrue(isAllowedExternalHost("sub1.trial.labkey.host", true, ()->wildCardHosts));
+            assertTrue(isAllowedExternalHost("sub2.trial.labkey.host", true, ()->wildCardHosts));
+
+            // bad
+            assertFalse(isAllowedExternalHost("trial.labkey.host", true, ()->wildCardHosts));
+            assertFalse(isAllowedExternalHost("sub1.sub2.lkpoc.labkey.com", true, ()->wildCardHosts));
+            assertFalse(isAllowedExternalHost("google.com", true, ()->wildCardHosts));
+            assertFalse(isAllowedExternalHost("sub1.sub2.labkey.com", true, ()->wildCardHosts));
         }
     }
 }

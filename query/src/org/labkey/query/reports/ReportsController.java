@@ -1019,7 +1019,7 @@ public class ReportsController extends SpringActionController
             }
             catch (RedirectException re)
             {
-                // Link reports throw RedirectException... pass it on
+                // Link and attachment reports throw RedirectException... pass it on
                 throw re;
             }
             catch (RuntimeException e)

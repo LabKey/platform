@@ -398,7 +398,7 @@ public class SecurityController extends SpringActionController
     public class BeginAction extends SimpleRedirectAction<Object>
     {
         @Override
-        public URLHelper getRedirectURL(Object o)
+        public ActionURL getRedirectURL(Object o)
         {
             if (null == getContainer() || getContainer().isRoot())
             {

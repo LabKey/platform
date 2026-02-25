@@ -22,7 +22,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 
@@ -36,7 +35,7 @@ import java.util.Set;
 public class ReimportRedirectAction extends SimpleRedirectAction<ProtocolIdForm>
 {
     @Override
-    public URLHelper getRedirectURL(ProtocolIdForm form)
+    public ActionURL getRedirectURL(ProtocolIdForm form)
     {
         Set<String> selectedRunIds = DataRegionSelection.getSelected(getViewContext(), true);
         if (selectedRunIds.isEmpty())
