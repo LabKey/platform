@@ -1093,6 +1093,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 // ConvertHelper used to short-circuit null which would break this test
                 var a = ConvertUtils.convert((String)null, MultiChoice.Array.class);
                 var b = ConvertHelper.convert(null, MultiChoice.Array.class);
+                assertNotNull(a);
                 assertEquals(a,b);
             }
         }
