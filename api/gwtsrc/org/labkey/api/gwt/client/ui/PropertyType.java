@@ -40,7 +40,6 @@ public enum PropertyType
     xsdTime("http://www.w3.org/2001/XMLSchema#time", true, "Time", null, "time"),
     expFileLink("http://cpas.fhcrc.org/exp/xml#fileLink", false, "File"),
     expAttachment("http://www.labkey.org/exp/xml#attachment", false, "Attachment"),
-    expFlag("http://www.labkey.org/exp/xml#flag", false, "Flag (String)"),
     xsdFloat("http://www.w3.org/2001/XMLSchema#float", true, "Number (Float)", "Float", "float"),
     xsdDecimal("http://www.w3.org/2001/XMLSchema#decimal", true, "Number (Decimal)", "Decimal", "float"),
     xsdLong("http://www.w3.org/2001/XMLSchema#long", true, "Long Integer", "Long", "int"),
