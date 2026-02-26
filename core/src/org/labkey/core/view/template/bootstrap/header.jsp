@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="jakarta.servlet.http.HttpSession" %>
 <%@ page import="org.labkey.api.admin.CoreUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
@@ -45,15 +44,13 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.Header" %>
 <%@ page import="static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY" %>
 <%@ page import="static org.labkey.api.util.DOM.IMG" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.src" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.alt" %>
 <%@ page import="static org.labkey.api.util.DOM.A" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.href" %>
-<%@ page import="org.labkey.core.view.template.bootstrap.Header" %>
-<%@ page import="java.lang.Override" %>
-<%@ page import="java.lang.String" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
