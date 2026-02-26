@@ -233,9 +233,6 @@ public class AssayDomainServiceImpl implements AssayDomainService, ContainerUser
             gwtDomain.setFields(fields);
             gwtDomain.setMandatoryFieldNames(mandatoryPropertyDescriptors);
 
-            if (isResultsDomain)
-                gwtDomain.setAllowFlagProperties(provider.supportsFlagColumnType(ExpProtocol.AssayDomainTypes.Result));
-
             gwtDomains.add(gwtDomain);
         }
 
