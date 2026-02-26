@@ -50,7 +50,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Provides static functions for help with sending email.
@@ -64,7 +63,7 @@ public class MailHelper
 
     // Transport providers
     private static final SmtpTransportProvider _smtpProvider = new SmtpTransportProvider();
-    private static final List<EmailTransportProvider> _providers = new CopyOnWriteArrayList<>(List.of(_smtpProvider));
+    private static final List<EmailTransportProvider> _providers = new ArrayList<>(List.of(_smtpProvider));
 
     // Active provider (set during initialization)
     private static EmailTransportProvider _activeProvider = null;
@@ -132,6 +131,11 @@ public class MailHelper
     public static void setSession(Session session)
     {
         _smtpProvider.setSession(session);
+
+        if (session != null)
+        {
+            _activeProvider = _smtpProvider;
+        }
     }
 
     /**

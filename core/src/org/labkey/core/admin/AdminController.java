@@ -412,12 +412,14 @@ import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.href;
 import static org.labkey.api.util.DOM.Attribute.method;
 import static org.labkey.api.util.DOM.Attribute.name;
+import static org.labkey.api.util.DOM.Attribute.src;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.Attribute.title;
 import static org.labkey.api.util.DOM.Attribute.type;
 import static org.labkey.api.util.DOM.Attribute.value;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.LI;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.STYLE;
@@ -8799,21 +8801,14 @@ public class AdminController extends SpringActionController
                     .orElseThrow(() -> new ConfigurationException("Could not find _images directory in core module"));
                 String gifDataUri = "data:image/gif;base64," + java.util.Base64.getEncoder().encodeToString(java.nio.file.Files.readAllBytes(imagesDir.resolveChild("paperclip.gif").toNioPathForRead()));
 
-                msg.setEncodedHtmlContent("<html><body>" +
-                    "<table width='100%' style='max-width:600px;'>" +
-                    "<tr><td style='background:#f0f0f0; padding:20px; text-align:center;'>" +
-                    "<img src=\"" + logoUrl + "\" alt=\"LabKey Logo\" height='40' />" +
-                    "</td></tr>" +
-                    "<tr><td style='padding:20px;'>" +
-                    "<p>This is a <strong>test email</strong> with HTML content, attachment, and multiple images.</p>" +
-                    "<p><strong>External URL image</strong> (should remain unchanged):</p>" +
-                    "<img src=\"" + logoUrl + "\" alt=\"LabKey Logo\" height='30' />" +
-                    "<p><strong>Data URI image</strong> (should be converted to CID attachment):</p>" +
-                    "<img src=\"" + gifDataUri + "\" alt=\"Paperclip\" height='30' />" +
-                    "<p>Sent via " + MailHelper.getActiveProvider().getName() + ".</p>" +
-                    "</td></tr>" +
-                    "</table>" +
-                    "</body></html>");
+                msg.setEncodedHtmlContent(createHtmlFragment(
+                    DIV("This is a ", SPAN(at(style, "font-weight:bold"), "test email"), " with HTML content, attachment, and multiple images."),
+                    DIV(SPAN(at(style, "font-weight:bold"), "External URL image"), " (should remain unchanged):"),
+                    IMG(at(src, logoUrl, style, "height:30px")),
+                    DIV(SPAN(at(style, "font-weight:bold"), "Data URI image"), " (should be converted to CID attachment):"),
+                    IMG(at(src, gifDataUri, style, "height:30px")),
+                    DIV("Sent via ", MailHelper.getActiveProvider().getName(), ".")
+                ).toString());
                 msg.addAttachment(tempFile);
 
                 MailHelper.send(msg, getUser(), getContainer());
