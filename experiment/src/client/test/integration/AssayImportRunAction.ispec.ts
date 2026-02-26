@@ -112,9 +112,15 @@ async function verifyPropertiesFilesOnServer(
     requestOptions?: RequestOptions
 ): Promise<void> {
     const response = await server.request(
-        '_webdav',
-        '%40files/assaydata',
-        (agent, url) => agent.get(url.replace('.view', '') + '?method=JSON'),
+        'fakeController',
+        'fakeAction',
+        (agent, url) => {
+            // Note: this is a hack to allow us to make requests to the webdav controller. The IntegrationTestServer
+            // request method uses ActionURL to generate URLS, but webdav URLs are not ActionURLs, so we need to
+            // override the AgentProvider to generate the proper webdav URL.
+            url = `/_webdav/${requestOptions.containerPath}/%40files/assaydata?method=JSON`;
+            return agent.get(url);
+        },
         requestOptions
     );
 

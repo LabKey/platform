@@ -99,9 +99,9 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     {
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
             new PropertyStorageSpec("genId", JdbcType.INTEGER),
-            new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false),
-            new PropertyStorageSpec("name", JdbcType.VARCHAR, 200),
-            new PropertyStorageSpec("classid", JdbcType.INTEGER)
+            new PropertyStorageSpec("rowId", JdbcType.INTEGER).setNullable(false),
+            new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false), // TODO: expdataclass.lsid is deprecated, use rowId
+            new PropertyStorageSpec("name", JdbcType.VARCHAR, 200)
         )));
 
         Set<String> names = new HashSet<>();
@@ -116,13 +116,15 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         RESERVED_NAMES = DomainUtil.getNamesAndLabels(names);
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-                // NOTE: We join to exp.data using LSID instead of rowid for insert performance -- we will generate
-                // the LSID once on the server and insert into exp.object, exp.data, and the provisioned table at the same time.
+                new PropertyStorageSpec.ForeignKey("rowId", "exp", "Data", "RowId", null, false),
+                // TODO: expdataclass.lsid is deprecated, use rowId FK above
                 new PropertyStorageSpec.ForeignKey("lsid", "exp", "Data", "LSID", null, false)
         )));
 
-        INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(new PropertyStorageSpec.Index(true, "lsid"),
-                new PropertyStorageSpec.Index(true, "name", "classid"))));
+        INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
+                new PropertyStorageSpec.Index(true, "rowId"),
+                new PropertyStorageSpec.Index(true, "lsid"),       // TODO: expdataclass.lsid is deprecated
+                new PropertyStorageSpec.Index(true, "name"))));
 
         FORCE_ENABLED_SYSTEM_FIELDS = Collections.unmodifiableSet(Sets.newHashSet(Arrays.asList("Name")));
     }

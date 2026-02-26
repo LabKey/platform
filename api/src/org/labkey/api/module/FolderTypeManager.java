@@ -323,7 +323,7 @@ public class FolderTypeManager
             @Override
             public String getDescription()
             {
-                return "Comma-separated list of folder types to disable on this server";
+                return "Semicolon-separated list of folder types to disable on this server";
             }
         }
     }

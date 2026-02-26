@@ -848,10 +848,4 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     {
         return delegate.isMultiValued();
     }
-
-    @Override @Transient
-    public final SimpleConvert getConvertFn()
-    {
-        return ColumnRenderProperties.getDefaultConvertFn(this);
-    }
 }

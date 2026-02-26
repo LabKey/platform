@@ -79,7 +79,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.mvc.Controller;
-import org.springframework.web.servlet.view.RedirectView;
 
 import java.io.File;
 import java.io.IOException;
@@ -439,9 +438,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             if (null != redirectURL)
             {
-                _log.debug("URL " + url + " was redirected to " + redirectURL + " instead");
-                response.sendRedirect(redirectURL.toString());
-                return null;
+                _log.debug("URL {} was redirected to {} instead", url, redirectURL);
+                throw new RedirectException(redirectURL);
             }
 
             // This container check used to be in checkPermissions(), but that meant actions with lenient permissions checking
@@ -534,11 +532,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
             ModelAndView mv = controller.handleRequest(request, response);
             if (mv != null)
             {
-                if (mv.getView() instanceof RedirectView)
-                {
-                    // treat same as a throw redirect
-                    throw new RedirectException(((RedirectView)mv.getView()).getUrl());
-                }
                 renderInTemplate(context, controller, pageConfig, mv);
             }
         }
@@ -596,14 +589,14 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (!"1".equals(getViewContext().getActionURL().getParameter("_retry_")))
             {
                 ActionURL url = getViewContext().cloneActionURL().addParameter("_retry_", "1");
-                ExceptionUtil.doErrorRedirect(response, url.getLocalURIString());
+                ExceptionUtil.unsafeRedirect(response, url.getLocalURIString());
                 return;
             }
         }
             
         ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false, context, pageConfig);
         if (null != errorURL)
-            ExceptionUtil.doErrorRedirect(response, errorURL.toString());
+            ExceptionUtil.unsafeRedirect(response, errorURL.toString());
     }
 
 

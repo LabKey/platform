@@ -635,11 +635,13 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         }
     }
 
-    public static HttpView<?> redirect(URLHelper url, boolean allowAbsoluteUrl)
+    // Never redirects externally
+    public static HttpView<?> redirect(URLHelper url)
     {
-        throw new RedirectException(url, allowAbsoluteUrl);
+        throw new RedirectException(url);
     }
 
+    // Never redirects externally
     public static HttpView<?> redirect(ActionURL url)
     {
         throw new RedirectException(url);

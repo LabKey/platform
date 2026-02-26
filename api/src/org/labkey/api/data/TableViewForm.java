@@ -417,16 +417,9 @@ public class TableViewForm extends ViewForm implements HasBindParameters
 
             try
             {
-                Object val;
                 if (col != null)
-                {
                     propType = col.getJavaClass();
-                    val = col.convert(bindValue);
-                }
-                else
-                {
-                    val = getSimpleConvert(propName).convert(bindValue);
-                }
+                Object val = getSimpleConvert(propName).convert(bindValue);
 
                 boolean requiredError = false;
                 if (_validateRequired && null != _tinfo && null != col && col.isRequired() && !col.isAutoIncrement())
