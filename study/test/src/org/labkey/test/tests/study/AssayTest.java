@@ -325,11 +325,8 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Submit");
         assertTextPresent("Could not convert value: " + "notAnumber");
         setFormElement(Locator.name("quf_testAssayDataProp5"), "514801");
-        setFormElement(Locator.name("quf_Flags"), "This Flag Has Been Edited");
         clickButton("Submit");
         assertTextPresent("EditedSpecimenID", "601.5", "514801");
-        assertElementPresent(Locator.xpath("//i[contains(@class, 'lk-flag-enabled')][@title='This Flag Has Been Edited']"), 1);
-        assertElementPresent(Locator.xpath("//i[contains(@class, 'lk-flag-disabled')][@title='Flag for review']"), 9);
 
         // Try a delete
         dataTable.checkCheckbox(table.getRowIndex("Specimen ID", "EditedSpecimenID"));
@@ -341,7 +338,7 @@ public class AssayTest extends AbstractAssayTest
 
         // Verify that the edit was audited
         AuditLogHelper auditLogHelper = new AuditLogHelper(this, () -> WebTestHelper.getRemoteApiConnection(false));
-        auditLogHelper.checkAuditEventDiffCount(getProjectName(), AuditLogHelper.AuditEvent.QUERY_UPDATE_AUDIT_EVENT, List.of(0/*delete*/, 4/*edit*/));
+        auditLogHelper.checkAuditEventDiffCount(getProjectName(), AuditLogHelper.AuditEvent.QUERY_UPDATE_AUDIT_EVENT, List.of(0/*delete*/, 3/*edit*/));
 
         goToSchemaBrowser();
         viewQueryData("auditLog", "ExperimentAuditEvent");
@@ -393,7 +390,7 @@ public class AssayTest extends AbstractAssayTest
         assertTextPresent(
                 "Could not convert value 'Bad Test' (String) for Double field '" + TEST_ASSAY_SET_PROP_NAME + (TEST_ASSAY_SET_PREDEFINED_PROP_COUNT + 1) + "'.",
                 "Could not convert value 'Bad Test' (String) for Integer field '" + TEST_ASSAY_SET_PROP_NAME + (TEST_ASSAY_SET_PREDEFINED_PROP_COUNT + 2) + "'.",
-                "'Bad Test' is not a valid Date for " + TEST_ASSAY_SET_PROP_NAME + (TEST_ASSAY_SET_PREDEFINED_PROP_COUNT + 3) + " using U.S. date parsing (MDY).");
+                "'Bad Test' is not a valid Date for '" + TEST_ASSAY_SET_PROP_NAME + (TEST_ASSAY_SET_PREDEFINED_PROP_COUNT + 3) + "' using U.S. date parsing (MDY).");
         setFormElement(Locator.name(TEST_ASSAY_SET_PROP_NAME + (TEST_ASSAY_SET_PREDEFINED_PROP_COUNT + 1)), TEST_ASSAY_SET_PROPERTIES[1]);
         setFormElement(Locator.name(TEST_ASSAY_SET_PROP_NAME + (TEST_ASSAY_SET_PREDEFINED_PROP_COUNT + 2)), TEST_ASSAY_SET_PROPERTIES[2]);
         setFormElement(Locator.name(TEST_ASSAY_SET_PROP_NAME + (TEST_ASSAY_SET_PREDEFINED_PROP_COUNT + 3)), TEST_ASSAY_SET_PROPERTIES[3]);

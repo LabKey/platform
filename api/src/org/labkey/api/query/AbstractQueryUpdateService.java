@@ -214,7 +214,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                     if (StringUtils.isEmpty(dataContainer))
                         dataContainer = (String) row.get("folder");
                     if (!container.getId().equals(dataContainer))
-                        throw new InvalidKeyException("Data doesn't belong to folder '" + container.getName() + "': " + key.getValue().values());
+                        throw new InvalidKeyException("Data does not belong to folder '" + container.getName() + "': " + key.getValue().values());
                 }
             }
             else if (verifyExisting)
@@ -737,15 +737,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             try
             {
+                if (col.getKindOfQuantity() != null)
+                    providedValues.put(key, value);
                 if (PropertyType.FILE_LINK.equals(col.getPropertyType()))
                     value = ExpDataFileConverter.convert(value);
-                else if (col.getKindOfQuantity() != null)
-                {
-                    providedValues.put(key, value);
-                    value = Quantity.convert(value, col.getKindOfQuantity().getStorageUnit());
-                }
                 else
-                    value = col.getConvertFn().apply(value);
+                    value = col.convert(value);
             }
             catch (ConvertHelper.FileConversionException e)
             {

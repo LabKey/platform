@@ -263,7 +263,6 @@ import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
-import org.labkey.study.model.UploadLog;
 import org.labkey.study.model.VisitDataset;
 import org.labkey.study.model.VisitDatasetType;
 import org.labkey.study.model.VisitImpl;
@@ -652,6 +651,7 @@ public class StudyController extends BaseStudyController
     {
         private String _qcState;
         private String[] _visitStatistic = new String[0];
+        private String _cohortFilterType;
 
         public String getQCState()
         {
@@ -686,6 +686,16 @@ public class StudyController extends BaseStudyController
 
             return set;
         }
+
+        public String getCohortFilterType()
+        {
+            return _cohortFilterType;
+        }
+
+        public void setCohortFilterType(String cohortFilterType)
+        {
+            _cohortFilterType = cohortFilterType;
+        }
     }
 
 
@@ -715,6 +725,17 @@ public class StudyController extends BaseStudyController
                 bean.cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), DatasetQueryView.DATAREGION);
 
             VisitManager visitManager = StudyManager.getInstance().getVisitManager(bean.study);
+
+            if (null != bean.cohortFilter)
+            {
+                if (!visitManager.supportedCohortFilterTypes().contains(bean.cohortFilter.getType()))
+                {
+                    errors.rejectValue("cohortFilterType", ERROR_MSG, bean.cohortFilter.getType() + " is not supported.");
+                    // CohortFilterFactory.getFromURL() returns NULL for unrecognized and continues, let's do the same
+                    bean.cohortFilter = null;
+                }
+            }
+
             bean.visitMapSummary = visitManager.getVisitSummary(getUser(), bean.cohortFilter, bean.qcStates, bean.stats, bean.showAll);
 
             return new StudyJspView<>(_study, "/org/labkey/study/view/overview.jsp", bean, errors);
@@ -6293,7 +6314,7 @@ public class StudyController extends BaseStudyController
     public static class DatasetDetailRedirectAction extends SimpleRedirectAction<DatasetDetailRedirectForm>
     {
         @Override
-        public URLHelper getRedirectURL(DatasetDetailRedirectForm form)
+        public ActionURL getRedirectURL(DatasetDetailRedirectForm form)
         {
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (study == null)

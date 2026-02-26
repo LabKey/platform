@@ -40,7 +40,8 @@ if (!LABKEY.vis.PlotProperties) {
     if (!LABKEY.vis.PlotProperties.ValueConversion) {
         LABKEY.vis.PlotProperties.ValueConversion = {
             StandardDeviation: 'standardDeviation',
-            PercentDeviation: 'percentDeviation'
+            PercentDeviation: 'percentDeviation',
+            DeltaFromMean: 'deltaFromMean'
         }
     }
 }

@@ -11,9 +11,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.security.Directive;
@@ -36,6 +40,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -45,11 +50,9 @@ import java.util.stream.Collectors;
  */
 public class ContentSecurityPolicyFilter implements Filter
 {
-    public static final String FEATURE_FLAG_DISABLE_ENFORCE_CSP = "disableEnforceCsp";
-    public static final String FEATURE_FLAG_FORWARD_CSP_REPORTS = "forwardCspReports";
+    private static final Logger LOG = LogHelper.getLogger(ContentSecurityPolicyFilter.class, "Register/unregister allowed resource hosts");
 
     private static final String NONCE_SUBST = "REQUEST.SCRIPT.NONCE";
-    private static final String REPORT_PARAMETER_SUBSTITUTION = "CSP.REPORT.PARAMS";
     private static final String UPGRADE_INSECURE_REQUESTS_SUBSTITUTION = "UPGRADE.INSECURE.REQUESTS";
     private static final String HEADER_NONCE = "org.labkey.filters.ContentSecurityPolicyFilter#NONCE";  // needs to match PageConfig.HEADER_NONCE
 
@@ -58,19 +61,24 @@ public class ContentSecurityPolicyFilter implements Filter
     // Lock that protects the static data structures below
     private static final Object SUBSTITUTION_LOCK = new Object();
     private static final Map<Directive, SetValuedMap<String, String>> ALLOWED_SOURCES = new HashMap<>();
+
+    public static final String FEATURE_FLAG_DISABLE_ENFORCE_CSP = "disableEnforceCsp";
+    public static final String FEATURE_FLAG_FORWARD_CSP_REPORTS = "forwardCspReports";
+
     // Regenerate and stash on every "allowed source" change as a convenience (so every filter doesn't need to recalculate
     // it on every init() and change)
     private static Map<String, String> SUBSTITUTION_MAP = Collections.emptyMap();
 
     // Per-filter-instance parameters that are set in init() and never changed
     private ContentSecurityPolicyType _type = ContentSecurityPolicyType.Enforce;
-    private String _policyTemplate = null;
-    private String _cspVersion = "Unknown";
+    private @NotNull String _cspVersion = "Unknown";
+    // These two are effectively @NotNull since they are set to non-null values in init() and never changed
+    private String _stashedTemplate = null;
+    private String _reportToEndpointName = null;
 
-    // Updated after every change to "allowed sources"
-    private StringExpression _policyExpression = null;
-
-    private static final Logger LOG = LogHelper.getLogger(ContentSecurityPolicyFilter.class, "Register/unregister allowed resource hosts");
+    // Per-filter-instance settings are initialized on first request and reset when base server URL or allowed sources
+    // change. Don't reference this directly; always use ensureSettings().
+    private volatile @Nullable CspFilterSettings _settings = null;
 
     public enum ContentSecurityPolicyType
     {
@@ -104,7 +112,6 @@ public class ContentSecurityPolicyFilter implements Filter
     public void init(FilterConfig filterConfig) throws ServletException
     {
         LogHelper.getLogger(ContentSecurityPolicyFilter.class, "CSP filter initialization").info("Initializing {}", filterConfig.getFilterName());
-
         Enumeration<String> paramNames = filterConfig.getInitParameterNames();
         while (paramNames.hasMoreElements())
         {
@@ -112,15 +119,8 @@ public class ContentSecurityPolicyFilter implements Filter
             String paramValue = filterConfig.getInitParameter(paramName);
             if ("policy".equalsIgnoreCase(paramName))
             {
-                String s = filterPolicy(paramValue);
-
-                // Replace REPORT_PARAMETER_SUBSTITUTION now since its value is static
-                s = StringExpressionFactory.create(s, false, NullValueBehavior.KeepSubstitution)
-                    .eval(Map.of(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())));
-
-                _policyTemplate = s;
-
-                extractCspVersion(s);
+                _stashedTemplate = filterPolicy(paramValue);
+                extractCspVersion(_stashedTemplate);
             }
             else if ("disposition".equalsIgnoreCase(paramName))
             {
@@ -136,10 +136,11 @@ public class ContentSecurityPolicyFilter implements Filter
             }
         }
 
-        if (CSP_FILTERS.put(_type, this) != null)
-            throw new ServletException("ContentSecurityPolicyFilter is misconfigured, duplicate policies of type: " + _type);
+        if (CSP_FILTERS.put(getType(), this) != null)
+            throw new ServletException("ContentSecurityPolicyFilter is misconfigured, duplicate policies of type: " + getType());
 
-        regeneratePolicyExpression();
+        // configure a different endpoint for each type to convey the correct csp version (eXX vs. rXX)
+        _reportToEndpointName = "csp-" + getType().name().toLowerCase();
     }
 
     /** Filter out block comments and replace special characters in the provided policy */
@@ -196,37 +197,131 @@ public class ContentSecurityPolicyFilter implements Filter
             }
         }
 
-        LOG.debug("CspVersion: {}", _cspVersion);
-    }
-
-    // Make all the "allowed sources" substitutions at init() and whenever the allowed sources map changes. With this,
-    // the only substitution needed on a per-request basis is the nonce value.
-    private void regeneratePolicyExpression()
-    {
-        final String allowSubstitutedPolicy;
-
-        synchronized (SUBSTITUTION_LOCK)
-        {
-            allowSubstitutedPolicy = StringExpressionFactory.create(_policyTemplate, false, NullValueBehavior.KeepSubstitution)
-                .eval(SUBSTITUTION_MAP);
-        }
-
-        _policyExpression = StringExpressionFactory.create(allowSubstitutedPolicy, false, NullValueBehavior.ReplaceNullAndMissingWithBlank);
+        LOG.debug("CspVersion: {}", getCspVersion());
     }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
     {
-        if (request instanceof HttpServletRequest req && response instanceof HttpServletResponse resp && null != _policyExpression)
+        if (request instanceof HttpServletRequest req && response instanceof HttpServletResponse resp)
         {
-            if (_type != ContentSecurityPolicyType.Enforce || !OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_DISABLE_ENFORCE_CSP))
+            CspFilterSettings settings = ensureSettings();
+
+            if (getType() != ContentSecurityPolicyType.Enforce || !OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_DISABLE_ENFORCE_CSP))
             {
                 Map<String, String> map = Map.of(NONCE_SUBST, getScriptNonceHeader(req));
-                var csp = _policyExpression.eval(map);
-                resp.setHeader(_type.getHeaderName(), csp);
+                var csp = settings.getPolicyExpression().eval(map);
+                resp.setHeader(getType().getHeaderName(), csp);
+
+                // null if https: is not configured on this server
+                String reportingEndpointsHeaderValue = settings.getReportingEndpointsHeaderValue();
+                if (reportingEndpointsHeaderValue != null)
+                    resp.addHeader("Reporting-Endpoints", reportingEndpointsHeaderValue);
             }
         }
         chain.doFilter(request, response);
+    }
+
+    public ContentSecurityPolicyType getType()
+    {
+        return _type;
+    }
+
+    public @NotNull String getCspVersion()
+    {
+        return _cspVersion;
+    }
+
+    public String getStashedTemplate()
+    {
+        return _stashedTemplate;
+    }
+
+    public String getReportToEndpointName()
+    {
+        return _reportToEndpointName;
+    }
+
+    private void clearSettings()
+    {
+        _settings = null;
+    }
+
+    private @NotNull CspFilterSettings ensureSettings()
+    {
+        String baseServerUrl = AppProps.getInstance().getBaseServerUrl();
+        CspFilterSettings settings = _settings; // Stash a local copy to ensure consistency in the checks below
+
+        // Reset settings if null or if base server URL has changed
+        if (null == settings || !Objects.equals(baseServerUrl, settings.getPreviousBaseServerUrl()))
+        {
+            settings = _settings = new CspFilterSettings(this, baseServerUrl);
+        }
+
+        return settings;
+    }
+
+    // Hold all the mutable per-filter settings in a single object so they can be set atomically
+    private static class CspFilterSettings
+    {
+        private final String _policyTemplate;
+        private final String _reportingEndpointsHeaderValue;
+        private final String _previousBaseServerUrl;
+        private final StringExpression _policyExpression;
+
+        private CspFilterSettings(ContentSecurityPolicyFilter filter, String baseServerUrl)
+        {
+            // Add "Reporting-Endpoints" header and "report-to" directive only if https: is configured on this
+            // server. This ensures that browsers fall-back on report-uri if https: isn't configured.
+            if (Strings.CI.startsWith(baseServerUrl, "https://"))
+            {
+                // Each filter adds its own "Reporting-Endpoints" header since we want to convey the correct version (eXX vs. rXX)
+                @SuppressWarnings("DataFlowIssue")
+                ActionURL violationUrl = PageFlowUtil.urlProvider(AdminUrls.class).getCspReportToURL(filter.getCspVersion());
+                // Use an absolute URL so we always post to https:, even if the violating request uses http:
+                _reportingEndpointsHeaderValue = filter.getReportToEndpointName() + "=\"" + violationUrl.getURIString() + "\"";
+
+                // Add "report-to" directive to the policy
+                _policyTemplate = filter.getStashedTemplate() + " report-to " + filter.getReportToEndpointName() + " ;";
+            }
+            else
+            {
+                _policyTemplate = filter.getStashedTemplate();
+                _reportingEndpointsHeaderValue = null;
+            }
+
+            _previousBaseServerUrl = baseServerUrl;
+
+            final String substitutedPolicy;
+
+            synchronized (SUBSTITUTION_LOCK)
+            {
+                substitutedPolicy = StringExpressionFactory.create(_policyTemplate, false, NullValueBehavior.KeepSubstitution)
+                    .eval(SUBSTITUTION_MAP);
+            }
+
+            _policyExpression = StringExpressionFactory.create(substitutedPolicy, false, NullValueBehavior.ReplaceNullAndMissingWithBlank);
+        }
+
+        public String getPolicyTemplate()
+        {
+            return _policyTemplate;
+        }
+
+        public String getReportingEndpointsHeaderValue()
+        {
+            return _reportingEndpointsHeaderValue;
+        }
+
+        public String getPreviousBaseServerUrl()
+        {
+            return _previousBaseServerUrl;
+        }
+
+        public StringExpression getPolicyExpression()
+        {
+            return _policyExpression;
+        }
     }
 
     public static String getScriptNonceHeader(HttpServletRequest request)
@@ -273,7 +368,10 @@ public class ContentSecurityPolicyFilter implements Filter
         }
     }
 
-    // Regenerate the substitution map and all policy expressions on every register/unregister
+    /**
+     * Regenerate the substitution map on every register/unregister. The policy expression will be regenerated on the
+     * next request (see {@link #ensureSettings()}).
+     */
     public static void regenerateSubstitutionMap()
     {
         synchronized (SUBSTITUTION_LOCK)
@@ -297,8 +395,9 @@ public class ContentSecurityPolicyFilter implements Filter
 
             SUBSTITUTION_MAP.put(UPGRADE_INSECURE_REQUESTS_SUBSTITUTION, AppProps.getInstance().isSSLRequired() ? "upgrade-insecure-requests;" : "");
 
-            // Tell each registered ContentSecurityPolicyFilter to refresh its policy template based on the new substitution map
-            CSP_FILTERS.values().forEach(ContentSecurityPolicyFilter::regeneratePolicyExpression);
+            // Tell each registered ContentSecurityPolicyFilter to clear its settings so the next request recreates them
+            // using the new substitution map
+            CSP_FILTERS.values().forEach(ContentSecurityPolicyFilter::clearSettings);
         }
     }
 
@@ -317,7 +416,7 @@ public class ContentSecurityPolicyFilter implements Filter
         }
         else
         {
-            String template = filter._policyTemplate;
+            String template = filter.ensureSettings().getPolicyTemplate();
             ret = Arrays.stream(Directive.values())
                 .map(dir -> "${" + dir.getSubstitutionKey() + "}")
                 .filter(key -> !template.contains(key))
@@ -330,8 +429,15 @@ public class ContentSecurityPolicyFilter implements Filter
     public static void registerMetricsProvider()
     {
         UsageMetricsService.get().registerUsageMetrics("API", () -> Map.of("cspFilters", CSP_FILTERS.values().stream()
-            .collect(Collectors.toMap(filter -> filter._type,
-                filter -> Map.of("version", filter._cspVersion, "csp", filter._policyTemplate, "cspSubstituted", filter._policyExpression.getSource())))));
+            .collect(Collectors.toMap(ContentSecurityPolicyFilter::getType,
+                filter -> {
+                    CspFilterSettings settings = filter.ensureSettings();
+                    return Map.of(
+                        "version", filter.getCspVersion(),
+                        "csp", settings.getPolicyTemplate(),
+                        "cspSubstituted", settings.getPolicyExpression().getSource()
+                    );
+                }))));
     }
 
     public static class TestCase extends Assert
@@ -478,7 +584,7 @@ public class ContentSecurityPolicyFilter implements Filter
         private void verifySubstitutionInPolicyExpressions(String value, int expectedCount)
         {
             List<String> failures = CSP_FILTERS.values().stream()
-                .map(filter -> filter._policyExpression.eval(Map.of()))
+                .map(filter -> filter.ensureSettings().getPolicyExpression().eval(Map.of()))
                 .filter(policy -> StringUtils.countMatches(policy, value) != expectedCount)
                 .toList();
 

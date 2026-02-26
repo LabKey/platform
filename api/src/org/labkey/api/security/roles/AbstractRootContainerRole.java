@@ -60,4 +60,9 @@ public abstract class AbstractRootContainerRole extends AbstractRole
     {
         return resource instanceof Container && ((Container)resource).isRoot();
     }
+
+    public boolean isAvailableEverywhere()
+    {
+        return true;
+    }
 }

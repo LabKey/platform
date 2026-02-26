@@ -122,10 +122,13 @@ public abstract class SqlDialect
         initializeSqlTypeNameMap();
         initializeSqlTypeIntMap();
         initializeJdbcTableTypeMap(_tableTypeMap);
-        Set<String> types = _tableTypeMap.keySet();
-        _tableTypes = types.toArray(new String[0]);
+        _tableTypes = _tableTypeMap.entrySet().stream()
+            .filter(e -> e.getValue() != DatabaseTableType.NOT_IN_DB)
+            .map(Map.Entry::getKey)
+            .toArray(String[]::new);
         _reservedWordSet = getReservedWords();
-        // NOTE: do not call createStringHandler() here, it may depend on child member fields being initialized (they are not initialized yet!)
+
+        // NOTE: do not call createStringHandler() here; it may depend on child member fields being initialized (they are not initialized yet!)
 
         MemTracker.getInstance().put(this);
     }
@@ -133,7 +136,7 @@ public abstract class SqlDialect
     protected void initializeJdbcTableTypeMap(Map<String, DatabaseTableType> map)
     {
         for (DatabaseTableType type : DatabaseTableType.values())
-            map.put(type.name(), type);
+            map.put(type.getJdbcTypeName(), type);
     }
 
     public DatabaseTableType getTableType(String tableTypeName)
@@ -1300,6 +1303,55 @@ public abstract class SqlDialect
         return StringUtils.lowerCase(getSqlTypeNameFromObject(object));
     }
 
+    public String getJDBCArrayType(Object[] array)
+    {
+        String typeName;
+        if (array.length == 0 || array[0] == null)
+        {
+            // Handle empty arrays by inferring the SQL element type from the Java component type.
+            // Primary target is String[0], but handle a reasonable set of common types defensively.
+            Class<?> componentType = array.getClass().getComponentType();
+            if (String.class.equals(componentType))
+            {
+                // Use dialect mapping for a String instance
+                typeName = getJDBCArrayType("");
+            }
+            else if (Integer.class.equals(componentType))
+            {
+                typeName = getJDBCArrayType(Integer.valueOf(0));
+            }
+            else if (Long.class.equals(componentType))
+            {
+                typeName = getJDBCArrayType(Long.valueOf(0L));
+            }
+            else if (Double.class.equals(componentType))
+            {
+                typeName = getJDBCArrayType(Double.valueOf(0.0d));
+            }
+            else if (Float.class.equals(componentType))
+            {
+                typeName = getJDBCArrayType(Float.valueOf(0.0f));
+            }
+            else if (Boolean.class.equals(componentType))
+            {
+                typeName = getJDBCArrayType(Boolean.FALSE);
+            }
+            else
+            {
+                // Fallback to VARCHAR which is the safest for most text use-cases
+                typeName = getSqlTypeName(JdbcType.VARCHAR);
+                if (typeName != null)
+                    typeName = typeName.toLowerCase();
+            }
+        }
+        else
+        {
+            typeName = getJDBCArrayType(array[0]);
+        }
+
+        return typeName;
+    }
+
     public Collection<String> getScriptWarnings(String name, String sql)
     {
         return Collections.emptyList();
@@ -2146,6 +2198,12 @@ public abstract class SqlDialect
 
     // construct a sql array from SQLFragment elements
     public SQLFragment array_construct(SQLFragment[] elements)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    public SQLFragment array_is_empty(SQLFragment a)
     {
         assert !supportsArrays();
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");

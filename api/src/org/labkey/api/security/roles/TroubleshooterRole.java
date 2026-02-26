@@ -17,6 +17,7 @@ package org.labkey.api.security.roles;
 
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 
@@ -28,11 +29,18 @@ public class TroubleshooterRole extends AbstractRootContainerRole
     static Collection<Class<? extends Permission>> PERMISSIONS = Set.of(
         TroubleshooterPermission.class,
         SeeUserDetailsPermission.class,
-        CanSeeAuditLogPermission.class
+        CanSeeAuditLogPermission.class,
+        ReadPermission.class
     );
 
     public TroubleshooterRole()
     {
         super("Troubleshooter", "Troubleshooters may view administration settings but may not change them.", PERMISSIONS);
+    }
+
+    @Override
+    public boolean isAvailableEverywhere()
+    {
+        return false; // This ensures troubleshooters get these permissions (esp. ReadPermission) only in the root
     }
 }

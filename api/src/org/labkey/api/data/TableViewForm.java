@@ -26,12 +26,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.ontology.Quantity;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -419,55 +417,30 @@ public class TableViewForm extends ViewForm implements HasBindParameters
 
             try
             {
-                if (null != bindValue)
-                {
-                    propType = getTruePropType(propName);
-                    Object val;
-                    if (null != col && null != col.getKindOfQuantity())
-                    {
-                        // TODO MultiChoice switch to col.getConvertFn().apply(bindValue)
-                        val = Quantity.convert(bindValue, col.getDisplayUnit());
-                    }
-                    else
-                    {
-                        if (propType != null)
-                            val = ConvertUtils.convert(bindValue, propType);
-                        else
-                            val = bindValue;
-                    }
-                    values.put(propName, val);
-                }
-                else if (_validateRequired && null != _tinfo)
-                {
-                    if (null == col || !col.isRequired())
-                    {
-                        values.put(propName, null);
-                    }
-                    else
-                    {
-                        boolean isError = true;
+                if (col != null)
+                    propType = col.getJavaClass();
+                Object val = getSimpleConvert(propName).convert(bindValue);
 
-                        // if the column is mv-enabled and a mv indicator has been specified, don't flag the required
-                        // error
-                        if (col.isMvEnabled() && col.isNullable())
+                boolean requiredError = false;
+                if (_validateRequired && null != _tinfo && null != col && col.isRequired() && !col.isAutoIncrement())
+                {
+                    requiredError = col.getJdbcType().isEmpty(val);
+
+                    // if the column is mv-enabled and a mv indicator has been specified, don't flag the required error
+                    if (requiredError && col.isMvEnabled() && col.isNullable())
+                    {
+                        ColumnInfo mvCol = _tinfo.getColumn(col.getMvColumnName());
+                        if (mvCol != null)
                         {
-                            ColumnInfo mvCol = _tinfo.getColumn(col.getMvColumnName());
-                            if (mvCol != null)
-                            {
-                                String ff_mvName = getFormFieldName(mvCol);
-                                isError = null == getValueToBind(ff_mvName);
-                            }
+                            String ff_mvName = getFormFieldName(mvCol);
+                            requiredError = null == getValueToBind(ff_mvName);
                         }
-                        if (isError)
-                            errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {SpringActionController.ERROR_REQUIRED}, new String[] {caption}, caption + " must not be empty."));
-                        else
-                            values.put(propName, null);
                     }
                 }
+                if (requiredError)
+                    errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {SpringActionController.ERROR_REQUIRED}, new String[] {caption}, caption + " must not be empty."));
                 else
-                {
-                    values.put(propName, null);
-                }
+                    values.put(propName, val);
             }
             catch (ConversionException e)
             {
@@ -733,18 +706,20 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         setDataLoaded(false);
     }
 
-
-    protected Class<?> getTruePropType(String propName)
+    protected SimpleConvert getSimpleConvert(String propName)
     {
         ColumnInfo column = getColumnByFormFieldName(propName);
         if (null == column)
-            return null;
-        // TODO MultiChoice : move this to ColumnInfo (it does not belong in this one place)
-        // TODO MultiChoice : Can we actually assume that the FK column (in this table) is the same type as the lookup column?
+            return (value) -> value;
         boolean multiValued = column.getFk() instanceof MultiValuedForeignKey && ((MultiValuedForeignKey)column.getFk()).isMultiSelectInput();
         if (multiValued)
-            return arrayClass(column.getJavaClass());
-        return column.getJavaClass();
+        {
+            // TODO This should be reconciled with SimpleTranslator.MultiValueConvertColumn.convert()
+            // TODO shouldn't this be getFk().createLookupColumn(getLookupDisplayName()).getJavaClass() or something like that?
+            // I think String is a better guess than column.getJavaClass()
+            return ConvertHelper.getSimpleConvert(String[].class);
+        }
+        return column.getConvertFn();
     }
 
     private static <K> Class<?> arrayClass(Class<K> k)
@@ -878,7 +853,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             setValueToBind(pv.getName(), pv.getValue());
         }
 
-        BindException errors = new NullSafeBindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "form"));
+        BindException errors = new NullSafeBindException(this, "form");
         validateBind(errors);
         return errors;
     }

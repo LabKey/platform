@@ -549,12 +549,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
-    public boolean getUseContainerRelativeURL()
-    {
-        return !OptionalFeatureService.get().isFeatureEnabled(AppProps.GENERATE_CONTROLLER_FIRST_URLS);
-    }
-
-    @Override
     public boolean isAllowApiKeys()
     {
         return lookupBooleanValue(allowApiKeys, false);

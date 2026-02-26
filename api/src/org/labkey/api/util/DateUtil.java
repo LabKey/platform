@@ -82,17 +82,17 @@ public class DateUtil
     {
     }
 
-    private static final Logger LOG = LogHelper.getLogger(DateUtil.class, "Fill in description");
+    private static final Logger LOG = LogHelper.getLogger(DateUtil.class, "Date parsing problems");
     private static final Map<Integer, TimeZone> tzCache = new ConcurrentHashMap<>();
     private static final Locale _localeDefault = Locale.getDefault();
     private static final TimeZone _timezoneDefault = TimeZone.getDefault();
 
-    private static final String ISO_DATE_FORMAT_STRING = "yyyy-MM-dd";
-    private static final String ISO_SHORT_TIME_FORMAT_STRING = "HH:mm";
-    private static final String ISO_DATE_SHORT_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_SHORT_TIME_FORMAT_STRING;
-    private static final String ISO_TIME_FORMAT_STRING = "HH:mm:ss";
-    private static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss.SSS";
-    private static final String ISO_DATE_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_LONG_TIME_FORMAT_STRING;
+    public static final String ISO_DATE_FORMAT_STRING = "yyyy-MM-dd";
+    public static final String ISO_SHORT_TIME_FORMAT_STRING = "HH:mm";
+    public static final String ISO_DATE_SHORT_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_SHORT_TIME_FORMAT_STRING;
+    public static final String ISO_TIME_FORMAT_STRING = "HH:mm:ss";
+    public static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss.SSS";
+    public static final String ISO_DATE_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_LONG_TIME_FORMAT_STRING;
 
     // SimpleDataFormat does not support microseconds, it can only support up to milliseconds
     private static final Pattern NON_SIMPLE_PRECISION_TIME_PATTERN = Pattern.compile(".*([0-5][0-9]):([0-5][0-9])\\.(\\d{4,6}).*");
@@ -809,18 +809,17 @@ public class DateUtil
         }
     }
 
-    public static @Nullable Date parseSimpleTime(@NotNull Object o)
+    public static @Nullable Date parseSimpleTime(@NotNull String s)
     {
         Date duration = null;
         ParseException parseException = null;
-        String s = (String) o;
         boolean hasAMPM = s.toLowerCase().endsWith(" am") || s.toLowerCase().endsWith(" pm");
         String[] validFormats = hasAMPM ? SIMPLE_TIME_FORMATS_WITH_AMPM : SIMPLE_TIME_FORMATS_NO_AMPM;
         for (int i = 0; i < validFormats.length && duration == null; i++)
         {
             try
             {
-                duration = DateUtil.parseDateTime(o.toString(), validFormats[i]);
+                duration = DateUtil.parseDateTime(s, validFormats[i]);
             }
             catch (ParseException ignore)
             {
@@ -830,7 +829,7 @@ public class DateUtil
             }
         }
         if (duration == null)
-            throw new ConversionException("Could not convert \"" + o + "\" to duration.", parseException);
+            throw new ConversionException("Could not convert \"" + s + "\" to time.", parseException);
         return duration;
     }
 
@@ -1428,7 +1427,7 @@ Parse:
             return date;
         if (null == date)
             return time;
-        Date newDate = (Date)date.clone();
+        Date newDate = new Date(date.getTime());
         newDate.setHours(time.getHours());
         newDate.setMinutes(time.getMinutes());
         newDate.setSeconds(time.getSeconds());
@@ -1445,7 +1444,7 @@ Parse:
         int month = fullDate.getMonth();
         int date = fullDate.getDate();
 
-        return new Date(year, month, date);
+        return new java.sql.Date(year, month, date);
     }
 
     public static TimeZone getTimeZone()

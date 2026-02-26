@@ -26,6 +26,7 @@ import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.JdbcType;
@@ -33,6 +34,7 @@ import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
@@ -52,6 +54,8 @@ import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
@@ -840,6 +844,11 @@ public class DomainPropertyImpl implements DomainProperty
                     changedType = true;
                     _pd.setFormat(null);
                 }
+                else if (newType == PropertyType.MULTI_CHOICE || oldType == PropertyType.MULTI_CHOICE)
+                {
+                    changedType = true;
+                    _pd.setFormat(null);
+                }
                 else
                 {
                     throw new ChangePropertyDescriptorException("Cannot convert an instance of " + oldType.getJdbcType() + " to " + newType.getJdbcType() + ".");
@@ -873,13 +882,21 @@ public class DomainPropertyImpl implements DomainProperty
 
                 if (changedType)
                 {
+                    var domainKind = _domain.getDomainKind();
+                    if (domainKind == null)
+                        throw new ChangePropertyDescriptorException("Cannot change property type for domain, unknown domain kind.");
+
                     StorageProvisionerImpl.get().changePropertyType(this.getDomain(), this);
                     if (_pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
                     {
                         updateBooleanValue(
-                                new SQLFragment().appendIdentifier(_domain.getDomainKind().getStorageSchemaName()).append(".").appendIdentifier(_domain.getStorageTableName()),
+                                new SQLFragment().appendIdentifier(domainKind.getStorageSchemaName()).append(".").appendIdentifier(_domain.getStorageTableName()),
                                 _pd.getLegalSelectName(dialect), _pdOld.getFormat(), null); // GitHub Issue #647
                     }
+
+                    TableInfo table = domainKind.getTableInfo(user, getContainer(), _domain, ContainerFilter.getUnsafeEverythingFilter());
+                    if (table != null && _pdOld.getPropertyType() != null && table.getSchema().getSqlDialect().isPostgreSQL())
+                        QueryChangeListener.QueryPropertyChange.handleColumnTypeChange(_pdOld, _pd, SchemaKey.fromString(table.getUserSchema().getSchemaName()), table.getName(), user, getContainer());
                 }
                 else if (propResized)
                     StorageProvisionerImpl.get().resizeProperty(this.getDomain(), this, _pdOld.getScale());
@@ -1172,12 +1189,7 @@ public class DomainPropertyImpl implements DomainProperty
         if (!StringUtils.isEmpty(getLabel()))
             map.put("Label", getLabel());
         if (null != getPropertyType())
-        {
-            if (org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI().equals(getConceptURI()))
-                map.put("Type", "Flag");
-            else
-                map.put("Type", getPropertyType().getXarName());
-        }
+            map.put("Type", getPropertyType().getXarName());
         if (getPropertyType().getJdbcType().isText())
             map.put("Scale", getScale());
         if (!StringUtils.isEmpty(getDescription()))

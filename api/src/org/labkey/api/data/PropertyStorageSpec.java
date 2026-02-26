@@ -169,6 +169,7 @@ public class PropertyStorageSpec
         setMvEnabled(propertyDescriptor.isMvEnabled());
         setDescription(propertyDescriptor.getDescription());
         setImportAliases(propertyDescriptor.getImportAliases());
+        setTypeURI(propertyDescriptor.getRangeURI());
 
         if (null != propertyDescriptor.getDatabaseDefaultValue())
             setDefaultValue(propertyDescriptor.getDatabaseDefaultValue());
@@ -270,9 +271,14 @@ public class PropertyStorageSpec
     public String getTypeURI()
     {
         if (typeURI != null)
+        {
             return typeURI;
+        }
         else
-            return PropertyType.getFromJdbcType(getJdbcType()).getTypeUri();
+        {
+            var pt = PropertyType.getFromJdbcType(getJdbcType(), false);
+            return null==pt ? null : pt.getTypeUri();
+        }
     }
 
     public PropertyStorageSpec setTypeURI(String typeURI)

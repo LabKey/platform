@@ -18,20 +18,33 @@ package org.labkey.api.util;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Logger;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TransactionFilter;
+import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.InvocationTargetException;
@@ -149,9 +162,9 @@ public class DebugInfoDumper
      * This is primarily intended to help understand deadlocks.  Developers are encouraged to
      * add information related to attaining locks or starting transactions.
      */
-    public static _PopAutoCloseable pushThreadDumpContext(String context)
+    public static QuietCloser pushThreadDumpContext(String context)
     {
-        final var arr = _threadDumpExtraContext.computeIfAbsent(Thread.currentThread(), (p1) -> Collections.synchronizedList(new ArrayList<>()));
+        final var arr = _threadDumpExtraContext.computeIfAbsent(Thread.currentThread(), (_) -> Collections.synchronizedList(new ArrayList<>()));
         int size = arr.size();
         arr.add(new ThreadExtraContext(context, MiniProfiler.getTroubleshootingStackTrace(), System.currentTimeMillis()));
         return new _PopAutoCloseable(size);
@@ -165,7 +178,7 @@ public class DebugInfoDumper
     }
 
 
-    public static class _PopAutoCloseable implements AutoCloseable
+    public static class _PopAutoCloseable implements QuietCloser
     {
         final int _size;
 
@@ -180,7 +193,7 @@ public class DebugInfoDumper
             var arr = _threadDumpExtraContext.get(Thread.currentThread());
             assert null != arr;
             while (arr.size() > _size)
-                arr.remove(arr.size() - 1);
+                arr.removeLast();
         }
     }
 
@@ -303,94 +316,163 @@ public class DebugInfoDumper
         // OK probably just waiting for work.  We could check for common tomcat/labkey patterns here to be more conservative.
     }
 
+    /** Prevent reentrancy when we get SQLException trying to grab locks from Postgres */
+    private static final ThreadLocal<Boolean> DUMPING_THREADS = ThreadLocal.withInitial(() -> false);
+
     /**
      * Writes the thread dump into threads.txt
      * */
     public static synchronized void dumpThreads(LoggerWriter logWriter)
     {
-        logWriter.debug("*********************************************");
-        logWriter.debug("Starting thread dump - " + LocalDateTime.now());
-        long used = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed();
-        long max = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax();
-        logWriter.debug("Heap usage at " + DecimalFormat.getPercentInstance().format(((double)used / (double)max)) + " - " +
-                FileUtils.byteCountToDisplaySize(used) + " from a max of " +
-                FileUtils.byteCountToDisplaySize(max) + " (" + DecimalFormat.getInstance().format(used) + " / " + DecimalFormat.getInstance().format(max) + " bytes)");
-
-        OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-        if (osBean != null)
+        if (DUMPING_THREADS.get() == true)
         {
-            DecimalFormat f3 = new DecimalFormat("0.000");
-
-            if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean)
-            {
-                logWriter.debug("Total OS memory (bytes): " + DecimalFormat.getInstance().format(sunOsBean.getTotalMemorySize()));
-                logWriter.debug("Free OS memory (bytes): " + DecimalFormat.getInstance().format(sunOsBean.getFreeMemorySize()));
-                logWriter.debug("OS CPU load: " + f3.format(sunOsBean.getCpuLoad()));
-                logWriter.debug("JVM CPU load: " + f3.format(sunOsBean.getProcessCpuLoad()));
-            }
-            logWriter.debug("CPU count: " + osBean.getAvailableProcessors());
+            return;
         }
 
-        logWriter.debug("*********************************************");
-
-        Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
-        var spidsByThread = ConnectionWrapper.getSPIDsForThreads();
-
-        ArrayList<Thread> threadsToDump = new ArrayList<>();
-        ArrayList<Thread> boringThreads = new ArrayList<>();
-
-        for (Thread thread : stackTraces.keySet())
+        try
         {
-            Set<Integer> spids = Objects.requireNonNullElse(spidsByThread.get(thread), Set.of());
-            var stack = stackTraces.get(thread);
+            DUMPING_THREADS.set(true);
 
-            if (spids.isEmpty() && justWaiting(stack))
-                boringThreads.add(thread);
-            else
-                threadsToDump.add(thread);
-        }
-
-        if (!threadsToDump.isEmpty())
-        {
-            logWriter.debug("");
-            logWriter.debug("  ----- active threads -----");
-
-            threadsToDump.sort(Comparator.comparing(Thread::getName, String.CASE_INSENSITIVE_ORDER));
-            for (Thread thread : threadsToDump)
-            {
-                dumpOneThread(thread, logWriter, stackTraces, spidsByThread);
-            }
-        }
-
-        if (!boringThreads.isEmpty())
-        {
-            logWriter.debug("");
-            logWriter.debug("  ----- waiting threads -----");
-
-            boringThreads.sort(Comparator.comparing(Thread::getName, String.CASE_INSENSITIVE_ORDER));
-            for (Thread thread : boringThreads)
-            {
-                dumpOneThread(thread, logWriter, stackTraces, spidsByThread);
-            }
-        }
-
-        logWriter.debug("*********************************************");
-        logWriter.debug("Completed thread dump");
-        logWriter.debug("*********************************************");
-
-        for (DbScope dbScope : DbScope.getDbScopes())
-        {
-            dbScope.logCurrentConnectionState(logWriter);
-        }
-
-        if (ConnectionWrapper.getActiveConnectionCount() > 0)
-        {
             logWriter.debug("*********************************************");
-            logWriter.debug("Start dump of all open connections");
+            logWriter.debug("Starting thread dump - " + LocalDateTime.now());
+            long used = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed();
+            long max = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax();
+            logWriter.debug("Heap usage at " + DecimalFormat.getPercentInstance().format(((double) used / (double) max)) + " - " +
+                    FileUtils.byteCountToDisplaySize(used) + " from a max of " +
+                    FileUtils.byteCountToDisplaySize(max) + " (" + DecimalFormat.getInstance().format(used) + " / " + DecimalFormat.getInstance().format(max) + " bytes)");
+
+            OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
+            if (osBean != null)
+            {
+                DecimalFormat f3 = new DecimalFormat("0.000");
+
+                if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean)
+                {
+                    logWriter.debug("Total OS memory (bytes): " + DecimalFormat.getInstance().format(sunOsBean.getTotalMemorySize()));
+                    logWriter.debug("Free OS memory (bytes): " + DecimalFormat.getInstance().format(sunOsBean.getFreeMemorySize()));
+                    logWriter.debug("OS CPU load: " + f3.format(sunOsBean.getCpuLoad()));
+                    logWriter.debug("JVM CPU load: " + f3.format(sunOsBean.getProcessCpuLoad()));
+                }
+                logWriter.debug("CPU count: " + osBean.getAvailableProcessors());
+            }
+
             logWriter.debug("*********************************************");
-            ConnectionWrapper.dumpOpenConnections(logWriter, null);
+
+            Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
+            var spidsByThread = ConnectionWrapper.getSPIDsForThreads();
+
+            ArrayList<Thread> threadsToDump = new ArrayList<>();
+            ArrayList<Thread> boringThreads = new ArrayList<>();
+
+            for (Thread thread : stackTraces.keySet())
+            {
+                Set<Integer> spids = Objects.requireNonNullElse(spidsByThread.get(thread), Set.of());
+                var stack = stackTraces.get(thread);
+
+                if (spids.isEmpty() && justWaiting(stack))
+                    boringThreads.add(thread);
+                else
+                    threadsToDump.add(thread);
+            }
+
+            if (!threadsToDump.isEmpty())
+            {
+                logWriter.debug("");
+                logWriter.debug("  ----- active threads -----");
+
+                threadsToDump.sort(Comparator.comparing(Thread::getName, String.CASE_INSENSITIVE_ORDER));
+                for (Thread thread : threadsToDump)
+                {
+                    dumpOneThread(thread, logWriter, stackTraces, spidsByThread);
+                }
+            }
+
+            if (!boringThreads.isEmpty())
+            {
+                logWriter.debug("");
+                logWriter.debug("  ----- waiting threads -----");
+
+                boringThreads.sort(Comparator.comparing(Thread::getName, String.CASE_INSENSITIVE_ORDER));
+                for (Thread thread : boringThreads)
+                {
+                    dumpOneThread(thread, logWriter, stackTraces, spidsByThread);
+                }
+            }
+
             logWriter.debug("*********************************************");
-            logWriter.debug("Completed dump of all open connections");
+            logWriter.debug("Completed thread dump");
+            logWriter.debug("*********************************************");
+
+            for (DbScope dbScope : DbScope.getDbScopes())
+            {
+                dbScope.logCurrentConnectionState(logWriter);
+            }
+
+            if (ConnectionWrapper.getActiveConnectionCount() > 0)
+            {
+                logWriter.debug("*********************************************");
+                logWriter.debug("Start dump of all open connections");
+                logWriter.debug("*********************************************");
+                ConnectionWrapper.dumpOpenConnections(logWriter, null);
+                logWriter.debug("*********************************************");
+                logWriter.debug("Completed dump of all open connections");
+                logWriter.debug("*********************************************");
+            }
+
+            // GitHub Issue 713: Automatically include PG locks and active queries in thread dumps
+            UserSchema schema = QueryService.get().getUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot(), BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME);
+            // Schema won't exist on SQLServer
+            if (schema != null)
+            {
+                try
+                {
+                    writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_LOCKS_TABLE_NAME, "Postgres locks");
+                }
+                catch (RuntimeException e)
+                {
+                    logWriter.debug("Failed to write Postgres locks table:" + e);
+                }
+                try
+                {
+                    writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_TABLE_NAME, "Postgres activity");
+                }
+                catch (RuntimeException e)
+                {
+                    logWriter.debug("Failed to write Postgres activity table:" + e);
+                }
+            }
+        }
+        finally
+        {
+            DUMPING_THREADS.set(false);
+        }
+    }
+
+    private static void writeTable(LoggerWriter logWriter, UserSchema schema, String tableName, String header)
+    {
+        QueryForm form = new QueryForm();
+        try (var _ = ViewContext.pushMockViewContext(schema.getUser(), schema.getContainer(), new ActionURL()))
+        {
+            form.setViewContext(HttpView.currentContext());
+            form.setSchemaName(schema.getName());
+            form.setQueryName(tableName);
+            QueryView view = QueryView.create(form, new NullSafeBindException(new Object(), "form"));
+            logWriter.debug("Starting dump of " + header);
+            logWriter.debug("*********************************************");
+            try (TSVWriter writer = view.getTsvWriter())
+            {
+                StringWriter stringWriter = new StringWriter();
+                PrintWriter printWriter = new PrintWriter(stringWriter);
+                writer.write(printWriter);
+                printWriter.flush();
+                logWriter.debug("\n" + stringWriter);
+            }
+            catch (IOException e)
+            {
+                logWriter.error("Failed to write " + header, e);
+            }
+            logWriter.debug("*********************************************");
+            logWriter.debug("Completed dump of " + header);
             logWriter.debug("*********************************************");
         }
     }
@@ -424,32 +506,46 @@ public class DebugInfoDumper
             // subtract 1 because dumpThreads includes Thread.run() in the stack trace
             logWriter.debug(String.format("%3d\t\t%s", stack.length-i-1, stack[i].toString()));
         }
-        var extraInfo = _threadDumpExtraContext.get(thread);
-        if (null != extraInfo && !extraInfo.isEmpty())
+        for (String line : getFormattedExtraContext(thread))
         {
-            logWriter.debug("extra stack context (may not match stacktrace if thread is not blocked)");
-            var messages = extraInfo.toArray(new ThreadExtraContext[0]);
-            for (var i = messages.length-1 ; i>= 0 ; i--)
-            {
-                logWriter.debug("\t" + messages[i].context.replace('\n',' ') + "\tage: " + (System.currentTimeMillis() - messages[i].startTime) + "ms");
-                var messageStack = messages[i].stack();
-                if (null != messageStack)
-                {
-                    for (int j=0, count=0 ; j<messageStack.length && count < 4; j++)
-                    {
-                        if (skipMethods.contains(messageStack[j].getMethodName()))
-                            continue;
-                        logWriter.debug(String.format("%3d\t\t%s", messageStack.length - j, messageStack[j].toString()));
-                        count++;
-                    }
-                }
-            }
+            logWriter.debug(line);
         }
 
         if (ConnectionWrapper.getProbableLeakCount() > 0)
         {
             ConnectionWrapper.dumpLeaksForThread(thread, logWriter);
         }
+    }
+
+    /**
+     * Returns formatted extra stack context lines for the given thread, suitable for display in thread dumps.
+     * Returns an empty list if the thread has no extra context.
+     */
+    public static List<String> getFormattedExtraContext(Thread thread)
+    {
+        var extraInfo = _threadDumpExtraContext.get(thread);
+        if (extraInfo == null || extraInfo.isEmpty())
+            return List.of();
+
+        List<String> result = new ArrayList<>();
+        result.add("extra stack context (may not match stacktrace if thread is not blocked)");
+        var messages = extraInfo.toArray(new ThreadExtraContext[0]);
+        for (int i = messages.length - 1; i >= 0; i--)
+        {
+            result.add("\t" + messages[i].context.replace('\n', ' ') + "\tage: " + (System.currentTimeMillis() - messages[i].startTime) + "ms");
+            var messageStack = messages[i].stack();
+            if (messageStack != null)
+            {
+                for (int j = 0, count = 0; j < messageStack.length && count < 4; j++)
+                {
+                    if (skipMethods.contains(messageStack[j].getMethodName()))
+                        continue;
+                    result.add(String.format("%3d\t\t%s", messageStack.length - j, messageStack[j].toString()));
+                    count++;
+                }
+            }
+        }
+        return result;
     }
 
     /**

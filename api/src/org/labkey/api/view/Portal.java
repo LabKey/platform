@@ -121,7 +121,7 @@ import static org.labkey.api.util.DOM.createHtml;
  */
 public class Portal implements ModuleChangeListener
 {
-    private static final Logger LOG = LogHelper.getLogger(Portal.class, "Page and web part warnings");
+    private static final Logger LOG = LogHelper.getLogger(Portal.class, "Page and web part warnings and exceptions");
     private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
 
     public static final String FOLDER_PORTAL_PAGE = "folder";
@@ -1714,6 +1714,7 @@ public class Portal implements ModuleChangeListener
             WebPartView<?> errorView;
             if (t instanceof HttpStatusException)
             {
+                LOG.debug("Exception while rendering a webpart", t);
                 BindException errors = new BindException(new Object(), "form");
                 errors.reject(SpringActionController.ERROR_MSG, t.getMessage());
                 errorView = new SimpleErrorView(errors, false);

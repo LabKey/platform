@@ -23,18 +23,24 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.DefaultAuditProvider;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
+import org.labkey.api.migration.DatabaseMigrationService;
+import org.labkey.api.migration.GuidMapperColumn;
+import org.labkey.api.migration.MigrationTableHandler;
 import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.JavaExportScriptFactory;
@@ -89,10 +95,12 @@ import org.labkey.query.analytics.AggregatesMinAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesSumAnalyticsProvider;
 import org.labkey.query.analytics.RemoveColumnAnalyticsProvider;
 import org.labkey.query.analytics.SummaryStatisticsAnalyticsProvider;
+import org.labkey.query.audit.GridViewAuditProvider;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
+import org.labkey.query.controllers.QueryMcp;
 import org.labkey.query.controllers.SqlController;
 import org.labkey.query.jdbc.QueryDriver;
 import org.labkey.query.olap.MemberSet;
@@ -237,6 +245,8 @@ public class QueryModule extends DefaultModule
             "Allow for lookup fields in product folders to query across all folders within the top-level folder.", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product folders display folder-specific data",
             "Only list folder-specific data within product folders.", false);
+
+        McpService.get().register(new QueryMcp());
     }
 
 
@@ -288,6 +298,7 @@ public class QueryModule extends DefaultModule
         {
             AuditLogService.get().registerAuditType(new QueryExportAuditProvider());
             AuditLogService.get().registerAuditType(new QueryUpdateAuditProvider());
+            AuditLogService.get().registerAuditType(new GridViewAuditProvider());
         }
         AuditLogService.get().registerAuditType(new ReportAuditProvider());
 
@@ -335,6 +346,26 @@ public class QueryModule extends DefaultModule
         Role trustedAnalystRole = RoleManager.getRole("org.labkey.api.security.roles.TrustedAnalystRole");
         if (null != trustedAnalystRole)
             trustedAnalystRole.addPermission(EditQueriesPermission.class);
+    }
+
+    @Override
+    public void registerMigrationHandlers(@NotNull DatabaseMigrationService service)
+    {
+        service.registerTableHandler(new MigrationTableHandler()
+        {
+            @Override
+            public TableInfo getTableInfo()
+            {
+                return QueryManager.get().getTableInfoExternalSchema();
+            }
+
+            @Override
+            public ColumnInfo handleColumn(ColumnInfo col)
+            {
+                // In the LinkedSchema case, the container GUID is stored in the "DataSource" column
+                return "DataSource".equals(col.getName()) ? new GuidMapperColumn(col) : col;
+            }
+        });
     }
 
     @Override

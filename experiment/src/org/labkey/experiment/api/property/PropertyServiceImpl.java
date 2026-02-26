@@ -603,7 +603,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
             {
                 try
                 {
-                    Object converted = ConvertUtils.convert(defaultValue, type.getJavaType());
+                    Object converted = type.convert(defaultValue);
                     defaultValues.put(prop, converted);
                 }
                 catch (ConversionException e)

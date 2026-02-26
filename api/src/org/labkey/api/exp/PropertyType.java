@@ -28,6 +28,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.SimpleConvert;
 import org.labkey.api.exp.OntologyManager.PropertyRow;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.util.DateUtil;
@@ -53,7 +54,7 @@ import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 /**
  * TODO: Add more types? Entity, Lsid, User, ...
  */
-public enum PropertyType
+public enum PropertyType implements SimpleConvert
 {
     BOOLEAN("http://www.w3.org/2001/XMLSchema#boolean", "Boolean", 'f', JdbcType.BOOLEAN, 10, null, CellType.BOOLEAN, Boolean.class, Boolean.TYPE)
     {
@@ -66,7 +67,7 @@ public enum PropertyType
         @Override
         public Object convert(Object value) throws ConversionException
         {
-            boolean boolValue = false;
+            Boolean boolValue = null;
             if (value instanceof Boolean)
                 boolValue = (Boolean)value;
             else if (null != value && !"".equals(value))
@@ -121,10 +122,11 @@ public enum PropertyType
         @Override
         public Object convert(Object value) throws ConversionException
         {
-            if (value instanceof String)
+            if (null == value)
                 return value;
-            else
-                return ConvertUtils.convert(value);
+            if (value instanceof CharSequence cs)
+                return cs.isEmpty() ? null : cs.toString();
+            return ConvertUtils.convert(value, String.class);
         }
 
         @Override
@@ -169,10 +171,7 @@ public enum PropertyType
         @Override
         public Object convert(Object value) throws ConversionException
         {
-            if (value instanceof String)
-                return value;
-            else
-                return ConvertUtils.convert(value);
+            return STRING.convert(value);
         }
 
         @Override
@@ -234,13 +233,13 @@ public enum PropertyType
         @Override
         protected void setValue(ObjectProperty property, Object value)
         {
-            throw new UnsupportedOperationException("TODO MultiChoice");
+            property.arrayValue = MultiChoice.Converter.getInstance().convert(MultiChoice.Array.class, value);
         }
 
         @Override
         protected Object getValue(ObjectProperty property)
         {
-            throw new UnsupportedOperationException("TODO MultiChoice");
+            return property.arrayValue;
         }
 
         @Override
@@ -594,8 +593,6 @@ public enum PropertyType
                 {
                     throw new ConversionException(e);
                 }
-//                int offset = TimeZone.getDefault().getOffset(date.getTime());
-//                date.setTime(date.getTime() - offset);
             }
             return date;
         }
@@ -612,7 +609,7 @@ public enum PropertyType
                 String strVal = value.toString();
                 if (DateUtil.isSignedDuration(strVal))
                     strVal = JdbcType.TIMESTAMP.convert(value).toString();
-                return ConvertUtils.convert(strVal, Date.class);
+                return ConvertUtils.convert(strVal, java.sql.Timestamp.class);
             }
         }
 
@@ -932,10 +929,7 @@ public enum PropertyType
         @Override
         public Object convert(Object value) throws ConversionException
         {
-            if (value instanceof String)
-                return value;
-            else
-                return ConvertUtils.convert(value);
+            return STRING.convert(value);
         }
 
         @Override
@@ -1002,6 +996,10 @@ public enum PropertyType
         this.excelCellType = excelCellType;
         this.additionalTypes = additionalTypes;
     }
+
+    /**
+     * The returned Function&lt;Object,Object> should throw ConversionException (undeclared RuntimeException)
+     */
 
     public String getTypeUri()
     {
@@ -1179,8 +1177,6 @@ public enum PropertyType
     public abstract SimpleTypeNames.Enum getXmlBeanType();
 
     protected abstract Object convertExcelValue(Cell cell) throws ConversionException;
-
-    public abstract Object convert(Object value) throws ConversionException;
 
     public static Object getFromExcelCell(Cell cell) throws ConversionException
     {

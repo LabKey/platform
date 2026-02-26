@@ -94,11 +94,15 @@ public class ColumnValidators
         boolean supportsMV = (null != col && null != col.getMvColumnName()) || (null != dp && dp.isMvEnabled());
         boolean notnull = null != col && !col.isNullable();
         boolean required = null != dp && dp.isRequired() || null != col && col.isRequired();
+        JdbcType jdbcType = null != col ? col.getJdbcType() : null != dp ? dp.getJdbcType(): JdbcType.VARCHAR;
 
+        // CONSIDER: RequiredValidator is treating notnull and required the same
+        // This is a bit confusing for ARRAY, where required clearly means not empty array
+        // while an empty array would satisfy NOT NULL in the databse.
         if ((notnull || required) && (col == null || !col.isAutoIncrement()))
         {
             String label = col != null ? col.getName() : dp.getName();
-            return new RequiredValidator(label, !notnull && supportsMV, allowEmptyString);
+            return new RequiredValidator(label, jdbcType, !notnull && supportsMV, allowEmptyString);
         }
 
         return null;

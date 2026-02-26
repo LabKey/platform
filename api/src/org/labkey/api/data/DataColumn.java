@@ -649,7 +649,13 @@ public class DataColumn extends DisplayColumn
                 }
             }
             else
+            {
+                // TODO: We currently rely on the behavior of DateFriendlyDateConverter.convert(String.class, dateObject);
+                // TODO: This logic really belongs in LenientDateConverter.convert(String.class, dateObject)
+                // To force the desired behavior here we need to call ConvertUtils.convert(object)
+                // strVal = ConvertHelper.convert(value, String.class);
                 strVal = ConvertUtils.convert(value);
+            }
         }
         return strVal;
     }
@@ -735,15 +741,19 @@ public class DataColumn extends DisplayColumn
 
     private void renderSelectFormInput(HtmlWriter out, String formFieldName, Object value, List<String> strValues, boolean disabledInput, NamedObjectList entryList)
     {
+        boolean isMultiple = "select.multiple".equalsIgnoreCase(_inputType);
+        if (isMultiple && !formFieldName.startsWith(MultiChoice.ARRAY_MARKER))
+            formFieldName = MultiChoice.ARRAY_MARKER + formFieldName;
         SelectBuilder select = new SelectBuilder()
             .disabled(disabledInput)
-            .multiple("select.multiple".equalsIgnoreCase(_inputType))
+            .multiple(isMultiple)
             .name(formFieldName);
 
         List<OptionBuilder.Option> options = new ArrayList<>();
 
         // add empty option
-        options.add(new OptionBuilder().build());
+        if (!_boundColumn.isRequired() || !isMultiple)
+            options.add(new OptionBuilder().build());
 
         Set<String> selectedValues = strValues.isEmpty() ? Set.of() :
                 strValues.size()==1 ? (null == strValues.get(0) ? Set.of() : Set.of(strValues.get(0))) :

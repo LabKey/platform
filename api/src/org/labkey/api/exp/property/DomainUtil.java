@@ -35,6 +35,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -54,6 +55,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -78,6 +80,8 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
@@ -175,7 +179,7 @@ public class DomainUtil
                     {
                         ColumnInfo pkColumnInfo = table.getColumn(pkCol);
                         if (!pkColumnInfo.getClass().equals(defaultValue.getClass()))
-                            defaultValue = ConvertUtils.convert(defaultValue.toString(), pkColumnInfo.getJavaClass());
+                            defaultValue = pkColumnInfo.convert(defaultValue.toString());
 
                         if (!validateOnly)
                         {
@@ -428,6 +432,15 @@ public class DomainUtil
         return calculatedFieldKeys;
     }
 
+    public static boolean allowMultiChoice(DomainKind<?> kind)
+    {
+        if (!kind.allowMultiChoiceProperties())
+            return false;
+        if (!OptionalFeatureService.get().isFeatureEnabled(AppProps.MULTI_VALUE_TEXT_CHOICE))
+            return false;
+        return CoreSchema.getInstance().getSqlDialect().isPostgreSQL();
+    }
+
     private static GWTDomain<GWTPropertyDescriptor> getDomain(Domain dd)
     {
         GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<>();
@@ -445,8 +458,8 @@ public class DomainUtil
         {
             gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
             gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
-            gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
             gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
+            gwtDomain.setAllowMultiChoiceProperties(allowMultiChoice(kind));
             gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
             gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
             gwtDomain.setAllowUniqueConstraintProperties(kind.allowUniqueConstraintProperties());
@@ -464,8 +477,8 @@ public class DomainUtil
         gwtDomain.setDomainKindName(kind.getKindName());
         gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
         gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
-        gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
         gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
+        gwtDomain.setAllowMultiChoiceProperties(allowMultiChoice(kind));
         gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
         gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
         gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
@@ -784,6 +797,10 @@ public class DomainUtil
             validationException.addError(new SimpleValidationError("Domain not found: " + update.getDomainURI()));
             return validationException;
         }
+
+        var lockSchema = ExperimentService.get().getSchema();
+        if (lockSchema.getScope().isTransactionActive())
+            d.lockForUpdateDelete(lockSchema);
 
         DomainKind<?> kind = d.getDomainKind();
         ValidationException validationException = validateProperties(d, update, kind, orig, user);
@@ -1427,6 +1444,7 @@ public class DomainUtil
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
 
+        boolean allowMultiChoice = domainKind != null ? allowMultiChoice(domainKind) : updates.isAllowMultiChoiceProperties();
         for (GWTPropertyDescriptor field : updates.getFields(true))
         {
             String name = field.getName();
@@ -1440,6 +1458,12 @@ public class DomainUtil
             if (ILLEGAL_PROPERTY_NAMES.contains(name.trim()))
             {
                 exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "The field name '" + name + "' is not allowed.")));
+            }
+
+            if (!allowMultiChoice && PropertyType.MULTI_CHOICE.getTypeUri().equals(field.getRangeURI()))
+            {
+                exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "The field '" + name + "' does not support multiple values.")));
+                continue;
             }
 
             Matcher expMatcher = SUBSTITUTION_EXP_PATTERN.matcher(name);

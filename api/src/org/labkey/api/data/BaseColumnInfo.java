@@ -1461,7 +1461,10 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     @Override
     public boolean isRequiredForInsert(@Nullable DomainProperty dp)
     {
-        if (isCalculated() || !isUserEditable() || isAutoIncrement() || isVersionColumn() || null != getJdbcDefaultValue())
+        if (isCalculated() || !isUserEditable() || isAutoIncrement() || isVersionColumn())
+            return false;
+        // ARRAY may have DEFAULT [] which does not satisfy our isRequired() constraint
+        if (!JdbcType.ARRAY.equals(getJdbcType()) && null != getJdbcDefaultValue())
             return false;
         return !isNullable() || (null != dp && dp.isRequired());
     }

@@ -19,16 +19,18 @@ package org.labkey.query.controllers;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.genai.errors.ClientException;
+import com.google.genai.errors.ServerException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -128,6 +130,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
@@ -154,6 +157,10 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.mcp.AbstractAgentAction;
+import org.labkey.api.mcp.McpContext;
+import org.labkey.api.mcp.McpService;
+import org.labkey.api.mcp.PromptForm;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.RecordedAction;
@@ -175,6 +182,7 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -198,6 +206,7 @@ import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresAnyOf;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
@@ -223,10 +232,12 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.ButtonBuilder;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.LinkBuilder;
@@ -234,6 +245,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.SqlUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
@@ -298,6 +310,7 @@ import org.labkey.remoteapi.RemoteConnections;
 import org.labkey.remoteapi.SelectRowsStreamHack;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.vfs.FileLike;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -340,6 +353,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static org.labkey.api.action.ApiJsonWriter.CONTENT_TYPE_JSON;
 import static org.labkey.api.assay.AssayFileWriter.ensureUploadDirectory;
@@ -715,7 +729,8 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors)
         {
             // Site Admin or Troubleshooter? Troubleshooters can see all the information but can't test data sources.
-            boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
+            // Dev mode only, since "Test" is meant for LabKey's own development and testing purposes.
+            boolean showTestButton = getContainer().hasPermission(getUser(), AdminOperationsPermission.class) && AppProps.getInstance().isDevMode();
             List<ExternalSchemaDef> allDefs = QueryManager.get().getExternalSchemaDefs(null);
 
             MultiValuedMap<String, ExternalSchemaDef> byDataSourceName = new ArrayListValuedHashMap<>();
@@ -730,7 +745,7 @@ public class QueryController extends SpringActionController
                 BR(),
                 TABLE(cl("labkey-data-region"),
                     TR(cl("labkey-show-borders"),
-                        hasAdminOpsPerms ? TD(cl("labkey-column-header"), "Test") : null,
+                        showTestButton ? TD(cl("labkey-column-header"), "Test") : null,
                         TD(cl("labkey-column-header"), "Data Source"),
                         TD(cl("labkey-column-header"), "Current Status"),
                         TD(cl("labkey-column-header"), "URL"),
@@ -760,7 +775,7 @@ public class QueryController extends SpringActionController
                             return Stream.of(
                                 TR(
                                     cl(rowStyle),
-                                    hasAdminOpsPerms ? TD(connected ? new ButtonBuilder("Test").href(new ActionURL(TestDataSourceConfirmAction.class, getContainer()).addParameter("dataSource", scope.getDataSourceName())) : "") : null,
+                                    showTestButton ? TD(connected ? new ButtonBuilder("Test").href(new ActionURL(TestDataSourceConfirmAction.class, getContainer()).addParameter("dataSource", scope.getDataSourceName())) : "") : null,
                                     TD(HtmlString.NBSP, scope.getDisplayName()),
                                     TD(status),
                                     TD(scope.getDatabaseUrl()),
@@ -3114,7 +3129,7 @@ public class QueryController extends SpringActionController
                 for (int idx = 0; idx < numPks; ++idx)
                 {
                     ColumnInfo keyColumn = pks.get(idx);
-                    Object keyValue = keyColumn.getJavaClass() == String.class ? stringValues[idx] : ConvertUtils.convert(stringValues[idx], keyColumn.getJavaClass());
+                    Object keyValue = keyColumn.getJavaClass() == String.class ? stringValues[idx] : keyColumn.convert(stringValues[idx]);
                     rowKeyValues.put(keyColumn.getName(), keyValue);
                 }
                 keyValues.add(rowKeyValues);
@@ -6357,7 +6372,7 @@ public class QueryController extends SpringActionController
         public boolean handlePost(InternalViewForm form, BindException errors)
         {
             CstmView view = form.getViewAndCheckPermission();
-            QueryManager.get().delete(view);
+            QueryManager.get().delete(getUser(), view);
             return true;
         }
 
@@ -6629,7 +6644,7 @@ public class QueryController extends SpringActionController
             {
                 for (String id : ids)
                 {
-                    if (StringUtils.isNotBlank(id))
+                    if (isNotBlank(id))
                         selection.add(id);
                 }
             }
@@ -6703,7 +6718,7 @@ public class QueryController extends SpringActionController
             {
                 for (String id : ids)
                 {
-                    if (StringUtils.isNotBlank(id))
+                    if (isNotBlank(id))
                         selection.add(id);
                 }
             }
@@ -6729,7 +6744,7 @@ public class QueryController extends SpringActionController
             {
                 for (String id : ids)
                 {
-                    if (StringUtils.isNotBlank(id))
+                    if (isNotBlank(id))
                         selection.add(id);
                 }
             }
@@ -7553,7 +7568,7 @@ public class QueryController extends SpringActionController
     public static class QueryExportAuditRedirectAction extends SimpleRedirectAction<QueryExportAuditForm>
     {
         @Override
-        public URLHelper getRedirectURL(QueryExportAuditForm form)
+        public ActionURL getRedirectURL(QueryExportAuditForm form)
         {
             if (form.getRowId() == 0)
                 throw new NotFoundException("Query export audit rowid required");
@@ -8788,5 +8803,197 @@ public class QueryController extends SpringActionController
 
             return rows;
         }
+    }
+
+
+    public static class SqlPromptForm extends PromptForm
+    {
+        public String schemaName;
+
+        public String getSchemaName()
+        {
+            return schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            this.schemaName = schemaName;
+        }
+    }
+
+
+    @RequiresPermission(ReadPermission.class)
+    @RequiresLogin
+    public static class QueryAgentAction extends AbstractAgentAction<SqlPromptForm>
+    {
+        SqlPromptForm _form;
+
+        @Override
+        public void validateForm(SqlPromptForm sqlPromptForm, Errors errors)
+        {
+            _form = sqlPromptForm;
+        }
+
+        @Override
+        protected String getAgentName()
+        {
+            return QueryAgentAction.class.getName();
+        }
+
+        @Override
+        protected String getServicePrompt()
+        {
+            StringBuilder serviceMessage = new StringBuilder();
+            serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(getSQLHelp()).append("\n\n");
+            serviceMessage.append("NOTE: Prefer using lookup syntax rather than JOIN where possible.\n");
+            serviceMessage.append("NOTE: When helping generate SQL please don't use names of tables and columns from documentation examples. Always refer to the available tools for retrieving database metadata.\n");
+
+            DefaultSchema defaultSchema = DefaultSchema.get(getUser(), getContainer());
+
+            if (!isBlank(_form.getSchemaName()))
+            {
+                var schema = defaultSchema.getSchema(_form.getSchemaName());
+                if (null != schema)
+                {
+                    serviceMessage.append("\n\nCurrent default schema is " + schema.getSchemaPath().toSQLString() + ".");
+                }
+            }
+            return serviceMessage.toString();
+        }
+
+        String getSQLHelp()
+        {
+            try
+            {
+                return IOUtils.resourceToString("org/labkey/query/controllers/LabKeySql.md", null, QueryController.class.getClassLoader());
+            }
+            catch (IOException x)
+            {
+                throw new ConfigurationException("error loading resource", x);
+            }
+        }
+
+        @Override
+        public Object execute(SqlPromptForm form, BindException errors) throws Exception
+        {
+            // save form here for context in getServicePrompt()
+            _form = form;
+
+            try (var mcpPush = McpContext.withContext(getViewContext()))
+            {
+                String prompt = form.getPrompt();
+
+                String escapeResponse = handleEscape(prompt);
+                if (null != escapeResponse)
+                {
+                    return new JSONObject(Map.of(
+                            "contentType", "text/plain",
+                            "text", escapeResponse,
+                            "success", Boolean.TRUE));
+                }
+
+                // TODO when/how to do we reset or isolate different chat sessions, e.g. if two SQL windows are open concurrently?
+                ChatClient chatSession = getChat(true);
+                List<McpService.MessageResponse> responses;
+                SqlResponse sqlResponse;
+
+                if (isBlank(prompt))
+                {
+                    return new JSONObject(Map.of(
+                        "contentType", "text/plain",
+                        "text", "🤷",
+                        "success", Boolean.TRUE));
+                }
+
+                try
+                {
+                    responses = McpService.get().sendMessageEx(chatSession, prompt);
+                    sqlResponse = extractSql(responses);
+                }
+                catch (ServerException x)
+                {
+                    return new JSONObject(Map.of(
+                            "error", x.getMessage(),
+                            "text", "ERROR: " + x.getMessage(),
+                            "success", Boolean.FALSE));
+                }
+
+                /* VALIDATE SQL */
+                if (null != sqlResponse.sql())
+                {
+                    QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema("study");
+                    try
+                    {
+                        TableInfo ti = QueryService.get().createTable(schema, sqlResponse.sql(), null, true);
+                        var warnings = ti.getWarnings();
+                        if (null != warnings)
+                        {
+                            var warning = warnings.stream().findFirst();
+                            if (warning.isPresent())
+                                throw warning.get();
+                        }
+                        // if that worked, let have the DB check it too
+                        if (ti.getSqlDialect().isPostgreSQL())
+                        {
+                            // CONSIDER: will this work with LabKey SQL named parameters?
+                            SQLFragment sql = new SQLFragment("PREPARE validate AS SELECT * FROM ").append(ti.getFromSQL("MYVALIDATEQUERY__"));
+                            new SqlExecutor(ti.getSchema().getScope()).execute(sql);
+                        }
+                    }
+                    catch (Exception x)
+                    {
+                        // CONSIDER remove line line/character information from DB errors as they won't match the LabKey SQL
+                        String validationPrompt = "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below, can you attempt to fix this?\n```" + x.getMessage() + "```";
+                        responses = McpService.get().sendMessageEx(chatSession, validationPrompt);
+                        var newSqlResponse = extractSql(responses);
+                        if (isNotBlank(newSqlResponse.sql()))
+                            sqlResponse = newSqlResponse;
+                    }
+                }
+
+                var ret = new JSONObject(Map.of(
+                        "success", Boolean.TRUE));
+                if (null != sqlResponse.sql())
+                    ret.put("sql", sqlResponse.sql());
+                if (null != sqlResponse.html())
+                    ret.put("html", sqlResponse.html());
+                return ret;
+            }
+            catch (ClientException ex)
+            {
+                var ret = new JSONObject(Map.of(
+                        "text", ex.getMessage(),
+                        "user", getViewContext().getUser().getName(),
+                        "success", Boolean.FALSE));
+                return ret;
+            }
+        }
+    }
+
+    record SqlResponse(HtmlString html, String sql)
+    {
+    }
+
+    static SqlResponse extractSql(List<McpService.MessageResponse> responses)
+    {
+        HtmlStringBuilder html = HtmlStringBuilder.of();
+        String sql = null;
+
+        for (var response : responses)
+        {
+            if (null == sql)
+            {
+                var text = response.text();
+                String sqlFind = SqlUtil.extractSql(text);
+                if (null != sqlFind)
+                {
+                    sql = sqlFind;
+                    if (sql.equals(text) || text.startsWith("```sql"))
+                        continue;   // Don't append this to the html response
+                }
+            }
+            html.append(response.html());
+        }
+        return new SqlResponse(html.getHtmlString(), sql);
     }
 }

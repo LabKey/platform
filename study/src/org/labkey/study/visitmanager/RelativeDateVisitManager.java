@@ -74,6 +74,11 @@ public class RelativeDateVisitManager extends VisitManager
         return "Timepoints";
     }
 
+    @Override
+    public Set<CohortFilter.Type> supportedCohortFilterTypes()
+    {
+        return Set.of(CohortFilter.Type.PTID_CURRENT, CohortFilter.Type.PTID_INITIAL);
+    }
 
     @Override
     @Nullable

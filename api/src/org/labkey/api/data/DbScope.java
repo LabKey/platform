@@ -50,7 +50,6 @@ import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.LoggerWriter;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.SimpleLoggerWriter;
 import org.labkey.api.util.SkipMothershipLogging;
@@ -1543,7 +1542,7 @@ public class DbScope
         public void testSchemaNames()
         {
             ModuleLoader.getInstance().getModules()
-                    .forEach(m -> assertEquals(getSchemaNames(m, true), getSchemaNames(m, false)));
+                .forEach(m -> assertEquals(getSchemaNames(m, true), getSchemaNames(m, false)));
         }
     }
 
@@ -3271,9 +3270,8 @@ public class DbScope
         {
             ReentrantLock lock1 = new ReentrantLock();
             ReentrantLock lock2 = new ReentrantLock();
-            Pair<Throwable, Throwable> throwables = attemptToDeadlock(lock1, lock2, (x) -> ((TransactionImpl)x).setLockTimeout(5, TimeUnit.SECONDS));
+            attemptToDeadlock(lock1, lock2, (x) -> ((TransactionImpl)x).setLockTimeout(5, TimeUnit.SECONDS), DeadlockPreventingException.class);
 
-            assertTrue(throwables.first instanceof DeadlockPreventingException || throwables.second instanceof DeadlockPreventingException);
             assertFalse("Lock 1 is still locked", lock1.isLocked());
             assertFalse("Lock 2 is still locked", lock2.isLocked());
         }
@@ -3394,18 +3392,13 @@ public class DbScope
             Lock lockUser = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoUsersData(), user.getUserId());
             Lock lockHome = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoContainers(), ContainerManager.getHomeContainer().getId());
 
-            Pair<Throwable, Throwable> throwables = attemptToDeadlock(lockUser, lockHome, (x) -> {});
-
-            assertTrue("Unexpected exceptions: " + throwables.first + "\n" + throwables.second, throwables.first instanceof PessimisticLockingFailureException || throwables.second instanceof PessimisticLockingFailureException );
+            attemptToDeadlock(lockUser, lockHome, (x) -> {}, PessimisticLockingFailureException.class);
         }
 
-        /**
-         * @return foreground and background thread exceptions
-         */
-        private Pair<Throwable, Throwable> attemptToDeadlock(Lock lock1, Lock lock2, @NotNull Consumer<Transaction> transactionModifier)
+        private void attemptToDeadlock(Lock lock1, Lock lock2, @NotNull Consumer<Transaction> transactionModifier, Class<? extends Throwable> expectedException)
         {
             final Object notifier = new Object();
-            final Pair<Throwable, Throwable> result = new Pair<>(null, null);
+            final List<Throwable> result = new ArrayList<>();
 
             // let's try to intentionally cause a deadlock
             Thread bkg = new Thread(() -> {
@@ -3431,7 +3424,7 @@ public class DbScope
                     }
                     catch (Throwable x)
                     {
-                        result.second = x;
+                        result.add(x);
                     }
                 }
             });
@@ -3465,7 +3458,7 @@ public class DbScope
                 }
                 catch (Throwable x)
                 {
-                    result.first = x;
+                    result.add(x);
                 }
                 finally
                 {
@@ -3479,7 +3472,13 @@ public class DbScope
                     }
                 }
             }
-            return result;
+
+            assertFalse("No exceptions from attempted deadlock.", result.isEmpty());
+            result.stream().filter(t -> !expectedException.isAssignableFrom(t.getClass()))
+                .findAny().ifPresent(t -> {
+                    throw new AssertionError("Wrong error from deadlock. expected: <" +
+                        expectedException.getSimpleName() + ">, but was <" + t.getClass().getSimpleName() + ">", t);
+                });
         }
 
          @Test

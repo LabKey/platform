@@ -101,10 +101,10 @@ public class PopupAdminView
             }
         }
 
-        if (user.isAnalyst())
+        if (user.isAnalyst() || user.hasRootPermission(TroubleshooterPermission.class))
         {
             NavTree devMenu = new NavTree("Developer Links");
-            devMenu.addChildren(PopupDeveloperView.getNavTree(context));
+            devMenu.addChildren(DeveloperMenu.getNavTree(context));
             navTree.addChild(devMenu);
         }
 
@@ -135,6 +135,7 @@ public class PopupAdminView
             SortedSet<Module> disabledModules = new TreeSet<>(moduleComparator);
             disabledModules.addAll(ModuleLoader.getInstance().getModules());
             disabledModules.removeAll(activeModules);
+            disabledModules.removeIf(module -> !module.isAvailable(context.getContainer()));
 
             NavTree goToModuleMenu = new NavTree("Go To Module");
             Module defaultModule = null;

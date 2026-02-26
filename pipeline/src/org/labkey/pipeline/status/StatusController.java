@@ -52,6 +52,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
@@ -86,6 +87,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -118,7 +120,7 @@ public class StatusController extends SpringActionController
         ActionURL url = urlProvider(PipelineStatusUrls.class).urlBegin(ContainerManager.getRoot(), false);
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "pipeline", url, ReadPermission.class);
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Diagnostics, "pipelines and tasks",
-                new ActionURL(AnalysisController.InternalListPipelinesAction.class, ContainerManager.getRoot()), ReadPermission.class);
+                new ActionURL(AnalysisController.InternalListPipelinesAction.class, ContainerManager.getRoot()), AdminPermission.class);
     }
 
     @Override
@@ -492,7 +494,15 @@ public class StatusController extends SpringActionController
 
             if (sf.getDataUrl() != null)
             {
-                throw new RedirectException(sf.getDataUrl());
+                try
+                {
+                    URLHelper url = new URLHelper(sf.getDataUrl());
+                    throw new RedirectException(url);
+                }
+                catch (URISyntaxException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
 
             return urlDetails(c, form.getRowId());

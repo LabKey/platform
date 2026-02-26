@@ -26,4 +26,10 @@ public class ImpersonatingTroubleshooterRole extends AbstractRootContainerRole
     {
         return true;
     }
+
+    @Override
+    public boolean isAvailableEverywhere()
+    {
+        return false;
+    }
 }

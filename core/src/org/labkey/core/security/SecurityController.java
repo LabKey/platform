@@ -77,7 +77,6 @@ import org.labkey.api.security.InvalidGroupMembershipException;
 import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -399,7 +398,7 @@ public class SecurityController extends SpringActionController
     public class BeginAction extends SimpleRedirectAction<Object>
     {
         @Override
-        public URLHelper getRedirectURL(Object o)
+        public ActionURL getRedirectURL(Object o)
         {
             if (null == getContainer() || getContainer().isRoot())
             {
@@ -719,14 +718,6 @@ public class SecurityController extends SpringActionController
         }
 
         return view;
-    }
-
-    private void verifySystemGroupIsAssignedRole(Group group, Role role, BindException errors)
-    {
-        Set<Role> roles = ContainerManager.getRoot().getPolicy().getRoles(new PrincipalArray(List.of(group.getUserId())));
-        if (!roles.contains(role))
-            errors.reject(ERROR_MSG, "Warning: This group is not assigned its standard role, "
-                + role.getDisplayName() + "! Consider assigning it on the Site Permissions page.");
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -1217,19 +1208,19 @@ public class SecurityController extends SpringActionController
         private void addAuditEvent(Group group, SecurityPolicy newPolicy, SecurityPolicy oldPolicy, AuditChangeType changeType)
         {
             Role oldRole = RoleManager.getRole(NoPermissionsRole.class);
-            if(null != oldPolicy)
+            if (null != oldPolicy)
             {
-                List<Role> oldRoles = oldPolicy.getAssignedRoles(group);
-                if(!oldRoles.isEmpty())
-                    oldRole = oldRoles.get(0);
+                oldRole = oldPolicy.getAssignedRoles(group)
+                    .findFirst()
+                    .orElse(oldRole);
             }
 
             Role newRole = RoleManager.getRole(NoPermissionsRole.class);
-            if(null != newPolicy)
+            if (null != newPolicy)
             {
-                List<Role> newRoles = newPolicy.getAssignedRoles(group);
-                if(!newRoles.isEmpty())
-                    newRole = newRoles.get(0);
+                newRole = newPolicy.getAssignedRoles(group)
+                    .findFirst()
+                    .orElse(newRole);
             }
 
             switch (changeType)
@@ -1619,7 +1610,7 @@ public class SecurityController extends SpringActionController
                 continue;
 
             MutableSecurityPolicy policy = new MutableSecurityPolicy(container, container.getPolicy());
-            Collection<Role> roles = policy.getAssignedRoles(user);
+            Collection<Role> roles = policy.getAssignedRoles(user).toList();
 
             if (!roles.isEmpty())
             {
@@ -2244,18 +2235,12 @@ public class SecurityController extends SpringActionController
 
     public static void fillUserAccessGroups(UserPrincipal user, List<Group> groups, SecurityPolicy policy, Collection<Role> effectiveRoles, Map<String, List<Group>> userAccessGroups)
     {
-        for (Group group : groups)
-        {
-            if (user.isInGroup(group.getUserId()))
-            {
-                Collection<Role> groupRoles = policy.getAssignedRoles(group);
-                for (Role role : effectiveRoles)
-                {
-                    if (groupRoles.contains(role))
-                        userAccessGroups.get(role.getName()).add(group);
-                }
-            }
-        }
+        groups.stream().filter(group -> user.isInGroup(group.getUserId())).forEach(group -> {
+            Collection<Role> groupRoles = policy.getAssignedRoles(group).collect(Collectors.toSet());
+            effectiveRoles.stream()
+                .filter(groupRoles::contains)
+                .forEach(role -> userAccessGroups.get(role.getName()).add(group));
+        });
     }
 
     public static class FolderAccessForm

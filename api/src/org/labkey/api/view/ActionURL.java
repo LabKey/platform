@@ -42,17 +42,34 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.containsString;
 
-/**
- * Encapsulates URL generation and parsing based on controller/container/action conventions.
- * This class has to be kept in sync with ViewServlet.
- */
+/// Represents a URL that follows LabKey's container/action routing conventions.
+/// Extends [URLHelper] with structured access to the controller name, action name, and
+/// container path, generating URLs in the format: `/contextPath/containerPath/controller-action.view`
+///
+/// Scheme, host, and port are lazily initialized from [AppProps] and only needed when
+/// generating absolute URLs.
+///
+/// ### Examples
+///
+/// ```java
+/// // From an action class (preferred)
+/// ActionURL url = new ActionURL(MyAction.class, container);
+///
+/// // From controller/action strings
+/// ActionURL url = new ActionURL("core", "login", container);
+///
+/// // Parsed from a URL string
+/// ActionURL url = new ActionURL("/containerPath/core-login.view?returnUrl=...");
+///
+/// // Adding parameters (fluent API)
+/// url.addParameter("key", "value")
+///    .addReturnUrl(returnUrl);
+/// ```
+///
+/// @see URLHelper
+/// @see ViewServlet
 public class ActionURL extends URLHelper implements Cloneable
 {
-    private static boolean useContainerRelativeURL()
-    {
-        return AppProps.getInstance().getUseContainerRelativeURL();
-    }
-
     public enum Param implements SafeToRenderEnum
     {
         returnUrl,
@@ -202,41 +219,20 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
     /** @return just the controller-action.view?parameters#fragment part of the URL, omitting the server name, context path, and container path */
-    public String toContainerRelativeURL()
+    public String toRelativeURL()
     {
-        StringBuilder result = new StringBuilder(toPathStringNew(Path.emptyPath, _controller, _action, Path.emptyPath));
+        StringBuilder result = new StringBuilder(toPathString(Path.emptyPath, _controller, _action, Path.emptyPath));
         appendParamsAndFragment(result, false);
         return result.toString();
     }
 
+    /** Generates in the format of /contextPath/containerPath/controller-action.view */
     private String toPathString(Path contextPath, String controller, String action, Path extraPath)
     {
-        if (useContainerRelativeURL())
-            return toPathStringNew(contextPath, controller, action, extraPath);
-        else
-            return toPathStringOld(contextPath, controller, action, extraPath);
-    }
-
-    /** Generates in the format of /contextPath/controller/containerPath/action.view */
-    private static String toPathStringOld(Path contextPath, String controller, String action, Path extraPath)
-    {
-        Path path = contextPath.append(controller).append(extraPath);
-        if (null != action)
-        {
-            if (-1 == action.indexOf('.'))
-                action = action + ".view";
-            path = path.append(action, false);
-        }
-        return path.encode();
-    }
-
-    /** Generates in the format of /contextPath/containerPath/controller-action.view */
-    private static String toPathStringNew(Path contextPath, String pageFlow, String action, Path extraPath)
-    {
         Path path = contextPath.append(extraPath);
-        if (null != action && null != pageFlow)
+        if (null != action && null != controller)
         {
-            action = pageFlow + "-" + action + (-1 == action.indexOf('.') ? ".view" : "");
+            action = controller + "-" + action + (-1 == action.indexOf('.') ? ".view" : "");
             path = path.append(action, false);
         }
         return path.encode();
@@ -551,14 +547,14 @@ public class ActionURL extends URLHelper implements Cloneable
         {
             controller = action.substring(0, dash);
             action = action.substring(dash+1);
-            setIsCanonical(useContainerRelativeURL());
+            setIsCanonical(true);
         }
         else
         {
             // Reject controller-first URLs if that experimental feature is enabled AND the generate controller-first URLs option is NOT enabled. Otherwise, admin would end up in a very bad state.
-            if (OptionalFeatureService.get().isFeatureEnabled(AppProps.REJECT_CONTROLLER_FIRST_URLS) && !OptionalFeatureService.get().isFeatureEnabled(AppProps.GENERATE_CONTROLLER_FIRST_URLS))
+            if (OptionalFeatureService.get().isFeatureEnabled(AppProps.REJECT_CONTROLLER_FIRST_URLS))
                 throw new IllegalArgumentException("Controller-first URLs are not allowed! (" + savedPath +")");
-            setIsCanonical(!useContainerRelativeURL());
+            setIsCanonical(false);
         }
 
         // parse controller
@@ -684,10 +680,7 @@ public class ActionURL extends URLHelper implements Cloneable
 
             ActionURL parse = new ActionURL("/Controller/path/action.view?foo=bar");
             String toString = parse.getLocalURIString();
-            if (useContainerRelativeURL())
-                assertEquals(parse.getContextPath() + "/path/controller-action.view?foo=bar", toString);
-            else
-                assertEquals(parse.getContextPath() + "/controller/path/action.view?foo=bar", toString);
+            assertEquals(parse.getContextPath() + "/path/controller-action.view?foo=bar", toString);
         }
 
         @Test

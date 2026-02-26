@@ -25,14 +25,12 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.roles.AbstractRootContainerRole;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
 import java.io.Serializable;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -54,34 +52,38 @@ public interface ImpersonationContext extends Serializable
 
     /**
      * @return The roles assigned to this user in the provided resource's policy as well as the root. The roles may be
-     * modified and/or filtered by the impersonation context.
+     * modified and/or filtered by the impersonation context. Note: The returned stream may duplicate some roles; if a
+     * distinct stream of roles is required, callers should invoke {@code distinct()} or collect to a set.
      */
     default Stream<Role> getAssignedRoles(User user, SecurableResource resource)
     {
-        Stream<Role> roles = getSiteRoles(user);
-        SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
-        return Streams.concat(roles, policy.getRoles(user.getGroups()).stream()).distinct();
-    }
-
-    /**
-     * @return The roles assigned to this user in the root. The roles may be modified and/or filtered by the
-     * impersonation context.
-     */
-    default Stream<Role> getSiteRoles(User user)
-    {
+        // Collect the site roles first. By default, they are applicable everywhere.
+        PrincipalArray groups = getGroups(user);
         Container root = ContainerManager.getRoot();
-        SecurityPolicy policy = root.getPolicy();
-        Set<Role> roles = policy.getRoles(getGroups(user));
-        roles.remove(RoleManager.getRole(NoPermissionsRole.class));
-        for (Role role : roles)
-            assert role.isApplicable(policy, root);
+        SecurityPolicy rootPolicy = root.getPolicy();
+        Stream<Role> ret = rootPolicy.getRoles(groups)
+            .filter(role -> {
+                if (!role.isApplicable(rootPolicy, root))
+                    throw new IllegalStateException("Root role " + role.getName() + " is not applicable");
+                if (!(role instanceof AbstractRootContainerRole siteRole))
+                    throw new IllegalStateException("Root roles should all be AbstractRootContainerRole");
 
-        return roles.stream();
+                return siteRole.isAvailableEverywhere() || resource.equals(root);
+            });
+
+        if (!resource.equals(root))
+        {
+            // Add the roles assigned in the project or folder
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
+            ret = Streams.concat(ret, policy.getRoles(groups));
+        }
+
+        return ret;
     }
 
     ImpersonationContextFactory getFactory();
 
-    /** Responsible for adding menu items to allow the user to initiate or stop impersonating, based on the current state */
+    /** Responsible for adding menu items to allow the user to initiate, adjust, or stop impersonating, based on the current state */
     void addMenu(NavTree menu, Container c, User user, ActionURL currentURL);
 
     // restrict the permissions this user is allowed

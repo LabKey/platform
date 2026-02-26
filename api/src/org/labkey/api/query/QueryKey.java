@@ -330,13 +330,18 @@ import java.util.Objects;
      */
     public String toSQLString()
     {
+        return toSQLString(false);
+    }
+
+    public String toSQLString(boolean quoteEverything)
+    {
         List<String> parts = getParts();
         StringBuilder escapedName = new StringBuilder();
         String sep = "";
         for (String part : parts)
         {
             escapedName.append(sep);
-            if (needsQuotes(part))
+            if (quoteEverything || needsQuotes(part))
                 escapedName.append("\"").append(part.replace("\"", "\"\"")).append("\"");
             else
                 escapedName.append(part);

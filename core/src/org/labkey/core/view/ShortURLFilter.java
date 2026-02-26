@@ -15,6 +15,7 @@
  */
 package org.labkey.core.view;
 
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ShortURLRecord;
 import org.labkey.api.view.ShortURLService;
 
@@ -31,17 +32,9 @@ import java.io.IOException;
 /**
  * Looks for incoming URLs that match a short URL registered with ShortURLService. If so, the filter will bounce the
  * browser to the target URL.
- * User: jeckels
- * Date: 1/31/14
  */
 public class ShortURLFilter implements Filter
 {
-    @Override
-    public void destroy()
-    {
-
-    }
-
     @Override
     public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain) throws IOException, ServletException
     {
@@ -64,7 +57,7 @@ public class ShortURLFilter implements Filter
         if (fullURL != null)
         {
             // We found a match, do a redirect and bail out
-            response.sendRedirect(fullURL.getFullURL());
+            ExceptionUtil.unsafeRedirect(response, fullURL.getFullURL());
         }
         else
         {

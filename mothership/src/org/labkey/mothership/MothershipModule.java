@@ -88,6 +88,12 @@ public class MothershipModule extends DefaultModule
     }
 
     @Override
+    public boolean isAvailable(Container container)
+    {
+        return container.isRoot() || container.getActiveModules().contains(this);
+    }
+
+    @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
         if (moduleContext.isNewInstall() && ModuleLoader.getInstance().shouldInsertData())

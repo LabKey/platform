@@ -24,6 +24,7 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.menu.NavTreeMenu;
 
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -38,12 +39,33 @@ import static org.labkey.api.util.DOM.I;
 import static org.labkey.api.util.DOM.cl;
 import static org.labkey.api.util.DOM.createHtmlFragment;
 
-/**
- * NavTree can be used three ways in different places in the product
- * 1) as a single navigation element (no children)
- * 2) as a list of navigation elements (ignore the root node, use children as list of elements)
- * 3) as a tree, may be rendered as a tree, or menu
- */
+/// A tree-structured navigation element used throughout the application to build menus, breadcrumbs,
+/// button dropdowns, tab strips, webpart controls, and other navigational UI. Each node carries display
+/// properties (text, icon, tooltip) and behavior (href, onclick script, POST with confirmation).
+///
+/// NavTree is used in many contexts — as a single link, a flat list of items, a hierarchical menu,
+/// or serialized to JSON/JavaScript for client-side rendering. The special singleton [MENU_SEPARATOR]
+/// inserts visual dividers between groups of menu items.
+///
+/// ### Examples
+///
+/// ```java
+/// // Simple link
+/// NavTree link = new NavTree("Settings", settingsUrl);
+///
+/// // Dropdown menu with items
+/// NavTree menu = new NavTree("Admin");
+/// menu.addChild("Users", usersUrl);
+/// menu.addChild("Permissions", permissionsUrl);
+/// menu.addSeparator();
+/// menu.addChild("Site Settings", siteSettingsUrl);
+///
+/// // POST action
+/// NavTree delete = new NavTree("Delete", deleteUrl);
+/// delete.usePost();
+/// ```
+///
+/// @see NavTreeMenu
 
 public class NavTree implements Collapsible
 {

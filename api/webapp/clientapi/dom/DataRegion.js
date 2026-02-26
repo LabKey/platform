@@ -493,6 +493,7 @@ if (!LABKEY.DataRegions) {
          * Non-configurable Options
          */
         this.selectionModified = false;
+        this.selectionLoading = false;
 
         if (this.panelConfigurations === undefined) {
             this.panelConfigurations = {};
@@ -1171,19 +1172,11 @@ if (!LABKEY.DataRegions) {
         config.selectionKey = this.selectionKey;
         config.scope = config.scope || me;
 
-        config = _chainSelectionCountCallback(this, config);
+        // set loading flag for DataRegion, will be cleared in callback
+        this.selectionLoading = true;
+        _updateSelectedCountMessage(this);
 
-        var failure = LABKEY.Utils.getOnFailure(config);
-        if ($.isFunction(failure)) {
-            config.failure = failure;
-        }
-        else {
-            config.failure = function(error) {
-                let msg = 'Error setting selection';
-                if (error && error.exception) msg += ': ' + error.exception;
-                me.addMessage(msg, 'selection');
-            };
-        }
+        config = _chainSelectionCountCallback(this, config);
 
         if (config.selectionKey) {
             LABKEY.DataRegion.setSelected(config);
@@ -3006,10 +2999,6 @@ if (!LABKEY.DataRegions) {
             });
         }
 
-        if (direction === SORT_ASC) { // Easier to read without the encoded + on the URL...
-            direction = '';
-        }
-
         if (LABKEY.Utils.isString(direction)) {
             newSorts = [direction + columnName].concat(newSorts);
         }
@@ -3058,12 +3047,39 @@ if (!LABKEY.DataRegions) {
 
     var _chainSelectionCountCallback = function(region, config) {
 
-        var success = LABKEY.Utils.getOnSuccess(config);
+        const failure = LABKEY.Utils.getOnFailure(config);
+        config.failure = function(error) {
+            region.selectionLoading = false;
+
+            let msg = 'Error setting selection';
+            if (error && error.exception) msg += ': ' + error.exception;
+            config.scope.addMessage(msg, 'selection');
+
+            if ($.isFunction(failure)) {
+                failure.call(config.scope, error);
+            }
+        }
 
         // On success, update the current selectedCount on this DataRegion and fire the 'selectchange' event
-        config.success = function(data) {
+        const success = LABKEY.Utils.getOnSuccess(config);
+        config.success = function(data, response) {
+
+            // Workaround for GitHub Issue 778 where the response payload is JSON but the response has been
+            // configured by the server as non-JSON.
+            if (!data && response?.responseText) {
+                try {
+                    data = JSON.parse(response.responseText);
+                } catch (e) {
+                    const msg = 'failed to parse response';
+                    console.error(msg, e, response);
+                    config.failure.call(config.scope, { exception: msg });
+                    return;
+                }
+            }
+
             region.removeMessage('selection');
             region.selectionModified = true;
+            region.selectionLoading = false;
             region.selectedCount = data.count;
             _onSelectionChange(region);
 
@@ -3363,7 +3379,10 @@ if (!LABKEY.DataRegions) {
     var _buttonSelectionBind = function(region, cls, fn) {
         var partEl = region.msgbox.getParent().find('div[data-msgpart="selection"]');
         partEl.find('.labkey-button' + cls).off('click').on('click', $.proxy(function() {
-            fn.call(this);
+            // if one of the buttons is clicked while another action is loading selections, skip the click (the button should also be disabled)
+            if (!region.selectionLoading) {
+                fn.call(this);
+            }
         }, region));
     };
 
@@ -3592,18 +3611,20 @@ if (!LABKEY.DataRegions) {
 
     var _showSelectMessage = function(region, msg) {
         if (region.showRecordSelectors) {
+            const cls = 'labkey-button ' + (region.selectionLoading ? 'disabled ' : '');
+
             if (_isShowSelectAll(region)) {
-                msg += "&nbsp;<span class='labkey-button select-all'>" + _getSelectAllText(region) + "</span>";
+                msg += "&nbsp;<span class='" + cls + " select-all'>" + _getSelectAllText(region) + "</span>";
             }
 
-            msg += "&nbsp;" + "<span class='labkey-button select-none'>Select None</span>";
+            msg += "&nbsp;" + "<span class='" + cls + " select-none'>Select None</span>";
             var showOpts = [];
             if (region.showRows !== 'all' && !_isMaxRowsAllRows(region))
-                showOpts.push("<span class='labkey-button show-all'>Show All</span>");
+                showOpts.push("<span class='" + cls + " show-all'>Show All</span>");
             if (region.showRows !== 'selected')
-                showOpts.push("<span class='labkey-button show-selected'>Show Selected</span>");
+                showOpts.push("<span class='" + cls + " show-selected'>Show Selected</span>");
             if (region.showRows !== 'unselected')
-                showOpts.push("<span class='labkey-button show-unselected'>Show Unselected</span>");
+                showOpts.push("<span class='" + cls + " show-unselected'>Show Unselected</span>");
             msg += "&nbsp;&nbsp;" + showOpts.join(" ");
         }
 
@@ -4081,6 +4102,21 @@ if (!LABKEY.DataRegions) {
         _setParameters(region, params, [OFFSET_PREFIX].concat(skipPrefixes));
     };
 
+    var _updateSelectedCountMessage = function(region) {
+        // If not all rows are visible and some rows are selected, show selection message
+        if (region.totalRows && 0 !== region.selectedCount && !region.complete) {
+            var msg;
+            if (region.selectedCount === region.totalRows) {
+                msg = 'All <span class="labkey-strong">' + region.totalRows.toLocaleString() + '</span> rows selected.';
+            } else if (region.selectionLoading) {
+                msg = 'Selected <i class="fa fa-spinner fa-pulse" ></i> of ' + region.totalRows.toLocaleString() + ' rows.';
+            } else {
+                msg = 'Selected <span class="labkey-strong">' + region.selectedCount.toLocaleString() + '</span> of ' + region.totalRows.toLocaleString() + ' rows.';
+            }
+            _showSelectMessage(region, msg);
+        }
+    }
+
     var _updateRequiresSelectionButtons = function(region, selectedCount) {
 
         // update the 'select all on page' checkbox state
@@ -4100,13 +4136,7 @@ if (!LABKEY.DataRegions) {
             }
         });
 
-        // If not all rows are visible and some rows are selected, show selection message
-        if (region.totalRows && 0 !== region.selectedCount && !region.complete) {
-            var msg = (region.selectedCount === region.totalRows) ?
-                        'All <span class="labkey-strong">' + region.totalRows.toLocaleString() + '</span> rows selected.' :
-                        'Selected <span class="labkey-strong">' + region.selectedCount.toLocaleString() + '</span> of ' + region.totalRows.toLocaleString() + ' rows.';
-            _showSelectMessage(region, msg);
-        }
+        _updateSelectedCountMessage(region);
 
         // Issue 10566: for javascript perf on IE stash the requires selection buttons
         if (!region._requiresSelectionButtons) {
@@ -4446,6 +4476,11 @@ if (!LABKEY.DataRegions) {
     };
 
     LABKEY.DataRegion.selectAll = function(config) {
+        // GitHub Issue 778: Track selection loading state on DataRegion so we can disable buttons and prevent another click
+        var region = config.scope;
+        region.selectionLoading = true;
+        _updateSelectedCountMessage(region);
+
         var params = {};
         if (!config.url) {
             // DataRegion doesn't have selectAllURL so generate url and query parameters manually
@@ -4485,8 +4520,8 @@ if (!LABKEY.DataRegions) {
             url: config.url,
             method: 'POST',
             params: params,
-            success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
-            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+            success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), region),
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), region, true)
         });
     };
 

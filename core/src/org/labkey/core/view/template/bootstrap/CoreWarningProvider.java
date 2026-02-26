@@ -16,6 +16,7 @@
 package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -296,21 +297,15 @@ public class CoreWarningProvider implements WarningProvider
 
     private void addTomcatWarnings(Warnings warnings, boolean showAllWarnings)
     {
-        if (showAllWarnings || ModuleLoader.getInstance().getTomcatVersion().isDeprecated())
-        {
-            String serverInfo = ModuleLoader.getServletContext().getServerInfo();
-            addStandardWarning(warnings, "The deployed version of Tomcat, " + serverInfo + ", is not supported.", "supported", "Supported Technologies page");
-        }
-
         try
         {
             Set<String> deployedWebapps = new HashSet<>(collectAllDeployedApps());
             deployedWebapps.remove(StringUtils.strip(AppProps.getInstance().getContextPath(),"/"));
             boolean defaultTomcatWebappFound = deployedWebapps.stream().anyMatch(webapp ->
-                StringUtils.startsWithIgnoreCase(webapp,"docs") ||
-                StringUtils.startsWithIgnoreCase(webapp,"host-manager") ||
-                StringUtils.startsWithIgnoreCase(webapp,"examples") ||
-                StringUtils.startsWithIgnoreCase(webapp,"manager")
+                Strings.CI.startsWith(webapp,"docs") ||
+                Strings.CI.startsWith(webapp,"host-manager") ||
+                Strings.CI.startsWith(webapp,"examples") ||
+                Strings.CI.startsWith(webapp,"manager")
             );
 
             if (showAllWarnings || (defaultTomcatWebappFound && !AppProps.getInstance().isDevMode()))

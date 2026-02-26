@@ -746,7 +746,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             {
                 try
                 {
-                    pkValue = ConvertUtils.convert(pkValue.toString(), pk.getJavaObjectClass());
+                    pkValue = pk.convert(pkValue);
                 }
                 catch (ConversionException ignored) { /* Maybe the database can do the conversion */ }
             }
@@ -778,9 +778,14 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return _missingValues.containsKey(mv);
     }
 
+    protected TableInfo getTableInfoForConversion()
+    {
+        return getDbTable();
+    }
+
     final protected void convertTypes(User user, Container c, Map<String,Object> row) throws ValidationException
     {
-        convertTypes(user, c, row,  getDbTable(), null);
+        convertTypes(user, c, row,  getTableInfoForConversion(), null);
     }
 
     // TODO Path->FileObject
@@ -826,7 +831,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 row.put(col.getMvColumnName().getName(), mv);
             }
 
-            value = null==value ? null : convertColumnValue(col, value, user, c, fileLinkDirPath);
+            value = convertColumnValue(col, value, user, c, fileLinkDirPath);
             row.put(col.getName(), value);
         }
     }
@@ -846,7 +851,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 }
                 return ExpDataFileConverter.convert(value);
             }
-            return col.getConvertFn().apply(value);
+            return col.getConvertFn().convert(value);
         }
         catch (ConvertHelper.FileConversionException e)
         {

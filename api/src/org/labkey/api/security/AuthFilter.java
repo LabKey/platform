@@ -53,6 +53,13 @@ import java.util.Random;
 public class AuthFilter implements Filter
 {
     private static final Object FIRST_REQUEST_LOCK = new Object();
+
+    public static final String STRICT_TRANSPORT_SECURITY_HEADER_NAME = "Strict-Transport-Security";
+    public static final String X_FRAME_OPTIONS_HEADER_NAME = "X-Frame-Options";
+    public static final String X_CONTENT_TYPE_OPTIONS_HEADER_NAME = "X-Content-Type-Options";
+    public static final String REFERRER_POLICY_HEADER_NAME = "Referrer-Policy";
+    public static final String SERVER_HEADER_NAME = "Server";
+
     private static boolean _firstRequestHandled = false;
     private static volatile boolean _sslChecked = false;
     private static SecurityPointcutService _securityPointcut = null;
@@ -81,9 +88,9 @@ public class AuthFilter implements Filter
         if (ModuleLoader.getInstance().isStartupComplete())
         {
             if (!"ALLOW".equals(AppProps.getInstance().getXFrameOption()))
-                resp.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOption());
-            resp.setHeader("X-Content-Type-Options", "nosniff");
-            resp.setHeader("Referrer-Policy", "origin-when-cross-origin" );
+                resp.setHeader(X_FRAME_OPTIONS_HEADER_NAME, AppProps.getInstance().getXFrameOption());
+            resp.setHeader(X_CONTENT_TYPE_OPTIONS_HEADER_NAME, "nosniff");
+            resp.setHeader(REFERRER_POLICY_HEADER_NAME, "origin-when-cross-origin" );
 
             if (AppProps.getInstance().isIncludeServerHttpHeader())
             {
@@ -91,7 +98,7 @@ public class AuthFilter implements Filter
                 {
                     _serverHeader =  "LabKey/" + AppProps.getInstance().getReleaseVersion();
                 }
-                resp.setHeader("Server", _serverHeader);
+                resp.setHeader(SERVER_HEADER_NAME, _serverHeader);
             }
         }
 
@@ -101,27 +108,6 @@ public class AuthFilter implements Filter
         {
             ExceptionUtil.handleException(req, resp, t, null, true);
             return;
-        }
-
-        // Versions of tomcat prior to 7.0.67 would automatically redirect if a URL with just a context path without
-        // a trailing slash was entered ie: http://www.labkey.org/labkey would automatically redirect to: http://www.labkey.org/labkey/
-        // We need to handle it here otherwise the begin page redirect in index.html will fail: issue 25395
-
-        // getServletPath() will return an empty String when a URL with a context path but no trailing slash is requested
-        if (req.getServletPath().isEmpty())
-        {
-            // now check if this is the case where the request URL contains only the context path
-            if (req.getContextPath() != null && req.getRequestURL().toString().endsWith(req.getContextPath()))
-            {
-                StringBuilder redirectURL = new StringBuilder();
-                redirectURL.append(req.getRequestURL()).append("/");
-                if (!StringUtils.isBlank(req.getQueryString()))
-                {
-                    redirectURL.append("?").append(req.getQueryString());
-                }
-                resp.sendRedirect(redirectURL.toString());
-                return;
-            }
         }
 
         if (AppProps.getInstance().isSSLRequired())
@@ -160,15 +146,14 @@ public class AuthFilter implements Filter
                 }
                 url = new URL("https", url.getHost(), port, url.getFile());
                 // Use 301 redirect instead of a 302 to indicate it's a permanent move
-                resp.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
-                resp.setHeader("Location", resp.encodeRedirectURL(url.toString()));
+                ExceptionUtil.unsafeRedirect(resp, url.toString(), HttpServletResponse.SC_MOVED_PERMANENTLY);
                 return;
             }
             else if (!AppProps.getInstance().isDevMode())
             {
                 // Issue 51904: Strict-Transport-Security header when HTTPS is required
                 // Avoid setting when in dev mode to make it easier to toggle HTTPS on and off again for local deployments
-                resp.setHeader("Strict-Transport-Security", "max-age=31536000;includeSubdomains");
+                resp.setHeader(STRICT_TRANSPORT_SECURITY_HEADER_NAME, "max-age=31536000;includeSubdomains");
             }
         }
 

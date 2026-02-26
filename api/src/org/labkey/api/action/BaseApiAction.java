@@ -92,13 +92,13 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         {
             Class<?> superClass = getClass().getSuperclass();
             if (null != superClass)
-                marshal = (Marshal) superClass.getAnnotation(Marshal.class);
+                marshal = superClass.getAnnotation(Marshal.class);
         }
         if (marshal == null)
         {
             Class<?> declaringClass = getClass().getDeclaringClass();
             if (declaringClass != null)
-                marshal = (Marshal)declaringClass.getAnnotation(Marshal.class);
+                marshal = declaringClass.getAnnotation(Marshal.class);
         }
 
         if (marshal != null)
@@ -312,7 +312,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             if (null != contentType)
             {
                 if (MimeMap.DEFAULT.isJsonContentTypeHeader(contentType))
-                    {
+                {
                     _reqFormat = ApiResponseWriter.Format.JSON;
                     return populateJsonForm();
                 }

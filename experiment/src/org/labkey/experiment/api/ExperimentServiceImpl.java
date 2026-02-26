@@ -172,6 +172,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.ExpUnreferencedSampleFilesTable;
 import org.labkey.api.exp.query.SampleStatusTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LSIDRelativizer;
@@ -1288,7 +1289,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
                 .append(" INNER JOIN ").append(table, "t")
-                .append(" ON t.lsid = d.lsid")
+                .append(" ON t.rowId = d.RowId")
                 .append(" LEFT OUTER JOIN ").append(getTinfoDataIndexed(), "di")
                 .append(" ON d.RowId = di.DataId")
                 .append(" WHERE d.classId = ?").add(dataClass.getRowId())
@@ -1626,6 +1627,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    public ExpUnreferencedSampleFilesTable createUnreferencedSampleFilesTable(ExpSchema expSchema, ContainerFilter cf)
+    {
+        return new ExpUnreferencedSampleFilesTableImpl(expSchema, cf);
+    }
+
+    @Override
     public FilteredTable<ExpSchema> createFieldsTable(ExpSchema expSchema, ContainerFilter cf)
     {
         return new FieldsTable(expSchema, cf);
@@ -1839,7 +1846,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
                 .append(", ").append(table, "t")
-                .append(" WHERE t.lsid = d.lsid")
+                .append(" WHERE t.rowId = d.RowId")
                 .append(" AND d.classId = ?").add(dataClass.getRowId());
 
         List<Data> datas = new SqlSelector(table.getSchema().getScope(), sql).getArrayList(Data.class);
@@ -1864,7 +1871,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
                 .append(", ").append(table, "t")
-                .append(" WHERE t.lsid = d.lsid")
+                .append(" WHERE t.rowId = d.RowId")
                 .append(" AND d.classId = ?").add(dataClass.getRowId())
                 .append(" AND d.Name = ?").add(name);
 
@@ -1882,7 +1889,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
                 .append(", ").append(table, "t")
-                .append(" WHERE t.lsid = d.lsid")
+                .append(" WHERE t.rowId = d.RowId")
                 .append(" AND d.classId = ?").add(dataClass.getRowId())
                 .append(" AND d.rowId = ?").add(rowId);
 
@@ -4627,7 +4634,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 for (var domain : provider.getDomains(expProtocol))
                 {
-                    domain.lockForDelete(expSchema);
+                    domain.lockForUpdateDelete(expSchema);
                 }
             }
         }
@@ -5300,7 +5307,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
 
             List<String> allLsids = new ArrayList<>(datas.size());
-            Map<Long, List<String>> lsidsByClass = new LinkedHashMap<>();
+            Map<Long, List<Long>> rowIdsByClass = new LinkedHashMap<>();
 
             for (Data data : datas)
             {
@@ -5333,8 +5340,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 if (data.getClassId() != null)
                 {
-                    List<String> byClass = lsidsByClass.computeIfAbsent(data.getClassId(), k -> new ArrayList<>(10));
-                    byClass.add(data.getLSID());
+                    List<Long> byClass = rowIdsByClass.computeIfAbsent(data.getClassId(), k -> new ArrayList<>(10));
+                    byClass.add(data.getRowId());
                 }
                 allLsids.add(data.getLSID());
             }
@@ -5361,18 +5368,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // exp.DataIndexed handled via a ON DELETE CASCADE foreign key
 
             // DELETE FROM provisioned dataclass tables
-            for (var classId : lsidsByClass.keySet())
+            for (var classId : rowIdsByClass.keySet())
             {
                 ExpDataClassImpl dataClass = getDataClass(classId);
                 if (dataClass == null)
                     throw new SQLException("DataClass not found '" + classId + "'");
 
-                List<String> lsids = lsidsByClass.get(classId);
-                if (!lsids.isEmpty())
+                List<Long> rowIds = rowIdsByClass.get(classId);
+                if (!rowIds.isEmpty())
                 {
                     TableInfo t = dataClass.getTinfo();
-                    SQLFragment sql = new SQLFragment("DELETE FROM ").append(t).append(" WHERE lsid ");
-                    dialect.appendInClauseSql(sql, lsids);
+                    SQLFragment sql = new SQLFragment("DELETE FROM ").append(t).append(" WHERE rowId ");
+                    dialect.appendInClauseSql(sql, rowIds);
                     executor.execute(sql);
                 }
             }
@@ -5470,6 +5477,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         if (null == c)
             return;
+        LOG.info("Beginning delete of expObj in container {}", c);
 
         String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ?";
         int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
@@ -5553,8 +5561,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ?";
             Collection<Long> dataIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Long.class);
+            LOG.info("Deleting {} dataIds {} ", dataIds.size(), dataIds);
             deleteDataByRowIds(user, c, dataIds);
 
+            LOG.info("Deleting objects from container {}", c);
             OntologyManager.deleteAllObjects(c, user);
 
             transaction.commit();
@@ -6088,9 +6098,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             TableInfo table = dataClass.getTinfo();
 
             SQLFragment sql = new SQLFragment()
-                    .append("SELECT t.lsid FROM ").append(getTinfoData(), "d")
+                    .append("SELECT d.lsid FROM ").append(getTinfoData(), "d")
                     .append(" LEFT OUTER JOIN ").append(table, "t")
-                    .append(" ON d.lsid = t.lsid")
+                    .append(" ON d.RowId = t.rowId")
                     .append(" WHERE d.Container = ?").add(dataClass.getContainer().getEntityId())
                     .append(" AND d.ClassId = ?").add(dataClass.getRowId());
 
@@ -8046,7 +8056,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!errors.hasErrors())
             {
                 transaction.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-                transaction.addCommitTask(() -> indexDataClass(getDataClass(c, dataClass.getName()), SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified)), POSTCOMMIT);
+                transaction.addCommitTask(() -> indexDataClass(dataClass, SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified)), POSTCOMMIT);
                 transaction.commit();
             }
         }

@@ -620,7 +620,7 @@ public class SimpleFilter implements Filter
         public MultiValuedFilterClause(@NotNull FieldKey fieldKey, CompareType comparison, Collection<?> params, boolean negated)
         {
             super(fieldKey);
-            params = new ArrayList<>(params); // possibly immutable
+            params = params == null ? new ArrayList<>() : new ArrayList<>(params); // possibly immutable
             if (params.contains(null)) //params.size() == 0 ||
             {
                 _includeNull = true;
