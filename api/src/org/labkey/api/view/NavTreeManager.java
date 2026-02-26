@@ -163,7 +163,7 @@ public class NavTreeManager
         if (null != user)
         {
             // Caching permission-related state is tricky with impersonation, so involve the impersonation context
-            key = navTreeId + "/user=" + user.getUserId() + user.getImpersonationContext().getCacheKey();
+            key = navTreeId + "/user=" + user.getUserId() + user.getPermissionsContext().getCacheKey();
         }
         else
         {
