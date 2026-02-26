@@ -385,12 +385,6 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
-    public boolean supportsFlagColumnType(ExpProtocol.AssayDomainTypes type)
-    {
-        return ExpProtocol.AssayDomainTypes.Result.equals(type);
-    }
-
-    @Override
     public boolean supportsPlateMetadata(ExpProtocol protocol)
     {
         if (protocol != null)

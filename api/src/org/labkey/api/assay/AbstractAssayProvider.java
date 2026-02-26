@@ -1689,12 +1689,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public boolean supportsFlagColumnType(ExpProtocol.AssayDomainTypes type)
-    {
-        return false;
-    }
-
-    @Override
     public Module getDeclaringModule()
     {
         return _declaringModule;

@@ -16,7 +16,6 @@
 
 package org.labkey.assay;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -42,7 +41,6 @@ import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayQCService;
-import org.labkey.api.assay.AssayResultTable;
 import org.labkey.api.assay.AssayRunsView;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
@@ -75,12 +73,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
@@ -1213,12 +1209,6 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public ActionURL getSetResultFlagURL(Container container)
-        {
-            return new ActionURL(SetResultFlagAction.class, container);
-        }
-
-        @Override
         public ActionURL getChooseAssayTypeURL(Container container)
         {
             return new ActionURL(ChooseAssayTypeAction.class, container);
@@ -1369,65 +1359,6 @@ public class AssayController extends SpringActionController
                 catch (NumberFormatException x) {}
             }
             return ret;
-        }
-    }
-
-
-    /**
-     * This is different from ExperimentController$SetFlagAction since Result Rows are not ExpObjects,
-     * and we store flag directly in the materialized table
-     */
-    @RequiresPermission(UpdatePermission.class)
-    public static class SetResultFlagAction extends MutatingApiAction<SetResultFlagForm>
-    {
-        @Override
-        protected @NotNull SetResultFlagForm getCommand(HttpServletRequest request)
-        {
-            return new SetResultFlagForm();
-        }
-
-        @Override
-        public ApiResponse execute(SetResultFlagForm form, BindException errors)
-        {
-            form.setContainer(getContainer());
-            ExpProtocol protocol = form.getProtocol();
-            String tableName = AssayProtocolSchema.DATA_TABLE_NAME;
-            AssaySchema schema = form.getProvider().createProtocolSchema(getUser(), getContainer(), protocol, null);
-            TableInfo table = schema.getTable(tableName);
-            if (!(table instanceof AssayResultTable assayResultTable))
-                throw new NotFoundException();
-            if (null == form.getColumnName())
-                throw new NotFoundException();
-            TableInfo ti = assayResultTable.getSchemaTableInfo();
-            String comment = StringUtils.trimToNull(form.getComment());
-
-            ColumnInfo flagCol = assayResultTable.getColumn(form.getColumnName());
-            if (null == form.getColumnName())
-                throw new NotFoundException();
-            if (!org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI().equals(flagCol.getConceptURI()))
-                throw new NotFoundException();
-
-            DbScope scope = ti.getSchema().getScope();
-            int rowsAffected  = 0 ;
-            try (DbScope.Transaction transaction = scope.ensureTransaction())
-            {
-                for (Integer id : form.getRowList())
-                {
-                    // assuming that column in storage table has same name
-                    Map<String, Object> flagComment = new HashMap<>();
-                    flagComment.put(flagCol.getColumnName(), comment);
-                    Table.update(getUser(), ti, flagComment, id);
-                    rowsAffected++;
-                }
-                transaction.commit();
-            }
-
-            // the flag is editable even if the assay is not
-            JSONObject res = new JSONObject();
-            res.put("success", true);
-            res.put("comment", form.getComment());
-            res.put("rowsAffected", rowsAffected);
-            return new ApiSimpleResponse(res);
         }
     }
 
