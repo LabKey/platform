@@ -131,11 +131,6 @@ public class MailHelper
     public static void setSession(Session session)
     {
         _smtpProvider.setSession(session);
-
-        if (session != null)
-        {
-            _activeProvider = _smtpProvider;
-        }
     }
 
     /**
