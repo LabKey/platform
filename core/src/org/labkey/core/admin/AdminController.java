@@ -8646,15 +8646,15 @@ public class AdminController extends SpringActionController
                 getViewContext().getSession().removeAttribute(EMAIL_TEST_SUCCESS_KEY);
                 form.setSuccess(true);
             }
-            if (Boolean.TRUE.equals(getViewContext().getSession().getAttribute(EmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_SUCCESS_KEY)))
+            if (Boolean.TRUE.equals(getViewContext().getSession().getAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_SUCCESS_KEY)))
             {
-                getViewContext().getSession().removeAttribute(EmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_SUCCESS_KEY);
+                getViewContext().getSession().removeAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_SUCCESS_KEY);
                 form.setAttachmentSuccess(true);
             }
-            String attachmentError = (String) getViewContext().getSession().getAttribute(EmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_ERROR_KEY);
+            String attachmentError = (String) getViewContext().getSession().getAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_ERROR_KEY);
             if (attachmentError != null)
             {
-                getViewContext().getSession().removeAttribute(EmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_ERROR_KEY);
+                getViewContext().getSession().removeAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_ERROR_KEY);
                 form.setException(new ConfigurationException(attachmentError));
             }
 
@@ -8732,10 +8732,10 @@ public class AdminController extends SpringActionController
      */
     @AdminConsoleAction
     @RequiresPermission(AdminOperationsPermission.class)
-    public class EmailTestWithAttachmentAction extends FormHandlerAction<EmailTestForm>
+    public class GraphEmailTestWithAttachmentAction extends FormHandlerAction<EmailTestForm>
     {
-        private static final String EMAIL_TEST_ATTACHMENT_SUCCESS_KEY = "EmailTestWithAttachmentAction.success";
-        private static final String EMAIL_TEST_ATTACHMENT_ERROR_KEY = "EmailTestWithAttachmentAction.error";
+        private static final String EMAIL_TEST_ATTACHMENT_SUCCESS_KEY = "GraphEmailTestWithAttachmentAction.success";
+        private static final String EMAIL_TEST_ATTACHMENT_ERROR_KEY = "GraphEmailTestWithAttachmentAction.error";
 
         @Override
         public void validateCommand(EmailTestForm form, Errors errors)

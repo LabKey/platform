@@ -23,7 +23,7 @@
 <%@ page import="org.labkey.api.util.MailHelper" %>
 <%@ page import="org.labkey.core.admin.AdminController.EmailTestAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.EmailTestForm" %>
-<%@ page import="org.labkey.core.admin.AdminController.EmailTestWithAttachmentAction" %>
+<%@ page import="org.labkey.core.admin.AdminController.GraphEmailTestWithAttachmentAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -78,7 +78,7 @@ message to the address specified in the 'To' text box containing the content spe
 <hr/>
 <p><strong>Microsoft Graph Attachment Test:</strong> Send a test email with HTML content and a 4MB file attachment
 to verify the Graph API upload session workflow.</p>
-<labkey:form action="<%=urlFor(EmailTestWithAttachmentAction.class)%>" method="POST" id="attachmentTestForm">
+<labkey:form action="<%=urlFor(GraphEmailTestWithAttachmentAction.class)%>" method="POST" id="attachmentTestForm">
     <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label"><label for="attachmentTo">To</label></td>

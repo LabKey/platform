@@ -50,7 +50,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.stream.Collectors;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Provides static functions for help with sending email.
@@ -64,19 +64,13 @@ public class MailHelper
 
     // Transport providers
     private static final SmtpTransportProvider _smtpProvider = new SmtpTransportProvider();
-    private static final GraphTransportProvider _graphProvider = new GraphTransportProvider();
-    private static final List<EmailTransportProvider> _providers = List.of(_smtpProvider, _graphProvider);
+    private static final List<EmailTransportProvider> _providers = new CopyOnWriteArrayList<>(List.of(_smtpProvider));
 
     // Active provider (set during initialization)
     private static EmailTransportProvider _activeProvider = null;
 
     // Configuration conflict flag
     private static boolean _configurationConflict = false;
-
-    static
-    {
-        _activeProvider = loadActiveProvider();
-    }
 
     /**
      * Load configuration for all providers and return the single configured provider.
@@ -100,9 +94,9 @@ public class MailHelper
         if (configured.size() > 1)
         {
             _configurationConflict = true;
-            String names = configured.stream()
+            String names = StringUtilsLabKey.joinWithConjunction(configured.stream()
                 .map(EmailTransportProvider::getName)
-                .collect(Collectors.joining(" and "));
+                .toList(), "and");
             _log.error("Invalid email configuration: {} are configured. " +
                 "Please configure only one email transport method. Email sending will fail until this is resolved.", names);
             return null;
@@ -121,24 +115,29 @@ public class MailHelper
         return null != _activeProvider;
     }
 
+    /**
+     * Registers an optional transport provider. Must be called during module {@code init()} so that
+     * all providers are in place before {@link #init()} calls {@link #loadActiveProvider()}.
+     */
+    public static void registerProvider(EmailTransportProvider provider)
+    {
+        _providers.add(provider);
+    }
+
     public static void init()
     {
-        // Invoked to trigger static initialization which loads email transport providers
+        _activeProvider = loadActiveProvider();
     }
 
     public static void setSession(Session session)
     {
         _smtpProvider.setSession(session);
-
-        if (session != null)
-        {
-            _activeProvider = _smtpProvider;
-        }
     }
 
     /**
-     * Returns the SMTP session for creating messages, or null if SMTP is not configured.
+     * Returns the SMTP session for creating messages
      */
+    @Nullable
     public static Session getSession()
     {
         return _smtpProvider.getSession();
