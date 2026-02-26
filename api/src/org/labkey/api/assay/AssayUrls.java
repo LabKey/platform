@@ -88,7 +88,6 @@ public interface AssayUrls extends UrlProvider
     ActionURL getUpdateQCStateURL(Container container, ExpProtocol protocol);
 
     ActionURL getBeginURL(Container container);
-    ActionURL getSetResultFlagURL(Container container);
     ActionURL getChooseAssayTypeURL(Container container);
     ActionURL getImportAssayDesignURL(Container container);
     ActionURL getShowSelectedDataURL(Container container, ExpProtocol protocol);
