@@ -463,15 +463,4 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         return getJsonValue(ctx);
     }
 
-    @Override
-    public boolean isFilterable()
-    {
-        return true;
-    }
-    @Override
-    public boolean isSortable()
-    {
-        return true;
-    }
-
 }

@@ -251,13 +251,13 @@ public class JsonWriter
 
             props.put("shortCaption", cinfo.getShortLabel());
 
-            if (dc instanceof IMultiValuedDisplayColumn || dc instanceof AbstractFileDisplayColumn || (cinfo.getParentTable() != null && cinfo.getParentTable().getSqlDialect() != null && !cinfo.getParentTable().getSqlDialect().isSortableDataType(cinfo.getSqlTypeName())))
+            if (PropertyType.FILE_LINK == cinfo.getPropertyType() || dc instanceof IMultiValuedDisplayColumn || (cinfo.getParentTable() != null && cinfo.getParentTable().getSqlDialect() != null && !cinfo.getParentTable().getSqlDialect().isSortableDataType(cinfo.getSqlTypeName())))
             {
+                // Disallow faceted filtering for file columns since the values are often absolute file path
+
                 // Disallow faceted filtering when the column is multi-valued, as the value that comes out of the
                 // database likely has a different delimiter compared to what the user wants to see and therefore
                 // doesn't work very well.
-                // Disallow faceted filtering for file columns since the values are often absolute file path
-
                 // Similarly, SQLServer doesn't allow doing a SELECT DISTINCT on TEXT columns, so check the data type (they also can't be sorted)
                 props.put("facetingBehaviorType", FacetingBehaviorType.ALWAYS_OFF);
             }
