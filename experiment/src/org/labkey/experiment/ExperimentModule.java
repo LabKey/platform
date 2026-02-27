@@ -656,7 +656,7 @@ public class ExperimentModule extends SpringModule
                     assayMetrics.put("assayRunsWithMultipleInputFiles", new SqlSelector(schema, """
                         SELECT COUNT(*) FROM (
                             SELECT sourceapplicationid, COUNT(*) AS count FROM exp.data
-                            WHERE name NOT LIKE '%.log' AND name NOT LIKE '%.Rout' AND name NOT LIKE '%.pdf' AND sourceapplicationid IN (
+                            WHERE lsid NOT LIKE '%:RelatedFile.%' AND sourceapplicationid IN (
                                 SELECT rowid FROM exp.protocolapplication
                                 WHERE lsid LIKE '%:SimpleProtocol.CoreStep' AND (protocollsid LIKE '%:LuminexAssayProtocol.%' OR protocollsid LIKE '%:GeneralAssayProtocol.%')
                             )
