@@ -40,7 +40,6 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     @Getter @Setter private String container;
     @Getter @Setter private boolean allowFileLinkProperties;
     @Getter @Setter private boolean allowAttachmentProperties;
-    @Getter @Setter private boolean allowFlagProperties;
     @Getter @Setter private boolean allowTextChoiceProperties;
     @Getter @Setter private boolean allowMultiChoiceProperties;
     @Getter @Setter private boolean allowSampleSubjectProperties;
@@ -89,7 +88,6 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.container = src.container;
         this.allowFileLinkProperties = src.allowFileLinkProperties;
         this.allowAttachmentProperties = src.allowAttachmentProperties;
-        this.allowFlagProperties = src.allowFlagProperties;
         this.allowTextChoiceProperties = src.allowTextChoiceProperties;
         this.allowMultiChoiceProperties = src.allowMultiChoiceProperties;
         this.allowSampleSubjectProperties = src.allowSampleSubjectProperties;

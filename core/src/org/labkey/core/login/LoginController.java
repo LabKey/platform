@@ -1456,7 +1456,7 @@ public class LoginController extends SpringActionController
         @Override
         public boolean handlePost(ReturnUrlForm form, BindException errors) throws Exception
         {
-            SecurityManager.stopImpersonating(getViewContext().getRequest(), getUser().getImpersonationContext().getFactory());
+            SecurityManager.stopImpersonating(getViewContext().getRequest(), getUser().getPermissionsContext().getFactory());
 
             return true;
         }
@@ -1485,7 +1485,7 @@ public class LoginController extends SpringActionController
         @Override
         public Object execute(Object o, BindException errors) throws Exception
         {
-            SecurityManager.stopImpersonating(getViewContext().getRequest(), getUser().getImpersonationContext().getFactory());
+            SecurityManager.stopImpersonating(getViewContext().getRequest(), getUser().getPermissionsContext().getFactory());
 
             return new ApiSimpleResponse("success", true);
         }

@@ -24,6 +24,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
@@ -81,7 +82,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
     }
 
     @Override
-    public ImpersonationContext getImpersonationContext()
+    public PermissionsContext getImpersonationContext()
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
 
@@ -135,7 +136,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         }
     }
 
-    static void addMenu(NavTree menu)
+    public static void addMenu(NavTree menu)
     {
         NavTree userMenu = new NavTree("User");
         userMenu.setScript("LABKEY.Security.Impersonation.showImpersonateUser();");

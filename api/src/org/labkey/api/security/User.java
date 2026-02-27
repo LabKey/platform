@@ -29,8 +29,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.Transient;
-import org.labkey.api.security.impersonation.ImpersonationContext;
-import org.labkey.api.security.impersonation.NotImpersonatingContext;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
@@ -85,7 +83,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     private ActionURL _avatarUrl;
     private boolean _system = false;
 
-    private ImpersonationContext _impersonationContext = NotImpersonatingContext.get();
+    private PermissionsContext _permissionsContext = NormalPermissionsContext.get();
 
     public static final User guest = new GuestUser("guest", "guest");
 
@@ -241,7 +239,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     public PrincipalArray getGroups()
     {
         if (_groups == null)
-            _groups = _impersonationContext.getGroups(this);
+            _groups = _permissionsContext.getGroups(this);
         return _groups;
     }
 
@@ -351,7 +349,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     @Override
     public Stream<Role> getAssignedRoles(SecurableResource resource)
     {
-        return _impersonationContext.getAssignedRoles(this, resource);
+        return _permissionsContext.getAssignedRoles(this, resource);
     }
 
     public JSONObject getUserProps()
@@ -404,30 +402,30 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         _lastActivity = lastActivity;
     }
 
-    void setImpersonationContext(ImpersonationContext impersonationContext)
+    void setImpersonationContext(PermissionsContext permissionsContext)
     {
-        _impersonationContext = impersonationContext;
+        _permissionsContext = permissionsContext;
     }
 
-    public @NotNull ImpersonationContext getImpersonationContext()
+    public @NotNull PermissionsContext getPermissionsContext()
     {
-        return _impersonationContext;
+        return _permissionsContext;
     }
 
     public boolean isImpersonated()
     {
-        return _impersonationContext.isImpersonating();
+        return _permissionsContext.isImpersonating();
     }
 
     // @NotNull when isImpersonated() is true... returns the admin user, with all normal roles & groups
     public User getImpersonatingUser()
     {
-        return _impersonationContext.getAdminUser();
+        return _permissionsContext.getAdminUser();
     }
 
     public @Nullable Container getImpersonationProject()
     {
-        return _impersonationContext.getImpersonationProject();
+        return _permissionsContext.getImpersonationProject();
     }
 
     @Override
