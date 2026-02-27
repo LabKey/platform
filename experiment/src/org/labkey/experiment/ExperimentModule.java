@@ -652,6 +652,17 @@ public class ExperimentModule extends SpringModule
                                  JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
                         WHERE DD.domainUri LIKE ? AND D.rangeURI = ?""", "urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%", PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
 
+                    // metric to count the number of Luminex and Standard assay runs that were imported with > 1 data file
+                    assayMetrics.put("assayRunsWithMultipleInputFiles", new SqlSelector(schema, """
+                        SELECT COUNT(*) FROM (
+                            SELECT sourceapplicationid, COUNT(*) AS count FROM exp.data
+                            WHERE lsid NOT LIKE '%:RelatedFile.%' AND sourceapplicationid IN (
+                                SELECT rowid FROM exp.protocolapplication
+                                WHERE lsid LIKE '%:SimpleProtocol.CoreStep' AND (protocollsid LIKE '%:LuminexAssayProtocol.%' OR protocollsid LIKE '%:GeneralAssayProtocol.%')
+                            )
+                            GROUP BY sourceapplicationid
+                        ) x WHERE count > 1""").getObject(Long.class));
+
                     Map<String, Object> sampleLookupCountMetrics = new HashMap<>();
                     SQLFragment baseAssaySampleLookupSQL = new SQLFragment("SELECT COUNT(*) FROM exp.propertydescriptor WHERE (lookupschema = 'samples' OR (lookupschema = 'exp' AND lookupquery =  'Materials')) AND propertyuri LIKE ?");
 
