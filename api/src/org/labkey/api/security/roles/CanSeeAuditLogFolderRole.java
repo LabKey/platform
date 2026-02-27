@@ -9,7 +9,7 @@ public class CanSeeAuditLogFolderRole extends AbstractRole
 {
     protected CanSeeAuditLogFolderRole()
     {
-        super("See Audit Log Events", "Allows non-administrators to view audit log events.",
+        super("See Audit Log Events", "Allows non-administrators to view audit log events. " + CanSeeAuditLogRole.FINAL_WARNING_LINE,
             CanSeeAuditLogPermission.class
         );
     }
