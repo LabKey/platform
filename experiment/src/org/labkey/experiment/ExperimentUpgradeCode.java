@@ -682,14 +682,20 @@ public class ExperimentUpgradeCode implements UpgradeCode
     {
         String fullName()
         {
-            // Have to bracket storage column name since it could have special characters
+            // Have to bracket storage column name since it could have special characters (like dots)
             return storageSchemaName + "." + storageTableName + "." + bracketIt(storageColumnName);
+        }
+
+        // Bracket name and escape any internal ending brackets
+        private String bracketIt(String name)
+        {
+            return "[" + name.replace("]", "]]") + "]";
         }
     }
 
     /**
-     * Called from exp-????.sql, SQL Server only
-     * Query all table & column storage names and rename the ones that are too long for PostgreSQL.
+     * Called from exp-26.004-26.005.sql, on SQL Server only
+     * Query all table & column storage names and rename the ones that are too long for PostgreSQL
      * TODO: When this upgrade code is removed, get rid of the StorageProvisionerImpl.makeTableName() method it uses.
      */
     @SuppressWarnings("unused")
@@ -784,7 +790,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 // Now use that StorageNameGenerator to create new names. Rename the column and update the PropertyDescriptor table.
                 badColumns.forEach(property -> {
                     String oldName = property.fullName();
-                    String newName = bracketIt(nameGenerator.generateColumnName(property.name())); // Could have special characters, so bracket it
+                    String newName = nameGenerator.generateColumnName(property.name()); // No need to bracket or quote or escape: JDBC parameter takes care of all special characters
 
                     executor.execute(new SQLFragment("EXEC sp_rename ?, ?, 'COLUMN'").add(oldName).add(newName));
                     Table.update(null, tinfoPropertyDescriptor, PageFlowUtil.map("StorageColumnName", newName), property.propertyId());
@@ -801,11 +807,5 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         if (!badColumnNames.isEmpty())
             LOG.error("Some storage column names are still too long!! {}", badColumnNames);
-    }
-
-    // Bracket name and escape any internal ending brackets
-    static String bracketIt(String name)
-    {
-        return "[" + name.replace("]", "]]") + "]";
     }
 }
