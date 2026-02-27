@@ -695,6 +695,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
     /**
      * Called from exp-26.004-26.005.sql, on SQL Server only
+     * GitHub Issue 869: Long table/column names cause SQL Server migration to fail
      * Query all table & column storage names and rename the ones that are too long for PostgreSQL
      * TODO: When this upgrade code is removed, get rid of the StorageProvisionerImpl.makeTableName() method it uses.
      */
@@ -764,7 +765,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 ArrayListValuedHashMap::new)
             );
 
-        LOG.info("   Found {} with storage column names that are too long for PostgreSQL:", StringUtilsLabKey.pluralize(badDomainMap.keySet().size(), "domain"));
+        if (!badDomainMap.isEmpty())
+            LOG.info("   Found {} with storage column names that are too long for PostgreSQL:", StringUtilsLabKey.pluralize(badDomainMap.keySet().size(), "domain"));
 
         // Now enumerate the bad domains and rename their bad storage columns using the PostgreSQL truncation rules
         badDomainMap.keySet()
