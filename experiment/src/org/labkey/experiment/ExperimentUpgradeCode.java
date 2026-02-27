@@ -189,7 +189,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
             }
             ExperimentService.get().clearCaches();
         }
-
     }
 
     private static void getAmountAndUnitUpdates(Map<String, Object> sampleMap, Parameter unitsCol, Set<Parameter> amountCols, Unit currentDisplayUnit, Map<String, Object> oldDataMap, Map<String, Object> newDataMap, Map<String, Integer> sampleCounts, boolean aliquotFields)
@@ -694,7 +693,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
      * TODO: When this upgrade code is removed, get rid of the StorageProvisionerImpl.makeTableName() method it uses.
      */
     @SuppressWarnings("unused")
-    @DeferredUpgrade
     public static void shortenAllStorageNames(ModuleContext context)
     {
         if (context.isNewInstall())
@@ -711,32 +709,31 @@ public class ExperimentUpgradeCode implements UpgradeCode
         TableInfo tinfoDomainDescriptor = OntologyManager.getTinfoDomainDescriptor();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString("StorageSchemaName"), null, CompareType.NONBLANK);
         filter.addCondition(FieldKey.fromString("StorageTableName"), null, CompareType.NONBLANK);
-        try (DbScope.Transaction t = scope.beginTransaction())
-        {
-            new TableSelector(tinfoDomainDescriptor, new CsvSet("Container, DomainId, Name, StorageSchemaName, StorageTableName"), filter, null)
-                .setJdbcCaching(false)
-                .stream(DomainRecord.class)
-                .filter(domain -> dialect.isIdentifierTooLong(domain.storageTableName()))
-                .forEach(domain -> {
-                    String oldName = domain.fullName();
-                    String newName = StorageProvisionerImpl.get().makeTableName(dialect, domain.container(), domain.domainId(), domain.name());
 
-                    executor.execute(new SQLFragment("EXEC sp_rename ?, ?").add(oldName).add(newName));
-                    Table.update(null, tinfoDomainDescriptor, PageFlowUtil.map("StorageTableName", newName), domain.domainId());
+        new TableSelector(tinfoDomainDescriptor, new CsvSet("Container, DomainId, Name, StorageSchemaName, StorageTableName"), filter, null)
+            .setJdbcCaching(false)
+            .stream(DomainRecord.class)
+            .filter(domain -> dialect.isIdentifierTooLong(domain.storageTableName()))
+            .forEach(domain -> {
+                String oldName = domain.fullName();
+                String newName = StorageProvisionerImpl.get().makeTableName(dialect, domain.container(), domain.domainId(), domain.name());
 
-                    LOG.info("   Table \"{}\" renamed to \"{}\" ({} bytes)", oldName, newName, newName.getBytes(StandardCharsets.UTF_8).length);
-                });
+                executor.execute(new SQLFragment("EXEC sp_rename ?, ?").add(oldName).add(newName));
+                Table.update(null, tinfoDomainDescriptor, PageFlowUtil.map("StorageTableName", newName), domain.domainId());
 
-            List<String> badTableNames = new TableSelector(tinfoDomainDescriptor, new CsvSet("StorageTableName"), filter, null)
-                .setJdbcCaching(false)
-                .stream(String.class)
-                .filter(dialect::isIdentifierTooLong)
-                .toList();
+                LOG.info("   Table \"{}\" renamed to \"{}\" ({} bytes)", oldName, newName, newName.getBytes(StandardCharsets.UTF_8).length);
+            });
 
-            if (!badTableNames.isEmpty())
-                LOG.error("Some storage table names are still too long!! {}", badTableNames);
-        }
+        List<String> badTableNames = new TableSelector(tinfoDomainDescriptor, new CsvSet("StorageTableName"), filter, null)
+            .setJdbcCaching(false)
+            .stream(String.class)
+            .filter(dialect::isIdentifierTooLong)
+            .toList();
 
+        if (!badTableNames.isEmpty())
+            LOG.error("Some storage table names are still too long!! {}", badTableNames);
+
+        // Collect all the domains that have one or more storage columns names that are too long for PostgreSQL
         TableInfo tinfoPropertyDomain = OntologyManager.getTinfoPropertyDomain();
         TableInfo tinfoPropertyDescriptor = OntologyManager.getTinfoPropertyDescriptor();
         SQLFragment sql = new SQLFragment("SELECT dd.DomainId, dd.Name AS DomainName, px.PropertyId, StorageSchemaName, StorageTableName, StorageColumnName, px.Name FROM ")
@@ -763,50 +760,47 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         LOG.info("   Found {} with storage column names that are too long for PostgreSQL:", StringUtilsLabKey.pluralize(badDomainMap.keySet().size(), "domain"));
 
-        try (DbScope.Transaction t = scope.beginTransaction())
-        {
-            // Now enumerate the bad domains and rename their bad storage columns
-            badDomainMap.keySet()
-                .forEach(domain -> {
-                    Collection<Property> badColumns = badDomainMap.get(domain);
-                    List<String> badColumnNames = badColumns.stream().map(Property::storageColumnName).toList();
+        // Now enumerate the bad domains and rename their bad storage columns using the PostgreSQL truncation rules
+        badDomainMap.keySet()
+            .forEach(domain -> {
+                Collection<Property> badColumns = badDomainMap.get(domain);
+                List<String> badColumnNames = badColumns.stream().map(Property::storageColumnName).toList();
 
-                    // First, populate a new StorageNameGenerator with all the "good" names in this domain so we don't
-                    // accidentally try to re-use one of them
-                    StorageNameGenerator nameGenerator = new StorageNameGenerator(dialect);
-                    SQLFragment domainSql = new SQLFragment("SELECT StorageColumnName FROM ")
-                        .append(tinfoPropertyDomain, "pd")
-                        .append(" INNER JOIN ")
-                        .append(tinfoPropertyDescriptor, "px")
-                        .append(" ON pd.PropertyId = px.PropertyId ")
-                        .append("WHERE DomainId = ? AND StorageColumnName NOT ")
-                        .add(domain.domainId())
-                        .appendInClause(badColumnNames, scope.getSqlDialect());
-                    new SqlSelector(scope, domainSql).forEach(String.class, nameGenerator::claimName);
+                // First, populate a new StorageNameGenerator with all the "good" names in this domain so we don't
+                // accidentally try to re-use one of them
+                StorageNameGenerator nameGenerator = new StorageNameGenerator(dialect);
+                SQLFragment domainSql = new SQLFragment("SELECT StorageColumnName FROM ")
+                    .append(tinfoPropertyDomain, "pd")
+                    .append(" INNER JOIN ")
+                    .append(tinfoPropertyDescriptor, "px")
+                    .append(" ON pd.PropertyId = px.PropertyId ")
+                    .append("WHERE DomainId = ? AND StorageColumnName NOT ")
+                    .add(domain.domainId())
+                    .appendInClause(badColumnNames, scope.getSqlDialect());
+                new SqlSelector(scope, domainSql).forEach(String.class, nameGenerator::claimName);
 
-                    LOG.info("   Renaming {} in table \"{}\"", StringUtilsLabKey.pluralize(badColumns.size(), "column"), domain.fullName());
+                LOG.info("   Renaming {} in table \"{}\"", StringUtilsLabKey.pluralize(badColumns.size(), "column"), domain.fullName());
 
-                    // Now use that StorageNameGenerator to create new names. Rename the column and update the PropertyDescriptor table.
-                    badColumns.forEach(property -> {
-                        String oldName = property.fullName();
-                        String newName = bracketIt(nameGenerator.generateColumnName(property.name())); // Could have special characters, so bracket it
+                // Now use that StorageNameGenerator to create new names. Rename the column and update the PropertyDescriptor table.
+                badColumns.forEach(property -> {
+                    String oldName = property.fullName();
+                    String newName = bracketIt(nameGenerator.generateColumnName(property.name())); // Could have special characters, so bracket it
 
-                        executor.execute(new SQLFragment("EXEC sp_rename ?, ?, 'COLUMN'").add(oldName).add(newName));
-                        Table.update(null, tinfoPropertyDescriptor, PageFlowUtil.map("StorageColumnName", newName), property.propertyId());
+                    executor.execute(new SQLFragment("EXEC sp_rename ?, ?, 'COLUMN'").add(oldName).add(newName));
+                    Table.update(null, tinfoPropertyDescriptor, PageFlowUtil.map("StorageColumnName", newName), property.propertyId());
 
-                        LOG.info("      Column \"{}\" renamed to \"{}\" ({} bytes)", oldName, newName, newName.getBytes(StandardCharsets.UTF_8).length);
-                    });
+                    LOG.info("      Column \"{}\" renamed to \"{}\" ({} bytes)", oldName, newName, newName.getBytes(StandardCharsets.UTF_8).length);
                 });
+            });
 
-            List<String> badColumnNames = new TableSelector(tinfoPropertyDescriptor, new CsvSet("StorageColumnName"), new SimpleFilter(FieldKey.fromString("StorageColumnName"), null, CompareType.NONBLANK), null)
-                .setJdbcCaching(false)
-                .stream(String.class)
-                .filter(dialect::isIdentifierTooLong)
-                .toList();
+        List<String> badColumnNames = new TableSelector(tinfoPropertyDescriptor, new CsvSet("StorageColumnName"), new SimpleFilter(FieldKey.fromString("StorageColumnName"), null, CompareType.NONBLANK), null)
+            .setJdbcCaching(false)
+            .stream(String.class)
+            .filter(dialect::isIdentifierTooLong)
+            .toList();
 
-            if (!badColumnNames.isEmpty())
-                LOG.error("Some storage column names are still too long!! {}", badColumnNames);
-        }
+        if (!badColumnNames.isEmpty())
+            LOG.error("Some storage column names are still too long!! {}", badColumnNames);
     }
 
     // Bracket name and escape any internal ending brackets
