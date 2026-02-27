@@ -26,6 +26,7 @@ import org.labkey.api.util.logging.LogHelper;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.ref.Cleaner;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -286,7 +287,8 @@ public class TempTableTracker
         {
             synchronized(createdTableNames)
             {
-                for (TempTableTracker ttt : createdTableNames.values())
+                // Copy createdTableNames.values() to prevent ConcurrentModificationException
+                for (TempTableTracker ttt : new ArrayList<>(createdTableNames.values()))
                 {
                     ttt.state.run();
                 }
