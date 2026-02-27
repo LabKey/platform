@@ -67,10 +67,8 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.security.impersonation.DisallowPrivilegedRolesContext;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
-import org.labkey.api.security.impersonation.ReadOnlyImpersonatingContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractPermission;
@@ -606,7 +604,7 @@ public class SecurityManager
                         // If impersonating, stop so it gets logged
                         if (sessionUser.isImpersonated())
                         {
-                            stopImpersonating(request, sessionUser.getImpersonationContext().getFactory());
+                            stopImpersonating(request, sessionUser.getPermissionsContext().getFactory());
                             sessionUser = sessionUser.getImpersonatingUser(); // Need to log out the admin
                         }
 
@@ -3096,7 +3094,7 @@ public class SecurityManager
         Stream<Class<? extends Permission>> permissions = roles.flatMap(role -> role.getPermissions().stream());
 
         if (principal instanceof User user)
-            permissions = user.getImpersonationContext().filterPermissions(permissions);
+            permissions = user.getPermissionsContext().filterPermissions(permissions);
 
         return permissions.collect(Collectors.toSet());
     }
@@ -3438,7 +3436,7 @@ public class SecurityManager
             final User testUser = TestContext.get().getUser();
             // this user is subsetted to only permit read permissions (see AllowedForReadOnlyUser)
             User user = addUser(new ValidEmail("impersonate@test.net"), null, false).getUser();
-            user.setImpersonationContext(new ReadOnlyImpersonatingContext());
+            user.setImpersonationContext(new ReadOnlyPermissionsContext());
 
             Container testFolder = null;
 
