@@ -82,6 +82,7 @@ import org.labkey.api.security.LimitActiveUsersService;
 import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MemberType;
+import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
@@ -96,7 +97,6 @@ import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
-import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
@@ -2998,7 +2998,7 @@ public class UserController extends SpringActionController
         @Override
         public ApiResponse execute(Object object, BindException errors)
         {
-            ImpersonationContext context = authorizeImpersonateRoles();
+            PermissionsContext context = authorizeImpersonateRoles();
             Set<Role> impersonationRoles = context.isImpersonating() ? context.getAssignedRoles(getUser(), getContainer()).collect(Collectors.toSet()) : Collections.emptySet();
 
             User user = context.isImpersonating() ? context.getAdminUser() : getUser();
@@ -3021,10 +3021,10 @@ public class UserController extends SpringActionController
     }
 
 
-    private ImpersonationContext authorizeImpersonateRoles()
+    private PermissionsContext authorizeImpersonateRoles()
     {
         User user = getUser();
-        ImpersonationContext context = user.getImpersonationContext();
+        PermissionsContext context = user.getPermissionsContext();
 
         if (context.isImpersonating())
             user = context.getAdminUser();
@@ -3063,7 +3063,7 @@ public class UserController extends SpringActionController
         @Override
         public String impersonate(ImpersonateRolesForm form)
         {
-            ImpersonationContext context = authorizeImpersonateRoles();
+            PermissionsContext context = authorizeImpersonateRoles();
             Set<Role> currentImpersonationRoles = context.isImpersonating() ? context.getAssignedRoles(getUser(), getContainer()).collect(Collectors.toSet()) : Collections.emptySet();
 
             String[] roleNames = form.getRoleNames();

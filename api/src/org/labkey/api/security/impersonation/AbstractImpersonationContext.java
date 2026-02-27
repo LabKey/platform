@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.roles.Role;
@@ -28,7 +29,7 @@ import org.labkey.api.view.NavTree;
 
 import java.util.stream.Stream;
 
-public abstract class AbstractImpersonationContext implements ImpersonationContext
+public abstract class AbstractImpersonationContext implements PermissionsContext
 {
     private final User _adminUser;
     private final @Nullable Container _project;
@@ -71,7 +72,7 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
     @Override
     public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
     {
-        ActionURL url = PageFlowUtil.urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnUrl());
+        ActionURL url = PageFlowUtil.urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getPermissionsContext().getReturnUrl());
         NavTree stop = new NavTree("Stop Impersonating", url).usePost();
         menu.addChild(stop);
     }
