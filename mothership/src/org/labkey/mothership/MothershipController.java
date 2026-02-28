@@ -503,7 +503,7 @@ public class MothershipController extends SpringActionController
     public static class JumpToErrorCodeAction extends SimpleRedirectAction<ErrorCodeForm>
     {
         @Override
-        public URLHelper getRedirectURL(ErrorCodeForm form)
+        public ActionURL getRedirectURL(ErrorCodeForm form)
         {
             String errorCode = StringUtils.trimToNull(form.getErrorCode());
             ActionURL url;

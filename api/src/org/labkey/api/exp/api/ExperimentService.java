@@ -804,6 +804,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpRun> getRunsUsingDataClasses(Collection<ExpDataClass> dataClasses);
 
+    /** Get derivation run IDs for a data class — runs with SAMPLE_DERIVATION_PROTOCOL that have no material inputs/outputs */
+    List<Long> getDerivationRunIdsForDataClassExport(long dataClassRowId);
+
+    /** Get derivation/aliquot run IDs for sample types — filtered by protocol and optionally excluding runs with data inputs/outputs */
+    List<Long> getDerivationRunIdsForSampleTypesExport(Collection<String> sampleTypeLsids, Container c, boolean includeRunsWithDataIO);
+
     /**
      * @return the subset of these runs which are supposed to be deleted when one of their inputs is deleted.
      */

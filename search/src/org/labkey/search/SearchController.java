@@ -438,7 +438,7 @@ public class SearchController extends SpringActionController
     public static class WaitForIdleAction extends SimpleRedirectAction<Object>
     {
         @Override
-        public URLHelper getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o) throws Exception
         {
             SearchService ss = AbstractSearchService.get();
             ss.waitForIdle();

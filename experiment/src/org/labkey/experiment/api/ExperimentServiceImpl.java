@@ -1289,7 +1289,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
                 .append(" INNER JOIN ").append(table, "t")
-                .append(" ON t.lsid = d.lsid")
+                .append(" ON t.rowId = d.RowId")
                 .append(" LEFT OUTER JOIN ").append(getTinfoDataIndexed(), "di")
                 .append(" ON d.RowId = di.DataId")
                 .append(" WHERE d.classId = ?").add(dataClass.getRowId())
@@ -1846,7 +1846,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
                 .append(", ").append(table, "t")
-                .append(" WHERE t.lsid = d.lsid")
+                .append(" WHERE t.rowId = d.RowId")
                 .append(" AND d.classId = ?").add(dataClass.getRowId());
 
         List<Data> datas = new SqlSelector(table.getSchema().getScope(), sql).getArrayList(Data.class);
@@ -1871,7 +1871,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
                 .append(", ").append(table, "t")
-                .append(" WHERE t.lsid = d.lsid")
+                .append(" WHERE t.rowId = d.RowId")
                 .append(" AND d.classId = ?").add(dataClass.getRowId())
                 .append(" AND d.Name = ?").add(name);
 
@@ -1889,7 +1889,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
                 .append(", ").append(table, "t")
-                .append(" WHERE t.lsid = d.lsid")
+                .append(" WHERE t.rowId = d.RowId")
                 .append(" AND d.classId = ?").add(dataClass.getRowId())
                 .append(" AND d.rowId = ?").add(rowId);
 
@@ -5307,7 +5307,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
 
             List<String> allLsids = new ArrayList<>(datas.size());
-            Map<Long, List<String>> lsidsByClass = new LinkedHashMap<>();
+            Map<Long, List<Long>> rowIdsByClass = new LinkedHashMap<>();
 
             for (Data data : datas)
             {
@@ -5340,8 +5340,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 if (data.getClassId() != null)
                 {
-                    List<String> byClass = lsidsByClass.computeIfAbsent(data.getClassId(), k -> new ArrayList<>(10));
-                    byClass.add(data.getLSID());
+                    List<Long> byClass = rowIdsByClass.computeIfAbsent(data.getClassId(), k -> new ArrayList<>(10));
+                    byClass.add(data.getRowId());
                 }
                 allLsids.add(data.getLSID());
             }
@@ -5368,18 +5368,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // exp.DataIndexed handled via a ON DELETE CASCADE foreign key
 
             // DELETE FROM provisioned dataclass tables
-            for (var classId : lsidsByClass.keySet())
+            for (var classId : rowIdsByClass.keySet())
             {
                 ExpDataClassImpl dataClass = getDataClass(classId);
                 if (dataClass == null)
                     throw new SQLException("DataClass not found '" + classId + "'");
 
-                List<String> lsids = lsidsByClass.get(classId);
-                if (!lsids.isEmpty())
+                List<Long> rowIds = rowIdsByClass.get(classId);
+                if (!rowIds.isEmpty())
                 {
                     TableInfo t = dataClass.getTinfo();
-                    SQLFragment sql = new SQLFragment("DELETE FROM ").append(t).append(" WHERE lsid ");
-                    dialect.appendInClauseSql(sql, lsids);
+                    SQLFragment sql = new SQLFragment("DELETE FROM ").append(t).append(" WHERE rowId ");
+                    dialect.appendInClauseSql(sql, rowIds);
                     executor.execute(sql);
                 }
             }
@@ -5800,6 +5800,108 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    public List<Long> getDerivationRunIdsForDataClassExport(long dataClassRowId)
+    {
+        SQLFragment sql = new SQLFragment("""
+            SELECT DISTINCT er.RowId
+            FROM exp.ExperimentRun er
+            WHERE er.ProtocolLSID = ?
+            AND er.RowId IN (
+                SELECT pa.RunId FROM exp.ProtocolApplication pa
+                INNER JOIN exp.DataInput di ON di.TargetApplicationId = pa.RowId
+                INNER JOIN exp.Data d ON di.DataId = d.RowId
+                WHERE d.classId = ?
+                UNION
+                SELECT pa.RunId FROM exp.ProtocolApplication pa
+                INNER JOIN exp.Data d ON d.SourceApplicationId = pa.RowId
+                WHERE d.classId = ?
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM exp.ProtocolApplication pa2
+                INNER JOIN exp.MaterialInput mi ON mi.TargetApplicationId = pa2.RowId
+                WHERE pa2.RunId = er.RowId
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM exp.Material m
+                INNER JOIN exp.ProtocolApplication pa3 ON m.SourceApplicationId = pa3.RowId
+                WHERE pa3.RunId = er.RowId
+            )
+            """,
+            SAMPLE_DERIVATION_PROTOCOL_LSID,
+            dataClassRowId,
+            dataClassRowId
+        );
+
+        return new SqlSelector(getExpSchema(), sql).getArrayList(Long.class);
+    }
+
+    @Override
+    public List<Long> getDerivationRunIdsForSampleTypesExport(Collection<String> sampleTypeLsids, Container c, boolean includeRunsWithDataIO)
+    {
+        if (sampleTypeLsids.isEmpty())
+            return Collections.emptyList();
+
+        SQLFragment inClause = getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), sampleTypeLsids);
+
+        // Subquery to find runs that use materials from the given sample types and container
+        SQLFragment materialsSubquery = new SQLFragment("""
+            SELECT pa.RunId FROM exp.ProtocolApplication pa
+            INNER JOIN exp.MaterialInput mi ON mi.TargetApplicationId = pa.RowId
+            INNER JOIN exp.Material m ON mi.MaterialId = m.RowId
+            WHERE m.cpasType """);
+        materialsSubquery.append(inClause);
+        materialsSubquery.append(" AND m.Container = ?\n");
+        materialsSubquery.add(c);
+        materialsSubquery.append("""
+            UNION
+            SELECT pa.RunId FROM exp.ProtocolApplication pa
+            INNER JOIN exp.Material m ON m.SourceApplicationId = pa.RowId
+            WHERE m.cpasType """);
+        materialsSubquery.append(inClause);
+        materialsSubquery.append(" AND m.Container = ?");
+        materialsSubquery.add(c);
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT DISTINCT er.RowId\nFROM exp.ExperimentRun er\nWHERE er.RowId IN (\n");
+        sql.append(materialsSubquery);
+        sql.append(")\n");
+
+        if (includeRunsWithDataIO)
+        {
+            // Include all derivation and aliquot runs
+            sql.append("AND er.ProtocolLSID IN (?, ?)\n");
+            sql.add(SAMPLE_DERIVATION_PROTOCOL_LSID);
+            sql.add(SAMPLE_ALIQUOT_PROTOCOL_LSID);
+        }
+        else
+        {
+            // Aliquot runs are always included; derivation runs only if they have no data inputs/outputs
+            sql.append("AND (\n");
+            sql.append("    er.ProtocolLSID = ?\n");
+            sql.add(SAMPLE_ALIQUOT_PROTOCOL_LSID);
+            sql.append("    OR (\n");
+            sql.append("        er.ProtocolLSID = ?\n");
+            sql.add(SAMPLE_DERIVATION_PROTOCOL_LSID);
+            sql.append("""
+                            AND NOT EXISTS (
+                                SELECT 1 FROM exp.ProtocolApplication pa2
+                                INNER JOIN exp.DataInput di ON di.TargetApplicationId = pa2.RowId
+                                WHERE pa2.RunId = er.RowId
+                            )
+                            AND NOT EXISTS (
+                                SELECT 1 FROM exp.Data d
+                                INNER JOIN exp.ProtocolApplication pa3 ON d.SourceApplicationId = pa3.RowId
+                                WHERE pa3.RunId = er.RowId
+                            )
+                        )
+                    )
+                    """);
+        }
+
+        return new SqlSelector(getExpSchema(), sql).getArrayList(Long.class);
+    }
+
+    @Override
     public List<ExpRunImpl> runsDeletedWithInput(List<? extends ExpRun> runs)
     {
         List<ExpRunImpl> ret = new ArrayList<>();
@@ -6098,9 +6200,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             TableInfo table = dataClass.getTinfo();
 
             SQLFragment sql = new SQLFragment()
-                    .append("SELECT t.lsid FROM ").append(getTinfoData(), "d")
+                    .append("SELECT d.lsid FROM ").append(getTinfoData(), "d")
                     .append(" LEFT OUTER JOIN ").append(table, "t")
-                    .append(" ON d.lsid = t.lsid")
+                    .append(" ON d.RowId = t.rowId")
                     .append(" WHERE d.Container = ?").add(dataClass.getContainer().getEntityId())
                     .append(" AND d.ClassId = ?").add(dataClass.getRowId());
 

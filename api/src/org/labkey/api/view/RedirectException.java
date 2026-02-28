@@ -15,37 +15,32 @@
  */
 package org.labkey.api.view;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.SkipMothershipLogging;
 import org.labkey.api.util.URLHelper;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 /**
  * When thrown in the context of an HTTP request, sends the client a *temporary* redirect in the HTTP response. Not
  * treated as a loggable error. See {@link PermanentRedirectException} if a permanent redirect is desired.
+ * Note: This always redirects to the local server. If an external redirect is needed (this is rare), use
+ * {@link ExternalRedirectException} or (even rarer) {@link UnsafeExternalRedirectException}.
  */
 public class RedirectException extends RuntimeException implements SkipMothershipLogging
 {
     private final String _url;
-
-    @Deprecated // Call the variant that takes allowAbsoluteUrl
-    public RedirectException(@NotNull URLHelper url)
-    {
-        this(url, false);
-    }
-
-    public RedirectException(@NotNull URLHelper url, boolean allowAbsoluteUrl)
-    {
-        this(!allowAbsoluteUrl || url.isLocalUri(HttpView.getRootContext()) ? url.getLocalURIString() : url.getURIString());
-    }
 
     public RedirectException(@NotNull ActionURL url)
     {
         this(url.getLocalURIString());
     }
 
-    public RedirectException(String url)
+    public RedirectException(@NotNull URLHelper url)
+    {
+        this(url.getLocalURIString());
+    }
+
+    protected RedirectException(String url)
     {
         _url = url;
     }

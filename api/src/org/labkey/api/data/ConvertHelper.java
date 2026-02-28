@@ -791,15 +791,26 @@ public class ConvertHelper implements PropertyEditorRegistrar
         }
     }
 
-    /** Simple genericized wrapper around ConvertUtils.convert(). Also handles calling toString() on value, if non-null */
+
+    /** Genericized wrapper around ConvertUtils.convert(). */
     public static <T> T convert(Object value, Class<T> cl)
     {
-        if (value == null)
-        {
+        var ret = ConvertUtils.convert(value, cl);
+        if (ret == null)
             return null;
+        try
+        {
+            return cl.cast(ret);
         }
-        return (T)ConvertUtils.convert(value.toString(), cl);
+        catch (ClassCastException ex)
+        {
+            // for testing let's blow up dramatically here
+            if (cl.isPrimitive())
+                throw new IllegalArgumentException("primitive type is not allowed: " + cl.getName());
+            throw new ConversionException("Could not convert value to " + cl.getSimpleName());
+        }
     }
+
 
     public static SimpleConvert getSimpleConvert(Class<?> targetType)
     {
@@ -1060,6 +1071,34 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
     public static class TestCase extends Assert
     {
+        @Test
+        public void testConvertHelperEqualsConvertUtils()
+        {
+            {
+                // ConvertHelper used to call toString() which would break this test
+                var a = ConvertHelper.convert("a,b,c", String[].class);
+                assert a instanceof String[] arr && arr.length == 3;
+                var b = ConvertHelper.convert(a, String[].class);
+                assertArrayEquals(a, b);
+            }
+
+            {
+                var a = ConvertUtils.convert("a,b,c", String[].class);
+                assert a instanceof String[] arr && arr.length == 3;
+                var b = ConvertUtils.convert(a, String[].class);
+                assertArrayEquals((String [])a, (String [])b);
+            }
+
+            {
+                // ConvertHelper used to short-circuit null which would break this test
+                var a = ConvertUtils.convert((String)null, MultiChoice.Array.class);
+                var b = ConvertHelper.convert(null, MultiChoice.Array.class);
+                assertNotNull(a);
+                assertEquals(a,b);
+            }
+        }
+
+
         @Test
         public void testConvertTimestamp()
         {

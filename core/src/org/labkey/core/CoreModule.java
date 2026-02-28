@@ -255,7 +255,7 @@ import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
-import org.labkey.core.mpc.McpServiceImpl;
+import org.labkey.core.mcp.McpServiceImpl;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
 import org.labkey.core.notification.EmailPreferenceUserListener;
@@ -540,11 +540,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "Short-circuit robots",
             "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
             false);
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(AppProps.GENERATE_CONTROLLER_FIRST_URLS,
-            "Restore controller-first URLs",
-            "Generate URLs in a legacy format that puts the controller name before the folder path. This option will be removed in LabKey Server 26.3.",
-            false, false, OptionalFeatureService.FeatureType.Deprecated
-        ));
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.REJECT_CONTROLLER_FIRST_URLS,
             "Reject controller-first URLs",
             "Require standard path-first URLs. Note: This option will be ignored if the deprecated feature for generating controller-first URLs is enabled.",
@@ -1202,7 +1197,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 customLog4JConfig = Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter("org.labkey.customLog4JConfig"));
             }
             results.put("customLog4JConfig", customLog4JConfig);
-            results.put("containerRelativeURL", AppProps.getInstance().getUseContainerRelativeURL());
             results.put("runtimeMode", AppProps.getInstance().isDevMode() ? "development" : "production");
             Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
             deployedApps.remove(labkeyContextPath);

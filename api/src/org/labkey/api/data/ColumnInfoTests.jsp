@@ -25,6 +25,7 @@ This tests uses MockRequest to test some expected Headers and Meta tags for vari
         var result = col.convert(val);
         assertNotNull(result);
         //assertEquals(col.getJdbcType().getJavaClass(), result.getClass());
+        assertEquals(expected.getClass(), result.getClass());
         assertEquals(expected, result);
     }
 
@@ -159,9 +160,27 @@ This tests uses MockRequest to test some expected Headers and Meta tags for vari
                 case INTEGER -> {}
                 case REAL -> {}
                 case SMALLINT, TINYINT -> {}
-                case DATE -> {}
-                case TIME -> {}
-                case TIMESTAMP -> {}
+                case DATE ->
+                {
+                    testConvert(type, java.sql.Date.valueOf("2024-01-15"), "2024-01-15");
+                    testConvert(type, java.sql.Date.valueOf("2024-01-15"), java.sql.Date.valueOf("2024-01-15"));
+                    testConvertsToNull(type, null);
+                    testConvertsToNull(type, "");
+                }
+                case TIME ->
+                {
+                    testConvert(type, java.sql.Time.valueOf("14:30:00"), "14:30:00");
+                    testConvert(type, java.sql.Time.valueOf("14:30:00"), java.sql.Time.valueOf("14:30:00"));
+                    testConvertsToNull(type, null);
+                    testConvertsToNull(type, "");
+                }
+                case TIMESTAMP ->
+                {
+                    testConvert(type, java.sql.Timestamp.valueOf("2024-01-15 14:30:00"), "2024-01-15 14:30:00");
+                    testConvert(type, java.sql.Timestamp.valueOf("2024-01-15 14:30:00"), java.sql.Timestamp.valueOf("2024-01-15 14:30:00"));
+                    testConvertsToNull(type, null);
+                    testConvertsToNull(type, "");
+                }
                 case GUID -> {}
                 case ARRAY, NULL, OTHER -> { /* ignore */ }
                 default -> fail("We missed a JdbcType: " + type.name());
@@ -203,9 +222,27 @@ This tests uses MockRequest to test some expected Headers and Meta tags for vari
                 case BINARY -> {}
                 case FILE_LINK -> {}
                 case ATTACHMENT -> {}
-                case DATE_TIME -> {}
-                case DATE -> {}
-                case TIME -> {}
+                case DATE_TIME ->
+                {
+                    testConvert(type, java.sql.Timestamp.valueOf("2024-01-15 14:30:00"), "2024-01-15 14:30:00");
+                    testConvert(type, java.sql.Timestamp.valueOf("2024-01-15 14:30:00"), java.sql.Timestamp.valueOf("2024-01-15 14:30:00"));
+                    testConvertsToNull(type, null);
+                    testConvertsToNull(type, "");
+                }
+                case DATE ->
+                {
+                    testConvert(type, java.sql.Date.valueOf("2024-01-15"), "2024-01-15");
+                    testConvert(type, java.sql.Date.valueOf("2024-01-15"), java.sql.Date.valueOf("2024-01-15"));
+                    testConvertsToNull(type, null);
+                    testConvertsToNull(type, "");
+                }
+                case TIME ->
+                {
+                    testConvert(type, java.sql.Time.valueOf("14:30:00"), "14:30:00");
+                    testConvert(type, java.sql.Time.valueOf("14:30:00"), java.sql.Time.valueOf("14:30:00"));
+                    testConvertsToNull(type, null);
+                    testConvertsToNull(type, "");
+                }
                 case DOUBLE -> {}
                 case FLOAT -> {}
                 case DECIMAL -> {}

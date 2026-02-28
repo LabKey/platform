@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.security.impersonation;
+package org.labkey.api.security;
 
 import com.google.common.collect.Streams;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.PrincipalArray;
-import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.User;
+import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.view.ActionURL;
@@ -32,18 +30,18 @@ import java.util.stream.Stream;
 /**
  * Do not use this class directly; use ElevatedUser instead.
  */
-public class WrappedImpersonationContext implements ImpersonationContext
+public class WrappedPermissionsContext implements PermissionsContext
 {
-    private final ImpersonationContext _delegate;
+    private final PermissionsContext _delegate;
     private final Set<Role> _additionalRoles;
 
-    public WrappedImpersonationContext(ImpersonationContext delegate, Set<Role> additionalRoles)
+    public WrappedPermissionsContext(PermissionsContext delegate, Set<Role> additionalRoles)
     {
         _delegate = delegate;
         _additionalRoles = additionalRoles;
     }
 
-    public WrappedImpersonationContext(ImpersonationContext delegate, Role additionalRole)
+    public WrappedPermissionsContext(PermissionsContext delegate, Role additionalRole)
     {
         this(delegate, Set.of(additionalRole));
     }

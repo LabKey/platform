@@ -462,7 +462,7 @@ public class ProjectController extends SpringActionController
     public static class FileBrowserAction extends org.labkey.api.action.SimpleRedirectAction<Object>
     {
         @Override
-        public URLHelper getRedirectURL(Object o)
+        public ActionURL getRedirectURL(Object o)
         {
             String p = StringUtils.trimToEmpty(getViewContext().getRequest().getParameter("path"));
             Path path;
@@ -635,7 +635,7 @@ public class ProjectController extends SpringActionController
         {
             URLHelper successURL = getSuccessURL(form);
             if (null != successURL)
-                return HttpView.redirect(successURL, false);
+                return HttpView.redirect(successURL);
             return HttpView.redirect(getContainer().getStartURL(getUser()));
         }
 
@@ -915,7 +915,7 @@ public class ProjectController extends SpringActionController
             handlePost(customizePortletForm, errors);
             URLHelper successURL = getSuccessURL(customizePortletForm);
             if (null != successURL)
-                return HttpView.redirect(successURL, false);
+                return HttpView.redirect(successURL);
             return HttpView.redirect(getContainer().getStartURL(getUser()));
         }
 
