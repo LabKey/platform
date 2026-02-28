@@ -129,6 +129,7 @@ public class XmlBeansUtil
      * freshly configured factories.
      */
     public static final SAXParserFactory SAX_PARSER_FACTORY;
+    public static final SAXParserFactory SAX_PARSER_FACTORY_ALLOWING_DOCTYPE;
     public static final XMLInputFactory XML_INPUT_FACTORY;
     public static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY;
 
@@ -139,20 +140,10 @@ public class XmlBeansUtil
         XML_INPUT_FACTORY.setProperty(XMLInputFactory.SUPPORT_DTD, false);
         XML_INPUT_FACTORY.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 
-        //noinspection XMLInputFactory
-        SAX_PARSER_FACTORY = SAXParserFactory.newInstance();
         try
         {
-            SAX_PARSER_FACTORY.setNamespaceAware(true);
-            SAX_PARSER_FACTORY.setFeature("http://xml.org/sax/features/validation", false);
-            SAX_PARSER_FACTORY.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-
-            // Disable features that could lead to XXE or other vulnerabilities
-            // Keep in sync with ModuleArchive.nameFromModuleXML()
-            SAX_PARSER_FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            SAX_PARSER_FACTORY.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            SAX_PARSER_FACTORY.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            SAX_PARSER_FACTORY.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            SAX_PARSER_FACTORY = saxParserFactory(false);
+            SAX_PARSER_FACTORY_ALLOWING_DOCTYPE = saxParserFactory(true);
 
             //noinspection XMLInputFactory
             DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
@@ -169,5 +160,25 @@ public class XmlBeansUtil
         {
             throw UnexpectedException.wrap(e);
         }
+    }
+
+    private static SAXParserFactory saxParserFactory(boolean allowDocType) throws SAXException, ParserConfigurationException
+    {
+        //noinspection XMLInputFactory
+        SAXParserFactory result = SAXParserFactory.newInstance();
+        result.setNamespaceAware(true);
+        result.setFeature("http://xml.org/sax/features/validation", false);
+        result.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+
+        // Disable features that could lead to XXE or other vulnerabilities
+        // Keep in sync with ModuleArchive.nameFromModuleXML()
+        if (!allowDocType)
+        {
+            result.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        }
+        result.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        result.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        result.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        return result;
     }
 }
