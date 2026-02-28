@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupMembershipCache;
+import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
@@ -76,7 +77,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
     }
 
     @Override
-    public ImpersonationContext getImpersonationContext()
+    public PermissionsContext getImpersonationContext()
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
         Group group = SecurityManager.getGroup(_groupId);
@@ -152,7 +153,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         return false;
     }
 
-    static void addMenu(NavTree menu)
+    public static void addMenu(NavTree menu)
     {
         NavTree groupMenu = new NavTree("Group");
         groupMenu.setScript("LABKEY.Security.Impersonation.showImpersonateGroup();");

@@ -17,7 +17,7 @@ package org.labkey.api.view;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.impersonation.ImpersonationContext;
+import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserUrls;
@@ -66,8 +66,8 @@ public class PopupUserView extends PopupMenuView
         }
 
         // Delegate impersonate, stop impersonating, adjust impersonation, and sign out menu items to the current ImpersonationContext
-        ImpersonationContext impersonationContext = user.getImpersonationContext();
-        impersonationContext.addMenu(tree, c, user, currentURL);
+        PermissionsContext permissionsContext = user.getPermissionsContext();
+        permissionsContext.addMenu(tree, c, user, currentURL);
 
         tree.addSeparator();
 

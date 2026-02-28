@@ -394,10 +394,6 @@ public class MothershipReport implements Runnable
     private HttpURLConnection submitRequest(URL url, @Nullable String forwardedFor) throws IOException
     {
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
-        if (connection instanceof HttpsURLConnection)
-        {
-            HttpsUtil.disableValidation((HttpsURLConnection)connection);
-        }
         // We'll handle redirects on our own which makes sure that we
         // POST instead of GET after being redirected
         connection.setInstanceFollowRedirects(false);

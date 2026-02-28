@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.security.impersonation;
+package org.labkey.api.security;
 
 /*
-  A "not impersonating" context that filters out privileged site roles (i.e., Site Admin, Platform Developer)
+  A context that filters out privileged site roles (i.e., Site Admin, Platform Developer)
  */
 
-import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
 
 import java.util.stream.Stream;
 
-public class DisallowPrivilegedRolesContext extends NotImpersonatingContext
+public class DisallowPrivilegedRolesContext extends NormalPermissionsContext
 {
     private static final DisallowPrivilegedRolesContext INSTANCE = new DisallowPrivilegedRolesContext();
 
