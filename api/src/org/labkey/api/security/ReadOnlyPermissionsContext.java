@@ -1,8 +1,6 @@
-package org.labkey.api.security.impersonation;
+package org.labkey.api.security;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AllowedForReadOnlyUser;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
@@ -11,7 +9,7 @@ import org.labkey.api.view.NavTree;
 
 import java.util.stream.Stream;
 
-public class ReadOnlyImpersonatingContext extends NotImpersonatingContext
+public class ReadOnlyPermissionsContext extends NormalPermissionsContext
 {
     @Override
     public Stream<Class<? extends Permission>> filterPermissions(Stream<Class<? extends Permission>> perms)

@@ -63,10 +63,10 @@ public class CrosstabView extends QueryView
     {
         List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = new ArrayList<>();
 
-        CrosstabMember currentMember = null;
         List<DisplayColumn> currentMemberColumns = new ArrayList<>();
-        groupedByMember.add(Pair.of(currentMember, currentMemberColumns));
+        groupedByMember.add(Pair.of(null, currentMemberColumns));
 
+        CrosstabMember currentMember = null;
         for (DisplayColumn renderer : renderers)
         {
             ColumnInfo col = renderer.getColumnInfo();
@@ -101,16 +101,22 @@ public class CrosstabView extends QueryView
         return super.createDataRegion();
     }
 
+    private CrosstabTableInfo getCrosstabTable()
+    {
+        if (!(getTable() instanceof CrosstabTableInfo table) || !table.isCrosstab())
+        {
+            throw new IllegalStateException("getTable() must return a CrosstabTableInfo but was " + getTable());
+        }
+        return table;
+    }
+
     @Override
     public List<DisplayColumn> getDisplayColumns()
     {
-        assert getTable() instanceof CrosstabTableInfo cti && cti.isCrosstab();
-
-        CrosstabTableInfo table = (CrosstabTableInfo)getTable();
-
         List<FieldKey> selectedFieldKeys = null;
+        CrosstabTableInfo table = getCrosstabTable();
 
-        // First check if something has explicitly overridden the columns
+        // First, check if something has explicitly overridden the columns
         if (_columns != null)
         {
             selectedFieldKeys = _columns;
@@ -132,11 +138,11 @@ public class CrosstabView extends QueryView
         for (FieldKey col : selectedFieldKeys)
         {
             ColumnInfo column = table.getColumn(col);
-            if (col.getParts().get(0).startsWith(AggregateColumnInfo.NAME_PREFIX))
+            if (col.getParts().getFirst().startsWith(AggregateColumnInfo.NAME_PREFIX))
                 measureFieldKeys.add(col);
             else if (column != null && column.getCrosstabColumnMember() != null)
             {
-                List<FieldKey> fieldKeys = measureFieldKeysByMember.computeIfAbsent(column.getCrosstabColumnMember(), k -> new ArrayList<>());
+                List<FieldKey> fieldKeys = measureFieldKeysByMember.computeIfAbsent(column.getCrosstabColumnMember(), _ -> new ArrayList<>());
                 fieldKeys.add(col);
             }
             else
@@ -156,10 +162,10 @@ public class CrosstabView extends QueryView
                     for (FieldKey col : measureFieldKeys)
                     {
                         List<String> parts = new ArrayList<>(col.getParts());
-                        parts.set(0, AggregateColumnInfo.getColumnName(member, table.getMeasureFromKey(col.getParts().get(0))));
+                        parts.set(0, AggregateColumnInfo.getColumnName(member, table.getMeasureFromKey(col.getParts().getFirst())));
 
                         FieldKey measureMemberFieldKey = FieldKey.fromParts(parts);
-                        List<FieldKey> fieldKeys = measureFieldKeysByMember.computeIfAbsent(member, k -> new ArrayList<>());
+                        List<FieldKey> fieldKeys = measureFieldKeysByMember.computeIfAbsent(member, _ -> new ArrayList<>());
                         fieldKeys.add(measureMemberFieldKey);
                     }
                 }
@@ -195,9 +201,7 @@ public class CrosstabView extends QueryView
     {
         DataView view = super.createDataView();
 
-        assert getTable() instanceof CrosstabTableInfo cti && cti.isCrosstab();
-
-        CrosstabTableInfo table = (CrosstabTableInfo)getTable();
+        CrosstabTableInfo table = getCrosstabTable();
 
         // set the default base sort (remove non-existent sort columns), merging with any existing base sort from the
         // custom view or other settings (issue 17209).

@@ -1,6 +1,5 @@
 package org.labkey.api.security;
 
-import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 
@@ -14,13 +13,13 @@ import java.util.stream.Stream;
 
 public abstract class ClonedUser extends User
 {
-    protected ClonedUser(User user, ImpersonationContext ctx)
+    protected ClonedUser(User user, PermissionsContext ctx)
     {
         this(user.getEmail(), user.getUserId(), user.getFriendlyName(), user.getFirstName(), user.getLastName(), user.isActive(), user.getLastLogin(), user.getPhone(), user.getLastActivity(), ctx);
     }
 
     protected ClonedUser(String email, int userId, String displayName, String firstName, String lastName, boolean active,
-                         Date lastLogin, String phone, Date lastActivity, ImpersonationContext ctx)
+                         Date lastLogin, String phone, Date lastActivity, PermissionsContext ctx)
     {
         super(email, userId);
         setDisplayName(displayName);

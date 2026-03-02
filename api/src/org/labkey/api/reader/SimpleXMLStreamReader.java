@@ -16,17 +16,11 @@
 
 package org.labkey.api.reader;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.util.XmlBeansUtil;
 
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * User: arauch
@@ -35,31 +29,9 @@ import java.util.regex.Pattern;
  */
 public class SimpleXMLStreamReader extends XMLStreamReaderWrapper
 {
-    private static final Logger _log = LogManager.getLogger(SimpleXMLStreamReader.class);
-    private static final Pattern _blankPattern = Pattern.compile("");
-
     public SimpleXMLStreamReader(InputStream stream) throws XMLStreamException
     {
-        super(getFactory().createXMLStreamReader(stream));
-    }
-
-
-    // Make sure XMLStreamReader doesn't freak if it can't resolve DTD URL
-    private static XMLInputFactory getFactory()
-    {
-        XMLInputFactory factory = XMLInputFactory.newInstance();
-        factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-        return factory;
-    }
-
-
-    public void logElement()
-    {
-        _log.debug("----" + (getEventType() == XMLStreamConstants.END_ELEMENT ? "/" : "") + getLocalName() + "----");
-        int count = getAttributeCount();
-
-        for (int i = 0; i < count; i++)
-            _log.debug(getAttributeLocalName(i) + "=" + getAttributeValue(i));
+        super(XmlBeansUtil.XML_INPUT_FACTORY.createXMLStreamReader(stream));
     }
 
 
@@ -89,36 +61,6 @@ public class SimpleXMLStreamReader extends XMLStreamReaderWrapper
     }
 
 
-    public String getAllText() throws XMLStreamException
-    {
-        String token = "";
-
-        // Skip until we find a character event
-        while (hasNext())
-        {
-            int event = next();
-
-            if (event == XMLStreamConstants.CHARACTERS)
-            {
-                // Characters can come in chunks... so loop until no more character events
-                while (event == XMLStreamConstants.CHARACTERS)
-                {
-                    token += getText().trim();
-
-                    if (!hasNext())
-                        break;
-
-                    event = next();
-                }
-
-                return token;
-            }
-        }
-
-        return null;
-    }
-
-
     public String getHref()
             throws XMLStreamException
     {
@@ -131,47 +73,5 @@ public class SimpleXMLStreamReader extends XMLStreamReaderWrapper
         }
         // UNDONE: Raise exception instead of returning null
         return null;
-    }
-
-
-    public String getAllText(Pattern validationExpression) throws XMLStreamException
-    {
-        String token = getAllText();
-
-        if (validationExpression.matcher(token).matches())
-        {
-            return token;
-        }
-        else
-        {
-            _log.error("Unexpected token: " + token + " doesn't match " + validationExpression.pattern());
-            return token;
-        }
-    }
-
-
-    public void skipBlank() throws XMLStreamException
-    {
-        getAllText(_blankPattern);
-    }
-
-
-    // Creates & populates bean of the given class from XML attributes.
-    // Create and register a BeanObjectFactory for this class first, unless the default factory will do.
-    // In particular, you may need to override convertToPropertyName to convert attribute names.
-    public <K> K beanFromAttributes(Class<K> clazz)
-    {
-        Map<String, Object> m = new HashMap<>();
-        int attributeCount = getAttributeCount();
-        BeanObjectFactory<K> bof = (BeanObjectFactory<K>) BeanObjectFactory.Registry.getFactory(clazz);
-
-        for (int i = 0; i < attributeCount; i++)
-        {
-            String name = bof.convertToPropertyName(getAttributeLocalName(i));
-            String value = getAttributeValue(i);
-            m.put(name, value);
-        }
-
-        return bof.fromMap(m);
     }
 }
