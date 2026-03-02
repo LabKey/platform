@@ -822,7 +822,7 @@ public class SecurityManager
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
 
-        if (user.hasRootAdminPermission())
+        if (user.hasRootPermission(ImpersonatePermission.class))
             project = null;
 
         impersonate(viewContext, new UserImpersonationContextFactory(project, user, impersonatedUser, returnUrl));

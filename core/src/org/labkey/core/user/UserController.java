@@ -2786,18 +2786,9 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermission(ImpersonatePermission.class)
+    @RequiresNoPermission // getValidImpersonationUsers() does all permission checking
     public static class GetImpersonationUsersAction extends MutatingApiAction<Object>
     {
-        @Override
-        public void checkPermissions() throws UnauthorizedException
-        {
-            // Impersonating troubleshooter role is restricted to the root, but, as a convenience, we let them
-            // impersonate from any container.
-            if (!getUser().hasRootPermission(ImpersonatePermission.class))
-                super.checkPermissions();
-        }
-
         @Override
         public ApiResponse execute(Object object, BindException errors)
         {
@@ -2888,7 +2879,7 @@ public class UserController extends SpringActionController
         public abstract @Nullable String impersonate(FORM form);
     }
 
-    @RequiresPermission(ImpersonatePermission.class)
+    @RequiresNoPermission
     public static class ImpersonateUserAction extends ImpersonateApiAction<ImpersonateUserForm>
     {
         @Override
@@ -2972,7 +2963,7 @@ public class UserController extends SpringActionController
 
     // TODO: Better instructions
     // TODO: Messages for no groups, no users
-    @RequiresPermission(ImpersonatePermission.class)
+    @RequiresNoPermission
     public static class ImpersonateGroupAction extends ImpersonateApiAction<ImpersonateGroupForm>
     {
         @Override
@@ -3247,6 +3238,15 @@ public class UserController extends SpringActionController
 
             UserController controller = new UserController();
 
+            assertForNoPermission(user,
+                new GetImpersonationUsersAction(),
+                new ImpersonateUserAction(),
+                new GetImpersonationGroupsAction(),
+                new ImpersonateGroupAction(),
+                controller.new GetImpersonationRolesAction(),
+                controller.new ImpersonateRolesAction()
+            );
+
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
                 new BeginAction(),
@@ -3256,15 +3256,9 @@ public class UserController extends SpringActionController
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                controller.new ShowUsersAction(),
+                controller.new ShowUsersAction()
                 //TODO controller.new ShowUserHistoryAction(),
                 //TODO controller.new UserAccessAction(),
-                new GetImpersonationUsersAction(),
-                    new ImpersonateUserAction(),
-                    new GetImpersonationGroupsAction(),
-                    new ImpersonateGroupAction()
-//                controller.new GetImpersonationRolesAction()   Annotated as "no permission", to allow impersonation adjustments
-//                controller.new ImpersonateRolesAction()        Annotated as "no permission", to allow impersonation adjustments
             );
 
             // @RequiresPermission(UserManagementPermission.class)
