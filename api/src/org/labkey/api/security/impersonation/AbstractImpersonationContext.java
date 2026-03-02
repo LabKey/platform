@@ -21,7 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
+import org.labkey.api.security.permissions.ImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -88,7 +88,7 @@ public abstract class AbstractImpersonationContext implements PermissionsContext
      */
     protected Stream<Role> getFilteredRoles(Stream<Role> roles)
     {
-        if (getAdminUser() != null && !getAdminUser().hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
+        if (getAdminUser() != null && !getAdminUser().hasRootPermission(ImpersonatePrivilegedSiteRolesPermission.class))
             return roles.filter(role -> !role.isPrivileged());
 
         return roles;

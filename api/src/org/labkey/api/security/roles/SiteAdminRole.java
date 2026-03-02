@@ -16,11 +16,9 @@
 package org.labkey.api.security.roles;
 
 import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
-import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
+import org.labkey.api.security.permissions.ImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.permissions.CanUseSendMessageApiPermission;
 import org.labkey.api.security.permissions.EditModuleResourcesPermission;
-import org.labkey.api.security.permissions.ExemptFromAccountDisablingPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.UploadFileBasedModulePermission;
@@ -37,11 +35,9 @@ public class SiteAdminRole extends AbstractRootContainerRole implements AdminRol
 {
     private static final Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
         AdminOperationsPermission.class,
-        CanImpersonatePrivilegedSiteRolesPermission.class,
-        CanImpersonateSiteRolesPermission.class,
+        ImpersonatePrivilegedSiteRolesPermission.class,
         CanUseSendMessageApiPermission.class,
         EmailNonUsersPermission.class,
-        ExemptFromAccountDisablingPermission.class,
         SiteAdminPermission.class,
         UploadFileBasedModulePermission.class
     );

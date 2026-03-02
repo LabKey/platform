@@ -105,8 +105,8 @@ import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.CanAccessLockedProjectsPermission;
-import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeleteUserPermission;
+import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdateUserPermission;
@@ -896,7 +896,7 @@ public class UserController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ShowUserHistoryAction extends SimpleViewAction
+    public class ShowUserHistoryAction extends SimpleViewAction<Object>
     {
         @Override
         public void checkPermissions() throws UnauthorizedException
@@ -2786,18 +2786,25 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(ImpersonatePermission.class)
     public static class GetImpersonationUsersAction extends MutatingApiAction<Object>
     {
+        @Override
+        public void checkPermissions() throws UnauthorizedException
+        {
+            // Impersonating troubleshooter role is restricted to the root, but, as a convenience, we let them
+            // impersonate from any container.
+            if (!getUser().hasRootPermission(ImpersonatePermission.class))
+                super.checkPermissions();
+        }
+
         @Override
         public ApiResponse execute(Object object, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             User currentUser = getUser();
-            Container project = currentUser.hasRootAdminPermission() ? null : getContainer().getProject();
-            Collection<User> users = UserImpersonationContextFactory.getValidImpersonationUsers(project, getUser());
-
+            Collection<User> users = UserImpersonationContextFactory.getValidImpersonationUsers(getContainer().getProject(), currentUser);
             Collection<Map<String, Object>> responseUsers = new LinkedList<>();
 
             for (User user : users)
@@ -2849,6 +2856,15 @@ public class UserController extends SpringActionController
     private abstract static class ImpersonateApiAction<FORM> extends MutatingApiAction<FORM>
     {
         @Override
+        public void checkPermissions() throws UnauthorizedException
+        {
+            // Impersonating troubleshooter role is restricted to the root, but, as a convenience, we let them
+            // impersonate from any container.
+            if (!getUser().hasRootPermission(ImpersonatePermission.class))
+                super.checkPermissions();
+        }
+
+        @Override
         protected String getCommandClassMethodName()
         {
             return "impersonate";
@@ -2872,9 +2888,8 @@ public class UserController extends SpringActionController
         public abstract @Nullable String impersonate(FORM form);
     }
 
-
-    @RequiresPermission(AdminPermission.class)
-    public class ImpersonateUserAction extends ImpersonateApiAction<ImpersonateUserForm>
+    @RequiresPermission(ImpersonatePermission.class)
+    public static class ImpersonateUserAction extends ImpersonateApiAction<ImpersonateUserForm>
     {
         @Override
         public @Nullable String impersonate(ImpersonateUserForm form)
@@ -2912,8 +2927,8 @@ public class UserController extends SpringActionController
         }
     }
 
-
-    @RequiresPermission(AdminPermission.class)
+    // getValidImpersonationGroups() checks permissions and returns empty for user who can't impersonate
+    @RequiresNoPermission
     public static class GetImpersonationGroupsAction extends MutatingApiAction<Object>
     {
         @Override
@@ -2957,8 +2972,8 @@ public class UserController extends SpringActionController
 
     // TODO: Better instructions
     // TODO: Messages for no groups, no users
-    @RequiresPermission(AdminPermission.class)
-    public class ImpersonateGroupAction extends ImpersonateApiAction<ImpersonateGroupForm>
+    @RequiresPermission(ImpersonatePermission.class)
+    public static class ImpersonateGroupAction extends ImpersonateApiAction<ImpersonateGroupForm>
     {
         @Override
         public @Nullable String impersonate(ImpersonateGroupForm form)
@@ -3003,7 +3018,7 @@ public class UserController extends SpringActionController
 
             User user = context.isImpersonating() ? context.getAdminUser() : getUser();
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Collection<Map<String, Object>> responseRoles = RoleImpersonationContextFactory.getValidImpersonationRoles(getContainer(), user)
+            Collection<Map<String, Object>> responseRoles = RoleImpersonationContextFactory.filterImpersonationRoles(getContainer(), user, RoleManager.getAllRoles()).stream()
                 .map(role -> {
                     Map<String, Object> map = new HashMap<>();
                     map.put("displayName", role.getDisplayName());
@@ -3029,10 +3044,10 @@ public class UserController extends SpringActionController
         if (context.isImpersonating())
             user = context.getAdminUser();
 
-        if (getContainer().isRoot() && user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
+        if (user.hasRootPermission(ImpersonatePermission.class))
             return context;
 
-        if (!getContainer().hasPermission(user, AdminPermission.class))
+        if (!getContainer().hasPermission(user, ImpersonatePermission.class))
             throw new UnauthorizedException();
 
         return context;
@@ -3245,9 +3260,9 @@ public class UserController extends SpringActionController
                 //TODO controller.new ShowUserHistoryAction(),
                 //TODO controller.new UserAccessAction(),
                 new GetImpersonationUsersAction(),
-                controller.new ImpersonateUserAction(),
+                    new ImpersonateUserAction(),
                     new GetImpersonationGroupsAction(),
-                controller.new ImpersonateGroupAction()
+                    new ImpersonateGroupAction()
 //                controller.new GetImpersonationRolesAction()   Annotated as "no permission", to allow impersonation adjustments
 //                controller.new ImpersonateRolesAction()        Annotated as "no permission", to allow impersonation adjustments
             );

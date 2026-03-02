@@ -31,20 +31,17 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
-import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
+import org.labkey.api.security.permissions.ImpersonatePermission;
+import org.labkey.api.security.permissions.ImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.roles.AbstractRootContainerRole;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -183,16 +180,30 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         menu.addChild(newRoleMenu);
     }
 
-    public static Stream<Role> getValidImpersonationRoles(Container c, User user)
+    // Returns a stream of roles that this user is allowed to impersonate. Empty if user can't impersonate.
+    public static Collection<Role> filterImpersonationRoles(Container c, User adminUser, Collection<Role> roles)
     {
+        boolean canImpersonate = adminUser.hasRootPermission(ImpersonatePermission.class);
+
+        if (!canImpersonate && !c.isRoot())
+        {
+            canImpersonate = c.hasPermission(adminUser, ImpersonatePermission.class);
+        }
+
+        if (!canImpersonate)
+        {
+            return Collections.emptyList();
+        }
+
+        boolean canImpersonatePrivilegedRoles = adminUser.hasRootPermission(ImpersonatePrivilegedSiteRolesPermission.class);
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
-        boolean canImpersonatePrivilegedRoles = user.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class);
 
         // Stream the valid roles
-        return RoleManager.getAllRoles().stream()
+        return roles.stream()
             .filter(Role::isAssignable)
             .filter(role -> role.isApplicable(policy, c))
-            .filter(role -> !role.isPrivileged() || canImpersonatePrivilegedRoles);
+            .filter(role -> !role.isPrivileged() || canImpersonatePrivilegedRoles)
+            .toList();
     }
 
     public static class RoleImpersonationContext extends AbstractImpersonationContext
@@ -226,8 +237,10 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         // Throws if user is not authorized to impersonate all roles
-        private void verifyPermissions(@Nullable Container project, User user, Set<Role> roles)
+        private void verifyPermissions(@Nullable Container project, User adminUser, Set<Role> roles)
         {
+            final Collection<Role> filteredRoles;
+
             if (null == project)
             {
                 // Ensure we have either site roles or project roles, not both
@@ -238,32 +251,15 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
                 if (map.size() > 1)
                     throw new UnauthorizedImpersonationException("You are not allowed to impersonate site roles and project roles at the same time", getFactory());
 
-                // Site Administrator and Impersonating Troubleshooter can impersonate any site role
-                if (user.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
-                    return;
-
-                if (!user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
-                    throw new UnauthorizedImpersonationException("You are not allowed to impersonate site roles", getFactory());
-
-                // Application Administrator can impersonate all site roles except the privileged ones
-                List<String> privileged = roles.stream()
-                    .filter(Role::isPrivileged)
-                    .map(Role::getDisplayName)
-                    .toList();
-
-                if (!privileged.isEmpty())
-                    throw new UnauthorizedImpersonationException("You are not allowed to impersonate " + StringUtilsLabKey.joinWithConjunction(privileged, "or"), getFactory());
+                filteredRoles = filterImpersonationRoles(ContainerManager.getRoot(), adminUser, roles);
             }
             else
             {
-                // Must have admin permissions in this project
-                if (!project.hasPermission(user, AdminPermission.class))
-                    throw new UnauthorizedImpersonationException("You are not allowed to impersonate a role in this project", getFactory());
-
-                // Must not be impersonating any site roles
-                if (roles.stream().anyMatch(role -> (role instanceof AbstractRootContainerRole)))
-                    throw new UnauthorizedImpersonationException("You are not allowed to impersonate site roles", getFactory());
+                filteredRoles = filterImpersonationRoles(project, adminUser, roles);
             }
+
+            if (filteredRoles.size() != roles.size())
+                throw new UnauthorizedImpersonationException("One or more impersonation roles are not authorized", getFactory());
         }
 
         @Override
@@ -285,7 +281,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
             // impersonate the specified roles. See Issue #50248 to understand the "instanceof Container" check.
             return resource instanceof Container c ?
                 _roles.stream()
-                    .filter(role -> !(role instanceof AbstractRootContainerRole siteRole) || siteRole.isAvailableEverywhere() || c.isRoot()) :
+                    .filter(role -> !(role instanceof AbstractRootContainerRole siteRole) || siteRole.isApplicableOutsideRoot() || c.isRoot()) :
                 Stream.empty();
         }
 

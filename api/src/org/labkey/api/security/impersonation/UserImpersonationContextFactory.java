@@ -30,7 +30,8 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ImpersonatePermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.SessionHelper;
@@ -40,6 +41,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -147,20 +149,22 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
     // project == null means return all site users (if authorized)
     public static Collection<User> getValidImpersonationUsers(@Nullable Container project, User adminUser)
     {
+        // Must assign a mutable list in all scenarios to allow subsequent remove() call
         Collection<User> validUsers;
 
-        // Site admin can impersonate any active user...
-        if (null == project)
+        // Site admin, app admin, and impersonating troubleshooter can impersonate any user, regardless of user's permissions and where impersonation is initiated
+        if (adminUser.hasRootPermission(ImpersonatePermission.class))
         {
-            validUsers = adminUser.hasRootAdminPermission() ? UserManager.getUsers(true) : new ArrayList<>(0); // Mutable list to allow subsequent remove() call
+            validUsers = UserManager.getUsers(true);
         }
-        else if (!project.hasPermission(adminUser, AdminPermission.class))
+        else if (project != null && project.hasPermission(adminUser, ImpersonatePermission.class))
         {
-            validUsers = new ArrayList<>(0); // Mutable list to allow subsequent remove() call
+            // The read permission check is not for security; it just seems useless to offer impersonation on a user who lacks read.
+            validUsers = new ArrayList<>(SecurityManager.getUsersWithPermissions(project, true, Set.of(ReadPermission.class)));
         }
         else
         {
-            validUsers = SecurityManager.getProjectUsers(project);
+            validUsers = new ArrayList<>(0);
         }
 
         validUsers.remove(adminUser);
@@ -191,12 +195,12 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
             if (impersonatedUser.equals(adminUser))
                 throw new UnauthorizedImpersonationException("Can't impersonate yourself", getFactory());
 
-            // Site/app admin can impersonate anywhere
-            if (adminUser.hasRootAdminPermission())
+            // Site admin, app admin, and impersonating troubleshooter can impersonate anywhere, regardless of user's permissions
+            if (adminUser.hasRootPermission(ImpersonatePermission.class))
                 return;
 
             // Project admin...
-            if (null != project && project.hasPermission(adminUser, AdminPermission.class) && SecurityManager.getProjectUsersIds(project).contains(impersonatedUser.getUserId()))
+            if (null != project && project.hasPermission(adminUser, ImpersonatePermission.class) && project.hasPermission(impersonatedUser, ReadPermission.class))
                 return;
 
             throw new UnauthorizedImpersonationException("Can't impersonate this user", getFactory());

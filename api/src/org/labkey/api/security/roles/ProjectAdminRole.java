@@ -19,9 +19,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.AddUserPermission;
+import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.Permission;
 
-import java.util.Collections;
+import java.util.List;
 
 public class ProjectAdminRole extends AbstractRole implements AdminRoleListener
 {
@@ -30,7 +31,10 @@ public class ProjectAdminRole extends AbstractRole implements AdminRoleListener
         super("Project Administrator",
             "Project Administrators have full control over the project, but not the entire system.",
             FolderAdminRole.PERMISSIONS,
-            Collections.singletonList(AddUserPermission.class)
+            List.of(
+                AddUserPermission.class,
+                ImpersonatePermission.class
+            )
         );
 
         excludeGuests();

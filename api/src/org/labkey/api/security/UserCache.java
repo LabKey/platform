@@ -83,8 +83,8 @@ class UserCache
         return null != user ? user.cloneUser() : null;
     }
 
-    // Returns a deep copy of the active users list, allowing callers to interrogate user permissions without affecting
-    // cached users. Collection is ordered by email... maybe it should be ordered by display name?
+    // Returns a mutable deep copy of the active users list, allowing callers to interrogate user permissions without
+    // affecting cached users. Collection is ordered by email... maybe it should be ordered by display name?
     static @NotNull Collection<User> getActiveUsers()
     {
         List<User> activeUsers = getUserCollections().getActiveUsers();
@@ -95,7 +95,7 @@ class UserCache
             .collect(Collectors.toCollection(LinkedList::new));
     }
 
-    // Returns a deep copy of the users list including deactivated accounts, allowing callers to interrogate user permissions
+    // Returns a mutable deep copy of the users list including deactivated accounts, allowing callers to interrogate user permissions
     // without affecting cached users. Collection is ordered randomly... maybe it should be ordered by display name?
     static @NotNull Collection<User> getActiveAndInactiveUsers()
     {
@@ -104,7 +104,7 @@ class UserCache
         return users
             .stream()
             .map(User::cloneUser)
-            .collect(Collectors.toList());
+            .collect(Collectors.toCollection(LinkedList::new));
     }
 
     static @NotNull List<Integer> getUserIds()
