@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.RoleSet;
 import org.labkey.api.security.SecurableResource;
@@ -102,7 +103,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     }
 
     @Override
-    public ImpersonationContext getImpersonationContext()
+    public PermissionsContext getImpersonationContext()
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
 
@@ -170,7 +171,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         AuditLogService.get().addEvent(adminUser, event);
     }
 
-    static void addMenu(NavTree menu)
+    public static void addMenu(NavTree menu)
     {
         addMenu(menu, "Roles");
     }

@@ -5800,6 +5800,108 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    public List<Long> getDerivationRunIdsForDataClassExport(long dataClassRowId)
+    {
+        SQLFragment sql = new SQLFragment("""
+            SELECT DISTINCT er.RowId
+            FROM exp.ExperimentRun er
+            WHERE er.ProtocolLSID = ?
+            AND er.RowId IN (
+                SELECT pa.RunId FROM exp.ProtocolApplication pa
+                INNER JOIN exp.DataInput di ON di.TargetApplicationId = pa.RowId
+                INNER JOIN exp.Data d ON di.DataId = d.RowId
+                WHERE d.classId = ?
+                UNION
+                SELECT pa.RunId FROM exp.ProtocolApplication pa
+                INNER JOIN exp.Data d ON d.SourceApplicationId = pa.RowId
+                WHERE d.classId = ?
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM exp.ProtocolApplication pa2
+                INNER JOIN exp.MaterialInput mi ON mi.TargetApplicationId = pa2.RowId
+                WHERE pa2.RunId = er.RowId
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM exp.Material m
+                INNER JOIN exp.ProtocolApplication pa3 ON m.SourceApplicationId = pa3.RowId
+                WHERE pa3.RunId = er.RowId
+            )
+            """,
+            SAMPLE_DERIVATION_PROTOCOL_LSID,
+            dataClassRowId,
+            dataClassRowId
+        );
+
+        return new SqlSelector(getExpSchema(), sql).getArrayList(Long.class);
+    }
+
+    @Override
+    public List<Long> getDerivationRunIdsForSampleTypesExport(Collection<String> sampleTypeLsids, Container c, boolean includeRunsWithDataIO)
+    {
+        if (sampleTypeLsids.isEmpty())
+            return Collections.emptyList();
+
+        SQLFragment inClause = getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), sampleTypeLsids);
+
+        // Subquery to find runs that use materials from the given sample types and container
+        SQLFragment materialsSubquery = new SQLFragment("""
+            SELECT pa.RunId FROM exp.ProtocolApplication pa
+            INNER JOIN exp.MaterialInput mi ON mi.TargetApplicationId = pa.RowId
+            INNER JOIN exp.Material m ON mi.MaterialId = m.RowId
+            WHERE m.cpasType """);
+        materialsSubquery.append(inClause);
+        materialsSubquery.append(" AND m.Container = ?\n");
+        materialsSubquery.add(c);
+        materialsSubquery.append("""
+            UNION
+            SELECT pa.RunId FROM exp.ProtocolApplication pa
+            INNER JOIN exp.Material m ON m.SourceApplicationId = pa.RowId
+            WHERE m.cpasType """);
+        materialsSubquery.append(inClause);
+        materialsSubquery.append(" AND m.Container = ?");
+        materialsSubquery.add(c);
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT DISTINCT er.RowId\nFROM exp.ExperimentRun er\nWHERE er.RowId IN (\n");
+        sql.append(materialsSubquery);
+        sql.append(")\n");
+
+        if (includeRunsWithDataIO)
+        {
+            // Include all derivation and aliquot runs
+            sql.append("AND er.ProtocolLSID IN (?, ?)\n");
+            sql.add(SAMPLE_DERIVATION_PROTOCOL_LSID);
+            sql.add(SAMPLE_ALIQUOT_PROTOCOL_LSID);
+        }
+        else
+        {
+            // Aliquot runs are always included; derivation runs only if they have no data inputs/outputs
+            sql.append("AND (\n");
+            sql.append("    er.ProtocolLSID = ?\n");
+            sql.add(SAMPLE_ALIQUOT_PROTOCOL_LSID);
+            sql.append("    OR (\n");
+            sql.append("        er.ProtocolLSID = ?\n");
+            sql.add(SAMPLE_DERIVATION_PROTOCOL_LSID);
+            sql.append("""
+                            AND NOT EXISTS (
+                                SELECT 1 FROM exp.ProtocolApplication pa2
+                                INNER JOIN exp.DataInput di ON di.TargetApplicationId = pa2.RowId
+                                WHERE pa2.RunId = er.RowId
+                            )
+                            AND NOT EXISTS (
+                                SELECT 1 FROM exp.Data d
+                                INNER JOIN exp.ProtocolApplication pa3 ON d.SourceApplicationId = pa3.RowId
+                                WHERE pa3.RunId = er.RowId
+                            )
+                        )
+                    )
+                    """);
+        }
+
+        return new SqlSelector(getExpSchema(), sql).getArrayList(Long.class);
+    }
+
+    @Override
     public List<ExpRunImpl> runsDeletedWithInput(List<? extends ExpRun> runs)
     {
         List<ExpRunImpl> ret = new ArrayList<>();

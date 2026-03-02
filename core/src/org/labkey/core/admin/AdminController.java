@@ -199,6 +199,7 @@ import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -213,7 +214,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
-import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
@@ -12471,9 +12471,9 @@ public class AdminController extends SpringActionController
     {
         static class TestJob extends PipelineJob
         {
-            ImpersonationContext _impersonationContext;
-            ImpersonationContext _impersonationContext1;
-            ImpersonationContext _impersonationContext2;
+            PermissionsContext _permissionsContext;
+            PermissionsContext _permissionsContext1;
+            PermissionsContext _permissionsContext2;
 
             @Override
             public URLHelper getStatusHref()
@@ -12499,13 +12499,13 @@ public class AdminController extends SpringActionController
             RoleImpersonationContextFactory factory = new RoleImpersonationContextFactory(
                 viewContext.getContainer(), viewContext.getUser(),
                 Collections.singleton(RoleManager.getRole(SharedViewEditorRole.class)), Collections.emptySet(), null);
-            job._impersonationContext = factory.getImpersonationContext();
+            job._permissionsContext = factory.getImpersonationContext();
 
             try
             {
                 UserImpersonationContextFactory factory1 = new UserImpersonationContextFactory(viewContext.getContainer(), viewContext.getUser(),
                     UserManager.getGuestUser(), null);
-                job._impersonationContext1 = factory1.getImpersonationContext();
+                job._permissionsContext1 = factory1.getImpersonationContext();
             }
             catch (Exception e)
             {
@@ -12514,7 +12514,7 @@ public class AdminController extends SpringActionController
 
             GroupImpersonationContextFactory factory2 = new GroupImpersonationContextFactory(viewContext.getContainer(), viewContext.getUser(),
                 GroupManager.getGroup(ContainerManager.getRoot(), "Users", GroupEnumType.SITE), null);
-            job._impersonationContext2 = factory2.getImpersonationContext();
+            job._permissionsContext2 = factory2.getImpersonationContext();
             testSerialize(job, LOG);
         }
     }
