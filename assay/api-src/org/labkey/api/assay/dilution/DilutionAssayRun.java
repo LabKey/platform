@@ -47,9 +47,9 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.ElevatedUser;
+import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 
@@ -83,7 +83,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
     // Objects of this class are cached (held by NAbRunWrapper), so we don't want to hold onto a User object. The
     // passed in user might have elevated permissions, so stash the impersonation context along with the user ID.
     private final int _userId;
-    private final ImpersonationContext _impersonationContext;
+    private final PermissionsContext _permissionsContext;
     private final Map<FieldKey, PropertyDescriptor> _fieldKeys;
 
     public DilutionAssayRun(DilutionAssayProvider<?> provider, ExpRun run,
@@ -92,7 +92,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
         super(run.getRowId(), cutoffs, renderCurveFitType);
         _run = run;
         _userId = user.getUserId();
-        _impersonationContext = user instanceof ElevatedUser eu ? eu.getImpersonationContext() : null;
+        _permissionsContext = user instanceof ElevatedUser eu ? eu.getPermissionsContext() : null;
         _protocol = run.getProtocol();
         _provider = provider;
         _fieldKeys = getFieldKeys(user);
@@ -116,7 +116,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
     protected User getUser()
     {
         User user = UserManager.getUser(_userId);
-        return _impersonationContext != null ? ElevatedUser.getElevatedUser(user, _impersonationContext) : user;
+        return _permissionsContext != null ? ElevatedUser.getElevatedUser(user, _permissionsContext) : user;
     }
 
     public DilutionAssayProvider<?> getProvider()
@@ -295,7 +295,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
             // We need sample key without Virus for sample properties
             Map<PropertyDescriptor, Object> sampleProperties = samplePropertiesMap.get(getSampleKey(summary));
             Map<PropertyDescriptor, Object> dataProperties = new TreeMap<>(new PropertyDescriptorComparator());
-            String sampleKeyWithVirus = getSampleKeyForResultPoperties(summary, virusTable);
+            String sampleKeyWithVirus = getSampleKeyForResultProperties(summary, virusTable);
             String dataRowLsid = getDataHandler().getDataRowLSID(outputData, summary.getFirstWellGroup().getName()).toString();
             mgr.getDataPropertiesFromRunData(resultTable, dataRowLsid, _run.getContainer(), propertyDescriptors, dataProperties);
             dilutionResultPropertiesMap.put(sampleKeyWithVirus, new DilutionResultProperties(dataProperties,
@@ -553,7 +553,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
         List<WellGroup> groups = getWellGroups(material);
         // All current NAb assay types don't mix well groups for a single sample- there may be muliple
         // instances of the same well group on different plates, but they'll all have the same name.
-        return groups != null ? groups.get(0).getName() : null;
+        return groups != null ? groups.getFirst().getName() : null;
     }
 
     /**
@@ -572,7 +572,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
         return summary.getFirstWellGroup().getName();
     }
 
-    protected String getSampleKeyForResultPoperties(DilutionSummary summary, @Nullable TableInfo virusTable)
+    protected String getSampleKeyForResultProperties(DilutionSummary summary, @Nullable TableInfo virusTable)
     {
         return null != virusTable ? summary.getFirstWellGroup().getName() : getSampleKey(summary);
     }
@@ -584,5 +584,4 @@ public abstract class DilutionAssayRun extends Luc5Assay
         if (!bean.isGraphsPerRowSet())
             bean.setGraphsPerRow(NabGraph.DEFAULT_GRAPHS_PER_ROW);
     }
-
 }
