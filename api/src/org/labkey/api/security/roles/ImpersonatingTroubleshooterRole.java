@@ -10,7 +10,7 @@ public class ImpersonatingTroubleshooterRole extends AbstractRootContainerRole
 {
     protected ImpersonatingTroubleshooterRole()
     {
-        super("Impersonating Troubleshooter", "Can impersonate site roles, including Site Administrator, in addition to having other standard Troubleshooter abilities.",
+        super("Impersonating Troubleshooter", "Can impersonate users, groups, and roles, including Site Administrator, in addition to having other standard Troubleshooter abilities.",
             TroubleshooterRole.PERMISSIONS,
             Set.of(
                 ExemptFromAccountDisablingPermission.class,
