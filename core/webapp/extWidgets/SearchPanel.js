@@ -313,7 +313,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         //the label
         row.push({
             cls: 'search-panel-row-label',
-            html: meta.caption + ':', width: this.LABEL_WIDTH,
+            html: LABKEY.Utils.encodeHtml(meta.caption) + ':', width: this.LABEL_WIDTH,
             bodyStyle: 'background-color: transparent;'
         });
         Ext4.apply(theField, {

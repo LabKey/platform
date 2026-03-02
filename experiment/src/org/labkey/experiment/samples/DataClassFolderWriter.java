@@ -11,10 +11,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
-import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
@@ -29,9 +26,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toList;
 
 public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
 {
@@ -78,19 +72,14 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
             typesSelection.addDataClass(dataClass);
             exportTypes = true;
 
-            // get the list of runs with the data we expect to export, these will be the sample derivation
-            // protocol runs to track the lineage
+            // get the list of derivation runs for this data class — only sample derivation protocol runs
+            // with no material inputs/outputs (those are handled by the sample type writer)
+            // Sample derivation protocols involving data classes can be either to/from another data
+            //   class or also to/from a sample type. If it's the latter, we will let the sample writer handle it
+            //   since on import, data classes run before sample types.
             if (exportDataClassData)
             {
-                List<Long> dataIdsToExport = dataClass.getDatas().stream().map(ExpData::getRowId).collect(toList());
-
-                // only want the sample derivation runs; other runs will get included in the experiment xar.
-                List<Long> exportedRunIds = ExperimentService.get().getRunsUsingDataIds(dataIdsToExport).stream().filter(run -> {
-                    String lsid = run.getProtocol().getLSID();
-                    return lsid.equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID) && isValidRunType(ctx, run);
-                })
-                    .collect(Collectors.toSet())
-                    .stream().map(ExpObject::getRowId).toList();
+                List<Long> exportedRunIds = ExperimentService.get().getDerivationRunIdsForDataClassExport(dataClass.getRowId());
 
                 if (!exportedRunIds.isEmpty())
                 {
@@ -127,16 +116,6 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
             writeDataClassDataFiles(dataClasses, ctx, xarDir);
 
         exportContext.setDataClassXarCreated(true);
-    }
-
-    /**
-     * Sample derivation protocols involving data classes can be either to/from another data
-     * class or also to/from a sample type. If it's the latter, we will let the sample writer handle it
-     * since on import, data classes run before sample types.
-     */
-    private boolean isValidRunType(FolderExportContext ctx, ExpRun run)
-    {
-        return run.getMaterialOutputs().isEmpty() && run.getMaterialInputs().isEmpty();
     }
 
     private void writeDataClassDataFiles(Set<ExpDataClass> dataClasses, FolderExportContext ctx, VirtualFile dir) throws Exception

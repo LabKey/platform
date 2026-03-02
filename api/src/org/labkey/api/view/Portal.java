@@ -1674,7 +1674,7 @@ public class Portal implements ModuleChangeListener
 
     public static WebPartView getWebPartViewSafe(@NotNull WebPartFactory factory, @NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
-        WebPartView view;
+        WebPartView<?> view;
 
         try
         {
