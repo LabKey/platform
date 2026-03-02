@@ -128,7 +128,7 @@ public class MailHelper
         _activeProvider = loadActiveProvider();
     }
 
-    public static void setSession(Session session)
+    public static void setSmtpSession(Session session)
     {
         _smtpProvider.setSession(session);
     }
@@ -137,7 +137,7 @@ public class MailHelper
      * Returns the SMTP session for creating messages
      */
     @Nullable
-    public static Session getSession()
+    public static Session getSmtpSession()
     {
         return _smtpProvider.getSession();
     }
@@ -147,12 +147,12 @@ public class MailHelper
      */
     public static ViewMessage createMessage()
     {
-        return new ViewMessage(getSession());
+        return new ViewMessage(getSmtpSession());
     }
 
     public static MultipartMessage createMultipartMessage()
     {
-        return new MultipartMessage(getSession());
+        return new MultipartMessage(getSmtpSession());
     }
 
     /**
