@@ -184,21 +184,18 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
             DbSchema biologicsSourceSchema = sourceScope.getSchema("biologics", DbSchemaType.Migration);
             DbSchema biologicsTargetSchema = targetScope.getSchema("biologics", DbSchemaType.Module);
 
-            if (biologicsSourceSchema.existsInDatabase() && biologicsTargetSchema.existsInDatabase())
-            {
-                TableInfo sourceTable = biologicsSourceSchema.getTable("SequenceIdentity");
-                TableInfo targetTable = biologicsTargetSchema.getTable("SequenceIdentity");
+            TableInfo sourceTable = biologicsSourceSchema.getTable("SequenceIdentity");
+            TableInfo targetTable = biologicsTargetSchema.getTable("SequenceIdentity");
 
-                DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceTable, targetTable, DbSchemaType.Module, true, null, new DefaultMigrationSchemaHandler(biologicsTargetSchema)
+            DatabaseMigrationService.get().copySourceTableToTargetTable(configuration, sourceTable, targetTable, DbSchemaType.Module, true, null, new DefaultMigrationSchemaHandler(biologicsTargetSchema)
+            {
+                @Override
+                public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
                 {
-                    @Override
-                    public FilterClause getTableFilterClause(TableInfo sourceTable, Set<GUID> containers)
-                    {
-                        // This is a global table, so no container clause. Just query and copy the sequence IDs referenced by data class rows we copied.
-                        return new InClause(FieldKey.fromParts("SequenceId"), SEQUENCE_IDS);
-                    }
-                });
-            }
+                    // This is a global table, so no container clause. Just query and copy the sequence IDs referenced by data class rows we copied.
+                    return new InClause(FieldKey.fromParts("SequenceId"), SEQUENCE_IDS);
+                }
+            });
         }
     }
 

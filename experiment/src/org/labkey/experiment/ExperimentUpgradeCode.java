@@ -35,6 +35,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
@@ -168,7 +169,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
         LimitedUser admin = new LimitedUser(context.getUpgradeUser(), SiteAdminRole.class);
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             // create a single transaction event at the root container for use in tying all updates together
             TransactionAuditProvider.TransactionAuditEvent transactionEvent = AbstractQueryUpdateService.createTransactionAuditEvent(ContainerManager.getRoot(), QueryService.AuditAction.UPDATE);
@@ -380,7 +381,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (context.isNewInstall())
             return;
 
-        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        try (Transaction tx = ExperimentService.get().ensureTransaction())
         {
             // Process all sample types across all containers
             TableInfo sampleTypeTable = ExperimentServiceImpl.get().getTinfoSampleType();
@@ -514,7 +515,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (context.isNewInstall())
             return;
 
-        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        try (Transaction tx = ExperimentService.get().ensureTransaction())
         {
             FileContentService service = FileContentService.get();
             if (service == null)
@@ -539,7 +540,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (context.isNewInstall())
             return;
 
-        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        try (Transaction tx = ExperimentService.get().ensureTransaction())
         {
             TableInfo source = ExperimentServiceImpl.get().getTinfoDataClass();
             new TableSelector(source, null, null).stream(DataClass.class)
@@ -725,8 +726,12 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 String oldName = domain.fullName();
                 String newName = StorageProvisionerImpl.get().makeTableName(dialect, domain.container(), domain.domainId(), domain.name());
 
-                executor.execute(new SQLFragment("EXEC sp_rename ?, ?").add(oldName).add(newName));
-                Table.update(null, tinfoDomainDescriptor, PageFlowUtil.map("StorageTableName", newName), domain.domainId());
+                try (Transaction transaction = scope.beginTransaction())
+                {
+                    executor.execute(new SQLFragment("EXEC sp_rename ?, ?").add(oldName).add(newName));
+                    Table.update(null, tinfoDomainDescriptor, PageFlowUtil.map("StorageTableName", newName), domain.domainId());
+                    transaction.commit();
+                }
 
                 LOG.info("   Table \"{}\" renamed to \"{}\" ({} bytes)", oldName, newName, newName.getBytes(StandardCharsets.UTF_8).length);
             });
@@ -752,9 +757,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
             .append(" ON pd.PropertyId = px.PropertyId ")
             .append("WHERE StorageSchemaName IS NOT NULL AND StorageTableName IS NOT NULL AND StorageColumnName IS NOT NULL");
 
-        filter = new SimpleFilter(FieldKey.fromString("StorageSchemaName"), null, CompareType.NONBLANK);
-        filter.addCondition(FieldKey.fromString("StorageTableName"), null, CompareType.NONBLANK);
-        filter.addCondition(FieldKey.fromString("StorageColumnName"), null, CompareType.NONBLANK);
         MultiValuedMap<DomainRecord, Property> badDomainMap = new SqlSelector(scope, sql)
             .setJdbcCaching(false)
             .stream(Property.class)
@@ -794,8 +796,12 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     String oldName = property.fullName();
                     String newName = nameGenerator.generateColumnName(property.name()); // No need to bracket or quote or escape: JDBC parameter takes care of all special characters
 
-                    executor.execute(new SQLFragment("EXEC sp_rename ?, ?, 'COLUMN'").add(oldName).add(newName));
-                    Table.update(null, tinfoPropertyDescriptor, PageFlowUtil.map("StorageColumnName", newName), property.propertyId());
+                    try (Transaction transaction = scope.beginTransaction())
+                    {
+                        executor.execute(new SQLFragment("EXEC sp_rename ?, ?, 'COLUMN'").add(oldName).add(newName));
+                        Table.update(null, tinfoPropertyDescriptor, PageFlowUtil.map("StorageColumnName", newName), property.propertyId());
+                        transaction.commit();
+                    }
 
                     LOG.info("      Column \"{}\" renamed to \"{}\" ({} bytes)", oldName, newName, newName.getBytes(StandardCharsets.UTF_8).length);
                 });
