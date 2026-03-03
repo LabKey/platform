@@ -103,16 +103,16 @@ public class MailHelper
             String names = StringUtilsLabKey.joinWithConjunction(configured.stream()
                 .map(EmailTransportProvider::getName)
                 .toList(), "and");
-            _log.error("Invalid email configuration: {} are configured. " +
-                "Please configure only one email transport method. Email sending will fail until this is resolved.", names);
+            String message = "Invalid email configuration: " + names + " are configured. " +
+                "Please configure only one email transport method. Email sending will fail until this is resolved.";
+            _log.error(message);
             WarningService.get().register(new WarningProvider()
             {
                 @Override
                 public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
                 {
                     if (context == null || context.getUser().hasRootPermission(TroubleshooterPermission.class))
-                        warnings.add(HtmlString.of("Invalid email configuration: " + names + " are configured. " +
-                            "Please configure only one email transport method. Email sending will fail until this is resolved."));
+                        warnings.add(HtmlString.of(message));
                 }
             });
             return null;
