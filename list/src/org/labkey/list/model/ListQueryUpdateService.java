@@ -767,7 +767,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         ListManager.get().deleteIndexedList(_list);
 
         // Delete attachments and discussions associated with a list in batches of 1,000
-        new TableSelector(getDbTable(), Collections.singleton("entityId")).forEachBatch(String.class, 1000, new ForEachBatchBlock<>()
+        new TableSelector(getDbTable(), Collections.singleton("entityId"), SimpleFilter.createContainerFilter(container), null).forEachBatch(String.class, 1000, new ForEachBatchBlock<>()
         {
             @Override
             public boolean accept(String entityId)

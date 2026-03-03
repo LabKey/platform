@@ -54,6 +54,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -521,19 +522,36 @@ public class ListDefinitionImpl implements ListDefinition
         return impl;
     }
 
-    public boolean hasListItemForEntityId(String entityId, User user)
+    public Container getListItemContainerForDownload(String entityId, User user, Class<? extends Permission> permissionClass)
     {
-        return hasListItem(new SimpleFilter(FieldKey.fromParts("EntityId"), entityId), user, getContainer());
-    }
-
-    private boolean hasListItem(SimpleFilter filter, User user, Container c)
-    {
-        TableInfo tbl = getTable(user, c);
+        Container c = getContainer();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
+        // Use a relax CF to find the list items, permission will be validated later
+        ContainerFilter cf = ContainerFilter.Type.AllInProjectPlusShared.create(c, user);
+        TableInfo tbl = getTable(user, c, cf);
 
         if (null == tbl)
-            return false;
+            return null;
 
-        return new TableSelector(tbl, filter, null).exists();
+        Map<String, Object> row = null;
+
+        try
+        {
+            row = new TableSelector(tbl, filter, null).getMap();
+        }
+        catch (IllegalStateException e)
+        {
+            /* more than one row matches */
+        }
+
+        if (row == null)
+            return null;
+
+        Container dataContainer = row.get("Container") != null ? ContainerManager.getForId(row.get("Container").toString()) : null;
+        if (dataContainer != null && dataContainer.hasPermission(user, permissionClass))
+            return dataContainer;
+
+        return null;
     }
 
     @Override
