@@ -21,6 +21,7 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
 import org.apache.catalina.filters.CorsFilter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.action.SpringActionController;
@@ -135,6 +136,7 @@ import org.labkey.api.security.RoleSet;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.AppPropsTestCase;
 import org.labkey.api.settings.BaseServerProperties;
@@ -156,6 +158,7 @@ import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.JsonUtil;
@@ -182,8 +185,12 @@ import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.LabKeyKaptchaServlet;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.RedirectorServlet;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.template.WarningProvider;
+import org.labkey.api.view.template.WarningService;
+import org.labkey.api.view.template.Warnings;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.filters.ContentSecurityPolicyFilter;
@@ -258,6 +265,18 @@ public class ApiModule extends CodeOnlyModule
         ContentSecurityPolicyFilter.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();
         MailHelper.init();
+        WarningService.get().register(new WarningProvider()
+        {
+            @Override
+            public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
+            {
+                if ((context == null || context.getUser().hasRootPermission(TroubleshooterPermission.class)) && MailHelper.hasConfigurationConflict())
+                {
+                    warnings.add(HtmlString.of("Invalid email configuration: multiple email transport methods are configured. " +
+                        "Please configure only one email transport method. Email sending will fail until this is resolved."));
+                }
+            }
+        });
         // Handle system maintenance startup properties as late as possible; we want all system maintenance tasks to be registered first
         ContextListener.addStartupListener(new SystemMaintenanceStartupListener());
         ContextListener.addStartupListener(new StartupPropertyStartupListener());

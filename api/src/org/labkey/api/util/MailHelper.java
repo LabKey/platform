@@ -114,6 +114,11 @@ public class MailHelper
         return null != _activeProvider;
     }
 
+    public static boolean hasConfigurationConflict()
+    {
+        return _configurationConflict;
+    }
+
     /**
      * Registers an optional transport provider. Must be called during module {@code init()} so that
      * all providers are in place before {@link #init()} calls {@link #loadActiveProvider()}.
