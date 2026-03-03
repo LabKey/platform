@@ -31,14 +31,21 @@ import jakarta.mail.internet.MimeMultipart;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.MessageAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.WarningProvider;
+import org.labkey.api.view.template.WarningService;
+import org.labkey.api.view.template.Warnings;
 
 import java.io.File;
 import java.io.IOException;
@@ -98,6 +105,16 @@ public class MailHelper
                 .toList(), "and");
             _log.error("Invalid email configuration: {} are configured. " +
                 "Please configure only one email transport method. Email sending will fail until this is resolved.", names);
+            WarningService.get().register(new WarningProvider()
+            {
+                @Override
+                public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
+                {
+                    if (context == null || context.getUser().hasRootPermission(TroubleshooterPermission.class))
+                        warnings.add(HtmlString.of("Invalid email configuration: " + names + " are configured. " +
+                            "Please configure only one email transport method. Email sending will fail until this is resolved."));
+                }
+            });
             return null;
         }
 
@@ -112,11 +129,6 @@ public class MailHelper
     public static boolean hasActiveProvider()
     {
         return null != _activeProvider;
-    }
-
-    public static boolean hasConfigurationConflict()
-    {
-        return _configurationConflict;
     }
 
     /**
