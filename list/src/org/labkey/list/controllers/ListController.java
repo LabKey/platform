@@ -425,6 +425,97 @@ public class ListController extends SpringActionController
         }
     }
 
+    @RequiresPermission(AdminPermission.class)
+    public static class TruncateListDataAction extends ConfirmAction<ListDeletionForm>
+    {
+        private boolean canTruncate(Container listContainer, int listId)
+        {
+            ListDef listDef = ListManager.get().getList(listContainer, listId);
+            ListDefinitionImpl list = ListDefinitionImpl.of(listDef);
+
+            if (list == null || !list.getAllowDelete())
+                return false;
+
+            return list.getContainer().hasPermission(getUser(), AdminPermission.class);
+        }
+
+        @Override
+        public String getConfirmText()
+        {
+            return "Confirm Delete All Data";
+        }
+
+        @Override
+        public void validateCommand(ListDeletionForm form, Errors errors)
+        {
+            Container currentContainer = getContainer();
+            List<String> errorMessages = new ArrayList<>();
+            Collection<String> listIDs;
+            if (form.getListIds() != null)
+                listIDs = form.getListIds();
+            else
+                listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
+
+            for (Pair<Integer, Container> pair : getListIdContainerPairs(listIDs, currentContainer, errorMessages))
+            {
+                var listId = pair.first;
+                var listContainer = pair.second;
+
+                if (canTruncate(listContainer, listId))
+                {
+                    form.getListContainerMap().add(pair);
+                }
+                else
+                    errorMessages.add(String.format("You do not have permission to delete data for list %s in container %s", listId, listContainer.getName()));
+            }
+
+            if (!errorMessages.isEmpty())
+                errors.reject(ERROR_MSG, StringUtils.join(errorMessages, "\n"));
+
+            if (form.getListContainerMap().isEmpty())
+                errors.reject(ERROR_MSG, "You must specify a list or lists to delete data from.");
+        }
+
+        @Override
+        public ModelAndView getConfirmView(ListDeletionForm form, BindException errors)
+        {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Confirm Delete All Data");
+            return new JspView<>("/org/labkey/list/view/truncateListData.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(ListDeletionForm form, BindException errors)
+        {
+            Container containerDataToDelete = getContainer();
+            for (Pair<Integer, Container> pair : form.getListContainerMap())
+            {
+                Container listDefContainer = pair.second;
+                ListDefinition listDef = ListService.get().getList(listDefContainer, pair.first);
+                if (null != listDef)
+                {
+                    try
+                    {
+                        TableInfo table = listDef.getTable(getUser(), listDefContainer);
+                        if (table != null && table.getUpdateService() != null)
+                            table.getUpdateService().truncateRows(getUser(), containerDataToDelete, null, null);
+                    }
+                    catch (Exception e)
+                    {
+                        errors.reject(ERROR_MSG, "Error deleting data from list '" + listDef.getName() + "': " + e.getMessage());
+                    }
+                }
+            }
+
+            return !errors.hasErrors();
+        }
+
+        @Override @NotNull
+        public URLHelper getSuccessURL(ListDeletionForm form)
+        {
+            return form.getReturnUrlHelper(getBeginURL(getContainer()));
+        }
+    }
 
     @RequiresPermission(ReadPermission.class)
     public class GridAction extends SimpleViewAction<ListQueryForm>
@@ -958,10 +1049,11 @@ public class ListController extends SpringActionController
             if (listDef == null)
                 throw new NotFoundException("List does not exist in this container");
 
-            if (!listDef.hasListItemForEntityId(form.getEntityId(), getUser()))
+            Container dataContainer = listDef.getListItemContainerForDownload(form.getEntityId(), getUser(), ReadPermission.class);
+            if (dataContainer == null)
                 throw new NotFoundException("List does not have an item for the entityid");
 
-            AttachmentParent parent = new ListItemAttachmentParent(form.getEntityId(), getContainer());
+            AttachmentParent parent = new ListItemAttachmentParent(form.getEntityId(), dataContainer);
 
             return new Pair<>(parent, form.getName());
         }
