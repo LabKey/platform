@@ -1,10 +1,18 @@
 package org.labkey.api.workflow;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;import org.labkey.api.security.User;import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.data.Container;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.security.User;import org.labkey.api.services.ServiceRegistry;
 
 public interface WorkflowService
 {
+    enum WorkflowConfigs
+    {
+        ActionId,
+        JobId,
+    }
+
     enum ActionType
     {
         AssayImport("assay types", "Imported assay data"),
@@ -44,4 +52,8 @@ public interface WorkflowService
 
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long actionId);
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long taskId, @NotNull ActionType actionType);
+
+    DataIteratorBuilder getSampleCreationDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
+
+    DataIteratorBuilder getActionAuditDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
 }

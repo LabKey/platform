@@ -108,6 +108,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.workflow.WorkflowService;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
 
@@ -416,6 +417,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             if (sampleType.getAutoLinkTargetContainer() != null && StudyPublishService.get() != null && !context.getInsertOption().updateOnly/* TODO support link to study on update? */)
                 dib = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, getSchema(), userSchema.getContainer(), userSchema.getUser(), sampleType));
+            if (WorkflowService.get() != null && context.getErrors().getExtraContext() != null)
+            {
+                if (context.getErrors().getExtraContext().get(WorkflowService.WorkflowConfigs.ActionId.name()) != null)
+                {
+                    dib = WorkflowService.get().getSampleCreationDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser());
+                    dib = WorkflowService.get().getActionAuditDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser());
+                }
+            }
         }
         return dib;
     }
