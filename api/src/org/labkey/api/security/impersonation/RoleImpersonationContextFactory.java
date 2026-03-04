@@ -180,8 +180,8 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         menu.addChild(newRoleMenu);
     }
 
-    // Returns a stream of roles that this user is allowed to impersonate. Empty if user can't impersonate.
-    public static Collection<Role> filterImpersonationRoles(Container c, User adminUser, Collection<Role> roles)
+    // Returns a collection of roles that this user is allowed to impersonate. Empty if user can't impersonate.
+    public static Collection<Role> filterImpersonationRoles(Container c, User adminUser, Collection<Role> candidates)
     {
         boolean canImpersonate = adminUser.hasRootPermission(ImpersonatePermission.class);
 
@@ -199,7 +199,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
 
         // Stream the valid roles
-        return roles.stream()
+        return candidates.stream()
             .filter(Role::isAssignable)
             .filter(role -> role.isApplicable(policy, c))
             .filter(role -> !role.isPrivileged() || canImpersonatePrivilegedRoles)
@@ -213,11 +213,12 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
 
         @JsonCreator
         private RoleImpersonationContext(
-                @JsonProperty("_project") @Nullable Container project,
-                @JsonProperty("_adminUser") User adminUser,
-                @JsonProperty("_roles") RoleSet roles,
-                @JsonProperty("_factory") ImpersonationContextFactory factory,
-                @JsonProperty("_cacheKey") String cacheKey)
+            @JsonProperty("_project") @Nullable Container project,
+            @JsonProperty("_adminUser") User adminUser,
+            @JsonProperty("_roles") RoleSet roles,
+            @JsonProperty("_factory") ImpersonationContextFactory factory,
+            @JsonProperty("_cacheKey") String cacheKey
+        )
         {
             this(project, adminUser, roles, null, factory, cacheKey);
         }
