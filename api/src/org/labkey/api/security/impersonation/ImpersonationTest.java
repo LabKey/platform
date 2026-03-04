@@ -87,8 +87,8 @@ public class ImpersonationTest extends Assert
             testImpersonator("SiteAdminRole", true, project, siteUserCount, siteGroupCount, siteRoleCount, siteUserCount, allGroupCount, projectRoleCount);
             testImpersonator("ImpersonatingTroubleshooterRole", true, project, siteUserCount, siteGroupCount, siteRoleCount, siteUserCount, allGroupCount, projectRoleCount);
             // Can't impersonate privileged roles, so SiteAdmin, ImpersonatingTroubleshooter, and PlatformDeveloper should not appear as valid site roles (siteRoleCount - 3)
-            // Can't impersonate a group with a privileged role (siteGroupCount - privilegedSiteGroupCount)
-            testImpersonator("ApplicationAdminRole", true, project, siteUserCount, siteGroupCount - privilegedSiteGroupCount, siteRoleCount - 3, siteUserCount, allGroupCount - privilegedSiteGroupCount, projectRoleCount);
+            // Can impersonate all users and groups (same counts as above), but privileged roles will get filtered out by the impersonation contexts
+            testImpersonator("ApplicationAdminRole", true, project, siteUserCount, siteGroupCount, siteRoleCount - 3, siteUserCount, allGroupCount, projectRoleCount);
 
             // Can impersonate any project group plus any site group where project admin has read permission. As a
             // brand-new user, Site:Users is the only site group where they have read and we created one project group,

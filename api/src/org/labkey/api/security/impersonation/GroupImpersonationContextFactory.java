@@ -133,11 +133,9 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         if (group.isGuests())
             return false;
 
-        // Impersonating "Site: Administrators" or any other group assigned a privileged role requires special permission
-        if (group.hasPrivilegedRole() && !adminUser.hasRootPermission(ImpersonatePrivilegedSiteRolesPermission.class))
-            return false;
-
-        // Site admin, app admin, and impersonating troubleshooter can impersonate any other group
+        // Site admin, app admin, and impersonating troubleshooter can impersonate any group, even those assigned
+        // privileged roles. In the case where an app admin impersonates such a group, the privileged roles are
+        // filtered out (see GroupImpersonationContext.getAssignedRoles() below).
         if (adminUser.hasRootPermission(ImpersonatePermission.class))
             return true;
 
@@ -183,13 +181,13 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
 
         @JsonCreator
         protected GroupImpersonationContext(
-                @JsonProperty("_project") @Nullable Container project,
-                @JsonProperty("_adminUser") User adminUser,
-                @JsonProperty("_group") Group group,
-                @JsonProperty("_groups") PrincipalArray groups,
-                @JsonProperty("_returnUrl") ActionURL returnUrl,
-                @JsonProperty("_factory") ImpersonationContextFactory factory)
-
+            @JsonProperty("_project") @Nullable Container project,
+            @JsonProperty("_adminUser") User adminUser,
+            @JsonProperty("_group") Group group,
+            @JsonProperty("_groups") PrincipalArray groups,
+            @JsonProperty("_returnUrl") ActionURL returnUrl,
+            @JsonProperty("_factory") ImpersonationContextFactory factory
+        )
         {
             super(adminUser, project, returnUrl, factory);
             _group = group;
