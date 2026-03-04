@@ -178,11 +178,12 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
 
         DbScope sourceScope = configuration.getSourceScope();
         DbScope targetScope = configuration.getTargetScope();
-        DbSchema biologicsSourceSchema = sourceScope.getSchema("biologics", DbSchemaType.Migration);
-        DbSchema biologicsTargetSchema = targetScope.getSchema("biologics", DbSchemaType.Module);
 
-        if (biologicsSourceSchema.existsInDatabase() && biologicsTargetSchema.existsInDatabase())
+        if (sourceScope.getSchemaNames().contains("biologics") && targetScope.getSchemaNames().contains("biologics"))
         {
+            DbSchema biologicsSourceSchema = sourceScope.getSchema("biologics", DbSchemaType.Migration);
+            DbSchema biologicsTargetSchema = targetScope.getSchema("biologics", DbSchemaType.Module);
+
             TableInfo sourceTable = biologicsSourceSchema.getTable("SequenceIdentity");
             TableInfo targetTable = biologicsTargetSchema.getTable("SequenceIdentity");
 

@@ -52,7 +52,7 @@ public class RecordFactory<K> implements ObjectFactory<K>
     {
         Object[] params = Arrays.stream(_parameters).map(p -> {
             Object value = m.get(p.getName());
-            return ConvertUtils.convert(value, p.getType());
+            return value != null ? ConvertUtils.convert(value, p.getType()) : null;
         }).toArray();
 
         try

@@ -221,6 +221,7 @@ public class SqlScriptExecutor
                 {
                     LOG.info("Executing {}", upgradeMethod.getDisplayName());
                     _moduleContext.invokeUpgradeMethod(upgradeMethod);
+                    LOG.info("Finished executing {}", upgradeMethod.getDisplayName());
                 }
             }
             catch (NoSuchMethodException e)
