@@ -134,6 +134,7 @@ public class RoleManager
         registerRole(new SubmitterRole());
         registerRole(new NoPermissionsRole());
         registerRole(new OwnerRole());
+        registerRole(new CanSeeAuditLogFolderRole());
     }
 
     public static void addAdminRoleListener(AdminRoleListener listener)
