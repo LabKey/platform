@@ -134,8 +134,8 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
             return false;
 
         // Site admin, app admin, and impersonating troubleshooter can impersonate any group, even those assigned
-        // privileged roles. In the case where an app admin impersonates such a group, the privileged roles are
-        // filtered out (see GroupImpersonationContext.getAssignedRoles() below).
+        // privileged roles. However, in the case where an app admin impersonates such a group, the privileged roles
+        // are filtered out (see GroupImpersonationContext.getAssignedRoles() below).
         if (adminUser.hasRootPermission(ImpersonatePermission.class))
             return true;
 
