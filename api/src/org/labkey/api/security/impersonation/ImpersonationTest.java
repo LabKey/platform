@@ -73,7 +73,6 @@ public class ImpersonationTest extends Assert
             int siteUserCount = UserManager.getUserIds().size(); // Includes inactive
             List<Group> siteGroups = SecurityManager.getGroups(null, false);
             int siteGroupCount = siteGroups.size() - 1; // Can't impersonate the guests group
-            int privilegedSiteGroupCount = (int)siteGroups.stream().filter(UserPrincipal::hasPrivilegedRole).count();
             int siteRoleCount = RoleManager.getSiteRoles().size();
 
             // Project-related counts
@@ -90,9 +89,9 @@ public class ImpersonationTest extends Assert
             // Can impersonate all users and groups (same counts as above), but privileged roles will get filtered out by the impersonation contexts
             testImpersonator("ApplicationAdminRole", true, project, siteUserCount, siteGroupCount, siteRoleCount - 3, siteUserCount, allGroupCount, projectRoleCount);
 
-            // Can impersonate any project group plus any site group where project admin has read permission. As a
-            // brand-new user, Site:Users is the only site group where they have read and we created one project group,
-            // so they can impersonate two groups at the project level.
+            // Can impersonate any project group plus any site group where project admin is a member. As a brand-new
+            // user, they are a member in Site:Users only and we created one project group, so they can impersonate two
+            // groups at the project level.
             testImpersonator("ProjectAdminRole", false, project, 0, 0, 0, projectUserCount, 2, projectRoleCount);
 
             // Can't impersonate anything anywhere
