@@ -61,7 +61,7 @@
             long count = (table != null) ? new TableSelector(table).getRowCount() : 0;
         %>
         <li>
-            <%= simpleLink(listDef.getName(), listDef.urlFor(ListController.GridAction.class, listDef.getContainer())) %>
+            <%= simpleLink(listDef.getName(), listDef.urlFor(ListController.GridAction.class, currentContainer)) %>
             &mdash; <%= count %> row<%= h(count != 1 ? "s" : "") %> in <%= h(currentPath) %>
         </li>
         <% } %>

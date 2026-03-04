@@ -522,7 +522,7 @@ public class ListDefinitionImpl implements ListDefinition
         return impl;
     }
 
-    public Container getListItemContainerForDownload(String entityId, User user, Class<? extends Permission> permissionClass)
+    public @Nullable Container getListItemContainerForDownload(String entityId, User user, Class<? extends Permission> permissionClass)
     {
         Container c = getContainer();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
@@ -541,7 +541,9 @@ public class ListDefinitionImpl implements ListDefinition
         }
         catch (IllegalStateException e)
         {
-            /* more than one row matches */
+            // More than one row matches the specified EntityId; log for diagnosis and return null as before
+            LOG.warn("Multiple list items match EntityId '{}' when resolving download container. List: '{}', Container: '{}'. Returning null.",
+                    entityId, getName(), getContainer().getPath(), e);
         }
 
         if (row == null)

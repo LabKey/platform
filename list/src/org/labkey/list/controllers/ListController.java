@@ -51,6 +51,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -116,6 +117,7 @@ import org.labkey.list.model.ListDefinitionImpl;
 import org.labkey.list.model.ListDomainKindProperties;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListManagerSchema;
+import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.ListWriter;
 import org.labkey.list.view.ListDefinitionForm;
 import org.labkey.list.view.ListItemAttachmentParent;
@@ -488,23 +490,29 @@ public class ListController extends SpringActionController
         public boolean handlePost(ListDeletionForm form, BindException errors)
         {
             Container containerDataToDelete = getContainer();
-            for (Pair<Integer, Container> pair : form.getListContainerMap())
+            try (DbScope.Transaction transaction = ListSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
-                Container listDefContainer = pair.second;
-                ListDefinition listDef = ListService.get().getList(listDefContainer, pair.first);
-                if (null != listDef)
+                for (Pair<Integer, Container> pair : form.getListContainerMap())
                 {
-                    try
+                    Container listDefContainer = pair.second;
+                    ListDefinition listDef = ListService.get().getList(listDefContainer, pair.first);
+                    if (null != listDef)
                     {
-                        TableInfo table = listDef.getTable(getUser(), listDefContainer);
-                        if (table != null && table.getUpdateService() != null)
-                            table.getUpdateService().truncateRows(getUser(), containerDataToDelete, null, null);
-                    }
-                    catch (Exception e)
-                    {
-                        errors.reject(ERROR_MSG, "Error deleting data from list '" + listDef.getName() + "': " + e.getMessage());
+                        try
+                        {
+                            TableInfo table = listDef.getTable(getUser(), listDefContainer);
+                            if (table != null && table.getUpdateService() != null)
+                                table.getUpdateService().truncateRows(getUser(), containerDataToDelete, null, null);
+                        }
+                        catch (Exception e)
+                        {
+                            errors.reject(ERROR_MSG, "Error deleting data from list '" + listDef.getName() + "': " + e.getMessage());
+                            return false;
+                        }
                     }
                 }
+
+                transaction.commit();
             }
 
             return !errors.hasErrors();
