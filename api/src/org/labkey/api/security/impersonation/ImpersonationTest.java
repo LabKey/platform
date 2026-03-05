@@ -44,7 +44,7 @@ public class ImpersonationTest extends Assert
         User noPermUser = null;
         User readPermUser = null;
         Group readPermGroup = null;
-        Group priviledgedGroup = null;
+        Group privilegedGroup = null;
         try
         {
             // Need to test in a new project since all users get read permission in /Shared, which we don't want
@@ -63,10 +63,10 @@ public class ImpersonationTest extends Assert
             readPermGroup = SecurityManager.createGroup(root, "Test_Read_Perm", null);
 
             // Ensure there's at least one site group assigned to a privileged role
-            priviledgedGroup = SecurityManager.createGroup(root, "Test_Privileged", null);
+            privilegedGroup = SecurityManager.createGroup(root, "Test_Privileged", null);
             MutableSecurityPolicy policy = new MutableSecurityPolicy(root.getPolicy());
             Role privilegedRole = RoleManager.getRole(PlatformDeveloperRole.class);
-            policy.addRoleAssignment(priviledgedGroup, privilegedRole);
+            policy.addRoleAssignment(privilegedGroup, privilegedRole);
             SecurityPolicyManager.savePolicy(policy, testUser);
 
             // Site-related counts
@@ -101,8 +101,8 @@ public class ImpersonationTest extends Assert
         }
         finally
         {
-            if (priviledgedGroup != null)
-                SecurityManager.deleteGroup(priviledgedGroup, testUser);
+            if (privilegedGroup != null)
+                SecurityManager.deleteGroup(privilegedGroup, testUser);
             if (readPermGroup != null)
                 SecurityManager.deleteGroup(readPermGroup, testUser);
             if (readPermUser != null)
@@ -139,7 +139,7 @@ public class ImpersonationTest extends Assert
             assertTrue(user + " is able to impersonate themselves!", validUsers.stream().noneMatch(u -> u.equals(user)));
             Collection<Group> validSiteGroups = GroupImpersonationContextFactory.getValidImpersonationGroups(root, user);
             assertEquals(expectedSiteGroups, validSiteGroups.size());
-            Collection<Role> validSiteRoles = RoleImpersonationContextFactory.filterImpersonationRoles(root, user, RoleManager.getAllRoles());
+            Collection<Role> validSiteRoles = RoleImpersonationContextFactory.filterImpersonationRoles(null, user, RoleManager.getAllRoles());
             assertEquals(expectedSiteRoles, validSiteRoles.size());
 
             // Test impersonating at the project level

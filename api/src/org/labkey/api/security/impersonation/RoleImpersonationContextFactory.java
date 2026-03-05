@@ -180,14 +180,14 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         menu.addChild(newRoleMenu);
     }
 
-    // Returns a collection of roles that this user is allowed to impersonate. Empty if user can't impersonate.
-    public static Collection<Role> filterImpersonationRoles(Container c, User adminUser, Collection<Role> candidates)
+    // Returns a collection of roles that this user is allowed to impersonate in this project (or root). Empty if user can't impersonate.
+    public static Collection<Role> filterImpersonationRoles(@Nullable Container project, User adminUser, Collection<Role> candidates)
     {
         boolean canImpersonate = adminUser.hasRootPermission(ImpersonatePermission.class);
 
-        if (!canImpersonate && !c.isRoot())
+        if (!canImpersonate && project != null)
         {
-            canImpersonate = c.hasPermission(adminUser, ImpersonatePermission.class);
+            canImpersonate = project.hasPermission(adminUser, ImpersonatePermission.class);
         }
 
         if (!canImpersonate)
@@ -195,6 +195,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
             return Collections.emptyList();
         }
 
+        Container c = project != null ? project : ContainerManager.getRoot();
         boolean canImpersonatePrivilegedRoles = adminUser.hasRootPermission(ImpersonatePrivilegedSiteRolesPermission.class);
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
 
@@ -240,24 +241,16 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         // Throws if user is not authorized to impersonate all roles
         private void verifyPermissions(@Nullable Container project, User adminUser, Set<Role> roles)
         {
-            final Collection<Role> filteredRoles;
-
-            if (null == project)
+            // Ensure we have either site roles or project roles, not both. UI prevents this, but crafty admin could
+            // attempt it by crafting a post with specific class names
+            if (roles.stream()
+                .collect(Collectors.groupingBy(role -> role instanceof AbstractRootContainerRole))
+                .size() > 1)
             {
-                // Ensure we have either site roles or project roles, not both
-                var map = roles.stream()
-                    .collect(Collectors.groupingBy(role -> role instanceof AbstractRootContainerRole));
-
-                // UI prevents this, but crafty admin could attempt it by crafting a post with specific class names
-                if (map.size() > 1)
-                    throw new UnauthorizedImpersonationException("You are not allowed to impersonate site roles and project roles at the same time", getFactory());
-
-                filteredRoles = filterImpersonationRoles(ContainerManager.getRoot(), adminUser, roles);
+                throw new UnauthorizedImpersonationException("You are not allowed to impersonate site roles and project roles at the same time", getFactory());
             }
-            else
-            {
-                filteredRoles = filterImpersonationRoles(project, adminUser, roles);
-            }
+
+            Collection<Role> filteredRoles = filterImpersonationRoles(project, adminUser, roles);
 
             if (filteredRoles.size() != roles.size())
                 throw new UnauthorizedImpersonationException("One or more impersonation roles are not authorized", getFactory());
