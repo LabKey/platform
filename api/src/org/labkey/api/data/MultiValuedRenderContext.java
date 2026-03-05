@@ -114,18 +114,6 @@ public class MultiValuedRenderContext extends RenderContextDecorator
             if (getFieldMap() != null)
             {
                 ColumnInfo columnInfo = getFieldMap().get(key);
-//                if (columnInfo != null && columnInfo.getPropertyType() == PropertyType.MULTI_CHOICE && value instanceof String strVal)
-//                {
-//                    // Multi-choice values array is converted to string: "{value1,value2,...}", so strip off the braces before converting
-//                    if (strVal.startsWith("{") && strVal.endsWith("}"))
-//                    {
-//                        String pgArrayStr = strVal.substring(1, strVal.length() - 1);
-//                        // pgArrayStr escapes double quote with \", but MultiChoice.Array.from expects GoogleSheetMultiValue, which escapes quote with double quotes ""
-//                        pgArrayStr = pgArrayStr.replace("\\\"", "\"\"");
-//                        return columnInfo.convert(pgArrayStr);
-//                    }
-//
-//                }
                 // The value was concatenated with others, so it's become a string.
                 // Do conversion to switch it back to the expected type.
                 if (value != null && columnInfo != null && !columnInfo.getJavaClass().isInstance(value))
