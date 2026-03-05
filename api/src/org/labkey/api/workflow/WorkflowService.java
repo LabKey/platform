@@ -5,6 +5,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.security.User;import org.labkey.api.services.ServiceRegistry;
 
+import java.util.Map;
+
 public interface WorkflowService
 {
     enum WorkflowConfigs
@@ -50,6 +52,7 @@ public interface WorkflowService
         return ServiceRegistry.get().getService(WorkflowService.class);
     }
 
+    void populateConfigParams(Map<String, Object> provided, Map<Enum, Object> configParameters);
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long actionId);
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long taskId, @NotNull ActionType actionType);
 
