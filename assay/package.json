@@ -15,7 +15,7 @@
     "@labkey/components": "7.21.0"
   },
   "devDependencies": {
-    "@labkey/build": "8.9.0",
+    "@labkey/build": "8.9.1-fb-es-2023.1",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7"
