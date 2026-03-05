@@ -419,7 +419,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 dib = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, getSchema(), userSchema.getContainer(), userSchema.getUser(), sampleType));
             if (WorkflowService.get() != null && context.getErrors().getExtraContext() != null)
             {
-                if (context.getErrors().getExtraContext().get(WorkflowService.WorkflowConfigs.ActionId.name()) != null)
+                if (context.getConfigParameter(WorkflowService.WorkflowConfigs.ActionId) != null)
                 {
                     dib = WorkflowService.get().getSampleCreationDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser());
                     dib = WorkflowService.get().getActionAuditDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser());

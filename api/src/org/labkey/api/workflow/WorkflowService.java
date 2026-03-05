@@ -1,5 +1,6 @@
 package org.labkey.api.workflow;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -53,6 +54,8 @@ public interface WorkflowService
     }
 
     void populateConfigParams(Map<String, Object> provided, Map<Enum, Object> configParameters);
+
+    void populateConfigParams(HttpServletRequest request, Map<Enum, Object> configParameters);
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long actionId);
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long taskId, @NotNull ActionType actionType);
 

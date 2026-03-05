@@ -252,6 +252,7 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.workflow.WorkflowService;
 import org.labkey.experiment.ChooseExperimentTypeBean;
 import org.labkey.experiment.ConfirmDeleteView;
 import org.labkey.experiment.CustomPropertiesView;
@@ -4448,6 +4449,8 @@ public class ExperimentController extends SpringActionController
                 tInfo = ExperimentService.get().createMaterialTable(new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(this), null);
                 updateService = tInfo.getUpdateService();
             }
+            if (WorkflowService.get() != null)
+                WorkflowService.get().populateConfigParams(getViewContext().getRequest(), _context.getConfigParameters());
 
             int count = importData(dl, tInfo, updateService, _context, auditEvent, getUser(), getContainer());
 
