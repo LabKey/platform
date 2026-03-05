@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -411,12 +412,14 @@ import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.href;
 import static org.labkey.api.util.DOM.Attribute.method;
 import static org.labkey.api.util.DOM.Attribute.name;
+import static org.labkey.api.util.DOM.Attribute.src;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.Attribute.title;
 import static org.labkey.api.util.DOM.Attribute.type;
 import static org.labkey.api.util.DOM.Attribute.value;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.LI;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.STYLE;
@@ -8549,6 +8552,28 @@ public class AdminController extends SpringActionController
         private String _to;
         private String _body;
         private ConfigurationException _exception;
+        private boolean _success;
+        private boolean _attachmentSuccess;
+
+        public boolean isSuccess()
+        {
+            return _success;
+        }
+
+        public void setSuccess(boolean success)
+        {
+            _success = success;
+        }
+
+        public boolean isAttachmentSuccess()
+        {
+            return _attachmentSuccess;
+        }
+
+        public void setAttachmentSuccess(boolean attachmentSuccess)
+        {
+            _attachmentSuccess = attachmentSuccess;
+        }
 
         public String getTo()
         {
@@ -8591,6 +8616,8 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class EmailTestAction extends FormViewAction<EmailTestForm>
     {
+        private static final String EMAIL_TEST_SUCCESS_KEY = "EmailTestAction.success";
+
         @Override
         public void validateCommand(EmailTestForm form, Errors errors)
         {
@@ -8615,10 +8642,28 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(EmailTestForm form, boolean reshow, BindException errors)
         {
+            // Check for flash message from previous successful send
+            if (Boolean.TRUE.equals(getViewContext().getSession().getAttribute(EMAIL_TEST_SUCCESS_KEY)))
+            {
+                getViewContext().getSession().removeAttribute(EMAIL_TEST_SUCCESS_KEY);
+                form.setSuccess(true);
+            }
+            if (Boolean.TRUE.equals(getViewContext().getSession().getAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_SUCCESS_KEY)))
+            {
+                getViewContext().getSession().removeAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_SUCCESS_KEY);
+                form.setAttachmentSuccess(true);
+            }
+            String attachmentError = (String) getViewContext().getSession().getAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_ERROR_KEY);
+            if (attachmentError != null)
+            {
+                getViewContext().getSession().removeAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_ERROR_KEY);
+                form.setException(new ConfigurationException(attachmentError));
+            }
+
             JspView<EmailTestForm> testView = new JspView<>("/org/labkey/core/admin/emailTest.jsp", form);
             testView.setTitle("Send a Test Email");
 
-            if(null != MailHelper.getSession() && null != MailHelper.getSession().getProperties())
+            if(MailHelper.hasActiveProvider())
             {
                 JspView<?> emailPropsView = new JspView<>("/org/labkey/core/admin/emailProps.jsp");
                 emailPropsView.setTitle("Current Email Settings");
@@ -8647,6 +8692,7 @@ public class AdminController extends SpringActionController
                     try
                     {
                         MailHelper.send(msg, getUser(), getContainer());
+                        getViewContext().getSession().setAttribute(EMAIL_TEST_SUCCESS_KEY, Boolean.TRUE);
                     }
                     catch (ConfigurationException e)
                     {
@@ -8677,6 +8723,110 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             addAdminNavTrail(root, "Test Email Configuration", getClass());
+        }
+    }
+
+    /**
+     * Tests the Microsoft Graph API email transport with HTML content and a large attachment.
+     * This action tests the Graph API upload session workflow for attachments over 3MB,
+     * and data URI to CID attachment conversion (embedded base64 images in HTML).
+     * Use {@link EmailTestAction} for general email testing for both SMTP and Graph API.
+     */
+    @AdminConsoleAction
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class GraphEmailTestWithAttachmentAction extends FormHandlerAction<EmailTestForm>
+    {
+        private static final String EMAIL_TEST_ATTACHMENT_SUCCESS_KEY = "GraphEmailTestWithAttachmentAction.success";
+        private static final String EMAIL_TEST_ATTACHMENT_ERROR_KEY = "GraphEmailTestWithAttachmentAction.error";
+
+        @Override
+        public void validateCommand(EmailTestForm form, Errors errors)
+        {
+            if (form.getTo() == null || form.getTo().isEmpty())
+            {
+                errors.reject(ERROR_MSG, "To field cannot be blank.");
+            }
+        }
+
+        @Override
+        public boolean handlePost(EmailTestForm form, BindException errors) throws Exception
+        {
+            if (errors.hasErrors())
+                return false;
+
+            if (!MailHelper.hasActiveProvider())
+            {
+                form.setException(new ConfigurationException("No email provider configured"));
+                return false;
+            }
+
+            ValidEmail recipient = new ValidEmail(form.getTo());
+
+            // Create a temp file for attachment, deleting any leftover from previous test
+            File tempFile = FileUtil.appendPath(FileUtil.getTempDirectory(), org.labkey.api.util.Path.parse("email_test_attachment.txt"));
+            FileUtil.deleteTempFile(tempFile);
+
+            // Generate ~4MB of content to test Graph API upload session chunked upload
+            StringBuilder sb = new StringBuilder();
+            sb.append("LabKey Server Email Attachment Test\n");
+            sb.append("Provider: ").append(MailHelper.getActiveProvider().getName()).append("\n");
+            sb.append("Timestamp: ").append(java.time.Instant.now()).append("\n\n");
+            String line = "This is test data for email attachment upload testing. ";
+            while (sb.length() < 4 * 1024 * 1024)
+            {
+                sb.append(line);
+            }
+            java.nio.file.Files.writeString(tempFile.toPath(), sb.toString());//creates the actual file and writes the content
+
+            try
+            {
+                // Use the Graph provider's configured from address
+                String fromAddress = MailHelper.getActiveProvider().getProperties().getProperty("mail.graph.fromAddress");
+                MailHelper.MultipartMessage msg = MailHelper.createMultipartMessage();
+                msg.setFrom(fromAddress);
+                msg.addRecipient(Message.RecipientType.TO, recipient.getAddress());
+                msg.setSubject("Test Email with HTML and Attachment");
+
+                // Test both external URL images and data URI images.
+                // External URLs should be left unchanged, while data URIs should be converted to CID attachments.
+
+                // External image URL served by the running LabKey server (should NOT be converted - left as-is)
+                String logoUrl = "https://www.labkey.org/_webdav/Documentation/%40files/badge.png";
+
+                // Data URI image built from actual webapp image (should be converted to CID attachment by GraphTransportProvider)
+                FileLike imagesDir = ModuleLoader.getInstance().getModule("Core").getStaticFileDirectories().stream()
+                    .map(dir -> dir.resolveChild("_images"))
+                    .filter(FileLike::isDirectory)
+                    .findFirst()
+                    .orElseThrow(() -> new ConfigurationException("Could not find _images directory in core module"));
+                String gifDataUri = "data:image/gif;base64," + java.util.Base64.getEncoder().encodeToString(java.nio.file.Files.readAllBytes(imagesDir.resolveChild("paperclip.gif").toNioPathForRead()));
+
+                msg.setEncodedHtmlContent(createHtmlFragment(
+                    DIV("This is a ", SPAN(at(style, "font-weight:bold"), "test email"), " with HTML content, attachment, and multiple images."),
+                    DIV(SPAN(at(style, "font-weight:bold"), "External URL image"), " (should remain unchanged):"),
+                    IMG(at(src, logoUrl, style, "height:30px")),
+                    DIV(SPAN(at(style, "font-weight:bold"), "Data URI image"), " (should be converted to CID attachment):"),
+                    IMG(at(src, gifDataUri, style, "height:30px")),
+                    DIV("Sent via ", MailHelper.getActiveProvider().getName(), ".")
+                ).toString());
+                msg.addAttachment(tempFile);
+
+                MailHelper.send(msg, getUser(), getContainer());
+                getViewContext().getSession().setAttribute(EMAIL_TEST_ATTACHMENT_SUCCESS_KEY, Boolean.TRUE);
+            }
+            catch (Exception e)
+            {
+                getViewContext().getSession().setAttribute(EMAIL_TEST_ATTACHMENT_ERROR_KEY, e.getMessage());
+                return true;
+            }
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(EmailTestForm form)
+        {
+            return new ActionURL(EmailTestAction.class, getContainer());
         }
     }
 
