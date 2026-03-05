@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008-2010 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,27 @@
  */
 %>
 <%@ page import="org.labkey.api.util.MailHelper" %>
+<%@ page import="org.labkey.api.util.EmailTransportProvider" %>
 <%@ page import="java.util.Properties" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    Properties emailProps = MailHelper.getSession().getProperties();
+    EmailTransportProvider activeProvider = MailHelper.getActiveProvider();
+    Properties emailProps = activeProvider != null ? activeProvider.getProperties() : new Properties();
+    String providerName = activeProvider != null ? activeProvider.getName() : "None";
     Set<String> obscuredProps = new CaseInsensitiveHashSet(
             "mail.smtp.user",
-            "mail.smtp.password"
+            "mail.smtp.password",
+            "mail.graph.clientSecret"
     );
 %>
 
 <table class="lk-fields-table">
+    <tr>
+        <td class="labkey-form-label">Transport</td>
+        <td><%=h(providerName)%></td>
+    </tr>
     <% for(Object key : emailProps.keySet()) { %>
     <tr>
         <td class="labkey-form-label"><%=h(key.toString())%></td>
