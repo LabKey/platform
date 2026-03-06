@@ -180,7 +180,11 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         menu.addChild(newRoleMenu);
     }
 
-    // Returns a collection of roles that this user is allowed to impersonate in this project (or root). Empty if user can't impersonate.
+    // Returns a collection of roles that this user is allowed to impersonate in this project (or root). Empty if user
+    // can't impersonate these roles (or maybe at all). We always check "applicability" at the project or root level,
+    // never folder, because when AuthFilter calls this on every impersonated request, it has no idea what the current
+    // folder is. All it has is the project stashed in the factory that's in session. That means admins can't
+    // impersonate roles that are applicable only in a folder (e.g., due to folder types).
     public static Collection<Role> filterImpersonationRoles(@Nullable Container project, User adminUser, Collection<Role> candidates)
     {
         boolean canImpersonate = adminUser.hasRootPermission(ImpersonatePermission.class);
