@@ -12,7 +12,6 @@ import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -133,13 +132,12 @@ public class ImpersonationTest extends Assert
             SecurityPolicyManager.savePolicyForTests(rootPolicy, TestContext.get().getUser());
 
             // Test impersonating at the site level
-            // TODO: Active vs. all?
             Collection<User> validUsers = UserImpersonationContextFactory.getValidImpersonationUsers(null, user);
             assertEquals(expectedSiteUsers, validUsers.size());
             assertTrue(user + " is able to impersonate themselves!", validUsers.stream().noneMatch(u -> u.equals(user)));
             Collection<Group> validSiteGroups = GroupImpersonationContextFactory.getValidImpersonationGroups(root, user);
             assertEquals(expectedSiteGroups, validSiteGroups.size());
-            Collection<Role> validSiteRoles = RoleImpersonationContextFactory.filterImpersonationRoles(null, user, RoleManager.getAllRoles());
+            Collection<Role> validSiteRoles = RoleImpersonationContextFactory.getValidImpersonationRoles(ContainerManager.getRoot(), user).toList();
             assertEquals(expectedSiteRoles, validSiteRoles.size());
 
             // Test impersonating at the project level
@@ -147,7 +145,7 @@ public class ImpersonationTest extends Assert
             assertEquals(expectedProjectUsers, projectUsers.size());
             Collection<Group> validProjectGroups = GroupImpersonationContextFactory.getValidImpersonationGroups(project, user);
             assertEquals(expectedProjectGroups, validProjectGroups.size());
-            Collection<Role> validProjectRoles = RoleImpersonationContextFactory.filterImpersonationRoles(project, user, RoleManager.getAllRoles());
+            Collection<Role> validProjectRoles = RoleImpersonationContextFactory.getValidImpersonationRoles(project, user).toList();
             assertEquals(expectedProjectRoles, validProjectRoles.size());
         }
         finally

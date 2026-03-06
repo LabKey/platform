@@ -3009,7 +3009,7 @@ public class UserController extends SpringActionController
 
             User user = context.isImpersonating() ? context.getAdminUser() : getUser();
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Collection<Map<String, Object>> responseRoles = RoleImpersonationContextFactory.filterImpersonationRoles(getContainer(), user, RoleManager.getAllRoles()).stream()
+            Collection<Map<String, Object>> responseRoles = RoleImpersonationContextFactory.getValidImpersonationRoles(getContainer(), user)
                 .map(role -> {
                     Map<String, Object> map = new HashMap<>();
                     map.put("displayName", role.getDisplayName());

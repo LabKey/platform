@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.servlet.http.HttpServletRequest;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -35,13 +36,15 @@ import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.ImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.roles.AbstractRootContainerRole;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -180,35 +183,72 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         menu.addChild(newRoleMenu);
     }
 
-    // Returns a collection of roles that this user is allowed to impersonate in this project (or root). Empty if user
-    // can't impersonate these roles (or maybe at all). We always check "applicability" at the project or root level,
-    // never folder, because when AuthFilter calls this on every impersonated request, it has no idea what the current
-    // folder is. All it has is the project stashed in the factory that's in session. That means admins can't
-    // impersonate roles that are applicable only in a folder (e.g., due to folder types).
-    public static Collection<Role> filterImpersonationRoles(@Nullable Container project, User adminUser, Collection<Role> candidates)
+    // Can this user impersonate in this container?
+    private static boolean canImpersonate(@Nullable Container c, User user)
     {
-        boolean canImpersonate = adminUser.hasRootPermission(ImpersonatePermission.class);
+        return user.hasRootPermission(ImpersonatePermission.class) || (c != null && !c.isRoot() && c.hasPermission(user, ImpersonatePermission.class));
+    }
 
-        if (!canImpersonate && project != null)
+    public static Stream<Role> getValidImpersonationRoles(@NotNull Container c, User user)
+    {
+        if (canImpersonate(c, user))
         {
-            canImpersonate = project.hasPermission(adminUser, ImpersonatePermission.class);
-        }
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
+            boolean canImpersonatePrivilegedRoles = user.hasRootPermission(ImpersonatePrivilegedSiteRolesPermission.class);
 
-        if (!canImpersonate)
+            // Stream the valid roles
+            return RoleManager.getAllRoles().stream()
+                .filter(Role::isAssignable)
+                .filter(role -> role.isApplicable(policy, c))
+                .filter(role -> !role.isPrivileged() || canImpersonatePrivilegedRoles);
+        }
+        else
         {
-            return Collections.emptyList();
+            return Stream.empty();
         }
+    }
 
-        Container c = project != null ? project : ContainerManager.getRoot();
-        boolean canImpersonatePrivilegedRoles = adminUser.hasRootPermission(ImpersonatePrivilegedSiteRolesPermission.class);
-        SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
+    // Throws if user is not authorized to impersonate all roles
+    private static void verifyPermissions(@Nullable Container project, User adminUser, Set<Role> roles, ImpersonationContextFactory factory)
+    {
+        if (canImpersonate(project, adminUser))
+        {
+            // null project means a root admin is impersonating. Impersonation could have started in the root, project, or folder... we don't know.
+            if (null == project)
+            {
+                // Ensure we have either site roles or project roles, not both. UI prevents this, but crafty admin could
+                // attempt it by crafting a post with specific class names
+                if (roles.stream()
+                        .collect(Collectors.groupingBy(role -> role instanceof AbstractRootContainerRole))
+                        .size() > 1)
+                {
+                    throw new UnauthorizedImpersonationException("You are not allowed to impersonate site roles and project roles at the same time", factory);
+                }
 
-        // Stream the valid roles
-        return candidates.stream()
-            .filter(Role::isAssignable)
-            .filter(role -> role.isApplicable(policy, c))
-            .filter(role -> !role.isPrivileged() || canImpersonatePrivilegedRoles)
-            .toList();
+                if (!adminUser.hasRootPermission(ImpersonatePrivilegedSiteRolesPermission.class))
+                {
+                    // Application Administrator is not allowed to impersonate privileged roles
+                    List<String> privileged = roles.stream()
+                        .filter(Role::isPrivileged)
+                        .map(Role::getDisplayName)
+                        .toList();
+
+                    if (!privileged.isEmpty())
+                        throw new UnauthorizedImpersonationException("You are not allowed to impersonate " + StringUtilsLabKey.joinWithConjunction(privileged, "or"), factory);
+                }
+            }
+            else
+            {
+                // Must not be impersonating any site roles
+                if (roles.stream().anyMatch(role -> (role instanceof AbstractRootContainerRole)))
+                    throw new UnauthorizedImpersonationException("You are not allowed to impersonate site roles", factory);
+            }
+        }
+        else
+        {
+            // Admin's permissions must have been revoked since impersonation began
+            throw new UnauthorizedImpersonationException("You are not allowed to impersonate here", factory);
+        }
     }
 
     public static class RoleImpersonationContext extends AbstractImpersonationContext
@@ -229,35 +269,18 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         private RoleImpersonationContext(
-                @Nullable Container project,
-                User adminUser,
-                RoleSet roles,
-                ActionURL returnUrl,
-                ImpersonationContextFactory factory,
-                String cacheKey)
+            @Nullable Container project,
+            User adminUser,
+            RoleSet roles,
+            ActionURL returnUrl,
+            ImpersonationContextFactory factory,
+            String cacheKey
+        )
         {
             super(adminUser, project, returnUrl, factory);
             _roles = roles;
             _cacheKey = cacheKey;
-            verifyPermissions(project, adminUser, _roles.getRoles());
-        }
-
-        // Throws if user is not authorized to impersonate all roles
-        private void verifyPermissions(@Nullable Container project, User adminUser, Set<Role> roles)
-        {
-            // Ensure we have either site roles or project roles, not both. UI prevents this, but crafty admin could
-            // attempt it by crafting a post with specific class names
-            if (roles.stream()
-                .collect(Collectors.groupingBy(role -> role instanceof AbstractRootContainerRole))
-                .size() > 1)
-            {
-                throw new UnauthorizedImpersonationException("You are not allowed to impersonate site roles and project roles at the same time", getFactory());
-            }
-
-            Collection<Role> filteredRoles = filterImpersonationRoles(project, adminUser, roles);
-
-            if (filteredRoles.size() != roles.size())
-                throw new UnauthorizedImpersonationException("One or more impersonation roles are not authorized", getFactory());
+            verifyPermissions(project, adminUser, _roles.getRoles(), factory);
         }
 
         @Override
