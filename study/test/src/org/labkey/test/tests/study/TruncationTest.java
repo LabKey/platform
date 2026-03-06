@@ -79,12 +79,17 @@ public class TruncationTest extends BaseWebDriverTest
     public void testTruncateList()
     {
         goToProjectHome();
-        clickAndWait(Locator.linkWithText(LIST_NAME));
-        click(Locator.linkContainingText("Delete All Rows"));
-        waitAndClick(Ext4Helper.Locators.ext4Button("Yes"));
-        waitForText("2 rows deleted");
-        waitAndClickAndWait(Ext4Helper.Locators.ext4Button("OK"));
-        waitForText("No data to show.");
+        var listsPage = goToManageLists();
+        var grid = listsPage.getGrid();
+        grid.uncheckAllOnPage();
+        grid.selectLists(List.of(LIST_NAME));
+        grid.clickHeaderMenu("Delete", true, "Delete All Data from List");
+
+        // Verify confirmation page
+        assertTextPresent("Are you sure you want to delete all data");
+        assertElementPresent(Locator.linkWithText(LIST_NAME));
+        assertTextPresent("2 rows");
+        clickButton("Confirm Delete All Data");
     }
 
     @Test
