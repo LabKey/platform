@@ -3045,6 +3045,22 @@ public class PageFlowUtil
             );
             for (List<String> test : quickTests)
                 assertEquals(test, splitStringToValuesForImport(joinValuesToStringForExport(test)));
+
+            List<String> specialCharArrays = Arrays.asList(
+                    "&^G'{\"И<2&)&]#~%:\uD83D\uDC7E*!안GaC;",
+                    ",~-",
+                    "<=0\\!41%d!By&]b",
+                    "A)D'z:&",
+                    "b$Dyf)D;C@",
+                    "c_x-eИ",
+                    "d[dF2cは=&G&1",
+                    "e^\"#x"
+            );
+
+            String specialCharStr = "\"&^G'{\"\"И<2&)&]#~%:\uD83D\uDC7E*!안GaC;\", \",~-\", <=0\\!41%d!By&]b, A)D'z:&, b$Dyf)D;C@, c_x-eИ, d[dF2cは=&G&1, \"e^\"\"#x\"";
+
+            assertEquals(specialCharStr, joinValuesToStringForExport(specialCharArrays));
+            assertEquals(specialCharArrays, splitStringToValuesForImport(specialCharStr));
         }
 
         @Test
