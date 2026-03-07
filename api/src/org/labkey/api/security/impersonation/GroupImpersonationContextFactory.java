@@ -126,6 +126,28 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         return UserManager.getUser(_adminUserId);
     }
 
+    public static void addMenu(NavTree menu)
+    {
+        NavTree groupMenu = new NavTree("Group");
+        groupMenu.setScript("LABKEY.Security.Impersonation.showImpersonateGroup();");
+        menu.addChild(groupMenu);
+    }
+
+    // Returns the groups this user is allowed to impersonate. Empty for users who aren't allowed to impersonate.
+    public static Collection<Group> getValidImpersonationGroups(Container c, User user)
+    {
+        LinkedList<Group> validGroups = new LinkedList<>();
+        Container project = c.getProject();
+        List<Group> groups = SecurityManager.getGroups(project, true);
+
+        // Site groups are always first, followed by project groups
+        for (Group group : groups)
+            if (canImpersonateGroup(project, user, group))
+                validGroups.add(group);
+
+        return validGroups;
+    }
+
     private static boolean canImpersonateGroup(@Nullable Container project, User adminUser, Group group)
     {
         // Impersonating the "Site: Guests" group leads to confusion and is not useful. Better to just log out. See #20140.
@@ -149,28 +171,6 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         }
 
         return false;
-    }
-
-    public static void addMenu(NavTree menu)
-    {
-        NavTree groupMenu = new NavTree("Group");
-        groupMenu.setScript("LABKEY.Security.Impersonation.showImpersonateGroup();");
-        menu.addChild(groupMenu);
-    }
-
-    // Returns the groups this user is allowed to impersonate. Empty for users who aren't allowed to impersonate.
-    public static Collection<Group> getValidImpersonationGroups(Container c, User user)
-    {
-        LinkedList<Group> validGroups = new LinkedList<>();
-        Container project = c.getProject();
-        List<Group> groups = SecurityManager.getGroups(project, true);
-
-        // Site groups are always first, followed by project groups
-        for (Group group : groups)
-            if (canImpersonateGroup(project, user, group))
-                validGroups.add(group);
-
-        return validGroups;
     }
 
     private static class GroupImpersonationContext extends AbstractImpersonationContext

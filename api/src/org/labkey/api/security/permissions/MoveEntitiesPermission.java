@@ -16,7 +16,7 @@
 package org.labkey.api.security.permissions;
 
 /**
- * Describes the ability to move entities between containers within the system.
+ * Provides the ability to move entities between containers within the system
  */
 public class MoveEntitiesPermission extends UpdatePermission
 {

@@ -18,9 +18,7 @@ package org.labkey.api.security.permissions;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Describes the ability to change existing objects within the system.
- * User: Dave
- * Date: Apr 27, 2009
+ * Provides the ability to change existing objects within the system
  */
 public class UpdatePermission extends AbstractPermission
 {

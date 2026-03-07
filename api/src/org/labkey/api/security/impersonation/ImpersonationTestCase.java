@@ -27,11 +27,11 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * We have many impersonation permissions rules. This attempts to test them all.
+ * We have many impersonation permissions rules. This attempts to test many of them.
  */
-public class ImpersonationTest extends Assert
+public class ImpersonationTestCase extends Assert
 {
-    private static final Logger LOG = LogHelper.getLogger(ImpersonationTest.class, "Progress of ImpersonationTest");
+    private static final Logger LOG = LogHelper.getLogger(ImpersonationTestCase.class, "Progress of ImpersonationTest");
 
     @Test
     public void testPermissions() throws Exception

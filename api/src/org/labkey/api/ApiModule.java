@@ -135,7 +135,7 @@ import org.labkey.api.security.RoleSet;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
-import org.labkey.api.security.impersonation.ImpersonationTest;
+import org.labkey.api.security.impersonation.ImpersonationTestCase;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.AppPropsTestCase;
 import org.labkey.api.settings.BaseServerProperties;
@@ -399,7 +399,7 @@ public class ApiModule extends CodeOnlyModule
             FileUtil.TestCase.class,
             GenerateUniqueDataIterator.TestCase.class,
             HelpTopic.TestCase.class,
-            ImpersonationTest.class,
+            ImpersonationTestCase.class,
             InlineInClauseGenerator.TestCase.class,
             JSONDataLoader.HeaderMatchTest.class,
             JSONDataLoader.MetadataTest.class,
