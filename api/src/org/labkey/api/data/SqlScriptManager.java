@@ -174,6 +174,23 @@ public abstract class SqlScriptManager
         return runScripts;
     }
 
+    @NotNull
+    public Collection<String> getPreviouslyRunSqlScriptNames()
+    {
+        TableInfo tinfo = getTableInfoSqlScripts();
+
+        // Skip if the table hasn't been created yet (bootstrap case)
+        if (getTableInfoSqlScripts().getTableType() == DatabaseTableType.NOT_IN_DB)
+            return Collections.emptySet();
+
+        SimpleFilter filter = new SimpleFilter();
+        ColumnInfo fileNameColumn = tinfo.getColumn("FileName");
+        filter.addCondition(tinfo.getColumn("ModuleName"), _provider.getProviderName());
+        filter.addCondition(tinfo.getColumn("FileName"), _schema.getResourcePrefix() + "-", CompareType.STARTS_WITH);
+
+        return new TableSelector(tinfo, Collections.singleton(fileNameColumn), filter, null).getCollection(String.class);
+    }
+
     private static final String SKIP_SCRIPT_ANNOTATION = "@SkipScriptIfSchemaExists";
     // Use to annotate a script that may take a long time to execute. A message will be logged, including a reason and
     // strongly discouraging server shutdown or restart during upgrade.
@@ -219,10 +236,10 @@ public abstract class SqlScriptManager
                     // - restructuring the way workflow jobs are stored
                     String reason = matcher.group("reason");
                     LOG.info(
-                """
+                    """
                         This script could take a long time to execute because it is {}.
                         Do NOT shut down or restart the server until this script and the rest of the upgrade is complete.
-                        Any interruption will likely corrupt the database, requiring a database restore and a restart of the upgrade process.""",
+                        Any interruption will likely corrupt the schemas, requiring a database restore and a restart of the upgrade process.""",
                         reason
                     );
                 }
@@ -237,23 +254,6 @@ public abstract class SqlScriptManager
 
         if (script.isValidName())
             insert(user, script);
-    }
-
-    @NotNull
-    public Collection<String> getPreviouslyRunSqlScriptNames()
-    {
-        TableInfo tinfo = getTableInfoSqlScripts();
-
-        // Skip if the table hasn't been created yet (bootstrap case)
-        if (getTableInfoSqlScripts().getTableType() == DatabaseTableType.NOT_IN_DB)
-            return Collections.emptySet();
-
-        SimpleFilter filter = new SimpleFilter();
-        ColumnInfo fileNameColumn = tinfo.getColumn("FileName");
-        filter.addCondition(tinfo.getColumn("ModuleName"), _provider.getProviderName());
-        filter.addCondition(tinfo.getColumn("FileName"), _schema.getResourcePrefix() + "-", CompareType.STARTS_WITH);
-
-        return new TableSelector(tinfo, Collections.singleton(fileNameColumn), filter, null).getCollection(String.class);
     }
 
     private void insert(@Nullable User user, SqlScript script)
@@ -298,7 +298,7 @@ public abstract class SqlScriptManager
     }
 
 
-    public @NotNull SchemaBean ensureSchemaBean()
+    protected @NotNull SchemaBean ensureSchemaBean()
     {
         SchemaBean bean = getSchemaBean();
 
@@ -306,7 +306,7 @@ public abstract class SqlScriptManager
     }
 
 
-    protected @Nullable SchemaBean getSchemaBean()
+    private @Nullable SchemaBean getSchemaBean()
     {
         TableInfo tinfo = getTableInfoSchemas();
 

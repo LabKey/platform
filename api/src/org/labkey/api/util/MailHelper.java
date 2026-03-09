@@ -37,11 +37,9 @@ import org.labkey.api.audit.provider.MessageAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
@@ -107,10 +105,9 @@ public class MailHelper
             WarningService.get().register(new WarningProvider()
             {
                 @Override
-                public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
+                public void addStaticWarnings(@NotNull Warnings warnings, boolean showAllWarnings)
                 {
-                    if (context == null || context.getUser().hasRootPermission(TroubleshooterPermission.class))
-                        warnings.add(HtmlString.of(message));
+                    warnings.add(HtmlString.of(message));
                 }
             });
             return null;
