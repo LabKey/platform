@@ -77,13 +77,18 @@ public class StorageNameGenerator
             ret = legalName + i;
         }
 
-        if (_dialect.isIdentifierTooLong(ret))
+        if (isIdentifierTooLong(ret))
             throw new IllegalStateException("generateName() produced a name that was too long for " + _dialect.getProductName() + ": \"" + ret + "\" was generated from \"" + candidateName + "\"");
 
         if (ret.length() > 255)
             throw new IllegalStateException("generateName() produced a name that was > 255 characters: \"" + ret + "\" was generated from \"" + candidateName + "\"");
 
         return claimName(ret);
+    }
+
+    private boolean isIdentifierTooLong(String candidate)
+    {
+        return _dialect.isIdentifierTooLong(candidate);
     }
 
     public static class TestCase extends Assert
@@ -101,11 +106,11 @@ public class StorageNameGenerator
             testCandidates(255, dialect, StringUtilsLabKey::generateSpecialCharacterString);
 
             // Test that the same string over and over again generates a unique name
-            testCandidates(255, dialect, i -> "kumquat");
+            testCandidates(255, dialect, _ -> "kumquat");
             // Same, but test case sensitivity
             testCandidates(255, dialect, i -> i % 2 == 0 ? "kumquat" : "KUMQUAT");
             String randomString = StringUtilsLabKey.generateSpecialCharacterString(255);
-            testCandidates(255, dialect, i -> randomString);
+            testCandidates(255, dialect, _ -> randomString);
         }
 
         private void testCandidates(int count, SqlDialect dialect, Function<Integer, String> candidateSupplier)
@@ -119,7 +124,7 @@ public class StorageNameGenerator
                 String generated = generator.generateColumnName(candidate);
                 boolean exists = uniqueNames.contains(candidate);
 
-                if (exists || dialect.isIdentifierTooLong(candidate + StringUtils.repeat("x", COLUMN_RESERVED_LENGTH)))
+                if (exists || generator.isIdentifierTooLong(candidate + StringUtils.repeat("x", COLUMN_RESERVED_LENGTH)))
                     assertNotEquals(candidate, generated);
                 else
                     assertEquals(candidate, generated);
