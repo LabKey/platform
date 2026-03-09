@@ -1190,7 +1190,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             case "SQL_TSI_SECOND" ->
                 new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")))::INT");
             case "SQL_TSI_FRAC_SECOND" ->
-                new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")) * 1000)::INT");
+                new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")) * 1000)::BIGINT");
             default -> throw new IllegalArgumentException("Unsupported interval for timestampdiff2: " + interval);
         };
     }
