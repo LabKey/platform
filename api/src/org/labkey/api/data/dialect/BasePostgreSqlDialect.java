@@ -1197,30 +1197,10 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
     private SQLFragment getWholeElapsedMonths(SQLFragment start, SQLFragment end)
     {
-        SQLFragment baseMonths = new SQLFragment("((EXTRACT(YEAR FROM (").append(end).append(")) - EXTRACT(YEAR FROM (")
-            .append(start).append("))) * 12 + EXTRACT(MONTH FROM (").append(end).append(")) - EXTRACT(MONTH FROM (")
-            .append(start).append(")))::INT");
-        SQLFragment endBeforeStartInMonth = isSubMonthPartBefore(end, start);
-        SQLFragment endAfterStartInMonth = isSubMonthPartBefore(start, end);
-
-        // baseMonths counts calendar month boundaries. Adjust away any trailing partial month so the result
-        // reflects only whole elapsed months, while still truncating toward zero for negative differences.
-        return new SQLFragment("(CASE WHEN (").append(baseMonths).append(") > 0 AND ").append(endBeforeStartInMonth)
-            .append(" THEN (").append(baseMonths).append(" - 1) WHEN (").append(baseMonths).append(") < 0 AND ")
-            .append(endAfterStartInMonth).append(" THEN (").append(baseMonths).append(" + 1) ELSE ")
-            .append(baseMonths).append(" END)");
-    }
-
-    private SQLFragment isSubMonthPartBefore(SQLFragment left, SQLFragment right)
-    {
-        SQLFragment leftTimeOfDay = new SQLFragment("EXTRACT(EPOCH FROM ((").append(left).append(") - DATE_TRUNC('day', (")
-            .append(left).append("))))");
-        SQLFragment rightTimeOfDay = new SQLFragment("EXTRACT(EPOCH FROM ((").append(right).append(") - DATE_TRUNC('day', (")
-            .append(right).append("))))");
-
-        return new SQLFragment("((EXTRACT(DAY FROM (").append(left).append(")) < EXTRACT(DAY FROM (").append(right)
-            .append("))) OR (EXTRACT(DAY FROM (").append(left).append(")) = EXTRACT(DAY FROM (").append(right)
-            .append(")) AND (").append(leftTimeOfDay).append(") < (").append(rightTimeOfDay).append(")))");
+        // AGE() normalizes the symbolic year/month/day components for both positive and negative spans.
+        SQLFragment age = new SQLFragment("AGE((").append(end).append("), (").append(start).append("))");
+        return new SQLFragment("((EXTRACT(YEAR FROM ").append(age).append(") * 12) + EXTRACT(MONTH FROM ").append(age)
+            .append("))::INT");
     }
 
     @Override
