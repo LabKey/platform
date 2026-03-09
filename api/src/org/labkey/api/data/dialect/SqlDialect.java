@@ -2107,6 +2107,8 @@ public abstract class SqlDialect
 
     public SQLFragment formatJdbcFunction(String fn, SQLFragment... arguments)
     {
+        if (fn.equalsIgnoreCase("timestampdiff2"))
+            fn = "timestampdiff";
         SQLFragment ret = new SQLFragment();
         ret.append("{fn ");
         formatFunction(ret, fn, arguments);

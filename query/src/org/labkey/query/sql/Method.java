@@ -428,6 +428,14 @@ public abstract class Method
                 return new TimestampInfo(this);
             }
         });
+        labkeyMethod.put("timestampdiff2", new Method("timestampdiff2", JdbcType.INTEGER, 3, 3)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new TimestampInfo(this);
+            }
+        });
         labkeyMethod.put("truncate", new JdbcMethod("truncate", JdbcType.DOUBLE, 2, 2));
         labkeyMethod.put("ucase", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("upper", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));

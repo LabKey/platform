@@ -1117,6 +1117,8 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             return formatFunction(call, nativeFn, arguments);
         else if (fn.equalsIgnoreCase("timestampdiff"))
             return timestampdiff(arguments);
+        else if (fn.equalsIgnoreCase("timestampdiff2"))
+            return timestampdiff2(arguments);
         else
             return super.formatJdbcFunction(fn, arguments);
     }
@@ -1155,6 +1157,39 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             return epoch.append("/3600.0");
 
         return super.formatJdbcFunction("timestampdiff", arguments);
+    }
+
+    /* Native PostgreSQL implementation for all 9 SQL_TSI intervals.
+     * This returns INTEGER for all intervals and never falls back to the JDBC escape.
+     */
+    private SQLFragment timestampdiff2(SQLFragment... arguments)
+    {
+        String interval = arguments[0].getSQL();
+        SQLFragment start = arguments[1];
+        SQLFragment end = arguments[2];
+
+        return switch (interval)
+        {
+            case "SQL_TSI_YEAR" ->
+                new SQLFragment("(EXTRACT(YEAR FROM (").append(end).append(")) - EXTRACT(YEAR FROM (").append(start).append(")))::INT");
+            case "SQL_TSI_QUARTER" ->
+                new SQLFragment("((EXTRACT(YEAR FROM (").append(end).append(")) - EXTRACT(YEAR FROM (").append(start).append("))) * 4 + EXTRACT(QUARTER FROM (").append(end).append(")) - EXTRACT(QUARTER FROM (").append(start).append(")))::INT");
+            case "SQL_TSI_MONTH" ->
+                new SQLFragment("((EXTRACT(YEAR FROM (").append(end).append(")) - EXTRACT(YEAR FROM (").append(start).append("))) * 12 + EXTRACT(MONTH FROM (").append(end).append(")) - EXTRACT(MONTH FROM (").append(start).append(")))::INT");
+            case "SQL_TSI_WEEK" ->
+                new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")) / 604800)::INT");
+            case "SQL_TSI_DAY" ->
+                new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")) / 86400)::INT");
+            case "SQL_TSI_HOUR" ->
+                new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")) / 3600)::INT");
+            case "SQL_TSI_MINUTE" ->
+                new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")) / 60)::INT");
+            case "SQL_TSI_SECOND" ->
+                new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")))::INT");
+            case "SQL_TSI_FRAC_SECOND" ->
+                new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")) * 1000)::INT");
+            default -> throw new IllegalArgumentException("Unsupported interval for timestampdiff2: " + interval);
+        };
     }
 
     @Override
