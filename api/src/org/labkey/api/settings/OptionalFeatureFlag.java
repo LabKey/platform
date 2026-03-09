@@ -86,7 +86,8 @@ public class OptionalFeatureFlag implements Comparable<OptionalFeatureFlag>, Sta
         String name = getFlag();
         if (!StringUtilsLabKey.isValidJavaIdentifier(name))
         {
-            LOG.warn("Feature flag name doesn't conform to the property name rules so it won't be available as a startup property: {}", name);
+            if (AppProps.getInstance().isDevMode())
+                LOG.warn("Feature flag name doesn't conform to the property name rules so it won't be available as a startup property: {}", name);
             name = null;
         }
         return name;

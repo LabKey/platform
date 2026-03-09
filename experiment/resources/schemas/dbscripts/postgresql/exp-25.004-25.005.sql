@@ -1,3 +1,5 @@
+-- @LongRunningScript('updating all ObjectId columns to BIGINT')
+
 -- Change all ObjectId columns to BIGINT
 ALTER TABLE exp.Object ALTER COLUMN ObjectId TYPE BIGINT;
 ALTER TABLE exp.Object ALTER COLUMN OwnerObjectId TYPE BIGINT;

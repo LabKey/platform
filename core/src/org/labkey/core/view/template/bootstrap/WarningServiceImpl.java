@@ -42,6 +42,8 @@ import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 public class WarningServiceImpl implements WarningService
 {
+    private static final Object STATIC_WARNING_LOCK = new Object();
+
     private static volatile Collection<HtmlString> STATIC_ADMIN_WARNINGS = null;
     private static volatile boolean SHOW_ALL_WARNINGS = false;
 
@@ -81,6 +83,7 @@ public class WarningServiceImpl implements WarningService
     public void register(WarningProvider provider)
     {
         _providers.add(provider);
+        STATIC_ADMIN_WARNINGS = null;
     }
 
     @Override
@@ -90,27 +93,22 @@ public class WarningServiceImpl implements WarningService
     }
 
     // Check warning conditions that don't change after the server has started up. We'll collect and stash these during
-    // the first request after startup is complete. They are also re-collected if the "show all warnings" experimental
-    // feature flag is used.
+    // the first request after startup is complete. They are also re-collected if a new provider is registered or if
+    // the "show all warnings" experimental feature flag is used.
     private static Collection<HtmlString> getStaticAdminWarnings()
     {
-        if (STATIC_ADMIN_WARNINGS != null)
+        if (null == STATIC_ADMIN_WARNINGS)
         {
-            return STATIC_ADMIN_WARNINGS;
+            synchronized (STATIC_WARNING_LOCK)
+            {
+                LazyInitializer.init(); // Invoke no-op method to ensure static initializer is executed
+                Warnings warnings = Warnings.of(new LinkedList<>());
+                WarningService.get().forEachProvider(p -> p.addStaticWarnings(warnings, WarningService.get().showAllWarnings()));
+                STATIC_ADMIN_WARNINGS = Collections.unmodifiableList(warnings.getMessages());;
+            }
         }
 
-        LazyInitializer.init(); // Invoke no-op method to ensure static initializer is executed
-        Warnings warnings = Warnings.of(new LinkedList<>());
-        WarningService.get().forEachProvider(p -> p.addStaticWarnings(warnings, WarningService.get().showAllWarnings()));
-        List<HtmlString> messages = Collections.unmodifiableList(warnings.getMessages());
-
-        if (ModuleLoader.getInstance().isStartupComplete())
-        {
-            // We should have our full list of warnings at this point, so safe to stash them
-            STATIC_ADMIN_WARNINGS = messages;
-        }
-
-        return messages;
+        return STATIC_ADMIN_WARNINGS;
     }
 
     private static final String DISMISSAL_SCRIPT_FORMAT =

@@ -41,6 +41,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -173,6 +175,9 @@ public abstract class SqlScriptManager
     }
 
     private static final String SKIP_SCRIPT_ANNOTATION = "@SkipScriptIfSchemaExists";
+    // Use to annotate a script that may take a long time to execute. A message will be logged, including a reason and
+    // strongly discouraging server shutdown or restart during upgrade.
+    private static final Pattern LONG_RUNNING_SCRIPT_ANNOTATION_PATTERN = Pattern.compile("@LongRunningScript\\('(?<reason>.+)'\\)");
 
     public void runScript(@Nullable User user, SqlScript script, ModuleContext moduleContext, @Nullable Connection conn) throws SqlScriptException
     {
@@ -204,24 +209,34 @@ public abstract class SqlScriptManager
             }
             else
             {
+                Matcher matcher = LONG_RUNNING_SCRIPT_ANNOTATION_PATTERN.matcher(contents);
+                if (matcher.find())
+                {
+                    // Reason is expected to be a gerund phrase that summarizes the time-consuming action(s) that the
+                    // script is taking. It should start with a lowercase letter and should not end with punctuation.
+                    // Examples:
+                    // - updating all ObjectId columns to BIGINT
+                    // - restructuring the way workflow jobs are stored
+                    String reason = matcher.group("reason");
+                    LOG.info(
+                """
+                        This script could take a long time to execute because it is {}.
+                        Do NOT shut down or restart the server until this script and the rest of the upgrade is complete.
+                        Any interruption will likely corrupt the database, requiring a database restore and a restart of the upgrade process.""",
+                        reason
+                    );
+                }
                 dialect.runSql(description, schema, contents, moduleContext, conn);
                 LOG.info("Finished running script: {}", description);
             }
         }
-        catch(Throwable t)
+        catch (Throwable t)
         {
             throw new SqlScriptException(t, description);
         }
 
         if (script.isValidName())
-        {
-            // Should never be true, unless getNewScripts() isn't doing its job. TODO: Remove update() branch below.
-            assert !hasBeenRun(script);
-            if (hasBeenRun(script))
-                update(user, script);
-            else
-                insert(user, script);
-        }
+            insert(user, script);
     }
 
     @NotNull
@@ -241,37 +256,19 @@ public abstract class SqlScriptManager
         return new TableSelector(tinfo, Collections.singleton(fileNameColumn), filter, null).getCollection(String.class);
     }
 
-    public boolean hasBeenRun(SqlScript script)
+    private void insert(@Nullable User user, SqlScript script)
     {
         TableInfo tinfo = getTableInfoSqlScripts();
 
-        // Make sure DbSchema thinks SqlScript table is in the database.  If not, we're bootstrapping and it's either just before or just after the first
-        // script is run.  In either case, invalidate to force reloading schema from database meta data.
+        // Make sure DbSchema thinks SqlScripts table is in the database. If not, we're bootstrapping, and it's just
+        // after the first script has run. Invalidate to force reloading the schema from database metadata.
         if (tinfo.getTableType() == DatabaseTableType.NOT_IN_DB)
         {
             CacheManager.clearAllKnownCaches();
-            return false;
+            tinfo = getTableInfoSqlScripts(); // Reload to update table type
         }
 
-        PkFilter filter = new PkFilter(tinfo, new String[]{_provider.getProviderName(), script.getDescription()});
-
-        return new TableSelector(getTableInfoSqlScripts(), filter, null).exists();
-    }
-
-
-    public void insert(@Nullable User user, SqlScript script)
-    {
-        SqlScriptBean ss = new SqlScriptBean(script.getProvider().getProviderName(), script.getDescription());
-
-        Table.insert(user, getTableInfoSqlScripts(), ss);
-    }
-
-
-    public void update(@Nullable User user, SqlScript script)
-    {
-        Object[] pk = new Object[]{script.getProvider().getProviderName(), script.getDescription()};
-
-        Table.update(user, getTableInfoSqlScripts(), new HashMap<>(), pk);  // Update user and modified date
+        Table.insert(user, tinfo, new SqlScriptBean(script.getProvider().getProviderName(), script.getDescription()));
     }
 
     // Allow null version for oddball cases like gel_reports, which claims to have schemas but no schema version. That
