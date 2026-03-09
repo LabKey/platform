@@ -1167,15 +1167,18 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         String interval = arguments[0].getSQL();
         SQLFragment start = arguments[1];
         SQLFragment end = arguments[2];
+        // Compute whole elapsed months first, then derive quarter/year from that value so all larger
+        // intervals use the same truncation-toward-zero semantics as the epoch-based branches below.
+        SQLFragment wholeMonths = getWholeElapsedMonths(start, end);
 
         return switch (interval)
         {
             case "SQL_TSI_YEAR" ->
-                new SQLFragment("(EXTRACT(YEAR FROM (").append(end).append(")) - EXTRACT(YEAR FROM (").append(start).append(")))::INT");
+                new SQLFragment("TRUNC((").append(wholeMonths).append(")::NUMERIC / 12)::INT");
             case "SQL_TSI_QUARTER" ->
-                new SQLFragment("((EXTRACT(YEAR FROM (").append(end).append(")) - EXTRACT(YEAR FROM (").append(start).append("))) * 4 + EXTRACT(QUARTER FROM (").append(end).append(")) - EXTRACT(QUARTER FROM (").append(start).append(")))::INT");
+                new SQLFragment("TRUNC((").append(wholeMonths).append(")::NUMERIC / 3)::INT");
             case "SQL_TSI_MONTH" ->
-                new SQLFragment("((EXTRACT(YEAR FROM (").append(end).append(")) - EXTRACT(YEAR FROM (").append(start).append("))) * 12 + EXTRACT(MONTH FROM (").append(end).append(")) - EXTRACT(MONTH FROM (").append(start).append(")))::INT");
+                wholeMonths;
             case "SQL_TSI_WEEK" ->
                 new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")) / 604800)::INT");
             case "SQL_TSI_DAY" ->
@@ -1190,6 +1193,34 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                 new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")) * 1000)::INT");
             default -> throw new IllegalArgumentException("Unsupported interval for timestampdiff2: " + interval);
         };
+    }
+
+    private SQLFragment getWholeElapsedMonths(SQLFragment start, SQLFragment end)
+    {
+        SQLFragment baseMonths = new SQLFragment("((EXTRACT(YEAR FROM (").append(end).append(")) - EXTRACT(YEAR FROM (")
+            .append(start).append("))) * 12 + EXTRACT(MONTH FROM (").append(end).append(")) - EXTRACT(MONTH FROM (")
+            .append(start).append(")))::INT");
+        SQLFragment endBeforeStartInMonth = isSubMonthPartBefore(end, start);
+        SQLFragment endAfterStartInMonth = isSubMonthPartBefore(start, end);
+
+        // baseMonths counts calendar month boundaries. Adjust away any trailing partial month so the result
+        // reflects only whole elapsed months, while still truncating toward zero for negative differences.
+        return new SQLFragment("(CASE WHEN (").append(baseMonths).append(") > 0 AND ").append(endBeforeStartInMonth)
+            .append(" THEN (").append(baseMonths).append(" - 1) WHEN (").append(baseMonths).append(") < 0 AND ")
+            .append(endAfterStartInMonth).append(" THEN (").append(baseMonths).append(" + 1) ELSE ")
+            .append(baseMonths).append(" END)");
+    }
+
+    private SQLFragment isSubMonthPartBefore(SQLFragment left, SQLFragment right)
+    {
+        SQLFragment leftTimeOfDay = new SQLFragment("EXTRACT(EPOCH FROM ((").append(left).append(") - DATE_TRUNC('day', (")
+            .append(left).append("))))");
+        SQLFragment rightTimeOfDay = new SQLFragment("EXTRACT(EPOCH FROM ((").append(right).append(") - DATE_TRUNC('day', (")
+            .append(right).append("))))");
+
+        return new SQLFragment("((EXTRACT(DAY FROM (").append(left).append(")) < EXTRACT(DAY FROM (").append(right)
+            .append("))) OR (EXTRACT(DAY FROM (").append(left).append(")) = EXTRACT(DAY FROM (").append(right)
+            .append(")) AND (").append(leftTimeOfDay).append(") < (").append(rightTimeOfDay).append(")))");
     }
 
     @Override
