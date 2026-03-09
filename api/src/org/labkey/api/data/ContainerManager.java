@@ -2437,14 +2437,14 @@ public class ContainerManager
 
         for (ContainerListener l : list)
         {
-            LOG.debug("Deleting " + c.getPath() + ": fireDeleteContainer for " + l.getClass().getName());
+            LOG.debug("Deleting {}: fireDeleteContainer for {}", c.getPath(), l.getClass().getName());
             try
             {
                 l.containerDeleted(c, user);
             }
             catch (RuntimeException e)
             {
-                LOG.error("fireDeleteContainer for " + l.getClass().getName(), e);
+                LOG.error("fireDeleteContainer for {}", l.getClass().getName(), e);
 
                 // Issue 17560: Fail fast (first Throwable aborts iteration)
                 throw e;

@@ -137,16 +137,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
-public class AttachmentServiceImpl implements AttachmentService, ContainerManager.ContainerListener
+public class AttachmentServiceImpl implements AttachmentService
 {
     private static final String UPLOAD_LOG = ".upload.log";
     private static final Map<String, AttachmentParentType> ATTACHMENT_TYPE_MAP = new HashMap<>();
     private static final Set<String> ATTACHMENT_COLUMNS = Set.of("Parent", "Container", "DocumentName", "DocumentSize", "DocumentType", "Created", "CreatedBy", "LastIndexed");
-
-    public AttachmentServiceImpl()
-    {
-        ContainerManager.addContainerListener(this);
-    }
 
     @Override
     public void download(HttpServletResponse response, AttachmentParent parent, String filename, @Nullable String alias, boolean inlineIfPossible) throws ServletException, IOException
@@ -904,14 +899,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         {
             return AttachmentCache.getAttachments(parent).get(name);
         }
-    }
-
-    @Override
-    public void containerDeleted(Container c, User user)
-    {
-        // TODO: do we need to get each document and remove its security policy?
-        ContainerUtil.purgeTable(coreTables().getTableInfoDocuments(), c, null);
-        AttachmentCache.removeAttachments(c);
     }
 
     private void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, @Nullable String alias, boolean asAttachment) throws ServletException, IOException
