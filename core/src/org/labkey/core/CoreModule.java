@@ -965,7 +965,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // This listener deletes all properties; make sure it executes after most of the other listeners
         ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);
-        // This listener attempts to detect orphaned attachments left behind by tests and other listeners. Run just before CoreContainerListener.
+        // This listener deletes all attachments in the container; execute it just before CoreContainerListener
         ContainerManager.addContainerListener(new AttachmentContainerListener(), ContainerManager.ContainerListener.Order.Last);
         ContainerManager.addContainerListener(new FolderSettingsCacheListener());
         SecurityManager.init();
