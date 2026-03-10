@@ -37,10 +37,10 @@ public class ApplicationAdminRole extends AbstractRootContainerRole implements A
     static Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
         AddUserPermission.class,
         ApplicationAdminPermission.class,
-        ImpersonatePermission.class,
         DeleteUserPermission.class,
         EnableRestrictedModules.class,
         ExemptFromAccountDisablingPermission.class,
+        ImpersonatePermission.class,
         TroubleshooterPermission.class,
         UpdateUserPermission.class,
         UserManagementPermission.class

@@ -35,9 +35,9 @@ public class SiteAdminRole extends AbstractRootContainerRole implements AdminRol
 {
     private static final Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
         AdminOperationsPermission.class,
-        ImpersonatePrivilegedSiteRolesPermission.class,
         CanUseSendMessageApiPermission.class,
         EmailNonUsersPermission.class,
+        ImpersonatePrivilegedSiteRolesPermission.class,
         SiteAdminPermission.class,
         UploadFileBasedModulePermission.class
     );
