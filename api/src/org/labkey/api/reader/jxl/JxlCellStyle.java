@@ -18,6 +18,7 @@ package org.labkey.api.reader.jxl;
 import jxl.format.Alignment;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.CellPropertyType;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Color;
 import org.apache.poi.ss.usermodel.FillPatternType;
@@ -25,14 +26,10 @@ import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * User: klum
- * Date: May 20, 2011
- * Time: 1:45:20 PM
- */
 public class JxlCellStyle implements CellStyle
 {
     private static final String DEFAULT_FORMAT = "General";
@@ -109,19 +106,14 @@ public class JxlCellStyle implements CellStyle
         return _format != null && _format.isLocked();
     }
 
-    private static final Map<Alignment, HorizontalAlignment> HORIZONTAL_ALIGNMENT_MAP = new HashMap<>();
-
-    static
-    {
-        HORIZONTAL_ALIGNMENT_MAP.put(Alignment.GENERAL, HorizontalAlignment.GENERAL);
-        HORIZONTAL_ALIGNMENT_MAP.put(Alignment.LEFT, HorizontalAlignment.LEFT);
-        HORIZONTAL_ALIGNMENT_MAP.put(Alignment.CENTRE, HorizontalAlignment.CENTER);
-        HORIZONTAL_ALIGNMENT_MAP.put(Alignment.RIGHT, HorizontalAlignment.RIGHT);
-        HORIZONTAL_ALIGNMENT_MAP.put(Alignment.FILL, HorizontalAlignment.FILL);
-        HORIZONTAL_ALIGNMENT_MAP.put(Alignment.JUSTIFY, HorizontalAlignment.JUSTIFY);
-
+    private static final Map<Alignment, HorizontalAlignment> HORIZONTAL_ALIGNMENT_MAP = Map.of(
+            Alignment.GENERAL, HorizontalAlignment.GENERAL,
+            Alignment.LEFT, HorizontalAlignment.LEFT,
+            Alignment.CENTRE, HorizontalAlignment.CENTER,
+            Alignment.RIGHT, HorizontalAlignment.RIGHT,
+            Alignment.FILL, HorizontalAlignment.FILL,
+            Alignment.JUSTIFY, HorizontalAlignment.JUSTIFY);
         // Note: No JXL options for CENTER_SELECTION or DISTRIBUTED
-    }
 
     @Override
     public HorizontalAlignment getAlignment()
@@ -385,7 +377,7 @@ public class JxlCellStyle implements CellStyle
     @Override
     public int getFontIndexAsInt()
     {
-        throw new UnsupportedOperationException("method not yet supported");
+        return getFontIndex();
     }
 
     @Override
@@ -398,5 +390,48 @@ public class JxlCellStyle implements CellStyle
     public void setFillForegroundColor(Color color)
     {
         throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    /**
+     * A pared down version of {@link org.apache.poi.ss.util.CellUtil#getFormatProperties(org.apache.poi.ss.usermodel.CellStyle)}
+     * that only includes properties supported by this implementation.
+     */
+    @Override
+    public EnumMap<CellPropertyType, Object> getFormatProperties()
+    {
+        EnumMap<CellPropertyType, Object> properties = new EnumMap<>(CellPropertyType.class);
+        properties.put(CellPropertyType.ALIGNMENT, getAlignment());
+        properties.put(CellPropertyType.VERTICAL_ALIGNMENT, getVerticalAlignment());
+        //properties.put(CellPropertyType.BORDER_BOTTOM, getBorderBottom());
+        //properties.put(CellPropertyType.BORDER_LEFT, getBorderLeft());
+        //properties.put(CellPropertyType.BORDER_RIGHT, getBorderRight());
+        //properties.put(CellPropertyType.BORDER_TOP, getBorderTop());
+        properties.put(CellPropertyType.BOTTOM_BORDER_COLOR, getBottomBorderColor());
+        properties.put(CellPropertyType.DATA_FORMAT, getDataFormat());
+        properties.put(CellPropertyType.FILL_PATTERN, getFillPattern());
+
+        //properties.put(CellPropertyType.FILL_FOREGROUND_COLOR, getFillForegroundColor());
+        //properties.put(CellPropertyType.FILL_BACKGROUND_COLOR, getFillBackgroundColor());
+        //properties.put(CellPropertyType.FILL_FOREGROUND_COLOR_COLOR, getFillForegroundColorColor());
+        //properties.put(CellPropertyType.FILL_BACKGROUND_COLOR_COLOR, getFillBackgroundColorColor());
+
+        properties.put(CellPropertyType.FONT, getFontIndex());
+        properties.put(CellPropertyType.HIDDEN, getHidden());
+        properties.put(CellPropertyType.INDENTION, getIndention());
+        properties.put(CellPropertyType.LEFT_BORDER_COLOR, getLeftBorderColor());
+        properties.put(CellPropertyType.LOCKED, getLocked());
+        properties.put(CellPropertyType.RIGHT_BORDER_COLOR, getRightBorderColor());
+        //properties.put(CellPropertyType.ROTATION, getRotation());
+        properties.put(CellPropertyType.TOP_BORDER_COLOR, getTopBorderColor());
+        properties.put(CellPropertyType.WRAP_TEXT, getWrapText());
+        //properties.put(CellPropertyType.SHRINK_TO_FIT, getShrinkToFit());
+        //properties.put(CellPropertyType.QUOTE_PREFIXED, getQuotePrefixed());
+        return properties;
+    }
+
+    @Override
+    public void invalidateCachedProperties()
+    {
+        // Properties can't change in this implementation, nothing to invalidate
     }
 }
