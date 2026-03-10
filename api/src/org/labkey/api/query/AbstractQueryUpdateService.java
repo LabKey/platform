@@ -453,6 +453,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         DataIterator it = etl.getDataIterator(context);
 
+        if (null == it)
+            return 0;
+
         try
         {
             if (null != rows)

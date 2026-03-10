@@ -161,8 +161,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public static final String ROOT_RECOMPUTE_ROWID_SET = "RootIdToRecomputeSet";
     public static final String PARENT_RECOMPUTE_NAME_SET = "ParentNameToRecomputeSet";
 
-    public static final String EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_SAMPLE_MERGE = "org.labkey.experiment.api.SampleTypeUpdateServiceDI#ALLOW_ROW_ID_SAMPLE_MERGE";
-
     public static final Map<String, String> SAMPLE_ALT_IMPORT_NAME_COLS;
 
     private static final Map<ExpMaterialTable.Column, JdbcType> ALIQUOT_ROLLUP_FIELDS = Map.of(
@@ -629,67 +627,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
-    /**
-     * Attempt to make the passed in types match the expected types so the script doesn't have to do the conversion
-     */
-    @Deprecated
-    @Override
-    protected Map<String, Object> coerceTypes(Map<String, Object> row, Map<String, Object> providedValues, boolean isUpdate)
-    {
-        Map<String, Object> result = new CaseInsensitiveHashMap<>(row.size());
-        Map<String, ColumnInfo> columnMap = ImportAliasable.Helper.createImportMap(_queryTable.getColumns(), true);
-        Object unitsVal = null;
-        ColumnInfo unitsCol = null;
-        Object amountVal = null;
-        ColumnInfo amountCol = null;
-        if (row.containsKey(Units.name()))
-        {
-            unitsVal = row.get(Units.name());
-            unitsCol = columnMap.get(Units.name());
-        }
-        for (String colName : StoredAmount.namesAndLabels())
-        {
-            if (row.containsKey(colName))
-            {
-                amountVal = row.get(colName);
-                amountCol = columnMap.get(colName);
-                break;
-            }
-        }
-        if (amountVal != null)
-        {
-            String unitsStr = "";
-            if (unitsVal != null)
-                unitsStr = " " + unitsVal;
-
-            providedValues.put(PROVIDED_DATA_PREFIX + StoredAmount.label(),  amountVal + unitsStr);
-        }
-
-        Unit baseUnit = _sampleType != null ? _sampleType.getBaseUnit() : null;
-
-        for (Map.Entry<String, Object> entry : row.entrySet())
-        {
-            ColumnInfo col = columnMap.get(entry.getKey());
-
-            Object value = entry.getValue();
-            if (col != null && col == unitsCol)
-            {
-                value = _SamplesCoerceDataIterator.SampleUnitsConvertColumn.getValue(unitsVal, amountVal, amountCol != null, baseUnit, _sampleType == null ? null : _sampleType.getName());
-            }
-            else if (col != null && col == amountCol)
-            {
-                value = _SamplesCoerceDataIterator.SampleAmountConvertColumn.getValue(amountVal, unitsCol != null, unitsVal, baseUnit, _sampleType == null ? null : _sampleType.getName());
-            }
-            else
-            {
-                value = coerceTypesValue(col, providedValues, entry.getKey(), value);
-            }
-
-            result.put(entry.getKey(), value);
-        }
-        return result;
-    }
-
     @Override
     public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws BatchValidationException
@@ -835,29 +772,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     @Override
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation)
-            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        if (row.containsKey(LSID.name()) && !(row.containsKey(RowId.name()) || row.containsKey(Name.name())))
-            throw new ValidationException("Either RowId or Name is required to update a sample.");
+        throw new UnsupportedOperationException("_update() is no longer supported for samples");
 
-        Map<String, Object> result = super.updateRow(user, container, row, oldRow, allowOwner, retainCreation);
-
-        // add MaterialInput/DataInputs field from parent alias
-        try
-        {
-            Map<String, String> parentAliases = _sampleType.getImportAliases();
-            for (String alias : parentAliases.keySet())
-            {
-                if (row.containsKey(alias))
-                    result.put(parentAliases.get(alias), result.get(alias));
-            }
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-
-        return result;
     }
 
     @Override
@@ -1447,7 +1364,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                         // While accepting RowId during merge is not our preferred behavior, we want to give users a way
                         // to opt-in to the old behavior where RowId is accepted and ignored.
-                        if (isMerge && !OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_SAMPLE_MERGE))
+                        if (isMerge && !OptionalFeatureService.get().isFeatureEnabled(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE))
                         {
                             context.getErrors().addRowError(new ValidationException("RowId is not accepted when merging samples. Specify only the sample name instead.", RowId.name()));
                             return null;
@@ -1466,8 +1383,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 return null;
             }
 
-            if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
-                drop.remove(LSID.name());
             if (!drop.isEmpty())
                 di = new DropColumnsDataIterator(di, drop);
 
@@ -1652,18 +1567,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             _nameState = sampleType.getNameGenState(skipDuplicateCheck, true, _container, user);
             lsidBuilder = sampleType.generateSampleLSID();
 
-            boolean useLsidForUpdate = context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
-            if (useLsidForUpdate)
-                selectAll(CaseInsensitiveHashSet.of(Name.name(), RootMaterialRowId.name()));
-            else
-                selectAll(CaseInsensitiveHashSet.of(Name.name(), LSID.name(), RootMaterialRowId.name()));
+            selectAll(CaseInsensitiveHashSet.of(Name.name(), LSID.name(), RootMaterialRowId.name()));
 
             addColumn(new BaseColumnInfo(Name.fieldKey(), JdbcType.VARCHAR), (Supplier<String>)() -> generatedName);
-            if (!useLsidForUpdate)
-            {
-                DbSequence lsidDbSeq = sampleType.getSampleLsidDbSeq(batchSize, sampleType.getContainer());
-                addColumn(new BaseColumnInfo(LSID.name(), JdbcType.VARCHAR), (Supplier<String>) () -> lsidBuilder.setObjectId(String.valueOf(lsidDbSeq.next())).toString());
-            }
+
+            DbSequence lsidDbSeq = sampleType.getSampleLsidDbSeq(batchSize, sampleType.getContainer());
+            addColumn(new BaseColumnInfo(LSID.name(), JdbcType.VARCHAR), (Supplier<String>) () -> lsidBuilder.setObjectId(String.valueOf(lsidDbSeq.next())).toString());
+
             addColumn(new BaseColumnInfo(CpasType.fieldKey(), JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
             addColumn(new BaseColumnInfo(MaterialSourceId.fieldKey(), JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
         }

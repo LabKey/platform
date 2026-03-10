@@ -309,7 +309,6 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                                     options.put(SampleTypeService.ConfigParameters.DeferAliquotRuns, true);
                                     if (isUpdate)
                                         options.put(QueryUpdateService.ConfigParameters.SkipRequiredFieldValidation, true);
-                                    options.put(ExperimentService.QueryOptions.UseLsidForUpdate, !isUpdate);
                                     options.put(ExperimentService.QueryOptions.DeferRequiredLineageValidation, true);
                                     context.setConfigParameters(options);
 
