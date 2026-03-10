@@ -459,7 +459,6 @@ describe('Duplicate IDs', () => {
             }]
         }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
             errorResp = JSON.parse(result.text);
-            expect(errorResp).toBe('a');
             expect(errorResp['exception']).toBe('Duplicate key provided: ' + dataName1);
         });
 
@@ -472,7 +471,7 @@ describe('Duplicate IDs', () => {
                 rowId: data1RowId
             },{
                 description: 'update',
-                name: data2RowId
+                name: dataName2
             },{
                 description: 'update',
                 rowId: data1RowId
@@ -952,6 +951,20 @@ describe('Data CRUD', () => {
         expect(caseInsensitive(row2, 'name')).toBe('mixed_rename2');
         expect(caseInsensitive(row3, 'description')).toBe('mixedVal3 desc');
         expect(caseInsensitive(row3, fieldName)).toBe('val3'); // fieldName value should not be updated for row3
+
+        // update using name as key, should succeed, verify update is successful and data are updated correctly
+        await ExperimentCRUDUtils.updateRows(server, [
+            { name: dataName1, description: 'updByName1', [fieldName]: 'nameVal1' },
+            { name: 'mixed_rename2', description: 'updByName2', [fieldName]: 'nameVal2' },
+        ], 'exp.data', dataType, topFolderOptions, editorUserOptions);
+
+        rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
+        row1 = findRow(rows, row1RowId);
+        row2 = findRow(rows, row2RowId);
+        expect(caseInsensitive(row1, 'description')).toBe('updByName1');
+        expect(caseInsensitive(row1, fieldName)).toBe('nameVal1');
+        expect(caseInsensitive(row2, 'description')).toBe('updByName2');
+        expect(caseInsensitive(row2, fieldName)).toBe('nameVal2');
 
         // update names of both rows using lsid (ignored) an rowId as key, verify update is successful and names are updated correctly
         const newName1 = 'RenamedByLsid1';

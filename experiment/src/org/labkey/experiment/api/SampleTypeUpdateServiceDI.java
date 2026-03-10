@@ -531,66 +531,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         try
         {
             results = getSchema().getDbSchema().getScope().executeWithRetry(tx ->
-            {
-                int index = 0;
-                int numPartitions = 0;
-                List<Map<String, Object>> ret = new ArrayList<>();
-
-                Set<Long> observedRowIds = new HashSet<>();
-                Set<String> observedNames = new CaseInsensitiveHashSet();
-
-                while (index < rows.size())
-                {
-                    CaseInsensitiveHashSet rowKeys = new CaseInsensitiveHashSet(rows.get(index).keySet());
-                    confirmAmountAndUnitsColumns(rowKeys);
-
-                    int nextIndex = index + 1;
-                    while (nextIndex < rows.size() && rowKeys.equals(new CaseInsensitiveHashSet(rows.get(nextIndex).keySet())))
-                        nextIndex++;
-
-                    List<Map<String, Object>> rowsToProcess = rows.subList(index, nextIndex);
-                    index = nextIndex;
-                    numPartitions++;
-
-                    DataIteratorContext context = getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters);
-
-                    // skip audit summary for the partitions, we will perform it once at the end
-                    context.putConfigParameter(ConfigParameters.SkipAuditSummary, true);
-
-                    List<Map<String, Object>> subRet = super._updateRowsUsingDIB(user, container, rowsToProcess, context, extraScriptContext);
-
-                    // we need to throw if we don't want executeWithRetry() attempt commit()
-                    if (context.getErrors().hasErrors())
-                        throw new DbScope.RetryPassthroughException(context.getErrors());
-
-                    if (subRet != null)
-                    {
-                        ret.addAll(subRet);
-
-                        // Check if duplicate rows have been processed across the partitions
-                        // Only start checking for duplicates after the first partition has been processed.
-                        if (numPartitions > 1)
-                        {
-                            // If we are on the second partition, then lazily check all previous rows, otherwise check only the current partition
-                            checkPartitionForDuplicates(numPartitions == 2 ? ret : subRet, observedRowIds, observedNames, errors);
-                        }
-
-                        if (errors.hasErrors())
-                            throw new DbScope.RetryPassthroughException(errors);
-                    }
-                }
-
-                if (numPartitions > 1)
-                {
-                    var auditEvent = tx.getAuditEvent();
-                    if (auditEvent != null)
-                        auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.DataIteratorPartitions, numPartitions);
-                }
-
-                _addSummaryAuditEvent(container, user, getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters), ret.size());
-
-                return ret;
-            });
+                    updateRowsUsingPartitionedDIB(tx, user, container, rows, errors, finalConfigParameters, extraScriptContext));
         }
         catch (DbScope.RetryPassthroughException retryException)
         {
@@ -607,24 +548,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return results;
     }
 
-    private void checkPartitionForDuplicates(List<Map<String, Object>> partitionRows, Set<Long> globalRowIds, Set<String> globalNames, BatchValidationException errors)
+    @Override
+    protected void validatePartitionedRowKeys(Collection<String> columns)
     {
-        for (Map<String, Object> row : partitionRows)
-        {
-            Long rowId = MapUtils.getLong(row, RowId.name());
-            if (rowId != null && !globalRowIds.add(rowId))
-            {
-                errors.addRowError(new ValidationException("Duplicate key provided: " + rowId));
-                return;
-            }
-
-            Object nameObj = row.get(Name.name());
-            if (nameObj != null && !globalNames.add(nameObj.toString()))
-            {
-                errors.addRowError(new ValidationException("Duplicate key provided: " + nameObj));
-                return;
-            }
-        }
+        confirmAmountAndUnitsColumns(columns);
     }
 
     @Override

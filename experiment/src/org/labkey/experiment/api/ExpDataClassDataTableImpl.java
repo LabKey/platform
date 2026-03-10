@@ -692,7 +692,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         // all columns from dataclass property table except key columns
         Set<String> pCols = new CaseInsensitiveHashSet(provisioned.getColumnNameSet());
         pCols.remove("name");
-        pCols.remove("lsid"); // TODO remove
         pCols.remove("rowId");
 
         boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, pCols);
@@ -1415,7 +1414,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
         @Override
-        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException // TODO remove
+        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys)
         {
             throw new UnsupportedOperationException("_update() is no longer supported for dataclass");
         }
@@ -1426,38 +1425,20 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (rows == null || rows.isEmpty())
                 return Collections.emptyList();
 
+            List<Map<String, Object>> results;
             Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
             recordDataIteratorUsed(configParameters);
 
-            List<Map<String, Object>> results = new ArrayList<>();
-            int index = 0;
-
-            while (index < rows.size())
+            try
             {
-                // TODO: check for duplicates
-
-                CaseInsensitiveHashSet rowKeys = new CaseInsensitiveHashSet(rows.get(index).keySet());
-
-                int nextIndex = index + 1;
-                while (nextIndex < rows.size() && rowKeys.equals(new CaseInsensitiveHashSet(rows.get(nextIndex).keySet())))
-                    nextIndex++;
-
-                List<Map<String, Object>> rowsToProcess = rows.subList(index, nextIndex);
-                index = nextIndex;
-
-                DataIteratorContext context = getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters);
-                List<Map<String, Object>> subRet = super._updateRowsUsingDIB(user, container, rowsToProcess, context, extraScriptContext);
-
-                if (context.getErrors().hasErrors())
-                    throw context.getErrors();
-
-                if (subRet != null)
-                    results.addAll(subRet);
-
-                // TODO: record partitions
+                results = getSchema().getScope().executeWithRetry(tx ->
+                        updateRowsUsingPartitionedDIB(tx, user, container, rows, errors, finalConfigParameters, extraScriptContext));
             }
-
-            // summary audit?
+            catch (DbScope.RetryPassthroughException retryException)
+            {
+                retryException.rethrow(BatchValidationException.class);
+                throw retryException.throwRuntimeException();
+            }
 
             return results;
         }
