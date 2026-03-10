@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -37,6 +38,7 @@ import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
@@ -79,7 +81,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
-import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -91,8 +92,10 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -136,9 +139,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 public class AttachmentServiceImpl implements AttachmentService
 {
+    private static final Logger LOG = LogHelper.getLogger(AttachmentServiceImpl.class, "");
     private static final String UPLOAD_LOG = ".upload.log";
     private static final Map<String, AttachmentParentType> ATTACHMENT_TYPE_MAP = new HashMap<>();
     private static final Set<String> ATTACHMENT_COLUMNS = Set.of("Parent", "Container", "DocumentName", "DocumentSize", "DocumentType", "Created", "CreatedBy", "LastIndexed");
@@ -176,7 +181,6 @@ public class AttachmentServiceImpl implements AttachmentService
             addAuditEvent(user, parent, filename, "The attachment " + filename + " was downloaded");
         }
     }
-
 
     @Override
     public void download(HttpServletResponse response, AttachmentParent parent, String filename, boolean inlineIfPossible) throws ServletException, IOException
@@ -994,7 +998,6 @@ public class AttachmentServiceImpl implements AttachmentService
         writeDocument(writer, parent, name, null, asAttachment);
     }
 
-
     @Override
     @NotNull
     public InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException
@@ -1085,6 +1088,39 @@ public class AttachmentServiceImpl implements AttachmentService
         }
     }
 
+    private record Orphan(String documentName, String parentType){}
+
+    @Override
+    public void detectOrphans(Container c)
+    {
+        TableInfo table = CoreSchema.getInstance().getTableInfoDocuments();
+        // Log orphaned attachments in this container, but in dev mode only, since this is for our testing. Also, we
+        // don't yet offer a way to delete orphaned attachments via the UI, so it's not helpful to inform admins.
+        if (AppProps.getInstance().isDevMode())
+        {
+            // Find all attachments in this container that don't use the container itself as the parent (since those
+            // are the responsibility of this container listener).
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), c.getId());
+            List<Orphan> orphans = new TableSelector(table, new CsvSet("DocumentName, ParentType"), filter, null).getArrayList(Orphan.class);
+            if (!orphans.isEmpty())
+            {
+                LOG.error("Found {} in this container, which likely indicates a problem with a delete method or a container listener.", StringUtilsLabKey.pluralize(orphans.size(), "orphaned attachment"));
+
+                final String message;
+                if (orphans.size() > 20)
+                {
+                    orphans = orphans.subList(0, 20);
+                    message = "The first 20";
+                }
+                else
+                {
+                    message = "All";
+                }
+
+                LOG.error("{} detected orphans are listed below:\n{}", message, orphans.stream().map(Record::toString).collect(Collectors.joining("\n")));
+            }
+        }
+    }
 
     private CoreSchema coreTables()
     {
