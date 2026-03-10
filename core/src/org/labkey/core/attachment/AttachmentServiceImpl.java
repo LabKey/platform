@@ -1098,7 +1098,7 @@ public class AttachmentServiceImpl implements AttachmentService
     private record Orphan(String documentName, String parentType){}
 
     @Override
-    public void detectOrphans(Container c)
+    public void detectOrphans()
     {
         // Log orphaned attachments in this server, but in dev mode only, since this is for our testing. Also, we
         // don't yet offer a way to delete orphaned attachments via the UI, so it's not helpful to inform admins.
