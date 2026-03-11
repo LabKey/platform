@@ -56,7 +56,9 @@ import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
+import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.CoerceDataIterator;
+import org.labkey.api.dataiterator.DataClassUpdateAddColumnsDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -152,11 +154,13 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.Name;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInputs;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.RowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.LSID;
+import static org.labkey.api.query.DefaultQueryUpdateService.getKeyColumnAliasForUpdate;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 
 public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassDataTable.Column> implements ExpDataClassDataTable
@@ -1064,16 +1068,28 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             ColumnInfo cpasTypeCol = expData.getColumn("cpasType");
             step0.addColumn(cpasTypeCol, new SimpleTranslator.ConstantColumn(_dataClass.getLSID()));
 
+            Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(input);
+
             if (context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE)
             {
+                String keyColumnAlias = getKeyColumnAliasForUpdate(expData, columnNameMap);
+                if (keyColumnAlias == null)
+                {
+                    context.getErrors().addRowError(new ValidationException(String.format(DUPLICATE_COLUMN_IN_DATA_ERROR, ExpDataTable.Column.RowId.name())));
+                    return null;
+                }
+                step0.addNullColumn(Column.LSID.name(), JdbcType.VARCHAR);
                 step0.selectAll();
-                return LoggingDataIterator.wrap(step0.getDataIterator(context));
+
+                // add lsid column (for Attachment) but need to re-query it
+                var added = new DataClassUpdateAddColumnsDataIterator(new CachingDataIterator(step0), expData, c ,_dataClass.getRowId(), keyColumnAlias);
+                return LoggingDataIterator.wrap(added);
             }
 
             step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId")); //TODO can this be moved up?
 
             // Ensure we have a name column -- makes the NameExpressionDataIterator easier
-            if (!DataIteratorUtil.createColumnNameMap(step0).containsKey("name"))
+            if (!columnNameMap.containsKey("name"))
             {
                 ColumnInfo nameCol = expData.getColumn("name");
                 step0.addColumn(nameCol, (Supplier<String>)() -> null);

@@ -537,7 +537,12 @@ public class StatementDataIterator extends AbstractDataIterator
     public Object get(int i)
     {
         if (null != _keyColumnInfo.get(i))
-            return _keyValues.get(i);
+        {
+            Object value = _keyValues.get(i);
+            if (value != null)
+                return value;
+        }
+
         return _data.get(i);
     }
 

@@ -88,6 +88,9 @@ public class ExpDataClassType implements AttachmentParentType
                         ))
                         .append(" AS Description FROM expdataclass.")
                         .append(domain.getStorageTableName())
+                        .append(" ds JOIN ")
+                        .append(ExperimentService.get().getTinfoData())
+                        .append(" d ON d.rowId = ds.rowid")
                         .append(" WHERE ").append(where)
                 );
         });

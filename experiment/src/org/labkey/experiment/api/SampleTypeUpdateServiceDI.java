@@ -1329,7 +1329,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 addAliquotedFrom.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
                 addAliquotedFrom.selectAll();
 
-                String keyColumnAlias = getKeyColumnAlias(materialTable, columnNameMap);
+                String keyColumnAlias = getKeyColumnAliasForUpdate(materialTable, columnNameMap);
                 if (keyColumnAlias == null)
                 {
                     context.getErrors().addRowError(new ValidationException(String.format(DUPLICATE_COLUMN_IN_DATA_ERROR, RowId.name())));
@@ -1377,22 +1377,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             // TODO: does not handle insertIgnore
             DataIterator names = new _GenerateNamesDataIterator(sampleType, container, user, DataIteratorUtil.wrapMap(di, false), context, batchSize);
             return LoggingDataIterator.wrap(names);
-        }
-
-        private static @Nullable String getKeyColumnAlias(TableInfo materialTable, @NotNull Map<String, Integer> columnNameMap)
-        {
-            // Currently, SampleUpdateAddColumnsDataIterator is being called before a translator is invoked to
-            // remap column labels to columns (e.g., "Row Id" -> "RowId"). Due to this, we need to search the
-            // map of columns for the key column.
-            var rowIdAliases = ImportAliasable.Helper.createImportSet(materialTable.getColumn(RowId.fieldKey()));
-            rowIdAliases.retainAll(columnNameMap.keySet());
-
-            if (rowIdAliases.size() == 1)
-                return rowIdAliases.iterator().next();
-            if (rowIdAliases.isEmpty())
-                return Name.name();
-
-            return null;
         }
 
         private static boolean isReservedHeader(String name)
