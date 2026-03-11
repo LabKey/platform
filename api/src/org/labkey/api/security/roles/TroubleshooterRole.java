@@ -39,7 +39,7 @@ public class TroubleshooterRole extends AbstractRootContainerRole
     }
 
     @Override
-    public boolean isAvailableEverywhere()
+    public boolean isApplicableOutsideRoot()
     {
         return false; // This ensures troubleshooters get these permissions (esp. ReadPermission) only in the root
     }
