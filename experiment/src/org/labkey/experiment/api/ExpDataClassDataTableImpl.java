@@ -1095,7 +1095,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 step0.addColumn(nameCol, (Supplier<String>)() -> null);
             }
 
-            if (context.getSelectIds() && !columnNameMap.containsKey(RowId.name()))
+            if (Boolean.TRUE.equals(context.getSelectIds()) && !columnNameMap.containsKey(RowId.name()))
             {
                 step0.addNullColumn(RowId.name(), JdbcType.INTEGER);
             }
