@@ -21,6 +21,8 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DisplayColumn;
@@ -38,6 +40,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.view.ActionURL;
@@ -162,14 +165,37 @@ public class ListManagerSchema extends UserSchema
                 @Override
                 public ActionButton createDeleteButton()
                 {
+                    if (!getContainer().hasPermission(getUser(), DesignListPermission.class))
+                        return null;
+
+                    if (!getContainer().hasPermission(getUser(), AdminPermission.class))
+                    {
+                        ActionURL urlDelete = new ActionURL(ListController.DeleteListDefinitionAction.class, getContainer());
+                        urlDelete.addReturnUrl(getReturnUrl());
+                        ActionButton btnDelete = new ActionButton(urlDelete, "Delete");
+                        btnDelete.setIconCls("trash");
+                        btnDelete.setActionType(ActionButton.Action.GET);
+                        btnDelete.setRequiresSelection(true);
+                        return btnDelete;
+                    }
+
+                    MenuButton menuDelete = new MenuButton("Delete");
+                    menuDelete.setIconCls("trash");
+                    menuDelete.setDisplayPermission(DesignListPermission.class);
+                    menuDelete.setRequiresSelection(true);
+
                     ActionURL urlDelete = new ActionURL(ListController.DeleteListDefinitionAction.class, getContainer());
                     urlDelete.addReturnUrl(getReturnUrl());
-                    ActionButton btnDelete = new ActionButton(urlDelete, "Delete");
-                    btnDelete.setIconCls("trash");
-                    btnDelete.setActionType(ActionButton.Action.GET);
-                    btnDelete.setDisplayPermission(DesignListPermission.class);
-                    btnDelete.setRequiresSelection(true);
-                    return btnDelete;
+                    menuDelete.addMenuItem("Delete List", "if (verifySelected(" + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form, \"" +
+                            urlDelete.getLocalURIString() + "\", \"GET\", \"rows\")) " + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form.submit()");
+
+
+                    ActionURL urlTruncate = new ActionURL(ListController.TruncateListDataAction.class, getContainer());
+                    urlTruncate.addReturnUrl(getReturnUrl());
+                    menuDelete.addMenuItem("Delete All Data from List", "if (verifySelected(" + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form, \"" +
+                            urlTruncate.getLocalURIString() + "\", \"GET\", \"rows\")) " + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form.submit()");
+
+                    return menuDelete;
                 }
 
                 private ActionButton createExportArchiveButton()

@@ -31,7 +31,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
@@ -126,33 +126,6 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         return UserManager.getUser(_adminUserId);
     }
 
-    private static boolean canImpersonateGroup(@Nullable Container project, User user, Group group)
-    {
-        // Impersonating the "Site: Guests" group leads to confusion and is not useful. Better to just log out. See #20140.
-        if (group.isGuests())
-            return false;
-
-        // Impersonating "Site: Administrators" or any other group assigned a privileged role by a non-site admin is confusing as well.
-        if (group.hasPrivilegedRole() && !user.hasSiteAdminPermission())
-            return false;
-
-        // Site/app admin can impersonate any other group
-        if (user.hasRootAdminPermission())
-            return true;
-
-        // Project admin...
-        if (null != project && project.hasPermission(user, AdminPermission.class))
-        {
-            // ...can impersonate any project group but must be a member of a site group to impersonate it
-            if (group.isProjectGroup())
-                return group.getContainer().equals(project.getId());
-            else
-                return user.isInGroup(group.getUserId());
-        }
-
-        return false;
-    }
-
     public static void addMenu(NavTree menu)
     {
         NavTree groupMenu = new NavTree("Group");
@@ -160,11 +133,12 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         menu.addChild(groupMenu);
     }
 
+    // Returns the groups this user is allowed to impersonate. Empty for users who aren't allowed to impersonate.
     public static Collection<Group> getValidImpersonationGroups(Container c, User user)
     {
         LinkedList<Group> validGroups = new LinkedList<>();
-        List<Group> groups = SecurityManager.getGroups(c.getProject(), true);
         Container project = c.getProject();
+        List<Group> groups = SecurityManager.getGroups(project, true);
 
         // Site groups are always first, followed by project groups
         for (Group group : groups)
@@ -174,6 +148,31 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         return validGroups;
     }
 
+    private static boolean canImpersonateGroup(@Nullable Container project, User adminUser, Group group)
+    {
+        // Impersonating the "Site: Guests" group leads to confusion and is not useful. Better to just log out. See #20140.
+        if (group.isGuests())
+            return false;
+
+        // Site admin, app admin, and impersonating troubleshooter can impersonate any group, even those assigned
+        // privileged roles. However, in the case where an app admin impersonates such a group, the privileged roles
+        // are filtered out (see GroupImpersonationContext.getAssignedRoles() below).
+        if (adminUser.hasRootPermission(ImpersonatePermission.class))
+            return true;
+
+        // Project admin...
+        if (null != project && project.hasPermission(adminUser, ImpersonatePermission.class))
+        {
+            // ...can impersonate any project group but must be a member of a site group to impersonate it
+            if (group.isProjectGroup())
+                return group.getContainer().equals(project.getId());
+            else
+                return adminUser.isInGroup(group.getUserId());
+        }
+
+        return false;
+    }
+
     private static class GroupImpersonationContext extends AbstractImpersonationContext
     {
         private final Group _group;
@@ -181,13 +180,13 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
 
         @JsonCreator
         protected GroupImpersonationContext(
-                @JsonProperty("_project") @Nullable Container project,
-                @JsonProperty("_adminUser") User adminUser,
-                @JsonProperty("_group") Group group,
-                @JsonProperty("_groups") PrincipalArray groups,
-                @JsonProperty("_returnUrl") ActionURL returnUrl,
-                @JsonProperty("_factory") ImpersonationContextFactory factory)
-
+            @JsonProperty("_project") @Nullable Container project,
+            @JsonProperty("_adminUser") User adminUser,
+            @JsonProperty("_group") Group group,
+            @JsonProperty("_groups") PrincipalArray groups,
+            @JsonProperty("_returnUrl") ActionURL returnUrl,
+            @JsonProperty("_factory") ImpersonationContextFactory factory
+        )
         {
             super(adminUser, project, returnUrl, factory);
             _group = group;

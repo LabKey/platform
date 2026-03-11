@@ -1,1 +1,2 @@
-EXEC core.executeJavaUpgradeCode 'dropProvisionedDataClassLsidColumn';
+-- SQL Server only
+EXEC core.executeJavaUpgradeCode 'shortenAllStorageNames';
