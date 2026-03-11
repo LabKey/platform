@@ -12149,9 +12149,6 @@ public class AdminController extends SpringActionController
                                 jsonObj.put("ip", ipAddress);
                                 if (isNotBlank(userAgent) && !jsonObj.has("user_agent"))
                                     jsonObj.put("user_agent", userAgent);
-                                String cspVersion = request.getParameter("cspVersion");
-                                if (null != cspVersion)
-                                    jsonObj.put("cspVersion", cspVersion);
                             }
 
                             var jsonStr = jsonObj.toString(2);
