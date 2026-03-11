@@ -74,7 +74,7 @@ import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractPermission;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
+import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -822,7 +822,7 @@ public class SecurityManager
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
 
-        if (user.hasRootAdminPermission())
+        if (user.hasRootPermission(ImpersonatePermission.class))
             project = null;
 
         impersonate(viewContext, new UserImpersonationContextFactory(project, user, impersonatedUser, returnUrl));
@@ -839,7 +839,7 @@ public class SecurityManager
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
 
-        if (user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
+        if (user.hasRootPermission(ImpersonatePermission.class))
             project = null;
 
         impersonate(viewContext, new RoleImpersonationContextFactory(project, user, newImpersonationRoles, currentImpersonationRoles, returnUrl));
@@ -1412,7 +1412,7 @@ public class SecurityManager
     }
 
     // A permission class that uniquely identifies the root admins, of which we insist there must be at least one
-    public static final Class<? extends Permission> ROOT_ADMIN_PERMISSION = CanImpersonateSiteRolesPermission.class;
+    public static final Class<? extends Permission> ROOT_ADMIN_PERMISSION = ImpersonatePermission.class;
 
     public static boolean isRootAdmin(User user)
     {
