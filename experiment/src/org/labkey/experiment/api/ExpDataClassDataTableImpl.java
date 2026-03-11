@@ -1095,6 +1095,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 step0.addColumn(nameCol, (Supplier<String>)() -> null);
             }
 
+            if (context.getSelectIds() && !columnNameMap.containsKey(RowId.name()))
+            {
+                step0.addNullColumn(RowId.name(), JdbcType.INTEGER);
+            }
+
             ColumnInfo lsidCol = expData.getColumn("lsid");
 
             // TODO: validate dataFileUrl column, it will be saved later

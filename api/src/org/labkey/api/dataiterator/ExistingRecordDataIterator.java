@@ -153,6 +153,8 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     @Override
     public Object get(int i)
     {
+        assert(i <= existingColIndex);
+
         if (i<existingColIndex)
             return _delegate.get(i);
         Integer rowNumber = asInteger(_delegate.get(0));
