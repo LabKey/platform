@@ -1,6 +1,7 @@
 package org.labkey.api.dataiterator;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
@@ -14,7 +15,9 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ValidationException;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -42,11 +45,13 @@ public class DataClassUpdateAddColumnsDataIterator extends WrapperDataIterator
 
     int lastPrefetchRowNumber = -1;
     final IntHashMap<String> lsids = new IntHashMap<>();
+    final DataIteratorContext _context;
 
-    public DataClassUpdateAddColumnsDataIterator(DataIterator in, TableInfo target, Container container, long dataClassId, String keyColumnName)
+    public DataClassUpdateAddColumnsDataIterator(DataIterator in, @NotNull DataIteratorContext context, TableInfo target, Container container, long dataClassId, String keyColumnName)
     {
         super(in);
         this._unwrapped = (CachingDataIterator)in;
+        _context = context;
         _tableInfo = target;
         _targetContainer = container;
         _dataClassId = dataClassId;
@@ -111,7 +116,9 @@ public class DataClassUpdateAddColumnsDataIterator extends WrapperDataIterator
         boolean numericKey = pkColumn.isNumericType();
         JdbcType jdbcType = pkColumn.getJdbcType();
         Map<Integer, Object> rowKeyMap = new LinkedHashMap<>();
-        Map<Object, Integer> keyRowMap = new LinkedHashMap<>();
+        Map<Object, Set<Integer>> keyRowMap = new LinkedHashMap<>();
+        Set<Object> notFoundKeys = new HashSet<>();
+
         do
         {
             lastPrefetchRowNumber = asInteger(_delegate.get(0));
@@ -127,7 +134,11 @@ public class DataClassUpdateAddColumnsDataIterator extends WrapperDataIterator
                 throw new IllegalArgumentException(keyFieldName + " value not provided on row " + lastPrefetchRowNumber);
 
             rowKeyMap.put(lastPrefetchRowNumber, key);
-            keyRowMap.put(key, lastPrefetchRowNumber);
+            notFoundKeys.add(key);
+            // if keyRowMap doesn't contain key, add new set, then add row number to set for this key
+            if (!keyRowMap.containsKey(key))
+                keyRowMap.put(key, new HashSet<>());
+            keyRowMap.get(key).add(lastPrefetchRowNumber);
             lsids.put(lastPrefetchRowNumber, null);
         }
         while (--rowsToFetch > 0 && _delegate.next());
@@ -144,10 +155,17 @@ public class DataClassUpdateAddColumnsDataIterator extends WrapperDataIterator
             Object key = result.get(keyFieldName);
             Object lsidObj = result.get(LSID.name());
 
-            Integer rowInd = keyRowMap.get(key);
+            Set<Integer> rowInds = keyRowMap.get(key);
             if (lsidObj != null)
-                lsids.put(rowInd, (String) lsidObj);
+            {
+                for (Integer rowInd : rowInds)
+                    lsids.put(rowInd, (String) lsidObj);
+                notFoundKeys.remove(key);
+            }
         }
+
+        if (!notFoundKeys.isEmpty())
+            _context.getErrors().addRowError(new ValidationException("Data not found for " + notFoundKeys));
 
         // backup to where we started so caller can iterate through them one at a time
         _unwrapped.reset(); // unwrapped _delegate
@@ -157,6 +175,9 @@ public class DataClassUpdateAddColumnsDataIterator extends WrapperDataIterator
     @Override
     public boolean next() throws BatchValidationException
     {
+        if (_context.getErrors().hasErrors())
+            return false;
+
         // NOTE: we have to call mark() before we call next() if we want the 'next' row to be cached
         _unwrapped.mark();  // unwrapped _delegate
         boolean ret = super.next();

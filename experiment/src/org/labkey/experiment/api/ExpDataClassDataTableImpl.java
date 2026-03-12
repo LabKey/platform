@@ -1082,7 +1082,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 step0.selectAll();
 
                 // add lsid column (for Attachment) but need to re-query it
-                var added = new DataClassUpdateAddColumnsDataIterator(new CachingDataIterator(step0), expData, c ,_dataClass.getRowId(), keyColumnAlias);
+                var added = new DataClassUpdateAddColumnsDataIterator(new CachingDataIterator(step0), context, expData, c ,_dataClass.getRowId(), keyColumnAlias);
                 return LoggingDataIterator.wrap(added);
             }
 
@@ -1498,6 +1498,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 context.putConfigParameter(QueryUpdateService.ConfigParameters.CheckForCrossProjectData, true);
             if (context.getInsertOption() == InsertOption.IMPORT || context.getInsertOption() == InsertOption.MERGE)
                 context.setSelectIds(true); // select rowId because provisioned expdataclass.rowId and QueryUpdateAuditEvent.rowPk needs actual rowId
+            else if (context.getSelectIds() == null && context.getInsertOption() == InsertOption.UPDATE)
+                context.setSelectIds(false); // for update, don't add RowId if it wasn't in the input (without setSelectIds(false), rowId col will be added if table.hasTriggers by TableInsertUpdateDataIterator
         }
 
         @Override

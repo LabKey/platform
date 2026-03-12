@@ -297,11 +297,11 @@ describe('Import with update / merge', () => {
 
        // Issue 52922: Blank / bogus  id in the file are getting ignored in update from file
        let blankKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataType, "UPDATE", topFolderOptions, editorUserOptions);
-       expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_NO_EXPRESSION) > -1).toBeTruthy();
+       expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_WITH_EXPRESSION) > -1).toBeTruthy();
        blankKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataType, "UPDATE", subfolder1Options, editorUserOptions);
-       expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_NO_EXPRESSION) > -1).toBeTruthy();
+       expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_WITH_EXPRESSION) > -1).toBeTruthy();
        blankKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\n\tisBlank", dataType, "UPDATE", topFolderOptions, editorUserOptions);
-       expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_NO_EXPRESSION) > -1).toBeTruthy();
+       expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_WITH_EXPRESSION) > -1).toBeTruthy();
        blankKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataType, "MERGE", topFolderOptions, editorUserOptions);
        expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_NO_EXPRESSION) > -1).toBeTruthy();
        blankKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataType, "MERGE", subfolder1Options, editorUserOptions);
