@@ -61,7 +61,9 @@ public abstract class AbstractRootContainerRole extends AbstractRole
         return resource instanceof Container && ((Container)resource).isRoot();
     }
 
-    public boolean isAvailableEverywhere()
+    // Most site roles are applicable outside the root (i.e., every container). Troubleshooters are an exception
+    // because we want them to have read in the root but not elsewhere.
+    public boolean isApplicableOutsideRoot()
     {
         return true;
     }

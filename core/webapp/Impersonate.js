@@ -35,7 +35,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
 
     getPanel: function(){
         var instructions = LABKEY.Security.currentUser.isRootAdmin ?
-            "As a site or application administrator, you can impersonate any user on the site." +
+            "As a site administrator, application administrator, or impersonating troubleshooter, you can impersonate any user on the site." +
             (!LABKEY.Security.currentUser.isSystemAdmin ? " While impersonating you will not inherit the user's "
                 + "site-level roles (e.g., Site Administrator, Developer)." : "") :
 
@@ -191,7 +191,7 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
 
     getPanel: function(){
         var instructions = LABKEY.Security.currentUser.isRootAdmin ?
-            "As a site or application administrator, you can impersonate any site or project group." :
+            "As a site administrator, application administrator, or impersonating troubleshooter, you can impersonate any site or project group." :
             "As a project administrator, you can impersonate any project group in this project or any site group in which you're member. While impersonating you will be restricted to this project.";
 
         var divContainer = Ext4.create('Ext.container.Container', {
@@ -315,7 +315,7 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
 
     getPanel: function(){
         var instructions = LABKEY.Security.currentUser.canImpersonateSiteRoles ?
-            "As a site administrator, application administrator, or impersonating troubleshooter you can impersonate one or more security roles. While impersonating you will have access to " +
+            "As a site administrator, application administrator, or impersonating troubleshooter, you can impersonate one or more security roles. While impersonating you will have access to " +
                 "the entire site, limited to the permissions provided by the selected roles(s)." :
             "As a project administrator, you can impersonate one or more security roles. While impersonating you will be restricted to this project.";
 

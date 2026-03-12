@@ -25,11 +25,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Describes the ability to perform administration. Note that this is distinct from {@link org.labkey.api.security.roles.SiteAdminRole},
+ * Provides the ability to perform administration. Note that this is distinct from {@link org.labkey.api.security.roles.SiteAdminRole},
  * which is far more all-encompassing.
- *
- * User: Dave
- * Date: Apr 28, 2009
  */
 public class AdminPermission extends AbstractPermission
 {
