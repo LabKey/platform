@@ -204,7 +204,7 @@ public enum PropertyType implements SimpleConvert
             return prefix + "Value";
         }
     },
-    MULTI_CHOICE("http://cpas.fhcrc.org/exp/xml#multiChoice", "MultiChoice", '?' /* unsupported in exp.PropertyValues */, JdbcType.ARRAY, 0, "textarea", CellType.STRING, List.class)
+    MULTI_CHOICE("http://cpas.fhcrc.org/exp/xml#multiChoice", "MultiChoice", '?' /* unsupported in exp.PropertyValues */, JdbcType.ARRAY, 0, "textarea", CellType.STRING, MultiChoice.Array.class)
     {
         @Override
         protected Object convertExcelValue(Cell cell) throws ConversionException
