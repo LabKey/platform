@@ -18,9 +18,7 @@ package org.labkey.api.security.permissions;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Describes the ability to view information within the system.
- * User: Dave
- * Date: Apr 23, 2009
+ * Provides the ability to view information within the system
  */
 @AllowedForReadOnlyUser
 public class ReadPermission extends AbstractPermission

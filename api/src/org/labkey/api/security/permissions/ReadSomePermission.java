@@ -16,9 +16,7 @@
 package org.labkey.api.security.permissions;
 
 /**
- * Describes the ability to read a limited subset of information within a specific context.
- * User: Dave
- * Date: Apr 30, 2009
+ * Provides the ability to read a limited subset of information within a specific context
  */
 @AllowedForReadOnlyUser
 public class ReadSomePermission extends AbstractPermission

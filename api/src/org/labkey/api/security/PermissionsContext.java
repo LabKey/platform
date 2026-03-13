@@ -64,7 +64,7 @@ public interface PermissionsContext extends Serializable
                 if (!(role instanceof AbstractRootContainerRole siteRole))
                     throw new IllegalStateException("Root roles should all be AbstractRootContainerRole");
 
-                return siteRole.isAvailableEverywhere() || resource.equals(root);
+                return siteRole.isApplicableOutsideRoot() || resource.equals(root);
             });
 
         if (!resource.equals(root))
