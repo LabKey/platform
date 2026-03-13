@@ -33,6 +33,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -824,6 +825,12 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                                 mvWrapper.setMvIndicator("".equals(fld) ? null : fld.toString());
                                 values[i] = mvWrapper;
                             }
+                        }
+                        else if (column.clazz == MultiChoice.Array.class)
+                        {
+                            // GitHub Issue 925: Not providing a MVTC value in an assay result throws error
+                            // convert blank to empty array, not null
+                            values[i] = column.converter.convert(column.clazz, fld);
                         }
                         else
                         {
