@@ -937,7 +937,7 @@ public class DomainUtil
             List<Map<String, Object>> propTextChoiceValueUpdates = updatePropertyValidators(p, old, pd);
             if (propTextChoiceValueUpdates != null && !propTextChoiceValueUpdates.isEmpty())
             {
-                if (PropertyType.MULTI_CHOICE.getTypeUri().equals(old.getRangeURI()))
+                if (PropertyType.MULTI_CHOICE.getTypeUri().equals(old.getRangeURI()) || PropertyType.MULTI_CHOICE.getTypeUri().equals(pd.getRangeURI()))
                 {
                     // GitHub Issue 923: Renamed text choice option while converting MV to SV text choice results in bad values
                     validationException.addError(new SimpleValidationError("Text choice value updates are not supported for multi-choice field: " + p.getName()));
