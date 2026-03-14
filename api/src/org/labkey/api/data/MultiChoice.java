@@ -219,7 +219,12 @@ public class MultiChoice
             str.filter(Objects::nonNull)
                     .map(s -> StringUtils.trimToNull(s.toString()))
                     .filter(Objects::nonNull)
-                    .forEach(setCaseSensitive::add);
+                    .forEach(s ->
+                    {
+                        // GitHub Issue 942: Add error for duplicate values for MVTC fields
+                        if (!setCaseSensitive.add(s))
+                            throw new ConversionExceptionWithMessage("Duplicate value provided: " + s);
+                    });
             array = setCaseSensitive.toArray(new String[0]);
         }
 
