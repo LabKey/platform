@@ -61,7 +61,7 @@ public class WarningServiceImpl implements WarningService
                 SHOW_ALL_WARNINGS = OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SHOW_ALL_WARNINGS);
                 OptionalFeatureService.get().addFeatureListener(EXPERIMENTAL_SHOW_ALL_WARNINGS, (feature, enabled) -> {
                     SHOW_ALL_WARNINGS = enabled;
-                    STATIC_ADMIN_WARNINGS = null; // Force static warnings to be re-collected since flag has changed
+                    clearStaticWarnings(); // Force static warnings to be re-collected since flag has changed
                 });
             }
         }
@@ -83,7 +83,15 @@ public class WarningServiceImpl implements WarningService
     public void register(WarningProvider provider)
     {
         _providers.add(provider);
-        STATIC_ADMIN_WARNINGS = null;
+        clearStaticWarnings();
+    }
+
+    private static void clearStaticWarnings()
+    {
+        synchronized (STATIC_WARNING_LOCK)
+        {
+            STATIC_ADMIN_WARNINGS = null;
+        }
     }
 
     @Override
@@ -97,18 +105,25 @@ public class WarningServiceImpl implements WarningService
     // the "show all warnings" experimental feature flag is used.
     private static Collection<HtmlString> getStaticAdminWarnings()
     {
-        if (null == STATIC_ADMIN_WARNINGS)
+        Collection<HtmlString> staticWarnings = STATIC_ADMIN_WARNINGS;
+
+        if (null == staticWarnings)
         {
             synchronized (STATIC_WARNING_LOCK)
             {
-                LazyInitializer.init(); // Invoke no-op method to ensure static initializer is executed
-                Warnings warnings = Warnings.of(new LinkedList<>());
-                WarningService.get().forEachProvider(p -> p.addStaticWarnings(warnings, WarningService.get().showAllWarnings()));
-                STATIC_ADMIN_WARNINGS = Collections.unmodifiableList(warnings.getMessages());;
+                if (null == STATIC_ADMIN_WARNINGS)
+                {
+                    LazyInitializer.init(); // Invoke no-op method to ensure static initializer is executed
+                    Warnings warnings = Warnings.of(new LinkedList<>());
+                    WarningService.get().forEachProvider(p -> p.addStaticWarnings(warnings, WarningService.get().showAllWarnings()));
+                    STATIC_ADMIN_WARNINGS = Collections.unmodifiableList(warnings.getMessages());
+                }
+
+                staticWarnings = STATIC_ADMIN_WARNINGS;
             }
         }
 
-        return STATIC_ADMIN_WARNINGS;
+        return staticWarnings;
     }
 
     private static final String DISMISSAL_SCRIPT_FORMAT =

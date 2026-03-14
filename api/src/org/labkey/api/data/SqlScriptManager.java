@@ -239,7 +239,8 @@ public abstract class SqlScriptManager
                     """
                         This script could take a long time to execute because it is {}.
                         Do NOT shut down or restart the server until this script and the rest of the upgrade is complete.
-                        Any interruption will likely corrupt the schemas, requiring a database restore and a restart of the upgrade process.""",
+                        Any interruption will likely corrupt the schemas, requiring a database restore and a restart of the upgrade process.
+                        """,
                         reason
                     );
                 }
