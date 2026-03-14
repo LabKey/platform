@@ -147,7 +147,7 @@ public class ContentSecurityPolicyFilter implements Filter
         if (CSP_FILTERS.put(getType(), this) != null)
             throw new ServletException("ContentSecurityPolicyFilter is misconfigured, duplicate policies of type: " + getType());
 
-        // configure a different endpoint for each type to convey the correct csp version (eXX vs. rXX)
+        // configure a different endpoint for each type. TODO: We only need one CSP violation reporting endpoint now, so one header would do
         _reportToEndpointName = "csp-" + getType().name().toLowerCase();
     }
 
