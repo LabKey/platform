@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
@@ -170,26 +172,23 @@ public class ContentSecurityPolicyFilter implements Filter
         return s;
     }
 
-    private static final String CSP_VERSION = "cspVersion=";
+    private static final Pattern CSP_VERSION_PATTERN = Pattern.compile("cspVersion\\s*=\\s*(\\w+)");
 
     /**
-     * Extract the cspVersion parameter value from a comment in the CSP, if it exists. Otherwise, cspVersion is left as
-     * "Unknown". This value is reported as part of usage metrics and sent in reports.
+     * Extract the cspVersion value from a comment in the CSP, if it exists. Otherwise, cspVersion is left as "Unknown".
+     * This value is reported as part of usage metrics and included in violation reports that are logged and forwarded.
      */
     private void extractCspVersion(String s)
     {
-        int idx = s.indexOf(CSP_VERSION);
-        if (idx > -1)
+        Matcher matcher = CSP_VERSION_PATTERN.matcher(s);
+        if (matcher.find())
         {
-            int start = idx + CSP_VERSION.length();
-            int end = s.indexOf(" ", start);
-            if (end > -1)
-            {
-                _cspVersion = s.substring(start, end);
-                if (s.indexOf(CSP_VERSION, end) > -1)
-                    LOG.warn("More than one " + CSP_VERSION + " assignment found; using the first one.");
-                LOG.debug("CspVersion: {}", getCspVersion());
-            }
+            _cspVersion = matcher.group(1);
+
+            if (matcher.find())
+                LOG.warn("More than one cspVersion=XX assignment found; using the first one.");
+
+            LOG.debug("CspVersion: {}", getCspVersion());
         }
     }
 
@@ -464,6 +463,32 @@ public class ContentSecurityPolicyFilter implements Filter
     public static class TestCase extends Assert
     {
         @Test
+        public void testCspVersionExtraction()
+        {
+            testCspExtract("e14", "/* cspVersion=e14 */");
+            testCspExtract("r14", "/*cspVersion=r14 */");
+            testCspExtract("e15", "/*   cspVersion  =  e15 */");
+            testCspExtract("r15", "/* cspVersion=r15*/");
+            testCspExtract("e15", "/*   cspVersion    =    e15*/");
+            testCspExtract("e15", "/*   cspVersion    =    e15*/ /* cspVersion=XXX */");
+
+            testCspExtract("Unknown", "");
+            testCspExtract("Unknown", "     ");
+            testCspExtract("Unknown", "/* cspVersin=e14 */");
+            testCspExtract("Unknown", "/* cspVersion */");
+            testCspExtract("Unknown", "/* cspVersion= */");
+            testCspExtract("Unknown", "/* cspVersion=*/");
+            testCspExtract("Unknown", "/* cspVersion== */");
+        }
+
+        private void testCspExtract(String expected, String csp)
+        {
+            ContentSecurityPolicyFilter filter = new ContentSecurityPolicyFilter();
+            filter.extractCspVersion(csp);
+            assertEquals(expected, filter.getCspVersion());
+        }
+
+        @Test
         public void testPolicyFiltering()
         {
             String fakePolicyForTesting = """
@@ -482,7 +507,7 @@ public class ContentSecurityPolicyFilter implements Filter
                         report-uri /* Whoa! */ /admin-contentsecuritypolicyreport.api?${CSP.REPORT.PARAMS} https://*;
                     """;
 
-            // Multi-line for readability, but notice that newlines are replaced before assignment
+            // Multi-line for readability, but notice that newlines are replaced when constructing the expected string
             String expected = """
                     default-src 'self' https: http: ;
                     connect-src 'self' http://www.labkey.org localhost:* ws: ${LABKEY.ALLOWED.CONNECTIONS} ;
