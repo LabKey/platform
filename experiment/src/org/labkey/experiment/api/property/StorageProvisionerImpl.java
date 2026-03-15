@@ -601,7 +601,9 @@ public class StorageProvisionerImpl implements StorageProvisioner
                             throw new ChangePropertyDescriptorException("Unable to change property type. There are rows with multiple values stored for '" + prop.getName() + "'.");
                         }
                     }
-                    oldPropTypes.put(prop.getName(), oldPd.getPropertyType());
+                    // GitHub Issue 935: Changing from MVTC to TC wraps all values in curly braces
+                    // This is due to StorageColumnName differ from column name, resulting in column update skipped
+                    oldPropTypes.put(prop.getPropertyDescriptor().getStorageColumnName(), oldPd.getPropertyType());
                 }
 
             }
