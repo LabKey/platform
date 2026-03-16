@@ -886,10 +886,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ActionURL getCspReportToURL(@NotNull String cspVersion)
+        public ActionURL getCspReportToURL()
         {
-            return new ActionURL(ContentSecurityPolicyReportToAction.class, ContainerManager.getRoot())
-                .addParameter("cspVersion", cspVersion);
+            return new ActionURL(ContentSecurityPolicyReportToAction.class, ContainerManager.getRoot());
         }
 
         public static ActionURL getDeprecatedFeaturesURL()
@@ -12135,6 +12134,7 @@ public class AdminController extends SpringActionController
                             if (!forwarded)
                             {
                                 jsonObj.put("labkeyVersion", AppProps.getInstance().getReleaseVersion());
+                                jsonObj.put("cspVersion", ContentSecurityPolicyFilter.getCspVersion(cspReport.optString("disposition", null)));
                                 User user = getUser();
                                 String email = null;
                                 // If the user is not logged in, we may still be able to snag the email address from our cookie
@@ -12149,9 +12149,6 @@ public class AdminController extends SpringActionController
                                 jsonObj.put("ip", ipAddress);
                                 if (isNotBlank(userAgent) && !jsonObj.has("user_agent"))
                                     jsonObj.put("user_agent", userAgent);
-                                String cspVersion = request.getParameter("cspVersion");
-                                if (null != cspVersion)
-                                    jsonObj.put("cspVersion", cspVersion);
                             }
 
                             var jsonStr = jsonObj.toString(2);
