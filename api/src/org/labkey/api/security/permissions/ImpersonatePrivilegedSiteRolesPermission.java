@@ -1,8 +1,8 @@
 package org.labkey.api.security.permissions;
 
-public class CanImpersonatePrivilegedSiteRolesPermission extends AbstractPermission
+public class ImpersonatePrivilegedSiteRolesPermission extends AbstractPermission
 {
-    public CanImpersonatePrivilegedSiteRolesPermission()
+    public ImpersonatePrivilegedSiteRolesPermission()
     {
         super("Can Impersonate Privileged Site Roles", "Allows users to impersonate privileged site roles including Site Admin");
     }

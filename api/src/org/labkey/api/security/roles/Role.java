@@ -121,8 +121,8 @@ public interface Role extends Parameter.JdbcParameterValue
     }
 
     /**
-     * @return Whether this role is applicable to the policy. For example, some roles might only make sense in the context of a
-     * certain type of resource, such as a folder (or particular type of folder) or dataset
+     * @return Whether this role is applicable in this resource. For example, some roles might only make sense in the
+     * context of a dataset or a certain folder type. TODO: Eliminate policy parameter; no implementation uses it.
      */
     boolean isApplicable(SecurityPolicy policy, SecurableResource resource);
 
