@@ -1,4 +1,4 @@
-package org.labkey.test.tests.professional;
+package org.labkey.test.tests.specimen;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -7,7 +7,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Git;
-import org.labkey.test.pages.professional.ConfigureSpecimenImportPage;
+import org.labkey.test.pages.specimen.ConfigureSpecimenImportPage;
 
 import java.io.File;
 import java.util.Arrays;
@@ -92,8 +92,6 @@ public class QueryBasedSpecimenImportTest extends BaseWebDriverTest
                     matchingSpecimenDetail.isPresent());
         }
     }
-
-
 
     @Override
     protected BrowserType bestBrowser()

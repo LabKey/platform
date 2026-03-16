@@ -1,4 +1,4 @@
-package org.labkey.test.pages.professional;
+package org.labkey.test.pages.specimen;
 
 import org.labkey.test.Locator;
 import org.labkey.test.WebDriverWrapper;
