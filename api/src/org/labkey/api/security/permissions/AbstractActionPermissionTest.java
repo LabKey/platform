@@ -67,6 +67,7 @@ public abstract class AbstractActionPermissionTest extends Assert
     private static final String AUTHOR_EMAIL = "author@actionpermission.test";
     private static final String READER_EMAIL = "reader@actionpermission.test";
     private static final String SUBMITTER_EMAIL = "submitter@actionpermission.test";
+    private static final String NO_PERMISSION_EMAIL = "nopermission@actionpermission.test";
     private static final String TRUSTED_EDITOR_EMAIL = "trustededitor@actionpermission.test";
     private static final String TRUSTED_AUTHOR_EMAIL = "trustedauthor@actionpermission.test";
     private static final String TROUBLESHOOTER_EMAIL = "troubleshooter@actionpermission.test";
@@ -74,7 +75,7 @@ public abstract class AbstractActionPermissionTest extends Assert
     protected static final String[] LKS_ROLE_EMAILS = {
             SITE_ADMIN_EMAIL, APPLICATION_ADMIN_EMAIL, PROJECT_ADMIN_EMAIL, FOLDER_ADMIN_EMAIL, EDITOR_EMAIL,
             AUTHOR_EMAIL, READER_EMAIL, SUBMITTER_EMAIL, TRUSTED_EDITOR_EMAIL, TRUSTED_AUTHOR_EMAIL, TROUBLESHOOTER_EMAIL,
-            IMPERSONATING_TROUBLESHOOTER_EMAIL
+            IMPERSONATING_TROUBLESHOOTER_EMAIL, NO_PERMISSION_EMAIL
     };
 
     protected static Container _c;
@@ -181,6 +182,21 @@ public abstract class AbstractActionPermissionTest extends Assert
         {}
 
         return users;
+    }
+
+    public void assertForNoPermission(User user, PermissionCheckableAction... actions)
+    {
+        for (PermissionCheckableAction action : actions)
+        {
+            assertPermission(_c, action, user);
+
+            assertPermission(_c, action,
+                _users.get(READER_EMAIL), _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
+                _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL),
+                _users.get(APPLICATION_ADMIN_EMAIL), _users.get(SITE_ADMIN_EMAIL),
+                _users.get(SUBMITTER_EMAIL)
+            );
+        }
     }
 
     public void assertForReadPermission(User user, PermissionCheckableAction... actions)

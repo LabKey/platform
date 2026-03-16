@@ -118,7 +118,7 @@ async function verifyPropertiesFilesOnServer(
             // Note: this is a hack to allow us to make requests to the webdav controller. The IntegrationTestServer
             // request method uses ActionURL to generate URLS, but webdav URLs are not ActionURLs, so we need to
             // override the AgentProvider to generate the proper webdav URL.
-            url = `/_webdav/${requestOptions.containerPath}/%40files/assaydata?method=JSON`;
+            url = `${LABKEY.contextPath}/_webdav/${requestOptions.containerPath}/%40files/assaydata?method=JSON`;
             return agent.get(url);
         },
         requestOptions

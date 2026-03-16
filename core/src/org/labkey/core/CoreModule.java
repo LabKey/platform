@@ -77,6 +77,7 @@ import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
+import org.labkey.api.data.dialect.PostgreSqlService;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
@@ -561,10 +562,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ScriptEngineManagerImpl.registerEncryptionMigrationHandler();
 
         McpService.get().register(new CoreMcp());
+        PostgreSqlService.setInstance(PostgreSqlDialectFactory::getLatestSupportedDialect);
 
         deleteTempFiles();
     }
-
 
     private void deleteTempFiles()
     {

@@ -17,10 +17,10 @@ package org.labkey.api.security.roles;
 
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
-import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.EnableRestrictedModules;
 import org.labkey.api.security.permissions.ExemptFromAccountDisablingPermission;
+import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UpdateUserPermission;
@@ -37,10 +37,10 @@ public class ApplicationAdminRole extends AbstractRootContainerRole implements A
     static Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
         AddUserPermission.class,
         ApplicationAdminPermission.class,
-        CanImpersonateSiteRolesPermission.class,
         DeleteUserPermission.class,
         EnableRestrictedModules.class,
         ExemptFromAccountDisablingPermission.class,
+        ImpersonatePermission.class,
         TroubleshooterPermission.class,
         UpdateUserPermission.class,
         UserManagementPermission.class

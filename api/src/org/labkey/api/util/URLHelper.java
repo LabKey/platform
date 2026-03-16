@@ -915,7 +915,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
         if (devMode && "localhost".equalsIgnoreCase(host))
             return true;
 
-        // Count the dots in case there's a wild card
+        // Count the dots in case there's a wildcard
         int dotCount = StringUtils.countMatches(host, '.');
 
         return allowedHostsSupplier.get().stream()
@@ -928,14 +928,14 @@ public class URLHelper implements Cloneable, Serializable, JSONString
 
         if (allowedHost.startsWith("*."))
         {
-            // This wild-card pattern matches the host if 1) they have the same number of dots and 2) the host ends with
-            // the portion of the pattern after the wild card.
+            // This wildcard pattern matches the host if 1) they have the same number of dots and 2) the host ends with
+            // the portion of the pattern after the wildcard and dot.
             int expectedDotCount = StringUtils.countMatches(allowedHost, '.');
             ret = (dotCount == expectedDotCount && Strings.CI.endsWith(host, allowedHost.substring(2)));
         }
         else
         {
-            // Non-wild-card pattern must match the entire host
+            // Non-wildcard pattern must match the entire host
             ret = Strings.CI.equals(host, allowedHost);
         }
 
@@ -1120,8 +1120,8 @@ public class URLHelper implements Cloneable, Serializable, JSONString
             allowedHosts2.add("www.google.com");
             assertTrue(isAllowedExternalHost("www.google.com", true, ()->allowedHosts2));
 
-            // test wild cards
-            List<String> wildCardHosts = List.of(
+            // test wildcards
+            List<String> wildcardHosts = List.of(
                 "*.labkey.com",
                 "labkey.com",
                 "*.lkpoc.labkey.com",
@@ -1130,21 +1130,21 @@ public class URLHelper implements Cloneable, Serializable, JSONString
             );
 
             // good
-            assertTrue(isAllowedExternalHost("www.labkey.com", true, ()->wildCardHosts));
-            assertTrue(isAllowedExternalHost("lkpoc.labkey.com", true, ()->wildCardHosts));
-            assertTrue(isAllowedExternalHost("sub1.labkey.com", true, ()->wildCardHosts));
-            assertTrue(isAllowedExternalHost("sub2.labkey.com", true, ()->wildCardHosts));
-            assertTrue(isAllowedExternalHost("labkey.com", true, ()->wildCardHosts));
-            assertTrue(isAllowedExternalHost("sub1.lkpoc.labkey.com", true, ()->wildCardHosts));
-            assertTrue(isAllowedExternalHost("sub2.lkpoc.labkey.com", true, ()->wildCardHosts));
-            assertTrue(isAllowedExternalHost("sub1.trial.labkey.host", true, ()->wildCardHosts));
-            assertTrue(isAllowedExternalHost("sub2.trial.labkey.host", true, ()->wildCardHosts));
+            assertTrue(isAllowedExternalHost("www.labkey.com", true, ()->wildcardHosts));
+            assertTrue(isAllowedExternalHost("lkpoc.labkey.com", true, ()->wildcardHosts));
+            assertTrue(isAllowedExternalHost("sub1.labkey.com", true, ()->wildcardHosts));
+            assertTrue(isAllowedExternalHost("sub2.labkey.com", true, ()->wildcardHosts));
+            assertTrue(isAllowedExternalHost("labkey.com", true, ()->wildcardHosts));
+            assertTrue(isAllowedExternalHost("sub1.lkpoc.labkey.com", true, ()->wildcardHosts));
+            assertTrue(isAllowedExternalHost("sub2.lkpoc.labkey.com", true, ()->wildcardHosts));
+            assertTrue(isAllowedExternalHost("sub1.trial.labkey.host", true, ()->wildcardHosts));
+            assertTrue(isAllowedExternalHost("sub2.trial.labkey.host", true, ()->wildcardHosts));
 
             // bad
-            assertFalse(isAllowedExternalHost("trial.labkey.host", true, ()->wildCardHosts));
-            assertFalse(isAllowedExternalHost("sub1.sub2.lkpoc.labkey.com", true, ()->wildCardHosts));
-            assertFalse(isAllowedExternalHost("google.com", true, ()->wildCardHosts));
-            assertFalse(isAllowedExternalHost("sub1.sub2.labkey.com", true, ()->wildCardHosts));
+            assertFalse(isAllowedExternalHost("trial.labkey.host", true, ()->wildcardHosts));
+            assertFalse(isAllowedExternalHost("sub1.sub2.lkpoc.labkey.com", true, ()->wildcardHosts));
+            assertFalse(isAllowedExternalHost("google.com", true, ()->wildcardHosts));
+            assertFalse(isAllowedExternalHost("sub1.sub2.labkey.com", true, ()->wildcardHosts));
         }
     }
 }
