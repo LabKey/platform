@@ -45,9 +45,9 @@
 
 <%
     // At the moment, there's exactly one SpecimenTransform, QueryBasedSpecimenTransform, which is provided by the
-    // Specimen module. As a result, this "choose importer" page is never linked  (if a single transform exists, the
-    // "Configure Specimen Import" link navigates straight to the query-based import configuration page. This probably
-    // won't ever change, but we'll leave this page in place just in case.
+    // Specimen module. As a result, this "choose importer" page is never linked (if a single transform exists, the
+    // "Configure Specimen Import" link navigates straight its configuration page. This probably won't ever change,
+    // but we'll leave this page in place just in case.
 %>
 <div>
     <% if (numberOfTransforms > 1) { %>

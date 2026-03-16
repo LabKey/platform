@@ -7,6 +7,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Git;
+import org.labkey.test.categories.Specimen;
 import org.labkey.test.pages.specimen.ConfigureSpecimenImportPage;
 
 import java.io.File;
@@ -20,7 +21,7 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-@Category({Git.class})
+@Category({Git.class, Specimen.class})
 public class QueryBasedSpecimenImportTest extends BaseWebDriverTest
 {
     String TEST_SCHEMA = "lists";
