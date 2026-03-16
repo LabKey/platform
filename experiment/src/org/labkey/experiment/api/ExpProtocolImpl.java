@@ -329,9 +329,12 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     }
 
     @Override
-    public List<ExpExperimentImpl> getBatches()
+    public List<ExpExperimentImpl> getBatches(@Nullable Container c)
     {
-        Filter filter = new SimpleFilter(FieldKey.fromParts("BatchProtocolId"), getRowId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("BatchProtocolId"), getRowId());
+        // GitHub Issue 895: add param option to get just the assay batches for a specific container
+        if (c != null)
+            filter.addCondition(FieldKey.fromParts("container"), c);
         return ExpExperimentImpl.fromExperiments(new TableSelector(ExperimentServiceImpl.get().getTinfoExperiment(), filter, null).getArray(Experiment.class));
     }
 

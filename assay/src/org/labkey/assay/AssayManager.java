@@ -379,12 +379,25 @@ public class AssayManager implements AssayService
     @Override
     public @NotNull List<ExpProtocol> getAssayProtocols(Container container)
     {
+        return getAssayProtocols(container, false);
+    }
+
+    private @NotNull List<ExpProtocol> getAssayProtocols(Container container, boolean currentOnly)
+    {
         List<ExpProtocol> allProtocols = new ArrayList<>();
 
-        for (Container containerInScope : container.getContainersFor(ContainerType.DataType.protocol))
+        if (currentOnly)
         {
-            List<ExpProtocol> ids = PROTOCOL_CACHE.get(containerInScope);
+            List<ExpProtocol> ids = PROTOCOL_CACHE.get(container);
             allProtocols.addAll(ids);
+        }
+        else
+        {
+            for (Container containerInScope : container.getContainersFor(ContainerType.DataType.protocol))
+            {
+                List<ExpProtocol> ids = PROTOCOL_CACHE.get(containerInScope);
+                allProtocols.addAll(ids);
+            }
         }
 
         Collections.sort(allProtocols);
@@ -622,14 +635,14 @@ public class AssayManager implements AssayService
     }
 
     /**
-     * Creates a single document per assay design/folder combo, with some simple assay info (name, description), plus
-     * the names and comments from all the runs.
+     * Creates a single document per assay design, with some simple assay info (name, description).
+     * Note: the document for an assay protocol will just be associated with the protocol's container
      */
     @Override
     public void indexAssays(SearchService.TaskIndexingQueue queue)
     {
-        List<ExpProtocol> protocols = getAssayProtocols(queue.getContainer());
-
+        // GitHub Issue 895: for the assay protocol search document just user the current container's protocols
+        List<ExpProtocol> protocols = getAssayProtocols(queue.getContainer(), true);
         for (ExpProtocol protocol : protocols)
             indexAssay(queue, protocol);
     }
@@ -728,7 +741,7 @@ public class AssayManager implements AssayService
     {
         if (shouldIndexProtocolBatches(protocol))
         {
-            for (ExpExperiment batch : protocol.getBatches())
+            for (ExpExperiment batch : protocol.getBatches(queue.getContainer()))
             {
                 if (modifiedSince == null || modifiedSince.before(batch.getModified()))
                     indexAssayBatch(queue, batch);

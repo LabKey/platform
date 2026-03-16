@@ -4528,7 +4528,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             for (ExpProtocol protocolToDelete : expProtocols)
             {
-                for (ExpExperiment batch : protocolToDelete.getBatches())
+                for (ExpExperiment batch : protocolToDelete.getBatches(null))
                 {
                     batch.delete(user);
                 }
