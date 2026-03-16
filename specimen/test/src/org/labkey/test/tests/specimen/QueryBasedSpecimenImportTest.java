@@ -38,7 +38,7 @@ public class QueryBasedSpecimenImportTest extends BaseWebDriverTest
 
     private void doSetup()
     {
-        _containerHelper.createProject(getProjectName(), "Study (ITN)");
+        _containerHelper.createProject(getProjectName(), "Study");
         _studyHelper.startCreateStudy()
             .createStudy();
         goToFolderManagement()

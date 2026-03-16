@@ -42,7 +42,7 @@ public class QueryBasedSpecimenImportUploadTask implements SystemMaintenance.Mai
                     // Study must have been deleted
                     if (null == StudyService.get().getStudy(c))
                     {
-                        log.error("Query-based specimen import failed: Study does not exist in folder " + c.getPath());
+                        log.error("Query-based specimen import failed: Study does not exist in folder {}", c.getPath());
                         return;
                     }
 
@@ -55,15 +55,15 @@ public class QueryBasedSpecimenImportUploadTask implements SystemMaintenance.Mai
 
                     if (!enabled)
                     {
-                        log.info(String.format("Prohibiting queuing specimen import for %s. Query-based specimen import is not enabled.", c.getName()));
+                        log.info("Prohibiting queuing specimen import for {}. Query-based specimen import is not enabled.", c.getName());
                         return;
                     }
                     if (!transform.isActive(c))
                     {
-                        log.info(String.format("Prohibiting queuing specimen import for %s. Query-based specimen import is not the active import mechanism.", c.getName()));
+                        log.info("Prohibiting queuing specimen import for {}. Query-based specimen import is not the active import mechanism.", c.getName());
                         return;
                     }
-                    log.info("Queuing specimen import for " + c.getName());
+                    log.info("Queuing specimen import for {}", c.getName());
 
                     int userId = Integer.parseInt(props.get("userId"));
                     User reloadUser = UserManager.getUser(userId);
