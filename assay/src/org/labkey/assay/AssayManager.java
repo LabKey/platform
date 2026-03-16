@@ -674,22 +674,6 @@ public class AssayManager implements AssayService
         m.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
         m.put(SearchService.PROPERTY.categories.toString(), ASSAY_CATEGORY.getName());
 
-        ExperimentService.get().getExpRuns(c, protocol, null)
-            .forEach(run -> {
-                StringBuilder runKeywords = new StringBuilder();
-
-                runKeywords.append(" ");
-                runKeywords.append(run.getName());
-
-                if (null != run.getComments())
-                {
-                    runKeywords.append(" ");
-                    runKeywords.append(run.getComments());
-                }
-
-                body.append(runKeywords);
-            });
-
         String docId = protocol.getDocumentId();
         WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getEntityId(), "text/plain", body.toString(), assayBeginURL, createdBy, created, modifiedBy, modified, m);
         queue.addResource(r);
