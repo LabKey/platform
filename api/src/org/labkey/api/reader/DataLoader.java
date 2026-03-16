@@ -832,7 +832,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                             // GitHub Issue 925: Not providing a MVTC value in an assay result throws error
                             // convert blank to empty array, not null
                             values[i] = column.converter.convert(column.clazz, fld);
-                            if (values[i] instanceof MultiChoice.Array array)
+                            if (values[i] instanceof MultiChoice.Array array) // TODO: make this more generic? instanceof List and/or instanceof java.sql.Array?
                             {
                                 // If line is blank, array will be empty array instead of null
                                 if (array.isEmpty())
