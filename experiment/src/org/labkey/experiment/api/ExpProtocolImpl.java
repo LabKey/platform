@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.Filter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;

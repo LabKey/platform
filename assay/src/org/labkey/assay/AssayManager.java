@@ -386,18 +386,11 @@ public class AssayManager implements AssayService
     {
         List<ExpProtocol> allProtocols = new ArrayList<>();
 
-        if (currentOnly)
+        Collection<Container> containerScopes = currentOnly ? List.of(container) : container.getContainersFor(ContainerType.DataType.protocol);
+        for (Container containerInScope : containerScopes)
         {
-            List<ExpProtocol> ids = PROTOCOL_CACHE.get(container);
+            List<ExpProtocol> ids = PROTOCOL_CACHE.get(containerInScope);
             allProtocols.addAll(ids);
-        }
-        else
-        {
-            for (Container containerInScope : container.getContainersFor(ContainerType.DataType.protocol))
-            {
-                List<ExpProtocol> ids = PROTOCOL_CACHE.get(containerInScope);
-                allProtocols.addAll(ids);
-            }
         }
 
         Collections.sort(allProtocols);
