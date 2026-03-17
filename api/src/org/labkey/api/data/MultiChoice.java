@@ -56,6 +56,7 @@ public class MultiChoice
         public DisplayColumn(ColumnInfo col)
         {
             super(col, false);
+            setTextAlign("left"); //  GitHub Issue 933: Left align MV cells in grids
         }
 
         @Override
