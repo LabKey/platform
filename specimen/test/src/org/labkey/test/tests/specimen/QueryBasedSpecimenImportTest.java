@@ -72,7 +72,7 @@ public class QueryBasedSpecimenImportTest extends BaseWebDriverTest
         waitForPipelineJobsToComplete(1, false);
 
         // navigate to Specimens tab, verify
-        clickTab("Specimens", true);
+        clickTab("Specimen Data", true);
 
         // iterate over the list, ensure that for each there is a matching specimen in specimenDetails
         List<Map<String, Object>> sourceSpecimenData =executeSelectRowCommand(TEST_SCHEMA, TEST_QUERY).getRows();
