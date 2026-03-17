@@ -891,6 +891,13 @@ public class AdminController extends SpringActionController
             return new ActionURL(ContentSecurityPolicyReportToAction.class, ContainerManager.getRoot());
         }
 
+        @Override
+        public ActionURL getAllowedExternalRedirectHostsURL()
+        {
+            return new ActionURL(AllowListAction.class, ContainerManager.getRoot())
+                .addParameter("type", AllowListType.Redirect.name());
+        }
+
         public static ActionURL getDeprecatedFeaturesURL()
         {
             return new ActionURL(OptionalFeaturesAction.class, ContainerManager.getRoot()).addParameter("type", FeatureType.Deprecated.name());

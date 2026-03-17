@@ -67,6 +67,8 @@ public interface AdminUrls extends UrlProvider
     ActionURL getSystemMaintenanceURL();
     ActionURL getCspReportToURL();
 
+    ActionURL getAllowedExternalRedirectHostsURL();
+
     /**
      * Simply adds an "Admin Console" link to nav trail if invoked in the root container. Otherwise, root is unchanged.
      */
