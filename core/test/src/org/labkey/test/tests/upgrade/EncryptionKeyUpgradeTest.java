@@ -73,7 +73,7 @@ public class EncryptionKeyUpgradeTest extends BaseUpgradeTest
         {
             // Just loading this page can trigger an error if there was a problem with the encryption
             assertEquals("StatusCake API key input should be present but blank",
-                    "", EditUpgradeMessagePage.beginAt(this).getStatusCakeApiKey());
+                    "", EditUpgradeMessagePage.beginAt(this, null).getStatusCakeApiKey()); // Use the root container in case the '_mothership' project doesn't exist
         }
     }
 
