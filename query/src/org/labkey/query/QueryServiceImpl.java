@@ -2055,10 +2055,12 @@ public class QueryServiceImpl implements QueryService
                 for (SimpleFilter.FilterClause clause : filterClauses)
                 {
                     boolean isArrayFilter = clause instanceof CompareType.ArrayClause;
-                    if (isArrayColumn && !isArrayFilter)
-                        throw new ApiUsageException("Array column '" + fieldKey + "' requires an array filter type");
-                    if (!isArrayColumn && isArrayFilter)
-                        throw new ApiUsageException("Non-array column '" + fieldKey + "' cannot use an array filter type");
+                    boolean invalidArrayFilter = (isArrayFilter && !isArrayColumn) || (!isArrayFilter && isArrayColumn);
+                    if (invalidArrayFilter)
+                    {
+                        unresolvedColumns.add(fieldKey);
+                        return column; // return column, but mark as unresolvedColumns to drop filters
+                    }
                 }
             }
 
