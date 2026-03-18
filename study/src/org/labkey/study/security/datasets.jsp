@@ -214,11 +214,10 @@ set on the alternate ID dataset will affect who can edit other datasets. Hover o
     {
         if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
         {
-            DatasetDefinition ds = datasets.get(0);
-            SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
+            DatasetDefinition ds = datasets.getFirst();
             for (Role role : RoleManager.getAllRoles())
             {
-                if (role.isApplicable(dsPolicy, ds))
+                if (role.isApplicable(ds))
                 {
                     possibleRoles.add(role);
                 }
