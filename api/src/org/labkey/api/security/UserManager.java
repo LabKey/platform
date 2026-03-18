@@ -59,7 +59,7 @@ import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
-import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
+import org.labkey.api.security.permissions.ImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.SiteAdminRole;
@@ -162,7 +162,7 @@ public class UserManager
     public static void addUserListener(UserListener listener, boolean meFirst)
     {
         if (meFirst)
-            _listeners.add(0, listener);
+            _listeners.addFirst(listener);
         else
             _listeners.add(listener);
     }
@@ -670,12 +670,14 @@ public class UserManager
     }
 
     @NotNull
+    // Returns a mutable collection
     public static Collection<User> getActiveUsers()
     {
         return getUsers(false);
     }
 
     @NotNull
+    // Returns a mutable collection
     public static Collection<User> getUsers(boolean includeInactive)
     {
         return includeInactive ? UserCache.getActiveAndInactiveUsers() : UserCache.getActiveUsers() ;
@@ -1305,7 +1307,7 @@ public class UserManager
             assertTrue("Expected all SiteAdmins to be in the AppAdmins list",
                 appAdmins.containsAll(siteAdmins));
 
-            List<User> privilegedUsers = SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), Set.of(CanImpersonatePrivilegedSiteRolesPermission.class));
+            List<User> privilegedUsers = SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), Set.of(ImpersonatePrivilegedSiteRolesPermission.class));
             assertTrue("Expected all users with privileged role impersonation permissions to have a privileged role",
                 privilegedUsers.stream().allMatch(User::hasPrivilegedRole));
 
