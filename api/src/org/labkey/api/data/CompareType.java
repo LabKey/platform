@@ -1003,6 +1003,10 @@ public abstract class CompareType
                 return null;
 
             ColumnInfo colInfo = columnMap != null ? columnMap.get(_fieldKey) : null;
+
+            if (colInfo != null && colInfo.getJdbcType() != JdbcType.ARRAY)
+                throw new RuntimeSQLException(new SQLGenerationException("Invalid filter type for column '" + _fieldKey.toDisplayString() + "'."));
+
             var alias = SimpleFilter.getAliasForColumnFilter(dialect, colInfo, _fieldKey);
 
             SQLFragment valuesFragment = dialect.array_construct(paramValues);
@@ -1040,6 +1044,10 @@ public abstract class CompareType
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             ColumnInfo colInfo = columnMap != null ? columnMap.get(_fieldKey) : null;
+
+            if (colInfo != null && colInfo.getJdbcType() != JdbcType.ARRAY)
+                throw new RuntimeSQLException(new SQLGenerationException("Invalid filter type for column '" + _fieldKey.toDisplayString() + "'."));
+
             var alias = SimpleFilter.getAliasForColumnFilter(dialect, colInfo, _fieldKey);
 
             SQLFragment columnFragment = new SQLFragment().appendIdentifier(alias);
@@ -1747,6 +1755,9 @@ public abstract class CompareType
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             ColumnInfo colInfo = columnMap != null ? columnMap.get(_fieldKey) : null;
+            if (colInfo != null && colInfo.getJdbcType() == JdbcType.ARRAY)
+                throw new RuntimeSQLException(new SQLGenerationException("Invalid filter type for column '" + _fieldKey.toDisplayString() + "'."));
+
             var alias = SimpleFilter.getAliasForColumnFilter(dialect, colInfo, _fieldKey);
 
             SQLFragment fragment = toWhereClause(dialect, alias);
