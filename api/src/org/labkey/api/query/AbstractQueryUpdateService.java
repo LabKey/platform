@@ -465,7 +465,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                     {
                         boolean ret = super.next();
                         if (ret)
-                            rows.add(((MapDataIterator)_delegate).getMap());
+                            rows.add(((MapDataIterator)_delegate).getMapExcludeExistingRecord());
                         return ret;
                     }
                 };

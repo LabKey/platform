@@ -18,6 +18,7 @@ package org.labkey.api.dataiterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
@@ -43,7 +44,17 @@ public interface MapDataIterator extends DataIterator
     Logger LOGGER = LogHelper.getLogger(MapDataIterator.class, "DataIterators backed by Maps");
 
     boolean supportsGetMap();
-    Map<String,Object> getMap();
+    @Nullable Map<String,Object> getMap();
+    default @Nullable Map<String, Object> getMapExcludeExistingRecord()
+    {
+        Map<String, Object> row = getMap();
+        if (null == row)
+            return null;
+
+        Map<String, Object> rowClean = new CaseInsensitiveHashMap<>(row);
+        rowClean.remove(ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME);
+        return rowClean;
+    }
 
     /**
      * wrap an existing DataIterator to add MapDataIterator interface
