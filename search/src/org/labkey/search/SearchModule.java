@@ -212,7 +212,7 @@ public class SearchModule extends DefaultModule
             public void afterMigration(DatabaseMigrationConfiguration configuration)
             {
                 // Clear index and all last indexed tracking
-                SearchService.get().deleteIndex("Database was just migrated");
+                SearchService.get().deleteIndex("the database was just migrated");
             }
         });
     }

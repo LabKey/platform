@@ -2848,15 +2848,6 @@ public class UserController extends SpringActionController
     private abstract static class ImpersonateApiAction<FORM> extends MutatingApiAction<FORM>
     {
         @Override
-        public void checkPermissions() throws UnauthorizedException
-        {
-            // Impersonating troubleshooter role is restricted to the root, but, as a convenience, we let them
-            // impersonate from any container.
-            if (!getUser().hasRootPermission(ImpersonatePermission.class))
-                super.checkPermissions();
-        }
-
-        @Override
         protected String getCommandClassMethodName()
         {
             return "impersonate";

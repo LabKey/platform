@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -37,12 +38,14 @@ import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter.AllFolders;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
@@ -66,20 +69,22 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationLogoAttachmentParent;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.TroubleshooterRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
-import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -91,8 +96,10 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -106,6 +113,7 @@ import org.labkey.api.webdav.DavException;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.core.query.AttachmentAuditProvider;
+import org.labkey.core.query.CoreQuerySchema;
 import org.springframework.http.ContentDisposition;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
@@ -136,17 +144,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
-public class AttachmentServiceImpl implements AttachmentService, ContainerManager.ContainerListener
+public class AttachmentServiceImpl implements AttachmentService
 {
+    private static final Logger LOG = LogHelper.getLogger(AttachmentServiceImpl.class, "Orphaned attachments");
     private static final String UPLOAD_LOG = ".upload.log";
     private static final Map<String, AttachmentParentType> ATTACHMENT_TYPE_MAP = new HashMap<>();
     private static final Set<String> ATTACHMENT_COLUMNS = Set.of("Parent", "Container", "DocumentName", "DocumentSize", "DocumentType", "Created", "CreatedBy", "LastIndexed");
-
-    public AttachmentServiceImpl()
-    {
-        ContainerManager.addContainerListener(this);
-    }
 
     @Override
     public void download(HttpServletResponse response, AttachmentParent parent, String filename, @Nullable String alias, boolean inlineIfPossible) throws ServletException, IOException
@@ -181,7 +186,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             addAuditEvent(user, parent, filename, "The attachment " + filename + " was downloaded");
         }
     }
-
 
     @Override
     public void download(HttpServletResponse response, AttachmentParent parent, String filename, boolean inlineIfPossible) throws ServletException, IOException
@@ -906,14 +910,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
     }
 
-    @Override
-    public void containerDeleted(Container c, User user)
-    {
-        // TODO: do we need to get each document and remove its security policy?
-        ContainerUtil.purgeTable(coreTables().getTableInfoDocuments(), c, null);
-        AttachmentCache.removeAttachments(c);
-    }
-
     private void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, @Nullable String alias, boolean asAttachment) throws ServletException, IOException
     {
         checkSecurityPolicy(parent);
@@ -1007,7 +1003,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         writeDocument(writer, parent, name, null, asAttachment);
     }
 
-
     @Override
     @NotNull
     public InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException
@@ -1098,6 +1093,47 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
     }
 
+    private static final int MAX_ORPHANS_TO_LOG = 20;
+
+    private record Orphan(String documentName, String parentType){}
+
+    @Override
+    public void detectOrphans()
+    {
+        // Log orphaned attachments in this server, but in dev mode only, since this is for our testing. Also, we
+        // don't yet offer a way to delete orphaned attachments via the UI, so it's not helpful to inform admins.
+        if (AppProps.getInstance().isDevMode())
+        {
+            User user = ElevatedUser.getElevatedUser(User.getSearchUser(), TroubleshooterRole.class);
+            UserSchema core = DefaultSchema.get(user, ContainerManager.getRoot()).getUserSchema(CoreQuerySchema.NAME);
+            if (core != null)
+            {
+                TableInfo documents = core.getTable(CoreQuerySchema.DOCUMENTS_TABLE_NAME, new AllFolders(user));
+                if (null != documents)
+                {
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Orphaned"), true);
+                    List<Orphan> orphans = new TableSelector(documents, new CsvSet("DocumentName, ParentType"), filter, null).getArrayList(Orphan.class);
+                    if (!orphans.isEmpty())
+                    {
+                        LOG.error("Found {}, which likely indicates a problem with a delete method or a container listener.", StringUtilsLabKey.pluralize(orphans.size(), "orphaned attachment"));
+
+                        final String message;
+                        if (orphans.size() > MAX_ORPHANS_TO_LOG)
+                        {
+                            orphans = orphans.subList(0, MAX_ORPHANS_TO_LOG);
+                            message = "The first " + MAX_ORPHANS_TO_LOG;
+                        }
+                        else
+                        {
+                            message = "All";
+                        }
+
+                        LOG.error("{} detected orphans are listed below:\n{}", message, orphans.stream().map(Record::toString).collect(Collectors.joining("\n")));
+                    }
+                }
+            }
+        }
+    }
 
     private CoreSchema coreTables()
     {

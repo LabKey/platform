@@ -488,15 +488,15 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     @Override
-    public void clearLastIndexed()
+    public void clearLastIndexed(String reason)
     {
-        _log.info("Clearing last indexed for all providers");
+        _log.info("Clearing last indexed for all providers because: {}", reason);
 
         for (DocumentProvider p : _documentProviders)
         {
             try
             {
-                _log.info("Clearing last indexed for provider : " + p.getClass().getName());
+                _log.info("Clearing last indexed for provider : {}", p.getClass().getName());
                 p.indexDeleted();
             }
             catch (Throwable t)
@@ -960,7 +960,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
 
     @Override
-    public void updateIndex()
+    public void updateIndex(String reason)
     {
         // Subclasses should switch out the index at this point.
     }
@@ -1155,7 +1155,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 {
                     /* */
                 }
-                _log.error("Error running " + (null != i ? i._id : ""), x);
+                _log.error("Error running {}", null != i ? i._id : "", x);
             }
             finally
             {
@@ -1284,7 +1284,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             WebdavResource r = i.getResource();
             if (null == r || !r.exists())
             {
-                _log.info("Document no longer exist, skipping: " + i._id);
+                _log.info("Document no longer exist, skipping: {}", i._id);
                 // This is a strange case.  If this resource doesn't exist anymore, it is not really an error.
                 // see 34102: Search indexing is unreliable for wiki attachments
                 i.complete(true);
@@ -1296,7 +1296,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             i._modified = r.getLastModified();
 
             MemTracker.getInstance().put(r);
-            _log.debug("processAndIndex(" + i._id + ")");
+            _log.debug("processAndIndex({})", i._id);
 
             Throwable[] out = new Throwable[] {null};
 
@@ -1334,12 +1334,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 }
             }
             else
-                _log.debug("skipping " + i._id);
+                _log.debug("skipping {}", i._id);
         }
         catch (InterruptedException ignored) {}
         catch (Throwable x)
         {
-            _log.error("Error indexing " + (null != i ? i._id : ""), x);
+            _log.error("Error indexing {}", null != i ? i._id : "", x);
         }
         finally
         {
@@ -1462,7 +1462,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public IndexTask indexContainer(IndexTask in, final Container c, final Date since)
     {
-        _log.debug("Indexing container \"" + c + "\", since: " + since);
+        _log.debug("Indexing container \"{}\", since: {}", c, since);
         final IndexTask task = null==in ? createTask("Index folder " + c.getPath()) : in;
         task.getQueue(c, PRIORITY.crawl).addRunnable((q) ->
         {
@@ -1485,7 +1485,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public void indexFull(final boolean force, String reason)
     {
-        _log.info("Initiating an aggressive full-text search reindex because: " + reason);
+        _log.info("Initiating an aggressive full-text search reindex because: {}", reason);
         // crank crawler into high gear!
         DavCrawler.getInstance().startFull(WebdavService.getPath(), force);
     }
