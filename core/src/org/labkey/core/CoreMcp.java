@@ -1,9 +1,12 @@
 package org.labkey.core;
 
 import org.json.JSONObject;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
@@ -60,5 +63,16 @@ public class CoreMcp implements McpService.McpImpl
             "currentFolder", folderObj,
             "site", siteObj
         )).toString();
+    }
+
+    @Tool(description = "List the hierarchical path for every container in the server where the user has read permissions.")
+    String listContainers(ToolContext context)
+    {
+        User user = (User)context.getContext().get("user");
+        return ContainerManager.getAllChildren(ContainerManager.getRoot(), user, ReadPermission.class)
+            .stream()
+            .map(Container::getPath)
+            .collect(LabKeyCollectors.toJSONArray())
+            .toString();
     }
 }
