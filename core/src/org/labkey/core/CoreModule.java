@@ -150,7 +150,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
-import org.labkey.api.settings.FolderSettingsCache;
+import org.labkey.api.settings.FolderSettingsCache.FolderSettingsCacheListener;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
@@ -247,6 +247,7 @@ import org.labkey.core.admin.writer.SearchSettingsWriterFactory;
 import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
+import org.labkey.core.attachment.AttachmentContainerListener;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.dialect.PostgreSqlVersion;
@@ -543,7 +544,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.REJECT_CONTROLLER_FIRST_URLS,
             "Reject controller-first URLs",
-            "Require standard path-first URLs. Note: This option will be ignored if the deprecated feature for generating controller-first URLs is enabled.",
+            "Require standard path-first URLs.",
             false
         );
 
@@ -962,9 +963,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         checkForMissingDbViews();
 
         ProductConfiguration.handleStartupProperties();
+
         // This listener deletes all properties; make sure it executes after most of the other listeners
         ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);
-        ContainerManager.addContainerListener(new FolderSettingsCache.FolderSettingsCacheListener());
+        // This listener deletes all attachments in the container; execute it just before CoreContainerListener
+        ContainerManager.addContainerListener(new AttachmentContainerListener(), ContainerManager.ContainerListener.Order.Last);
+        ContainerManager.addContainerListener(new FolderSettingsCacheListener());
         SecurityManager.init();
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
         FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
