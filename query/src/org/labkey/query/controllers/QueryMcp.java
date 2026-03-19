@@ -5,10 +5,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
@@ -22,9 +20,10 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleSchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.UserManager;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.query.sql.SqlParser;
 import org.springaicommunity.mcp.annotation.McpResource;
+import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
@@ -66,18 +65,18 @@ public class QueryMcp implements McpService.McpImpl
     }
 
     @Tool(description = "Provide list of tables within the provided schema.")
-    String listTablesForSchema(@ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. \"schema\"") String quotedSchemaName)
+    String listTablesForSchema(ToolContext toolContext, @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. \"schema\"") String quotedSchemaName)
     {
-        var json = _listTablesForSchema(quotedSchemaName);
+        var json = _listTablesForSchema(quotedSchemaName, getContext(toolContext));
         // can I just return a JSONObject
         return json.toString();
     }
 
     @Tool(description = "Provide list of database schemas")
-    String listSchemas()
+    String listSchemas(ToolContext toolContext)
     {
-        McpContext context = getContext();
-        var map = _listAllSchemas(DefaultSchema.get(context.getUser(), context.getContainer()));
+        ContainerUser cu = getContext(toolContext);
+        var map = _listAllSchemas(DefaultSchema.get(cu.getUser(), cu.getContainer()));
         var array = new JSONArray();
         for (var entry : map.entrySet())
         {
@@ -92,52 +91,13 @@ public class QueryMcp implements McpService.McpImpl
 
 
     @Tool(description = "Provide the SQL source for a saved query.")
-    String getSourceForSavedQuery(@ToolParam(description = "Fully qualified query name as it would appear in SQL e.g. \"schema\".\"table or query\"") String fullQuotedTableName)
+    String getSourceForSavedQuery(ToolContext toolContext, @ToolParam(description = "Fully qualified query name as it would appear in SQL e.g. \"schema\".\"table or query\"") String fullQuotedTableName)
     {
-        var json = _listTablesForSchema(fullQuotedTableName);
+        var json = _listTablesForSchema(fullQuotedTableName, getContext(toolContext));
         if (json.has("sql"))
             return "```sql\n" + json.getString("sql") + "\n```\n";
         else
             return "I could not find the source for " + fullQuotedTableName;
-    }
-
-
-    @Tool(description = """
-            Save addition information for database columns.  If additional metadata is gathered via
-            chat, it can be saved to improve further interactions.
-            """)
-    String saveColumnDescription(
-            @ToolParam(description = "Fully qualified table or query name as it would appear in SQL e.g. \"schema\".\"table or query\"")
-                String fullQuotedTableName,
-            @ToolParam(description = "Quoted column name as it would appear in SQL e.g. \"column name\"")
-                String quotedColumnName,
-            @ToolParam(description = "Additional metadata to remember for future use.  This will replace any currently saved value")
-                String columnMetadata
-    )
-    {
-        McpContext context = McpContext.get();
-        var map = PropertyManager.getWritableProperties(context.getContainer(), "QueryMCP.annotations", true);
-        String fullPath = normalizeIdentifier(fullQuotedTableName + "." + quotedColumnName);
-        map.put(fullPath, columnMetadata);
-        try (var ignore = SpringActionController.ignoreSqlUpdates())
-        {
-            map.save();
-        }
-        return new JSONObject(Map.of("success",Boolean.TRUE)).toString();
-    }
-
-    /* TODO  McpContext setup */
-
-    static McpContext getContext()
-    {
-        try
-        {
-            return McpContext.get();
-        }
-        catch (Exception x)
-        {
-            return new McpContext(ContainerManager.getHomeContainer(), UserManager.getGuestUser());
-        }
     }
 
     /* For now, list all schemas.  CONSIDER support incremental querying. */
@@ -179,7 +139,7 @@ public class QueryMcp implements McpService.McpImpl
     }
 
 
-    public static JSONObject _listTablesForSchema(String fullQuotedName)
+    public static JSONObject _listTablesForSchema(String fullQuotedName, ContainerUser cu)
     {
         SchemaKey fullKey;
 
@@ -195,8 +155,7 @@ public class QueryMcp implements McpService.McpImpl
             fullKey = SchemaKey.fromParts(parts);
         }
 
-        McpContext context = getContext();
-        var defaultSchema = DefaultSchema.get(context.getUser(), context.getContainer());
+        var defaultSchema = DefaultSchema.get(cu.getUser(), cu.getContainer());
         var schema = DefaultSchema.resolve(defaultSchema, fullKey);
         if (!(schema instanceof UserSchema userSchema))
             return new JSONObject("error", "could not find schema for : " + fullQuotedName);

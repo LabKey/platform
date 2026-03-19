@@ -22,6 +22,8 @@ import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -79,6 +81,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -212,6 +215,8 @@ public class McpServiceImpl implements McpService
         ).toList();
     }
 
+    public final static Cache<String, String> PATH_CACHE = CacheManager.getCache(1000, CacheManager.DAY, "MCP container paths");
+
     private class _McpServlet extends HttpServlet // wraps HttpServletSseServerTransportProvider
     {
         HttpServletStreamableServerTransportProvider transportProvider;
@@ -225,10 +230,8 @@ public class McpServiceImpl implements McpService
                 .contextExtractor(req -> {
                     User user = (User) req.getUserPrincipal();
                     return McpTransportContext.create(Map.of(
-                        "container", ContainerManager.getHomeContainer(),
                         "user", user
-                        )
-                    );
+                    ));
                 })
                 .build();
         }
@@ -260,12 +263,22 @@ public class McpServiceImpl implements McpService
 
             return new McpServerFeatures.SyncToolSpecification(schema, (exchange, args) -> {
                 var transportCtx = exchange.transportContext();
-                var container = (Container) transportCtx.get("container"); // TODO: Pull container from session instead. Or insist that LLM provides it?
                 var user = (User) transportCtx.get("user");
                 var sessionId = exchange.sessionId();
-                LOG.info("MCP sessionId: {}", sessionId);
 
-                var toolContext = new ToolContext(Map.of("container", container, "user", user,  "sessionId", sessionId));
+                Map<String, Object> map = new HashMap<>();
+                map.put("user", user);
+                map.put("sessionId", sessionId);
+
+                String containerPath = PATH_CACHE.get(exchange.sessionId());
+                if (containerPath != null)
+                {
+                    Container container = ContainerManager.getForPath(containerPath);
+                    map.put("container", container);
+                    map.put("containerPath", containerPath);
+                }
+
+                var toolContext = new ToolContext(map);
 
                 String toolInput = /* serialize args to JSON */ null;
                 try

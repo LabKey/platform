@@ -29,7 +29,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mbean.SearchMXBean;
-import org.labkey.api.mcp.McpService;
 import org.labkey.api.migration.DatabaseMigrationConfiguration;
 import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.migration.DefaultMigrationSchemaHandler;
@@ -134,11 +133,11 @@ public class SearchModule extends DefaultModule
             }
         });
 
-        var mcp = McpService.get();
-        if (null != mcp)
-        {
-            mcp.register(new SearchMcp());
-        }
+//        var mcp = McpService.get();
+//        if (null != mcp)
+//        {
+//            mcp.register(new SearchMcp());
+//        }
     }
 
     @Override

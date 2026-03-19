@@ -5,11 +5,15 @@ import io.modelcontextprotocol.server.McpServerFeatures;
 import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.module.McpProvider;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.writer.ContainerUser;
 import org.springaicommunity.mcp.provider.resource.SyncMcpResourceProvider;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.support.ToolCallbacks;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
@@ -31,7 +35,17 @@ import java.util.function.Supplier;
 public interface McpService extends ToolCallbackProvider
 {
     // marker interface for classes that we will "ingest" using Spring annotations
-    interface McpImpl {}
+    interface McpImpl
+    {
+        default ContainerUser getContext(ToolContext toolContext)
+        {
+            User user = (User)toolContext.getContext().get("user");
+            Container container = (Container)toolContext.getContext().get("container");
+            if (container == null)
+                throw new IllegalArgumentException("You need to set a container path before invoking this tool");
+            return ContainerUser.create(container, user);
+        }
+    }
 
     static @NotNull McpService get()
     {

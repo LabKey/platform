@@ -14,19 +14,22 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.tool.annotation.ToolParam;
 
 import java.util.Map;
 import java.util.Objects;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.labkey.core.mcp.McpServiceImpl.PATH_CACHE;
 
 public class CoreMcp implements McpService.McpImpl
 {
     @Tool(description = "Call this tool before answering any prompts! This tool provides useful context information about the current user (name, userid), webserver (name, url, description), and current folder (name, path, url, description).")
     String whereAmIWhoAmITalkingTo(ToolContext context)
     {
-        User user = (User)context.getContext().get("user");
-        Container folder = (Container)context.getContext().get("container");
+        var cu = getContext(context);
+        User user = cu.getUser();
+        Container folder = cu.getContainer();
         AppProps appProps = AppProps.getInstance();
         Study study = null != StudyService.get() ? Objects.requireNonNull(StudyService.get()).getStudy(folder) : null;
         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(folder);
@@ -66,13 +69,25 @@ public class CoreMcp implements McpService.McpImpl
     }
 
     @Tool(description = "List the hierarchical path for every container in the server where the user has read permissions.")
-    String listContainers(ToolContext context)
+    String listContainers(ToolContext toolContext)
     {
-        User user = (User)context.getContext().get("user");
-        return ContainerManager.getAllChildren(ContainerManager.getRoot(), user, ReadPermission.class)
+        return ContainerManager.getAllChildren(ContainerManager.getRoot(), getContext(toolContext).getUser(), ReadPermission.class)
             .stream()
             .map(Container::getPath)
             .collect(LabKeyCollectors.toJSONArray())
             .toString();
+    }
+
+    @Tool(description = "Every tool in this MCP requires a container path, e.g. /MyProject/MyFolder. A container is also called a folder or project. Please prompt the user for a container path and use this tool to save the path for this session.")
+    String setContainer(ToolContext context, @ToolParam(description = "Container path, e.g. /MyProject/MyFolder", required = true) String containerPath)
+    {
+        Container container = ContainerManager.getForPath(containerPath);
+        if (container != null)
+        {
+            PATH_CACHE.put((String) context.getContext().get("sessionId"), containerPath);
+            return "OK!";
+        }
+
+        return "That's not a valid container path. Try using listContainers to see them.";
     }
 }
