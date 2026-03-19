@@ -2654,7 +2654,7 @@ public class DataRegion extends DisplayElement
                 StringBuilder msg;
                 if (ignoredColumns.size() == 1)
                 {
-                    msg = new StringBuilder("Ignoring filter/sort on column '" + ignoredColumns.iterator().next().toDisplayString() + "' because it does not exist.");
+                    msg = new StringBuilder("Ignoring filter/sort on column '" + ignoredColumns.iterator().next().toDisplayString() + "' because it does not exist or the filter type is invalid.");
                 }
                 else
                 {
@@ -2666,7 +2666,7 @@ public class DataRegion extends DisplayElement
                         sep = ", ";
                         msg.append("'").append(fieldKey.toDisplayString()).append("'");
                     }
-                    msg.append(" because they do not exist.");
+                    msg.append(" because they do not exist or the filter types are invalid.");
                 }
 
                 addMessage(new Message(msg.toString(), MessageType.WARNING, "filter"));
