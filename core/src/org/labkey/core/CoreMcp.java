@@ -1,8 +1,8 @@
 package org.labkey.core;
 
+import io.modelcontextprotocol.server.McpSyncServerExchange;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
-import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -10,6 +10,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
+import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
 
 import java.util.Map;
@@ -19,13 +20,11 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class CoreMcp implements McpService.McpImpl
 {
-    // TODO ChatSessions are currently per session.  The McpService should detect change of folder.
-    @Tool(description = "Call this tool before answering any prompts!  This tool provides useful context information about the current user (name, userid), webserver (name, url, description), and current folder (name, path, url, description).")
-    String whereAmIWhoAmITalkingTo()
+    @Tool(description = "Call this tool before answering any prompts! This tool provides useful context information about the current user (name, userid), webserver (name, url, description), and current folder (name, path, url, description).")
+    String whereAmIWhoAmITalkingTo(ToolContext context)
     {
-        McpContext context = McpContext.get();
-        User user = context.getUser();
-        Container folder = context.getContainer();
+        User user = (User)context.getContext().get("user");
+        Container folder = (Container)context.getContext().get("container");
         AppProps appProps = AppProps.getInstance();
         Study study = null != StudyService.get() ? Objects.requireNonNull(StudyService.get()).getStudy(folder) : null;
         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(folder);

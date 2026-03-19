@@ -1,8 +1,10 @@
 package org.labkey.core.mcp;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
 import com.google.genai.types.ClientOptions;
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.json.McpJsonMapper;
 import io.modelcontextprotocol.server.McpServer;
 import io.modelcontextprotocol.server.McpServerFeatures;
@@ -23,9 +25,12 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import org.labkey.api.collections.CopyOnWriteHashMap;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
+import org.labkey.api.security.User;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
@@ -35,13 +40,6 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
-import org.springframework.ai.google.genai.common.GoogleGenAiThinkingLevel;
-import org.springframework.ai.openai.OpenAiChatModel;
-import org.springframework.ai.openai.OpenAiChatOptions;
-import org.springframework.ai.openai.OpenAiEmbeddingModel;
-import org.springframework.ai.openai.OpenAiEmbeddingOptions;
-import org.springframework.ai.openai.api.OpenAiApi;
-import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.anthropic.api.AnthropicApi;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
@@ -53,8 +51,11 @@ import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.Generation;
+import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
@@ -62,11 +63,14 @@ import org.springframework.ai.google.genai.GoogleGenAiEmbeddingConnectionDetails
 import org.springframework.ai.google.genai.text.GoogleGenAiTextEmbeddingModel;
 import org.springframework.ai.google.genai.text.GoogleGenAiTextEmbeddingOptions;
 import org.springframework.ai.mcp.McpToolUtils;
-import org.springframework.ai.chat.model.ToolContext;
+import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.ai.openai.OpenAiEmbeddingModel;
+import org.springframework.ai.openai.OpenAiEmbeddingOptions;
+import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.ai.tool.metadata.ToolMetadata;
-import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -82,6 +86,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -222,22 +227,70 @@ public class McpServiceImpl implements McpService
         _McpServlet(ObjectMapper objectMapper, String messageEndpoint, String sseEndpoint)
         {
             transportProvider = HttpServletStreamableServerTransportProvider.builder()
-                    .jsonMapper(McpJsonMapper.getDefault())
-                    .mcpEndpoint(messageEndpoint)
-                    .build();
+                .jsonMapper(McpJsonMapper.getDefault())
+                .mcpEndpoint(messageEndpoint)
+                .contextExtractor(req -> {
+                    User user = (User) req.getUserPrincipal();
+                    return McpTransportContext.create(Map.of(
+                        "container", ContainerManager.getHomeContainer(),
+                        "user", user
+                        )
+                    );
+                })
+                .build();
         }
 
         void startMcpServer()
         {
-            List<McpServerFeatures.SyncToolSpecification> tools = Arrays.stream(getToolCallbacks()).map(McpToolUtils::toSyncToolSpecification).toList();
+            List<McpServerFeatures.SyncToolSpecification> tools = Arrays.stream(getToolCallbacks())
+                .map(this::toSyncToolSpecification)
+                .toList();
+
             List<McpServerFeatures.SyncResourceSpecification> resources = new ArrayList<>(resourceMap.values());
 
             mcpServer = McpServer.sync(transportProvider)
-                    .tools(tools)
-                    .resources(resources)
+                .tools(tools)
+                .resources(resources)
 //                    .capabilities(new McpSchema.ServerCapabilities())
-                    .build();
+                .build();
             ContextListener.addShutdownListener(new _ShutdownListener());
+        }
+
+        private McpServerFeatures.SyncToolSpecification toSyncToolSpecification(ToolCallback toolCallback)
+        {
+            var toolDef = toolCallback.getToolDefinition();
+            var schema = McpSchema.Tool.builder()
+                .name(toolDef.name())
+                .description(toolDef.description())
+                .inputSchema(McpJsonMapper.getDefault(), toolDef.inputSchema())
+                .build();
+
+            return new McpServerFeatures.SyncToolSpecification(schema, (exchange, args) -> {
+                var transportCtx = exchange.transportContext();
+                var container = (Container) transportCtx.get("container"); // TODO: Pull container from session instead. Or insist that LLM provides it?
+                var user = (User) transportCtx.get("user");
+                var sessionId = exchange.sessionId();
+                LOG.info("MCP sessionId: {}", sessionId);
+
+                var toolContext = new ToolContext(Map.of("container", container, "user", user,  "sessionId", sessionId));
+
+                String toolInput = /* serialize args to JSON */ null;
+                try
+                {
+                    toolInput = JsonUtil.DEFAULT_MAPPER.writeValueAsString(args);
+                }
+                catch (JsonProcessingException e)
+                {
+                    throw new RuntimeException(e);
+                }
+                String result = toolCallback.call(toolInput, toolContext);
+                return new McpSchema.CallToolResult(
+                    List.of(
+                        new McpSchema.TextContent(result)
+                    ),
+                    false
+                );
+            });
         }
 
         @Override
@@ -255,34 +308,6 @@ public class McpServiceImpl implements McpService
                 return;
             }
 
-            if ("POST".equals(req.getMethod()))
-            {
-                if (null == req.getParameter("sessionId") && null == req.getSession(true).getAttribute("McpServiceImpl#mcpSessionId"))
-                {
-                    // USE SSE endpoint to get a sessionId
-                    MockHttpServletRequest mockRequest = new MockHttpServletRequest(req.getServletContext(), "GET", SSE_ENDPOINT);
-                    mockRequest.setAsyncSupported(true);
-                    MockHttpServletResponse mockResponse = new MockHttpServletResponse();
-                    transportProvider.service(mockRequest, mockResponse);
-                    String body = new String(mockResponse.getContentAsByteArray(), StandardCharsets.UTF_8);
-                    String mcpSessionId = StringUtils.substringBetween(body, "sessionId=", "\n");
-                    req.getSession(true).setAttribute("McpServiceImpl#mcpSessionId", mcpSessionId);
-                    mockRequest.close();
-                    mockResponse.getOutputStream().close();
-                }
-
-                req = new HttpServletRequestWrapper(req)
-                {
-                    @Override
-                    public String getParameter(String name)
-                    {
-                        var ret = super.getParameter(name);
-                        if (null == ret && "sessionId".equals(name))
-                            return String.valueOf(Objects.requireNonNull(((HttpServletRequest) getRequest()).getSession(true).getAttribute("McpServiceImpl#mcpSessionId")));
-                        return ret;
-                    }
-                };
-            }
             transportProvider.service(req, res);
         }
 
