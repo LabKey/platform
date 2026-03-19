@@ -1,6 +1,5 @@
 package org.labkey.core;
 
-import io.modelcontextprotocol.server.McpSyncServerExchange;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.mcp.McpService;
