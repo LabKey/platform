@@ -141,7 +141,6 @@ import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
@@ -4861,9 +4860,6 @@ public class QueryController extends SpringActionController
                     rowMap.put(fieldKey, file.isEmpty() ? null : file);
                 }
             }
-
-            for (ColumnInfo col : tableInfo.getColumns())
-                DataIteratorUtil.MatchType.multiPartFormData.updateRowMap(col, rowMap);
         }
 
         protected boolean isSuccessOnValidationError()

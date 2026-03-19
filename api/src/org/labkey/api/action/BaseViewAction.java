@@ -185,19 +185,11 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return ret;
     }
 
-    static final String FORM_DATE_ENCODED_PARAM = "formDataEncoded";
 
-    /**
-     * When a double quote is encountered in a multipart/form-data context, it is encoded as %22 using URL-encoding by browsers.
-     * This process replaces the double quote with its hexadecimal equivalent in a URL-safe format, preventing it from being misinterpreted as the end of a value or a boundary.
-     * The consequence of such encoding is we can't distinguish '"' from the actual '%22' in parameter name.
-     * As a workaround, a client-side util `encodeFormDataQuote` is used to convert %22 to %2522 and " to %22 explicitly, while passing in an additional param formDataEncoded=true.
-     * This class converts those encoded param names back to its decoded form during PropertyValues binding.
-     * See Issue 52827, 52925 and 52119 for more information.
-     */
+    /// Some characters can be mishandled by the browser in multipart/formdata requests (e.g. doublequote and backslask).
+    /// We support an encoding from fields to avoid these characters, see {@link PageFlowUtil#encodeFormName} and {@link PageFlowUtil#decodeFormName}.
     static public class ViewActionParameterPropertyValues extends ServletRequestParameterPropertyValues
     {
-
         public ViewActionParameterPropertyValues(ServletRequest request) {
             this(request, null, null);
         }
@@ -205,31 +197,14 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         public ViewActionParameterPropertyValues(ServletRequest request, @Nullable String prefix, @Nullable String prefixSeparator)
         {
             super(request, prefix, prefixSeparator);
-            if (isFormDataEncoded())
+            for (int i = 0; i < getPropertyValues().length; i++)
             {
-                for (int i = 0; i < getPropertyValues().length; i++)
-                {
-                    PropertyValue formDataPropValue = getPropertyValues()[i];
-                    String propValueName = formDataPropValue.getName();
-                    String decoded = PageFlowUtil.decodeQuoteEncodedFormDataKey(propValueName);
-                    if (!propValueName.equals(decoded))
-                        setPropertyValueAt(new PropertyValue(decoded, formDataPropValue.getValue()), i);
-                }
+                PropertyValue formDataPropValue = getPropertyValues()[i];
+                String propValueName = formDataPropValue.getName();
+                String decoded = PageFlowUtil.decodeFormName(propValueName);
+                if (!propValueName.equals(decoded))
+                    setPropertyValueAt(new PropertyValue(decoded, formDataPropValue.getValue()), i);
             }
-        }
-
-        private boolean isFormDataEncoded()
-        {
-            PropertyValue formDataPropValue = getPropertyValue(FORM_DATE_ENCODED_PARAM);
-            if (formDataPropValue != null)
-            {
-                Object v = formDataPropValue.getValue();
-                String formDataPropValueStr = v == null ? null : String.valueOf(v);
-                if (StringUtils.isNotBlank(formDataPropValueStr))
-                    return (Boolean) ConvertUtils.convert(formDataPropValueStr, Boolean.class);
-            }
-
-            return false;
         }
     }
 

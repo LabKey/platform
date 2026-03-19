@@ -64,16 +64,16 @@
 %>
 <table class="lk-fields-table">
     <tr>
-        <td valign="center"><input type="radio" id="<%=h(xlsxGUID)%>" name="<%=h(checkboxGroupName)%>" checked="checked" /></td>
+        <td valign="center"><input type="radio" id="<%=h(xlsxGUID)%>" name="<%=hname(checkboxGroupName)%>" checked="checked" /></td>
         <td valign="center"><label for="<%=h(xlsxGUID)%>">Excel Workbook (.xlsx)</label> <span style="font-size: smaller">Maximum 1,048,576 rows and 16,384 columns.</span></td>
     </tr>
     <tr>
-        <td valign="center"><input type="radio" id="<%=h(xlsGUID)%>" name="<%=h(checkboxGroupName)%>" /></td>
+        <td valign="center"><input type="radio" id="<%=h(xlsGUID)%>" name="<%=hname(checkboxGroupName)%>" /></td>
         <td valign="center"><label for="<%=h(xlsGUID)%>">Excel Old Binary Workbook (.xls)</label> <span style="font-size: smaller">Maximum 65,536 rows and 256 columns.</span></td>
     </tr>
     <% if (model.getIqyURL() != null) { %>
         <tr>
-            <td valign="center"><input type="radio" id="<%=h(iqyGUID)%>" name="<%=h(checkboxGroupName)%>"/></td>
+            <td valign="center"><input type="radio" id="<%=h(iqyGUID)%>" name="<%=hname(checkboxGroupName)%>"/></td>
             <td valign="center"><label for="<%=h(iqyGUID)%>">Refreshable Web Query (.iqy)</label></td>
         </tr>
     <% } %>

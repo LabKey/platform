@@ -107,21 +107,6 @@ public class QueryUpdateForm extends TableViewForm
     public String getFormFieldName(@NotNull ColumnInfo column)
     {
         String columnName = column.getName();
-        StringBuilder sb = new StringBuilder();
-        for (char c : columnName.toCharArray())
-        {
-            if (SPECIAL_CHARS.indexOf(c) >= 0)
-                sb.append(BACKSLASH);
-            sb.append(c);
-        }
-
-        String fieldName = sb.toString();
-        return _ignorePrefix ? fieldName : PREFIX + fieldName;
-    }
-
-    @Override
-    public String getMultiPartFormFieldName(@NotNull ColumnInfo column)
-    {
-        return DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(getFormFieldName(column));
+        return _ignorePrefix ? columnName : PREFIX + columnName;
     }
 }

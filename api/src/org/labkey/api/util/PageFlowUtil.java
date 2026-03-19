@@ -2677,17 +2677,30 @@ public class PageFlowUtil
     }
 
 
-    /**
-     * Issue 52925: App export to csv/tsv ignores filter with column containing double quote
-     * Issue 52119: App issues with assay run properties with special characters
-     * @param encodedKey The encoded form key by client side `encodeFormDataQuote` util
-     * @return The decoded raw field name
-     */
-    public static String decodeQuoteEncodedFormDataKey(@Nullable String encodedKey)
+    static final String FIELD_ENCODED_PREFIX = "%_";
+
+    /// Because of various bugs related encoding of INPUT.name values in multipart/formdata, we now recommend encoding
+    /// all names in all forms.
+    /// The choice of using encodeURI component is somewhat arbitrary, any encoding that can remove
+    /// double-quote and backslash from the name would be fine.
+    public static String encodeFormName(String name)
     {
-        if (encodedKey == null)
-            return null;
-        return encodedKey.replaceAll("%22", "\"").replaceAll("%2522", "%22");
+        final String escapeChar = "%";
+        final String problemChars = "\\\"";
+        final String unclean = escapeChar + problemChars;
+        if (!StringUtils.containsAny(name, unclean))
+            return name;
+        var ret = FIELD_ENCODED_PREFIX + encodeURIComponent(name);
+        assert !StringUtils.containsAny(ret, problemChars);
+        return ret;
+    }
+
+    public static String decodeFormName(String name)
+    {
+        if (!name.startsWith(FIELD_ENCODED_PREFIX))
+            return name;
+        var ret = decode(name.substring(2));
+        return ret;
     }
 
     public static class TestCase extends Assert
@@ -3095,19 +3108,46 @@ public class PageFlowUtil
             assertEquals("/a/b/c/", PageFlowUtil.encodePath("/a/b/c/"));
         }
 
-        @Test
-        public void testDecodeQuoteEncodedFormDataKey()
+        private void assertEncodeDecode(String test)
         {
-            assertEquals("test", decodeQuoteEncodedFormDataKey("test"));
-            assertEquals("a/b/c", decodeQuoteEncodedFormDataKey("a/b/c"));
-            assertEquals("a'b.c", decodeQuoteEncodedFormDataKey("a'b.c"));
-            assertEquals("%", decodeQuoteEncodedFormDataKey("%"));
-            assertEquals("\"", decodeQuoteEncodedFormDataKey("%22"));
-            assertEquals("\"\"", decodeQuoteEncodedFormDataKey("%22%22"));
-            assertEquals("%22", decodeQuoteEncodedFormDataKey("%2522"));
-            assertEquals("%22%22", decodeQuoteEncodedFormDataKey("%2522%2522"));
-            assertEquals("%22\"", decodeQuoteEncodedFormDataKey("%2522%22"));
-            assertEquals("\"22", decodeQuoteEncodedFormDataKey("%2222"));
+            assertEquals(test, decodeFormName(encodeFormName(test)));
+        }
+
+        private void assertReencode(String a)
+        {
+            // We want to make sure there are no ambiguous encodings
+            var b = encodeFormName(a);
+            var c = encodeFormName(b);
+            if (a.equals(b))
+                assertEquals(a,c);
+            else
+                assertNotEquals(b,c);
+        }
+
+        @Test
+        public void testFormNameEncoding()
+        {
+            assertEncodeDecode("test");
+            assertEncodeDecode("a/b/c");
+            assertEncodeDecode("a'b.c");
+            assertEncodeDecode("%");
+            assertEncodeDecode("\"");
+            assertEncodeDecode("\"\"");
+            assertEncodeDecode("%22");
+            assertEncodeDecode("%22%22");
+            assertEncodeDecode("%22\"");
+            assertEncodeDecode("\"22");
+
+            assertReencode("test");
+            assertReencode("a/b/c");
+            assertReencode("a'b.c");
+            assertReencode("%");
+            assertReencode("\"");
+            assertReencode("\"\"");
+            assertReencode("%22");
+            assertReencode("%22%22");
+            assertReencode("%22\"");
+            assertReencode("\"22");
         }
     }
 

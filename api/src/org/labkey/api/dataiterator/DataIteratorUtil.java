@@ -148,34 +148,6 @@ public class DataIteratorUtil
         alias,
         jdbcname,
         tsvColumn,
-        multiPartFormData()
-                {
-                    @Override
-                    public String getMatchedName(@Nullable String name)
-                    {
-                        if (name == null)
-                            return null;
-                        // " is encoded as %22 when content-type is "multipart/form-data" (but is not otherwise encoded so decode() does not work)
-                        return name.replaceAll("\"", "%22");
-                    }
-
-                    @Override
-                    public boolean updateRowMap(@NotNull ColumnInfo col, Map<String, Object> rowMap)
-                    {
-                        if (col.getName().contains("\"") && File.class.equals(col.getJavaClass()))
-                        {
-                            // Issue 52827: File/attachment fields with special characters
-                            String quoteEncodedName = DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(col.getName());
-                            if (rowMap.containsKey(quoteEncodedName))
-                            {
-                                rowMap.put(col.getName(), rowMap.get(quoteEncodedName));
-                                rowMap.remove(quoteEncodedName);
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-                },
         low;
 
         public String getMatchedName(@Nullable String name)
@@ -208,9 +180,6 @@ public class DataIteratorUtil
                 .toList();
 
         Map<String, Pair<ColumnInfo,MatchType>> targetAliasesMap = new CaseInsensitiveHashMap<>(cols.size()*4);
-
-        for (ColumnInfo col : cols)
-            targetAliasesMap.put(MatchType.multiPartFormData.getMatchedName(col.getName()), new Pair<>(col, MatchType.multiPartFormData));
 
         // should this be under the useImportAliases flag???
         for (ColumnInfo col : cols)
