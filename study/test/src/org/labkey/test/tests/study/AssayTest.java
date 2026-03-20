@@ -64,6 +64,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.labkey.test.util.TestDataGenerator.shuffleSelect;
+import static org.labkey.test.util.samplemanagement.SMTestUtils.COL_ASSAY_ID_LABEL;
 import static org.labkey.test.util.samplemanagement.SMTestUtils.COL_MULTITEXTCHOICE;
 import static org.labkey.test.util.samplemanagement.SMTestUtils.TEXT_MULTI_CHOICE_LIST;
 
@@ -157,12 +158,12 @@ public class AssayTest extends AbstractAssayTest
         assayImportPage.clickSaveAndFinish();
 
         AssayRunsPage assayRunsPage = new AssayRunsPage(getDriver());
-        checker().wrapAssertion(() -> Assertions.assertThat(assayRunsPage.getTable().getColumnDataAsText("Assay ID"))
+        checker().wrapAssertion(() -> Assertions.assertThat(assayRunsPage.getTable().getColumnDataAsText(COL_ASSAY_ID_LABEL))
                 .as("expect both runs to appear in the runs list")
                 .containsExactlyInAnyOrder(firstFileName, secondFileName));
 
         List<String> expectedValues = Stream.concat(fileDataFirstImport.stream(), fileDataSecondImport.stream())
-                .map(values -> String.join(" ", TestArrayDataUtils.sortValues(values)))
+                .map(values -> TestArrayDataUtils.sortAndJoin(values, " "))
                 .toList();
         checker().wrapAssertion(() -> Assertions.assertThat(assayRunsPage.clickViewResults().getDataTable().getColumnDataAsText(COL_MULTITEXTCHOICE.getLabel()))
                 .as("expect MVTC values to match imported data")
