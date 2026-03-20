@@ -71,7 +71,7 @@ public class CoreMcp implements McpService.McpImpl
     @Tool(description = "List the hierarchical path for every container in the server where the user has read permissions.")
     String listContainers(ToolContext toolContext)
     {
-        return ContainerManager.getAllChildren(ContainerManager.getRoot(), getContext(toolContext).getUser(), ReadPermission.class)
+        return ContainerManager.getAllChildren(ContainerManager.getRoot(), getUser(toolContext), ReadPermission.class)
             .stream()
             .map(Container::getPath)
             .collect(LabKeyCollectors.toJSONArray())

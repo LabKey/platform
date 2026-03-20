@@ -29,6 +29,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mcp.McpContext;
+import org.labkey.api.mcp.McpException;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContextListener;
@@ -69,6 +70,7 @@ import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.ToolDefinition;
+import org.springframework.ai.tool.execution.ToolExecutionException;
 import org.springframework.ai.tool.metadata.ToolMetadata;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
@@ -289,7 +291,19 @@ public class McpServiceImpl implements McpService
                 {
                     throw new RuntimeException(e);
                 }
-                String result = toolCallback.call(toolInput, toolContext);
+                String result;
+                try
+                {
+                    result = toolCallback.call(toolInput, toolContext);
+                }
+                catch (ToolExecutionException e)
+                {
+                    // If a tool threw McpException then just send back the message without making a big fuss
+                    if (e.getCause() instanceof McpException)
+                        result = e.getMessage();
+                    else
+                        throw e;
+                }
                 return new McpSchema.CallToolResult(
                     List.of(
                         new McpSchema.TextContent(result)
