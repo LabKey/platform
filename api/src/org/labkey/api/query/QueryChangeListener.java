@@ -224,7 +224,9 @@ public interface QueryChangeListener
         if (oldType.getPropertyType() != PropertyType.MULTI_CHOICE || newType.getPropertyType() == PropertyType.MULTI_CHOICE)
             return filterStr;
 
-        String columnNameEncoded = PageFlowUtil.encodeURIComponent(QueryKey.encodePart(columnName));
+        // GitHub Issue 943: Converting between TC and MVTC results in bad saved views
+        // single quote should decode to match url filter
+        String columnNameEncoded = PageFlowUtil.encodeURIComponent(QueryKey.encodePart(columnName), true);
 
         String colLower = columnNameEncoded.toLowerCase();
         String sLower = filterStr.toLowerCase();
@@ -285,7 +287,7 @@ public interface QueryChangeListener
         if (oldType.getPropertyType() == PropertyType.MULTI_CHOICE || newType.getPropertyType() != PropertyType.MULTI_CHOICE)
             return filterStr;
 
-        String columnNameEncoded = PageFlowUtil.encodeURIComponent(QueryKey.encodePart(columnName));
+        String columnNameEncoded = PageFlowUtil.encodeURIComponent(QueryKey.encodePart(columnName), true);
 
         String colLower = columnNameEncoded.toLowerCase();
         String sLower = filterStr.toLowerCase();
