@@ -29,7 +29,6 @@ import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,11 +37,9 @@ import org.labkey.api.audit.provider.MessageAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
@@ -59,14 +56,13 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 /**
- * Provides static functions for help with sending email.
- * Supports SMTP and Microsoft Graph transport providers.
+ * Provides static functions for help with sending email. Supports SMTP and Microsoft Graph transport providers.
  */
 public class MailHelper
 {
     public static final String MESSAGE_AUDIT_EVENT = "MessageAuditEvent";
 
-    private static final Logger _log = LogManager.getLogger(MailHelper.class);
+    private static final Logger _log = LogHelper.getLogger(MailHelper.class, "Errors sending and configuring email");
 
     // Transport providers
     private static final SmtpTransportProvider _smtpProvider = new SmtpTransportProvider();
@@ -109,16 +105,15 @@ public class MailHelper
             WarningService.get().register(new WarningProvider()
             {
                 @Override
-                public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
+                public void addStaticWarnings(@NotNull Warnings warnings, boolean showAllWarnings)
                 {
-                    if (context == null || context.getUser().hasRootPermission(TroubleshooterPermission.class))
-                        warnings.add(HtmlString.of(message));
+                    warnings.add(HtmlString.of(message));
                 }
             });
             return null;
         }
 
-        return configured.isEmpty() ? null : configured.get(0);
+        return configured.isEmpty() ? null : configured.getFirst();
     }
 
     public static EmailTransportProvider getActiveProvider()
@@ -196,12 +191,12 @@ public class MailHelper
      */
     public static Address[] createAddressArray(String s) throws AddressException
     {
-        List<InternetAddress> addrs = new ArrayList<>();
+        List<InternetAddress> addresses = new ArrayList<>();
         StringTokenizer st = new StringTokenizer(s, ";");
         while (st.hasMoreTokens())
-            addrs.add(new InternetAddress(st.nextToken()));
+            addresses.add(new InternetAddress(st.nextToken()));
 
-        return addrs.toArray(new Address[0]);
+        return addresses.toArray(new Address[0]);
     }
 
     /**
@@ -221,8 +216,7 @@ public class MailHelper
             // Check for configuration conflict
             if (_configurationConflict)
             {
-                throw new ConfigurationException(
-                    "Multiple email transport methods are configured. Please configure only one email transport method.");
+                throw new ConfigurationException("Multiple email transport methods are configured. Please configure only one email transport method.");
             }
 
             // Check if any provider is configured
@@ -289,10 +283,14 @@ public class MailHelper
     {
         try
         {
-            _log.error(ERROR_MESSAGE +
-                "\nfrom: " + StringUtils.join(m.getFrom(), "; ") + "\n" +
-                "to: " + StringUtils.join(m.getRecipients(RecipientType.TO), "; ") + "\n" +
-                "subject: " + m.getSubject(), e);
+            _log.error(
+                "{}\nfrom: {}\nto: {}\nsubject: {}",
+                ERROR_MESSAGE,
+                StringUtils.join(m.getFrom(), "; "),
+                StringUtils.join(m.getRecipients(RecipientType.TO), "; "),
+                m.getSubject(),
+                e
+            );
         }
         catch (MessagingException ex)
         {
@@ -545,11 +543,11 @@ public class MailHelper
                     }
                     catch (MessagingException e)
                     {
-                        _log.error("Failed to send message to " + email, e);
+                        _log.error("Failed to send message to {}", email, e);
                     }
                     catch (ConfigurationException e)
                     {
-                        _log.error("Error sending email: " + e.getMessage(), e);
+                        _log.error("Error sending email: {}", e.getMessage(), e);
                     }
                 }
             }

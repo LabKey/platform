@@ -22,8 +22,10 @@ import org.labkey.api.view.ViewContext;
 public interface WarningProvider
 {
     /**
-     * Add warnings for conditions that will never change while the server is running (e.g., size of JVM heap or Tomcat
-     * version). These warnings are displayed to site administrators, application administrators, and troubleshooters.
+     * Add warnings for conditions that don't change after this method is first called, unless the showAllWarnings
+     * flag is toggled. Examples of static conditions: size of JVM heap or the email settings in application.properties.
+     * These warnings are displayed to site administrators, application admins, and troubleshooters. The method could
+     * be called multiple times, for example, if the showAllWarnings flag is toggled or a new provider is registered.
      * @param warnings A @NotNull Warnings collector
      * @param showAllWarnings A flag for testing that indicates the provider should unconditionally add all warnings
      */
@@ -37,7 +39,8 @@ public interface WarningProvider
      * @param warnings A @NotNull Warnings collector
      * @param context optionally, a ViewContext for which the warnings can be customized. Null when checking for
      *                warnings that are scoped to the whole server's health, which typically correlate with site-wide
-     *                messages shown to site admins. If a ViewContext is provided, it will have a user, container, and request
+     *                messages shown to site admins. If a ViewContext is provided, it will have a user, container, and
+     *                request
      * @param showAllWarnings A flag for testing that indicates the provider should add all warnings if its standard
      *                        permissions check passes.
      */
