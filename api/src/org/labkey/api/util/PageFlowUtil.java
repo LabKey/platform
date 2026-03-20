@@ -2670,9 +2670,14 @@ public class PageFlowUtil
     // Google Sheets compatible version of joinValuesToString()
     public static String joinValuesToStringForExport(@NotNull List<String> values)
     {
+        return joinValuesToStringForExport(values, ", ");
+    }
+
+    public static String joinValuesToStringForExport(@NotNull List<String> values, String delimiter)
+    {
         return values.stream()
                 .map(value -> null==value ? "" : shouldEscapeForExport(value) ? "\"" + Strings.CS.replace(value,"\"", "\"\"") + "\"": value)
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.joining(delimiter));
     }
 
     private static boolean shouldEscapeForExport(@NotNull String value)
