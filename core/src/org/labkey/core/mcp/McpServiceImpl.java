@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
 import com.google.genai.types.ClientOptions;
 import io.modelcontextprotocol.common.McpTransportContext;
-import io.modelcontextprotocol.json.McpJsonMapper;
+import io.modelcontextprotocol.json.McpJsonDefaults;
 import io.modelcontextprotocol.server.McpServer;
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.server.McpSyncServer;
@@ -41,7 +41,6 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
-import org.springframework.ai.anthropic.api.AnthropicApi;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
@@ -207,13 +206,12 @@ public class McpServiceImpl implements McpService
 
     public List<McpSchema.Tool> tools()
     {
-        McpJsonMapper mapper = McpJsonMapper.getDefault();
         return toolMap.values().stream().map(ToolCallback::getToolDefinition).map(td ->
-                McpSchema.Tool.builder()
-                        .name(td.name())
-                        .description(td.description())
-                        .inputSchema(mapper, td.inputSchema())
-                        .build()
+            McpSchema.Tool.builder()
+                .name(td.name())
+                .description(td.description())
+                .inputSchema(McpJsonDefaults.getMapper(), td.inputSchema())
+                .build()
         ).toList();
     }
 
@@ -227,7 +225,7 @@ public class McpServiceImpl implements McpService
         _McpServlet(ObjectMapper objectMapper, String messageEndpoint, String sseEndpoint)
         {
             transportProvider = HttpServletStreamableServerTransportProvider.builder()
-                .jsonMapper(McpJsonMapper.getDefault())
+                .jsonMapper(McpJsonDefaults.getMapper())
                 .mcpEndpoint(messageEndpoint)
                 .contextExtractor(req -> {
                     User user = (User) req.getUserPrincipal();
@@ -260,7 +258,7 @@ public class McpServiceImpl implements McpService
             var schema = McpSchema.Tool.builder()
                 .name(toolDef.name())
                 .description(toolDef.description())
-                .inputSchema(McpJsonMapper.getDefault(), toolDef.inputSchema())
+                .inputSchema(McpJsonDefaults.getMapper(), toolDef.inputSchema())
                 .build();
 
             return new McpServerFeatures.SyncToolSpecification(schema, (exchange, args) -> {
@@ -272,7 +270,7 @@ public class McpServiceImpl implements McpService
                 map.put("user", user);
                 map.put("sessionId", sessionId);
 
-                String containerPath = PATH_CACHE.get(exchange.sessionId());
+                String containerPath = PATH_CACHE.get(exchange.sessionId()); // TODO: Cache Container IDs instead of paths?
                 if (containerPath != null)
                 {
                     Container container = ContainerManager.getForPath(containerPath);
@@ -305,10 +303,10 @@ public class McpServiceImpl implements McpService
                         throw e;
                 }
                 return new McpSchema.CallToolResult(
-                    List.of(
-                        new McpSchema.TextContent(result)
-                    ),
-                    false
+                    List.of(new McpSchema.TextContent(result)),
+                    false,
+                    null,
+                    null
                 );
             });
         }
@@ -880,25 +878,22 @@ public class McpServiceImpl implements McpService
             return null;
         }
 
+        @Override
         public AnthropicChatOptions getChatOptions()
         {
-            AnthropicChatOptions chatOptions = AnthropicChatOptions.builder()
-                    .model(getModel())
-                    .toolCallbacks(getToolCallbacks())
-                    .build();
-            return chatOptions;
+            return AnthropicChatOptions.builder()
+                .model(getModel())
+                .apiKey(System.getenv("CLAUDE_API_KEY"))
+                .toolCallbacks(getToolCallbacks())
+                .build();
         }
 
+        @Override
         public AnthropicChatModel getChatModel()
         {
-            AnthropicChatOptions chatOptions = getChatOptions();
-            AnthropicApi api = AnthropicApi.builder()
-                    .apiKey(System.getenv("CLAUDE_API_KEY"))
-                    .build();
-            AnthropicChatModel chatModel = AnthropicChatModel.builder()
-                    .anthropicApi(api)
-                    .build();
-            return chatModel;
+            return AnthropicChatModel.builder()
+                .options(getChatOptions())
+                .build();
         }
 
         @Override
