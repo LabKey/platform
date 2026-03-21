@@ -35,6 +35,7 @@ import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.ImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
@@ -592,9 +593,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
             props.put("canDelete", nonNullContainer && container.hasPermission(user, DeletePermission.class));
             props.put("canDeleteOwn", nonNullContainer && container.hasPermission(user, DeletePermission.class));
             props.put("isAdmin", nonNullContainer && container.hasPermission(user, AdminPermission.class));
-            props.put("isRootAdmin", user.hasRootAdminPermission());
-            props.put("isSystemAdmin", user.hasSiteAdminPermission());
-            props.put("canImpersonateSiteRoles", user.hasRootPermission(ImpersonatePermission.class));
+            props.put("isRootAdmin", user.hasRootAdminPermission()); // Site Admin or App Admin
+            props.put("isSystemAdmin", user.hasSiteAdminPermission()); // @Deprecated, use isSiteAdmin instead. TODO: Eliminate usages and remove
+            props.put("isSiteAdmin", user.hasSiteAdminPermission()); // Just Site Admin
+            props.put("canImpersonateSiteRoles", user.hasRootPermission(ImpersonatePermission.class)); // Site Admin, App Admin, or Impersonating Troubleshooter
+            props.put("canImpersonatePrivilegedRoles", user.hasRootPermission(ImpersonatePrivilegedSiteRolesPermission.class));
             props.put("isGuest", user.isGuest());
             props.put("isDeveloper", user.isBrowserDev());
             props.put("isAnalyst", user.hasRootPermission(AnalystPermission.class));
