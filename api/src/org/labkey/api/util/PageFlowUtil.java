@@ -747,6 +747,14 @@ public class PageFlowUtil
         return encode(s, true);
     }
 
+    public static @NotNull String encodeURIComponent(String s, boolean decodeSingleQuote)
+    {
+        String encoded = encodeURIComponent(s);
+        if (!decodeSingleQuote)
+            return encoded;
+        return Strings.CS.replace(encoded, "%27", "'");
+    }
+
     /**
      * Intended to be equivalent to JavaScript encodeURI().
      */
