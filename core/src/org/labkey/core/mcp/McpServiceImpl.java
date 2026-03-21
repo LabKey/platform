@@ -290,8 +290,9 @@ public class McpServiceImpl implements McpService
                 {
                     throw new RuntimeException(e);
                 }
+
                 String result;
-                boolean isError = false;
+
                 try
                 {
                     SimpleMetricsService.get().increment("core", "mcpToolInvocations", request.name());
@@ -299,12 +300,9 @@ public class McpServiceImpl implements McpService
                 }
                 catch (ToolExecutionException e)
                 {
-                    // If a tool threw McpException then send back the message as an MCP-level error
+                    // If a tool threw McpException then just send back the message, not as an error
                     if (e.getCause() instanceof McpException)
-                    {
                         result = e.getCause().getMessage();
-                        isError = true;
-                    }
                     else
                         throw e;
                 }
@@ -314,9 +312,10 @@ public class McpServiceImpl implements McpService
                     throw t;
                 }
 
+                // Responses and McpExceptions are treated as "success". Tools should throw for true error conditions.
                 return new McpSchema.CallToolResult(
                     List.of(new McpSchema.TextContent(result)),
-                    isError,
+                    false,
                     null,
                     null
                 );
