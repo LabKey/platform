@@ -32,6 +32,7 @@ import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpException;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.security.User;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
@@ -261,7 +262,7 @@ public class McpServiceImpl implements McpService
                 .inputSchema(McpJsonDefaults.getMapper(), toolDef.inputSchema())
                 .build();
 
-            return new McpServerFeatures.SyncToolSpecification(schema, (exchange, args) -> {
+            return new McpServerFeatures.SyncToolSpecification(schema, (exchange, request) -> {
                 var transportCtx = exchange.transportContext();
                 var user = (User) transportCtx.get("user");
                 var sessionId = exchange.sessionId();
@@ -283,28 +284,39 @@ public class McpServiceImpl implements McpService
                 String toolInput = /* serialize args to JSON */ null;
                 try
                 {
-                    toolInput = JsonUtil.DEFAULT_MAPPER.writeValueAsString(args);
+                    toolInput = JsonUtil.DEFAULT_MAPPER.writeValueAsString(request.arguments());
                 }
                 catch (JsonProcessingException e)
                 {
                     throw new RuntimeException(e);
                 }
                 String result;
+                boolean isError = false;
                 try
                 {
+                    SimpleMetricsService.get().increment("core", "mcpToolInvocations", request.name());
                     result = toolCallback.call(toolInput, toolContext);
                 }
                 catch (ToolExecutionException e)
                 {
-                    // If a tool threw McpException then just send back the message without making a big fuss
+                    // If a tool threw McpException then send back the message as an MCP-level error
                     if (e.getCause() instanceof McpException)
-                        result = e.getMessage();
+                    {
+                        result = e.getCause().getMessage();
+                        isError = true;
+                    }
                     else
                         throw e;
                 }
+                catch (Throwable t)
+                {
+                    // Set a breakpoint below to inspect exceptions during development
+                    throw t;
+                }
+
                 return new McpSchema.CallToolResult(
                     List.of(new McpSchema.TextContent(result)),
-                    false,
+                    isError,
                     null,
                     null
                 );
@@ -379,25 +391,25 @@ public class McpServiceImpl implements McpService
         }
 
         @Override
-        public void add(List<Document> documents)
+        public void add(@NotNull List<Document> documents)
         {
             delegate.add(documents);
         }
 
         @Override
-        public void delete(Filter.Expression filterExpression)
+        public void delete(@NotNull Filter.Expression filterExpression)
         {
             delegate.delete(filterExpression);
         }
 
         @Override
-        public void delete(List<String> idList)
+        public void delete(@NotNull List<String> idList)
         {
             delegate.delete(idList);
         }
 
         @Override
-        public List<Document> similaritySearch(SearchRequest request)
+        public @NotNull List<Document> similaritySearch(SearchRequest request)
         {
             LOG.info("Vector store search: query=\"{}\"", request.getQuery());
             List<Document> results = delegate.similaritySearch(request);
@@ -419,7 +431,7 @@ public class McpServiceImpl implements McpService
         }
 
         @Override
-        public String getName()
+        public @NotNull String getName()
         {
             return delegate.getName();
         }
@@ -783,6 +795,7 @@ public class McpServiceImpl implements McpService
             │ labels                │ Map<String, String>            │ Custom labels attached to requests │
             └───────────────────────┴────────────────────────────────┴────────────────────────────────────┘
 */
+        @Override
         public GoogleGenAiChatOptions getChatOptions()
         {
             GoogleGenAiChatOptions chatOptions = GoogleGenAiChatOptions.builder()
@@ -792,6 +805,7 @@ public class McpServiceImpl implements McpService
             return chatOptions;
         }
 
+        @Override
         public ChatModel getChatModel()
         {
             Client genAiClient = getLlmClient();

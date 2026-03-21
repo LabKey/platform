@@ -9,6 +9,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.McpProvider;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.ai.chat.client.ChatClient;
@@ -49,6 +50,12 @@ public interface McpService extends ToolCallbackProvider
         default User getUser(ToolContext toolContext)
         {
             return (User)toolContext.getContext().get("user");
+        }
+
+        // Every MCP resource should call this on every invocation
+        default void incrementResourceReadCount(String resource)
+        {
+            SimpleMetricsService.get().increment("core", "mcpResourceReads", resource);
         }
     }
 

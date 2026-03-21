@@ -43,6 +43,7 @@ public class QueryMcp implements McpService.McpImpl
             description = "Provide documentation for LabKey SQL specific syntax")
     public McpSchema.ReadResourceResult getLabKeySQLDocumentation() throws IOException
     {
+        incrementResourceReadCount("LabKey SQL");
         String markdown = IOUtils.resourceToString("org/labkey/query/controllers/LabKeySql.md", null, QueryController.class.getClassLoader());
         return new McpSchema.ReadResourceResult(List.of(
             new McpSchema.TextResourceContents(
