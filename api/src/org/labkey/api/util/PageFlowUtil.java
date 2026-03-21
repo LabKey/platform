@@ -2691,6 +2691,8 @@ public class PageFlowUtil
     /// all names in all forms.
     /// The choice of using encodeURI component is somewhat arbitrary, any encoding that can remove
     /// double-quote and backslash from the name would be fine.
+    ///
+    ///  This must be kept in sync with org.labkey.test.util.EscapeUtil#getFormFieldName
     public static String encodeFormName(String name)
     {
         final String escapeChar = "%";
@@ -2698,7 +2700,8 @@ public class PageFlowUtil
         final String unclean = escapeChar + problemChars;
         if (!StringUtils.containsAny(name, unclean))
             return name;
-        var ret = FIELD_ENCODED_PREFIX + encodeURIComponent(name);
+        // CONSIDER: use encode(name) for simplicity or only encode the unclean chars?
+        var ret = FIELD_ENCODED_PREFIX + encode(name);
         assert !StringUtils.containsAny(ret, problemChars);
         return ret;
     }
