@@ -48,6 +48,7 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jspecify.annotations.NonNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
@@ -194,6 +195,7 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Directive;
 import org.labkey.api.security.ElevatedUser;
+import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -12355,6 +12357,36 @@ public class AdminController extends SpringActionController
                     }
                 }
             }
+        }
+    }
+
+    @RequiresPermission(AdminOperationsPermission.class) // Must be site administrator
+    public static class DeleteEncryptedContentAction extends ConfirmAction<Object>
+    {
+        @Override
+        public void validateCommand(Object o, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getConfirmView(Object o, BindException errors) throws Exception
+        {
+            return HtmlView.of("Are you sure you want to delete all encrypted content in the server? This " +
+                "content can include passwords to external systems, authentication configurations, users' TOTP " +
+                "settings, etc. The encrypted content will be cleared and can't be recovered.");
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            Encryption.deleteEncryptedContent();
+            return true;
+        }
+
+        @Override
+        public @NonNull URLHelper getSuccessURL(Object o)
+        {
+            return getShowAdminURL();
         }
     }
 

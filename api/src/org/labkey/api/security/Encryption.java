@@ -155,7 +155,7 @@ public class Encryption
     {
         if (passPhrase != null)
         {
-            LOG.info("Attempting to test the integrity of the " + keyDescription);
+            LOG.info("Attempting to test the integrity of the {}", keyDescription);
 
             try
             {
@@ -244,7 +244,7 @@ public class Encryption
 
     private static void logFailureGuidance()
     {
-        LOG.error(KEY_CHANGE_GUIDANCE + " For more information, see " + new HelpTopic("labkeyxml", "encrypt").getHelpTopicHref() + ".");
+        LOG.error("{} For more information, see {}.", KEY_CHANGE_GUIDANCE, new HelpTopic("labkeyxml", "encrypt").getHelpTopicHref());
     }
 
     private Encryption()
@@ -537,6 +537,8 @@ public class Encryption
         }
 
         void migrateEncryptedContent(String oldPassPhrase, String keySource, AESConfig oldConfig);
+
+        void deleteEncryptedContent();
     }
 
     public static void checkMigration()
@@ -567,7 +569,7 @@ public class Encryption
             }
             else if (!cipher.equals(AESConfig.current.getCipherName()))
             {
-                LOG.error("Unexpected cipher configuration: " + cipher);
+                LOG.error("Unexpected cipher configuration: {}", cipher);
             }
 
             if (migrationNeeded)
@@ -587,7 +589,7 @@ public class Encryption
                 if (DECRYPTION_EXCEPTIONS.get() == 0)
                 {
                     Encryption.EncryptionMigrationHandler.HANDLERS
-                            .forEach(handler -> handler.migrateEncryptedContent(passPhrase, message, migrationConfig));
+                        .forEach(handler -> handler.migrateEncryptedContent(passPhrase, message, migrationConfig));
 
                     CacheManager.clearAllKnownCaches();
                 }
@@ -600,7 +602,7 @@ public class Encryption
                 if (oldPassPhrase != null)
                 {
                     LOG.info("Migration of all existing encrypted content from OldEncryptionKey to EncryptionKey is complete");
-                    LOG.info("IMPORTANT: Since migration is complete you should now remove the " + keySource);
+                    LOG.info("IMPORTANT: Since migration is complete you should now remove the {}", keySource);
                 }
                 if (cipher == null)
                 {
@@ -612,8 +614,25 @@ public class Encryption
         }
     }
 
+    public static void deleteEncryptedContent()
+    {
+        EncryptionMigrationHandler.HANDLERS
+            .forEach(EncryptionMigrationHandler::deleteEncryptedContent);
+        CacheManager.clearAllKnownCaches();
+    }
 
-    private static final EncryptionMigrationHandler TEST_HANDLER = (oldPassPhrase, keySource, oldConfig) -> {};
+    private static final EncryptionMigrationHandler TEST_HANDLER = new EncryptionMigrationHandler()
+    {
+        @Override
+        public void migrateEncryptedContent(String oldPassPhrase, String keySource, AESConfig oldConfig)
+        {
+        }
+
+        @Override
+        public void deleteEncryptedContent()
+        {
+        }
+    };
 
     public static class TestCase extends Assert
     {

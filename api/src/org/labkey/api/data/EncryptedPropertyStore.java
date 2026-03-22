@@ -165,4 +165,20 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
         clearCache();
         LOG.info("  Migration of encrypted property store values is complete");
     }
+
+    @Override
+    public void deleteEncryptedContent()
+    {
+        LOG.info("Deleting all encrypted property sets");
+        TableInfo sets = PropertySchema.getInstance().getTableInfoPropertySets();
+        new TableSelector(
+            sets,
+            Set.of("Set", "Category", "Encryption"),
+            new SimpleFilter(FieldKey.fromParts("Encryption"), "None", CompareType.NEQ),
+            null
+        ).forEachMap(map -> {
+            int set = (int)map.get("Set");
+            PropertyManager.deleteSetDirectly(set);
+        });
+    }
 }

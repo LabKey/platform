@@ -628,6 +628,29 @@ public class PropertyManager
         new SqlExecutor(SCHEMA.getSchema()).execute(deleteSets);
     }
 
+    public static void deleteSetDirectly(int propertySet)
+    {
+        SqlExecutor executor = new SqlExecutor(SCHEMA.getSchema());
+
+        var setSelectName = SCHEMA.getTableInfoProperties().getColumn("Set").getSelectIdentifier();   // Keyword in some dialects
+
+        SQLFragment deleteProps = new SQLFragment("DELETE FROM ")
+            .append(SCHEMA.getTableInfoProperties())
+            .append(" WHERE ")
+            .appendIdentifier(setSelectName)
+            .append(" = ?")
+            .add(propertySet);
+        executor.execute(deleteProps);
+
+        SQLFragment deleteSet = new SQLFragment("DELETE FROM ")
+            .append(SCHEMA.getTableInfoPropertySets())
+            .append(" WHERE ")
+            .appendIdentifier(setSelectName)
+            .append(" = ?")
+            .add(propertySet);
+        executor.execute(deleteSet);
+    }
+
     public static class PropertyEntry
     {
         private int _userId;
