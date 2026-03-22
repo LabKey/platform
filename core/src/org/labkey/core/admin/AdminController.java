@@ -903,6 +903,12 @@ public class AdminController extends SpringActionController
                 .addParameter("type", AllowListType.Redirect.name());
         }
 
+        @Override
+        public ActionURL getDeleteEncryptedContentURL()
+        {
+            return new ActionURL(DeleteEncryptedContentAction.class, ContainerManager.getRoot());
+        }
+
         public static ActionURL getDeprecatedFeaturesURL()
         {
             return new ActionURL(OptionalFeaturesAction.class, ContainerManager.getRoot()).addParameter("type", FeatureType.Deprecated.name());
@@ -12371,9 +12377,12 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(Object o, BindException errors) throws Exception
         {
+            getPageConfig().setShowHeader(false);
+            getPageConfig().setTitle("Delete Encrypted Content?");
             return HtmlView.of("Are you sure you want to delete all encrypted content in the server? This " +
                 "content can include passwords to external systems, authentication configurations, users' TOTP " +
-                "settings, etc. The encrypted content will be cleared and can't be recovered.");
+                "settings, etc. The encrypted content will be cleared and can't be recovered. Restart the server " +
+                "after clearing encrypted content.");
         }
 
         @Override

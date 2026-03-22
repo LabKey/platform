@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.ContainerManager;
@@ -41,6 +42,8 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JobRunner;
+import org.labkey.api.util.LinkBuilder;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewContext;
@@ -64,6 +67,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -107,11 +111,16 @@ public class Encryption
                             ". An encryption key is required to save credentials used in various integrations.").append(getEncryptionKeyHelpLink()));
 
                     int count = DECRYPTION_EXCEPTIONS.get();
+                    String who = context == null || context.getUser().hasSiteAdminPermission() ? "you" : "a site administrator";
 
                     if (count > 0 || showAllWarnings)
                         warnings.add(HtmlStringBuilder.of("On " + StringUtilsLabKey.pluralize(count, "attempt") +
-                            " the server failed to decrypt encrypted content using the " +
-                            ENCRYPTION_KEY_CHANGED + " " + KEY_CHANGE_GUIDANCE).append(getEncryptionKeyHelpLink()));
+                            ", the server failed to decrypt encrypted content using the " +
+                            ENCRYPTION_KEY_CHANGED + " " + KEY_CHANGE_GUIDANCE)
+                                .append(" If the previous encryption key has been lost, " + who + " can clear all encrypted content via ")
+                                .append(LinkBuilder.simpleLink("this link", Objects.requireNonNull(PageFlowUtil.urlProvider(AdminUrls.class)).getDeleteEncryptedContentURL()))
+                                .append(". ")
+                                .append(getEncryptionKeyHelpLink()));
                 }
             }
 
@@ -616,9 +625,11 @@ public class Encryption
 
     public static void deleteEncryptedContent()
     {
+        LOG.info("Deleting all encrypted content at the request of a site administrator");
         EncryptionMigrationHandler.HANDLERS
             .forEach(EncryptionMigrationHandler::deleteEncryptedContent);
         CacheManager.clearAllKnownCaches();
+        LOG.info("Finished deleting all encrypted content");
     }
 
     private static final EncryptionMigrationHandler TEST_HANDLER = new EncryptionMigrationHandler()

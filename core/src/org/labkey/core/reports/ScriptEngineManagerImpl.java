@@ -156,8 +156,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
                             if (newEncryptedPassword != null)
                             {
-                                json.put(PASSWORD_FIELD, newEncryptedPassword);
-                                Table.update(null, tinfo, PageFlowUtil.map("Configuration", json.toString()), rowId);
+                                savePassword(tinfo, rowId, json, newEncryptedPassword);
                             }
                         }
                         catch (DecryptionException e)
@@ -174,17 +173,23 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             LOG.info("  Migration of encrypted content in scripting engine configurations is complete");
         }
 
+        private void savePassword(TableInfo tinfo, int rowId, JSONObject json, @Nullable String newPassword)
+        {
+            json.put(PASSWORD_FIELD, newPassword);
+            Table.update(null, tinfo, PageFlowUtil.map("Configuration", json.toString()), rowId);
+        }
+
         @Override
         public void deleteEncryptedContent()
         {
-            LOG.info("Deleting all script engine configurations that have a password");
+            LOG.info("Clearing the password from all script engine configurations that have one");
             TableInfo tinfo = CoreSchema.getInstance().getTableInfoReportEngines();
             new TableSelector(tinfo, PageFlowUtil.set("RowId", "Configuration")).<Integer, String>getValueMap(Integer.class).forEach((rowId, configuration) -> {
                 JSONObject json = new JSONObject(configuration);
                 String encryptedPassword = json.optString(PASSWORD_FIELD, null);
                 if (null != encryptedPassword)
                 {
-                    Table.delete(tinfo, rowId);
+                    savePassword(tinfo, rowId, json, null);
                 }
             });
         }

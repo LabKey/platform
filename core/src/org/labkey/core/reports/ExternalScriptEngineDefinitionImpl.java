@@ -31,6 +31,7 @@ import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.report.r.RserveScriptEngine;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Encryption.Algorithm;
+import org.labkey.api.security.Encryption.DecryptionException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.springframework.beans.MutablePropertyValues;
@@ -210,9 +211,17 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         {
             String password = json.getString("password");
             if (decrypt)
-                setPassword(AES.get().decrypt(Base64.decodeBase64(password)));
-            else
-                setPassword(password);
+            {
+                try
+                {
+                    password = AES.get().decrypt(Base64.decodeBase64(password));
+                }
+                catch (DecryptionException e)
+                {
+                    password = null;
+                }
+            }
+            setPassword(password);
         }
         if (json.has("external"))
             setExternal(json.getBoolean("external"));
