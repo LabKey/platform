@@ -45,6 +45,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilter.AllFolders;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -1098,7 +1099,7 @@ public class AttachmentServiceImpl implements AttachmentService
     private record Orphan(String documentName, String parentType){}
 
     @Override
-    public void detectOrphans()
+    public void logOrphanedAttachments()
     {
         // Log orphaned attachments in this server, but in dev mode only, since this is for our testing. Also, we
         // don't yet offer a way to delete orphaned attachments via the UI, so it's not helpful to inform admins.
@@ -1131,6 +1132,54 @@ public class AttachmentServiceImpl implements AttachmentService
                         LOG.error("{} detected orphans are listed below:\n{}", message, orphans.stream().map(Record::toString).collect(Collectors.joining("\n")));
                     }
                 }
+            }
+        }
+    }
+
+    record OrphanedAttachment(String container, String parent, String documentName)
+    {
+        AttachmentParent getAttachmentParent()
+        {
+            return new AttachmentParent()
+            {
+                @Override
+                public String getEntityId()
+                {
+                    return parent;
+                }
+
+                @Override
+                public String getContainerId()
+                {
+                    return container;
+                }
+
+                @Override
+                public @NotNull AttachmentParentType getAttachmentParentType()
+                {
+                    return AttachmentParentType.UNKNOWN;
+                }
+            };
+        }
+    }
+
+    @Override
+    public void deleteOrphanedAttachments()
+    {
+        User user = ElevatedUser.getElevatedUser(User.getSearchUser(), TroubleshooterRole.class);
+        UserSchema core = DefaultSchema.get(user, ContainerManager.getRoot()).getUserSchema(CoreQuerySchema.NAME);
+        if (core != null)
+        {
+            // Use "unsafe everything" container filter because it's possible that orphaned attachments have a container
+            // that no longer exists.
+            TableInfo documents = core.getTable(CoreQuerySchema.DOCUMENTS_TABLE_NAME, ContainerFilter.getUnsafeEverythingFilter());
+            if (null != documents)
+            {
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Orphaned"), true);
+                new TableSelector(documents, new CsvSet("Container, Parent, DocumentName"), filter, null).forEach(OrphanedAttachment.class, orphan -> {
+                    LOG.info("Deleting orphaned attachment: {}", orphan);
+                    deleteAttachment(orphan.getAttachmentParent(), orphan.documentName(), user);
+                });
             }
         }
     }
