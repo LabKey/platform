@@ -1136,7 +1136,7 @@ public class AttachmentServiceImpl implements AttachmentService
         }
     }
 
-    record OrphanedAttachment(String container, String parent, String documentName)
+    record OrphanedAttachment(String container, String parent, String parentType, String documentName)
     {
         AttachmentParent getAttachmentParent()
         {
@@ -1157,7 +1157,9 @@ public class AttachmentServiceImpl implements AttachmentService
                 @Override
                 public @NotNull AttachmentParentType getAttachmentParentType()
                 {
-                    return AttachmentParentType.UNKNOWN;
+                    // Attempt to resolve the parent type. This will get written to the audit log.
+                    AttachmentParentType type = ATTACHMENT_TYPE_MAP.get(parentType());
+                    return type != null ? type : AttachmentParentType.UNKNOWN;
                 }
             };
         }
@@ -1176,7 +1178,7 @@ public class AttachmentServiceImpl implements AttachmentService
             if (null != documents)
             {
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Orphaned"), true);
-                new TableSelector(documents, new CsvSet("Container, Parent, DocumentName"), filter, null).forEach(OrphanedAttachment.class, orphan -> {
+                new TableSelector(documents, new CsvSet("Container, Parent, ParentType, DocumentName"), filter, null).forEach(OrphanedAttachment.class, orphan -> {
                     LOG.info("Deleting orphaned attachment: {}", orphan);
                     deleteAttachment(orphan.getAttachmentParent(), orphan.documentName(), user);
                 });
