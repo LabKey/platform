@@ -1231,12 +1231,13 @@ public class DavController extends SpringActionController
                 
                 if (getRequest() instanceof MultipartHttpServletRequest multipartRequest)
                 {
-                    if (multipartRequest.getFileMap().size() > 1)
+                    var fileMap = BaseViewAction.getFileMap(multipartRequest);
+                    if (fileMap.size() > 1)
                         return WebdavStatus.SC_NOT_IMPLEMENTED;
-                    if (multipartRequest.getFileMap().isEmpty())
+                    if (fileMap.isEmpty())
                         return WebdavStatus.SC_METHOD_NOT_ALLOWED;
 
-                    Map.Entry<String, MultipartFile> entry = multipartRequest.getFileMap().entrySet().iterator().next();
+                    Map.Entry<String, MultipartFile> entry = fileMap.entrySet().iterator().next();
                     MultipartFile file = entry.getValue();
                     if (null == filename)
                     {

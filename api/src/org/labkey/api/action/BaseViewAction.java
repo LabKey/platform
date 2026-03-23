@@ -76,6 +76,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -700,9 +701,17 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
      */
     protected Map<String, MultipartFile> getFileMap()
     {
-        if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
-            return ((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
-        return Collections.emptyMap();
+        return getFileMap(getViewContext().getRequest());
+    }
+
+    static public Map<String, MultipartFile> getFileMap(HttpServletRequest req)
+    {
+        if (!(req instanceof MultipartHttpServletRequest mpreq))
+            return Collections.emptyMap();
+        Map<String, MultipartFile> htmlMap = mpreq.getFileMap();
+        Map<String, MultipartFile> formMap = new LinkedHashMap<>();
+        htmlMap.forEach((key, value) -> formMap.put(PageFlowUtil.decodeFormName(key), value));
+        return formMap;
     }
 
     protected List<AttachmentFile> getAttachmentFileList()

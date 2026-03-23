@@ -548,7 +548,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             }
             else if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
             {
-                Map<String, MultipartFile> files = ((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
+                Map<String, MultipartFile> files = getFileMap();
                 MultipartFile multipartfile = null==files ? null : files.get("file");
                 if (null != multipartfile && multipartfile.getSize() > 0)
                 {
