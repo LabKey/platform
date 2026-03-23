@@ -109,7 +109,8 @@ public class CoreUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from core-26.002-26.003.sql
+     * This is not invoked from any script yet. We want to make sure our orphaned attachment detection is perfect
+     * before blanket deleting them.
      */
     @DeferredUpgrade // Need to execute this after AttachmentTypes are registered
     @SuppressWarnings("unused")
