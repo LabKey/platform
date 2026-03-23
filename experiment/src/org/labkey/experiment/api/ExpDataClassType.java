@@ -28,6 +28,8 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.DataClassUserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 
@@ -74,22 +76,30 @@ public class ExpDataClassType implements AttachmentParentType
             String lsid = rs.getString("LSID");
             Domain domain = PropertyService.get().getDomain(c, lsid);
 
-            // Add a select for the ObjectIds in this ExpDataClass if the domain includes an attachment column. ExpDataClass attachments
-            // use the LSID's ObjectId as the attachment parent EntityId, so we need to use a SQL expression to extract it.
-            if (null != domain && domain.getProperties().stream().anyMatch(p -> p.getPropertyType() == PropertyType.ATTACHMENT))
-                selectStatements.add(
-                    new SQLFragment("\n    SELECT ")
-                        .append(expressionToExtractObjectId)
-                        .append(" AS EntityId, ")
-                        .append(dialect.concatenate(
-                            new SQLFragment("?", domain.getName()),
-                            new SQLFragment("':'"),
-                            new SQLFragment("Name")
-                        ))
-                        .append(" AS Description FROM expdataclass.")
-                        .append(domain.getStorageTableName())
-                        .append(" WHERE ").append(where)
-                );
+            if (null != domain)
+            {
+                // Enumerate columns on the data class TableInfo since it includes the vocabulary domain columns.
+                // For example, Compound has a built-in Structure2D attachment column supplied by a vocabulary domain.
+                TableInfo dataClassTable = new DataClassUserSchema(c, User.getSearchUser()).getTable(domain.getName());
+
+                // Add a select for the ObjectIds in this ExpDataClass if the domain includes an attachment column.
+                // ExpDataClass attachments use the LSID's ObjectId as the attachment parent EntityId, so we need to use
+                // a SQL expression to extract it.
+                if (dataClassTable != null && dataClassTable.getColumns().stream().anyMatch(col -> col.getPropertyType() == PropertyType.ATTACHMENT))
+                    selectStatements.add(
+                        new SQLFragment("\n    SELECT ")
+                            .append(expressionToExtractObjectId)
+                            .append(" AS EntityId, ")
+                            .append(dialect.concatenate(
+                                new SQLFragment("?", domain.getName()),
+                                new SQLFragment("':'"),
+                                new SQLFragment("Name")
+                            ))
+                            .append(" AS Description FROM expdataclass.")
+                            .append(domain.getStorageTableName())
+                            .append(" WHERE ").append(where)
+                    );
+            }
         });
 
         return selectStatements.isEmpty() ?
