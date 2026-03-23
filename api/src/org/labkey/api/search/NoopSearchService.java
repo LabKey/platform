@@ -29,7 +29,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.Reader;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -292,7 +291,7 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public void clearLastIndexed()
+    public void clearLastIndexed(String reason)
     {
     }
 
@@ -379,7 +378,7 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public void updateIndex()
+    public void updateIndex(String reason)
     {
     }
 
