@@ -54,7 +54,6 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -438,7 +437,7 @@ public interface SearchService extends SearchMXBean
     void resetIndex();
     void startCrawler();
     void pauseCrawler();
-    void updateIndex();
+    void updateIndex(String reason);
     void refreshNow();
 
     @Nullable Throwable getConfigurationError();
@@ -472,7 +471,7 @@ public interface SearchService extends SearchMXBean
     void deleteContainer(String id);
 
     void deleteIndex(String reason);          // close the index if it's been initialized, then delete the index directory and reset lastIndexed values
-    void clearLastIndexed();     // reset lastIndexed values and initiate aggressive crawl. must be callable before (and after) start() has been called.
+    void clearLastIndexed(String reason);     // reset lastIndexed values and initiate aggressive crawl. must be callable before (and after) start() has been called.
     void maintenance();
 
     //

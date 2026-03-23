@@ -341,7 +341,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                                     }
                                 }
                                 else
-                                    rows.add(((MapDataIterator) _delegate).getMap());
+                                    rows.add(((MapDataIterator) _delegate).getMapExcludeExistingRecord());
                             }
                             return ret;
                         }
