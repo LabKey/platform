@@ -47,7 +47,7 @@
         WikiVersion version = wiki.getLatestVersion();
         %>
         <hr size=1>
-        <h3><a name="<%=hname(tree.getName())%>"></a><%=h(tree.getTitle())%></h3><br>
+        <h3><a name="<%=h(tree.getName())%>"></a><%=h(tree.getTitle())%></h3><br>
         <pre><%=h(version.getBody())%></pre><br><br>
     <%}
 %>

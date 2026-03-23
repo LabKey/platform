@@ -2710,8 +2710,7 @@ public class PageFlowUtil
     {
         if (!name.startsWith(FIELD_ENCODED_PREFIX))
             return name;
-        var ret = decode(name.substring(2));
-        return ret;
+        return decode(name.substring(FIELD_ENCODED_PREFIX.length()));
     }
 
     public static class TestCase extends Assert

@@ -224,7 +224,7 @@
 </p>
 <table id="app-contexts">
 <% for (String contextName : bean.getAllContextNames()) { %>
-    <tr data-name="<%=hname(contextName)%>">
+    <tr data-name="<%=h(contextName)%>">
         <td><%=h(contextName)%></td>
         <td><%=link("edit", urlFor(OlapController.EditAppAction.class).addParameter("contextName", contextName))%></td>
         <td><%=link("delete").onClick("confirmDeleteApp(" + q(contextName) + ");return false;")%></td>
@@ -241,7 +241,7 @@
     %><table id="cube-definitions"><%
     for (OlapSchemaDescriptor sd : list)
     {
-        %><tr data-name="<%=hname(sd.getName())%>">
+        %><tr data-name="<%=h(sd.getName())%>">
             <td style="font-weight: bold;"><%=h(sd.getName())%></td>
             <% if (sd.isEditable()) { %>
                 <td><%=link("edit", ((CustomOlapSchemaDescriptor) sd).urlEdit().addReturnUrl(getActionURL()))%></td>
