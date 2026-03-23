@@ -18,7 +18,6 @@ package org.labkey.api.security.roles;
 import org.labkey.api.admin.FolderExportPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
@@ -49,7 +48,7 @@ public class FolderAdminRole extends AbstractRole implements AdminRoleListener
     }
 
     @Override
-    public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
+    public boolean isApplicable(SecurableResource resource)
     {
         return resource instanceof Container && !((Container)resource).isRoot();
     }

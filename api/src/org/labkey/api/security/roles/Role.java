@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 
@@ -122,9 +121,9 @@ public interface Role extends Parameter.JdbcParameterValue
 
     /**
      * @return Whether this role is applicable in this resource. For example, some roles might only make sense in the
-     * context of a dataset or a certain folder type. TODO: Eliminate policy parameter; no implementation uses it.
+     * context of a dataset or a certain folder type.
      */
-    boolean isApplicable(SecurityPolicy policy, SecurableResource resource);
+    boolean isApplicable(SecurableResource resource);
 
     /**
      * @return Whether this role is considered "privileged," meaning only Site Admins can assign it, un-assign it,
