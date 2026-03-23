@@ -448,7 +448,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
      */
     protected String encodePropertyValues(FormType domainIdForm, String propName) throws IOException
     {
-        return domainIdForm.getRequest().getParameter(propName);
+        return (String)getProperty(propName);
     }
 
     @Override
