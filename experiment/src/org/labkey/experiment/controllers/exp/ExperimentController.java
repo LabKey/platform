@@ -178,6 +178,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
@@ -4450,7 +4451,14 @@ public class ExperimentController extends SpringActionController
                 updateService = tInfo.getUpdateService();
             }
             if (WorkflowService.get() != null)
-                WorkflowService.get().populateConfigParams(getViewContext().getRequest(), _context.getConfigParameters());
+                try
+                {
+                    WorkflowService.get().populateConfigParams(getViewContext().getRequest(), _context.getConfigParameters());
+                }
+                catch (ValidationException e)
+                {
+                    errors.addRowError(e);
+                }
 
             int count = importData(dl, tInfo, updateService, _context, auditEvent, getUser(), getContainer());
 

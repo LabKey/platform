@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Map;
@@ -53,9 +54,9 @@ public interface WorkflowService
         return ServiceRegistry.get().getService(WorkflowService.class);
     }
 
-    void populateConfigParams(Map<String, Object> provided, Map<Enum, Object> configParameters);
+    void populateConfigParams(Map<String, Object> provided, Map<Enum, Object> configParameters) throws ValidationException;
 
-    void populateConfigParams(HttpServletRequest request, Map<Enum, Object> configParameters);
+    void populateConfigParams(HttpServletRequest request, Map<Enum, Object> configParameters) throws ValidationException;
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long actionId);
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long taskId, @NotNull ActionType actionType);
 
