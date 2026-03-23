@@ -51,8 +51,15 @@ public interface MapDataIterator extends DataIterator
         if (null == row)
             return null;
 
-        Map<String, Object> rowClean = new CaseInsensitiveHashMap<>(row);
-        rowClean.remove(ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME);
+        if (!row.containsKey(ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME))
+            return row;
+
+        Map<String, Object> rowClean = new CaseInsensitiveHashMap<>(row.size());
+        row.forEach((k, v) -> {
+            if (!ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME.equals(k))
+                rowClean.put(k, v);
+        });
+
         return rowClean;
     }
 
