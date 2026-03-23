@@ -17,7 +17,6 @@ package org.labkey.specimen.security.roles;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.AbstractRole;
 import org.labkey.api.study.StudyService;
@@ -37,9 +36,9 @@ public class AbstractSpecimenRole extends AbstractRole
     }
 
     @Override
-    public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
+    public boolean isApplicable(SecurableResource resource)
     {
-        return super.isApplicable(policy, resource) && ((Container)resource).hasActiveModuleByName(SpecimenModule.NAME) && branchContainsStudy((Container)resource);
+        return super.isApplicable(resource) && ((Container)resource).hasActiveModuleByName(SpecimenModule.NAME) && branchContainsStudy((Container)resource);
     }
 
     private boolean branchContainsStudy(Container container)
