@@ -99,7 +99,7 @@ public interface ExpProtocol extends ExpObject
     String getContact();
 
     List<? extends ExpProtocol> getChildProtocols();
-    List<? extends ExpExperiment> getBatches();
+    List<? extends ExpExperiment> getBatches(@Nullable Container c);
 
     void setEntityId(String entityId);
     String getEntityId();
