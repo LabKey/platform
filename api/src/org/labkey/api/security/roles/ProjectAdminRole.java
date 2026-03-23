@@ -17,7 +17,6 @@ package org.labkey.api.security.roles;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.Permission;
@@ -42,7 +41,7 @@ public class ProjectAdminRole extends AbstractRole implements AdminRoleListener
     }
 
     @Override
-    public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
+    public boolean isApplicable(SecurableResource resource)
     {
         return resource instanceof Container && ((Container)resource).isProject();
     }
