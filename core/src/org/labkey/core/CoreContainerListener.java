@@ -67,8 +67,9 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
         // report engine folder mapping
         Table.delete(CoreSchema.getInstance().getTableInfoReportEngineMap(), containerFilter);
 
-        // Let containerManager delete ACLs, we want that to happen last
         Portal.containerDeleted(c);
+
+        // Note: ContainerManager deletes security policies and DB sequences after it deletes the container
     }
 
     @Override

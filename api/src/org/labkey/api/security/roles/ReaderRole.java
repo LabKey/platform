@@ -17,7 +17,6 @@ package org.labkey.api.security.roles;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.MediaReadPermission;
@@ -53,7 +52,7 @@ public class ReaderRole extends AbstractRole
     }
 
     @Override
-    public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
+    public boolean isApplicable(SecurableResource resource)
     {
         // reader applies to just about anything other than the root container
         return !(resource instanceof Container) || !((Container)resource).isRoot();

@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
@@ -19,7 +20,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CopyOnWriteHashMap;
-import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.security.Directive;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
@@ -95,6 +97,11 @@ public class ContentSecurityPolicyFilter implements Filter
         {
             return _headerName;
         }
+
+        private static @Nullable ContentSecurityPolicyType get(String disposition)
+        {
+            return EnumUtils.getEnumIgnoreCase(ContentSecurityPolicyType.class, disposition);
+        }
     }
 
     static
@@ -119,8 +126,9 @@ public class ContentSecurityPolicyFilter implements Filter
             String paramValue = filterConfig.getInitParameter(paramName);
             if ("policy".equalsIgnoreCase(paramName))
             {
+                // Extract before filtering since CSP version is in a comment
+                extractCspVersion(paramValue);
                 _stashedTemplate = filterPolicy(paramValue);
-                extractCspVersion(_stashedTemplate);
             }
             else if ("disposition".equalsIgnoreCase(paramName))
             {
@@ -139,12 +147,12 @@ public class ContentSecurityPolicyFilter implements Filter
         if (CSP_FILTERS.put(getType(), this) != null)
             throw new ServletException("ContentSecurityPolicyFilter is misconfigured, duplicate policies of type: " + getType());
 
-        // configure a different endpoint for each type to convey the correct csp version (eXX vs. rXX)
+        // configure a different endpoint for each type. TODO: We only need one CSP violation reporting endpoint now, so one header would do
         _reportToEndpointName = "csp-" + getType().name().toLowerCase();
     }
 
     /** Filter out block comments and replace special characters in the provided policy */
-    public static String filterPolicy(String policy)
+    private static String filterPolicy(String policy)
     {
         String s = policy.trim();
         s = s.replace( '\n', ' ' );
@@ -164,40 +172,24 @@ public class ContentSecurityPolicyFilter implements Filter
         return s;
     }
 
+    private static final Pattern CSP_VERSION_PATTERN = Pattern.compile("cspVersion\\s*=\\s*(\\w+)");
+
     /**
-     * Extract the cspVersion parameter value from the report-uri directive, if possible. Otherwise, cspVersion is left
-     * as "Unknown". This value is reported as part of usage metrics.
+     * Extract the cspVersion value from a comment in the CSP, if it exists. Otherwise, cspVersion is left as "Unknown".
+     * This value is reported as part of usage metrics and included in violation reports that are logged and forwarded.
      */
     private void extractCspVersion(String s)
     {
-        // Simple parser that should be compliant with https://www.w3.org/TR/CSP3/#parse-serialized-policy
-        Map<String, String> cspMap = Arrays.stream(s.split(";"))
-            .map(String::trim)
-            .filter(line -> !line.isEmpty())
-            .map(line -> line.split("\\s+", 2))
-            .filter(parts -> parts.length == 2)
-            .collect(LabKeyCollectors.toCaseInsensitiveLinkedMap(parts -> parts[0], parts -> parts[1]));
-
-        String directive = "report-uri";
-        String reportUri = cspMap.get(directive);
-
-        if (reportUri != null)
+        Matcher matcher = CSP_VERSION_PATTERN.matcher(s);
+        if (matcher.find())
         {
-            try
-            {
-                ActionURL reportUrl =  new ActionURL(reportUri);
-                String cspVersion = reportUrl.getParameter("cspVersion");
+            _cspVersion = matcher.group(1);
 
-                if (null != cspVersion)
-                    _cspVersion = cspVersion;
-            }
-            catch (IllegalArgumentException e)
-            {
-                LOG.warn("Unable to parse {} URI", directive, e);
-            }
+            if (matcher.find())
+                LOG.warn("More than one cspVersion=XX assignment found; using the first one.");
+
+            LOG.debug("CspVersion: {}", getCspVersion());
         }
-
-        LOG.debug("CspVersion: {}", getCspVersion());
     }
 
     @Override
@@ -277,7 +269,7 @@ public class ContentSecurityPolicyFilter implements Filter
             {
                 // Each filter adds its own "Reporting-Endpoints" header since we want to convey the correct version (eXX vs. rXX)
                 @SuppressWarnings("DataFlowIssue")
-                ActionURL violationUrl = PageFlowUtil.urlProvider(AdminUrls.class).getCspReportToURL(filter.getCspVersion());
+                ActionURL violationUrl = PageFlowUtil.urlProvider(AdminUrls.class).getCspReportToURL();
                 // Use an absolute URL so we always post to https:, even if the violating request uses http:
                 _reportingEndpointsHeaderValue = filter.getReportToEndpointName() + "=\"" + violationUrl.getURIString() + "\"";
 
@@ -406,6 +398,34 @@ public class ContentSecurityPolicyFilter implements Filter
         return CSP_FILTERS.get(type) != null;
     }
 
+    public static @NotNull String getCspVersion(@Nullable String disposition)
+    {
+        if (disposition != null)
+        {
+            ContentSecurityPolicyType type = ContentSecurityPolicyType.get(disposition);
+
+            if (type != null)
+            {
+                var filter = CSP_FILTERS.get(type);
+
+                if (null != filter)
+                {
+                    return filter.getCspVersion();
+                }
+                else
+                {
+                    LOG.error("Disposition {} doesn't match a configured CSP filter", disposition);
+                }
+            }
+            else
+            {
+                LOG.error("Bad disposition: {}", disposition);
+            }
+        }
+
+        return "Unknown";
+    }
+
     public static List<String> getMissingSubstitutions(ContentSecurityPolicyType type)
     {
         ContentSecurityPolicyFilter filter = CSP_FILTERS.get(type);
@@ -443,6 +463,32 @@ public class ContentSecurityPolicyFilter implements Filter
     public static class TestCase extends Assert
     {
         @Test
+        public void testCspVersionExtraction()
+        {
+            testCspExtract("e14", "/* cspVersion=e14 */");
+            testCspExtract("r14", "/*cspVersion=r14 */");
+            testCspExtract("e15", "/*   cspVersion  =  e15 */");
+            testCspExtract("r15", "/* cspVersion=r15*/");
+            testCspExtract("e15", "/*   cspVersion    =    e15*/");
+            testCspExtract("e15", "/*   cspVersion    =    e15*/ /* cspVersion=XXX */");
+
+            testCspExtract("Unknown", "");
+            testCspExtract("Unknown", "     ");
+            testCspExtract("Unknown", "/* cspVersin=e14 */");
+            testCspExtract("Unknown", "/* cspVersion */");
+            testCspExtract("Unknown", "/* cspVersion= */");
+            testCspExtract("Unknown", "/* cspVersion=*/");
+            testCspExtract("Unknown", "/* cspVersion== */");
+        }
+
+        private void testCspExtract(String expected, String csp)
+        {
+            ContentSecurityPolicyFilter filter = new ContentSecurityPolicyFilter();
+            filter.extractCspVersion(csp);
+            assertEquals(expected, filter.getCspVersion());
+        }
+
+        @Test
         public void testPolicyFiltering()
         {
             String fakePolicyForTesting = """
@@ -461,7 +507,7 @@ public class ContentSecurityPolicyFilter implements Filter
                         report-uri /* Whoa! */ /admin-contentsecuritypolicyreport.api?${CSP.REPORT.PARAMS} https://*;
                     """;
 
-            // Multi-line for readability, but notice that newlines are replaced before assignment
+            // Multi-line for readability, but notice that newlines are replaced when constructing the expected string
             String expected = """
                     default-src 'self' https: http: ;
                     connect-src 'self' http://www.labkey.org localhost:* ws: ${LABKEY.ALLOWED.CONNECTIONS} ;
