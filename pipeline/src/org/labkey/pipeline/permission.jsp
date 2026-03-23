@@ -81,7 +81,7 @@ These permissions control whether pipeline files can be downloaded and updated v
         HtmlString name = h(g.isUsers() ? "All Users" : g.getName());
         %><tr>
             <td><%=name%><input type="hidden" name="groups[<%=i%>]" value="<%=g.getUserId()%>"></td>
-            <td><%=getSelect(i, g.isGuests() ? optionsGuest : optionsFull, assignedRole, policy, pipeRoot)%></td>
+            <td><%=getSelect(i, g.isGuests() ? optionsGuest : optionsFull, assignedRole, pipeRoot)%></td>
         </tr><%
         i++;
     }
@@ -99,7 +99,7 @@ These permissions control whether pipeline files can be downloaded and updated v
             .orElse(RoleManager.getRole(NoPermissionsRole.class));
         %><tr>
             <td><%=h(g.getName())%><input type="hidden" name="groups[<%=i%>]" value="<%=g.getUserId()%>"></td>
-            <td><%=getSelect(i, g.isGuests() ? optionsGuest : optionsFull, assignedRole, policy, pipeRoot)%></td>
+            <td><%=getSelect(i, g.isGuests() ? optionsGuest : optionsFull, assignedRole, pipeRoot)%></td>
         </tr><%
         i++;
     }
@@ -124,7 +124,7 @@ function toggleEnableFTP(checkbox)
 </script>
 
 <%!
-    SafeToRender getSelect(int i, List<Pair<String, Role>> options, Role role, SecurityPolicy policy, PipeRoot pipeRoot)
+    SafeToRender getSelect(int i, List<Pair<String, Role>> options, Role role, PipeRoot pipeRoot)
     {
         SelectBuilder select = select()
             .name("perms[" + i + "]")
@@ -138,7 +138,7 @@ function toggleEnableFTP(checkbox)
         {
             select.selected(role.getUniqueName());
         }
-        else if (role != null && role.isApplicable(policy, pipeRoot))
+        else if (role != null && role.isApplicable(pipeRoot))
         {
             select.addOption(role.getName(), role.getUniqueName());
             select.selected(role.getUniqueName());

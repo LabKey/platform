@@ -5,9 +5,7 @@
  */
 %>
 <%@ page import="com.google.common.collect.Iterables" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.SpecimenTransform" %>
@@ -18,7 +16,6 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.specimen.actions.ShowUploadSpecimensAction" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="static org.labkey.api.util.HtmlString.NBSP" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -34,9 +31,6 @@
     int rowNumber = 0;
 
     String selected = SpecimenService.get().getActiveSpecimenImporter(c);
-    HtmlString manageFoldersLink = h(urlProvider(AdminUrls.class).getFolderTypeURL(c));
-    HtmlString labkeyEditionsLink = h("https://www.labkey.com/products-services/labkey-server/labkey-server-editions-feature-comparison/");
-    HtmlString contactUsLink = h("https://www.labkey.com/about/contact/");
     HtmlString manuallyImportSpecimensLink = h(urlFor(ShowUploadSpecimensAction.class));
 %>
 
@@ -49,6 +43,12 @@
 
 <labkey:errors/>
 
+<%
+    // At the moment, there's exactly one SpecimenTransform, QueryBasedSpecimenTransform, which is provided by the
+    // Specimen module. As a result, this "choose importer" page is never linked (if a single transform exists, the
+    // "Configure Specimen Import" link navigates straight its configuration page. This probably won't ever change,
+    // but we'll leave this page in place just in case.
+%>
 <div>
     <% if (numberOfTransforms > 1) { %>
         <p>
@@ -114,8 +114,7 @@
                 %>
             </labkey:form>
 
-        <% } else if (numberOfTransforms == 1) { %>
-            <%
+        <% } else if (numberOfTransforms == 1) {
                 SpecimenTransform transform = Iterables.get(specimenTransforms, 0);
                 ActionURL manageAction = transform.getManageAction(c, user);
             %>
@@ -137,21 +136,6 @@
             %>
 
         <% } else { %>
-
-            <% if (ModuleLoader.getInstance().hasModule("professional")) { %>
-                <div class="alert alert-warning">
-                    External Specimen Import is not currently available for this folder.
-                    To use External import, <a href=<%=manageFoldersLink%>> enable the Professional Module </a> for this folder.
-                </div>
-            <% } else { %>
-                <div class="alert alert-warning">
-                    <h1 class="fa fa-star"><%=NBSP%></h1>
-                    External Specimen Import is a Premium LabKey feature. <a href=<%=labkeyEditionsLink%>> Learn more </a> or
-                    <a href=<%=contactUsLink%>> contact LabKey </a>.
-                </div>
-            <%
-                }
-            %>
 
             <a href=<%=manuallyImportSpecimensLink%>> Import specimens manually </a>
         <%

@@ -30,6 +30,7 @@ import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.audit.TransactionAuditProvider;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -56,6 +57,7 @@ import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -76,6 +78,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -759,6 +762,14 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         response.put("success", true);
         response.put("rowCount", rowCount);
         return response;
+    }
+
+    public static JSONArray prepareRowsResponse(@NotNull Collection<Map<String, Object>> rows)
+    {
+        return rows.stream()
+                .map(JsonUtil::toMapPreserveNonFinite)
+                .map(JsonUtil::toJsonPreserveNulls)
+                .collect(LabKeyCollectors.toJSONArray());
     }
 
     @Override
