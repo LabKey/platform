@@ -56,6 +56,7 @@ public class MultiChoice
         public DisplayColumn(ColumnInfo col)
         {
             super(col, false);
+            setTextAlign("left"); //  GitHub Issue 933: Left align MV cells in grids
         }
 
         @Override
@@ -219,7 +220,12 @@ public class MultiChoice
             str.filter(Objects::nonNull)
                     .map(s -> StringUtils.trimToNull(s.toString()))
                     .filter(Objects::nonNull)
-                    .forEach(setCaseSensitive::add);
+                    .forEach(s ->
+                    {
+                        // GitHub Issue 942: Add error for duplicate values for MVTC fields
+                        if (!setCaseSensitive.add(s))
+                            throw new ConversionExceptionWithMessage("Duplicate value provided: " + s);
+                    });
             array = setCaseSensitive.toArray(new String[0]);
         }
 

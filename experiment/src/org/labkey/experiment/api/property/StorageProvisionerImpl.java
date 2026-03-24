@@ -601,7 +601,9 @@ public class StorageProvisionerImpl implements StorageProvisioner
                             throw new ChangePropertyDescriptorException("Unable to change property type. There are rows with multiple values stored for '" + prop.getName() + "'.");
                         }
                     }
-                    oldPropTypes.put(prop.getName(), oldPd.getPropertyType());
+                    // GitHub Issue 935: Changing from MVTC to TC wraps all values in curly braces
+                    // This is due to StorageColumnName differ from column name, resulting in column update skipped
+                    oldPropTypes.put(prop.getPropertyDescriptor().getStorageColumnName(), oldPd.getPropertyType());
                 }
 
             }
@@ -615,8 +617,13 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
     public String makeTableName(DomainKind<?> kind, Domain domain)
     {
-        String rawTableName = String.format("c%sd%s_%s", domain.getContainer().getRowId(), domain.getTypeId(), domain.getName());
-        SqlDialect dialect = kind.getScope().getSqlDialect();
+        return makeTableName(kind.getScope().getSqlDialect(), domain.getContainer(), domain.getTypeId(), domain.getName());
+    }
+
+    // Needed by ExperimentUpgradeCode.shortenAllStorageNames(). When that code is removed, combine this with above variant.
+    public String makeTableName(SqlDialect dialect, Container c, int typeId, String domainName)
+    {
+        String rawTableName = String.format("c%sd%s_%s", c.getRowId(), typeId, domainName);
         return new StorageNameGenerator(dialect).generateTableName(rawTableName);
     }
 

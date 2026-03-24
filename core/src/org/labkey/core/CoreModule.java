@@ -77,6 +77,7 @@ import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
+import org.labkey.api.data.dialect.PostgreSqlService;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
@@ -88,6 +89,7 @@ import org.labkey.api.files.FileBrowserConfigImporter;
 import org.labkey.api.files.FileBrowserConfigWriter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.module.FolderType;
@@ -98,7 +100,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SchemaUpdateType;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
-import org.labkey.api.mcp.McpService;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.notification.NotificationMenuView;
@@ -149,7 +150,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
-import org.labkey.api.settings.FolderSettingsCache;
+import org.labkey.api.settings.FolderSettingsCache.FolderSettingsCacheListener;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
@@ -246,6 +247,7 @@ import org.labkey.core.admin.writer.SearchSettingsWriterFactory;
 import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
+import org.labkey.core.attachment.AttachmentContainerListener;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.dialect.PostgreSqlVersion;
@@ -253,9 +255,9 @@ import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
+import org.labkey.core.mcp.McpServiceImpl;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
-import org.labkey.core.mcp.McpServiceImpl;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
 import org.labkey.core.notification.EmailPreferenceUserListener;
@@ -542,7 +544,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.REJECT_CONTROLLER_FIRST_URLS,
             "Reject controller-first URLs",
-            "Require standard path-first URLs. Note: This option will be ignored if the deprecated feature for generating controller-first URLs is enabled.",
+            "Require standard path-first URLs.",
             false
         );
 
@@ -560,10 +562,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ScriptEngineManagerImpl.registerEncryptionMigrationHandler();
 
         McpService.get().register(new CoreMcp());
+        PostgreSqlService.setInstance(PostgreSqlDialectFactory::getLatestSupportedDialect);
 
         deleteTempFiles();
     }
-
 
     private void deleteTempFiles()
     {
@@ -961,9 +963,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         checkForMissingDbViews();
 
         ProductConfiguration.handleStartupProperties();
+
         // This listener deletes all properties; make sure it executes after most of the other listeners
         ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);
-        ContainerManager.addContainerListener(new FolderSettingsCache.FolderSettingsCacheListener());
+        // This listener deletes all attachments in the container; execute it just before CoreContainerListener
+        ContainerManager.addContainerListener(new AttachmentContainerListener(), ContainerManager.ContainerListener.Order.Last);
+        ContainerManager.addContainerListener(new FolderSettingsCacheListener());
         SecurityManager.init();
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
         FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());

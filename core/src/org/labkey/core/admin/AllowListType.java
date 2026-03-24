@@ -41,7 +41,7 @@ public enum AllowListType
                     </p>
                     <p>
                         Add allowed hosts based on the server name or IP address, as they will be referenced in parameters
-                        such as returnUrl. An asterisk (*) follow by a dot acts as a wild card that matches any leading
+                        such as returnUrl. An asterisk (*) follow by a dot acts as a wildcard that matches any leading
                         subdomain for that host.
                         Examples: www.myexternalhost.com, *.myexternalhost.com, or 1.2.3.4
                     </p>
@@ -75,21 +75,21 @@ public enum AllowListType
             {
                 if (AUTHORITY_VALIDATOR.isValidAuthority(host))
                 {
-                    // Validate wild card patterns
+                    // Validate wildcard patterns
                     int starCount = StringUtils.countMatches(host, '*');
                     if (starCount > 0)
                     {
                         if (starCount > 1)
                         {
-                            errors.addError(new LabKeyError(String.format("Redirect host name %1$s has multiple wild card characters", host)));
+                            errors.addError(new LabKeyError(String.format("Redirect host name %1$s has multiple wildcard characters", host)));
                         }
                         else if (!host.startsWith("*."))
                         {
-                            errors.addError(new LabKeyError(String.format("Redirect host name %1$s has an invalid wild card. The pattern must start with \"*.\".", host)));
+                            errors.addError(new LabKeyError(String.format("Redirect host name %1$s has an invalid wildcard. The pattern must start with \"*.\".", host)));
                         }
                         else if (StringUtils.countMatches(host, '.') < 2)
                         {
-                            errors.addError(new LabKeyError(String.format("Redirect host name %1$s with wild card is too short. The pattern must include at least two dots.", host)));
+                            errors.addError(new LabKeyError(String.format("Redirect host name %1$s with wildcard is too short. The pattern must include at least two dots.", host)));
                         }
                     }
                 }

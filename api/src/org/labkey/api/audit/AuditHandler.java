@@ -91,8 +91,6 @@ public interface AuditHandler
             if (col != null && (col.isMultiValued() || col.getFk() instanceof MultiValuedForeignKey))
                 isMultiValued = true;
 
-            boolean isMultiChoice = col != null && col.getPropertyType() == PropertyType.MULTI_CHOICE;
-
             String nameFromAlias = key;
             if (null != col)
                 nameFromAlias = col.getName();
@@ -104,9 +102,13 @@ public interface AuditHandler
                 {
                     if (aliasColumn.getFk() != null && (aliasColumn.isMultiValued() || aliasColumn.getFk() instanceof MultiValuedForeignKey))
                         isMultiValued = true;
+                    col = aliasColumn; // GitHub Issue 913: Updating a sample details page shows an update to the MVTC field
                     nameFromAlias = aliasColumn.getName();
                 }
             }
+
+            boolean isMultiChoice = col != null && col.getPropertyType() == PropertyType.MULTI_CHOICE;
+
             String lcName = nameFromAlias.toLowerCase();
             // Preserve casing of inputs so we can show the names properly
             boolean isExpInput = false; // TODO: extract lineage handling out of this generic method

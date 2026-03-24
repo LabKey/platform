@@ -169,6 +169,11 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         return PropertyType.getFromURI(getConceptURI(), getRangeURI());
     }
 
+    public MultiChoice.Array getArrayValue()
+    {
+        return arrayValue;
+    }
+
     public Container getContainer()
     {
         return ContainerManager.getForId(containerId);

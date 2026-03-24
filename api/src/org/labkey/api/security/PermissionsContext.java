@@ -59,12 +59,12 @@ public interface PermissionsContext extends Serializable
         SecurityPolicy rootPolicy = root.getPolicy();
         Stream<Role> ret = rootPolicy.getRoles(groups)
             .filter(role -> {
-                if (!role.isApplicable(rootPolicy, root))
+                if (!role.isApplicable(root))
                     throw new IllegalStateException("Root role " + role.getName() + " is not applicable");
                 if (!(role instanceof AbstractRootContainerRole siteRole))
                     throw new IllegalStateException("Root roles should all be AbstractRootContainerRole");
 
-                return siteRole.isAvailableEverywhere() || resource.equals(root);
+                return siteRole.isApplicableOutsideRoot() || resource.equals(root);
             });
 
         if (!resource.equals(root))

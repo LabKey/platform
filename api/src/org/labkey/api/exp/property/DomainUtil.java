@@ -935,8 +935,16 @@ public class DomainUtil
             if (old == null)
                 continue;
             List<Map<String, Object>> propTextChoiceValueUpdates = updatePropertyValidators(p, old, pd);
-            if (propTextChoiceValueUpdates != null)
+            if (propTextChoiceValueUpdates != null && !propTextChoiceValueUpdates.isEmpty())
+            {
+                if (PropertyType.MULTI_CHOICE.getTypeUri().equals(old.getRangeURI()) || PropertyType.MULTI_CHOICE.getTypeUri().equals(pd.getRangeURI()))
+                {
+                    // GitHub Issue 923: Renamed text choice option while converting MV to SV text choice results in bad values
+                    validationException.addError(new SimpleValidationError("Text choice value updates are not supported for multi-choice field: " + p.getName()));
+                    return validationException;
+                }
                 textChoiceValueUpdates.put(p, propTextChoiceValueUpdates);
+            }
             if (old.equals(pd))
                 continue;
 
@@ -1377,8 +1385,11 @@ public class DomainUtil
                         Set<String> rowContainers = rows.stream().map((row) -> (String) row.get(containerFieldName)).collect(Collectors.toSet());
                         for (String rowContainer : rowContainers)
                         {
+                            // GitHub Issue 924: Updating Single Text choice values errors when there are child folders
+                            var dataContainer = ContainerManager.getForId(rowContainer);
+                            var domainTable_ = domain.getDomainKind().getTableInfo(user, dataContainer, domain, ContainerFilter.getUnsafeEverythingFilter());
                             List<Map<String, Object>> containerRows = rows.stream().filter((row) -> row.get(containerFieldName).equals(rowContainer)).collect(Collectors.toList());
-                            domainTable.getUpdateService().updateRows(user, ContainerManager.getForId(rowContainer), containerRows, containerRows, batchErrors, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
+                            domainTable_.getUpdateService().updateRows(user, dataContainer, containerRows, containerRows, batchErrors, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
                         }
                     }
                     else

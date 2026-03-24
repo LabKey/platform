@@ -22,8 +22,7 @@ import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
+import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -93,19 +92,13 @@ public class NormalPermissionsContext implements PermissionsContext
         {
             @Nullable Container project = c.getProject();
 
-            // Must be site or project admin (folder admins can't impersonate)
-            if (user.hasRootAdminPermission() || (null != project && project.hasPermission(user, AdminPermission.class)))
+            // Site admin, app admin, and impersonating troubleshooter can impersonate anywhere; project admin can
+            // impersonate in that project. Folder admins can't impersonate.
+            if (user.hasRootPermission(ImpersonatePermission.class) || (project != null && project.hasPermission(user, ImpersonatePermission.class)))
             {
                 NavTree impersonateMenu = new NavTree("Impersonate");
                 UserImpersonationContextFactory.addMenu(impersonateMenu);
                 GroupImpersonationContextFactory.addMenu(impersonateMenu);
-                RoleImpersonationContextFactory.addMenu(impersonateMenu);
-                menu.addChild(impersonateMenu);
-            }
-            // Or Impersonating Troubleshooter to impersonate site roles only
-            else if (null == project && user.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
-            {
-                NavTree impersonateMenu = new NavTree("Impersonate");
                 RoleImpersonationContextFactory.addMenu(impersonateMenu);
                 menu.addChild(impersonateMenu);
             }

@@ -190,9 +190,8 @@ public class RoleManager
 
     public static Set<Role> getSiteRoles()
     {
-        SecurityPolicy policy = ContainerManager.getRoot().getPolicy();
         return _roles.stream().
-            filter(r -> r.isAssignable() && r.isApplicable(policy, ContainerManager.getRoot())).
+            filter(r -> r.isAssignable() && r.isApplicable(ContainerManager.getRoot())).
             collect(Collectors.toSet());
     }
 
