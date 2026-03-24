@@ -110,8 +110,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
 import static org.labkey.api.gwt.client.ui.PropertyType.CALCULATED_CONCEPT_URI;
 import static org.labkey.api.util.StringExpressionFactory.SUBSTITUTION_EXP_PATTERN;
@@ -1430,6 +1432,36 @@ public class DomainUtil
         return hasChange;
     }
 
+    private static final int TEXT_CHOICE_MAX_VALUE_LENGTH = 200;
+    private static final Pattern JSON_FILTER_VALUE_PATTERN = Pattern.compile("\\{json:\\s*\\[.*]}", Pattern.DOTALL);
+
+    /**
+     * Validate text choice options for a field. Returns an error message if invalid, or null if valid.
+     */
+    private static @Nullable String validateTextChoiceOptions(GWTPropertyDescriptor field)
+    {
+        for (GWTPropertyValidator validator : field.getPropertyValidators())
+        {
+            if (PropertyValidatorType.TextChoice.equals(validator.getType()))
+            {
+                String expression = validator.getExpression();
+                List<String> options = PageFlowUtil.splitStringToValues(expression != null ? expression : "", '|');
+                for (String option : options)
+                {
+                    if (option.length() > TEXT_CHOICE_MAX_VALUE_LENGTH)
+                    {
+                        return "Text choice value for field '" + field.getName() + "' must not exceed " + TEXT_CHOICE_MAX_VALUE_LENGTH + " characters: '" + StringUtils.abbreviate(option, 50) + "'";
+                    }
+                    if (JSON_FILTER_VALUE_PATTERN.matcher(option).matches())
+                    {
+                        return "Text choice value for field '" + field.getName() + "' must not use the reserved format '{json:[...]}': '" + StringUtils.abbreviate(option, 50) + "'";
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     private static String getDomainErrorMessage(@Nullable GWTDomain<?> domain, String message)
     {
         if (domain != null && domain.getName() != null)
@@ -1475,6 +1507,16 @@ public class DomainUtil
             {
                 exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "The field '" + name + "' does not support multiple values.")));
                 continue;
+            }
+
+            if (PropertyType.MULTI_CHOICE.getTypeUri().equals(field.getRangeURI()) || TEXT_CHOICE_CONCEPT_URI.equals(field.getConceptURI()))
+            {
+                String textChoiceError = validateTextChoiceOptions(field);
+                if (textChoiceError != null)
+                {
+                    exception.addFieldError(name, getDomainErrorMessage(updates, textChoiceError));
+                    continue;
+                }
             }
 
             Matcher expMatcher = SUBSTITUTION_EXP_PATTERN.matcher(name);
