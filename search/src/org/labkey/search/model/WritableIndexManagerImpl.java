@@ -51,9 +51,7 @@ import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
@@ -260,7 +258,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
                 iw.commit();
                 _manager.maybeRefreshBlocking();
 
-                // Forced repro for GitHub Issue 959
+                // Forced repro for GitHub Issue 959: Fallback when indexing hits IO problems. Retained for debugging purposes.
 //                boolean b = false;
 //                if (b)
 //                {

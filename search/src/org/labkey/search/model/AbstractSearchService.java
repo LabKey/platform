@@ -1067,7 +1067,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         _itemQueue.clear();
         for (Thread t : _threads)
             t.interrupt();
-        INDEX_EVENT.notifyAll();
+        synchronized (INDEX_EVENT)
+        {
+            INDEX_EVENT.notifyAll();
+        }
     }
 
 
