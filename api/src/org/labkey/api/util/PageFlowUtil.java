@@ -85,6 +85,8 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.vfs.FileLike;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.util.WebUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -2706,12 +2708,26 @@ public class PageFlowUtil
         return ret;
     }
 
+
     public static String decodeFormName(String name)
     {
         if (!name.startsWith(FIELD_ENCODED_PREFIX))
             return name;
         return decode(name.substring(FIELD_ENCODED_PREFIX.length()));
     }
+
+
+    /** Use in preferene to {@link }MultipartHttpServletRequest.getFileMap()} */
+    static public Map<String, MultipartFile> getFileMap(HttpServletRequest req)
+    {
+        if (!(req instanceof MultipartHttpServletRequest mpreq))
+            return Collections.emptyMap();
+        Map<String, MultipartFile> htmlMap = mpreq.getFileMap();
+        Map<String, MultipartFile> formMap = new LinkedHashMap<>();
+        htmlMap.forEach((key, value) -> formMap.put(PageFlowUtil.decodeFormName(key), value));
+        return formMap;
+    }
+
 
     public static class TestCase extends Assert
     {

@@ -62,6 +62,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -361,7 +362,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             File assayDirectory = getAssayDirectory(getContainer(), null);
 
             // Hidden values in form containing previously uploaded files if the previous upload resulted in error
-            var fileMap = BaseViewAction.getFileMap(request);
+            var fileMap = PageFlowUtil.getFileMap(request);
             for (String fileParam : filePdNames)
             {
                 DomainProperty domainProperty = fileParameters.get(fileParam);

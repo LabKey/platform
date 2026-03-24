@@ -204,7 +204,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
                 while (nameIterator.hasNext())
                 {
                     String formElementName = nameIterator.next();
-                    MultipartFile file = request.getFile(formElementName);
+                    MultipartFile file = getFileMap().get(formElementName);
                     String filename = file.getOriginalFilename();
 
                     try (InputStream input = file.getInputStream())

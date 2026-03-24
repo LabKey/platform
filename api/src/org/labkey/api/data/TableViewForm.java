@@ -567,7 +567,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             {
                 if (File.class.equals(column.getJavaClass()))
                 {
-                    MultipartFile file = request.getFile(fieldName);
+                    MultipartFile file = PageFlowUtil.getFileMap(request).get(fieldName);
                     if (file != null)
                     {
                         // Check if the file was removed

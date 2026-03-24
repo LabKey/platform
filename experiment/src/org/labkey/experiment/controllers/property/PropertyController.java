@@ -1492,7 +1492,7 @@ public class PropertyController extends SpringActionController
             //noinspection unchecked
             Iterator<String> nameIterator = request.getFileNames();
             String formElementName = nameIterator.next();
-            MultipartFile file = request.getFile(formElementName);
+            MultipartFile file = getFileMap().get(formElementName);
             String filename = file.getOriginalFilename();
             int dotIndex = filename.lastIndexOf(".");
             if (dotIndex < 0)

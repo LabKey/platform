@@ -701,17 +701,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
      */
     protected Map<String, MultipartFile> getFileMap()
     {
-        return getFileMap(getViewContext().getRequest());
-    }
-
-    static public Map<String, MultipartFile> getFileMap(HttpServletRequest req)
-    {
-        if (!(req instanceof MultipartHttpServletRequest mpreq))
-            return Collections.emptyMap();
-        Map<String, MultipartFile> htmlMap = mpreq.getFileMap();
-        Map<String, MultipartFile> formMap = new LinkedHashMap<>();
-        htmlMap.forEach((key, value) -> formMap.put(PageFlowUtil.decodeFormName(key), value));
-        return formMap;
+        return PageFlowUtil.getFileMap(getViewContext().getRequest());
     }
 
     protected List<AttachmentFile> getAttachmentFileList()

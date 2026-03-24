@@ -113,7 +113,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
             else
                 return null;
 
-            var fileMap = BaseViewAction.getFileMap(request);
+            var fileMap = PageFlowUtil.getFileMap(request);
             for (Map.Entry<String, MultipartFile> entry : fileMap.entrySet())
             {
                 if (entryKeyToFind.equals(entry.getKey()))
