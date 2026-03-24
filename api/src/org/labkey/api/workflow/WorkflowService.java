@@ -5,7 +5,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.User;import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Map;
 

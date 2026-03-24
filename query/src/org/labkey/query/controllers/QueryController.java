@@ -4660,7 +4660,7 @@ public class QueryController extends SpringActionController
                 }
             }
 
-            Map<String, Object> extraContext = json.has("extraContext") ? new CaseInsensitiveHashMap(json.getJSONObject("extraContext").toMap()) : new CaseInsensitiveHashMap<>();
+            Map<String, Object> extraContext = json.has("extraContext") ? new CaseInsensitiveHashMap<>(json.getJSONObject("extraContext").toMap()) : new CaseInsensitiveHashMap<>();
 
             Map<String, Object> auditDetails = json.has("auditDetails") ? json.getJSONObject("auditDetails").toMap() : new CaseInsensitiveHashMap<>();
 

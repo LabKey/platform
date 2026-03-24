@@ -324,7 +324,7 @@ public class QueryImportPipelineJob extends PipelineJob
 
             DataIteratorContext diContext = createDataIteratorContext(ve, getContainer());
 
-            if (_importContextBuilder.getWorkflowParams() != null)
+            if (_importContextBuilder.getWorkflowParams() != null && WorkflowService.get() != null)
             {
                 WorkflowService.get().populateConfigParams(_importContextBuilder.getWorkflowParams(), diContext.getConfigParameters());
             }

@@ -4451,6 +4451,7 @@ public class ExperimentController extends SpringActionController
                 updateService = tInfo.getUpdateService();
             }
             if (WorkflowService.get() != null)
+            {
                 try
                 {
                     WorkflowService.get().populateConfigParams(getViewContext().getRequest(), _context.getConfigParameters());
@@ -4459,6 +4460,7 @@ public class ExperimentController extends SpringActionController
                 {
                     errors.addRowError(e);
                 }
+            }
 
             int count = importData(dl, tInfo, updateService, _context, auditEvent, getUser(), getContainer());
 
