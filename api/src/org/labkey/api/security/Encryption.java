@@ -32,6 +32,8 @@ import org.labkey.api.audit.provider.SiteSettingsAuditProvider.SiteSettingsAudit
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.EncryptedPropertyStore;
 import org.labkey.api.data.NormalPropertyStore;
 import org.labkey.api.data.PropertyManager;
@@ -48,6 +50,7 @@ import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
@@ -69,6 +72,8 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -645,26 +650,27 @@ public class Encryption
     public static void deleteEncryptedContent(User user)
     {
         LOG.info("Deleting all encrypted content at the request of {}", user.getDisplayName(user));
-        SiteSettingsAuditEvent event = new SiteSettingsAuditEvent(ContainerManager.getRoot(), "All encrypted content was deleted");
-        String changes = StringUtilsLabKey.joinWithConjunction(
-            EncryptionMigrationHandler.HANDLERS.stream()
-                .map(handler -> handler.getDescription().toLowerCase())
-                .toList(),
-            "and"
-        );
-        event.setChanges("Deleted content: " + changes);
-        AuditLogService.get().addEvent(user, event);
+        List<String> descriptions = new LinkedList<>();
         EncryptionMigrationHandler.HANDLERS
             .forEach(encryptionMigrationHandler -> {
                 try
                 {
                     encryptionMigrationHandler.deleteEncryptedContent();
+                    descriptions.add(encryptionMigrationHandler.getDescription().toLowerCase());
                 }
                 catch (Exception e)
                 {
                     LOG.warn("Error while deleting encrypted content from {}", encryptionMigrationHandler.getDescription(), e);
                 }
             });
+        SiteSettingsAuditEvent event = new SiteSettingsAuditEvent(ContainerManager.getRoot(), "All encrypted content was deleted");
+        final String changes;
+        if (!descriptions.isEmpty())
+            changes = "Deleted content: " + StringUtilsLabKey.joinWithConjunction(descriptions, "and");
+        else
+            changes = "All deletes failed";
+        event.setChanges(changes);
+        AuditLogService.get().addEvent(user, event);
         CacheManager.clearAllKnownCaches();
         LOG.info("Finished deleting all encrypted content");
     }
@@ -745,6 +751,18 @@ public class Encryption
         {
             for (String test : new String[]{"foo", "bar", "this is some text I want to encrypt"})
                 assertEquals(test, decryptAlgorithm.decrypt(encryptAlgorithm.encrypt(test)));
+        }
+
+        @Test
+        public void testDeleteEncryptedContent()
+        {
+            // Simple test that ensures no exceptions are thrown and checks only that encrypted property sets are gone.
+            // Changes are not committed, so content is not actually deleted.
+            try (Transaction _ = DbScope.getLabKeyScope().ensureTransaction())
+            {
+                deleteEncryptedContent(TestContext.get().getUser());
+                assertEquals(0, new EncryptedPropertyStore().getEncryptedPropertySetCount());
+            }
         }
     }
 }

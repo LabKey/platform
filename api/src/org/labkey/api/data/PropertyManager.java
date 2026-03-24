@@ -634,7 +634,7 @@ public class PropertyManager
         SqlExecutor executor = new SqlExecutor(SCHEMA.getSchema());
         var setSelectName = SCHEMA.getTableInfoProperties().getColumn("Set").getSelectIdentifier();   // Keyword in some dialects
 
-        try (Transaction _ = SCHEMA.getSchema().getScope().ensureTransaction())
+        try (Transaction t = SCHEMA.getSchema().getScope().ensureTransaction())
         {
             SQLFragment deleteProps = new SQLFragment("DELETE FROM ")
                 .append(SCHEMA.getTableInfoProperties())
@@ -651,6 +651,7 @@ public class PropertyManager
                 .append(" = ?")
                 .add(propertySet);
             executor.execute(deleteSet);
+            t.commit();
         }
     }
 

@@ -109,7 +109,7 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
         TableInfo sets = PropertySchema.getInstance().getTableInfoPropertySets();
         TableInfo props = PropertySchema.getInstance().getTableInfoProperties();
 
-        new TableSelector(sets, Set.of("Set", "Category", "Encryption"), new SimpleFilter(FieldKey.fromParts("Encryption"), PropertyEncryption.None.toString(), CompareType.NEQ), null).forEachMap(map -> {
+        new TableSelector(sets, Set.of("Set", "Category", "Encryption"), getEncryptedSetFilter(), null).forEachMap(map -> {
             int set = (int)map.get("Set");
             String encryption = (String)map.get("Encryption");
             String propertySetName = "\"" + map.get("Category") + "\" (Set = " + set + ")";
@@ -180,11 +180,25 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
         new TableSelector(
             sets,
             Set.of("Set", "Category", "Encryption"),
-            new SimpleFilter(FieldKey.fromParts("Encryption"), PropertyEncryption.None.toString(), CompareType.NEQ),
+            getEncryptedSetFilter(),
             null
         ).forEachMap(map -> {
             int set = (int)map.get("Set");
             PropertyManager.deleteSetDirectly(set);
         });
+    }
+
+    public long getEncryptedPropertySetCount()
+    {
+        return new TableSelector(
+            PropertySchema.getInstance().getTableInfoPropertySets(),
+            getEncryptedSetFilter(),
+            null
+        ).getRowCount();
+    }
+
+    private Filter getEncryptedSetFilter()
+    {
+        return new SimpleFilter(FieldKey.fromParts("Encryption"), PropertyEncryption.None.toString(), CompareType.NEQ);
     }
 }
