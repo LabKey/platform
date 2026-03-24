@@ -1432,7 +1432,9 @@ public class DomainUtil
         return hasChange;
     }
 
+    // GitHub Issue 955: limit option length to 200
     private static final int TEXT_CHOICE_MAX_VALUE_LENGTH = 200;
+    // GitHub Issue 988: don't allow json array like values for text choice options
     private static final Pattern JSON_FILTER_VALUE_PATTERN = Pattern.compile("\\{json:\\s*\\[.*]}", Pattern.DOTALL);
 
     /**
