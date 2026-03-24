@@ -12150,7 +12150,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(TroubleshooterPermission.class)
-    public class ViewUsageStatistics extends SimpleViewAction<Object>
+    public class ViewUsageStatisticsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -12388,7 +12388,7 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            Encryption.deleteEncryptedContent();
+            Encryption.deleteEncryptedContent(getUser());
             return true;
         }
 
@@ -12409,6 +12409,11 @@ public class AdminController extends SpringActionController
             assertTrue(user.hasSiteAdminPermission());
 
             AdminController controller = new AdminController();
+
+            assertForNoPermission(user,
+                new ContentSecurityPolicyReportAction(),
+                new ContentSecurityPolicyReportToAction()
+            );
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
@@ -12465,7 +12470,8 @@ public class AdminController extends SpringActionController
                 controller.new ValidateDomainsAction(),
                 new OptionalFeatureAction(),
                 new GetSchemaXmlDocAction(),
-                new RecreateViewsAction()
+                new RecreateViewsAction(),
+                new DeleteEncryptedContentAction()
             );
 
             // @AdminConsoleAction
@@ -12507,7 +12513,8 @@ public class AdminController extends SpringActionController
             assertForTroubleshooterPermission(ContainerManager.getRoot(), user,
                 controller.new OptionalFeaturesAction(),
                 controller.new ShowModuleErrorsAction(),
-                new ModuleStatusAction()
+                new ModuleStatusAction(),
+                controller.new ViewUsageStatisticsAction()
             );
         }
     }

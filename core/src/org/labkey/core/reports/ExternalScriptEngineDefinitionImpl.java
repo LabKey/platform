@@ -17,6 +17,7 @@ package org.labkey.core.reports;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.BaseApiAction;
@@ -34,6 +35,7 @@ import org.labkey.api.security.Encryption.Algorithm;
 import org.labkey.api.security.Encryption.DecryptionException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.logging.LogHelper;
 import org.springframework.beans.MutablePropertyValues;
 
 import java.io.IOException;
@@ -45,6 +47,8 @@ import static org.labkey.core.reports.ScriptEngineManagerImpl.ENCRYPTION_MIGRATI
 
 public class ExternalScriptEngineDefinitionImpl extends Entity implements ExternalScriptEngineDefinition, ApiJsonForm, HasAllowBindParameter
 {
+    private static final Logger LOG = LogHelper.getLogger(ExternalScriptEngineDefinitionImpl.class, "Password decryption errors");
+
     // Most definitions don't require encryption, so retrieve AES128 lazily
     static final Supplier<Algorithm> AES = () -> {
         if (!Encryption.isEncryptionPassPhraseSpecified())
@@ -218,6 +222,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
                 }
                 catch (DecryptionException e)
                 {
+                    LOG.error("Failed to decrypt password for {}", getName(), e);
                     password = null;
                 }
             }

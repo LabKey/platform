@@ -27,6 +27,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.SiteSettingsAuditProvider.SiteSettingsAuditEvent;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.ContainerManager;
@@ -39,6 +41,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JobRunner;
@@ -111,16 +114,30 @@ public class Encryption
                             ". An encryption key is required to save credentials used in various integrations.").append(getEncryptionKeyHelpLink()));
 
                     int count = DECRYPTION_EXCEPTIONS.get();
-                    String who = context == null || context.getUser().hasSiteAdminPermission() ? "you" : "a site administrator";
 
                     if (count > 0 || showAllWarnings)
+                    {
+                        final String who;
+                        final HasHtmlString link;
+                        if (context != null && context.getUser().hasSiteAdminPermission())
+                        {
+                            who = "you";
+                            link = LinkBuilder.simpleLink("this link", Objects.requireNonNull(PageFlowUtil.urlProvider(AdminUrls.class)).getDeleteEncryptedContentURL());
+                        }
+                        else
+                        {
+                            who = "a site administrator";
+                            link = HtmlStringBuilder.of("the \"delete encrypted content\" action");
+                        }
+
                         warnings.add(HtmlStringBuilder.of("On " + StringUtilsLabKey.pluralize(count, "attempt") +
                             ", the server failed to decrypt encrypted content using the " +
                             ENCRYPTION_KEY_CHANGED + " " + KEY_CHANGE_GUIDANCE)
                                 .append(" If the previous encryption key has been lost, " + who + " can clear all encrypted content via ")
-                                .append(LinkBuilder.simpleLink("this link", Objects.requireNonNull(PageFlowUtil.urlProvider(AdminUrls.class)).getDeleteEncryptedContentURL()))
+                                .append(link)
                                 .append(". ")
                                 .append(getEncryptionKeyHelpLink()));
+                    }
                 }
             }
 
@@ -545,6 +562,8 @@ public class Encryption
             HANDLERS.add(handler);
         }
 
+        String getDescription();
+
         void migrateEncryptedContent(String oldPassPhrase, String keySource, AESConfig oldConfig);
 
         void deleteEncryptedContent();
@@ -623,17 +642,41 @@ public class Encryption
         }
     }
 
-    public static void deleteEncryptedContent()
+    public static void deleteEncryptedContent(User user)
     {
-        LOG.info("Deleting all encrypted content at the request of a site administrator");
+        LOG.info("Deleting all encrypted content at the request of {}", user.getDisplayName(user));
+        SiteSettingsAuditEvent event = new SiteSettingsAuditEvent(ContainerManager.getRoot(), "All encrypted content was deleted");
+        String changes = StringUtilsLabKey.joinWithConjunction(
+            EncryptionMigrationHandler.HANDLERS.stream()
+                .map(handler -> handler.getDescription().toLowerCase())
+                .toList(),
+            "and"
+        );
+        event.setChanges("Deleted content: " + changes);
+        AuditLogService.get().addEvent(user, event);
         EncryptionMigrationHandler.HANDLERS
-            .forEach(EncryptionMigrationHandler::deleteEncryptedContent);
+            .forEach(encryptionMigrationHandler -> {
+                try
+                {
+                    encryptionMigrationHandler.deleteEncryptedContent();
+                }
+                catch (Exception e)
+                {
+                    LOG.warn("Error while deleting encrypted content from {}", encryptionMigrationHandler.getDescription(), e);
+                }
+            });
         CacheManager.clearAllKnownCaches();
         LOG.info("Finished deleting all encrypted content");
     }
 
     private static final EncryptionMigrationHandler TEST_HANDLER = new EncryptionMigrationHandler()
     {
+        @Override
+        public String getDescription()
+        {
+            return "Test";
+        }
+
         @Override
         public void migrateEncryptedContent(String oldPassPhrase, String keySource, AESConfig oldConfig)
         {

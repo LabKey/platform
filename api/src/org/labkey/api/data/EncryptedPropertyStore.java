@@ -91,7 +91,13 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
     protected void appendWhereFilter(SQLFragment sql)
     {
         sql.append("NOT Encryption = ?");
-        sql.add("None");
+        sql.add(PropertyEncryption.None.toString());
+    }
+
+    @Override
+    public String getDescription()
+    {
+        return "Encrypted Property Sets";
     }
 
     @Override
@@ -103,7 +109,7 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
         TableInfo sets = PropertySchema.getInstance().getTableInfoPropertySets();
         TableInfo props = PropertySchema.getInstance().getTableInfoProperties();
 
-        new TableSelector(sets, Set.of("Set", "Category", "Encryption"), new SimpleFilter(FieldKey.fromParts("Encryption"), "None", CompareType.NEQ), null).forEachMap(map -> {
+        new TableSelector(sets, Set.of("Set", "Category", "Encryption"), new SimpleFilter(FieldKey.fromParts("Encryption"), PropertyEncryption.None.toString(), CompareType.NEQ), null).forEachMap(map -> {
             int set = (int)map.get("Set");
             String encryption = (String)map.get("Encryption");
             String propertySetName = "\"" + map.get("Category") + "\" (Set = " + set + ")";
@@ -174,7 +180,7 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
         new TableSelector(
             sets,
             Set.of("Set", "Category", "Encryption"),
-            new SimpleFilter(FieldKey.fromParts("Encryption"), "None", CompareType.NEQ),
+            new SimpleFilter(FieldKey.fromParts("Encryption"), PropertyEncryption.None.toString(), CompareType.NEQ),
             null
         ).forEachMap(map -> {
             int set = (int)map.get("Set");

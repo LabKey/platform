@@ -125,6 +125,12 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = new EncryptionMigrationHandler()
     {
         @Override
+        public String getDescription()
+        {
+            return "Script Engine Passwords";
+        }
+
+        @Override
         public void migrateEncryptedContent(String oldPassPhrase, String keySource, AESConfig oldConfig)
         {
             String currentPassPhrase = Encryption.getEncryptionPassPhrase();

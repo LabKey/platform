@@ -330,6 +330,12 @@ public class AuthenticationManager
     static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = new EncryptionMigrationHandler()
     {
         @Override
+        public String getDescription()
+        {
+            return "Encrypted Authentication Properties";
+        }
+
+        @Override
         public void migrateEncryptedContent(String oldPassPhrase, String keySource, Encryption.AESConfig oldConfig)
         {
             Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource, oldConfig);
