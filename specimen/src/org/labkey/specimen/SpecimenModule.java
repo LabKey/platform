@@ -57,6 +57,7 @@ import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -66,6 +67,8 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.specimen.actions.SpecimenApiController;
 import org.labkey.specimen.actions.SpecimenController;
 import org.labkey.specimen.importer.AbstractSpecimenTask;
+import org.labkey.specimen.importer.QueryBasedSpecimenImportUploadTask;
+import org.labkey.specimen.importer.QueryBasedSpecimenTransform;
 import org.labkey.specimen.importer.RequestabilityManager;
 import org.labkey.specimen.importer.SpecimenImporter;
 import org.labkey.specimen.importer.SpecimenSchemaImporter;
@@ -232,7 +235,9 @@ public class SpecimenModule extends SpringModule
                 return null;
             }
         });
-     }
+
+        SystemMaintenance.addTask(new QueryBasedSpecimenImportUploadTask());
+    }
 
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
@@ -253,6 +258,10 @@ public class SpecimenModule extends SpringModule
             new SpecimenSchemaImporter(),
             new SpecimenSettingsImporter()
         ));
+
+        SpecimenService specimenService = SpecimenService.get();
+        if (null != specimenService)
+            specimenService.registerSpecimenTransform(new QueryBasedSpecimenTransform());
 
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
