@@ -749,22 +749,32 @@ public class OntologyManager
     {
         boolean ret = true;
 
-        Object value = objectProperty.getObjectValue();
+        boolean isArray = prop.getPropertyType() == PropertyType.MULTI_CHOICE;
 
-        if (prop.isRequired() && value == null && objectProperty.getMvIndicator() == null)
+        Object value = isArray ? objectProperty.arrayValue : objectProperty.getObjectValue();
+        boolean isNull = value == null;
+
+        // GitHub Issue 995: Unable to import assay run with required MVTC values
+        if (isArray && value instanceof MultiChoice.Array array)
+            isNull = array.isEmpty();
+
+        if (prop.isRequired() && isNull && objectProperty.getMvIndicator() == null)
         {
             errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is required", prop.getName()));
             ret = false;
         }
 
         // Check if the string is too long. Use either the PropertyDescriptor's scale or VARCHAR(4000) for ontology managed values
-        int stringLengthLimit = prop.getScale() > 0 ? prop.getScale() : getTinfoObjectProperty().getColumn("StringValue").getScale();
-        int stringLength = value == null ? 0 : value.toString().length();
-        if (value != null && prop.isStringType() && stringLength > stringLengthLimit)
+        if (!isArray)
         {
-            String s = stringLength <= 100 ? value.toString() : StringUtilsLabKey.leftSurrogatePairFriendly(value.toString(), 100);
-            errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is limited to " + stringLengthLimit + " characters, but the value is " + stringLength + " characters. (The value starts with '" + s + "...')", prop.getName()));
-            ret = false;
+            int stringLengthLimit = prop.getScale() > 0 ? prop.getScale() : getTinfoObjectProperty().getColumn("StringValue").getScale();
+            int stringLength = value == null ? 0 : value.toString().length();
+            if (value != null && prop.isStringType() && stringLength > stringLengthLimit)
+            {
+                String s = stringLength <= 100 ? value.toString() : StringUtilsLabKey.leftSurrogatePairFriendly(value.toString(), 100);
+                errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is limited to " + stringLengthLimit + " characters, but the value is " + stringLength + " characters. (The value starts with '" + s + "...')", prop.getName()));
+                ret = false;
+            }
         }
 
         // TODO: check date is within postgres date range
