@@ -1252,13 +1252,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     };
 
-    public static void postFailureDelay(Throwable e, String logPrefix, Logger log, int consecutiveCommitFailures, final Object syncObject)
+    public static void postFailureDelay(Throwable e, String logPrefix, Logger log, int consecutiveFailures, final Object syncObject)
     {
-        long delayMs = TimeUnit.SECONDS.toMillis(30L * Math.min(10, consecutiveCommitFailures));
+        long delayMs = TimeUnit.SECONDS.toMillis(30L * Math.min(10, consecutiveFailures));
         log.error("{}, delaying next attempt by {}s ({} consecutive failures)",
                 logPrefix,
                 TimeUnit.MILLISECONDS.toSeconds(delayMs),
-                consecutiveCommitFailures,
+                consecutiveFailures,
                 e);
         if (delayMs > 0)
         {
