@@ -57,6 +57,7 @@ public interface WorkflowService
     void populateConfigParams(Map<String, Object> provided, Map<Enum, Object> configParameters) throws ValidationException;
 
     void populateConfigParams(HttpServletRequest request, Map<Enum, Object> configParameters) throws ValidationException;
+    Map<String, Object> getConfigParameters(HttpServletRequest request) throws ValidationException;
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long actionId);
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long taskId, @NotNull ActionType actionType);
 

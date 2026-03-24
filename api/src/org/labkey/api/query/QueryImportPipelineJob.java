@@ -327,7 +327,6 @@ public class QueryImportPipelineJob extends PipelineJob
             if (_importContextBuilder.getWorkflowParams() != null)
             {
                 WorkflowService.get().populateConfigParams(_importContextBuilder.getWorkflowParams(), diContext.getConfigParameters());
-//                diContext.getConfigParameters().putAll(_importContextBuilder.getWorkflowParams());
             }
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
             if (diContext.isCrossTypeImport() || (_importContextBuilder.getAuditBehaviorType() != null && _importContextBuilder.getAuditBehaviorType() != AuditBehaviorType.NONE))

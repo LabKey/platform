@@ -612,14 +612,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                 .setJobNotificationProvider(getQueryImportJobNotificationProviderName());
                             if (WorkflowService.get() != null)
                             {
-                                Map<Enum, Object> workflowConfig = new HashMap<>();
-                                WorkflowService.get().populateConfigParams(getViewContext().getRequest(), workflowConfig);
-                                if (!workflowConfig.isEmpty())
-                                {
-                                    Map<String, Object> workflowParams = new HashMap<>();
-                                    workflowConfig.forEach((k, v) -> workflowParams.put(k.name(), v));
-                                    importContextBuilder.setWorkflowParams(workflowParams);
-                                }
+                                Map<String, Object> workflowParams = WorkflowService.get().getConfigParameters(getViewContext().getRequest());
+                                importContextBuilder.setWorkflowParams(workflowParams);
                             }
 
                             importContextBuilder.setTransactionDetails(transactionDetails);
