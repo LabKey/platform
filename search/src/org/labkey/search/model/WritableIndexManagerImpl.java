@@ -51,6 +51,7 @@ import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
@@ -258,16 +259,16 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             {
                 iw.commit();
                 _manager.maybeRefreshBlocking();
-            }
-            catch (AccessDeniedException e)
-            {
-                // Index is unwritable wrap in configuration exception to notify Admin
-                throw new ConfigurationException("Unable to write to Full-Text search index: " + e.getMessage(), e);
+                boolean b = false;
+                if (b)
+                {
+                    throw new FileNotFoundException("fake");
+                }
             }
             catch (IOException e)
             {
-                // Close IndexWriter here as well?
-                ExceptionUtil.logExceptionToMothership(null, e);
+                // Index is unwritable. Wrap in a ConfigurationException to notify admins
+                throw new ConfigurationException("Unable to write to Full-Text search index: " + e.getMessage(), e);
             }
             catch (OutOfMemoryError e)
             {
