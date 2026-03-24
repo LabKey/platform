@@ -259,11 +259,13 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             {
                 iw.commit();
                 _manager.maybeRefreshBlocking();
-                boolean b = false;
-                if (b)
-                {
-                    throw new FileNotFoundException("fake");
-                }
+
+                // Forced repro for GitHub Issue 959
+//                boolean b = false;
+//                if (b)
+//                {
+//                    throw new FileNotFoundException("fake");
+//                }
             }
             catch (IOException e)
             {
