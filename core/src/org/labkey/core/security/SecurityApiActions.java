@@ -648,7 +648,7 @@ public class SecurityApiActions
             {
                 for (Role role : RoleManager.getAllRoles())
                 {
-                    if (role.isAssignable() && role.isApplicable(policy, resource))
+                    if (role.isAssignable() && role.isApplicable(resource))
                         relevantRoles.add(role.getUniqueName());
                 }
             }

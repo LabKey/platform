@@ -1003,6 +1003,10 @@ public abstract class CompareType
                 return null;
 
             ColumnInfo colInfo = columnMap != null ? columnMap.get(_fieldKey) : null;
+
+            if (colInfo != null && colInfo.getJdbcType() != JdbcType.ARRAY)
+                throw new RuntimeSQLException(new SQLGenerationException("Invalid filter type for column '" + _fieldKey.toDisplayString() + "'."));
+
             var alias = SimpleFilter.getAliasForColumnFilter(dialect, colInfo, _fieldKey);
 
             SQLFragment valuesFragment = dialect.array_construct(paramValues);
@@ -1040,6 +1044,10 @@ public abstract class CompareType
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             ColumnInfo colInfo = columnMap != null ? columnMap.get(_fieldKey) : null;
+
+            if (colInfo != null && colInfo.getJdbcType() != JdbcType.ARRAY)
+                throw new RuntimeSQLException(new SQLGenerationException("Invalid filter type for column '" + _fieldKey.toDisplayString() + "'."));
+
             var alias = SimpleFilter.getAliasForColumnFilter(dialect, colInfo, _fieldKey);
 
             SQLFragment columnFragment = new SQLFragment().appendIdentifier(alias);
@@ -1426,30 +1434,30 @@ public abstract class CompareType
         // check for JSON marker
         if (value.startsWith(JSON_MARKER_START) && value.endsWith(JSON_MARKER_END))
         {
-            value = value.substring(JSON_MARKER_START.length(), value.length()-JSON_MARKER_END.length());
-            if (value.startsWith("[") && value.endsWith("]"))
+            String cleanedValue = value.substring(JSON_MARKER_START.length(), value.length()-JSON_MARKER_END.length());
+            if (cleanedValue.startsWith("[") && cleanedValue.endsWith("]"))
             {
                 try
                 {
-                    // TODO what do we do with malformed parameters???
-                    JSONArray array = new JSONArray(value);
+                    JSONArray array = new JSONArray(cleanedValue);
                     for (int i = 0; i < array.length(); i++)
                     {
                         Object jsonVal = array.get(i);
                         collection.add(JSONObject.NULL.equals(jsonVal) ? null : Objects.toString(jsonVal));
                     }
+                    return;
                 }
                 catch (JSONException ex)
                 {
-                    // pass
+                    // GH Issue #948
+                    // Intentionally do nothing, so we revert to parsing by regex. Otherwise, valid filters like an IN
+                    // filter on "{json:123;abc}" will be skipped instead of parsed as ["{json:123", "abc}"]
                 }
             }
         }
-        else
-        {
-            String[] st = value.split("\\s*" + separator + "\\s*", -1);
-            Collections.addAll(collection, st);
-        }
+
+        String[] st = value.split("\\s*" + separator + "\\s*", -1);
+        Collections.addAll(collection, st);
     }
 
     protected static Set<String> parseParams(Object value_, String separator)
@@ -1747,6 +1755,9 @@ public abstract class CompareType
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             ColumnInfo colInfo = columnMap != null ? columnMap.get(_fieldKey) : null;
+            if (colInfo != null && colInfo.getJdbcType() == JdbcType.ARRAY)
+                throw new RuntimeSQLException(new SQLGenerationException("Invalid filter type for column '" + _fieldKey.toDisplayString() + "'."));
+
             var alias = SimpleFilter.getAliasForColumnFilter(dialect, colInfo, _fieldKey);
 
             SQLFragment fragment = toWhereClause(dialect, alias);

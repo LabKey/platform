@@ -79,7 +79,7 @@ public class ImpersonationTestCase extends Assert
             assertTrue(projectUserCount < siteUserCount); // Should be at least one less because test_no_permissions@test.com doesn't have read
             int projectGroupCount = SecurityManager.getGroups(project, false).size();
             int allGroupCount = siteGroupCount + projectGroupCount;
-            List<Role> projectRoles = RoleManager.getAllRoles().stream().filter(role -> role.isAssignable() && role.isApplicable(projectPolicy, project)).toList();
+            List<Role> projectRoles = RoleManager.getAllRoles().stream().filter(role -> role.isAssignable() && role.isApplicable(project)).toList();
             int projectRoleCount = projectRoles.size();
 
             testImpersonator("SiteAdminRole", true, project, siteUserCount, siteGroupCount, siteRoleCount, siteUserCount, allGroupCount, projectRoleCount);
