@@ -59,7 +59,6 @@ public class QueryMcp implements McpService.McpImpl
     String listColumns(ToolContext toolContext, @ToolParam(description = "Fully qualified table name as it would appear in SQL e.g. \"schema\".\"table\"") String fullQuotedTableName)
     {
         var json = _listColumns(fullQuotedTableName, toolContext);
-        // can I just return a JSONObject
         return json.toString();
     }
 
@@ -67,7 +66,6 @@ public class QueryMcp implements McpService.McpImpl
     String listTables(ToolContext toolContext, @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. \"schema\"") String quotedSchemaName)
     {
         var json = _listTables(quotedSchemaName, getContext(toolContext));
-        // can I just return a JSONObject
         return json.toString();
     }
 
