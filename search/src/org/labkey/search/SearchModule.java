@@ -133,6 +133,7 @@ public class SearchModule extends DefaultModule
             }
         });
 
+        // Search endpoints are not ready for prime time. For now, don't register.
 //        var mcp = McpService.get();
 //        if (null != mcp)
 //        {
