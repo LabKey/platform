@@ -76,31 +76,10 @@ public class QueryUpdateForm extends TableViewForm
     @Nullable
     public ColumnInfo getColumnByFormFieldName(@NotNull String fieldName)
     {
-        if (!_ignorePrefix && fieldName.length() < PREFIX.length())
-            return null;
-
-        var columnName = _ignorePrefix ? fieldName : fieldName.substring(PREFIX.length());
-
-        StringBuilder sb = new StringBuilder(columnName.length());
-        boolean escaping = false;
-        for (char c : columnName.toCharArray())
-        {
-            if (escaping)
-            {
-                sb.append(c);
-                escaping = false;
-            }
-            else if (c == BACKSLASH)
-                escaping = true;
-            else
-                sb.append(c);
-        }
-
-        // Issue 54094: Ensure it works when backslash is the last character
-        if (escaping)
-            sb.append(BACKSLASH);
-
-        return getTable().getColumn(sb.toString());
+        String columnName = fieldName;
+        if (!_ignorePrefix && columnName.startsWith(PREFIX))
+            columnName = columnName.substring(PREFIX.length());
+        return getTable().getColumn(columnName);
     }
 
     @Override
