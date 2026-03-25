@@ -80,13 +80,27 @@ public class CoreMcp implements McpService.McpImpl
     @Tool(description = "Every tool in this MCP requires a container path, e.g. /MyProject/MyFolder. A container is also called a folder or project. Please prompt the user for a container path and use this tool to save the path for this session.")
     String setContainer(ToolContext context, @ToolParam(description = "Container path, e.g. /MyProject/MyFolder", required = true) String containerPath)
     {
-        Container container = ContainerManager.getForPath(containerPath);
-        if (container != null)
+        final String message;
+
+        if (containerPath == null)
         {
-            McpService.get().saveSessionContainer(context, container);
-            return "OK!";
+            message = "Container path was null. Please enter a valid container path. Try using listContainers to see them.";
+        }
+        else
+        {
+            Container container = ContainerManager.getForPath(containerPath);
+
+            if (container == null)
+            {
+                message = "That's not a valid container path. Try using listContainers to see them.";
+            }
+            else
+            {
+                McpService.get().saveSessionContainer(context, container);
+                message = "Container has been set";
+            }
         }
 
-        return "That's not a valid container path. Try using listContainers to see them.";
+        return message;
     }
 }
