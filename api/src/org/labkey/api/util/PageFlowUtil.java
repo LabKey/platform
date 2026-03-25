@@ -85,6 +85,8 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.vfs.FileLike;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.util.WebUtils;
@@ -2722,8 +2724,20 @@ public class PageFlowUtil
     {
         if (!(req instanceof MultipartHttpServletRequest mpreq))
             return Collections.emptyMap();
+        @SuppressWarnings("SSBasedInspection")
         Map<String, MultipartFile> htmlMap = mpreq.getFileMap();
         Map<String, MultipartFile> formMap = new LinkedHashMap<>();
+        htmlMap.forEach((key, value) -> formMap.put(PageFlowUtil.decodeFormName(key), value));
+        return formMap;
+    }
+
+    static public MultiValueMap<String, MultipartFile> getMultiFileMap(HttpServletRequest req)
+    {
+        MultiValueMap<String, MultipartFile> formMap = new LinkedMultiValueMap<>();
+        if (!(req instanceof MultipartHttpServletRequest mpreq))
+            return formMap;
+        @SuppressWarnings("SSBasedInspection")
+        MultiValueMap<String, MultipartFile> htmlMap = mpreq.getMultiFileMap();
         htmlMap.forEach((key, value) -> formMap.put(PageFlowUtil.decodeFormName(key), value));
         return formMap;
     }

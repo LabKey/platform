@@ -192,19 +192,16 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
                 return;
             }
 
-            HttpServletRequest basicRequest = getViewContext().getRequest();
-
             // Parameter name (String) -> File on disk/original file name Pair
             Map<String, Pair<FileLike, String>> savedFiles = new HashMap<>();
 
-            if (basicRequest instanceof MultipartHttpServletRequest request)
+            if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
             {
-
-                Iterator<String> nameIterator = request.getFileNames();
-                while (nameIterator.hasNext())
+                Map<String, MultipartFile> fileMap = getFileMap();
+                for (var e : fileMap.entrySet())
                 {
-                    String formElementName = nameIterator.next();
-                    MultipartFile file = getFileMap().get(formElementName);
+                    var formElementName = e.getKey();
+                    var file = e.getValue();
                     String filename = file.getOriginalFilename();
 
                     try (InputStream input = file.getInputStream())
