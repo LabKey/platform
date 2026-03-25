@@ -148,7 +148,12 @@ public class MultiChoice
         @Override
         public Object getExcelCompatibleValue(RenderContext ctx)
         {
-            return getTsvFormattedValue(ctx);
+            Array values = getArrayValue(ctx);
+            if (null != values && !values.isEmpty())
+            {
+                return PageFlowUtil.joinValuesToStringForExport(values);
+            }
+            return null;
         }
 
         @Override
