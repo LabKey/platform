@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.24.1-fb-build-deps.1",
+    "@labkey/components": "7.24.2-fb-build-deps.0",
     "@labkey/themes": "1.7.0"
   },
   "devDependencies": {
