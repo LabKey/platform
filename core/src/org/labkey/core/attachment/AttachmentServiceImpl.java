@@ -114,6 +114,7 @@ import org.labkey.api.webdav.DavException;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.core.query.AttachmentAuditProvider;
+import org.labkey.core.query.AttachmentAuditProvider.AttachmentAuditEvent;
 import org.labkey.core.query.CoreQuerySchema;
 import org.springframework.http.ContentDisposition;
 import org.springframework.mock.web.MockMultipartFile;
@@ -204,7 +205,7 @@ public class AttachmentServiceImpl implements AttachmentService
         if (parent != null)
         {
             Container c = ContainerManager.getForId(parent.getContainerId());
-            AttachmentAuditProvider.AttachmentAuditEvent attachmentEvent = new AttachmentAuditProvider.AttachmentAuditEvent(c == null ? ContainerManager.getRoot() : c, comment);
+            AttachmentAuditEvent attachmentEvent = new AttachmentAuditEvent(c == null ? ContainerManager.getRoot() : c, comment);
 
             attachmentEvent.setAttachmentParentEntityId(parent.getEntityId());
             attachmentEvent.setParentType(parent.getAttachmentParentType().getUniqueName());
@@ -1178,10 +1179,13 @@ public class AttachmentServiceImpl implements AttachmentService
             if (null != documents)
             {
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Orphaned"), true);
-                new TableSelector(documents, new CsvSet("Container, Parent, ParentType, DocumentName"), filter, null).forEach(OrphanedAttachment.class, orphan -> {
+                int count = new TableSelector(documents, new CsvSet("Container, Parent, ParentType, DocumentName"), filter, null).forEach(OrphanedAttachment.class, orphan -> {
                     LOG.info("Deleting orphaned attachment: {}", orphan);
                     deleteAttachment(orphan.getAttachmentParent(), orphan.documentName(), user);
                 });
+                AttachmentAuditEvent event = new AttachmentAuditEvent(ContainerManager.getRoot(), "Deleted " + StringUtilsLabKey.pluralize(count, "orphaned attachment"));
+                event.setAttachment("All orphaned attachments");
+                AuditLogService.get().addEvent(user, event);
             }
         }
     }
