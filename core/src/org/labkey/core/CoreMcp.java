@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.labkey.core.mcp.McpServiceImpl.PATH_CACHE;
 
 public class CoreMcp implements McpService.McpImpl
 {
@@ -84,7 +83,7 @@ public class CoreMcp implements McpService.McpImpl
         Container container = ContainerManager.getForPath(containerPath);
         if (container != null)
         {
-            PATH_CACHE.put((String) context.getContext().get("sessionId"), containerPath);
+            McpService.get().saveSessionContainer(context, container);
             return "OK!";
         }
 
