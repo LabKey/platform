@@ -101,7 +101,7 @@ public class CoreMcp implements McpService.McpImpl
             else
             {
                 McpService.get().saveSessionContainer(context, container);
-                message = "Container has been set";
+                message = "Container has been set to " + container.getPath();
             }
         }
 
