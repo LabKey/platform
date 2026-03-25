@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.api;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
@@ -32,6 +33,7 @@ import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -39,6 +41,7 @@ import java.util.List;
 public class ExpDataClassType implements AttachmentParentType
 {
     private static final AttachmentParentType INSTANCE = new ExpDataClassType();
+    private static final Logger LOG = LogHelper.getLogger(ExpDataClassType.class, "Issues selecting entityIds");
 
     private ExpDataClassType()
     {
@@ -82,10 +85,15 @@ public class ExpDataClassType implements AttachmentParentType
                 // For example, Compound has a built-in Structure2D attachment column supplied by a vocabulary domain.
                 TableInfo dataClassTable = new DataClassUserSchema(c, User.getSearchUser()).getTable(domain.getName());
 
-                // Add a select for the ObjectIds in this ExpDataClass if the domain includes an attachment column.
-                // ExpDataClass attachments use the LSID's ObjectId as the attachment parent EntityId, so we need to use
-                // a SQL expression to extract it.
-                if (dataClassTable != null && dataClassTable.getColumns().stream().anyMatch(col -> col.getPropertyType() == PropertyType.ATTACHMENT))
+                if (dataClassTable == null)
+                {
+                    LOG.warn("DataClass table not found for {}", domain.getName());
+                }
+                else if (dataClassTable.getColumns().stream().anyMatch(col -> col.getPropertyType() == PropertyType.ATTACHMENT))
+                {
+                    // Add a select for the ObjectIds in this ExpDataClass if the table includes an attachment column.
+                    // ExpDataClass attachments use the LSID's ObjectId as the attachment parent EntityId, so we need
+                    // to use a SQL expression to extract it.
                     selectStatements.add(
                         new SQLFragment("\n    SELECT ")
                             .append(expressionToExtractObjectId)
@@ -99,6 +107,7 @@ public class ExpDataClassType implements AttachmentParentType
                             .append(domain.getStorageTableName())
                             .append(" WHERE ").append(where)
                     );
+                }
             }
         });
 

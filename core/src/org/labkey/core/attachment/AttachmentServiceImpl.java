@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1179,11 +1180,20 @@ public class AttachmentServiceImpl implements AttachmentService
             if (null != documents)
             {
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Orphaned"), true);
-                int count = new TableSelector(documents, new CsvSet("Container, Parent, ParentType, DocumentName"), filter, null).forEach(OrphanedAttachment.class, orphan -> {
+                MutableInt count = new MutableInt(0);
+                new TableSelector(documents, new CsvSet("Container, Parent, ParentType, DocumentName"), filter, null).forEach(OrphanedAttachment.class, orphan -> {
                     LOG.info("Deleting orphaned attachment: {}", orphan);
-                    deleteAttachment(orphan.getAttachmentParent(), orphan.documentName(), user);
+                    try
+                    {
+                        deleteAttachment(orphan.getAttachmentParent(), orphan.documentName(), user);
+                        count.increment();
+                    }
+                    catch (Exception e)
+                    {
+                        LOG.error("Exception while deleting orphaned attachment: {}", orphan, e);
+                    }
                 });
-                AttachmentAuditEvent event = new AttachmentAuditEvent(ContainerManager.getRoot(), "Deleted " + StringUtilsLabKey.pluralize(count, "orphaned attachment"));
+                AttachmentAuditEvent event = new AttachmentAuditEvent(ContainerManager.getRoot(), "Deleted " + StringUtilsLabKey.pluralize(count.intValue(), "orphaned attachment"));
                 event.setAttachment("All orphaned attachments");
                 AuditLogService.get().addEvent(user, event);
             }
