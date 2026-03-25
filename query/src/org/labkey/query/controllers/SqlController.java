@@ -142,7 +142,7 @@ public class SqlController extends SpringActionController
 
         public String getEol()
         {
-            return null!=eol ? eol : compact ? "\u001e" : "\n";
+            return null!=eol ? eol : compact ? "\u001e" : "\t";
         }
 
         public void setEol(String eol)
