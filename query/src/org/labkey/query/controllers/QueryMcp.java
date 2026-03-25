@@ -59,17 +59,19 @@ public class QueryMcp implements McpService.McpImpl
 
     @Tool(description = "Provide column metadata for a sql table. This tool will also return SQL source for saved queries.")
     @RequiresPermission(ReadPermission.class)
-    String listColumns(ToolContext toolContext, @ToolParam(description = "Fully qualified table name as it would appear in SQL e.g. \"schema\".\"table\"") String fullQuotedTableName)
+    String listColumns(ToolContext toolContext, @ToolParam(description = "Fully qualified table name as it would appear in SQL e.g. \"schema\".\"table\"") String tableName)
     {
-        var json = _listColumns(fullQuotedTableName, toolContext);
+        validateRequiredParameters("tableName", tableName);
+        var json = _listColumns(tableName, toolContext);
         return json.toString();
     }
 
     @Tool(description = "Provide list of tables within the provided schema.")
     @RequiresPermission(ReadPermission.class)
-    String listTables(ToolContext toolContext, @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. \"schema\"") String quotedSchemaName)
+    String listTables(ToolContext toolContext, @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. \"schema\"") String schemaName)
     {
-        var json = _listTables(quotedSchemaName, getContext(toolContext));
+        validateRequiredParameters("schemaName", schemaName);
+        var json = _listTables(schemaName, getContext(toolContext));
         return json.toString();
     }
 
@@ -94,16 +96,17 @@ public class QueryMcp implements McpService.McpImpl
 
     @Tool(description = "Provide the SQL source for a saved query.")
     @RequiresPermission(ReadPermission.class)
-    String getSourceForSavedQuery(ToolContext toolContext, @ToolParam(description = "Fully qualified query name as it would appear in SQL e.g. \"schema\".\"table or query\"") String fullQuotedTableName)
+    String getSourceForSavedQuery(ToolContext toolContext, @ToolParam(description = "Fully qualified query name as it would appear in SQL e.g. \"schema\".\"table or query\"") String tableName)
     {
-        var json = _listTables(fullQuotedTableName, getContext(toolContext));
+        validateRequiredParameters("tableName", tableName);
+        var json = _listColumns(tableName, toolContext);
         if (json.has("sql"))
             return "```sql\n" + json.getString("sql") + "\n```\n";
         else
-            return "I could not find the source for " + fullQuotedTableName;
+            return "I could not find the source for " + tableName;
     }
 
-    /* For now, list all schemas.  CONSIDER support incremental querying. */
+    /* For now, list all schemas. CONSIDER support incremental querying. */
     public static Map<SchemaKey, UserSchema> _listAllSchemas(DefaultSchema root)
     {
         SimpleSchemaTreeVisitor<Map<SchemaKey,UserSchema>, Void> visitor = new SimpleSchemaTreeVisitor<>(false)

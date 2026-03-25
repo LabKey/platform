@@ -95,7 +95,7 @@ public class CoreMcp implements McpService.McpImpl
 
         if (containerPath == null)
         {
-            message = "Container path was null. Please enter a valid container path. Try using listContainers to see them.";
+            message = "Container path was null. Please provide a valid containerPath parameter. Try using the listContainers tool to see them.";
         }
         else
         {
