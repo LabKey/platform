@@ -1238,7 +1238,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             {
                 if (!_shuttingDown)
                 {
-                    postFailureDelay(e, "Error in indexer", _log, ++consecutiveCommitFailures, INDEX_EVENT);
+                    // Postincrement so that we don't start backing off until the second error
+                    postFailureDelay(e, "Error in indexer", _log, consecutiveCommitFailures++, INDEX_EVENT);
                 }
             }
         }
