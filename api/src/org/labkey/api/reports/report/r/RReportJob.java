@@ -39,11 +39,9 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.Serializable;
-import java.nio.file.CopyOption;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -276,16 +274,15 @@ public class RReportJob extends PipelineJob implements Serializable
             {
                 // write the output substitution map to disk so we can render the view later
                 FileLike reportDir = report.getReportDirFileLike(getJob().getContainerId());
+                FileLike parentDir = report.getBackgroundOutputDirFileLike(getJob().getContainerId());
                 FileLike substitutionMap;
 
-                String reportDirName = reportDir.toNioPathForRead().getFileName().toString();
-                if (reportDirName.equals(getJobIdentifier()))
+                if (!reportDir.equals(parentDir))
                 {
-                    FileLike parentDir = FileSystemLike.wrapFile(reportDir.toNioPathForRead().getParent().toFile());
                     // clean up the destination folder
                     for (FileLike file : parentDir.getChildren())
                     {
-                        if (!file.isDirectory() && !"log".equalsIgnoreCase(FileUtil.getExtension(file)))
+                        if (!file.isFile() && !"log".equalsIgnoreCase(FileUtil.getExtension(file)))
                         {
                             getJob().debug("deleting parent file=" + file);
                             file.delete();
