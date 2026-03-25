@@ -1536,7 +1536,7 @@ public class PropertyController extends SpringActionController
             }
             catch (IOException ioe)
             {
-                ExceptionUtil.logExceptionToMothership(request, ioe);
+                ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), ioe);
                 error(writer, ioe.getMessage());
                 return null;
             }
