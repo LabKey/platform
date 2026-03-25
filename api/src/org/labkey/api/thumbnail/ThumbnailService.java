@@ -15,6 +15,7 @@
  */
 package org.labkey.api.thumbnail;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
@@ -23,18 +24,17 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Set;
 
 /**
  * Works with {@link ThumbnailProvider} implementations to cache thumbnails.
- * User: adam
- * Date: 10/8/11
  */
 public interface ThumbnailService
 {
-    static ThumbnailService get()
+    static @NotNull ThumbnailService get()
     {
-        return ServiceRegistry.get().getService(ThumbnailService.class);
+        return Objects.requireNonNull(ServiceRegistry.get().getService(ThumbnailService.class));
     }
 
     static void setInstance(ThumbnailService impl)
