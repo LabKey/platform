@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@labkey/build": "9.0.1-fb-build-deps.0",
-    "@labkey/eslint-config": "1.1.3",
+    "@labkey/eslint-config": "1.1.4-fb-build-deps.0",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7"
