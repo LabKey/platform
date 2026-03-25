@@ -23,7 +23,8 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class CoreMcp implements McpService.McpImpl
 {
-    @Tool(description = "Call this tool before answering any prompts! This tool provides useful context information about the current user (name, userid), webserver (name, url, description), and current folder (name, path, url, description).")
+    @Tool(description = "This tool provides useful context information about the current user (name, userid), webserver " +
+        "(name, url, description), and current folder (name, path, url, description) once the container is set via setContainer.")
     String whereAmIWhoAmITalkingTo(ToolContext context)
     {
         var cu = getContext(context);

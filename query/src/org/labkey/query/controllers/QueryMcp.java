@@ -19,6 +19,7 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleSchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.query.sql.SqlParser;
 import org.springframework.ai.chat.model.ToolContext;
@@ -156,7 +157,7 @@ public class QueryMcp implements McpService.McpImpl
         var defaultSchema = DefaultSchema.get(cu.getUser(), cu.getContainer());
         var schema = DefaultSchema.resolve(defaultSchema, fullKey);
         if (!(schema instanceof UserSchema userSchema))
-            return new JSONObject("error", "could not find schema for : " + fullQuotedName);
+            throw new NotFoundException("Could not find schema for " + fullQuotedName);
 
         JSONArray array = new JSONArray();
         CaseInsensitiveHashSet names = new CaseInsensitiveHashSet(schema.getTableNames());
@@ -212,12 +213,11 @@ public class QueryMcp implements McpService.McpImpl
         }
         else if (fullKey.size() == 1)
         {
-            schemaKey = SchemaKey.fromParts("study");
-            tableName = fullKey.getName();
+            throw new NotFoundException("You need to provide a fully qualified schema and table");
         }
         else
         {
-            return new JSONObject("error", "could not find table");
+            throw new NotFoundException("Could not find table " + fullQuotedName);
         }
 
         SchemaKey tableKey = new SchemaKey(schemaKey, tableName);
@@ -226,11 +226,11 @@ public class QueryMcp implements McpService.McpImpl
 
         var schema = DefaultSchema.resolve(defaultSchema, schemaKey);
         if (null == schema)
-            return new JSONObject("error", "could not find table");
+            throw new NotFoundException("Could not find schema for : " + fullQuotedName);
 
         TableInfo td = schema.getTable(tableName, null);
         if (null == td)
-            return new JSONObject("error", "could not find table");
+            throw new NotFoundException("Could not find table for : " + fullQuotedName);
 
         String sourceSQL = null;
         if (schema instanceof UserSchema userSchema)
