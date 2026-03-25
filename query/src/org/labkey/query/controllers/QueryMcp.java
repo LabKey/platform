@@ -19,6 +19,8 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleSchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.query.sql.SqlParser;
@@ -44,7 +46,7 @@ public class QueryMcp implements McpService.McpImpl
             description = "Provide documentation for LabKey SQL specific syntax")
     public McpSchema.ReadResourceResult getLabKeySQLDocumentation() throws IOException
     {
-        incrementResourceReadCount("LabKey SQL");
+        incrementResourceRequestCount("LabKey SQL");
         String markdown = IOUtils.resourceToString("org/labkey/query/controllers/LabKeySql.md", null, QueryController.class.getClassLoader());
         return new McpSchema.ReadResourceResult(List.of(
             new McpSchema.TextResourceContents(
@@ -56,6 +58,7 @@ public class QueryMcp implements McpService.McpImpl
     }
 
     @Tool(description = "Provide column metadata for a sql table. This tool will also return SQL source for saved queries.")
+    @RequiresPermission(ReadPermission.class)
     String listColumns(ToolContext toolContext, @ToolParam(description = "Fully qualified table name as it would appear in SQL e.g. \"schema\".\"table\"") String fullQuotedTableName)
     {
         var json = _listColumns(fullQuotedTableName, toolContext);
@@ -63,6 +66,7 @@ public class QueryMcp implements McpService.McpImpl
     }
 
     @Tool(description = "Provide list of tables within the provided schema.")
+    @RequiresPermission(ReadPermission.class)
     String listTables(ToolContext toolContext, @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. \"schema\"") String quotedSchemaName)
     {
         var json = _listTables(quotedSchemaName, getContext(toolContext));
@@ -70,6 +74,7 @@ public class QueryMcp implements McpService.McpImpl
     }
 
     @Tool(description = "Provide list of database schemas")
+    @RequiresPermission(ReadPermission.class)
     String listSchemas(ToolContext toolContext)
     {
         ContainerUser cu = getContext(toolContext);
@@ -88,6 +93,7 @@ public class QueryMcp implements McpService.McpImpl
 
 
     @Tool(description = "Provide the SQL source for a saved query.")
+    @RequiresPermission(ReadPermission.class)
     String getSourceForSavedQuery(ToolContext toolContext, @ToolParam(description = "Fully qualified query name as it would appear in SQL e.g. \"schema\".\"table or query\"") String fullQuotedTableName)
     {
         var json = _listTables(fullQuotedTableName, getContext(toolContext));
@@ -309,7 +315,6 @@ public class QueryMcp implements McpService.McpImpl
         return new SqlParser().parseIdentifier(compoundIdentifier).toSQLString(true).toLowerCase();
     }
 
-
     /** JSON schema example provided by GEMINI, using triple tick-marks to delimit the machine-readable structured data
      *
      * Here is the database schema in JSON format:
@@ -338,4 +343,3 @@ public class QueryMcp implements McpService.McpImpl
      * }```
      */
 }
-

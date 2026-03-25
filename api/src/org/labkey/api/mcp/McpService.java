@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.module.McpProvider;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HtmlString;
@@ -52,9 +51,9 @@ public interface McpService extends ToolCallbackProvider
         }
 
         // Every MCP resource should call this on every invocation
-        default void incrementResourceReadCount(String resource)
+        default void incrementResourceRequestCount(String resource)
         {
-            get().incrementResourceCount(resource);
+            get().incrementResourceRequestCount(resource);
         }
     }
 
@@ -70,27 +69,18 @@ public interface McpService extends ToolCallbackProvider
 
     boolean isReady();
 
-
-    default void register(McpImpl obj)
+    default void register(McpImpl mcp)
     {
-        ToolCallback[] tools = ToolCallbacks.from(obj);
-        if (null != tools && tools.length > 0)
-            registerTools(Arrays.asList(tools));
+        ToolCallback[] tools = ToolCallbacks.from(mcp);
+        if (tools.length > 0)
+            registerTools(Arrays.asList(tools), mcp);
 
-        var resources = new SyncMcpResourceProvider(List.of(obj)).getResourceSpecifications();
+        var resources = new SyncMcpResourceProvider(List.of(mcp)).getResourceSpecifications();
         if (null != resources && !resources.isEmpty())
             registerResources(resources);
     }
 
-
-    default void register(McpProvider mcp)
-    {
-        registerTools(mcp.getMcpTools());
-        registerPrompts(mcp.getMcpPrompts());
-        registerResources(mcp.getMcpResources());
-    }
-
-    void registerTools(@NotNull List<ToolCallback> tools);
+    void registerTools(@NotNull List<ToolCallback> tools, McpImpl mcp);
 
     void registerPrompts(@NotNull List<McpServerFeatures.SyncPromptSpecification> prompts);
 
@@ -106,7 +96,7 @@ public interface McpService extends ToolCallbackProvider
 
     void saveSessionContainer(ToolContext context, Container container);
 
-    void incrementResourceCount(String resource);
+    void incrementResourceRequestCount(String resource);
 
     ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier, boolean createIfNotExists);
 

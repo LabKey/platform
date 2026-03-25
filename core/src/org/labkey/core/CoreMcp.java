@@ -6,6 +6,8 @@ import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.mcp.McpService;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
@@ -13,6 +15,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.view.UnauthorizedException;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
@@ -26,6 +29,7 @@ public class CoreMcp implements McpService.McpImpl
 {
     @Tool(description = "This tool provides useful context information about the current user (name, userid), webserver " +
         "(name, url, description), and current container/folder (name, path, url, description) once the container is set via setContainer.")
+    @RequiresPermission(ReadPermission.class)
     String whereAmIWhoAmITalkingTo(ToolContext context)
     {
         var cu = getContext(context);
@@ -70,6 +74,7 @@ public class CoreMcp implements McpService.McpImpl
     }
 
     @Tool(description = "List the hierarchical path for every container in the server where the user has read permissions.")
+    @RequiresNoPermission
     String listContainers(ToolContext toolContext)
     {
         return ContainerManager.getAllChildren(ContainerManager.getRoot(), getUser(toolContext), ReadPermission.class)
@@ -80,8 +85,10 @@ public class CoreMcp implements McpService.McpImpl
     }
 
     @Tool(description = "Every tool in this MCP requires a container path, e.g. MyProject/MyFolder. A container is also called a folder or project. " +
-        "Please prompt the user for a container path and use this tool to save the path for this session. Don't suggest a leading slash on the path " +
-        "because typing a slash in some LLM clients triggers custom shortcuts.")
+        "Please prompt the user for a container path and use this tool to save the path for this MCP session. The user can also change the container " +
+        "during the session using this tool. The user must have read permissions in the container, in other words, the path must be on the list that " +
+        "the listContainers tool returns. Don't suggest a leading slash on the path because typing a slash in some LLM clients triggers custom shortcuts.")
+    @RequiresNoPermission // Because we don't have a container yet, but tool will check for read permission before setting the container
     String setContainer(ToolContext context, @ToolParam(description = "Container path, e.g. MyProject/MyFolder") String containerPath)
     {
         final String message;
@@ -100,6 +107,10 @@ public class CoreMcp implements McpService.McpImpl
             }
             else
             {
+                // Must have read permission to set a container
+                if (!container.hasPermission(getUser(context), ReadPermission.class))
+                    throw new UnauthorizedException();
+
                 McpService.get().saveSessionContainer(context, container);
                 message = "Container has been set to " + container.getPath();
             }
