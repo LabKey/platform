@@ -42,7 +42,7 @@ public interface McpService extends ToolCallbackProvider
             User user = (User)toolContext.getContext().get("user");
             Container container = (Container)toolContext.getContext().get("container");
             if (container == null)
-                throw new McpException("You need to set a container path before invoking this tool");
+                throw new McpException("No container path is set. Ask the user which container/folder they want to use (you can call listContainers to show available options), then call setContainer before retrying.");
             return ContainerUser.create(container, user);
         }
 
