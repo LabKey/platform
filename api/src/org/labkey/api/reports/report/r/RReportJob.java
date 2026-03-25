@@ -39,6 +39,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.Serializable;
@@ -277,14 +278,18 @@ public class RReportJob extends PipelineJob implements Serializable
                 FileLike reportDir = report.getReportDirFileLike(getJob().getContainerId());
                 FileLike substitutionMap;
 
-                if (reportDir.getName().equals(getJobIdentifier()))
+                String reportDirName = reportDir.toNioPathForRead().getFileName().toString();
+                if (reportDirName.equals(getJobIdentifier()))
                 {
-                    FileLike parentDir = reportDir.getParent();
+                    FileLike parentDir = FileSystemLike.wrapFile(reportDir.toNioPathForRead().getParent().toFile());
                     // clean up the destination folder
                     for (FileLike file : parentDir.getChildren())
                     {
                         if (!file.isDirectory() && !"log".equalsIgnoreCase(FileUtil.getExtension(file)))
+                        {
+                            getJob().debug("deleting parent file=" + file);
                             file.delete();
+                        }
                     }
 
                     // rewrite the parameter replacement files to point to the destination folder
@@ -294,6 +299,7 @@ public class RReportJob extends PipelineJob implements Serializable
                         for (FileLike file : replacement.getFiles())
                         {
                             FileLike newFile = parentDir.resolveChild(file.getName());
+                            getJob().debug("move replacement file  =" + replacement.getName() + " from=" + file + " to=" + newFile);
                             file.move(newFile);
                             newFiles.add(newFile);
                         }
@@ -317,6 +323,7 @@ public class RReportJob extends PipelineJob implements Serializable
                             {
                                 newFile = FileUtil.createTempFile(LOG_FILE_PREFIX, ".log", parentDir);
                                 getJob().setLogFile(newFile);
+                                getJob().debug("copy log file from=" + file + " to=" + newFile);
                                 FileUtil.copyFile(file, newFile, StandardCopyOption.REPLACE_EXISTING);
                             }
                             // report.log != getLogFile(), just regular file
@@ -325,16 +332,19 @@ public class RReportJob extends PipelineJob implements Serializable
                                 String logFileContent = PageFlowUtil.getStreamContentsAsString(file.openInputStream());
                                 if (!StringUtils.isEmpty(logFileContent))
                                     getJob().info("REPORT.LOG CONTENTS:\n" + logFileContent);
+                                getJob().debug("move log file from=" + file + " to=" + newFile);
                                 file.move(newFile);
                             }
                         }
                         else
                         {
+                            getJob().debug("move file from=" + file + " to=" + newFile);
                             file.move(newFile);
                         }
                     }
+                    getJob().debug("delete reportDir=" + reportDir);
                     FileUtil.deleteDir(reportDir);
-                    substitutionMap = reportDir.getParent().resolveChild(RReport.SUBSTITUTION_MAP);
+                    substitutionMap = parentDir.resolveChild(RReport.SUBSTITUTION_MAP);
                 }
                 else
                     substitutionMap = reportDir.resolveChild(RReport.SUBSTITUTION_MAP);
