@@ -1170,6 +1170,7 @@ public class AttachmentServiceImpl implements AttachmentService
     @Override
     public void deleteOrphanedAttachments()
     {
+        // TroubleShooterRole provides ability to read the Documents table. deleteAttachments() does not check perms.
         User user = ElevatedUser.getElevatedUser(User.getSearchUser(), TroubleshooterRole.class);
         UserSchema core = DefaultSchema.get(user, ContainerManager.getRoot()).getUserSchema(CoreQuerySchema.NAME);
         if (core != null)
