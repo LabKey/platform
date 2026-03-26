@@ -1,5 +1,8 @@
 package org.labkey.core;
 
+import io.modelcontextprotocol.spec.McpSchema;
+import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.collections.LabKeyCollectors;
@@ -17,9 +20,12 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.ai.chat.model.ToolContext;
+import org.springframework.ai.mcp.annotation.McpResource;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -117,5 +123,23 @@ public class CoreMcp implements McpService.McpImpl
         }
 
         return message;
+    }
+
+    @McpResource(
+        uri = "resource://org/labkey/core/FileBasedModules.md",
+        mimeType = "application/markdown",
+        name = "File-Based Module Development Guide",
+        description = "Provide documentation for developing LabKey file-based modules")
+    public ReadResourceResult getFileBasedModuleDevelopmentGuide() throws IOException
+    {
+        incrementResourceRequestCount("File-Based Modules");
+        String markdown = IOUtils.resourceToString("org/labkey/core/FileBasedModules.md", null, CoreModule.class.getClassLoader());
+        return new ReadResourceResult(List.of(
+            new McpSchema.TextResourceContents(
+                "resource://org/labkey/core/FileBasedModules.md",
+                "application/markdown",
+                markdown
+            )
+        ));
     }
 }

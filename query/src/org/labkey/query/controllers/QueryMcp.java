@@ -1,6 +1,7 @@
 package org.labkey.query.controllers;
 
-import io.modelcontextprotocol.spec.McpSchema;
+import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
+import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
@@ -44,12 +45,12 @@ public class QueryMcp implements McpService.McpImpl
             mimeType = "application/markdown",
             name = "LabKey SQL",
             description = "Provide documentation for LabKey SQL specific syntax")
-    public McpSchema.ReadResourceResult getLabKeySQLDocumentation() throws IOException
+    public ReadResourceResult getLabKeySQLDocumentation() throws IOException
     {
         incrementResourceRequestCount("LabKey SQL");
         String markdown = IOUtils.resourceToString("org/labkey/query/controllers/LabKeySql.md", null, QueryController.class.getClassLoader());
-        return new McpSchema.ReadResourceResult(List.of(
-            new McpSchema.TextResourceContents(
+        return new ReadResourceResult(List.of(
+            new TextResourceContents(
                 "resource://org/labkey/query/controllers/LabKeySql.md",
                 "application/markdown",
                 markdown
