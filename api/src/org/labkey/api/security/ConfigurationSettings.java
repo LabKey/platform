@@ -36,12 +36,12 @@ public class ConfigurationSettings
                 }
                 catch (Encryption.DecryptionException e)
                 {
-                    LOG.warn("Encrypted properties can't be read", e);
+                    LOG.warn("Encrypted properties can't be decrypted", e);
                 }
             }
             else
             {
-                LOG.warn("Encrypted properties can't be read: encryption key has not been set in " + AppProps.getInstance().getWebappConfigurationFilename() + "!");
+                LOG.warn("Encrypted properties can't be read: encryption key has not been set in {}!", AppProps.getInstance().getWebappConfigurationFilename());
             }
         }
 
