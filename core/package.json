@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.24.3-fb-encodeFormName.0",
+    "@labkey/components": "7.25.1-fb-encodeFormName.0",
     "@labkey/themes": "1.7.0"
   },
   "devDependencies": {

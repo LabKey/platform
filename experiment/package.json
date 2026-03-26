@@ -13,7 +13,7 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "7.24.3-fb-encodeFormName.0"
+    "@labkey/components": "7.25.1-fb-encodeFormName.0"
   },
   "devDependencies": {
     "@labkey/build": "9.0.0",
