@@ -285,7 +285,7 @@ public class RReportJob extends PipelineJob implements Serializable
                     // clean up the destination folder
                     for (FileLike file : parentDir.getChildren())
                     {
-                        if (!file.isDirectory() && !"log".equalsIgnoreCase(FileUtil.getExtension(file)))
+                        if (file.isFile() && !"log".equalsIgnoreCase(FileUtil.getExtension(file)))
                         {
                             getJob().debug("deleting parent file=" + file);
                             file.delete();
