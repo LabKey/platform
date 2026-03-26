@@ -140,7 +140,9 @@ public interface AttachmentService
 
     HttpView<?> getFindAttachmentParentsView();
 
-    void detectOrphans();
+    void logOrphanedAttachments();
+
+    void deleteOrphanedAttachments();
 
     class DuplicateFilenameException extends IOException implements SkipMothershipLogging
     {
