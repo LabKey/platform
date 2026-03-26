@@ -20,6 +20,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -75,6 +76,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbSchema;
@@ -7492,12 +7494,12 @@ public class ExperimentController extends SpringActionController
 
             QueryUpdateForm tableForm = (QueryUpdateForm)bind.getTarget();
 
-            int sampleId;
+            long sampleId;
             try
             {
-                sampleId = Integer.parseInt((String) tableForm.getPkVal());
+                sampleId = ConvertHelper.convert(tableForm.getPkVal(), Long.class);
             }
-            catch (NumberFormatException e)
+            catch (ConversionException e)
             {
                 throw new NotFoundException("Invalid RowId: " + tableForm.getPkVal());
             }
