@@ -71,6 +71,7 @@ public class CoreUpgradeCode implements UpgradeCode
         if (context.isNewInstall())
             return;
 
+        // TODO: Remove getExternalSourceHosts() method when this upgrade code is deleted
         List<String> hosts = AppProps.getInstance().getExternalSourceHosts();
         List<AllowedHost> allowedHosts = hosts.stream()
             .map(host -> new AllowedHost(Directive.Connection, host))
@@ -104,6 +105,25 @@ public class CoreUpgradeCode implements UpgradeCode
             type.addWhereSql(updateSql, "Parent", "DocumentName");
 
             new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(updateSql);
+        }
+    }
+
+    /**
+     * This is not invoked from any script yet. We want to make sure our orphaned attachment detection is perfect
+     * before blanket deleting them.
+     */
+    @DeferredUpgrade // Need to execute this after AttachmentTypes are registered
+    @SuppressWarnings("unused")
+    public static void deleteOrphanedAttachments(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        AttachmentService svc = AttachmentService.get();
+
+        if (svc != null)
+        {
+            svc.deleteOrphanedAttachments();
         }
     }
 }
