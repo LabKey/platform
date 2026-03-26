@@ -4,14 +4,11 @@ package org.labkey.api.mcp;
 import io.modelcontextprotocol.server.McpServerFeatures;
 import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ToolContext;
@@ -22,9 +19,7 @@ import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -59,39 +54,6 @@ public interface McpService extends ToolCallbackProvider
         default void incrementResourceRequestCount(String resource)
         {
             get().incrementResourceRequestCount(resource);
-        }
-
-        // These methods throw a NotFoundException listing all missing parameters. Apparently, even though parameters
-        // are marked as required, the LLM may not send them or send them with a different name. Best to check them all.
-        default void validateRequiredParameters(String k1, @Nullable Object v1)
-        {
-            validateRequiredParameters(new HashMap<>(){{put(k1, v1);}});
-        }
-
-        default void validateRequiredParameters(String k1, @Nullable Object v1, String k2, @Nullable Object v2)
-        {
-            validateRequiredParameters(new HashMap<>(){{put(k1, v1);put(k2, v2);}});
-        }
-
-        default void validateRequiredParameters(String k1, @Nullable Object v1, String k2, @Nullable Object v2, String k3, @Nullable Object v3)
-        {
-            validateRequiredParameters(new HashMap<>(){{put(k1, v1);put(k2, v2);put(k3, v3);}});
-        }
-
-        default void validateRequiredParameters(Map<String, Object> parameters)
-        {
-            List<String> missing = parameters.entrySet().stream()
-                .filter(entry -> entry.getValue() == null || entry.getValue().equals(""))
-                .map(Map.Entry::getKey)
-                .toList();
-
-            if (!missing.isEmpty())
-            {
-                if (missing.size() == 1)
-                    throw new NotFoundException(missing.getFirst() + " parameter is required");
-                else
-                    throw new NotFoundException("The following parameters are required: " + StringUtilsLabKey.joinWithConjunction(missing, "and"));
-            }
         }
     }
 

@@ -62,7 +62,6 @@ public class QueryMcp implements McpService.McpImpl
     @RequiresPermission(ReadPermission.class)
     String listColumns(ToolContext toolContext, @ToolParam(description = "Fully qualified table name as it would appear in SQL e.g. \"schema\".\"table\"") String tableName)
     {
-        validateRequiredParameters("tableName", tableName);
         var json = _listColumns(tableName, toolContext);
         return json.toString();
     }
@@ -71,7 +70,6 @@ public class QueryMcp implements McpService.McpImpl
     @RequiresPermission(ReadPermission.class)
     String listTables(ToolContext toolContext, @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. \"schema\"") String schemaName)
     {
-        validateRequiredParameters("schemaName", schemaName);
         var json = _listTables(schemaName, getContext(toolContext));
         return json.toString();
     }
@@ -99,7 +97,6 @@ public class QueryMcp implements McpService.McpImpl
     @RequiresPermission(ReadPermission.class)
     String getSourceForSavedQuery(ToolContext toolContext, @ToolParam(description = "Fully qualified query name as it would appear in SQL e.g. \"schema\".\"table or query\"") String tableName)
     {
-        validateRequiredParameters("tableName", tableName);
         var json = _listColumns(tableName, toolContext);
         if (json.has("sql"))
             return "```sql\n" + json.getString("sql") + "\n```\n";
