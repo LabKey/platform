@@ -3242,8 +3242,7 @@ public class ExpDataIterators
             if (data instanceof MultiChoice.Array array)
             {
                 // GitHub Issue 950: cross folder export/import roundtripping problems for MVTC with commas and quotes
-                String displayVal = PageFlowUtil.joinValuesToStringForExport(array);
-                return _tsvWriter.quoteValue(displayVal.trim());
+                return _tsvWriter.quoteValue(array.toString().trim());
             }
 
             return data;
