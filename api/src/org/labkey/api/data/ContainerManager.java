@@ -1944,7 +1944,7 @@ public class ContainerManager
                 setContainerTabDeleted(c.getParent(), c.getName(), c.getParent().getFolderType().getName());
             }
 
-            AttachmentService.get().detectOrphans();
+            AttachmentService.get().logOrphanedAttachments();
 
             fireDeleteContainer(c, user);
 
