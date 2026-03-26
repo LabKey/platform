@@ -277,12 +277,15 @@ public class RReportJob extends PipelineJob implements Serializable
                 FileLike parentDir = report.getBackgroundOutputDirFileLike(getJob().getContainerId());
                 FileLike substitutionMap;
 
-                if (!reportDir.equals(parentDir))
+                // ScriptEngineReport#getReportDirFileLike() appends the ThreadLocal job identifier only
+                // when background execution needs a per-job child directory under parentDir.
+                boolean hasJobSpecificReportDir = !reportDir.equals(parentDir);
+                if (hasJobSpecificReportDir)
                 {
                     // clean up the destination folder
                     for (FileLike file : parentDir.getChildren())
                     {
-                        if (!file.isFile() && !"log".equalsIgnoreCase(FileUtil.getExtension(file)))
+                        if (!file.isDirectory() && !"log".equalsIgnoreCase(FileUtil.getExtension(file)))
                         {
                             getJob().debug("deleting parent file=" + file);
                             file.delete();
