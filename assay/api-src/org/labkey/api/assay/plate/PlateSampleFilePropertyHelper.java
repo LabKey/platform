@@ -18,7 +18,6 @@ package org.labkey.api.assay.plate;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
@@ -99,7 +98,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
 
     private MultipartFile getMetadataFile(HttpServletRequest request)
     {
-        if (request instanceof MultipartHttpServletRequest multipartRequest)
+        if (request instanceof MultipartHttpServletRequest)
         {
             String entryKeyToFind;
             if (_metadataInputFormat == SampleMetadataInputFormat.FILE_BASED)
