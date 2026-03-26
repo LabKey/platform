@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,6 +46,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilter.AllFolders;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -113,6 +115,7 @@ import org.labkey.api.webdav.DavException;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.core.query.AttachmentAuditProvider;
+import org.labkey.core.query.AttachmentAuditProvider.AttachmentAuditEvent;
 import org.labkey.core.query.CoreQuerySchema;
 import org.springframework.http.ContentDisposition;
 import org.springframework.mock.web.MockMultipartFile;
@@ -203,7 +206,7 @@ public class AttachmentServiceImpl implements AttachmentService
         if (parent != null)
         {
             Container c = ContainerManager.getForId(parent.getContainerId());
-            AttachmentAuditProvider.AttachmentAuditEvent attachmentEvent = new AttachmentAuditProvider.AttachmentAuditEvent(c == null ? ContainerManager.getRoot() : c, comment);
+            AttachmentAuditEvent attachmentEvent = new AttachmentAuditEvent(c == null ? ContainerManager.getRoot() : c, comment);
 
             attachmentEvent.setAttachmentParentEntityId(parent.getEntityId());
             attachmentEvent.setParentType(parent.getAttachmentParentType().getUniqueName());
@@ -1098,7 +1101,7 @@ public class AttachmentServiceImpl implements AttachmentService
     private record Orphan(String documentName, String parentType){}
 
     @Override
-    public void detectOrphans()
+    public void logOrphanedAttachments()
     {
         // Log orphaned attachments in this server, but in dev mode only, since this is for our testing. Also, we
         // don't yet offer a way to delete orphaned attachments via the UI, so it's not helpful to inform admins.
@@ -1131,6 +1134,69 @@ public class AttachmentServiceImpl implements AttachmentService
                         LOG.error("{} detected orphans are listed below:\n{}", message, orphans.stream().map(Record::toString).collect(Collectors.joining("\n")));
                     }
                 }
+            }
+        }
+    }
+
+    record OrphanedAttachment(String container, String parent, String parentType, String documentName)
+    {
+        AttachmentParent getAttachmentParent()
+        {
+            return new AttachmentParent()
+            {
+                @Override
+                public String getEntityId()
+                {
+                    return parent;
+                }
+
+                @Override
+                public String getContainerId()
+                {
+                    return container;
+                }
+
+                @Override
+                public @NotNull AttachmentParentType getAttachmentParentType()
+                {
+                    // Attempt to resolve the parent type. This will get written to the audit log.
+                    AttachmentParentType type = ATTACHMENT_TYPE_MAP.get(parentType());
+                    return type != null ? type : AttachmentParentType.UNKNOWN;
+                }
+            };
+        }
+    }
+
+    @Override
+    public void deleteOrphanedAttachments()
+    {
+        // TroubleShooterRole provides ability to read the Documents table. deleteAttachments() does not check perms.
+        User user = ElevatedUser.getElevatedUser(User.getSearchUser(), TroubleshooterRole.class);
+        UserSchema core = DefaultSchema.get(user, ContainerManager.getRoot()).getUserSchema(CoreQuerySchema.NAME);
+        if (core != null)
+        {
+            // Use "unsafe everything" container filter because it's possible that orphaned attachments have a container
+            // that no longer exists.
+            TableInfo documents = core.getTable(CoreQuerySchema.DOCUMENTS_TABLE_NAME, ContainerFilter.getUnsafeEverythingFilter());
+            if (null != documents)
+            {
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Orphaned"), true);
+                MutableInt count = new MutableInt(0);
+                new TableSelector(documents, new CsvSet("Container, Parent, ParentType, DocumentName"), filter, null).forEach(OrphanedAttachment.class, orphan -> {
+                    LOG.info("Deleting orphaned attachment: {}", orphan);
+                    try
+                    {
+                        deleteAttachment(orphan.getAttachmentParent(), orphan.documentName(), user);
+                        count.increment();
+                    }
+                    catch (Exception e)
+                    {
+                        LOG.error("Exception while deleting orphaned attachment: {}", orphan, e);
+                    }
+                });
+                AttachmentAuditEvent event = new AttachmentAuditEvent(ContainerManager.getRoot(), "Deleted " + StringUtilsLabKey.pluralize(count.intValue(), "orphaned attachment"));
+                event.setAttachment("All orphaned attachments");
+                AuditLogService.get().addEvent(user, event);
             }
         }
     }
