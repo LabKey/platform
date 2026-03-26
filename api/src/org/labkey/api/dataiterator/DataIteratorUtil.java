@@ -141,29 +141,14 @@ public class DataIteratorUtil
 
     // rank of a match of import column NAME matching various properties of target column
     // MatchType.low is used for matches based on something other than name
-    public enum MatchType
+    private enum MatchType
     {
         propertyuri,
         name,
         alias,
         jdbcname,
         tsvColumn,
-        low;
-
-        public String getMatchedName(@Nullable String name)
-        {
-            return name;
-        }
-
-        /**
-         * Update rowMap content based on passed in col.
-         * For example, the original rowMap may contain encoded field name. This util substitute the key in rowMap to reflect the actual col name
-         * @return If rowMap has been updated
-         */
-        public boolean updateRowMap(@NotNull ColumnInfo col, Map<String, Object> rowMap)
-        {
-            return false;
-        }
+        low
     }
 
 

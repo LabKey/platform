@@ -15,7 +15,6 @@
  */
 package org.labkey.api.action;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.ExceptionUtil;
@@ -42,7 +41,6 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**

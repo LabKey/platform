@@ -2706,12 +2706,11 @@ public class PageFlowUtil
             return name;
         // CONSIDER: use encode(name) for simplicity or only encode the unclean chars?
         var ret = FIELD_ENCODED_PREFIX + encode(name);
-        assert !StringUtils.containsAny(ret, problemChars);
         return ret;
     }
 
 
-    public static String decodeFormName(String name)
+    public static String decodeFormName(@NotNull String name)
     {
         if (!name.startsWith(FIELD_ENCODED_PREFIX))
             return name;
@@ -2719,7 +2718,7 @@ public class PageFlowUtil
     }
 
 
-    /** Use in preferene to {@link }MultipartHttpServletRequest.getFileMap()} */
+    /** Use in preference to {@link }MultipartHttpServletRequest.getFileMap()} */
     static public Map<String, MultipartFile> getFileMap(HttpServletRequest req)
     {
         if (!(req instanceof MultipartHttpServletRequest mpreq))
@@ -3150,6 +3149,7 @@ public class PageFlowUtil
 
         private void assertEncodeDecode(String test)
         {
+            assertFalse(StringUtils.containsAny(encodeFormName(test), "\\\"%"));
             assertEquals(test, decodeFormName(encodeFormName(test)));
         }
 
@@ -3158,6 +3158,8 @@ public class PageFlowUtil
             // We want to make sure there are no ambiguous encodings
             var b = encodeFormName(a);
             var c = encodeFormName(b);
+            assertFalse(StringUtils.containsAny(b, "\\\"%"));
+            assertFalse(StringUtils.containsAny(c, "\\\"%"));
             if (a.equals(b))
                 assertEquals(a,c);
             else

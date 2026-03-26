@@ -4652,7 +4652,7 @@ public class QueryController extends SpringActionController
                         LOG.error("Row contained conflicting casing for key names in the incoming row: {}", jsonObj);
                     }
                     if (allowRowAttachments())
-                        addRowAttachments(table, rowMap, idx, commandIndex);
+                        addRowAttachments(rowMap, idx, commandIndex);
 
                     rowsToProcess.add(rowMap);
                     rowsAffected++;
@@ -4816,7 +4816,7 @@ public class QueryController extends SpringActionController
             return false;
         }
 
-        private void addRowAttachments(TableInfo tableInfo, Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
+        private void addRowAttachments(Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
         {
             if (getFileMap() != null)
             {
