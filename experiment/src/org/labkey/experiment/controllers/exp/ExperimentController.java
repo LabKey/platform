@@ -32,6 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jspecify.annotations.NonNull;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -6772,7 +6773,7 @@ public class ExperimentController extends SpringActionController
             ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), xarFile,
                     "Uploaded file", true, pipeRoot);
             PipelineService.get().queueJob(job);
-            
+
             response.put("success", true);
             return response;
         }
@@ -7494,15 +7495,7 @@ public class ExperimentController extends SpringActionController
 
             QueryUpdateForm tableForm = (QueryUpdateForm)bind.getTarget();
 
-            long sampleId;
-            try
-            {
-                sampleId = ConvertHelper.convert(tableForm.getPkVal(), Long.class);
-            }
-            catch (ConversionException e)
-            {
-                throw new NotFoundException("Invalid RowId: " + tableForm.getPkVal());
-            }
+            long sampleId = getSampleId(tableForm);
 
             ExpMaterial material = ExperimentService.get().getExpMaterial(sampleId);
             if (material == null)
@@ -7511,10 +7504,25 @@ public class ExperimentController extends SpringActionController
             return bind;
         }
 
+        private static long getSampleId(QueryUpdateForm tableForm)
+        {
+            Long sampleId = null;
+            try
+            {
+                sampleId = ConvertHelper.convert(tableForm.getPkVal(), Long.class);
+            }
+            catch (ConversionException e)
+            {
+            }
+            if (null == sampleId)
+                throw new NotFoundException("Invalid RowId: " + tableForm.getPkVal());
+            return sampleId;
+        }
+
         @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
-            int sampleId = Integer.parseInt((String) tableForm.getPkVal());
+            long sampleId = getSampleId(tableForm);
 
             ExpMaterial material = ExperimentService.get().getExpMaterial(sampleId);
             if (material == null)
