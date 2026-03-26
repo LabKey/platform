@@ -18,7 +18,6 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.view.UnauthorizedException;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.mcp.annotation.McpResource;
 import org.springframework.ai.tool.annotation.Tool;
@@ -111,7 +110,7 @@ public class CoreMcp implements McpService.McpImpl
             // cases to prevent information exposure.
             if (container == null || !container.hasPermission(getUser(context), ReadPermission.class))
             {
-                message = "That's not a valid container path. Try using listContainers to see them.";
+                message = "That's not a valid container path. Try using listContainers to see the valid options.";
             }
             else
             {
