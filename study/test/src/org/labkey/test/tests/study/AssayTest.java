@@ -59,7 +59,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
@@ -67,6 +66,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.labkey.test.util.TestDataGenerator.randomTextChoice;
 import static org.labkey.test.util.TestDataGenerator.shuffleSelect;
+import static org.labkey.test.util.data.TestArrayDataUtils.formatMultiValueText;
 
 @Category({Daily.class, Assays.class})
 public class AssayTest extends AbstractAssayTest
@@ -172,11 +172,11 @@ public class AssayTest extends AbstractAssayTest
 
     private File writeMultiValueFileForAssayRun(String fileName, List<List<String>> fileData) throws IOException
     {
-        String fileContent = Stream.concat(
-                Stream.of(COL_MULTITEXTCHOICE.getName()),
-                fileData.stream().map(TestArrayDataUtils::formatMultiValueText)
-        ).collect(Collectors.joining("\n", "", "\n"));
-        return TestFileUtils.writeTempFile(fileName, fileContent);
+        List<List<String>> rows = Stream.concat(
+                Stream.of(List.of(COL_MULTITEXTCHOICE.getName())),
+                fileData.stream().map(row -> List.of(formatMultiValueText(row)))
+        ).toList();
+        return TestDataUtils.writeRowsToFile(fileName, rows);
     }
 
     // Issue 53616: Assay creation attempt after an error results in "Assay protocol already exists for this name."
