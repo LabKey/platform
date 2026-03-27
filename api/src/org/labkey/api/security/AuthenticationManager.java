@@ -327,41 +327,68 @@ public class AuthenticationManager
         }
     }
 
-    static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = (oldPassPhrase, keySource, oldConfig) -> {
-        Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource, oldConfig);
-        _log.info("  Attempting to migrate encrypted properties in authentication configurations");
-        TableInfo tinfo = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
-        Map<Integer, String> map = new TableSelector(tinfo, PageFlowUtil.set("RowId", "EncryptedProperties"),
-                new SimpleFilter(FieldKey.fromParts("EncryptedProperties"), null, CompareType.NONBLANK), null).getValueMap(Integer.class);
-        Map<String, String> saveMap = new HashMap<>();
+    static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = new EncryptionMigrationHandler()
+    {
+        @Override
+        public String getDescription()
+        {
+            return "Encrypted Authentication Properties";
+        }
 
-        map.forEach((key, value) -> {
-            try
-            {
-                _log.info("    Migrating encrypted properties for configuration " + key);
+        @Override
+        public void migrateEncryptedContent(String oldPassPhrase, String keySource, Encryption.AESConfig oldConfig)
+        {
+            Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource, oldConfig);
+            _log.info("  Attempting to migrate encrypted properties in authentication configurations");
+            TableInfo tinfo = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
+            Map<Integer, String> map = new TableSelector(tinfo, PageFlowUtil.set("RowId", "EncryptedProperties"),
+                new SimpleFilter(FieldKey.fromParts("EncryptedProperties"), null, CompareType.NONBLANK), null).getValueMap(Integer.class);
+            Map<String, String> saveMap = new HashMap<>();
+
+            map.forEach((key, value) -> {
                 try
                 {
-                    String decryptedValue = decryptAes.decrypt(Base64.decodeBase64(value));
-                    String newEncryptedValue = Base64.encodeBase64String(AES.get().encrypt(decryptedValue));
-                    assert decryptedValue.equals(AES.get().decrypt(Base64.decodeBase64(newEncryptedValue)));
-
-                    if (newEncryptedValue != null)
+                    _log.info("    Migrating encrypted properties for configuration {}", key);
+                    try
                     {
-                        saveMap.put("EncryptedProperties", newEncryptedValue);
-                        Table.update(null, tinfo, saveMap, key);
+                        String decryptedValue = decryptAes.decrypt(Base64.decodeBase64(value));
+                        String newEncryptedValue = Base64.encodeBase64String(AES.get().encrypt(decryptedValue));
+                        assert decryptedValue.equals(AES.get().decrypt(Base64.decodeBase64(newEncryptedValue)));
+
+                        if (newEncryptedValue != null)
+                        {
+                            saveMap.put("EncryptedProperties", newEncryptedValue);
+                            Table.update(null, tinfo, saveMap, key);
+                        }
+                    }
+                    catch (DecryptionException e)
+                    {
+                        _log.info("    Failed to decrypt encrypted properties for configuration {}. It will be skipped.", key);
                     }
                 }
-                catch (DecryptionException e)
+                catch (Exception e)
                 {
-                    _log.info("    Failed to decrypt encrypted properties for configuration " + key + ". It will be skipped.");
+                    _log.error("Exception while migrating configuration {}", key, e);
                 }
-            }
-            catch (Exception e)
-            {
-                _log.error("Exception while migrating configuration " + key, e);
-            }
-        });
-        _log.info("  Migration of encrypted properties in authentication configurations is complete");
+            });
+            _log.info("  Migration of encrypted properties in authentication configurations is complete");
+        }
+
+        @Override
+        public void deleteEncryptedContent()
+        {
+            _log.info("Clearing the core.AuthenticationConfigurations.EncryptedProperties column");
+            TableInfo tinfo = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
+            new TableSelector(
+                tinfo,
+                PageFlowUtil.set("RowId"),
+                new SimpleFilter(FieldKey.fromParts("EncryptedProperties"), null, CompareType.NONBLANK),
+                null
+            ).forEach(
+                Integer.class,
+                rowId -> Table.update(null, tinfo, PageFlowUtil.map("EncryptedProperties", null), rowId)
+            );
+        }
     };
 
     // Register a handler so encrypted properties are migrated whenever the encryption key changes
