@@ -529,19 +529,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
-            "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
+            "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(DataColumn.EXPERIMENTAL_USE_QUERYSELECT_COMPONENT, "Use QuerySelect for row insert/update form",
             "This feature will switch the query based select inputs on the row insert/update form to use the React QuerySelect" +
             "component. This will allow for a user to view the first 100 options in the select but then use type ahead" +
-            "search to find the other select values.", false);
+            "search to find the other select values.", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
-            "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false);
+            "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME, "Disable Login X-FRAME-OPTIONS=DENY",
-            "By default LabKey disables all framing of login related actions. Disabling this feature will revert to using the standard site settings.", false);
+            "By default LabKey disables all framing of login related actions. Disabling this feature will revert to using the standard site settings.", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS,
             "Short-circuit robots",
             "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
-            false);
+            false,
+            true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.REJECT_CONTROLLER_FIRST_URLS,
             "Reject controller-first URLs",
             "Require standard path-first URLs.",
