@@ -15,6 +15,7 @@
  */
 package org.labkey.core;
 
+import jakarta.servlet.ServletContext;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.attachments.AttachmentService;
@@ -29,6 +30,8 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.Directive;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.security.AllowedExternalResourceHosts;
 import org.labkey.core.security.AllowedExternalResourceHosts.AllowedHost;
@@ -82,38 +85,55 @@ public class CoreUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from core-25.008-25.009.sql
-     * Called from core-26.000-26.001.sql
+     * Called from core-26.003-26.004.sql
      */
     @SuppressWarnings("unused")
+    // @DeferredUpgrade ensures that the upgrade code method gets queued in the database so the listener eventually
+    // gets registered and run, even in the case of an upgrade failure or server shutdown.
     @DeferredUpgrade
     public static void populateAttachmentParentTypeColumn(ModuleContext context)
     {
         if (context.isNewInstall())
             return;
 
-        for (AttachmentParentType type : AttachmentService.get().getAttachmentParentTypes())
+        // This code needs to run after all @DeferredUpgrades are complete. In particular, it needs to wait for
+        // ExperimentUpgradeCode.addRowIdToProvisionedDataClassTables() to restructure data class provisioned tables.
+        ContextListener.addStartupListener(new StartupListener()
         {
-            LOG.info("Populating attachment parent type for {}", type.getUniqueName());
+            @Override
+            public String getName()
+            {
+                return "Populate Attachment Parent Types";
+            }
 
-            SQLFragment updateSql = new SQLFragment("UPDATE ")
-                .append(CoreSchema.getInstance().getTableInfoDocuments())
-                .append(" SET ParentType = ?")
-                .add(type.getUniqueName())
-                .append(" WHERE ");
-            // TODO: This is the only caller of addWhereSql(), which can be removed when this upgrade code is deleted.
-            type.addWhereSql(updateSql, "Parent", "DocumentName");
+            @Override
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                for (AttachmentParentType type : AttachmentService.get().getAttachmentParentTypes())
+                {
+                    LOG.info("Populating attachment parent type for {}", type.getUniqueName());
 
-            new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(updateSql);
-        }
+                    SQLFragment updateSql = new SQLFragment("UPDATE ")
+                        .append(CoreSchema.getInstance().getTableInfoDocuments())
+                        .append(" SET ParentType = ?")
+                        .add(type.getUniqueName())
+                        .append(" WHERE ");
+                    // TODO: This is the only caller of addWhereSql(), which can be removed when this upgrade code is deleted.
+                    type.addWhereSql(updateSql, "Parent", "DocumentName");
+
+                    new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(updateSql);
+                }
+            }
+        });
     }
 
     /**
-     * This is not invoked from any script yet. We want to make sure our orphaned attachment detection is perfect
-     * before blanket deleting them.
+     * This is not invoked from any script yet. We want to make sure our orphaned attachment detection is well tested
+     * and reviewed before blanket deleting them. TODO: Do not just call this from a script! We likely need to work
+     * this code into a StartupListener like we do above. Or integrate them into one. Or something.
      */
-    @DeferredUpgrade // Need to execute this after AttachmentTypes are registered
     @SuppressWarnings("unused")
+    @DeferredUpgrade // Need to execute this after AttachmentTypes are registered
     public static void deleteOrphanedAttachments(ModuleContext context)
     {
         if (context.isNewInstall())
