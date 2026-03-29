@@ -44,9 +44,7 @@ public class OptionalFeatureFlag implements Comparable<OptionalFeatureFlag>, Sta
             }
             else
             {
-                // TODO: Switch to throw IllegalStateException
-                LOG.error(_flag + " is not a valid Java identifier. Correct it so it can be used as a startup property. Or set useDumbName to true.", new IllegalStateException());
-                _propertyName = null;
+                throw new IllegalStateException(_flag + " is not a valid Java identifier. Correct it so it can be used as a startup property. Or set useDumbName to true.");
             }
         }
         else
