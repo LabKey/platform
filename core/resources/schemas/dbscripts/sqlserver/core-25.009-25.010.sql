@@ -4,5 +4,5 @@
 DELETE FROM core.Documents WHERE
     Container = (SELECT EntityId FROM core.Containers WHERE Parent IS NULL) AND
     Parent = (SELECT EntityId FROM core.Containers WHERE Parent IS NULL) AND
-    ParentType IS NULL AND
+    ParentType IS NULL AND -- ParentType is always NULL at this point, since populating the column is deferred. But the DocumentName condition below is sufficiently specific.
     (DocumentName LIKE 'auth_header_logo_%' OR DocumentName LIKE 'auth_login_page_logo_%');

@@ -122,6 +122,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     @SuppressWarnings("unused")
     public static void ensureBigObjectIds(ModuleContext context)
     {
+        // We force dev mode deployments to use BIGINT ObjectIds everywhere to ensure comprehensive testing
         if (AppProps.getInstance().isDevMode() && ModuleLoader.getInstance().shouldInsertData())
         {
             DbScope primary = DbScope.getLabKeyScope();
@@ -695,7 +696,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from exp-26.004-26.005.sql, on SQL Server only
+     * Called from exp-26.004-26.005.sql on SQL Server only
      * GitHub Issue 869: Long table/column names cause SQL Server migration to fail
      * Query all table & column storage names and rename the ones that are too long for PostgreSQL
      * TODO: When this upgrade code is removed, get rid of the StorageProvisionerImpl.makeTableName() method it uses.

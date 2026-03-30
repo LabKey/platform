@@ -43,12 +43,21 @@ public interface OptionalFeatureService
     }
 
     /**
-     * @param flag must be unique. Can be used as a startup property to enable/disable the task, but only if it follows
-     *             the Java identifier rules (e.g., alphanumeric plus _, start with a letter, no spaces).
+     * @param flag must be unique and conform to the Java identifier rules (e.g., alphanumeric plus _, start with a
+     *             letter, no spaces). That way it can be used as a startup property to enable/disable the task. If
+     *             you must use a flag that doesn't conform to these rules (why?) the call the other variant.
      */
     default void addExperimentalFeatureFlag(String flag, String title, String description, boolean requiresRestart)
     {
-        addFeatureFlag(new OptionalFeatureFlag(flag, title, description, requiresRestart, false, FeatureType.Experimental));
+        addExperimentalFeatureFlag(flag, title, description, requiresRestart, false);
+    }
+
+    /**
+     * This is left for backward compatibility. Use the variant above and provide flag that follows Java identifier rules.
+     */
+    default void addExperimentalFeatureFlag(String flag, String title, String description, boolean requiresRestart, boolean useDumbName)
+    {
+        addFeatureFlag(new OptionalFeatureFlag(flag, title, description, requiresRestart, false, FeatureType.Experimental, useDumbName));
     }
 
     void addFeatureFlag(OptionalFeatureFlag optionalFeatureFlag);
