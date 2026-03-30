@@ -1391,7 +1391,10 @@ public class DomainUtil
             for (IPropertyValidator pv : dp.getValidators())
             {
                 var gpv = newProps.get(pv.getRowId());
-                boolean hasExpressionChange = !Objects.equals(pv.getExpressionValue(), gpv.getExpression());//
+                if (gpv == null)
+                    continue;
+
+                boolean hasExpressionChange = !Objects.equals(pv.getExpressionValue(), gpv.getExpression());
                 if (hasExpressionChange && PropertyValidatorType.TextChoice.equals(gpv.getType()))
                 {
                     List<String> oldValidValues = PropertyService.get().getTextChoiceValidatorOptions(pv);
