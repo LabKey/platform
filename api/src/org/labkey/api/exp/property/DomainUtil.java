@@ -37,7 +37,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -983,26 +982,19 @@ public class DomainUtil
 
                         if (column != null)
                         {
-                            SQLFragment sql = new SQLFragment("SELECT DISTINCT ")
-                                    .appendIdentifier(column.getAlias())
-                                    .append(" FROM ")
-                                    .append(domainTable);
-                            var choiceResults = new SqlSelector(domainTable.getSchema().getScope(), sql).getArrayList(String.class);
-                            for (String resultArrayStr : choiceResults)
+                            var dialect = domainTable.getSchema().getSqlDialect();
+                            SQLFragment deletedArray = new SQLFragment("CAST(? AS TEXT[])").add(deletedValues.toArray(new String[0]));
+                            SQLFragment columnFrag = new SQLFragment().appendIdentifier(column.getAlias());
+
+                            SQLFragment sql = new SQLFragment("SELECT 1 FROM ")
+                                    .append(domainTable)
+                                    .append(" WHERE ")
+                                    .append(dialect.array_some_in_array(columnFrag, deletedArray));
+
+                            if (new SqlSelector(domainTable.getSchema().getScope(), sql).exists())
                             {
-                                var valueArray = MultiChoice.Array.parsePgArray(resultArrayStr);
-                                // if valueArray contains any of deletedValues, add validationException
-                                if (valueArray != null)
-                                {
-                                    for (String deletedValue : deletedValues)
-                                    {
-                                        if (valueArray.contains(deletedValue))
-                                        {
-                                            validationException.addError(new SimpleValidationError("One or more values cannot be removed from the multi-choice list because they are in use: " + deletedValue));
-                                            return validationException;
-                                        }
-                                    }
-                                }
+                                validationException.addError(new SimpleValidationError("One or more values cannot be removed from the multi-choice list because they are in use: " + StringUtils.join(deletedValues, ", ")));
+                                return validationException;
                             }
                         }
                     }
