@@ -262,7 +262,7 @@ public class ExperimentModule extends SpringModule
         ExperimentService.get().registerNameExpressionType("dataclass", "exp", "DataClass", "nameexpression");
 
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
-            "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
+            "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false, true);
         if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
         {
             OptionalFeatureService.get().addExperimentalFeatureFlag(NameGenerator.EXPERIMENTAL_WITH_COUNTER, "Use strict incremental withCounter and rootSampleCount expression",
@@ -282,9 +282,9 @@ public class ExperimentModule extends SpringModule
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.QUANTITY_COLUMN_SUFFIX_TESTING, "Quantity column suffix testing",
                 "If a column name contains a \"__<unit>\" suffix, this feature allows for testing it as a Quantity display column", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS, "SQL syntax: 'FROM EXPANCESTORS()'",
-                "Support for querying lineage of experiment objects", false);
+                "Support for querying lineage of experiment objects", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(SampleTypeUpdateServiceDI.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_SAMPLE_MERGE, "Allow RowId to be accepted when merging samples",
-                "If the incoming data includes a RowId column we will allow the column but ignore it's values.", false);
+                "If the incoming data includes a RowId column we will allow the column but ignore it's values.", false, true);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
         RoleManager.registerRole(new SampleTypeDesignerRole());
