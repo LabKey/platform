@@ -1,6 +1,6 @@
-# FileBasedModules.md - File-Based Module Development Guide
+# File-Based Module Development Guide
 
-This file provides guidance for creating and developing LabKey file-based modules.
+This document provides guidance for creating and developing LabKey file-based modules.
 
 ## What is a File-Based Module?
 
