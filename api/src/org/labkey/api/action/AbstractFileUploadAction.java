@@ -15,7 +15,6 @@
  */
 package org.labkey.api.action;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.ExceptionUtil;
@@ -42,7 +41,6 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -192,19 +190,16 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
                 return;
             }
 
-            HttpServletRequest basicRequest = getViewContext().getRequest();
-
             // Parameter name (String) -> File on disk/original file name Pair
             Map<String, Pair<FileLike, String>> savedFiles = new HashMap<>();
 
-            if (basicRequest instanceof MultipartHttpServletRequest request)
+            if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
             {
-
-                Iterator<String> nameIterator = request.getFileNames();
-                while (nameIterator.hasNext())
+                Map<String, MultipartFile> fileMap = getFileMap();
+                for (var e : fileMap.entrySet())
                 {
-                    String formElementName = nameIterator.next();
-                    MultipartFile file = request.getFile(formElementName);
+                    var formElementName = e.getKey();
+                    var file = e.getValue();
                     String filename = file.getOriginalFilename();
 
                     try (InputStream input = file.getInputStream())

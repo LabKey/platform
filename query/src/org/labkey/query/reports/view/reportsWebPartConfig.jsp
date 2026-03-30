@@ -106,7 +106,7 @@
             <td class="labkey-form-label">Show Tabs:<%=helpPopup("Show tabs",
                     "Some reports/charts may be rendered with multiple tabs showing. Select this option to only show the primary one.")%></td>
             <% addHandler("showTabs", "click", "return onShowTabs(this.checked);"); %>
-            <td><input id='showTabs' type="checkbox" name="<%=h(showTabs)%>" <%=checked(BooleanUtils.toBoolean(pm.get(showTabs)))%>></td>
+            <td><input id='showTabs' type="checkbox" name="<%=hname(showTabs)%>" <%=checked(BooleanUtils.toBoolean(pm.get(showTabs)))%>></td>
         </tr>
         <tr id="visibleSections">
             <td class="labkey-form-label">Visible Report Sections:<%=helpPopup("Show Report sections",
@@ -120,7 +120,7 @@
             <td><labkey:button text="Submit" /></td>
         </tr>
     </table>
-    <input type="hidden" name="<%=h(sectionName)%>" id="showSectionHidden">
+    <input type="hidden" name="<%=hname(sectionName)%>" id="showSectionHidden">
 </labkey:form>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">

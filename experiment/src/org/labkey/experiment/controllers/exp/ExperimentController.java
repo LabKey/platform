@@ -20,6 +20,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -31,6 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jspecify.annotations.NonNull;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -75,6 +77,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbSchema;
@@ -6770,7 +6773,7 @@ public class ExperimentController extends SpringActionController
             ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), xarFile,
                     "Uploaded file", true, pipeRoot);
             PipelineService.get().queueJob(job);
-            
+
             response.put("success", true);
             return response;
         }
@@ -7492,15 +7495,7 @@ public class ExperimentController extends SpringActionController
 
             QueryUpdateForm tableForm = (QueryUpdateForm)bind.getTarget();
 
-            int sampleId;
-            try
-            {
-                sampleId = Integer.parseInt((String) tableForm.getPkVal());
-            }
-            catch (NumberFormatException e)
-            {
-                throw new NotFoundException("Invalid RowId: " + tableForm.getPkVal());
-            }
+            long sampleId = getSampleId(tableForm);
 
             ExpMaterial material = ExperimentService.get().getExpMaterial(sampleId);
             if (material == null)
@@ -7509,10 +7504,25 @@ public class ExperimentController extends SpringActionController
             return bind;
         }
 
+        private static long getSampleId(QueryUpdateForm tableForm)
+        {
+            Long sampleId = null;
+            try
+            {
+                sampleId = ConvertHelper.convert(tableForm.getPkVal(), Long.class);
+            }
+            catch (ConversionException e)
+            {
+            }
+            if (null == sampleId)
+                throw new NotFoundException("Invalid RowId: " + tableForm.getPkVal());
+            return sampleId;
+        }
+
         @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
-            int sampleId = Integer.parseInt((String) tableForm.getPkVal());
+            long sampleId = getSampleId(tableForm);
 
             ExpMaterial material = ExperimentService.get().getExpMaterial(sampleId);
             if (material == null)

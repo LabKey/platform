@@ -141,7 +141,6 @@ import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
@@ -4653,7 +4652,7 @@ public class QueryController extends SpringActionController
                         LOG.error("Row contained conflicting casing for key names in the incoming row: {}", jsonObj);
                     }
                     if (allowRowAttachments())
-                        addRowAttachments(table, rowMap, idx, commandIndex);
+                        addRowAttachments(rowMap, idx, commandIndex);
 
                     rowsToProcess.add(rowMap);
                     rowsAffected++;
@@ -4817,7 +4816,7 @@ public class QueryController extends SpringActionController
             return false;
         }
 
-        private void addRowAttachments(TableInfo tableInfo, Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
+        private void addRowAttachments(Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
         {
             if (getFileMap() != null)
             {
@@ -4861,9 +4860,6 @@ public class QueryController extends SpringActionController
                     rowMap.put(fieldKey, file.isEmpty() ? null : file);
                 }
             }
-
-            for (ColumnInfo col : tableInfo.getColumns())
-                DataIteratorUtil.MatchType.multiPartFormData.updateRowMap(col, rowMap);
         }
 
         protected boolean isSuccessOnValidationError()

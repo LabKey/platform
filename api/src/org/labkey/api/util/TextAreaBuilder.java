@@ -53,7 +53,7 @@ public class TextAreaBuilder extends InputBuilder<TextAreaBuilder>
         protected void doInput(Appendable sb) throws IOException
         {
             var id = generateId("textarea");
-            sb.append("<textarea id=\"").append(h(id)).append("\" name=\"").append(h(getName())).append("\"");
+            sb.append("<textarea id=\"").append(h(id)).append("\" name=\"").append(hname(getName())).append("\"");
 
             if (getColumns() != -1)
                 sb.append(" cols=\"").append(h(getColumns())).append("\"");
