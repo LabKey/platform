@@ -13,17 +13,17 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "7.25.1-fb-encodeFormName.0"
+    "@labkey/components": "7.26.0"
   },
   "devDependencies": {
-    "@labkey/build": "9.0.0",
-    "@labkey/test": "1.12.0",
+    "@labkey/build": "9.1.0",
+    "@labkey/test": "1.13.0",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
-    "jest": "30.2.0",
-    "jest-cli": "30.2.0",
-    "jest-environment-jsdom": "30.2.0",
+    "jest": "30.3.0",
+    "jest-cli": "30.3.0",
+    "jest-environment-jsdom": "30.3.0",
     "jest-teamcity-reporter": "0.9.0",
     "mock-fs": "5.5.0",
     "ts-jest": "29.4.6"
