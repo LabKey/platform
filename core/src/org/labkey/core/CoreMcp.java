@@ -98,25 +98,18 @@ public class CoreMcp implements McpService.McpImpl
     {
         final String message;
 
-        if (StringUtils.isBlank(containerPath))
+        Container container = ContainerManager.getForPath(containerPath);
+
+        // Must exist and user must have read permission to set a container. Note: Send the same message in either
+        // case to prevent information exposure.
+        if (container == null || !container.hasPermission(getUser(context), ReadPermission.class))
         {
-            message = "Container path was missing. Please provide a valid containerPath parameter. Try using the listContainers tool to see them.";
+            message = "That's not a valid container path. Try using listContainers to see the valid options.";
         }
         else
         {
-            Container container = ContainerManager.getForPath(containerPath);
-
-            // Must exist and user must have read permission to set a container. Note: Send the same message in both
-            // cases to prevent information exposure.
-            if (container == null || !container.hasPermission(getUser(context), ReadPermission.class))
-            {
-                message = "That's not a valid container path. Try using listContainers to see the valid options.";
-            }
-            else
-            {
-                McpService.get().saveSessionContainer(context, container);
-                message = "Container has been set to " + container.getPath();
-            }
+            McpService.get().saveSessionContainer(context, container);
+            message = "Container has been set to " + container.getPath();
         }
 
         return message;
