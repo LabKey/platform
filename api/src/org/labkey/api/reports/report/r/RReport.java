@@ -697,6 +697,20 @@ public class RReport extends ExternalScriptEngineReport
     }
 
     @Override
+    protected FileLike getBackgroundOutputDirFileLike(@NotNull String executingContainerId)
+    {
+        FileLike reportDir = null;
+
+        if (getKnitrFormat() != RReportDescriptor.KnitrFormat.None)
+            reportDir = getCacheDir(executingContainerId);
+
+        if (reportDir != null)
+            return reportDir;
+
+        return super.getBackgroundOutputDirFileLike(executingContainerId);
+    }
+
+    @Override
     public void clearCache()
     {
         if (getKnitrFormat() == RReportDescriptor.KnitrFormat.None)

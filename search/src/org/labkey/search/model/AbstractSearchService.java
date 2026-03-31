@@ -40,6 +40,7 @@ import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
@@ -436,6 +437,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     final Object _idleEvent = new Object();
     boolean _idleWaiting = false;
 
+    static final Object INDEX_EVENT = new Object();
 
     @Override
     public void waitForIdle() throws InterruptedException
@@ -1032,7 +1034,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         int countIndexingThreads = Math.max(1, getCountIndexingThreads());
         for (int i = 0; i < countIndexingThreads; i++)
         {
-            startThread(new Thread(indexRunnable, "SearchService:index"));
+            startThread(new Thread(indexRunnable, "SearchService:index" + i));
         }
 
         startThread(new Thread(runRunnable, "SearchService:runner"));
@@ -1065,6 +1067,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         _itemQueue.clear();
         for (Thread t : _threads)
             t.interrupt();
+        synchronized (INDEX_EVENT)
+        {
+            INDEX_EVENT.notifyAll();
+        }
     }
 
 
@@ -1220,16 +1226,21 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     Runnable indexRunnable = () ->
     {
+        int consecutiveCommitFailures = 0;
         while (!_shuttingDown)
         {
             try
             {
                 _indexLoop();
+                consecutiveCommitFailures = 0;
             }
-            catch (Throwable t)
+            catch (Throwable e)
             {
-                // this should only happen if the catch/finally of the inner loop throws
-                try {_log.warn("error in indexer", t);} catch (Throwable x){/* */}
+                if (!_shuttingDown)
+                {
+                    // Postincrement so that we don't start backing off until the second error
+                    postFailureDelay(e, "Error in indexer", _log, consecutiveCommitFailures++, INDEX_EVENT);
+                }
             }
         }
         synchronized (_commitLock)
@@ -1241,6 +1252,28 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
         }
     };
+
+    public static void postFailureDelay(Throwable e, String logPrefix, Logger log, int consecutiveFailures, final Object syncObject)
+    {
+        long delayMs = TimeUnit.SECONDS.toMillis(30L * Math.min(10, consecutiveFailures));
+        log.error("{}, delaying next attempt by {}s ({} consecutive failures)",
+                logPrefix,
+                TimeUnit.MILLISECONDS.toSeconds(delayMs),
+                consecutiveFailures,
+                e);
+        if (delayMs > 0)
+        {
+            try
+            {
+                //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                synchronized (syncObject)
+                {
+                    syncObject.wait(delayMs);
+                }
+            }
+            catch (InterruptedException ignored) {}
+        }
+    }
 
     private void commitCheck(long ms)
     {
@@ -1337,6 +1370,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 _log.debug("skipping {}", i._id);
         }
         catch (InterruptedException ignored) {}
+        catch (IndexCommitException | ConfigurationException e) { throw e; }  // let outer loop handle backoff
         catch (Throwable x)
         {
             _log.error("Error indexing {}", null != i ? i._id : "", x);
@@ -1424,7 +1458,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    protected abstract void commitIndex();
+    protected abstract void commitIndex() throws ConfigurationException, IndexCommitException;
     protected abstract void deleteDocument(String id);
     protected abstract void deleteDocuments(Collection<String> ids);
     protected abstract void deleteDocumentsForPrefix(String prefix);

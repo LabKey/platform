@@ -143,12 +143,12 @@
     {
 %>
             <li class="navbar-search hidden-xs">
-                <a class="fa fa-search" id="global-search-trigger" aria-label="<%=h(SearchUtils.getPlaceholder(c))%>"></a>
+                <a class="fa fa-search" id="global-search-trigger" aria-label="<%=h(SearchUtils.getPlaceholder(c))%>" role="button"></a>
                 <div id="global-search" class="global-search">
                     <labkey:form id="global-search-form" action="<%=urlProvider(SearchUrls.class).getSearchURL(c, null)%>" method="GET">
                         <input type="text" class="search-box" name="q" placeholder="<%=h(SearchUtils.getPlaceholder(c))%>" value="">
                         <input type="submit" hidden>
-                        <a id="a_header_search" href="#" class="btn-search fa fa-search"></a>
+                        <a id="a_header_search" href="#" class="btn-search fa fa-search" aria-label="Search" role="button"></a>
                     </labkey:form>
                     <% pageConfig.addHandler("a_header_search","click","document.getElementById('global-search-form').submit(); return false;"); %>
                 </div>

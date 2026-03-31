@@ -1573,7 +1573,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     }
 
     @Override
-    protected void commitIndex()
+    protected void commitIndex() throws ConfigurationException, IndexCommitException
     {
         try
         {
@@ -1588,9 +1588,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         catch (Throwable t)
         {
             // If any exceptions happen during commit() the IndexManager will attempt to close the IndexWriter, making
-            // the IndexManager unusable. Attempt to reset the index.
+            // the IndexManager unusable. Attempt to reset the index, then let the outer loop handle backoff.
             ExceptionUtil.logExceptionToMothership(null, t);
             initializeIndex();
+            throw new IndexCommitException(t);
         }
     }
 
