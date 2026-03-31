@@ -422,7 +422,16 @@ public class DOM
         min,
         multiple,
         muted,
-        name,
+        name
+        {
+            @Override
+            Appendable render(Appendable builder, Object value) throws IOException
+            {
+                if (value instanceof String s)
+                    value = PageFlowUtil.encodeFormName(s);
+                return super.render(builder, value);
+            }
+        },
         nonce,
         novalidate
         {

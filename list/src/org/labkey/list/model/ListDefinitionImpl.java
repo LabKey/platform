@@ -576,10 +576,10 @@ public class ListDefinitionImpl implements ListDefinition
         try (DbScope.Transaction transaction = (table != null) ? table.getSchema().getScope().ensureTransaction() :
              ExperimentService.get().ensureTransaction())
         {
-            // remove related attachments, discussions, and indices
+            // remove related full-text search docs and attachments
             ListManager.get().deleteIndexedList(this);
             if (qus instanceof ListQueryUpdateService listQus)
-                listQus.deleteRelatedListData(user, getContainer());
+                listQus.deleteRelatedListData(null);
 
             // then delete the list itself
             ListManager.get().deleteListDef(getContainer(), getListId());
