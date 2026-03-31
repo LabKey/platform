@@ -672,6 +672,7 @@ public class Encryption
         event.setChanges(changes);
         AuditLogService.get().addEvent(user, event);
         CacheManager.clearAllKnownCaches();
+        WarningService.get().clearStaticWarnings();
         LOG.info("Finished deleting all encrypted content");
     }
 
