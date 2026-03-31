@@ -16,6 +16,8 @@
 
 package org.labkey.test.tests.study;
 
+import org.assertj.core.api.Assertions;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.api.util.FileUtil;
@@ -34,8 +36,11 @@ import org.labkey.test.components.domain.DomainFieldRow;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.pages.ReactAssayDesignerPage;
 import org.labkey.test.pages.assay.AssayBeginPage;
+import org.labkey.test.pages.assay.AssayImportPage;
+import org.labkey.test.pages.assay.AssayRunsPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.params.FieldInfo;
+import org.labkey.test.params.assay.GeneralAssayDesign;
 import org.labkey.test.params.experiment.SampleTypeDefinition;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.tests.AuditLogTest;
@@ -46,6 +51,7 @@ import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.SampleTypeHelper;
 import org.labkey.test.util.StudyHelper;
 import org.labkey.test.util.TestDataGenerator;
+import org.labkey.test.util.data.TestArrayDataUtils;
 import org.labkey.test.util.data.TestDataUtils;
 
 import java.io.File;
@@ -53,10 +59,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.labkey.test.util.TestDataGenerator.randomTextChoice;
+import static org.labkey.test.util.TestDataGenerator.shuffleSelect;
+import static org.labkey.test.util.data.TestArrayDataUtils.formatMultiValueText;
 
 @Category({Daily.class, Assays.class})
 public class AssayTest extends AbstractAssayTest
@@ -71,6 +81,13 @@ public class AssayTest extends AbstractAssayTest
     private static final String ISSUE_53831_PROJECT = "Issue53831Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
     private static final String SAMPLE_FIELD_TEST_ASSAY = "SampleFieldTestAssay";
     private static final String SAMPLE_FIELD_PROJECT_NAME = "Sample Field Test Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
+    private static final String MVTC_MULTI_FILE_IMPORT_ASSAY = TestDataGenerator.randomDomainName("MVTCMultiFileImportAssay", DomainUtils.DomainKind.Assay);
+    private static final String MVTC_MULTI_FILE_IMPORT_PROJECT = "MVTCMultiFileImportAssay" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
+    private static final String COL_ASSAY_ID_LABEL = "Assay ID";
+    private static final List<String> TEXT_MULTI_CHOICE_LIST = randomTextChoice(10);
+    private static final FieldInfo COL_MULTITEXTCHOICE = FieldInfo.random("Multi Choice", FieldDefinition.ColumnType.MultiValueTextChoice)
+            .customizeFieldDefinition(fd -> fd.setMultiChoiceValues(TEXT_MULTI_CHOICE_LIST));
+
 
     @Override
     protected String getProjectName()
@@ -90,6 +107,7 @@ public class AssayTest extends AbstractAssayTest
         _containerHelper.deleteProject(ISSUE_53616_PROJECT, false);
         _containerHelper.deleteProject(ISSUE_53625_PROJECT, false);
         _containerHelper.deleteProject(ISSUE_53831_PROJECT, false);
+        _containerHelper.deleteProject(MVTC_MULTI_FILE_IMPORT_PROJECT, false);
 
         _userHelper.deleteUsers(false, TEST_ASSAY_USR_PI1, TEST_ASSAY_USR_TECH1);
     }
@@ -107,6 +125,58 @@ public class AssayTest extends AbstractAssayTest
                 "Value is too long for assay design name, a maximum length of 150 is allowed. The supplied value, 'a01234567890123456789012...78901234567890123456789', was 151 characters long.",
                 errors.get(0));
         assayDesignerPage.clickCancel();
+    }
+
+    @Test
+    public void testAssayMultiFileImportForMVTC() throws Exception
+    {
+        Assume.assumeTrue("Multi-choice text fields are only supported on PostgreSQL", WebTestHelper.getDatabaseType() == WebTestHelper.DatabaseType.PostgreSQL);
+        _containerHelper.createProject(MVTC_MULTI_FILE_IMPORT_PROJECT, "Assay");
+        new GeneralAssayDesign(MVTC_MULTI_FILE_IMPORT_ASSAY)
+                .setRunFields(List.of(new FieldDefinition("runText", FieldDefinition.ColumnType.String)), true)
+                .setDataFields(List.of(COL_MULTITEXTCHOICE.getFieldDefinition()), false)
+                .createAssay(MVTC_MULTI_FILE_IMPORT_PROJECT, createDefaultConnection());
+
+        String firstFileName = "MVTCAssayImport.tsv";
+        String secondFileName = "MVTCAssayImportSecond.tsv";
+        List<List<String>> fileDataFirstImport = Stream.generate(() -> shuffleSelect(TEXT_MULTI_CHOICE_LIST))
+                .limit(5)
+                .toList();
+        List<List<String>> fileDataSecondImport = Stream.generate(() -> shuffleSelect(TEXT_MULTI_CHOICE_LIST))
+                .limit(5)
+                .toList();
+
+        log("Import first and second runs with MVTC data from files");
+        AssayImportPage assayImportPage = goToManageAssays()
+                .clickAssay(MVTC_MULTI_FILE_IMPORT_ASSAY)
+                .clickImportData();
+        assayImportPage.clickNext();
+        assayImportPage.setDataFile(writeMultiValueFileForAssayRun(firstFileName, fileDataFirstImport));
+
+        assayImportPage = assayImportPage.clickSaveAndImportAnother();
+        assayImportPage.setDataFile(writeMultiValueFileForAssayRun(secondFileName, fileDataSecondImport));
+        assayImportPage.clickSaveAndFinish();
+
+        AssayRunsPage assayRunsPage = new AssayRunsPage(getDriver());
+        checker().wrapAssertion(() -> Assertions.assertThat(assayRunsPage.getTable().getColumnDataAsText(COL_ASSAY_ID_LABEL))
+                .as("expect both runs to appear in the runs list")
+                .containsExactlyInAnyOrder(firstFileName, secondFileName));
+
+        List<String> expectedValues = Stream.concat(fileDataFirstImport.stream(), fileDataSecondImport.stream())
+                .map(values -> TestArrayDataUtils.sortAndJoin(values, " "))
+                .toList();
+        checker().wrapAssertion(() -> Assertions.assertThat(assayRunsPage.clickViewResults().getDataTable().getColumnDataAsText(COL_MULTITEXTCHOICE))
+                .as("expect MVTC values to match imported data")
+                .containsExactlyInAnyOrderElementsOf(expectedValues));
+    }
+
+    private File writeMultiValueFileForAssayRun(String fileName, List<List<String>> fileData) throws IOException
+    {
+        List<List<String>> rows = Stream.concat(
+                Stream.of(List.of(COL_MULTITEXTCHOICE.getName())),
+                fileData.stream().map(row -> List.of(formatMultiValueText(row)))
+        ).toList();
+        return TestDataUtils.writeRowsToFile(fileName, rows);
     }
 
     // Issue 53616: Assay creation attempt after an error results in "Assay protocol already exists for this name."

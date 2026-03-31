@@ -1102,8 +1102,7 @@ public class UserController extends SpringActionController
                 }
             }
 
-            String userId = form.getPkVal().toString();
-            if (userId == null)
+            if (null == form.getPkVal())
             {
                 errors.reject(SpringActionController.ERROR_MSG, "UserId parameter must be provided.");
             }

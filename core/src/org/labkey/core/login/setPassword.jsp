@@ -76,7 +76,7 @@
             <input
                 type="text"
                 id="<%=h(input.getObject().toString())%>"
-                name="<%=h(input.getObject().toString())%>"
+                name="<%=hname(input.getObject().toString())%>"
                 value="<%=h(input.getDefaultValue())%>"
                 class="input-block"
             />
@@ -95,7 +95,7 @@
             <input
                 type="password"
                 id="<%=h(input.getObject().toString())%>"
-                name="<%=h(input.getObject().toString())%>"
+                name="<%=hname(input.getObject().toString())%>"
                 class="input-block"
                 autocomplete="off"
             />
@@ -103,7 +103,6 @@
                 if (rule.shouldShowPasswordGuidance() && firstPassword)
                 {
                     firstPasswordId = input.getObject().toString();
-
         %>
             <canvas id="strengthGuidance" width="<%=gaugeWidth%>" height="<%=gaugeHeight%>">
                 Your browser does not support the HTML5 canvas element.

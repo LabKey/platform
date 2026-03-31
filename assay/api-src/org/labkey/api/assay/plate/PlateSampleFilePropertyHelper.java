@@ -98,7 +98,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
 
     private MultipartFile getMetadataFile(HttpServletRequest request)
     {
-        if (request instanceof MultipartHttpServletRequest multipartRequest)
+        if (request instanceof MultipartHttpServletRequest)
         {
             String entryKeyToFind;
             if (_metadataInputFormat == SampleMetadataInputFormat.FILE_BASED)
@@ -112,7 +112,8 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
             else
                 return null;
 
-            for (Map.Entry<String, MultipartFile> entry : multipartRequest.getFileMap().entrySet())
+            var fileMap = PageFlowUtil.getFileMap(request);
+            for (Map.Entry<String, MultipartFile> entry : fileMap.entrySet())
             {
                 if (entryKeyToFind.equals(entry.getKey()))
                 {

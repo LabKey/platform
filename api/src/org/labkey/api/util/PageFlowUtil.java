@@ -85,6 +85,10 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.vfs.FileLike;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.util.WebUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -2690,18 +2694,58 @@ public class PageFlowUtil
     }
 
 
-    /**
-     * Issue 52925: App export to csv/tsv ignores filter with column containing double quote
-     * Issue 52119: App issues with assay run properties with special characters
-     * @param encodedKey The encoded form key by client side `encodeFormDataQuote` util
-     * @return The decoded raw field name
-     */
-    public static String decodeQuoteEncodedFormDataKey(@Nullable String encodedKey)
+    static final String FIELD_ENCODED_PREFIX = "%_";
+
+    /// Because of various bugs related encoding of INPUT.name values in multipart/formdata, we now recommend encoding
+    /// all names in all forms.
+    /// The choice of using encodeURI component is somewhat arbitrary, any encoding that can remove
+    /// double-quote and backslash from the name would be fine.
+    ///
+    ///  This must be kept in sync with org.labkey.test.util.EscapeUtil#getFormFieldName
+    public static String encodeFormName(String name)
     {
-        if (encodedKey == null)
-            return null;
-        return encodedKey.replaceAll("%22", "\"").replaceAll("%2522", "%22");
+        final String escapeChar = "%";
+        final String problemChars = "\\\"";
+        final String unclean = escapeChar + problemChars;
+        if (!StringUtils.containsAny(name, unclean))
+            return name;
+        // CONSIDER: use encode(name) for simplicity or only encode the unclean chars?
+        var ret = FIELD_ENCODED_PREFIX + encode(name);
+        return ret;
     }
+
+
+    public static String decodeFormName(@NotNull String name)
+    {
+        if (!name.startsWith(FIELD_ENCODED_PREFIX))
+            return name;
+        return decode(name.substring(FIELD_ENCODED_PREFIX.length()));
+    }
+
+
+    /** Use in preference to {@link MultipartHttpServletRequest#getFileMap()} */
+    static public Map<String, MultipartFile> getFileMap(HttpServletRequest req)
+    {
+        if (!(req instanceof MultipartHttpServletRequest mpreq))
+            return Collections.emptyMap();
+        @SuppressWarnings("SSBasedInspection")
+        Map<String, MultipartFile> htmlMap = mpreq.getFileMap();
+        Map<String, MultipartFile> formMap = new LinkedHashMap<>();
+        htmlMap.forEach((key, value) -> formMap.put(PageFlowUtil.decodeFormName(key), value));
+        return formMap;
+    }
+
+    static public MultiValueMap<String, MultipartFile> getMultiFileMap(HttpServletRequest req)
+    {
+        MultiValueMap<String, MultipartFile> formMap = new LinkedMultiValueMap<>();
+        if (!(req instanceof MultipartHttpServletRequest mpreq))
+            return formMap;
+        @SuppressWarnings("SSBasedInspection")
+        MultiValueMap<String, MultipartFile> htmlMap = mpreq.getMultiFileMap();
+        htmlMap.forEach((key, value) -> formMap.put(PageFlowUtil.decodeFormName(key), value));
+        return formMap;
+    }
+
 
     public static class TestCase extends Assert
     {
@@ -3108,19 +3152,49 @@ public class PageFlowUtil
             assertEquals("/a/b/c/", PageFlowUtil.encodePath("/a/b/c/"));
         }
 
-        @Test
-        public void testDecodeQuoteEncodedFormDataKey()
+        private void assertEncodeDecode(String test)
         {
-            assertEquals("test", decodeQuoteEncodedFormDataKey("test"));
-            assertEquals("a/b/c", decodeQuoteEncodedFormDataKey("a/b/c"));
-            assertEquals("a'b.c", decodeQuoteEncodedFormDataKey("a'b.c"));
-            assertEquals("%", decodeQuoteEncodedFormDataKey("%"));
-            assertEquals("\"", decodeQuoteEncodedFormDataKey("%22"));
-            assertEquals("\"\"", decodeQuoteEncodedFormDataKey("%22%22"));
-            assertEquals("%22", decodeQuoteEncodedFormDataKey("%2522"));
-            assertEquals("%22%22", decodeQuoteEncodedFormDataKey("%2522%2522"));
-            assertEquals("%22\"", decodeQuoteEncodedFormDataKey("%2522%22"));
-            assertEquals("\"22", decodeQuoteEncodedFormDataKey("%2222"));
+            assertFalse(StringUtils.containsAny(encodeFormName(test), "\\\"%"));
+            assertEquals(test, decodeFormName(encodeFormName(test)));
+        }
+
+        private void assertReencode(String a)
+        {
+            // We want to make sure there are no ambiguous encodings
+            var b = encodeFormName(a);
+            var c = encodeFormName(b);
+            assertFalse(StringUtils.containsAny(b, "\\\"%"));
+            assertFalse(StringUtils.containsAny(c, "\\\"%"));
+            if (a.equals(b))
+                assertEquals(a,c);
+            else
+                assertNotEquals(b,c);
+        }
+
+        @Test
+        public void testFormNameEncoding()
+        {
+            assertEncodeDecode("test");
+            assertEncodeDecode("a/b/c");
+            assertEncodeDecode("a'b.c");
+            assertEncodeDecode("%");
+            assertEncodeDecode("\"");
+            assertEncodeDecode("\"\"");
+            assertEncodeDecode("%22");
+            assertEncodeDecode("%22%22");
+            assertEncodeDecode("%22\"");
+            assertEncodeDecode("\"22");
+
+            assertReencode("test");
+            assertReencode("a/b/c");
+            assertReencode("a'b.c");
+            assertReencode("%");
+            assertReencode("\"");
+            assertReencode("\"\"");
+            assertReencode("%22");
+            assertReencode("%22%22");
+            assertReencode("%22\"");
+            assertReencode("\"22");
         }
     }
 

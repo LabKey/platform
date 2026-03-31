@@ -167,7 +167,7 @@ public class SelectBuilder extends InputBuilder<SelectBuilder>
         {
             var id = StringUtils.defaultIfBlank(getId(), generateId("select"));
 
-            sb.append("<select").append(" id=\"").append(h(id)).append("\" name=\"").append(h(getName())).append("\"");
+            sb.append("<select").append(" id=\"").append(h(id)).append("\" name=\"").append(hname(getName())).append("\"");
 
             if (StringUtils.isNotEmpty(getClassName()))
                 sb.append(" class=\"").append(h(getClassName())).append("\"");
