@@ -1481,18 +1481,17 @@ public class PropertyController extends SpringActionController
         // Note: caller must close writer
         private String getDataFromFile(Writer writer) throws IOException
         {
-            HttpServletRequest basicRequest = getViewContext().getRequest();
-
-            if (! (basicRequest instanceof MultipartHttpServletRequest request))
+            Map<String, MultipartFile> fileMap = getFileMap();
+            if (fileMap.isEmpty())
             {
                 error(writer, "No file uploaded");
                 return null;
             }
 
             //noinspection unchecked
-            Iterator<String> nameIterator = request.getFileNames();
+            Iterator<String> nameIterator = fileMap.keySet().iterator();
             String formElementName = nameIterator.next();
-            MultipartFile file = request.getFile(formElementName);
+            MultipartFile file = fileMap.get(formElementName);
             String filename = file.getOriginalFilename();
             int dotIndex = filename.lastIndexOf(".");
             if (dotIndex < 0)
@@ -1537,7 +1536,7 @@ public class PropertyController extends SpringActionController
             }
             catch (IOException ioe)
             {
-                ExceptionUtil.logExceptionToMothership(request, ioe);
+                ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), ioe);
                 error(writer, ioe.getMessage());
                 return null;
             }

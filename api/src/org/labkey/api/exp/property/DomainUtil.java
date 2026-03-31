@@ -1665,8 +1665,6 @@ public class DomainUtil
                 else
                 {
                     altNameMap.put(name, name);
-                    altNameMap.put(DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(name), name);
-                    altNameMap.put(name.replaceAll("%22", "\""), name);
                 }
             }
 

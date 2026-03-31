@@ -33,7 +33,7 @@
     {
         if (!"experimentRunFilter".equals(params.getKey()))
         { %>
-            <input type="hidden" name="<%=h(params.getKey())%>" value="<%=h(params.getValue())%>" />
+            <input type="hidden" name="<%=hname(params.getKey())%>" value="<%=h(params.getValue())%>" />
     <%  }
     } %>
     <p>

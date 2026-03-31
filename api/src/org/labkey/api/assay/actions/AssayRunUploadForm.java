@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayFileWriter;
@@ -61,6 +62,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -360,10 +362,11 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             File assayDirectory = getAssayDirectory(getContainer(), null);
 
             // Hidden values in form containing previously uploaded files if the previous upload resulted in error
+            var fileMap = PageFlowUtil.getFileMap(request);
             for (String fileParam : filePdNames)
             {
                 DomainProperty domainProperty = fileParameters.get(fileParam);
-                MultipartFile multiFile = request.getFileMap().get(fileParam);
+                MultipartFile multiFile = fileMap.get(fileParam);
 
                 // If the file is removed from form after error, override hidden file name with an empty file
                 if (null != multiFile && multiFile.getOriginalFilename().isEmpty())
