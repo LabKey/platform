@@ -511,10 +511,14 @@ describe('Multi Value Text Choice', () => {
             {
                 ...MVTC_FIELD_PROP,
                 name: fieldName
+            },
+            {
+                name: 'MultiLineField',
+                rangeURI:"http://www.w3.org/2001/XMLSchema#multiLine",
             }
         ];
 
-        let domainId = -1, domainURI = '', propertyId, propertyURI;
+        let domainId = -1, domainURI = '', propertyId, propertyURI, mlPropertyId, mlPropertyURI;
         const createPayload = {
             kind: 'DataClass',
             domainDesign: { name: dataType, fields },
@@ -541,6 +545,9 @@ describe('Multi Value Text Choice', () => {
             const field = domain.fields[0];
             propertyId = field.propertyId;
             propertyURI = field.propertyURI;
+            const mlField = domain.fields[1];
+            mlPropertyId = mlField.propertyId;
+            mlPropertyURI = mlField.propertyURI;
             return true;
         });
 
@@ -786,6 +793,12 @@ describe('Multi Value Text Choice', () => {
                         name: fieldName,
                         propertyId,
                         propertyURI
+                    },
+                    {
+                        name: 'MultiLineField',
+                        rangeURI:"http://www.w3.org/2001/XMLSchema#multiLine",
+                        propertyId: mlPropertyId,
+                        propertyURI: mlPropertyURI
                     }
                 ],
                 domainId,
@@ -800,6 +813,62 @@ describe('Multi Value Text Choice', () => {
         await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...adminOptions}).expect(successfulResponse);
         result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual('Abnormal, Plasma'); // convert from ['Abnormal', 'Plasma'] to 'Abnormal, Plasma'
+
+        // GitHub Issue 951: Multi-line values converted to text choices lose multi-line editability
+        // verify cannot convert MultiLine field to MultiValue Text Choice
+        updatePayload = {
+            domainId,
+            domainDesign: {
+                name: dataType,
+                fields: [
+                    {
+                        name: fieldName,
+                        propertyId,
+                        propertyURI
+                    },
+                    {
+                        ...MVTC_FIELD_PROP,
+                        name: 'MultiLineField',
+                        propertyId: mlPropertyId,
+                        propertyURI: mlPropertyURI
+                    }
+                ],
+                domainId,
+                domainURI
+            },
+            options: {
+                rowId: dataClassRowId,
+                name: dataType,
+                nameExpression: 'S-${' + fieldNameInExpression + '}'
+            }
+        };
+        failedUpdate = await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...adminOptions});
+        expect(failedUpdate?.['body']?.['exception']).toContain('Cannot convert a multiline text field to a text choice field.');
+
+        // verify cannot convert MultiLine field to Text Choice field
+        updatePayload = {
+            domainId,
+            domainDesign: {
+                name: dataType,
+                fields: [
+                    {
+                        ...TC_FIELD_PROP,
+                        name: 'MultiLineField',
+                        propertyId: mlPropertyId,
+                        propertyURI: mlPropertyURI
+                    }
+                ],
+                domainId,
+                domainURI
+            },
+            options: {
+                rowId: dataClassRowId,
+                name: dataType,
+                nameExpression: 'S-${genId}'
+            }
+        };
+        failedUpdate = await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...adminOptions});
+        expect(failedUpdate?.['body']?.['exception']).toContain('Cannot convert a multiline text field to a text choice field.');
 
     });
 
