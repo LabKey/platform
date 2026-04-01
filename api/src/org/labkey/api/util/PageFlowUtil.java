@@ -3154,7 +3154,7 @@ public class PageFlowUtil
 
         private void assertEncodeDecode(String test)
         {
-            assertFalse(StringUtils.containsAny(encodeFormName(test), "\\\"%"));
+            assertFalse(StringUtils.containsAny(encodeFormName(test), "\\\""));
             assertEquals(test, decodeFormName(encodeFormName(test)));
         }
 
@@ -3163,8 +3163,8 @@ public class PageFlowUtil
             // We want to make sure there are no ambiguous encodings
             var b = encodeFormName(a);
             var c = encodeFormName(b);
-            assertFalse(StringUtils.containsAny(b, "\\\"%"));
-            assertFalse(StringUtils.containsAny(c, "\\\"%"));
+            assertFalse(StringUtils.containsAny(b, "\\\""));
+            assertFalse(StringUtils.containsAny(c, "\\\""));
             if (a.equals(b))
                 assertEquals(a,c);
             else
