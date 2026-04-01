@@ -89,7 +89,7 @@ public class QueryMcp implements McpService.McpImpl
                 "description", StringUtils.trimToEmpty(entry.getValue().getDescription())
             )));
         }
-        return new JSONObject(Map.of("success", "true", "schemas", array)).toString();
+        return new JSONArray(array).toString();
     }
 
 
@@ -218,7 +218,7 @@ public class QueryMcp implements McpService.McpImpl
         }
         else if (fullKey.size() == 1)
         {
-            throw new NotFoundException("tableName must be a fully qualified schema and table e.g. \"schema\".\"table or query\"");
+            throw new IllegalArgumentException("tableName must be a fully qualified schema and table e.g. \"schema\".\"table or query\"");
         }
         else
         {

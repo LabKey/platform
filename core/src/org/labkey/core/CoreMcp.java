@@ -93,7 +93,7 @@ public class CoreMcp implements McpService.McpImpl
         "Please prompt the user for a container path and use this tool to save the path for this MCP session. The user can also change the container " +
         "during the session using this tool. The user must have read permissions in the container, in other words, the path must be on the list that " +
         "the listContainers tool returns. Don't suggest a leading slash on the path because typing a slash in some LLM clients triggers custom shortcuts.")
-    @RequiresNoPermission // Because we don't have a container yet, but tool will check for read permission before setting the container
+    @RequiresNoPermission // Because we don't have a container yet, but the tool will verify read permission before setting the container
     String setContainer(ToolContext context, @ToolParam(description = "Container path, e.g. MyProject/MyFolder") String containerPath)
     {
         final String message;
