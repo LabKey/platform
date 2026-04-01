@@ -133,10 +133,9 @@ public interface McpService extends ToolCallbackProvider
             if (null != resources && !resources.isEmpty())
                 registerResources(resources);
         }
-        catch (Exception e)
+        catch (NoSuchMethodError t)
         {
-            String advice = e.getMessage().contains("victools") ? " Try doing a clean build of API." : "";
-            LOG.error("Exception while registering MCP implementations. The MCP server will not be available.{}", advice, e);
+            LOG.error("You likely need to do a clean build of API! Exception while registering an MCP implementation.", t);
         }
     }
 
