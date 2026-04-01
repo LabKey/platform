@@ -3,12 +3,14 @@ package org.labkey.api.mcp;
 
 import io.modelcontextprotocol.server.McpServerFeatures;
 import jakarta.servlet.http.HttpSession;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ToolContext;
@@ -78,6 +80,8 @@ import java.util.function.Supplier;
 ///
 public interface McpService extends ToolCallbackProvider
 {
+    Logger LOG = LogHelper.getLogger(McpService.class, "MCP registration exceptions");
+
     // Interface for MCP classes that we will "ingest" using Spring annotations. Provides a few helper methods.
     interface McpImpl
     {
@@ -119,13 +123,21 @@ public interface McpService extends ToolCallbackProvider
 
     default void register(McpImpl mcp)
     {
-        ToolCallback[] tools = ToolCallbacks.from(mcp);
-        if (tools.length > 0)
-            registerTools(Arrays.asList(tools), mcp);
+        try
+        {
+            ToolCallback[] tools = ToolCallbacks.from(mcp);
+            if (tools.length > 0)
+                registerTools(Arrays.asList(tools), mcp);
 
-        var resources = new SyncMcpResourceProvider(List.of(mcp)).getResourceSpecifications();
-        if (null != resources && !resources.isEmpty())
-            registerResources(resources);
+            var resources = new SyncMcpResourceProvider(List.of(mcp)).getResourceSpecifications();
+            if (null != resources && !resources.isEmpty())
+                registerResources(resources);
+        }
+        catch (Exception e)
+        {
+            String advice = e.getMessage().contains("victools") ? " Try doing a clean build of API." : "";
+            LOG.error("Exception while registering MCP implementations. The MCP server will not be available.{}", advice, e);
+        }
     }
 
     void registerTools(@NotNull List<ToolCallback> tools, McpImpl mcp);

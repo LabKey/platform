@@ -162,7 +162,7 @@ public class QueryMcp implements McpService.McpImpl
         var defaultSchema = DefaultSchema.get(cu.getUser(), cu.getContainer());
         var schema = DefaultSchema.resolve(defaultSchema, fullKey);
         if (!(schema instanceof UserSchema userSchema))
-            throw new NotFoundException("Could not find schema for " + fullQuotedName);
+            throw new NotFoundException("Could not find schema " + fullQuotedName);
 
         JSONArray array = new JSONArray();
         CaseInsensitiveHashSet names = new CaseInsensitiveHashSet(schema.getTableNames());
@@ -218,7 +218,7 @@ public class QueryMcp implements McpService.McpImpl
         }
         else if (fullKey.size() == 1)
         {
-            throw new NotFoundException("You need to provide a fully qualified schema and table");
+            throw new NotFoundException("tableName must be a fully qualified schema and table e.g. \"schema\".\"table or query\"");
         }
         else
         {
@@ -231,11 +231,11 @@ public class QueryMcp implements McpService.McpImpl
 
         var schema = DefaultSchema.resolve(defaultSchema, schemaKey);
         if (null == schema)
-            throw new NotFoundException("Could not find schema for : " + fullQuotedName);
+            throw new NotFoundException("Could not find schema " + fullQuotedName);
 
         TableInfo td = schema.getTable(tableName, null);
         if (null == td)
-            throw new NotFoundException("Could not find table for : " + fullQuotedName);
+            throw new NotFoundException("Could not find table " + fullQuotedName);
 
         String sourceSQL = null;
         if (schema instanceof UserSchema userSchema)
