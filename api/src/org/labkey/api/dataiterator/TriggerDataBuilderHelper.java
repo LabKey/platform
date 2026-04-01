@@ -15,6 +15,7 @@
  */
 package org.labkey.api.dataiterator;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -25,6 +26,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -55,7 +57,6 @@ public class TriggerDataBuilderHelper
     {
         return new Before(in);
     }
-
 
     public DataIteratorBuilder after(DataIteratorBuilder in)
     {
@@ -162,11 +163,11 @@ public class TriggerDataBuilderHelper
         }
     }
 
-
     class BeforeIterator extends TriggerDataIterator
     {
         boolean _firstRow = true;
-        Map<String,Object> _currentRow = null;
+        Map<String, Object> _currentRow = null;
+        Set<String> _currentColumns = null;
 
         BeforeIterator(DataIterator di, DataIteratorContext context)
         {
@@ -179,7 +180,6 @@ public class TriggerDataBuilderHelper
             // DON'T FIRE TRIGGERS TWICE!
             return false;
         }
-
 
         @Override
         public boolean next() throws BatchValidationException
@@ -199,7 +199,25 @@ public class TriggerDataBuilderHelper
                 _currentRow = getInput().getMap();
                 try
                 {
+                    if (_currentRow != null && _currentColumns == null)
+                        _currentColumns = Set.copyOf(_currentRow.keySet());
+
                     _target.fireRowTrigger(_c, _user, triggerType, true, rowNumber, _currentRow, getOldRow(), _extraContext, getExistingRecord());
+
+                    if (_currentRow != null && _currentColumns != null && !_currentColumns.equals(_currentRow.keySet()))
+                    {
+                        var added = CollectionUtils.subtract(_currentRow.keySet(), _currentColumns);
+                        var removed = CollectionUtils.subtract(_currentColumns, _currentRow.keySet());
+
+                        var diffs = new ArrayList<String>();
+                        if (!added.isEmpty())
+                            diffs.add("add: " + String.join(", ", added));
+                        if (!removed.isEmpty())
+                            diffs.add("remove: " + String.join(", ", removed));
+
+                        throw new ValidationException("Columns are not modifiable by triggers. Triggers attempted to " + String.join(", ", diffs));
+                    }
+
                     return true;
                 }
                 catch (ValidationException vex)
@@ -212,7 +230,6 @@ public class TriggerDataBuilderHelper
             return false;
         }
 
-
         @Override
         public Object get(int i)
         {
@@ -223,7 +240,6 @@ public class TriggerDataBuilderHelper
             return super.get(i);
         }
     }
-
 
     class After implements DataIteratorBuilder
     {
@@ -243,7 +259,6 @@ public class TriggerDataBuilderHelper
             return new AfterIterator(LoggingDataIterator.wrap(it), context);
         }
     }
-
 
     class AfterIterator extends TriggerDataIterator
     {
