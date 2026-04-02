@@ -58,22 +58,6 @@ public class QueryMcp implements McpService.McpImpl
         ));
     }
 
-    @Tool(description = "Provide column metadata for a sql table. This tool will also return SQL source for saved queries.")
-    @RequiresPermission(ReadPermission.class)
-    String listColumns(ToolContext toolContext, @ToolParam(description = "Fully qualified table name as it would appear in SQL e.g. \"schema\".\"table\"") String tableName)
-    {
-        var json = _listColumns(tableName, toolContext);
-        return json.toString();
-    }
-
-    @Tool(description = "Provide list of tables within the provided schema.")
-    @RequiresPermission(ReadPermission.class)
-    String listTables(ToolContext toolContext, @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. \"schema\"") String schemaName)
-    {
-        var json = _listTables(schemaName, getContext(toolContext));
-        return json.toString();
-    }
-
     @Tool(description = "Provide list of database schemas")
     @RequiresPermission(ReadPermission.class)
     String listSchemas(ToolContext toolContext)
@@ -92,16 +76,39 @@ public class QueryMcp implements McpService.McpImpl
         return new JSONArray(array).toString();
     }
 
+    @Tool(description = "Provide list of tables within the provided schema.")
+    @RequiresPermission(ReadPermission.class)
+    String listTables(ToolContext toolContext, @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study.Datasets\"") String schemaName)
+    {
+        var json = _listTables(getContext(toolContext), schemaName);
+        return json.toString();
+    }
+
+    @Tool(description = "Provide column metadata for a sql table. The metadata includes SQL source for saved queries.")
+    @RequiresPermission(ReadPermission.class)
+    String listColumns(
+        ToolContext toolContext,
+        @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study.Datasets\"") String schemaName,
+        @ToolParam(description = "Table or query name as it would appear in SQL e.g. MyTable, MyQuery, or \"MyTable\"") String tableName
+    )
+    {
+        var json = _listColumns(toolContext, schemaName, tableName);
+        return json.toString();
+    }
 
     @Tool(description = "Provide the SQL source for a saved query.")
     @RequiresPermission(ReadPermission.class)
-    String getSourceForSavedQuery(ToolContext toolContext, @ToolParam(description = "Fully qualified query name as it would appear in SQL e.g. \"schema\".\"table or query\"") String tableName)
+    String getSourceForSavedQuery(
+        ToolContext toolContext,
+        @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study.Datasets\"") String schemaName,
+        @ToolParam(description = "Table or query name as it would appear in SQL e.g. MyTable, MyQuery, or \"MyTable\"") String tableName
+    )
     {
-        var json = _listColumns(tableName, toolContext);
+        var json = _listColumns(toolContext, schemaName, tableName);
         if (json.has("sql"))
             return "```sql\n" + json.getString("sql") + "\n```\n";
         else
-            return "I could not find the source for " + tableName;
+            throw new NotFoundException("Could not find the source for " + schemaName + "." + tableName);
     }
 
     /* For now, list all schemas. CONSIDER support incremental querying. */
@@ -142,27 +149,13 @@ public class QueryMcp implements McpService.McpImpl
         return ret;
     }
 
-
-    public static JSONObject _listTables(String fullQuotedName, ContainerUser cu)
+    public static JSONObject _listTables(ContainerUser cu, String schemaName)
     {
-        SchemaKey fullKey;
-
-        // TODO : correct method for parsing quoted identifier
-        if (fullQuotedName.startsWith("\"") && fullQuotedName.endsWith("\""))
-        {
-            String[] parts = StringUtils.strip(fullQuotedName, "\"").split("\"\\.\"");
-            fullKey = SchemaKey.fromParts(parts);
-        }
-        else
-        {
-            String[] parts = StringUtils.split(fullQuotedName, ".");
-            fullKey = SchemaKey.fromParts(parts);
-        }
-
         var defaultSchema = DefaultSchema.get(cu.getUser(), cu.getContainer());
-        var schema = DefaultSchema.resolve(defaultSchema, fullKey);
+        var schema = DefaultSchema.resolve(defaultSchema, getSchemaKey(schemaName));
+
         if (!(schema instanceof UserSchema userSchema))
-            throw new NotFoundException("Could not find schema " + fullQuotedName);
+            throw new NotFoundException("Could not find schema " + schemaName);
 
         JSONArray array = new JSONArray();
         CaseInsensitiveHashSet names = new CaseInsensitiveHashSet(schema.getTableNames());
@@ -183,7 +176,7 @@ public class QueryMcp implements McpService.McpImpl
             {
                 continue;
             }
-            QueryDefinition qd = ((UserSchema)schema).getQueryDef(tableName);
+            QueryDefinition qd = userSchema.getQueryDef(tableName);
             JSONObject table = new JSONObject();
             table.put("schemaName", schema.getName());
             table.put("tableName", td.getName());
@@ -202,40 +195,24 @@ public class QueryMcp implements McpService.McpImpl
         return ret;
     }
 
-    public JSONObject _listColumns(String fullQuotedName, ToolContext toolContext)
+    public JSONObject _listColumns(ToolContext toolContext, String schemaName, String tableName)
     {
         var context = getContext(toolContext);
-        QueryKey fullKey = dottedIdentifier(fullQuotedName);
-        SchemaKey schemaKey;
+
+        SchemaKey schemaKey = getSchemaKey(schemaName);
+        var defaultSchema = DefaultSchema.get(context.getUser(), context.getContainer());
+        var schema = DefaultSchema.resolve(defaultSchema, schemaKey);
+        if (null == schema)
+            throw new NotFoundException("Could not find schema " + schemaName);
 
         var props = PropertyManager.getProperties(context.getContainer(), "QueryMCP.annotations");
 
-        String tableName;
-        if (fullKey.size() > 1)
-        {
-            schemaKey = SchemaKey.fromParts(fullKey.getParent().getParts());
-            tableName = fullKey.getName();
-        }
-        else if (fullKey.size() == 1)
-        {
-            throw new IllegalArgumentException("tableName must be a fully qualified schema and table e.g. \"schema\".\"table or query\"");
-        }
-        else
-        {
-            throw new NotFoundException("Could not find table " + fullQuotedName);
-        }
+        QueryKey<?> queryKey = dottedIdentifier(tableName);
+        SchemaKey tableKey = new SchemaKey(schemaKey, queryKey.getName());
 
-        SchemaKey tableKey = new SchemaKey(schemaKey, tableName);
-
-        var defaultSchema = DefaultSchema.get(context.getUser(), context.getContainer());
-
-        var schema = DefaultSchema.resolve(defaultSchema, schemaKey);
-        if (null == schema)
-            throw new NotFoundException("Could not find schema " + fullQuotedName);
-
-        TableInfo td = schema.getTable(tableName, null);
+        TableInfo td = schema.getTable(queryKey.getName(), null);
         if (null == td)
-            throw new NotFoundException("Could not find table " + fullQuotedName);
+            throw new NotFoundException("Could not find table " + schemaName + "." + tableName);
 
         String sourceSQL = null;
         if (schema instanceof UserSchema userSchema)
@@ -252,7 +229,7 @@ public class QueryMcp implements McpService.McpImpl
         if (isNotBlank(td.getDescription()))
             table.put("description", td.getDescription());
         if (isNotBlank(sourceSQL))
-            table.put("sql", sourceSQL);
+            table.put("sql", sourceSQL.trim());
 
         var pkColumns = td.getPkColumns();
         var pk = pkColumns.size() == 1 ? pkColumns.getFirst().getFieldKey() : null;
@@ -298,11 +275,27 @@ public class QueryMcp implements McpService.McpImpl
             }
             columns.put(md);
         }
-        table.put("columns",columns);
+        table.put("columns", columns);
 
         return table;
     }
 
+    private static SchemaKey getSchemaKey(String schemaName)
+    {
+        final String[] parts;
+
+        // TODO : correct method for parsing quoted identifier
+        if (schemaName.startsWith("\"") && schemaName.endsWith("\""))
+        {
+            parts = StringUtils.strip(schemaName, "\"").split("\"\\.\"");
+        }
+        else
+        {
+            parts = StringUtils.split(schemaName, ".");
+        }
+
+        return SchemaKey.fromParts(parts);
+    }
 
     static QueryKey<?> dottedIdentifier(String compoundIdentifier)
     {
