@@ -41,10 +41,10 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 public class QueryMcp implements McpService.McpImpl
 {
     @McpResource(
-            uri = "resource://org/labkey/query/controllers/LabKeySql.md",
-            mimeType = "application/markdown",
-            name = "LabKey SQL",
-            description = "Provide documentation for LabKey SQL specific syntax")
+        uri = "resource://org/labkey/query/controllers/LabKeySql.md",
+        mimeType = "application/markdown",
+        name = "LabKey SQL",
+        description = "Provide documentation for LabKey SQL specific syntax")
     public ReadResourceResult getLabKeySQLDocumentation() throws IOException
     {
         incrementResourceRequestCount("LabKey SQL");
@@ -89,10 +89,10 @@ public class QueryMcp implements McpService.McpImpl
     String listColumns(
         ToolContext toolContext,
         @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study.Datasets\"") String schemaName,
-        @ToolParam(description = "Table or query name as it would appear in SQL e.g. MyTable, MyQuery, or \"MyTable\"") String tableName
+        @ToolParam(description = "Table or query name as it would appear in SQL e.g. MyTable, MyQuery, or \"MyTable\"") String queryName
     )
     {
-        var json = _listColumns(toolContext, schemaName, tableName);
+        var json = _listColumns(toolContext, schemaName, queryName);
         return json.toString();
     }
 
@@ -101,14 +101,14 @@ public class QueryMcp implements McpService.McpImpl
     String getSourceForSavedQuery(
         ToolContext toolContext,
         @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study.Datasets\"") String schemaName,
-        @ToolParam(description = "Table or query name as it would appear in SQL e.g. MyTable, MyQuery, or \"MyTable\"") String tableName
+        @ToolParam(description = "Table or query name as it would appear in SQL e.g. MyTable, MyQuery, or \"MyTable\"") String queryName
     )
     {
-        var json = _listColumns(toolContext, schemaName, tableName);
+        var json = _listColumns(toolContext, schemaName, queryName);
         if (json.has("sql"))
             return "```sql\n" + json.getString("sql") + "\n```\n";
         else
-            throw new NotFoundException("Could not find the source for " + schemaName + "." + tableName);
+            throw new NotFoundException("Could not find the source for " + schemaName + "." + queryName);
     }
 
     /* For now, list all schemas. CONSIDER support incremental querying. */
