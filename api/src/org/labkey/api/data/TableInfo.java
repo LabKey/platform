@@ -619,7 +619,18 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     /**
      * Return true if all trigger scripts support streaming.
      */
-    default boolean canStreamTriggers(Container c) { return false; }
+    default boolean canStreamTriggers(Container c)
+    {
+        return false;
+    }
+
+    /**
+     * Returns the full set of columns managed by triggers for this TableInfo.
+     */
+    default @Nullable Set<String> getTriggerManagedColumns(@Nullable Container c)
+    {
+        return null;
+    }
 
     /**
      * Reset the trigger script context by reloading them. Note there could still be caches that need to be reset
@@ -632,9 +643,12 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     /**
      * Returns true if the underlying database table has triggers.
      */
-    default boolean hasDbTriggers() { return false; }
+    default boolean hasDbTriggers()
+    {
+        return false;
+    }
 
-    /* for asserting that tableinfo is not changed unexpectedly */
+    /* for asserting that the TableInfo is not changed unexpectedly */
     void setLocked(boolean b);
     boolean isLocked();
 

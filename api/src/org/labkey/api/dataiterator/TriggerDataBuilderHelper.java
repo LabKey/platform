@@ -15,7 +15,6 @@
  */
 package org.labkey.api.dataiterator;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -26,10 +25,11 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.labkey.api.admin.FolderImportContext.IS_NEW_FOLDER_IMPORT_KEY;
 import static org.labkey.api.util.IntegerUtils.asInteger;
@@ -115,20 +115,45 @@ public class TriggerDataBuilderHelper
 
     class Before implements DataIteratorBuilder
     {
-        final DataIteratorBuilder _pre;
+        final DataIteratorBuilder _in;
 
         Before(DataIteratorBuilder in)
         {
-            _pre = in;
+            _in = in;
         }
 
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator di = _pre.getDataIterator(context);
+            DataIterator di = _in.getDataIterator(context);
+            if (di == null)
+                return null; // can happen if context has errors
+
             if (!_target.hasTriggers(_c))
                 return di;
             di = LoggingDataIterator.wrap(di);
+
+            // Incorporate columns managed by triggers that may not overlap with the requested column set
+            var triggerColumns = _target.getTriggerManagedColumns(_c);
+            if (triggerColumns != null && !triggerColumns.isEmpty())
+            {
+                var columns = triggerColumns.stream().map(_target::getColumn).filter(Objects::nonNull).toList();
+                if (!columns.isEmpty())
+                {
+                    var translator = new SimpleTranslator(di, context);
+                    translator.setDebugName("TriggerDataBuilderHelper.Before.translator");
+                    translator.selectAll();
+
+                    var columnNameMap = translator.getColumnNameMap();
+
+                    for (var column : columns)
+                    {
+                        if (!columnNameMap.containsKey(column.getName()))
+                            translator.addColumn(column, (Supplier<Object>) () -> null);
+                    }
+                    di = translator.getDataIterator(context);
+                }
+            }
 
             Set<String> existingRecordKeyColumnNames = null;
             Set<String> sharedKeys = null;
@@ -167,7 +192,6 @@ public class TriggerDataBuilderHelper
     {
         boolean _firstRow = true;
         Map<String, Object> _currentRow = null;
-        Set<String> _currentColumns = null;
 
         BeforeIterator(DataIterator di, DataIteratorContext context)
         {
@@ -199,25 +223,7 @@ public class TriggerDataBuilderHelper
                 _currentRow = getInput().getMap();
                 try
                 {
-                    if (_currentRow != null && _currentColumns == null)
-                        _currentColumns = Set.copyOf(_currentRow.keySet());
-
                     _target.fireRowTrigger(_c, _user, triggerType, true, rowNumber, _currentRow, getOldRow(), _extraContext, getExistingRecord());
-
-                    if (_currentRow != null && _currentColumns != null && !_currentColumns.equals(_currentRow.keySet()))
-                    {
-                        var added = CollectionUtils.subtract(_currentRow.keySet(), _currentColumns);
-                        var removed = CollectionUtils.subtract(_currentColumns, _currentRow.keySet());
-
-                        var diffs = new ArrayList<String>();
-                        if (!added.isEmpty())
-                            diffs.add("add: " + String.join(", ", added));
-                        if (!removed.isEmpty())
-                            diffs.add("remove: " + String.join(", ", removed));
-
-                        throw new ValidationException("Columns are not modifiable by triggers. Triggers attempted to " + String.join(", ", diffs));
-                    }
-
                     return true;
                 }
                 catch (ValidationException vex)
@@ -243,20 +249,24 @@ public class TriggerDataBuilderHelper
 
     class After implements DataIteratorBuilder
     {
-        final DataIteratorBuilder _post;
+        final DataIteratorBuilder _in;
 
         After(DataIteratorBuilder in)
         {
-            _post = in;
+            _in = in;
         }
 
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator it = _post.getDataIterator(context);
+            DataIterator di = _in.getDataIterator(context);
+            if (di == null)
+                return null; // can happen if context has errors
+
             if (!_target.hasTriggers(_c))
-                return it;
-            return new AfterIterator(LoggingDataIterator.wrap(it), context);
+                return di;
+
+            return new AfterIterator(LoggingDataIterator.wrap(di), context);
         }
     }
 

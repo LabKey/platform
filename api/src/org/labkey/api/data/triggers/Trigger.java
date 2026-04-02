@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -37,20 +38,46 @@ import java.util.stream.Collectors;
  */
 public interface Trigger
 {
+    /**
+     * Sentinel value placed into the row map for each column declared by {@link #getManagedColumns()}
+     * when that column is absent from the incoming row. The trigger must replace this with a real value
+     * or {@code null} before returning; leaving the sentinel in place is a validation error.
+     */
+    Object COLUMN_SENTINEL = new Object()
+    {
+        @Override
+        public String toString()
+        {
+            return "<trigger managed column - not yet handled>";
+        }
+    };
+
     /** The trigger name. */
-    default String getName() { return getClass().getSimpleName(); }
+    default String getName()
+    {
+        return getClass().getSimpleName();
+    }
 
     /** Short description of the trigger. */
-    default String getDescription() { return null; }
+    default String getDescription()
+    {
+        return null;
+    }
 
-    /** Name of module that defines this trigger. */
-    default String getModuleName() { return null; }
+    /** Name of the module that defines this trigger. */
+    default String getModuleName()
+    {
+        return null;
+    }
 
     /**
      * For script triggers, this is the path to the trigger script.
      * For java triggers, this is the class name.
      */
-    default String getSource() { return getClass().getName(); }
+    default String getSource()
+    {
+        return getClass().getName();
+    }
 
     /**
      * The set of events that this trigger implements.
@@ -78,9 +105,49 @@ public interface Trigger
     }
 
     /**
-     * True if this TriggerScript can be used in a streaming context; triggers will be called without old row values.
+     * Returns the set of column names this trigger will read or write during row processing.
+     * <p>
+     * For each row where a declared column is absent from the input, the data iterator initializes
+     * that column to {@link #COLUMN_SENTINEL} before the trigger fires. The trigger must then
+     * explicitly set each such column to {@code null} or a real value; failure to do so produces
+     * a validation error naming this trigger and the unhandled column.
+     * <p>
+     * Columns that do not exist in the target table's schema (virtual/passthrough columns) may be
+     * declared here and will work correctly — the database writer ignores them.
      */
-    default boolean canStream() { return false; }
+    default @Nullable Set<String> getManagedColumns()
+    {
+        return null;
+    }
+
+    /**
+     * Convenience method for trigger implementations: replaces any {@link #COLUMN_SENTINEL} values
+     * in managed columns with {@code null}. Call this in early-return paths where the trigger will
+     * not produce a value for one or more of its declared columns.
+     */
+    default void clearManagedColumns(@Nullable Map<String, Object> row)
+    {
+        if (row == null)
+            return;
+
+        var managedColumns = getManagedColumns();
+        if (managedColumns == null || managedColumns.isEmpty())
+            return;
+
+        for (String col : managedColumns)
+        {
+            if (row.get(col) == COLUMN_SENTINEL)
+                row.remove(col);
+        }
+    }
+
+    /**
+     * Returns true if this TriggerScript can be used in a streaming context; triggers will be called without old row values.
+     */
+    default boolean canStream()
+    {
+        return false;
+    }
 
     default void batchTrigger(TableInfo table, Container c, User user, TableInfo.TriggerType event, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
     {

@@ -30,6 +30,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.triggers.ScriptTriggerFactory;
 import org.labkey.api.data.triggers.Trigger;
@@ -1884,6 +1885,24 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return true;
     }
 
+    @Override
+    public @Nullable Set<String> getTriggerManagedColumns(@Nullable Container c)
+    {
+        var triggers = getTriggers(c);
+        if (triggers.isEmpty())
+            return null;
+
+        var columns = triggers.stream()
+                .map(Trigger::getManagedColumns)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .toList();
+
+        if (columns.isEmpty())
+            return null;
+
+        return Sets.newCaseInsensitiveHashSet(columns);
+    }
 
     private Collection<Trigger> _triggers = null;
 
@@ -1959,7 +1978,63 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         for (Trigger script : triggers)
         {
+            var managed = before ? script.getManagedColumns() : null;
+
+            // Inject sentinel for each declared column absent from the row; the trigger must handle it
+            if (newRow != null && managed != null && before)
+            {
+                for (var col : managed)
+                    newRow.putIfAbsent(col, Trigger.COLUMN_SENTINEL);
+            }
+
+            // Snapshot keys after injection — trigger may update values but must not alter the key set
+            var keysBeforeTrigger = newRow != null && before ? Set.copyOf(newRow.keySet()) : null;
+
             script.rowTrigger(this, c, user, type, before, rowNumber, newRow, oldRow, errors, extraContext, existingRecord);
+            if (errors.hasErrors())
+                break;
+
+            if (newRow != null && before)
+            {
+                // Verify the trigger did not add or remove columns that are not managed
+                if (!newRow.keySet().equals(keysBeforeTrigger))
+                {
+                    var added = Sets.newCaseInsensitiveHashSet(newRow.keySet());
+                    added.removeAll(keysBeforeTrigger);
+
+                    var removed = Sets.newCaseInsensitiveHashSet(keysBeforeTrigger);
+                    removed.removeAll(newRow.keySet());
+
+                    // managed column removals are intentional
+                    if (managed != null)
+                    {
+                        added.removeAll(managed);
+                        removed.removeAll(managed);
+                    }
+
+                    if (!added.isEmpty() || !removed.isEmpty())
+                    {
+                        var diffs = new ArrayList<String>();
+                        if (!added.isEmpty())
+                            diffs.add("add: " + String.join(", ", added));
+                        if (!removed.isEmpty())
+                            diffs.add("remove: " + String.join(", ", removed));
+
+                        errors.addGlobalError("Trigger '" + script.getName() + "' attempted to " + String.join(", ", diffs) + ". Declare columns via getManagedColumns() to include them in the column set.");
+                    }
+                }
+
+                // Verify the trigger handled every declared column it was responsible for
+                if (managed != null)
+                {
+                    for (var col : managed)
+                    {
+                        if (newRow.get(col) == Trigger.COLUMN_SENTINEL)
+                            errors.addFieldError(col, "Trigger '" + script.getName() + "' declared column '" + col + "' in getManagedColumns() but did not set a value for it. Set null to clear or provide a value.");
+                    }
+                }
+            }
+
             if (errors.hasErrors())
                 break;
         }
