@@ -27,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.NamedObjectList;
@@ -1892,16 +1893,18 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (triggers.isEmpty())
             return null;
 
-        var columns = triggers.stream()
-                .map(Trigger::getManagedColumns)
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .toList();
+        var columns = new CaseInsensitiveHashSet();
+        for (var trigger : triggers)
+        {
+            var managedColumns = trigger.getManagedColumns();
+            if (managedColumns == null)
+                continue;
 
-        if (columns.isEmpty())
-            return null;
+            columns.addAll(managedColumns.insert());
+            columns.addAll(managedColumns.update());
+        }
 
-        return Sets.newCaseInsensitiveHashSet(columns);
+        return columns.isEmpty() ? null : columns;
     }
 
     private Collection<Trigger> _triggers = null;
@@ -1978,15 +1981,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         for (Trigger script : triggers)
         {
-            var managed = before ? script.getManagedColumns() : null;
-
-            // Inject sentinel for each declared column absent from the row; the trigger must handle it
-            if (newRow != null && managed != null && before)
-            {
-                for (var col : managed)
-                    newRow.putIfAbsent(col, Trigger.COLUMN_SENTINEL);
-            }
-
             // Snapshot keys after injection — trigger may update values but must not alter the key set
             var keysBeforeTrigger = newRow != null && before ? Set.copyOf(newRow.keySet()) : null;
 
@@ -1996,6 +1990,11 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
             if (newRow != null && before)
             {
+                var managed = script.getManagedColumns();
+                Set<String> managedCols = null;
+                if (managed != null)
+                    managedCols = managed.getColumns(type);
+
                 // Verify the trigger did not add or remove columns that are not managed
                 if (!newRow.keySet().equals(keysBeforeTrigger))
                 {
@@ -2006,10 +2005,15 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                     removed.removeAll(newRow.keySet());
 
                     // managed column removals are intentional
-                    if (managed != null)
+                    if (managedCols != null)
                     {
-                        added.removeAll(managed);
-                        removed.removeAll(managed);
+                        added.removeAll(managedCols);
+                        removed.removeAll(managedCols);
+                        if (managed.ignored() != null)
+                        {
+                            added.removeAll(managed.ignored());
+                            removed.removeAll(managed.ignored());
+                        }
                     }
 
                     if (!added.isEmpty() || !removed.isEmpty())
@@ -2024,12 +2028,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                     }
                 }
 
-                // Verify the trigger handled every declared column it was responsible for
-                if (managed != null)
+                // Verify that update triggers handle every managed column
+                if (managedCols != null && type == TriggerType.UPDATE)
                 {
-                    for (var col : managed)
+                    for (var col : managedCols)
                     {
-                        if (newRow.get(col) == Trigger.COLUMN_SENTINEL)
+                        if (!newRow.containsKey(col))
                             errors.addFieldError(col, "Trigger '" + script.getName() + "' declared column '" + col + "' in getManagedColumns() but did not set a value for it. Set null to clear or provide a value.");
                     }
                 }

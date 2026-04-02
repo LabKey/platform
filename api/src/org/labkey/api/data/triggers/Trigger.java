@@ -15,8 +15,10 @@
  */
 package org.labkey.api.data.triggers;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
@@ -38,20 +40,6 @@ import java.util.stream.Collectors;
  */
 public interface Trigger
 {
-    /**
-     * Sentinel value placed into the row map for each column declared by {@link #getManagedColumns()}
-     * when that column is absent from the incoming row. The trigger must replace this with a real value
-     * or {@code null} before returning; leaving the sentinel in place is a validation error.
-     */
-    Object COLUMN_SENTINEL = new Object()
-    {
-        @Override
-        public String toString()
-        {
-            return "<trigger managed column - not yet handled>";
-        }
-    };
-
     /** The trigger name. */
     default String getName()
     {
@@ -104,41 +92,68 @@ public interface Trigger
         }
     }
 
+    record ManagedColumns(@NotNull Set<String> insert, @NotNull Set<String> update, @Nullable Set<String> ignored)
+    {
+        public static ManagedColumns all(@NotNull Set<String> all)
+        {
+            return new ManagedColumns(all, all, null);
+        }
+
+        public static ManagedColumns all(@NotNull String... all)
+        {
+            return all(Sets.newCaseInsensitiveHashSet(all));
+        }
+
+        public @Nullable Set<String> getColumns(TableInfo.TriggerType type)
+        {
+            if (type == TableInfo.TriggerType.INSERT)
+                return insert;
+            if (type == TableInfo.TriggerType.UPDATE)
+                return update;
+            return null;
+        }
+    }
+
     /**
      * Returns the set of column names this trigger will read or write during row processing.
      * <p>
-     * For each row where a declared column is absent from the input, the data iterator initializes
-     * that column to {@link #COLUMN_SENTINEL} before the trigger fires. The trigger must then
-     * explicitly set each such column to {@code null} or a real value; failure to do so produces
+     * For each row where a declared column is absent from the input, the trigger must
+     * explicitly set each such column to null or a real value; failure to do so produces
      * a validation error naming this trigger and the unhandled column.
      * <p>
      * Columns that do not exist in the target table's schema (virtual/passthrough columns) may be
      * declared here and will work correctly — the database writer ignores them.
      */
-    default @Nullable Set<String> getManagedColumns()
+    default @Nullable ManagedColumns getManagedColumns()
     {
         return null;
     }
 
-    /**
-     * Convenience method for trigger implementations: replaces any {@link #COLUMN_SENTINEL} values
-     * in managed columns with {@code null}. Call this in early-return paths where the trigger will
-     * not produce a value for one or more of its declared columns.
-     */
-    default void clearManagedColumns(@Nullable Map<String, Object> row)
+    default void setInsertManagedColumns(@NotNull Map<String, Object> newRow)
     {
-        if (row == null)
+        setManagedColumns(newRow, null, TableInfo.TriggerType.INSERT);
+    }
+
+    default void setUpdateManagedColumns(@NotNull Map<String, Object> newRow, @NotNull Map<String, Object> oldRow)
+    {
+        if (oldRow == null)
+            throw new IllegalArgumentException("oldRow must be non-null for UPDATE triggers");
+
+        setManagedColumns(newRow, oldRow, TableInfo.TriggerType.UPDATE);
+    }
+
+    private void setManagedColumns(Map<String, Object> newRow, Map<String, Object> oldRow, TableInfo.TriggerType type)
+    {
+        var managedCols = getManagedColumns();
+        if (managedCols == null)
             return;
 
-        var managedColumns = getManagedColumns();
-        if (managedColumns == null || managedColumns.isEmpty())
+        var cols = managedCols.getColumns(type);
+        if (cols == null)
             return;
 
-        for (String col : managedColumns)
-        {
-            if (row.get(col) == COLUMN_SENTINEL)
-                row.remove(col);
-        }
+        for (var col : cols)
+            newRow.putIfAbsent(col, oldRow == null ? null : oldRow.get(col));
     }
 
     /**
