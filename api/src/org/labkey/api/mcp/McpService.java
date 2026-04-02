@@ -9,6 +9,7 @@ import org.jspecify.annotations.NonNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.writer.ContainerUser;
@@ -81,6 +82,7 @@ import java.util.function.Supplier;
 public interface McpService extends ToolCallbackProvider
 {
     Logger LOG = LogHelper.getLogger(McpService.class, "MCP registration exceptions");
+    String ENABLE_MCP_SERVER_FLAG = "enableMcpServer";
 
     // Interface for MCP classes that we will "ingest" using Spring annotations. Provides a few helper methods.
     interface McpImpl
@@ -102,6 +104,9 @@ public interface McpService extends ToolCallbackProvider
         // Every MCP resource should call this on every invocation
         default void incrementResourceRequestCount(String resource)
         {
+            if (!OptionalFeatureService.get().isFeatureEnabled(ENABLE_MCP_SERVER_FLAG))
+                throw new RuntimeException("The MCP server is not enabled for external requests. Consider toggling the experimental feature flag.");
+
             get().incrementResourceRequestCount(resource);
         }
     }
