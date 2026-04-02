@@ -332,12 +332,6 @@ public class MockModule implements Module
     }
 
     @Override
-    public String getVcsTag()
-    {
-        return null;
-    }
-
-    @Override
     public boolean shouldManageVersion()
     {
         return false;
