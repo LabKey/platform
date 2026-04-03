@@ -10,9 +10,18 @@ import {
     ImportRunOptions,
     importRunToServer,
     initProject,
+    MVTC_FIELD_PROP,
     options,
+    TC_FIELD_PROP,
 } from './utils';
-import { ASSAY_DESIGNER_ROLE, caseInsensitive, EXPERIMENT_AUDIT_EVENT, RANGE_URIS, Row } from '@labkey/components';
+import {
+    ASSAY_DESIGNER_ROLE,
+    caseInsensitive,
+    EXPERIMENT_AUDIT_EVENT,
+    IDomainField,
+    RANGE_URIS,
+    Row
+} from '@labkey/components';
 
 // @ts-expect-error process is not available in a browser environment
 const server = hookServer(process.env);
@@ -21,16 +30,47 @@ const BATCH_FILE_FIELD_NAME = 'batchFileField';
 const BATCH_FILE_FIELD_TWO_NAME = 'batchFile2Field';
 const RUN_FILE_FIELD_NAME = 'runFileField';
 const RUN_FILE_FIELD_TWO_NAME = 'runFile2Field';
+const RUN_TEXT_CHOICE_FIELD_NAME = 'runTextChoiceField';
 const RESULT_FIELD_NAME = 'resultStringField';
 const RESULT_FILE_FIELD_NAME = 'resultFileField';
+const RESULT_TC_FIELD_NAME = 'resultTextChoiceField';
+const RESULT_MVTC_FIELD_NAME = 'resultMultiChoiceField';
+
 let context;
 let ASSAY_A_ID: number;
+let ASSAY_A_DESIGN: any;
 const ASSAY_A_NAME = 'AssayA';
+
+let supportMultiChoice = false;
 
 beforeAll(async () => {
     context = await initProject(server, PROJECT_NAME, ASSAY_DESIGNER_ROLE, ['assay', 'experiment']);
 
-    const assayFields: AssayDesignFieldOptions = {
+    let supportMultiChoice = false;
+    const createTestPayload = {
+        kind: 'DataClass',
+        domainDesign: { name: 'Test_mvtc_support_check', fields: [{ name: 'Prop' }] },
+        options: {
+            name: "Test_mvtc_support_check",
+        }
+    };
+
+    await server.post('property', 'createDomain', createTestPayload).expect((result) => {
+        const domain = JSON.parse(result.text);
+        supportMultiChoice = domain.allowMultiChoiceProperties;
+        return true;
+    });
+
+    let resultFields = [
+        createDomainField({ name: RESULT_FIELD_NAME }),
+        createDomainField({ name: RESULT_FILE_FIELD_NAME, rangeURI: RANGE_URIS.FILELINK }),
+        createDomainField({name: RESULT_TC_FIELD_NAME, ...TC_FIELD_PROP} as Partial<IDomainField>)
+    ];
+
+    if (supportMultiChoice)
+        resultFields.push(createDomainField({name: RESULT_MVTC_FIELD_NAME, ...MVTC_FIELD_PROP} as Partial<IDomainField>));
+
+    let assayFields: AssayDesignFieldOptions = {
         batchFields: [
             createDomainField({ name: BATCH_FILE_FIELD_NAME, rangeURI: RANGE_URIS.FILELINK }),
             createDomainField({ name: BATCH_FILE_FIELD_TWO_NAME, rangeURI: RANGE_URIS.FILELINK }),
@@ -38,14 +78,14 @@ beforeAll(async () => {
         runFields: [
             createDomainField({ name: RUN_FILE_FIELD_NAME, rangeURI: RANGE_URIS.FILELINK }),
             createDomainField({ name: RUN_FILE_FIELD_TWO_NAME, rangeURI: RANGE_URIS.FILELINK }),
+            createDomainField({name: RUN_TEXT_CHOICE_FIELD_NAME, ...TC_FIELD_PROP} as Partial<IDomainField>)
         ],
-        resultFields: [
-            createDomainField({ name: RESULT_FIELD_NAME }),
-            createDomainField({ name: RESULT_FILE_FIELD_NAME, rangeURI: RANGE_URIS.FILELINK }),
-        ],
+        resultFields,
     };
+
     const assayA = await createAssayDesign(server, ASSAY_A_NAME, assayFields, context.topFolderOptions);
     ASSAY_A_ID = assayA.protocolId;
+    ASSAY_A_DESIGN = assayA;
 });
 
 afterAll(async () => {
@@ -528,6 +568,212 @@ describe('assay-importRun.api', () => {
             // Verify file system audit events
             auditLogs = await getAuditLogsForTransaction(server, auditTransactionId, 'filesystem', topFolderOptions);
             expect(auditLogs.length).toBe(0);
+        });
+    });
+
+    describe('text choice fields', () => {
+        function getUpdateField(domainFieldFull: any) {
+            // only keep the following properties for the update payload since the saveProtocol.api doesn't expect the other properties that come through in the assay design response
+            const propertiesToKeep = [
+                'name',
+                'label',
+                'type',
+                'propertyValidators',
+                'required',
+                'mvEnabled',
+                'multiValued',
+                'propertyId',
+                'container',
+                'conceptURI',
+                'rangeURI',
+                'format',
+                'propertyURI'
+            ];
+
+            return Object.fromEntries(Object.entries(domainFieldFull).filter(([key]) => propertiesToKeep.includes(key)));
+        }
+
+        // Build a saveProtocol.api payload that modifies the text choice validator expression
+        // for a specific field in the given domain (0=batch, 1=run, 2=data/results).
+        function buildAssayUpdatePayload(
+            domainIndex: number,
+            fieldName: string,
+            newExpression: string
+        ): any {
+            const domains = ASSAY_A_DESIGN.domains.map((domain: any, i: number) => ({
+                domainId: domain.domainId,
+                domainURI: domain.domainURI,
+                name: domain.name,
+                fields: domain.fields.map((field: any) => {
+                    const f = getUpdateField(field);
+                    if (i === domainIndex && f.name === fieldName) {
+                        const validators = f.propertyValidators[0] || {};
+                        return {
+                            ...f,
+                            propertyValidators: [{
+                                ...validators,
+                                type: 'TextChoice',
+                                name: 'Text Choice Validator',
+                                new: true,
+                                expression: newExpression,
+                            }],
+                        };
+                    }
+                    return f;
+                }),
+            }));
+
+            return {
+                protocolId: ASSAY_A_DESIGN.protocolId,
+                name: ASSAY_A_NAME,
+                providerName: 'General',
+                allowEditableResults: true,
+                editableResults: true,
+                editableRuns: true,
+                status: 'Active',
+                domains,
+            };
+        }
+
+        // GitHub Issue 949: Text choice value can be deleted if usage is added after loading designer
+        it('blocks deleting in-use run text choice value', async () => {
+            const { topFolderOptions } = context;
+
+            // Import a run with 'Abnormal' as the run text choice value
+            const importPayload: ImportRunOptions = {
+                assayId: ASSAY_A_ID,
+                properties: { [RUN_TEXT_CHOICE_FIELD_NAME]: 'Abnormal' },
+                dataRows: [{ [RESULT_FIELD_NAME]: 'tc-run-test' }],
+            };
+            const importResponse = await importRunToServer(server, importPayload, topFolderOptions);
+            expect(importResponse.body.success).toEqual(true);
+
+            // Try to remove 'Abnormal' from the run TC field's valid values
+            const updatePayload = buildAssayUpdatePayload(1, RUN_TEXT_CHOICE_FIELD_NAME, 'agent|cDNA|Plasma');
+            const response = await server.post('assay', 'saveProtocol.api', updatePayload, topFolderOptions);
+            expect(response.text).toContain('One or more values cannot be removed from the text choice list');
+        });
+
+        it('blocks deleting in-use result text choice value', async () => {
+            const { topFolderOptions } = context;
+
+            // Import a run with 'agent' as the result text choice value
+            const importPayload: ImportRunOptions = {
+                assayId: ASSAY_A_ID,
+                dataRows: [{ [RESULT_FIELD_NAME]: 'tc-result-test', [RESULT_TC_FIELD_NAME]: 'agent' }],
+            };
+            const importResponse = await importRunToServer(server, importPayload, topFolderOptions);
+            expect(importResponse.body.success).toEqual(true);
+
+            // Try to remove 'agent' from the result TC field's valid values
+            const updatePayload = buildAssayUpdatePayload(2, RESULT_TC_FIELD_NAME, 'Abnormal|cDNA|Plasma');
+            const response = await server.post('assay', 'saveProtocol.api', updatePayload, topFolderOptions);
+            expect(response.text).toContain('One or more values cannot be removed from the text choice list');
+        });
+
+        it('blocks deleting in-use multi-choice value used as single value', async () => {
+            if (!supportMultiChoice) {
+                console.warn('Multi-choice properties are not supported in this environment, skipping multi-choice field tests');
+                return;
+            }
+
+            const { topFolderOptions } = context;
+
+            // Import a run with 'Plasma' as a single multi-choice value
+            const importPayload: ImportRunOptions = {
+                assayId: ASSAY_A_ID,
+                dataRows: [{ [RESULT_FIELD_NAME]: 'mc-single-test', [RESULT_MVTC_FIELD_NAME]: ['Plasma'] }],
+            };
+            const importResponse = await importRunToServer(server, importPayload, topFolderOptions);
+            expect(importResponse.body.success).toEqual(true);
+
+            // Try to remove 'Plasma' from the multi-choice field's valid values
+            const updatePayload = buildAssayUpdatePayload(2, RESULT_MVTC_FIELD_NAME, 'Abnormal|agent|cDNA');
+            const response = await server.post('assay', 'saveProtocol.api', updatePayload, topFolderOptions);
+            expect(response.text).toContain('One or more values cannot be removed from the multi-choice list');
+        });
+
+        it('blocks deleting in-use multi-choice value used as part of an array value', async () => {
+            if (!supportMultiChoice) {
+                console.warn('Multi-choice properties are not supported in this environment, skipping multi-choice field tests');
+                return;
+            }
+
+            const { topFolderOptions } = context;
+
+            // Import a run with ['Abnormal', 'cDNA'] as multi-choice values
+            const importPayload: ImportRunOptions = {
+                assayId: ASSAY_A_ID,
+                dataRows: [{ [RESULT_FIELD_NAME]: 'mc-array-test', [RESULT_MVTC_FIELD_NAME]: ['Abnormal', 'cDNA'] }],
+            };
+            const importResponse = await importRunToServer(server, importPayload, topFolderOptions);
+            expect(importResponse.body.success).toEqual(true);
+
+            // Try to remove 'cDNA' (used as part of a multi-value array) from the valid values
+            const updatePayload = buildAssayUpdatePayload(2, RESULT_MVTC_FIELD_NAME, 'Abnormal|agent|Plasma');
+            const response = await server.post('assay', 'saveProtocol.api', updatePayload, topFolderOptions);
+            expect(response.text).toContain('One or more values cannot be removed from the multi-choice list');
+        });
+
+        // GitHub Issue 925: Not providing a MVTC value in an assay result throws error
+        it('errors when required MVTC column not provided in assay import', async () => {
+            if (!supportMultiChoice) {
+                console.warn('Multi-choice properties are not supported in this environment, skipping multi-choice field tests');
+                return;
+            }
+
+            const { topFolderOptions } = context;
+
+            // Create a separate assay with a required MVTC result field
+            const reqAssayFields: AssayDesignFieldOptions = {
+                resultFields: [
+                    createDomainField({ name: RESULT_FIELD_NAME }),
+                    createDomainField({ name: RESULT_MVTC_FIELD_NAME, ...MVTC_FIELD_PROP, required: true } as Partial<IDomainField>),
+                ],
+            };
+            const reqAssay = await createAssayDesign(server, 'AssayRequiredMVTC', reqAssayFields, topFolderOptions);
+
+            // Import without providing the required MVTC column in data rows
+            const importPayloadNoCol: ImportRunOptions = {
+                assayId: reqAssay.protocolId,
+                dataRows: [{ [RESULT_FIELD_NAME]: 'no-mvtc-column' }],
+            };
+            let response = await importRunToServer(server, importPayloadNoCol, topFolderOptions);
+            expect(response.body.success).toBeFalsy();
+            expect(response.body.exception).toContain(RESULT_MVTC_FIELD_NAME);
+
+            // Import without blank required MVTC column in data rows
+            const importPayloadNull = {
+                assayId: reqAssay.protocolId,
+                dataRows: [{ [RESULT_FIELD_NAME]: 'mvtc-column-null', [RESULT_MVTC_FIELD_NAME]: null }],
+            };
+            response = await importRunToServer(server, importPayloadNull, topFolderOptions);
+            expect(response.body.success).toBeFalsy();
+            expect(response.body.exception).toContain(RESULT_MVTC_FIELD_NAME);
+
+            const importPayloadBlank = {
+                assayId: reqAssay.protocolId,
+                dataRows: [{ [RESULT_FIELD_NAME]: 'mvtc-column-blank', [RESULT_MVTC_FIELD_NAME]: '' }],
+            };
+            response = await importRunToServer(server, importPayloadBlank, topFolderOptions);
+            expect(response.body.success).toBeFalsy();
+            expect(response.body.exception).toContain(RESULT_MVTC_FIELD_NAME);
+
+            const importPayloadEmpty: ImportRunOptions = {
+                assayId: reqAssay.protocolId,
+                dataRows: [{ [RESULT_FIELD_NAME]: 'mvtc-column-empty-array', [RESULT_MVTC_FIELD_NAME]: [] }],
+            };
+            response = await importRunToServer(server, importPayloadEmpty, topFolderOptions);
+            expect(response.body.success).toBeFalsy();
+            expect(response.body.exception).toContain(RESULT_MVTC_FIELD_NAME);
+
+            // Import with provided required MVTC column in data rows
+            const goodImportPayload = {
+                assayId: reqAssay.protocolId,
+                dataRows: [{ [RESULT_FIELD_NAME]: 'with-mvtc-column', [RESULT_MVTC_FIELD_NAME]: ['Abnormal', 'cDNA'] }],
+            };
+            response = await importRunToServer(server, goodImportPayload, topFolderOptions);
+            expect(response.body.success).toBeTruthy();
         });
     });
 });

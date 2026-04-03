@@ -48,6 +48,7 @@ import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.DomainUtils;
 import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.SampleTypeHelper;
 import org.labkey.test.util.StudyHelper;
 import org.labkey.test.util.TestDataGenerator;
@@ -131,6 +132,7 @@ public class AssayTest extends AbstractAssayTest
     public void testAssayMultiFileImportForMVTC() throws Exception
     {
         Assume.assumeTrue("Multi-choice text fields are only supported on PostgreSQL", WebTestHelper.getDatabaseType() == WebTestHelper.DatabaseType.PostgreSQL);
+        OptionalFeatureHelper.enableOptionalFeature(getCurrentTest().createDefaultConnection(), "multiChoiceDataType");
         _containerHelper.createProject(MVTC_MULTI_FILE_IMPORT_PROJECT, "Assay");
         new GeneralAssayDesign(MVTC_MULTI_FILE_IMPORT_ASSAY)
                 .setRunFields(List.of(new FieldDefinition("runText", FieldDefinition.ColumnType.String)), true)
