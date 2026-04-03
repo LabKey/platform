@@ -62,6 +62,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.util.ConfigurationException;
@@ -1887,7 +1888,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
-    public @Nullable Set<String> getTriggerManagedColumns(@Nullable Container c)
+    public @Nullable Set<String> getTriggerManagedColumns(@Nullable Container c, QueryUpdateService.InsertOption insertOption)
     {
         var triggers = getTriggers(c);
         if (triggers.isEmpty())
@@ -1900,8 +1901,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (managedColumns == null)
                 continue;
 
-            columns.addAll(managedColumns.insert());
-            columns.addAll(managedColumns.update());
+            if (insertOption.updateOnly)
+                columns.addAll(managedColumns.update());
+            else
+                columns.addAll(managedColumns.insert());
         }
 
         return columns.isEmpty() ? null : columns;
@@ -1968,7 +1971,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     @Override
     public void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber,
-                               @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord)
+                               @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord, boolean manageColumns)
             throws ValidationException
     {
         ValidationException errors = new ValidationException();
@@ -2024,7 +2027,11 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                         if (!removed.isEmpty())
                             diffs.add("remove: " + String.join(", ", removed));
 
-                        errors.addGlobalError("Trigger '" + script.getName() + "' attempted to " + String.join(", ", diffs) + ". Declare columns via getManagedColumns() to include them in the column set.");
+                        String message = "Trigger '" + script.getName() + "' attempted to " + String.join(", ", diffs) + ". Declare managed columns to include them in the column set.";
+                        if (manageColumns)
+                            errors.addGlobalError(message);
+                        else
+                            LOG.warn(message + " This will be an error if invoked via data iteration.");
                     }
                 }
 
@@ -2034,7 +2041,13 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                     for (var col : managedCols)
                     {
                         if (!newRow.containsKey(col))
-                            errors.addFieldError(col, "Trigger '" + script.getName() + "' declared column '" + col + "' in getManagedColumns() but did not set a value for it. Set null to clear or provide a value.");
+                        {
+                            String message = "Trigger '" + script.getName() + "' declared the managed column '" + col + "' but did not set a value for it. Set null to clear or provide a value.";
+                            if (manageColumns)
+                                errors.addFieldError(col, message);
+                            else
+                                LOG.warn(message + " This will be an error if invoked via data iteration.");
+                        }
                     }
                 }
             }

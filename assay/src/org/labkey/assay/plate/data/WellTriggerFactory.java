@@ -88,6 +88,12 @@ public final class WellTriggerFactory implements TriggerFactory
     {
         private final Map<Long, String> wellTypeMap = new LRUMap<>(PlateSet.MAX_PLATE_SET_WELLS);
 
+        @Override
+        public @Nullable ManagedColumns getManagedColumns()
+        {
+            return ManagedColumns.all(WellTable.Column.Type.name());
+        }
+
         private void addTypeSample(
             Container c,
             User user,
@@ -148,6 +154,7 @@ public final class WellTriggerFactory implements TriggerFactory
         )
         {
             addTypeSample(c, user, newRow, null, extraContext);
+            setInsertManagedColumns(newRow);
         }
 
         @Override
@@ -162,6 +169,7 @@ public final class WellTriggerFactory implements TriggerFactory
         )
         {
             addTypeSample(c, user, newRow, oldRow, extraContext);
+            setUpdateManagedColumns(newRow, oldRow);
         }
     }
 

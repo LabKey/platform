@@ -453,9 +453,9 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     }
 
     @Override
-    public void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord) throws ValidationException
+    public void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord, boolean manageColumns) throws ValidationException
     {
-        super.fireRowTrigger(c, user, type, before, rowNumber, newRow, oldRow, extraContext, existingRecord);
+        super.fireRowTrigger(c, user, type, before, rowNumber, newRow, oldRow, extraContext, existingRecord, manageColumns);
         Integer userId = null!=oldRow ? asInteger(oldRow.get("UserId")) : null!=newRow ? asInteger(newRow.get("UserId")) : null;
         if (null != userId && !before)
             UserManager.fireUserPropertiesChanged(userId);

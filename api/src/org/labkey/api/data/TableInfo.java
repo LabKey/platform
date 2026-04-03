@@ -40,6 +40,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -564,10 +565,12 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
             throws BatchValidationException;
 
     default void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber,
-                        @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext)
+                                @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext)
             throws ValidationException
     {
-        fireRowTrigger(c, user, type, before, rowNumber, newRow, oldRow, extraContext, null);
+        // In production, columns are not managed for non-data iterator invoked triggers and will log a warning.
+        // In development, columns are managed for all non-data iterator triggers and will throw an error.
+        fireRowTrigger(c, user, type, before, rowNumber, newRow, oldRow, extraContext, null, AppProps.getInstance().isDevMode());
     }
 
     /**
@@ -605,11 +608,21 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * @param oldRow The previous row for UPDATE and DELETE
      * @param extraContext Optional additional bindings to set in the script's context when evaluating.
      * @param existingRecord Optional existing record for the row, used for merge operation to differentiate new vs existing row
+     * @param manageColumns Whether to manage columns for the row.
      * @throws ValidationException if the trigger function returns false or the errors map isn't empty.
      */
-    void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber,
-                        @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord)
-            throws ValidationException;
+    void fireRowTrigger(
+        Container c,
+        User user,
+        TriggerType type,
+        boolean before,
+        int rowNumber,
+        @Nullable Map<String, Object> newRow,
+        @Nullable Map<String, Object> oldRow,
+        Map<String, Object> extraContext,
+        @Nullable Map<String, Object> existingRecord,
+        boolean manageColumns
+    ) throws ValidationException;
 
     /**
      * Return true if there are trigger scripts associated with this table.
@@ -627,7 +640,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     /**
      * Returns the full set of columns managed by triggers for this TableInfo.
      */
-    default @Nullable Set<String> getTriggerManagedColumns(@Nullable Container c)
+    default @Nullable Set<String> getTriggerManagedColumns(@Nullable Container c, QueryUpdateService.InsertOption insertOption)
     {
         return null;
     }

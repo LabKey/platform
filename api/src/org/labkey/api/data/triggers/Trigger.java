@@ -28,6 +28,7 @@ import org.labkey.api.util.UnexpectedException;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -104,6 +105,11 @@ public interface Trigger
             return all(Sets.newCaseInsensitiveHashSet(all));
         }
 
+        public static ManagedColumns empty()
+        {
+            return new ManagedColumns(Collections.emptySet(), Collections.emptySet(), null);
+        }
+
         public @Nullable Set<String> getColumns(TableInfo.TriggerType type)
         {
             if (type == TableInfo.TriggerType.INSERT)
@@ -129,12 +135,12 @@ public interface Trigger
         return null;
     }
 
-    default void setInsertManagedColumns(@NotNull Map<String, Object> newRow)
+    default void setInsertManagedColumns(Map<String, Object> newRow)
     {
         setManagedColumns(newRow, null, TableInfo.TriggerType.INSERT);
     }
 
-    default void setUpdateManagedColumns(@NotNull Map<String, Object> newRow, @NotNull Map<String, Object> oldRow)
+    default void setUpdateManagedColumns(Map<String, Object> newRow, @NotNull Map<String, Object> oldRow)
     {
         if (oldRow == null)
             throw new IllegalArgumentException("oldRow must be non-null for UPDATE triggers");
@@ -144,6 +150,9 @@ public interface Trigger
 
     private void setManagedColumns(Map<String, Object> newRow, Map<String, Object> oldRow, TableInfo.TriggerType type)
     {
+        if (newRow == null)
+            return;
+
         var managedCols = getManagedColumns();
         if (managedCols == null)
             return;

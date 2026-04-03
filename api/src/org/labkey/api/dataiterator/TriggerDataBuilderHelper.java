@@ -134,7 +134,7 @@ public class TriggerDataBuilderHelper
             di = LoggingDataIterator.wrap(di);
 
             // Incorporate columns managed by triggers that may not overlap with the requested column set
-            var triggerColumns = _target.getTriggerManagedColumns(_c);
+            var triggerColumns = _target.getTriggerManagedColumns(_c, context.getInsertOption());
             if (triggerColumns != null && !triggerColumns.isEmpty())
             {
                 var columns = triggerColumns.stream().map(_target::getColumn).filter(Objects::nonNull).toList();
@@ -223,7 +223,7 @@ public class TriggerDataBuilderHelper
                 _currentRow = getInput().getMap();
                 try
                 {
-                    _target.fireRowTrigger(_c, _user, triggerType, true, rowNumber, _currentRow, getOldRow(), _extraContext, getExistingRecord());
+                    _target.fireRowTrigger(_c, _user, triggerType, true, rowNumber, _currentRow, getOldRow(), _extraContext, getExistingRecord(), true);
                     return true;
                 }
                 catch (ValidationException vex)
@@ -290,7 +290,7 @@ public class TriggerDataBuilderHelper
                     Map<String,Object> newRow = getInput().getMap();
                     try
                     {
-                        _target.fireRowTrigger(_c, _user, getTriggerType(), false, rowNumber, newRow, getOldRow(), _extraContext, getExistingRecord());
+                        _target.fireRowTrigger(_c, _user, getTriggerType(), false, rowNumber, newRow, getOldRow(), _extraContext, getExistingRecord(), true);
                     }
                     catch (ValidationException vex)
                     {

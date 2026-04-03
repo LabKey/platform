@@ -17,6 +17,7 @@ package org.labkey.api.data.triggers;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -44,25 +45,26 @@ import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
  * Implements a trigger for table operations backed by JavaScript code.
- * User: kevink
- * Date: 12/21/15
  */
 public class ScriptTrigger implements Trigger
 {
     public static final String SERVER_CONTEXT_KEY = "~~ServerContext~~";
-    public static final String SERVER_CONTEXT_SCRIPTNAME = "serverContext";
+    public static final String SERVER_CONTEXT_SCRIPT_NAME = "serverContext";
 
     @NotNull protected final Container _container;
     @NotNull protected final TableInfo _table;
     @NotNull protected final ScriptReference _script;
+    @Nullable protected ManagedColumns _managedColumns = null;
 
     protected ScriptTrigger(@NotNull Container c, @NotNull TableInfo table, @NotNull ScriptReference script)
     {
@@ -112,6 +114,38 @@ public class ScriptTrigger implements Trigger
         return false;
     }
 
+    @Override
+    public @Nullable ManagedColumns getManagedColumns()
+    {
+        if (_managedColumns == null)
+            _managedColumns = resolveManagedColumns();
+
+        return _managedColumns;
+    }
+
+    private @NotNull ManagedColumns resolveManagedColumns()
+    {
+        var user = _table.getUserSchema() != null ? _table.getUserSchema().getUser() : null;
+        var result = _invokeTableScript(_container, user, Object.class, "managedColumns", null, () -> null);
+        if (result instanceof Map<?, ?> map)
+        {
+            var insert = managedColumnsFromScriptMap(map, "insert");
+            var update = managedColumnsFromScriptMap(map, "update");
+            var ignored = managedColumnsFromScriptMap(map, "ignored");
+
+            return new ManagedColumns(insert, update, ignored);
+        }
+
+        return ManagedColumns.empty();
+    }
+
+    private @NotNull Set<String> managedColumnsFromScriptMap(@NotNull Map<?, ?> map, String key)
+    {
+        if (map.get(key) instanceof List<?> columns)
+            return Sets.newCaseInsensitiveHashSet((List<String>) columns);
+        return Collections.emptySet();
+    }
+
     /**
      * To avoid leaking PHI through log files, avoid including the full row info in the error detail when any of the
      * columns in the target table is considered PHI
@@ -137,20 +171,12 @@ public class ScriptTrigger implements Trigger
         invokeTableScript(table, c, user, "complete", errors, extraContext, () -> null, event.name().toLowerCase());
     }
 
-
     @Override
     public void beforeInsert(TableInfo table, Container c,
                              User user, @Nullable Map<String, Object> newRow,
                              ValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table,
-                c,
-                user,
-                "beforeInsert",
-                errors,
-                extraContext,
-                filterErrorDetailByPhi(table, () -> "New row data: " + newRow),
-                newRow);
+        invokeTableScript(table, c, user, "beforeInsert", errors, extraContext, filterErrorDetailByPhi(table, () -> "New row data: " + newRow), newRow);
     }
 
     @Override
@@ -193,7 +219,6 @@ public class ScriptTrigger implements Trigger
         invokeTableScript(table, c, user, "afterDelete", errors, extraContext, filterErrorDetailByPhi(table, () -> "Old row: "  + oldRow), oldRow);
     }
 
-
     protected void invokeTableScript(TableInfo table, Container c, User user, String methodName, BatchValidationException errors, Map<String, Object> extraContext, Supplier<String> errorDetail, Object... args)
     {
         Object[] allArgs = Arrays.copyOf(args, args.length+1);
@@ -205,7 +230,6 @@ public class ScriptTrigger implements Trigger
             errors.addRowError(new ValidationException("script error: " + methodName + " trigger closed the connection, possibly due to constraint violation"));
     }
 
-
     protected void invokeTableScript(TableInfo table, Container c, User user, String methodName, ValidationException errors, Map<String, Object> extraContext, Supplier<String> errorDetail, Object... args)
     {
         Object[] allArgs = Arrays.copyOf(args, args.length+1);
@@ -216,7 +240,6 @@ public class ScriptTrigger implements Trigger
         if (isConnectionClosed(table.getSchema().getScope()))
             errors.addGlobalError("script error: " + methodName + " trigger closed the connection, possibly due to constraint violation");
     }
-
 
     private boolean _hasFn(Container c, User user, String methodName)
     {
@@ -294,7 +317,7 @@ public class ScriptTrigger implements Trigger
 
         public ServerContextModuleScript(Script serverContext) throws URISyntaxException
         {
-            super(serverContext, new URI(BASE_URI + SERVER_CONTEXT_SCRIPTNAME + ".js"), new URI(BASE_URI));
+            super(serverContext, new URI(BASE_URI + SERVER_CONTEXT_SCRIPT_NAME + ".js"), new URI(BASE_URI));
         }
 
         public static ServerContextModuleScript create(Script serverContext)
@@ -316,7 +339,7 @@ public class ScriptTrigger implements Trigger
         Context ctx = Context.enter();
         try
         {
-            return ctx.compileString("module.exports = " + jsCode, "serverContext.js", 1, null);
+            return ctx.compileString("module.exports = " + jsCode, SERVER_CONTEXT_SCRIPT_NAME + ".js", 1, null);
         }
         finally
         {
@@ -328,7 +351,6 @@ public class ScriptTrigger implements Trigger
     {
         R apply(ScriptReference scriptReference) throws NoSuchMethodException, ScriptException;
     }
-
 
     private boolean isConnectionClosed(DbScope scope)
     {
@@ -359,7 +381,6 @@ public class ScriptTrigger implements Trigger
     @Override
     public int hashCode()
     {
-
         return Objects.hash(_container, _table, _script);
     }
 }

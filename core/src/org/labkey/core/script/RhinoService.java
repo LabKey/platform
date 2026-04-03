@@ -807,7 +807,7 @@ class RhinoEngine extends RhinoScriptEngine
                 }
 
                 // Other JS scripts can call require('serverContext') to load this.
-                extraModules = Map.of(ScriptTrigger.SERVER_CONTEXT_SCRIPTNAME, scriptContextScript);
+                extraModules = Map.of(ScriptTrigger.SERVER_CONTEXT_SCRIPT_NAME, scriptContextScript);
             }
 
             Require require = new Require(cx, getTopLevel(), new WrappingModuleScriptProvider(_moduleScriptProvider, extraModules), null, null, true);
