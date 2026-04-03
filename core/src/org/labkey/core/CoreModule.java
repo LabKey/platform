@@ -105,6 +105,7 @@ import org.labkey.api.notification.EmailService;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.AntiVirusProviderRegistry;
+import org.labkey.api.products.Product;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.DefaultSchema;
@@ -1404,6 +1405,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
         json.put("productFeatures", ProductRegistry.getProductFeatureSet());
         json.put("primaryApplicationId", ProductRegistry.get().getPrimaryApplicationId(context.getContainer()));
+        json.put("productKey", ProductRegistry.getProducts().stream().filter(Product::isEnabled).toList().getFirst().getKey());
         return json;
     }
 
