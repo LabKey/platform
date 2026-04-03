@@ -17,6 +17,7 @@ import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.data.triggers.TriggerFactory;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -148,13 +149,15 @@ public final class WellTriggerFactory implements TriggerFactory
             TableInfo table,
             Container c,
             User user,
+            @Nullable QueryUpdateService.InsertOption insertOption,
             @Nullable Map<String, Object> newRow,
             ValidationException errors,
-            Map<String, Object> extraContext
+            Map<String, Object> extraContext,
+            @Nullable Map<String, Object> existingRecord
         )
         {
             addTypeSample(c, user, newRow, null, extraContext);
-            setInsertManagedColumns(newRow);
+            setInsertManagedColumns(newRow, existingRecord, insertOption);
         }
 
         @Override

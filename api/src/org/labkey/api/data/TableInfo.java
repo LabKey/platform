@@ -509,7 +509,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
     /**
      * Executes any trigger scripts for this table.
-     *
+     * <p>
      * The trigger should be called once before and once after an entire set of rows for each of the
      * INSERT, UPDATE, DELETE trigger types.  A trigger script may set up data structures to be used
      * during validation.  In particular, the trigger script might want to do a query to populate a set of
@@ -556,12 +556,13 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * @param c The current Container.
      * @param user the current user
      * @param type The TriggerType for the event.
+     * @param insertOption The insertOption that invoked this trigger. Will be null when invoked outside a data iterator.
      * @param before true if the trigger is before the event, false if after the event.
      * @param errors Any errors created by the validation script will be added to the errors collection.
      * @param extraContext Optional additional bindings to set in the script's context when evaluating.
      * @throws BatchValidationException if the trigger function returns false or the errors map isn't empty.
      */
-    void fireBatchTrigger(Container c, User user, TriggerType type, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
+    void fireBatchTrigger(Container c, User user, TriggerType type, @Nullable QueryUpdateService.InsertOption insertOption, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
             throws BatchValidationException;
 
     default void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber,
@@ -570,7 +571,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     {
         // In production, columns are not managed for non-data iterator invoked triggers and will log a warning.
         // In development, columns are managed for all non-data iterator triggers and will throw an error.
-        fireRowTrigger(c, user, type, before, rowNumber, newRow, oldRow, extraContext, null, AppProps.getInstance().isDevMode());
+        fireRowTrigger(c, user, type, null, before, rowNumber, newRow, oldRow, extraContext, null, AppProps.getInstance().isDevMode());
     }
 
     /**
@@ -603,6 +604,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * @param c The current Container.
      * @param user the current user
      * @param type The TriggerType for the event.
+     * @param insertOption The insertOption that invoked this trigger. Will be null when invoked outside a data iterator.
      * @param before true if the trigger is before the event, false if after the event.
      * @param newRow The new row for INSERT and UPDATE.
      * @param oldRow The previous row for UPDATE and DELETE
@@ -615,6 +617,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         Container c,
         User user,
         TriggerType type,
+        @Nullable QueryUpdateService.InsertOption insertOption,
         boolean before,
         int rowNumber,
         @Nullable Map<String, Object> newRow,

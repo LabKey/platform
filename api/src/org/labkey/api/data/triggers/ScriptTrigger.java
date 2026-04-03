@@ -24,6 +24,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.security.User;
@@ -173,7 +174,7 @@ public class ScriptTrigger implements Trigger
 
     @Override
     public void beforeInsert(TableInfo table, Container c,
-                             User user, @Nullable Map<String, Object> newRow,
+                             User user, @Nullable QueryUpdateService.InsertOption insertOption, @Nullable Map<String, Object> newRow,
                              ValidationException errors, Map<String, Object> extraContext)
     {
         invokeTableScript(table, c, user, "beforeInsert", errors, extraContext, filterErrorDetailByPhi(table, () -> "New row data: " + newRow), newRow);

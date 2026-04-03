@@ -63,7 +63,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.util.ConfigurationException;
@@ -1952,7 +1951,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
-    public final void fireBatchTrigger(Container c, User user, TriggerType type, boolean before, BatchValidationException batchErrors, Map<String, Object> extraContext)
+    public final void fireBatchTrigger(Container c, User user, TriggerType type, @Nullable QueryUpdateService.InsertOption insertOption, boolean before, BatchValidationException batchErrors, Map<String, Object> extraContext)
             throws BatchValidationException
     {
         assert batchErrors != null;
@@ -1971,9 +1970,19 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
-    public void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber,
-                               @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord, boolean manageColumns)
-            throws ValidationException
+    public void fireRowTrigger(
+        Container c,
+        User user,
+        TriggerType type,
+        @Nullable QueryUpdateService.InsertOption insertOption,
+        boolean before,
+        int rowNumber,
+        @Nullable Map<String, Object> newRow,
+        @Nullable Map<String, Object> oldRow,
+        Map<String, Object> extraContext,
+        @Nullable Map<String, Object> existingRecord,
+        boolean manageColumns
+    ) throws ValidationException
     {
         ValidationException errors = new ValidationException();
         errors.setSchemaName(getPublicSchemaName());
@@ -1998,7 +2007,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (trackedRow != null)
                 trackedRow.resetTracking();
 
-            script.rowTrigger(this, c, user, type, before, rowNumber, newRowTracked, oldRow, errors, extraContext, existingRecord);
+            script.rowTrigger(this, c, user, type, insertOption, before, rowNumber, newRowTracked, oldRow, errors, extraContext, existingRecord);
             if (errors.hasErrors())
                 break;
 

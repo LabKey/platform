@@ -212,7 +212,7 @@ public class TriggerDataBuilderHelper
             TableInfo.TriggerType triggerType = getTriggerType();
             if (_firstRow)
             {
-                _target.fireBatchTrigger(_c, _user, triggerType, true, getErrors(), _extraContext);
+                _target.fireBatchTrigger(_c, _user, triggerType, _context.getInsertOption(), true, getErrors(), _extraContext);
                 firedInit = true;
                 _firstRow = false;
             }
@@ -223,7 +223,7 @@ public class TriggerDataBuilderHelper
                 _currentRow = getInput().getMap();
                 try
                 {
-                    _target.fireRowTrigger(_c, _user, triggerType, true, rowNumber, _currentRow, getOldRow(), _extraContext, getExistingRecord(), true);
+                    _target.fireRowTrigger(_c, _user, triggerType, _context.getInsertOption(), true, rowNumber, _currentRow, getOldRow(), _extraContext, getExistingRecord(), true);
                     return true;
                 }
                 catch (ValidationException vex)
@@ -290,7 +290,7 @@ public class TriggerDataBuilderHelper
                     Map<String,Object> newRow = getInput().getMap();
                     try
                     {
-                        _target.fireRowTrigger(_c, _user, getTriggerType(), false, rowNumber, newRow, getOldRow(), _extraContext, getExistingRecord(), true);
+                        _target.fireRowTrigger(_c, _user, getTriggerType(), _context.getInsertOption(), false, rowNumber, newRow, getOldRow(), _extraContext, getExistingRecord(), true);
                     }
                     catch (ValidationException vex)
                     {
@@ -302,7 +302,7 @@ public class TriggerDataBuilderHelper
             finally
             {
                 if (!hasNext && firedInit && !getErrors().hasErrors())
-                    _target.fireBatchTrigger(_c, _user, getTriggerType(), false, getErrors(), _extraContext);
+                    _target.fireBatchTrigger(_c, _user, getTriggerType(), _context.getInsertOption(), false, getErrors(), _extraContext);
             }
         }
     }

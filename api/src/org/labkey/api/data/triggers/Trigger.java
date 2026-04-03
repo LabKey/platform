@@ -22,6 +22,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
@@ -135,8 +136,13 @@ public interface Trigger
         return null;
     }
 
-    default void setInsertManagedColumns(Map<String, Object> newRow)
+    default void setInsertManagedColumns(Map<String, Object> newRow, @Nullable Map<String, Object> existingRecord, @Nullable QueryUpdateService.InsertOption insertOption)
     {
+        // If this is a merge operation and the existingRecord is not supplied,
+        // then throw an error to avoid overwriting managed values to null.
+        if (insertOption != null && insertOption.mergeRows && (existingRecord == null || existingRecord.isEmpty()))
+            throw new IllegalArgumentException("existingRecord must be non-null for MERGE triggers");
+
         setManagedColumns(newRow, null, TableInfo.TriggerType.INSERT);
     }
 
@@ -189,7 +195,8 @@ public interface Trigger
     {
     }
 
-    default void rowTrigger(TableInfo table, Container c, User user, TableInfo.TriggerType event, boolean before, int rowNumber,
+    default void rowTrigger(TableInfo table, Container c, User user, TableInfo.TriggerType event,
+                            @Nullable QueryUpdateService.InsertOption insertOption, boolean before, int rowNumber,
                             @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
                             ValidationException errors, Map<String, Object> extraContext,
                             @Nullable Map<String, Object> existingRecord) throws ValidationException
@@ -199,7 +206,7 @@ public interface Trigger
             switch (event)
             {
                 case INSERT:
-                    beforeInsert(table, c, user, newRow, errors, extraContext, existingRecord);
+                    beforeInsert(table, c, user, insertOption, newRow, errors, extraContext, existingRecord);
                     break;
                 case UPDATE:
                     beforeUpdate(table, c, user, newRow, oldRow, errors, extraContext);
@@ -227,16 +234,16 @@ public interface Trigger
     }
 
     default void beforeInsert(TableInfo table, Container c,
-                              User user, @Nullable Map<String, Object> newRow,
+                              User user, @Nullable QueryUpdateService.InsertOption insertOption, @Nullable Map<String, Object> newRow,
                               ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
     }
 
     default void beforeInsert(TableInfo table, Container c,
-                              User user, @Nullable Map<String, Object> newRow,
+                              User user, @Nullable QueryUpdateService.InsertOption insertOption, @Nullable Map<String, Object> newRow,
                               ValidationException errors, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord) throws ValidationException
     {
-        beforeInsert(table, c, user, newRow, errors, extraContext);
+        beforeInsert(table, c, user, insertOption, newRow, errors, extraContext);
     }
 
     default void beforeUpdate(TableInfo table, Container c,
