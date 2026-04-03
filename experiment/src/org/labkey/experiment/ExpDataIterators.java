@@ -42,6 +42,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SimpleFilter;
@@ -116,6 +117,7 @@ import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
@@ -3237,6 +3239,12 @@ public class ExpDataIterators
                 return DateUtil.formatIsoDateLongTime(d, true);
             if (data instanceof String s)
                 return _tsvWriter.quoteValue(s.trim());
+            if (data instanceof MultiChoice.Array array)
+            {
+                // GitHub Issue 950: cross folder export/import roundtripping problems for MVTC with commas and quotes
+                return _tsvWriter.quoteValue(array.toString().trim());
+            }
+
             return data;
         }
 

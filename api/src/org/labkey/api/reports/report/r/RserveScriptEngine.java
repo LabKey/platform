@@ -569,7 +569,13 @@ public class RserveScriptEngine extends RScriptEngine
                 if (rconn.needLogin())
                 {
                     LOG.debug("Logging in to RServe as '" + _def.getUser() + "'");
-                    rconn.login(_def.getUser(), _def.getPassword());
+                    String password = _def.getPassword();
+                    if (password == null)
+                    {
+                        LOG.warn("RServe password is null! Login will likely fail.");
+                        password = "";
+                    }
+                    rconn.login(_def.getUser(), password);
                 }
 
                 initEnv(rconn, context);

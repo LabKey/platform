@@ -68,6 +68,7 @@ public interface AdminUrls extends UrlProvider
     ActionURL getCspReportToURL();
 
     ActionURL getAllowedExternalRedirectHostsURL();
+    ActionURL getDeleteEncryptedContentURL();
 
     /**
      * Simply adds an "Admin Console" link to nav trail if invoked in the root container. Otherwise, root is unchanged.

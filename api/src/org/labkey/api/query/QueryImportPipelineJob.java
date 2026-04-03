@@ -16,6 +16,7 @@ import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.workflow.WorkflowService;
 import org.labkey.vfs.FileLike;
 
 import java.util.HashMap;
@@ -62,6 +63,7 @@ public class QueryImportPipelineJob extends PipelineJob
         boolean _allowLineageColumns = false;
         Map<AbstractQueryImportAction.Params, Boolean> _optionParamsMap = new HashMap<>();
         LookupResolutionType _lookupResolutionType = null;
+        Map<String, Object> _workflowParams = null;
 
         String _jobDescription;
 
@@ -212,6 +214,17 @@ public class QueryImportPipelineJob extends PipelineJob
             return this;
         }
 
+        public QueryImportAsyncContextBuilder setWorkflowParams(Map<String, Object> workflowParams)
+        {
+            _workflowParams = workflowParams;
+            return this;
+        }
+
+        public Map<String, Object> getWorkflowParams()
+        {
+            return _workflowParams;
+        }
+
         public LookupResolutionType getLookupResolutionType()
         {
             return _lookupResolutionType;
@@ -311,6 +324,10 @@ public class QueryImportPipelineJob extends PipelineJob
 
             DataIteratorContext diContext = createDataIteratorContext(ve, getContainer());
 
+            if (_importContextBuilder.getWorkflowParams() != null && WorkflowService.get() != null)
+            {
+                WorkflowService.get().populateConfigParams(_importContextBuilder.getWorkflowParams(), diContext.getConfigParameters());
+            }
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
             if (diContext.isCrossTypeImport() || (_importContextBuilder.getAuditBehaviorType() != null && _importContextBuilder.getAuditBehaviorType() != AuditBehaviorType.NONE))
                 auditEvent = createTransactionAuditEvent(getContainer(), diContext.getInsertOption().auditAction, _importContextBuilder.getTransactionDetails());

@@ -83,7 +83,7 @@
                 String inputNameExisting = "existingValue" + num;
         %>
         <tr>
-            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%=h(value)%>" size="80"<%=disabled(isTroubleshooter)%>/></td>
+            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=hname(inputNameExisting)%>" value="<%=h(value)%>" size="80"<%=disabled(isTroubleshooter)%>/></td>
             <td><%=isTroubleshooter ? HtmlString.EMPTY_STRING : button("Delete").primary(true).onClick("return deleteExisting(\"" + h(value) + "\");") %></td>
         </tr>
         <%

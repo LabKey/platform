@@ -211,6 +211,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return h(url == null ? null : url.toString());
     }
 
+    public static HtmlString hname(String name)
+    {
+        return HtmlString.of(PageFlowUtil.encodeFormName(name));
+    }
+
     // Note: If you have a stream, use LabKeyCollectors.toJsonArray()
     public static JSONArray toJsonArray(Collection<?> c)
     {

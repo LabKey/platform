@@ -91,7 +91,13 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
     protected void appendWhereFilter(SQLFragment sql)
     {
         sql.append("NOT Encryption = ?");
-        sql.add("None");
+        sql.add(PropertyEncryption.None.toString());
+    }
+
+    @Override
+    public String getDescription()
+    {
+        return "Encrypted Property Sets";
     }
 
     @Override
@@ -103,7 +109,7 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
         TableInfo sets = PropertySchema.getInstance().getTableInfoPropertySets();
         TableInfo props = PropertySchema.getInstance().getTableInfoProperties();
 
-        new TableSelector(sets, Set.of("Set", "Category", "Encryption"), new SimpleFilter(FieldKey.fromParts("Encryption"), "None", CompareType.NEQ), null).forEachMap(map -> {
+        new TableSelector(sets, Set.of("Set", "Category", "Encryption"), getEncryptedSetFilter(), null).forEachMap(map -> {
             int set = (int)map.get("Set");
             String encryption = (String)map.get("Encryption");
             String propertySetName = "\"" + map.get("Category") + "\" (Set = " + set + ")";
@@ -164,5 +170,35 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
         // Clear the cache of encrypted properties since we updated the database directly
         clearCache();
         LOG.info("  Migration of encrypted property store values is complete");
+    }
+
+    @Override
+    public void deleteEncryptedContent()
+    {
+        LOG.info("Deleting all encrypted property sets");
+        TableInfo sets = PropertySchema.getInstance().getTableInfoPropertySets();
+        new TableSelector(
+            sets,
+            Set.of("Set", "Category", "Encryption"),
+            getEncryptedSetFilter(),
+            null
+        ).forEachMap(map -> {
+            int set = (int)map.get("Set");
+            PropertyManager.deleteSetDirectly(set);
+        });
+    }
+
+    public long getEncryptedPropertySetCount()
+    {
+        return new TableSelector(
+            PropertySchema.getInstance().getTableInfoPropertySets(),
+            getEncryptedSetFilter(),
+            null
+        ).getRowCount();
+    }
+
+    private Filter getEncryptedSetFilter()
+    {
+        return new SimpleFilter(FieldKey.fromParts("Encryption"), PropertyEncryption.None.toString(), CompareType.NEQ);
     }
 }

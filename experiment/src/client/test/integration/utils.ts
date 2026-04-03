@@ -20,6 +20,26 @@ export const ATTACHMENT_FIELD_2_NAME = 'SourceFile2';
 const SAMPLE_TYPE_DOMAIN_KIND = 'SampleSet';
 const DATA_CLASS_DOMAIN_KIND = 'DataClass';
 
+export const MVTC_FIELD_PROP = {
+    "propertyId": -1,
+    "propertyValidators": [
+        {
+            "type": "TextChoice",
+            "name": "Text Choice Validator",
+            "new": true,
+            "expression": "Abnormal|agent|cDNA|Plasma"
+        }
+    ],
+    "rangeURI": "http://cpas.fhcrc.org/exp/xml#multiChoice",
+};
+
+export const TC_FIELD_PROP = {
+    ...MVTC_FIELD_PROP,
+    rangeURI: 'http://www.w3.org/2001/XMLSchema#string',
+    conceptURI: 'http://www.labkey.org/types#textChoice',
+};
+
+
 export function options(folderOptions?: RequestOptions, userOptions?: RequestOptions): RequestOptions {
     return folderOptions || userOptions ? { ...folderOptions, ...userOptions } : undefined;
 }

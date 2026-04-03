@@ -12,6 +12,7 @@ public class OptionalFeatureFlag implements Comparable<OptionalFeatureFlag>, Sta
     private static final Logger LOG = LogHelper.getLogger(OptionalFeatureFlag.class, "Warnings about optional feature flag names");
 
     private final String _flag;
+    private final String _propertyName;
     private final String _title;
     private final String _description;
     private final boolean _requiresRestart;
@@ -19,10 +20,15 @@ public class OptionalFeatureFlag implements Comparable<OptionalFeatureFlag>, Sta
     private final FeatureType _type;
 
     /**
-     * @param flag must be unique. Can be used as a startup property to enable/disable the task, but only if it follows
-     *             the Java identifier rules (e.g., alphanumeric plus _, start with a letter, no spaces).
+     * @param flag must be unique and conform to the Java identifier rules (e.g., alphanumeric plus _, start with a
+     *             letter, no spaces). That way it can be used as a startup property to enable/disable the task.
      */
     public OptionalFeatureFlag(String flag, String title, String description, boolean requiresRestart, boolean hidden, FeatureType type)
+    {
+        this(flag, title, description, requiresRestart, hidden, type, false);
+    }
+
+    OptionalFeatureFlag(String flag, String title, String description, boolean requiresRestart, boolean hidden, FeatureType type, boolean useDumbName /* true means allow a name that can't be used as a startup property name */)
     {
         _flag = flag;
         _title = title;
@@ -30,6 +36,21 @@ public class OptionalFeatureFlag implements Comparable<OptionalFeatureFlag>, Sta
         _requiresRestart = requiresRestart;
         _hidden = hidden;
         _type = type;
+        if (!StringUtilsLabKey.isValidJavaIdentifier(_flag))
+        {
+            if (useDumbName)
+            {
+                _propertyName = null;
+            }
+            else
+            {
+                throw new IllegalStateException(_flag + " is not a valid Java identifier. Correct it so it can be used as a startup property. Or set useDumbName to true.");
+            }
+        }
+        else
+        {
+            _propertyName = _flag;
+        }
     }
 
     public String getFlag()
@@ -83,14 +104,6 @@ public class OptionalFeatureFlag implements Comparable<OptionalFeatureFlag>, Sta
     @Override
     public String getPropertyName()
     {
-        String name = getFlag();
-        if (!StringUtilsLabKey.isValidJavaIdentifier(name))
-        {
-            // This is a developer thing... no need to log a warning on production deployments
-            if (AppProps.getInstance().isDevMode())
-                LOG.warn("Feature flag name doesn't conform to the property name rules so it won't be available as a startup property: {}", name);
-            name = null;
-        }
-        return name;
+        return _propertyName;
     }
 }

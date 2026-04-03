@@ -69,6 +69,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.workflow.WorkflowService;
 import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
@@ -548,7 +549,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             }
             else if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
             {
-                Map<String, MultipartFile> files = ((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
+                Map<String, MultipartFile> files = getFileMap();
                 MultipartFile multipartfile = null==files ? null : files.get("file");
                 if (null != multipartfile && multipartfile.getSize() > 0)
                 {
@@ -609,6 +610,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                 .setAllowLineageColumns(allowLineageColumns())
                                 .setJobDescription(getQueryImportDescription())
                                 .setJobNotificationProvider(getQueryImportJobNotificationProviderName());
+                            if (WorkflowService.get() != null)
+                            {
+                                Map<String, Object> workflowParams = WorkflowService.get().getConfigParameters(getViewContext().getRequest());
+                                importContextBuilder.setWorkflowParams(workflowParams);
+                            }
 
                             importContextBuilder.setTransactionDetails(transactionDetails);
                             QueryImportPipelineJob job = new QueryImportPipelineJob(getQueryImportProviderName(), info, root, importContextBuilder);
