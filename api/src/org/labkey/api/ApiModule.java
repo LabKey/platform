@@ -38,6 +38,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CollectionUtils;
+import org.labkey.api.collections.DeltaTrackingMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
@@ -385,6 +386,7 @@ public class ApiModule extends CodeOnlyModule
             DatabaseCache.TestCase.class,
             DateUtil.TestCase.class,
             DbScope.DialectTestCase.class,
+            DeltaTrackingMap.TestCase.class,
             DetailsURL.TestCase.class,
             DiskCachingDataIterator.DiskTestCase.class,
             EmailTemplate.TestCase.class,

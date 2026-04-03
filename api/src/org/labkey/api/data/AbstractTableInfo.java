@@ -30,6 +30,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
+import org.labkey.api.collections.DeltaTrackingMap;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -1982,32 +1983,36 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         Collection<Trigger> triggers = getTriggers(c);
 
+        // Wrap the row once before the loop
+        DeltaTrackingMap<Object> trackedRow = null;
+        Map<String, Object> newRowTracked = newRow;
+
+        if (newRow != null && before)
+        {
+            trackedRow = new DeltaTrackingMap<>(newRow);
+            newRowTracked = trackedRow;
+        }
+
         for (Trigger script : triggers)
         {
-            // Snapshot keys after injection — trigger may update values but must not alter the key set
-            var keysBeforeTrigger = newRow != null && before ? Set.copyOf(newRow.keySet()) : null;
+            if (trackedRow != null)
+                trackedRow.resetTracking();
 
-            script.rowTrigger(this, c, user, type, before, rowNumber, newRow, oldRow, errors, extraContext, existingRecord);
+            script.rowTrigger(this, c, user, type, before, rowNumber, newRowTracked, oldRow, errors, extraContext, existingRecord);
             if (errors.hasErrors())
                 break;
 
-            if (newRow != null && before)
+            if (trackedRow != null)
             {
                 var managed = script.getManagedColumns();
-                Set<String> managedCols = null;
-                if (managed != null)
-                    managedCols = managed.getColumns(type);
+                var managedCols = managed != null ? managed.getColumns(type) : null;
 
                 // Verify the trigger did not add or remove columns that are not managed
-                if (!newRow.keySet().equals(keysBeforeTrigger))
+                if (trackedRow.hasStructuralChanges())
                 {
-                    var added = Sets.newCaseInsensitiveHashSet(newRow.keySet());
-                    added.removeAll(keysBeforeTrigger);
+                    var added = Sets.newCaseInsensitiveHashSet(trackedRow.getAddedKeys());
+                    var removed = Sets.newCaseInsensitiveHashSet(trackedRow.getRemovedKeys());
 
-                    var removed = Sets.newCaseInsensitiveHashSet(keysBeforeTrigger);
-                    removed.removeAll(newRow.keySet());
-
-                    // managed column removals are intentional
                     if (managedCols != null)
                     {
                         added.removeAll(managedCols);
@@ -2022,10 +2027,11 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                     if (!added.isEmpty() || !removed.isEmpty())
                     {
                         var diffs = new ArrayList<String>();
+
                         if (!added.isEmpty())
-                            diffs.add("add: " + String.join(", ", added));
+                            diffs.add("add: " + added.stream().map(col -> "'" + col + "'").collect(Collectors.joining(", ")));
                         if (!removed.isEmpty())
-                            diffs.add("remove: " + String.join(", ", removed));
+                            diffs.add("remove: " + removed.stream().map(col -> "'" + col + "'").collect(Collectors.joining(", ")));
 
                         String message = "Trigger '" + script.getName() + "' attempted to " + String.join(", ", diffs) + ". Declare managed columns to include them in the column set.";
                         if (manageColumns)
@@ -2040,7 +2046,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 {
                     for (var col : managedCols)
                     {
-                        if (!newRow.containsKey(col))
+                        if (!newRowTracked.containsKey(col))
                         {
                             String message = "Trigger '" + script.getName() + "' declared the managed column '" + col + "' but did not set a value for it. Set null to clear or provide a value.";
                             if (manageColumns)
