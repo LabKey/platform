@@ -65,7 +65,7 @@ public class ScriptTrigger implements Trigger
     @NotNull protected final Container _container;
     @NotNull protected final TableInfo _table;
     @NotNull protected final ScriptReference _script;
-    @Nullable protected ManagedColumns _managedColumns = null;
+    @Nullable protected volatile ManagedColumns _managedColumns = null;
 
     protected ScriptTrigger(@NotNull Container c, @NotNull TableInfo table, @NotNull ScriptReference script)
     {
