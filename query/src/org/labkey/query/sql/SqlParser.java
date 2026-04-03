@@ -995,7 +995,7 @@ public class SqlParser
                     }
                     exprList._replaceChildren(new LinkedList<>(List.of(valueExpression, type)));
                 }
-                else if (name.equals("timestampadd") || name.equals("timestampdiff"))
+                else if (name.equals("timestampadd") || name.equals("timestampdiff") || name.equals("timestampdiff2"))
                 {
                     if (!(exprList instanceof QExprList) || exprList.childList().size() != 3)
                     {
@@ -1945,6 +1945,7 @@ public class SqlParser
         "SELECT TIMESTAMPDIFF(SQL_TSI_SECOND,a,b), TIMESTAMPDIFF(SECOND,a,b), TIMESTAMPDIFF('SQL_TSI_DAY',a,b), TIMESTAMPDIFF('DAY',a,b) FROM R",
         "SELECT TIMESTAMPDIFF('SQL_TSI_Second',a,b), TIMESTAMPDIFF('Second',a,b), TIMESTAMPDIFF('SQL_TSI_Day',a,b), TIMESTAMPDIFF('Day',a,b) FROM R",
         "SELECT TIMESTAMPADD(SQL_TSI_SECOND,1,b), TIMESTAMPADD(SECOND,1,b), TIMESTAMPADD('SQL_TSI_DAY',1,b), TIMESTAMPADD('DAY',1,b) FROM R",
+        "SELECT TIMESTAMPDIFF2(SQL_TSI_SECOND,a,b), TIMESTAMPDIFF2('SQL_TSI_DAY',a,b), TIMESTAMPDIFF2('MONTH',a,b), TIMESTAMPDIFF2('YEAR',a,b) FROM R",
 
         "SELECT (SELECT value FROM S WHERE S.x=R.x) AS V FROM R",
         "SELECT R.value AS V FROM R WHERE R.y > (SELECT MAX(S.y) FROM S WHERE S.x=R.x)",
