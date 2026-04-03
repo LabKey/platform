@@ -15,6 +15,7 @@
  */
 package org.labkey.api.dataiterator;
 
+import io.micrometer.common.util.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
@@ -111,7 +112,8 @@ public class AttachmentDataIterator extends WrapperDataIterator
 
                 if (null == attachmentValue)
                 {
-                    if (oldAttachmentValue != null)
+                    // Remove existing attachment
+                    if (!StringUtils.isEmpty(oldAttachmentValue))
                         oldAttachments.add(oldAttachmentValue);
                     continue;
                 }
@@ -121,8 +123,19 @@ public class AttachmentDataIterator extends WrapperDataIterator
 
                 if (attachmentValue instanceof String str)
                 {
-                    if (str.equals(oldAttachmentValue))
+                    if (StringUtils.isEmpty(str))
+                    {
+                        // Remove existing attachment
+                        if (!StringUtils.isEmpty(oldAttachmentValue))
+                            oldAttachments.add(oldAttachmentValue);
                         continue;
+                    }
+
+                    if (str.equals(oldAttachmentValue)) // no change
+                        continue;
+
+                    if (!StringUtils.isEmpty(oldAttachmentValue)) // replace old attachment with new attachment, so mark old attachment for deletion
+                        oldAttachments.add(oldAttachmentValue);
 
                     if (null == attachmentDir)
                     {
@@ -175,11 +188,11 @@ public class AttachmentDataIterator extends WrapperDataIterator
             String entityId = String.valueOf(get(entityIdIndex));
             var attachmentParent = getAttachmentParent(entityId, container);
 
-            if (null != attachmentFiles && !attachmentFiles.isEmpty())
-                AttachmentService.get().addAttachments(attachmentParent, attachmentFiles, user);
-
             if (!oldAttachments.isEmpty())
                 AttachmentService.get().deleteAttachments(attachmentParent, oldAttachments, user);
+
+            if (null != attachmentFiles && !attachmentFiles.isEmpty())
+                AttachmentService.get().addAttachments(attachmentParent, attachmentFiles, user);
 
             return ret;
         }
