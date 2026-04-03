@@ -172,22 +172,34 @@ public class DeltaTrackingMap<V> implements Map<String, V>
         return delegate.get(key);
     }
 
+    /**
+     * Returns an unmodifiable view of the key set. Use {@link #put} and {@link #remove} to
+     * mutate the map so that structural changes are correctly tracked.
+     */
     @Override
     public @NotNull Set<String> keySet()
     {
-        return delegate.keySet();
+        return Collections.unmodifiableSet(delegate.keySet());
     }
 
+    /**
+     * Returns an unmodifiable view of the values collection. Use {@link #put} and {@link #remove} to
+     * mutate the map so that structural changes are correctly tracked.
+     */
     @Override
     public @NotNull Collection<V> values()
     {
-        return delegate.values();
+        return Collections.unmodifiableCollection(delegate.values());
     }
 
+    /**
+     * Returns an unmodifiable view of the entry set. Use {@link #put} and {@link #remove} to
+     * mutate the map so that structural changes are correctly tracked.
+     */
     @Override
     public @NotNull Set<Entry<String, V>> entrySet()
     {
-        return delegate.entrySet();
+        return Collections.unmodifiableSet(delegate.entrySet());
     }
 
     public static class TestCase extends Assert
@@ -331,6 +343,48 @@ public class DeltaTrackingMap<V> implements Map<String, V>
             {
                 // Expected behavior
             }
+        }
+
+        @Test
+        public void testMapViewsAreUnmodifiable()
+        {
+            DeltaTrackingMap<String> map = createTracker();
+
+            // keySet().remove() must not bypass tracking
+            try
+            {
+                map.keySet().remove("ExistingKey1");
+                fail("keySet() should return an unmodifiable view.");
+            }
+            catch (UnsupportedOperationException e)
+            {
+                // Expected behavior
+            }
+            assertFalse("keySet().remove() must not have modified the map", map.hasStructuralChanges());
+            assertTrue(map.containsKey("ExistingKey1"));
+
+            // entrySet() iterator remove() must not bypass tracking
+            try
+            {
+                map.entrySet().iterator().remove();
+                fail("entrySet() should return an unmodifiable view.");
+            }
+            catch (UnsupportedOperationException e)
+            {
+                // Expected behavior
+            }
+
+            // values() remove() must not bypass tracking
+            try
+            {
+                map.values().remove("Value1");
+                fail("values() should return an unmodifiable view.");
+            }
+            catch (UnsupportedOperationException e)
+            {
+                // Expected behavior
+            }
+            assertFalse("No mutations should have been tracked", map.hasStructuralChanges());
         }
 
         @Test

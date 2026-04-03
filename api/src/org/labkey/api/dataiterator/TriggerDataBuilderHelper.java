@@ -21,6 +21,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -192,10 +193,12 @@ public class TriggerDataBuilderHelper
     {
         boolean _firstRow = true;
         Map<String, Object> _currentRow = null;
+        private final boolean _manageColumns;
 
         BeforeIterator(DataIterator di, DataIteratorContext context)
         {
             super(di, context);
+            _manageColumns = QueryService.get().isTriggerManagedColumnsEnabled();
         }
 
         @Override
@@ -223,7 +226,7 @@ public class TriggerDataBuilderHelper
                 _currentRow = getInput().getMap();
                 try
                 {
-                    _target.fireRowTrigger(_c, _user, triggerType, _context.getInsertOption(), true, rowNumber, _currentRow, getOldRow(), _extraContext, getExistingRecord(), true);
+                    _target.fireRowTrigger(_c, _user, triggerType, _context.getInsertOption(), true, rowNumber, _currentRow, getOldRow(), _extraContext, getExistingRecord(), _manageColumns);
                     return true;
                 }
                 catch (ValidationException vex)
@@ -290,7 +293,7 @@ public class TriggerDataBuilderHelper
                     Map<String,Object> newRow = getInput().getMap();
                     try
                     {
-                        _target.fireRowTrigger(_c, _user, getTriggerType(), _context.getInsertOption(), false, rowNumber, newRow, getOldRow(), _extraContext, getExistingRecord(), true);
+                        _target.fireRowTrigger(_c, _user, getTriggerType(), _context.getInsertOption(), false, rowNumber, newRow, getOldRow(), _extraContext, getExistingRecord(), false);
                     }
                     catch (ValidationException vex)
                     {

@@ -2050,8 +2050,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                     }
                 }
 
-                // Verify that update triggers handle every managed column
-                if (managedCols != null && type == TriggerType.UPDATE)
+                // Verify the trigger handles every managed column
+                if (managedCols != null)
                 {
                     for (var col : managedCols)
                     {

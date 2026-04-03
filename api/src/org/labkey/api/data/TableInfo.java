@@ -571,7 +571,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     {
         // In production, columns are not managed for non-data iterator invoked triggers and will log a warning.
         // In development, columns are managed for all non-data iterator triggers and will throw an error.
-        fireRowTrigger(c, user, type, null, before, rowNumber, newRow, oldRow, extraContext, null, AppProps.getInstance().isDevMode());
+        fireRowTrigger(c, user, type, null, before, rowNumber, newRow, oldRow, extraContext, null, AppProps.getInstance().isDevMode() && QueryService.get().isTriggerManagedColumnsEnabled());
     }
 
     /**
