@@ -105,6 +105,7 @@ import org.labkey.api.notification.EmailService;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.AntiVirusProviderRegistry;
+import org.labkey.api.products.Product;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.DefaultSchema;
@@ -255,7 +256,6 @@ import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
-import org.labkey.core.mcp.McpServiceImpl;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
@@ -1289,8 +1289,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UserManager.addUserListener(new EmailPreferenceUserListener());
 
         Encryption.checkMigration();
-
-        McpServiceImpl.get().startMpcServer();
     }
 
     // Issue 7527: Auto-detect missing SQL views and attempt to recreate
@@ -1325,9 +1323,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         _webdavServletDynamic = servletCtx.addServlet("static", new WebdavServlet(true));
         _webdavServletDynamic.setMultipartConfig(SpringActionController.getMultiPartConfigElement());
         _webdavServletDynamic.addMapping("/_webdav/*");
-
-        McpService.setInstance(new McpServiceImpl());
-        McpServiceImpl.get().registerServlets(servletCtx);
     }
 
     @Override
@@ -1404,6 +1399,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
         json.put("productFeatures", ProductRegistry.getProductFeatureSet());
         json.put("primaryApplicationId", ProductRegistry.get().getPrimaryApplicationId(context.getContainer()));
+        json.put("productKey", new ProductConfiguration().getCurrentProductKey());
         return json;
     }
 

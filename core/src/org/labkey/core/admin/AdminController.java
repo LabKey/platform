@@ -3688,7 +3688,7 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             String parentType = getViewContext().getActionURL().getParameter("core.ParentType~eq");
-            addAdminNavTrail(root, "Documents Belonging to Parent Type" + (parentType != null ? " \"" + parentType + "\"" : ""), getClass());
+            addAdminNavTrail(root, parentType != null ? "Documents Belonging to Parent Type \"" + parentType + "\"" : "Documents", getClass());
         }
     }
 

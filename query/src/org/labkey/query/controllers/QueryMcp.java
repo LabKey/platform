@@ -1,18 +1,16 @@
 package org.labkey.query.controllers;
 
-import io.modelcontextprotocol.spec.McpSchema;
+import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
+import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryDefinition;
@@ -22,9 +20,13 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleSchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.UserManager;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.query.sql.SqlParser;
-import org.springaicommunity.mcp.annotation.McpResource;
+import org.springframework.ai.chat.model.ToolContext;
+import org.springframework.ai.mcp.annotation.McpResource;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
@@ -36,111 +38,80 @@ import java.util.TreeMap;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-/* TODO: integrate ToolContext support */
-
 public class QueryMcp implements McpService.McpImpl
 {
     @McpResource(
-            uri = "resource://org/labkey/query/controllers/LabKeySql.md",
-            mimeType = "application/markdown",
-            name = "LabKey SQL",
-            description = "Provide documentation for LabKey SQL specific syntax")
-    public McpSchema.ReadResourceResult getLabKeySQLDocumentation() throws IOException
+        uri = "resource://org/labkey/query/controllers/LabKeySql.md",
+        mimeType = "application/markdown",
+        name = "LabKey SQL",
+        description = "Provide documentation for LabKey SQL specific syntax")
+    public ReadResourceResult getLabKeySQLDocumentation() throws IOException
     {
+        incrementResourceRequestCount("LabKey SQL");
         String markdown = IOUtils.resourceToString("org/labkey/query/controllers/LabKeySql.md", null, QueryController.class.getClassLoader());
-        return new McpSchema.ReadResourceResult(List.of(
-                new McpSchema.TextResourceContents(
-                        "resource://org/labkey/query/controllers/LabKeySql.md",
-                        "application/markdown",
-                        markdown)
+        return new ReadResourceResult(List.of(
+            new TextResourceContents(
+                "resource://org/labkey/query/controllers/LabKeySql.md",
+                "application/markdown",
+                markdown
+            )
         ));
     }
 
-
-    @Tool(description = "Provide column metadata for a sql table.  This tool will also return SQL source for saved queries.")
-    String listColumnMetaData(@ToolParam(description = "Fully qualified table name as it would appear in SQL e.g. \"schema\".\"table\"") String fullQuotedTableName)
-    {
-        var json = _listColumnsForTable(fullQuotedTableName);
-        // can I just return a JSONObject
-        return json.toString();
-    }
-
-    @Tool(description = "Provide list of tables within the provided schema.")
-    String listTablesForSchema(@ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. \"schema\"") String quotedSchemaName)
-    {
-        var json = _listTablesForSchema(quotedSchemaName);
-        // can I just return a JSONObject
-        return json.toString();
-    }
-
     @Tool(description = "Provide list of database schemas")
-    String listSchemas()
+    @RequiresPermission(ReadPermission.class)
+    String listSchemas(ToolContext toolContext)
     {
-        McpContext context = getContext();
-        var map = _listAllSchemas(DefaultSchema.get(context.getUser(), context.getContainer()));
+        ContainerUser cu = getContext(toolContext);
+        var map = _listAllSchemas(DefaultSchema.get(cu.getUser(), cu.getContainer()));
         var array = new JSONArray();
         for (var entry : map.entrySet())
         {
-                array.put(new JSONObject(Map.of(
-                        "name", entry.getKey().getName(),
-                        "quotedName", entry.getKey().toSQLString(),
-                        "description", StringUtils.trimToEmpty(entry.getValue().getDescription())
-                )));
+            array.put(new JSONObject(Map.of(
+                "name", entry.getKey().getName(),
+                "quotedName", entry.getKey().toSQLString(),
+                "description", StringUtils.trimToEmpty(entry.getValue().getDescription())
+            )));
         }
-        return new JSONObject(Map.of("success", "true", "schemas", array)).toString();
+        return new JSONArray(array).toString();
     }
 
+    @Tool(description = "Provide list of tables within the provided schema.")
+    @RequiresPermission(ReadPermission.class)
+    String listTables(ToolContext toolContext, @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study.Datasets\"") String schemaName)
+    {
+        var json = _listTables(getContext(toolContext), schemaName);
+        return json.toString();
+    }
+
+    @Tool(description = "Provide column metadata for a sql table. The metadata includes SQL source for saved queries.")
+    @RequiresPermission(ReadPermission.class)
+    String listColumns(
+        ToolContext toolContext,
+        @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study.Datasets\"") String schemaName,
+        @ToolParam(description = "Table or query name as it would appear in SQL e.g. MyTable, MyQuery, or \"MyTable\"") String queryName
+    )
+    {
+        var json = _listColumns(toolContext, schemaName, queryName);
+        return json.toString();
+    }
 
     @Tool(description = "Provide the SQL source for a saved query.")
-    String getSourceForSavedQuery(@ToolParam(description = "Fully qualified query name as it would appear in SQL e.g. \"schema\".\"table or query\"") String fullQuotedTableName)
+    @RequiresPermission(ReadPermission.class)
+    String getSourceForSavedQuery(
+        ToolContext toolContext,
+        @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study.Datasets\"") String schemaName,
+        @ToolParam(description = "Table or query name as it would appear in SQL e.g. MyTable, MyQuery, or \"MyTable\"") String queryName
+    )
     {
-        var json = _listTablesForSchema(fullQuotedTableName);
+        var json = _listColumns(toolContext, schemaName, queryName);
         if (json.has("sql"))
             return "```sql\n" + json.getString("sql") + "\n```\n";
         else
-            return "I could not find the source for " + fullQuotedTableName;
+            throw new NotFoundException("Could not find the source for " + schemaName + "." + queryName);
     }
 
-
-    @Tool(description = """
-            Save addition information for database columns.  If additional metadata is gathered via
-            chat, it can be saved to improve further interactions.
-            """)
-    String saveColumnDescription(
-            @ToolParam(description = "Fully qualified table or query name as it would appear in SQL e.g. \"schema\".\"table or query\"")
-                String fullQuotedTableName,
-            @ToolParam(description = "Quoted column name as it would appear in SQL e.g. \"column name\"")
-                String quotedColumnName,
-            @ToolParam(description = "Additional metadata to remember for future use.  This will replace any currently saved value")
-                String columnMetadata
-    )
-    {
-        McpContext context = McpContext.get();
-        var map = PropertyManager.getWritableProperties(context.getContainer(), "QueryMCP.annotations", true);
-        String fullPath = normalizeIdentifier(fullQuotedTableName + "." + quotedColumnName);
-        map.put(fullPath, columnMetadata);
-        try (var ignore = SpringActionController.ignoreSqlUpdates())
-        {
-            map.save();
-        }
-        return new JSONObject(Map.of("success",Boolean.TRUE)).toString();
-    }
-
-    /* TODO  McpContext setup */
-
-    static McpContext getContext()
-    {
-        try
-        {
-            return McpContext.get();
-        }
-        catch (Exception x)
-        {
-            return new McpContext(ContainerManager.getHomeContainer(), UserManager.getGuestUser());
-        }
-    }
-
-    /* For now, list all schemas.  CONSIDER support incremental querying. */
+    /* For now, list all schemas. CONSIDER support incremental querying. */
     public static Map<SchemaKey, UserSchema> _listAllSchemas(DefaultSchema root)
     {
         SimpleSchemaTreeVisitor<Map<SchemaKey,UserSchema>, Void> visitor = new SimpleSchemaTreeVisitor<>(false)
@@ -178,28 +149,13 @@ public class QueryMcp implements McpService.McpImpl
         return ret;
     }
 
-
-    public static JSONObject _listTablesForSchema(String fullQuotedName)
+    public static JSONObject _listTables(ContainerUser cu, String schemaName)
     {
-        SchemaKey fullKey;
+        var defaultSchema = DefaultSchema.get(cu.getUser(), cu.getContainer());
+        var schema = DefaultSchema.resolve(defaultSchema, getSchemaKey(schemaName));
 
-        // TODO : correct method for parsing quoted identifier
-        if (fullQuotedName.startsWith("\"") && fullQuotedName.endsWith("\""))
-        {
-            String[] parts = StringUtils.strip(fullQuotedName, "\"").split("\"\\.\"");
-            fullKey = SchemaKey.fromParts(parts);
-        }
-        else
-        {
-            String[] parts = StringUtils.split(fullQuotedName, ".");
-            fullKey = SchemaKey.fromParts(parts);
-        }
-
-        McpContext context = getContext();
-        var defaultSchema = DefaultSchema.get(context.getUser(), context.getContainer());
-        var schema = DefaultSchema.resolve(defaultSchema, fullKey);
         if (!(schema instanceof UserSchema userSchema))
-            return new JSONObject("error", "could not find schema for : " + fullQuotedName);
+            throw new NotFoundException("Could not find schema " + schemaName);
 
         JSONArray array = new JSONArray();
         CaseInsensitiveHashSet names = new CaseInsensitiveHashSet(schema.getTableNames());
@@ -220,7 +176,7 @@ public class QueryMcp implements McpService.McpImpl
             {
                 continue;
             }
-            QueryDefinition qd = ((UserSchema)schema).getQueryDef(tableName);
+            QueryDefinition qd = userSchema.getQueryDef(tableName);
             JSONObject table = new JSONObject();
             table.put("schemaName", schema.getName());
             table.put("tableName", td.getName());
@@ -239,41 +195,24 @@ public class QueryMcp implements McpService.McpImpl
         return ret;
     }
 
-    public static JSONObject _listColumnsForTable(String fullQuotedName)
+    public JSONObject _listColumns(ToolContext toolContext, String schemaName, String tableName)
     {
-        McpContext context = McpContext.get();
-        QueryKey fullKey = dottedIdentifier(fullQuotedName);
-        SchemaKey schemaKey;
+        var context = getContext(toolContext);
+
+        SchemaKey schemaKey = getSchemaKey(schemaName);
+        var defaultSchema = DefaultSchema.get(context.getUser(), context.getContainer());
+        var schema = DefaultSchema.resolve(defaultSchema, schemaKey);
+        if (null == schema)
+            throw new NotFoundException("Could not find schema " + schemaName);
 
         var props = PropertyManager.getProperties(context.getContainer(), "QueryMCP.annotations");
 
-        String tableName;
-        if (fullKey.size() > 1)
-        {
-            schemaKey = SchemaKey.fromParts(fullKey.getParent().getParts());
-            tableName = fullKey.getName();
-        }
-        else if (fullKey.size() == 1)
-        {
-            schemaKey = SchemaKey.fromParts("study");
-            tableName = fullKey.getName();
-        }
-        else
-        {
-            return new JSONObject("error", "could not find table");
-        }
+        QueryKey<?> queryKey = dottedIdentifier(tableName);
+        SchemaKey tableKey = new SchemaKey(schemaKey, queryKey.getName());
 
-        SchemaKey tableKey = new SchemaKey(schemaKey, tableName);
-
-        var defaultSchema = DefaultSchema.get(context.getUser(), context.getContainer());
-
-        var schema = DefaultSchema.resolve(defaultSchema, schemaKey);
-        if (null == schema)
-            return new JSONObject("error", "could not find table");
-
-        TableInfo td = schema.getTable(tableName, null);
+        TableInfo td = schema.getTable(queryKey.getName(), null);
         if (null == td)
-            return new JSONObject("error", "could not find table");
+            throw new NotFoundException("Could not find table " + schemaName + "." + tableName);
 
         String sourceSQL = null;
         if (schema instanceof UserSchema userSchema)
@@ -290,10 +229,10 @@ public class QueryMcp implements McpService.McpImpl
         if (isNotBlank(td.getDescription()))
             table.put("description", td.getDescription());
         if (isNotBlank(sourceSQL))
-            table.put("sql", sourceSQL);
+            table.put("sql", sourceSQL.trim());
 
         var pkColumns = td.getPkColumns();
-        var pk = pkColumns.size() == 1 ? pkColumns.get(0).getFieldKey() : null;
+        var pk = pkColumns.size() == 1 ? pkColumns.getFirst().getFieldKey() : null;
         JSONArray columns = new JSONArray();
         for (ColumnInfo col : td.getColumns())
         {
@@ -336,11 +275,27 @@ public class QueryMcp implements McpService.McpImpl
             }
             columns.put(md);
         }
-        table.put("columns",columns);
+        table.put("columns", columns);
 
         return table;
     }
 
+    private static SchemaKey getSchemaKey(String schemaName)
+    {
+        final String[] parts;
+
+        // TODO : correct method for parsing quoted identifier
+        if (schemaName.startsWith("\"") && schemaName.endsWith("\""))
+        {
+            parts = StringUtils.strip(schemaName, "\"").split("\"\\.\"");
+        }
+        else
+        {
+            parts = StringUtils.split(schemaName, ".");
+        }
+
+        return SchemaKey.fromParts(parts);
+    }
 
     static QueryKey<?> dottedIdentifier(String compoundIdentifier)
     {
@@ -353,7 +308,6 @@ public class QueryMcp implements McpService.McpImpl
     {
         return new SqlParser().parseIdentifier(compoundIdentifier).toSQLString(true).toLowerCase();
     }
-
 
     /** JSON schema example provided by GEMINI, using triple tick-marks to delimit the machine-readable structured data
      *
@@ -383,4 +337,3 @@ public class QueryMcp implements McpService.McpImpl
      * }```
      */
 }
-
