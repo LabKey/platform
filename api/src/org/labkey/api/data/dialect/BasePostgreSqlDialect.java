@@ -1161,6 +1161,9 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
     /* Native PostgreSQL implementation for all 9 SQL_TSI intervals.
      * This returns INTEGER for all intervals and never falls back to the JDBC escape.
+     *
+     * This was specifically created as a work around for PG JDBC parameter swapping issue. This does not use the JDBC
+     * timestampdiff function.
      */
     private SQLFragment timestampdiff2(SQLFragment... arguments)
     {
