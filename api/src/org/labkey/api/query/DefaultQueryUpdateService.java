@@ -893,7 +893,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         }
     }
 
-    protected boolean hasAttachmentProperties()
+    public boolean hasAttachmentProperties()
     {
         Domain domain = getDomain();
         if (null != domain)
