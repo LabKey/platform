@@ -209,7 +209,7 @@ public interface Trigger
                     beforeInsert(table, c, user, insertOption, newRow, errors, extraContext, existingRecord);
                     break;
                 case UPDATE:
-                    beforeUpdate(table, c, user, newRow, oldRow, errors, extraContext);
+                    beforeUpdate(table, c, user, insertOption, newRow, oldRow, errors, extraContext);
                     break;
                 case DELETE:
                     beforeDelete(table, c, user, oldRow, errors, extraContext);
@@ -247,7 +247,7 @@ public interface Trigger
     }
 
     default void beforeUpdate(TableInfo table, Container c,
-                              User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
+                              User user, @Nullable QueryUpdateService.InsertOption insertOption, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
                               ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
     }

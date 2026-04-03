@@ -182,7 +182,7 @@ public class ScriptTrigger implements Trigger
 
     @Override
     public void beforeUpdate(TableInfo table, Container c,
-                             User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
+                             User user, @Nullable QueryUpdateService.InsertOption insertOption, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
                              ValidationException errors, Map<String, Object> extraContext)
     {
         invokeTableScript(table, c, user, "beforeUpdate", errors, extraContext, filterErrorDetailByPhi(table, () -> "New row: " + newRow + ". Old row: "  + oldRow), newRow, oldRow);

@@ -54,13 +54,13 @@ public final class WellTriggerFactory implements TriggerFactory
 
         @Override
         public void beforeUpdate(
-            TableInfo table,
-            Container c,
-            User user,
-            @Nullable Map<String, Object> newRow,
-            @Nullable Map<String, Object> oldRow,
-            ValidationException errors,
-            Map<String, Object> extraContext
+                TableInfo table,
+                Container c,
+                User user,
+                @Nullable QueryUpdateService.InsertOption insertOption, @Nullable Map<String, Object> newRow,
+                @Nullable Map<String, Object> oldRow,
+                ValidationException errors,
+                Map<String, Object> extraContext
         ) throws ValidationException
         {
             if (oldRow == null || errors.hasErrors() || !oldRow.containsKey(WellTable.Column.PlateId.name()))
@@ -165,6 +165,7 @@ public final class WellTriggerFactory implements TriggerFactory
             TableInfo table,
             Container c,
             User user,
+            @Nullable QueryUpdateService.InsertOption insertOption,
             @Nullable Map<String, Object> newRow,
             @Nullable Map<String, Object> oldRow,
             ValidationException errors,
