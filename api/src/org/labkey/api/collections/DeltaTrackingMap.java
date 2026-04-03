@@ -1,0 +1,432 @@
+package org.labkey.api.collections;
+
+import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * A lightweight Map proxy that tracks structural modifications (additions and removals)
+ * without requiring deep copies or full iteration of the underlying map.
+ * <p>
+ * This class is highly optimized for "happy path" data-processing scenarios where structural
+ * changes are rare. Tracking sets are allocated lazily only upon the first actual addition
+ * or removal. Standard value updates to existing keys pass through with zero allocation overhead.
+ * <p>
+ * <b>Example Usage:</b>
+ * <pre>{@code
+ * Map<String, Object> baseRow = new CaseInsensitiveHashMap<>();
+ * baseRow.put("ColumnA", "Value1");
+ *
+ * DeltaTrackingMap<Object> trackedRow = new DeltaTrackingMap<>(baseRow);
+ *
+ * // Updating an existing key (zero tracking overhead)
+ * trackedRow.put("ColumnA", "NewValue");
+ *
+ * // Adding a new key
+ * trackedRow.put("ColumnB", "Value2");
+ *
+ * // Removing a key
+ * trackedRow.remove("ColumnA");
+ *
+ * if (trackedRow.hasStructuralChanges())
+ * {
+ *     Set<String> added = trackedRow.getAddedKeys();     // Contains ["ColumnB"]
+ *     Set<String> removed = trackedRow.getRemovedKeys(); // Contains ["ColumnA"]
+ *
+ *     // Reset tracking state if you need to pass the map to another processor
+ *     trackedRow.resetTracking();
+ * }
+ * }</pre>
+ *
+ * @param <V> the type of mapped values
+ */
+public class DeltaTrackingMap<V> implements Map<String, V>
+{
+    private final Map<String, V> delegate;
+    private Set<String> added = null;
+    private Set<String> removed = null;
+
+    public DeltaTrackingMap(Map<String, V> delegate)
+    {
+        this.delegate = delegate;
+    }
+
+    @Override
+    public V put(String key, V value)
+    {
+        boolean isNew = !delegate.containsKey(key);
+        V prev = delegate.put(key, value);
+
+        if (isNew)
+        {
+            // If it was previously removed, an add operation cancels out the removal
+            if (removed != null && removed.contains(key))
+                removed.remove(key);
+            else
+            {
+                if (added == null)
+                    added = Sets.newCaseInsensitiveHashSet();
+                added.add(key);
+            }
+        }
+
+        return prev;
+    }
+
+    @Override
+    public V remove(Object key)
+    {
+        boolean exists = delegate.containsKey(key);
+        V prev = delegate.remove(key);
+
+        if (exists && key instanceof String strKey)
+        {
+            // If it was just added, a remove cancels out the add operation
+            if (added != null && added.contains(strKey))
+                added.remove(strKey);
+            else
+            {
+                if (removed == null)
+                    removed = Sets.newCaseInsensitiveHashSet();
+                removed.add(strKey);
+            }
+        }
+
+        return prev;
+    }
+
+    @Override
+    public void putAll(Map<? extends String, ? extends V> m)
+    {
+        for (Entry<? extends String, ? extends V> entry : m.entrySet())
+            put(entry.getKey(), entry.getValue());
+    }
+
+    @Override
+    public void clear()
+    {
+        // Snapshot keys first to avoid ConcurrentModificationException during removal
+        for (String key : new ArrayList<>(delegate.keySet()))
+            remove(key);
+    }
+
+    // --- State Checking and Reset ---
+
+    public boolean hasStructuralChanges()
+    {
+        return (added != null && !added.isEmpty()) || (removed != null && !removed.isEmpty());
+    }
+
+    public Set<String> getAddedKeys()
+    {
+        return added != null ? Collections.unmodifiableSet(added) : Collections.emptySet();
+    }
+
+    public Set<String> getRemovedKeys()
+    {
+        return removed != null ? Collections.unmodifiableSet(removed) : Collections.emptySet();
+    }
+
+    public void resetTracking()
+    {
+        if (added != null) added.clear();
+        if (removed != null) removed.clear();
+    }
+
+    // --- Standard Delegated Methods ---
+
+    @Override
+    public int size()
+    {
+        return delegate.size();
+    }
+
+    @Override
+    public boolean isEmpty()
+    {
+        return delegate.isEmpty();
+    }
+
+    @Override
+    public boolean containsKey(Object key)
+    {
+        return delegate.containsKey(key);
+    }
+
+    @Override
+    public boolean containsValue(Object value)
+    {
+        return delegate.containsValue(value);
+    }
+
+    @Override
+    public V get(Object key)
+    {
+        return delegate.get(key);
+    }
+
+    @Override
+    public @NotNull Set<String> keySet()
+    {
+        return delegate.keySet();
+    }
+
+    @Override
+    public @NotNull Collection<V> values()
+    {
+        return delegate.values();
+    }
+
+    @Override
+    public @NotNull Set<Entry<String, V>> entrySet()
+    {
+        return delegate.entrySet();
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static DeltaTrackingMap<String> createTracker()
+        {
+            Map<String, String> baseMap = new CaseInsensitiveHashMap<>();
+            baseMap.put("ExistingKey1", "Value1");
+            baseMap.put("ExistingKey2", "Value2");
+            baseMap.put("ExistingKey3", "Value3");
+            return new DeltaTrackingMap<>(baseMap);
+        }
+
+        @Test
+        public void testNoStructuralChanges()
+        {
+            DeltaTrackingMap<String> map = createTracker();
+
+            // Updating an existing key should not trigger structural changes
+            map.put("ExistingKey1", "NewValue1");
+            // Case-insensitive update of an existing key
+            map.put("existingkey2", "NewValue2");
+
+            assertFalse("Updates to existing keys should not flag structural changes", map.hasStructuralChanges());
+            assertTrue(map.getAddedKeys().isEmpty());
+            assertTrue(map.getRemovedKeys().isEmpty());
+        }
+
+        @Test
+        public void testAdditions()
+        {
+            DeltaTrackingMap<String> map = createTracker();
+
+            map.put("NewKey1", "NewValue");
+            assertTrue("Adding a key should flag structural changes", map.hasStructuralChanges());
+            assertTrue(map.getAddedKeys().contains("NewKey1"));
+            assertTrue(map.getRemovedKeys().isEmpty());
+
+            // Case-insensitive check of the tracking set
+            assertTrue(map.getAddedKeys().contains("newkey1"));
+        }
+
+        @Test
+        public void testRemovals()
+        {
+            DeltaTrackingMap<String> map = createTracker();
+
+            map.remove("ExistingKey1");
+            assertTrue("Removing a key should flag structural changes", map.hasStructuralChanges());
+            assertTrue(map.getRemovedKeys().contains("ExistingKey1"));
+            assertTrue(map.getAddedKeys().isEmpty());
+
+            // Case-insensitive remove and check
+            map.remove("existingkey2");
+            assertTrue(map.getRemovedKeys().contains("ExistingKey2"));
+            assertEquals(2, map.getRemovedKeys().size());
+        }
+
+        @Test
+        public void testCancellations()
+        {
+            DeltaTrackingMap<String> map = createTracker();
+
+            // Remove then Add (Cancels the removal)
+            map.remove("ExistingKey1");
+            assertTrue(map.getRemovedKeys().contains("ExistingKey1"));
+
+            map.put("ExistingKey1", "RestoredValue");
+            assertFalse("Adding back a removed key should cancel the structural change", map.hasStructuralChanges());
+            assertTrue(map.getRemovedKeys().isEmpty());
+            assertTrue(map.getAddedKeys().isEmpty());
+
+            // Add then Remove (Cancels the addition)
+            map.put("TemporaryKey", "TempValue");
+            assertTrue(map.getAddedKeys().contains("TemporaryKey"));
+
+            map.remove("TemporaryKey");
+            assertFalse("Removing a newly added key should cancel the structural change", map.hasStructuralChanges());
+            assertTrue(map.getRemovedKeys().isEmpty());
+            assertTrue(map.getAddedKeys().isEmpty());
+        }
+
+        @Test
+        public void testBulkOperations()
+        {
+            DeltaTrackingMap<String> map = createTracker();
+
+            // test putAll()
+            Map<String, String> bulkAdds = new CaseInsensitiveHashMap<>();
+            bulkAdds.put("ExistingKey1", "UpdatedValue"); // Update
+            bulkAdds.put("NewBulk1", "V1");               // Add
+            bulkAdds.put("NewBulk2", "V2");               // Add
+
+            map.putAll(bulkAdds);
+            assertTrue(map.hasStructuralChanges());
+            assertEquals("Should only track the 2 new keys", 2, map.getAddedKeys().size());
+            assertTrue(map.getAddedKeys().contains("NewBulk1"));
+            assertTrue(map.getAddedKeys().contains("NewBulk2"));
+
+            map.resetTracking();
+
+            // test clear()
+            map.clear();
+            assertTrue(map.hasStructuralChanges());
+            assertEquals("Should track all keys removed during clear", 5, map.getRemovedKeys().size());
+            assertTrue(map.isEmpty());
+        }
+
+        @Test
+        public void testResetTracking()
+        {
+            DeltaTrackingMap<String> map = createTracker();
+
+            map.put("NewKey", "Val");
+            map.remove("ExistingKey1");
+
+            assertTrue(map.hasStructuralChanges());
+            assertEquals(1, map.getAddedKeys().size());
+            assertEquals(1, map.getRemovedKeys().size());
+
+            map.resetTracking();
+
+            assertFalse(map.hasStructuralChanges());
+            assertTrue(map.getAddedKeys().isEmpty());
+            assertTrue(map.getRemovedKeys().isEmpty());
+        }
+
+        @Test
+        public void testEncapsulationOfTrackingSets()
+        {
+            DeltaTrackingMap<String> map = createTracker();
+            map.put("NewKey", "Val");
+
+            Set<String> addedKeys = map.getAddedKeys();
+            try
+            {
+                addedKeys.remove("NewKey");
+                fail("getAddedKeys() should return an unmodifiable set to prevent internal state corruption.");
+            }
+            catch (UnsupportedOperationException e)
+            {
+                // Expected behavior
+            }
+        }
+
+        @Test
+        public void testCrossCaseCancellations()
+        {
+            DeltaTrackingMap<String> map = createTracker();
+
+            // 1. Remove Exact, Add Lowercase (Cancels the removal)
+            map.remove("ExistingKey1");
+            map.put("existingkey1", "RestoredValue"); // Different casing than original
+
+            assertFalse("Adding back a removed key with different casing should cancel the structural change", map.hasStructuralChanges());
+            assertTrue(map.getRemovedKeys().isEmpty());
+            assertTrue(map.getAddedKeys().isEmpty());
+
+            // 2. Add Exact, Remove Lowercase (Cancels the addition)
+            map.put("TemporaryKey", "TempValue");
+            map.remove("temporarykey"); // Different casing than addition
+
+            assertFalse("Removing a newly added key with different casing should cancel the structural change", map.hasStructuralChanges());
+            assertTrue(map.getRemovedKeys().isEmpty());
+            assertTrue(map.getAddedKeys().isEmpty());
+        }
+
+        @Test
+        public void testNullValues()
+        {
+            DeltaTrackingMap<String> map = createTracker();
+
+            // Adding a new key with a null value
+            map.put("NullValueKey", null);
+            assertTrue(map.hasStructuralChanges());
+            assertTrue(map.getAddedKeys().contains("NullValueKey"));
+
+            // Updating an existing key to null
+            map.put("ExistingKey1", null);
+            assertEquals("Updating existing key to null should not trigger structural changes", 1, map.getAddedKeys().size());
+            assertTrue(map.getRemovedKeys().isEmpty());
+        }
+
+        @Test
+        public void testNonStringRemoval()
+        {
+            DeltaTrackingMap<String> map = createTracker();
+
+            // Verify passing a non-String doesn't throw a ClassCastException.
+            String result = map.remove(12345);
+            assertNull(result);
+            assertFalse("Removing a non-existent, non-string key should do nothing", map.hasStructuralChanges());
+        }
+
+        @Test
+        public void testWithLinkedHashMap()
+        {
+            // Use a standard, case-sensitive map which preserves insertion order
+            Map<String, String> baseMap = new LinkedHashMap<>();
+            baseMap.put("FirstKey", "V1");
+            baseMap.put("SecondKey", "V2");
+
+            DeltaTrackingMap<String> map = new DeltaTrackingMap<>(baseMap);
+
+            // Verify standard tracking works normally
+            map.put("ThirdKey", "V3");
+            map.remove("FirstKey");
+
+            assertTrue(map.hasStructuralChanges());
+            assertEquals(1, map.getAddedKeys().size());
+            assertTrue(map.getAddedKeys().contains("ThirdKey"));
+
+            assertEquals(1, map.getRemovedKeys().size());
+            assertTrue(map.getRemovedKeys().contains("FirstKey"));
+
+            // Verify underlying map features (iteration order) are preserved
+            map.put("FourthKey", "V4");
+
+            String[] expectedOrder = {"SecondKey", "ThirdKey", "FourthKey"};
+            int i = 0;
+            for (String key : map.keySet())
+            {
+                assertEquals("Iteration order should match LinkedHashMap's insertion order", expectedOrder[i], key);
+                i++;
+            }
+
+            map.resetTracking();
+
+            map.put("secondkey", "V-lower");
+
+            assertEquals("LinkedHashMap treats different casing as distinct keys", 4, map.size());
+            assertTrue("Tracker flagged the new key", map.getAddedKeys().contains("secondkey"));
+
+            map.remove("SecondKey");
+
+            assertEquals(3, map.size());
+            assertFalse(map.containsKey("SecondKey"));
+            assertTrue(map.containsKey("secondkey"));
+            assertFalse("Tracker lost the state because case-insensitive matching cancelled out the add/remove", map.hasStructuralChanges());
+        }
+    }
+}
