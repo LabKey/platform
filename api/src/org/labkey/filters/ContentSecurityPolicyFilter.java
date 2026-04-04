@@ -54,8 +54,6 @@ public class ContentSecurityPolicyFilter implements Filter
     private static final String UPGRADE_INSECURE_REQUESTS_SUBSTITUTION = "UPGRADE.INSECURE.REQUESTS";
     private static final String HEADER_NONCE = "org.labkey.filters.ContentSecurityPolicyFilter#NONCE";  // needs to match PageConfig.HEADER_NONCE
     private static final String REPORTING_ENDPOINTS_HEADER = "Reporting-Endpoints";
-    @SuppressWarnings("DataFlowIssue")
-    private static final String REPORTING_ENDPOINTS_HEADER_VALUE = "csp-report=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getCspReportToURL().getLocalURIString() + "\"";
 
     private static final Map<ContentSecurityPolicyType, ContentSecurityPolicyFilter> CSP_FILTERS = new CopyOnWriteHashMap<>();
 
@@ -75,6 +73,10 @@ public class ContentSecurityPolicyFilter implements Filter
     private @NotNull String _cspVersion = "Unknown";
     // These two are effectively @NotNull since they are set to non-null values in init() and never changed
     private String _stashedTemplate = null;
+
+    // We can't set this statically because the class is referenced before URLProviders are available
+    @SuppressWarnings("DataFlowIssue")
+    private final String _reportingEndpointsHeaderValue = "csp-report=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getCspReportToURL().getLocalURIString() + "\"";
 
     // Initialized on first request and reset when allowed sources change. Don't reference this directly; always use
     // ensurePolicyExpression().
@@ -202,7 +204,7 @@ public class ContentSecurityPolicyFilter implements Filter
                 if ("https".equals(req.getScheme()))
                 {
                     if (resp.getHeader(REPORTING_ENDPOINTS_HEADER) == null)
-                        resp.addHeader(REPORTING_ENDPOINTS_HEADER, REPORTING_ENDPOINTS_HEADER_VALUE);
+                        resp.addHeader(REPORTING_ENDPOINTS_HEADER, _reportingEndpointsHeaderValue);
                     csp = csp + " report-to csp-report ;";
                 }
 
