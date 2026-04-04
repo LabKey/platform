@@ -784,8 +784,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         startNonCoreUpgradeAndStartup(execution, lockFile);
 
         // Register filters and servlets at the last minute, just before Tomcat starts. At this point, the list of
-        // modules is final. Also, we've had one case where the CSP filter was getting called before modules were
-        // initialized, GitHub Issue 1008. We have no idea how that happened, but registering late won't hurt.
+        // modules is final. Also, we've had one case where the CSP filter was getting initialized before core module
+        // was initialized, GitHub Issue 1008. We have no idea how that happened, but registering late won't hurt.
 
         _log.info("Registering filters");
 
