@@ -55,7 +55,7 @@ public class ContentSecurityPolicyFilter implements Filter
     private static final String HEADER_NONCE = "org.labkey.filters.ContentSecurityPolicyFilter#NONCE";  // needs to match PageConfig.HEADER_NONCE
     private static final String REPORTING_ENDPOINTS_HEADER = "Reporting-Endpoints";
     @SuppressWarnings("DataFlowIssue")
-    private static final String REPORTING_ENDPOINTS_HEADER_VALUE = "csp-report=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getCspReportToURL().getLocalURIString() + "\"";;
+    private static final String REPORTING_ENDPOINTS_HEADER_VALUE = "csp-report=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getCspReportToURL().getLocalURIString() + "\"";
 
     private static final Map<ContentSecurityPolicyType, ContentSecurityPolicyFilter> CSP_FILTERS = new CopyOnWriteHashMap<>();
 
