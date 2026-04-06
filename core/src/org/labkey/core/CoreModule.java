@@ -254,7 +254,6 @@ import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
-import org.labkey.core.mcp.McpServiceImpl;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
@@ -1284,8 +1283,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UserManager.addUserListener(new EmailPreferenceUserListener());
 
         Encryption.checkMigration();
-
-        McpServiceImpl.get().startMpcServer();
     }
 
     // Issue 7527: Auto-detect missing SQL views and attempt to recreate
@@ -1320,9 +1317,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         _webdavServletDynamic = servletCtx.addServlet("static", new WebdavServlet(true));
         _webdavServletDynamic.setMultipartConfig(SpringActionController.getMultiPartConfigElement());
         _webdavServletDynamic.addMapping("/_webdav/*");
-
-        McpService.setInstance(new McpServiceImpl());
-        McpServiceImpl.get().registerServlets(servletCtx);
     }
 
     @Override
