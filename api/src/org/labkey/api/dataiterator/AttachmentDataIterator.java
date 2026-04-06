@@ -156,11 +156,15 @@ public class AttachmentDataIterator extends WrapperDataIterator
                 {
                     attachmentFile = file;
                     filename = attachmentFile.getFilename();
+                    if (!StringUtils.isEmpty(oldAttachmentValue))
+                        oldAttachments.add(oldAttachmentValue);
                 }
                 else if (attachmentValue instanceof File file)
                 {
                     attachmentFile = new FileAttachmentFile(file);
                     filename = attachmentFile.getFilename();
+                    if (!StringUtils.isEmpty(oldAttachmentValue))
+                        oldAttachments.add(oldAttachmentValue);
                 }
                 else
                 {
