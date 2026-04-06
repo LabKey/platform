@@ -41,7 +41,10 @@ public enum KindOfQuantity
         @Override
         public List<Unit> getCommonUnits()
         {
-            return Arrays.stream(Unit.values()).filter(u -> u.getKindOfQuantity() == KindOfQuantity.Count).sorted(Comparator.comparing(Unit::toString)).toList();
+            return Arrays.stream(Unit.values())
+                    .filter(u -> u.getKindOfQuantity() == KindOfQuantity.Count && u != Unit.count)
+                    .sorted(Comparator.comparing(Unit::toString))
+                    .toList();
         }
     };
 
