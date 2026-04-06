@@ -1126,10 +1126,10 @@ public class StudyPublishManager implements StudyPublishService
                 qs.setQueryName(sampleType.getName());
                 qs.setBaseFilter(new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), keys));
 
-                // issue 901 : lineage sourced subject or timepoint information are not resolving in cross folder configurations
-                ContainerFilter.Type cf = QueryService.get().getContainerFilterTypeForLookups(container);
+                // issue GH901 : lineage sourced subject or timepoint information are not resolving in cross folder configurations
+                ContainerFilter cf = QueryService.get().getContainerFilterForFolder(container, user);
                 if (cf != null)
-                    qs.setContainerFilterName(cf.name());
+                    qs.setContainerFilterName(cf.getType().name());
 
                 Map<StudyPublishService.LinkToStudyKeys, FieldKey> fieldKeyMap = StudyPublishService.get().getSamplePublishFieldKeys(user, container, sampleType, qs);
                 UserSchema userSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
