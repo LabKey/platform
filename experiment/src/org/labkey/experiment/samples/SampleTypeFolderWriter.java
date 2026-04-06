@@ -78,7 +78,7 @@ public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
 
         Lsid sampleTypeLsid = new Lsid(ExperimentService.get().generateLSID(c, ExpSampleType.class, "export"));
         Set<String> sampleTypeLsids = new HashSet<>();
-        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(c, true))
+        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(c, false))
         {
             // ignore the magic sample type that is used for the specimen repository, it is managed by the specimen importer
             StudyService ss = StudyService.get();
