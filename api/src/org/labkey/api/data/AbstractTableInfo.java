@@ -2051,13 +2051,19 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
                         String message = "Trigger '" + script.getName() + "' attempted to " + String.join(", ", diffs) + ". Declare managed columns to include them in the column set.";
                         if (manageColumns)
+                        {
                             errors.addGlobalError(message);
-                        else
-                            LOG.warn(message + " This will be an error if invoked via data iteration.");
+                            break;
+                        }
+
+                        LOG.warn(message + " This will be an error if invoked via data iteration.");
                     }
                 }
 
-                // Verify the trigger handles every managed column
+                if (errors.hasErrors())
+                    break;
+
+                // Verify the trigger handles all managed columns
                 if (managedCols != null)
                 {
                     for (var col : managedCols)
@@ -2066,9 +2072,13 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                         {
                             String message = "Trigger '" + script.getName() + "' declared the managed column '" + col + "' but did not set a value for it. Set null to clear or provide a value.";
                             if (manageColumns)
-                                errors.addFieldError(col, message);
-                            else
-                                LOG.warn(message + " This will be an error if invoked via data iteration.");
+                            {
+                                // Not using errors.addFieldError() here as the managed column may not be visible
+                                errors.addGlobalError(message);
+                                break;
+                            }
+
+                            LOG.warn(message + " This will be an error if invoked via data iteration.");
                         }
                     }
                 }
