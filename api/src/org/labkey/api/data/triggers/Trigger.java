@@ -138,16 +138,25 @@ public interface Trigger
 
     default void setInsertManagedColumns(Map<String, Object> newRow, @Nullable Map<String, Object> existingRecord, @Nullable QueryUpdateService.InsertOption insertOption)
     {
+        // A null insertOption indicates a non-data iterator operation
+        if (insertOption == null)
+            return;
+
         // If this is a merge operation and the existingRecord is not supplied,
         // then throw an error to avoid overwriting managed values to null.
-        if (insertOption != null && insertOption.mergeRows && (existingRecord == null || existingRecord.isEmpty()))
+        // existingRecord.isEmpty() indicates a new record.
+        if (insertOption.mergeRows && existingRecord == null)
             throw new IllegalArgumentException("existingRecord must be non-null for MERGE triggers");
 
         setManagedColumns(newRow, null, TableInfo.TriggerType.INSERT);
     }
 
-    default void setUpdateManagedColumns(Map<String, Object> newRow, @NotNull Map<String, Object> oldRow)
+    default void setUpdateManagedColumns(Map<String, Object> newRow, @NotNull Map<String, Object> oldRow, @Nullable QueryUpdateService.InsertOption insertOption)
     {
+        // A null insertOption indicates a non-data iterator operation
+        if (insertOption == null)
+            return;
+
         if (oldRow == null)
             throw new IllegalArgumentException("oldRow must be non-null for UPDATE triggers");
 

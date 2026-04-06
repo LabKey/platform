@@ -173,7 +173,7 @@ public final class WellTriggerFactory implements TriggerFactory
         )
         {
             addTypeSample(c, user, newRow, oldRow, extraContext);
-            setUpdateManagedColumns(newRow, oldRow);
+            setUpdateManagedColumns(newRow, oldRow, insertOption);
         }
     }
 
