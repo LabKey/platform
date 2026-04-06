@@ -40,6 +40,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.logging.LogHelper;
@@ -175,6 +176,19 @@ public class SecurityPolicyManager
             {
                 // AppAdmin cannot change assignments to privileged roles (e.g., Site Admin, Platform Developer, Impersonating Troubleshooter)
                 if (changedRole.isPrivileged())
+                    throw new UnauthorizedException("You do not have permission to modify the " + changedRole.getName() + " role.");
+            }
+        }
+
+        // This is a simple 26.3 fix for GitHub Issue #909. TODO: In 26.4+, change to a first class approach for
+        // validating all admin attempts at assigning admin roles or impersonating admin users, groups, and roles.
+        //
+        // For now, just use AddUserPermission as a proxy for Folder Admin attemping to assign Project Admin role
+        if (c.isProject() && !c.hasPermission(user, AddUserPermission.class))
+        {
+            for (Role changedRole : changedRoles)
+            {
+                if (changedRole.getPermissions().contains(AddUserPermission.class))
                     throw new UnauthorizedException("You do not have permission to modify the " + changedRole.getName() + " role.");
             }
         }

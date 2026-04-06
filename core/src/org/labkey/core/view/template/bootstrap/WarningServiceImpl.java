@@ -61,7 +61,7 @@ public class WarningServiceImpl implements WarningService
                 SHOW_ALL_WARNINGS = OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SHOW_ALL_WARNINGS);
                 OptionalFeatureService.get().addFeatureListener(EXPERIMENTAL_SHOW_ALL_WARNINGS, (feature, enabled) -> {
                     SHOW_ALL_WARNINGS = enabled;
-                    clearStaticWarnings(); // Force static warnings to be re-collected since flag has changed
+                    WarningService.get().clearStaticWarnings(); // Force static warnings to be re-collected since flag has changed
                 });
             }
         }
@@ -86,7 +86,8 @@ public class WarningServiceImpl implements WarningService
         clearStaticWarnings();
     }
 
-    private static void clearStaticWarnings()
+    @Override
+    public void clearStaticWarnings()
     {
         synchronized (STATIC_WARNING_LOCK)
         {
@@ -194,7 +195,7 @@ public class WarningServiceImpl implements WarningService
             List<HtmlString> messages = warnings.getMessages();
 
             if (messages.size() == 1)
-                html.append(messages.get(0));
+                html.append(messages.getFirst());
             else
             {
                 html.startTag("ul");

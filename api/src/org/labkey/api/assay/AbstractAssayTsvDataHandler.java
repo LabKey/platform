@@ -867,6 +867,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     if (PropertyType.MULTI_CHOICE == pd.getPropertyType())
                     {
                         o = MultiChoice.Converter.getInstance().convert(MultiChoice.Array.class, o);
+                        map.put(pd.getName(), o);
                     }
                     else if (o instanceof String)
                     {

@@ -26,9 +26,14 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.SiteSettingsAuditProvider.SiteSettingsAuditEvent;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.EncryptedPropertyStore;
 import org.labkey.api.data.NormalPropertyStore;
 import org.labkey.api.data.PropertyManager;
@@ -38,10 +43,14 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JobRunner;
+import org.labkey.api.util.LinkBuilder;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
@@ -63,7 +72,10 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -109,9 +121,28 @@ public class Encryption
                     int count = DECRYPTION_EXCEPTIONS.get();
 
                     if (count > 0 || showAllWarnings)
+                    {
+                        final String who;
+                        final HasHtmlString link;
+                        if (context != null && context.getUser().hasSiteAdminPermission())
+                        {
+                            who = "you";
+                            link = LinkBuilder.simpleLink("this link", Objects.requireNonNull(PageFlowUtil.urlProvider(AdminUrls.class)).getDeleteEncryptedContentURL());
+                        }
+                        else
+                        {
+                            who = "a site administrator";
+                            link = HtmlStringBuilder.of("the \"delete encrypted content\" action");
+                        }
+
                         warnings.add(HtmlStringBuilder.of("On " + StringUtilsLabKey.pluralize(count, "attempt") +
-                            " the server failed to decrypt encrypted content using the " +
-                            ENCRYPTION_KEY_CHANGED + " " + KEY_CHANGE_GUIDANCE).append(getEncryptionKeyHelpLink()));
+                            ", the server failed to decrypt encrypted content using the " +
+                            ENCRYPTION_KEY_CHANGED + " " + KEY_CHANGE_GUIDANCE)
+                                .append(" If the previous encryption key has been lost, " + who + " can clear all encrypted content via ")
+                                .append(link)
+                                .append(". ")
+                                .append(getEncryptionKeyHelpLink()));
+                    }
                 }
             }
 
@@ -155,7 +186,7 @@ public class Encryption
     {
         if (passPhrase != null)
         {
-            LOG.info("Attempting to test the integrity of the " + keyDescription);
+            LOG.info("Attempting to test the integrity of the {}", keyDescription);
 
             try
             {
@@ -244,7 +275,7 @@ public class Encryption
 
     private static void logFailureGuidance()
     {
-        LOG.error(KEY_CHANGE_GUIDANCE + " For more information, see " + new HelpTopic("labkeyxml", "encrypt").getHelpTopicHref() + ".");
+        LOG.error("{} For more information, see {}.", KEY_CHANGE_GUIDANCE, new HelpTopic("labkeyxml", "encrypt").getHelpTopicHref());
     }
 
     private Encryption()
@@ -536,7 +567,11 @@ public class Encryption
             HANDLERS.add(handler);
         }
 
+        String getDescription();
+
         void migrateEncryptedContent(String oldPassPhrase, String keySource, AESConfig oldConfig);
+
+        void deleteEncryptedContent();
     }
 
     public static void checkMigration()
@@ -567,7 +602,7 @@ public class Encryption
             }
             else if (!cipher.equals(AESConfig.current.getCipherName()))
             {
-                LOG.error("Unexpected cipher configuration: " + cipher);
+                LOG.error("Unexpected cipher configuration: {}", cipher);
             }
 
             if (migrationNeeded)
@@ -587,7 +622,7 @@ public class Encryption
                 if (DECRYPTION_EXCEPTIONS.get() == 0)
                 {
                     Encryption.EncryptionMigrationHandler.HANDLERS
-                            .forEach(handler -> handler.migrateEncryptedContent(passPhrase, message, migrationConfig));
+                        .forEach(handler -> handler.migrateEncryptedContent(passPhrase, message, migrationConfig));
 
                     CacheManager.clearAllKnownCaches();
                 }
@@ -600,7 +635,7 @@ public class Encryption
                 if (oldPassPhrase != null)
                 {
                     LOG.info("Migration of all existing encrypted content from OldEncryptionKey to EncryptionKey is complete");
-                    LOG.info("IMPORTANT: Since migration is complete you should now remove the " + keySource);
+                    LOG.info("IMPORTANT: Since migration is complete you should now remove the {}", keySource);
                 }
                 if (cipher == null)
                 {
@@ -612,8 +647,55 @@ public class Encryption
         }
     }
 
+    public static void deleteEncryptedContent(User user)
+    {
+        LOG.info("Deleting all encrypted content at the request of {}", user.getDisplayName(user));
+        List<String> descriptions = new LinkedList<>();
+        EncryptionMigrationHandler.HANDLERS
+            .forEach(encryptionMigrationHandler -> {
+                try
+                {
+                    encryptionMigrationHandler.deleteEncryptedContent();
+                    descriptions.add(encryptionMigrationHandler.getDescription().toLowerCase());
+                }
+                catch (Exception e)
+                {
+                    LOG.warn("Error while deleting encrypted content from {}", encryptionMigrationHandler.getDescription(), e);
+                }
+            });
+        SiteSettingsAuditEvent event = new SiteSettingsAuditEvent(ContainerManager.getRoot(), "All encrypted content was deleted");
+        final String changes;
+        if (!descriptions.isEmpty())
+            changes = "Deleted content: " + StringUtilsLabKey.joinWithConjunction(descriptions, "and");
+        else
+            changes = "All deletes failed";
+        event.setChanges(changes);
+        AuditLogService.get().addEvent(user, event);
+        CacheManager.clearAllKnownCaches();
+        // Reset the counter and clear the warnings
+        DECRYPTION_EXCEPTIONS.set(0);
+        WarningService.get().clearStaticWarnings();
+        LOG.info("Finished deleting all encrypted content");
+    }
 
-    private static final EncryptionMigrationHandler TEST_HANDLER = (oldPassPhrase, keySource, oldConfig) -> {};
+    private static final EncryptionMigrationHandler TEST_HANDLER = new EncryptionMigrationHandler()
+    {
+        @Override
+        public String getDescription()
+        {
+            return "Test";
+        }
+
+        @Override
+        public void migrateEncryptedContent(String oldPassPhrase, String keySource, AESConfig oldConfig)
+        {
+        }
+
+        @Override
+        public void deleteEncryptedContent()
+        {
+        }
+    };
 
     public static class TestCase extends Assert
     {
@@ -672,6 +754,18 @@ public class Encryption
         {
             for (String test : new String[]{"foo", "bar", "this is some text I want to encrypt"})
                 assertEquals(test, decryptAlgorithm.decrypt(encryptAlgorithm.encrypt(test)));
+        }
+
+        @Test
+        public void testDeleteEncryptedContent()
+        {
+            // Simple test that ensures no exceptions are thrown and checks only that encrypted property sets are gone.
+            // Changes are not committed, so content is not actually deleted.
+            try (Transaction _ = DbScope.getLabKeyScope().ensureTransaction())
+            {
+                deleteEncryptedContent(TestContext.get().getUser());
+                assertEquals(0, new EncryptedPropertyStore().getEncryptedPropertySetCount());
+            }
         }
     }
 }

@@ -30,6 +30,7 @@ import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -39,8 +40,10 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.TableSelector;
@@ -58,6 +61,7 @@ import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -87,6 +91,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.UnauthorizedException;
@@ -110,8 +115,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
 import static org.labkey.api.gwt.client.ui.PropertyType.CALCULATED_CONCEPT_URI;
 import static org.labkey.api.util.StringExpressionFactory.SUBSTITUTION_EXP_PATTERN;
@@ -907,6 +914,8 @@ public class DomainUtil
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
         Map<DomainProperty, List<Map<String, Object>>> textChoiceValueUpdates = new HashMap<>();
 
+        TableInfo domainTable = null;
+
         // and now update properties
         for (GWTPropertyDescriptor pd : update.getFields())
         {
@@ -934,7 +943,9 @@ public class DomainUtil
 
             if (old == null)
                 continue;
-            List<Map<String, Object>> propTextChoiceValueUpdates = updatePropertyValidators(p, old, pd);
+            var textChoiceUpdates = updatePropertyValidators(p, old, pd);
+            List<Map<String, Object>> propTextChoiceValueUpdates = textChoiceUpdates.first;
+            List<String> deletedValues = textChoiceUpdates.second;
             if (propTextChoiceValueUpdates != null && !propTextChoiceValueUpdates.isEmpty())
             {
                 if (PropertyType.MULTI_CHOICE.getTypeUri().equals(old.getRangeURI()) || PropertyType.MULTI_CHOICE.getTypeUri().equals(pd.getRangeURI()))
@@ -944,6 +955,52 @@ public class DomainUtil
                     return validationException;
                 }
                 textChoiceValueUpdates.put(p, propTextChoiceValueUpdates);
+            }
+
+            // GitHub Issue 949: Text choice value can be deleted if usage is added after loading designer
+            if (!deletedValues.isEmpty())
+            {
+                // using ContainerFilter.EVERYTHING to account for /Shared domains
+                if (domainTable == null)
+                    domainTable = d.getDomainKind().getTableInfo(user, d.getContainer(), d, ContainerFilter.getUnsafeEverythingFilter());
+
+                if (domainTable != null)
+                {
+                    // if was regular text choice, then we just check the property value
+                    if (TEXT_CHOICE_CONCEPT_URI.equals(old.getConceptURI()))
+                    {
+                        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(p.getName()), deletedValues, CompareType.IN);
+                        if (new TableSelector(domainTable, filter, null).exists())
+                        {
+                            validationException.addError(new SimpleValidationError("One or more values cannot be removed from the text choice list because they are in use: " + StringUtils.join(deletedValues, ", ")));
+                            return validationException;
+                        }
+                    }
+                    else if (PropertyType.MULTI_CHOICE.getTypeUri().equals(old.getRangeURI()))
+                    {
+                        var column = domainTable.getColumn(p.getName());
+
+                        if (column != null)
+                        {
+                            var dialect = domainTable.getSchema().getSqlDialect();
+                            SQLFragment deletedArray = new SQLFragment("CAST(? AS TEXT[])").add(deletedValues.toArray(new String[0]));
+                            SQLFragment columnFrag = new SQLFragment().appendIdentifier(column.getAlias());
+
+                            SQLFragment sql = new SQLFragment("SELECT 1 FROM ")
+                                    .append(domainTable)
+                                    .append(" WHERE ")
+                                    .append(dialect.array_some_in_array(columnFrag, deletedArray));
+
+                            if (new SqlSelector(domainTable.getSchema().getScope(), sql).exists())
+                            {
+                                validationException.addError(new SimpleValidationError("One or more values cannot be removed from the multi-choice list because they are in use: " + StringUtils.join(deletedValues, ", ")));
+                                return validationException;
+                            }
+                        }
+                    }
+
+                }
+
             }
             if (old.equals(pd))
                 continue;
@@ -997,7 +1054,7 @@ public class DomainUtil
                 for (Map.Entry<DomainProperty, List<Map<String, Object>>> entry : textChoiceValueUpdates.entrySet())
                 {
                     for (Map<String, Object> valueUpdate : entry.getValue())
-                        updateTextChoiceValueRows(d, user, entry.getKey().getName(), valueUpdate, validationException);
+                        updateTextChoiceValueRows(d, user, entry.getKey(), valueUpdate, validationException);
                 }
 
                 // update indices - add missing and drop those that aren't included in domain info
@@ -1277,10 +1334,12 @@ public class DomainUtil
             to.setDerivationDataScope(from.getDerivationDataScope());
     }
 
-    private static List<Map<String, Object>> updatePropertyValidators(DomainProperty dp, @Nullable GWTPropertyDescriptor oldPd, GWTPropertyDescriptor newPd)
+    // Returns list of value updates and list of deleted values for text choice validators.  Only returns if we have an oldPd to compare to, otherwise we don't know what the deleted values are.
+    private static @NotNull Pair<List<Map<String, Object>>, List<String>> updatePropertyValidators(DomainProperty dp, @Nullable GWTPropertyDescriptor oldPd, GWTPropertyDescriptor newPd)
     {
         Map<Long, GWTPropertyValidator> newProps = new LongHashMap<>();
         List<Map<String, Object>> valueUpdates = new ArrayList<>();
+        List<String> deletedValues = new ArrayList<>();
 
         PropertyDescriptor oldPropertyDescriptor = dp.getPropertyDescriptor().clone();
         boolean hasChange = false;
@@ -1323,7 +1382,24 @@ public class DomainUtil
             // update any new or changed
             for (IPropertyValidator pv : dp.getValidators())
             {
-                boolean change = _copyValidator(pv, newProps.get(pv.getRowId()));
+                var gpv = newProps.get(pv.getRowId());
+                if (gpv == null)
+                    continue;
+
+                boolean hasExpressionChange = !Objects.equals(pv.getExpressionValue(), gpv.getExpression());
+                if (hasExpressionChange && PropertyValidatorType.TextChoice.equals(gpv.getType()))
+                {
+                    List<String> oldValidValues = PropertyService.get().getTextChoiceValidatorOptions(pv);
+
+                    List<String> newValidValues = PageFlowUtil.splitStringToValues(gpv.getExpression(), '|');
+                    deletedValues = new ArrayList<>(oldValidValues);
+                    deletedValues.removeAll(newValidValues);
+                    // Exclude renamed oldValidValues from deletedValues — their keys in valueUpdates are the old names
+                    for (Map<String, Object> update : valueUpdates)
+                        deletedValues.removeAll(update.keySet());
+                }
+                boolean change = _copyValidator(pv, gpv);
+
                 hasChange = hasChange || change;
             }
 
@@ -1335,13 +1411,17 @@ public class DomainUtil
         if (hasChange)
             dp.setOldPropertyDescriptor(oldPropertyDescriptor); // mark dirty as needed
 
-        return oldPd != null ? valueUpdates : null;
+        return Pair.of(valueUpdates, deletedValues);
     }
 
-    private static void updateTextChoiceValueRows(Domain domain, User user, String propName, Map<String, Object> valueUpdates, ValidationException errors)
+    private static void updateTextChoiceValueRows(Domain domain, User user, DomainProperty prop, Map<String, Object> valueUpdates, ValidationException errors)
     {
         if (domain != null && domain.getDomainKind() != null)
         {
+            String propName = prop.getName();
+            // GitHub Issue 1014: Text choice value update doesn't update aliquot's aliquot-specific field values
+            boolean isParentOnlyField = StringUtils.isEmpty(prop.getDerivationDataScope())
+                    || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(prop.getDerivationDataScope());
             // using ContainerFilter.EVERYTHING to account for /Shared domains
             TableInfo domainTable = domain.getDomainKind().getTableInfo(user, domain.getContainer(), domain, ContainerFilter.getUnsafeEverythingFilter());
             if (domainTable != null && domainTable.getUpdateService() != null)
@@ -1356,7 +1436,7 @@ public class DomainUtil
                     // query for the row PKs of domain rows that have the original text choice value
                     SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(propName), entry.getKey());
                     // filter out aliquots for sample type domain
-                    if (domain.getDomainKind() instanceof SampleTypeDomainKind)
+                    if (domain.getDomainKind() instanceof SampleTypeDomainKind && isParentOnlyField)
                         filter.addCondition(FieldKey.fromParts("IsAliquot"), false);
                     List<ColumnInfo> columns = new ArrayList<>(domainTable.getPkColumns());
                     if (domainTable.getContainerFieldKey() != null)
@@ -1430,6 +1510,38 @@ public class DomainUtil
         return hasChange;
     }
 
+    // GitHub Issue 955: limit option length to 200
+    private static final int TEXT_CHOICE_MAX_VALUE_LENGTH = 200;
+    // GitHub Issue 988: don't allow json array like values for text choice options
+    private static final Pattern JSON_FILTER_VALUE_PATTERN = Pattern.compile("\\{json:\\s*\\[.*]}", Pattern.DOTALL);
+
+    /**
+     * Validate text choice options for a field. Returns an error message if invalid, or null if valid.
+     */
+    private static @Nullable String validateTextChoiceOptions(GWTPropertyDescriptor field)
+    {
+        for (GWTPropertyValidator validator : field.getPropertyValidators())
+        {
+            if (PropertyValidatorType.TextChoice.equals(validator.getType()))
+            {
+                String expression = validator.getExpression();
+                List<String> options = PageFlowUtil.splitStringToValues(expression != null ? expression : "", '|');
+                for (String option : options)
+                {
+                    if (option.length() > TEXT_CHOICE_MAX_VALUE_LENGTH)
+                    {
+                        return "Text choice value for field '" + field.getName() + "' must not exceed " + TEXT_CHOICE_MAX_VALUE_LENGTH + " characters: '" + StringUtils.abbreviate(option, 50) + "'";
+                    }
+                    if (JSON_FILTER_VALUE_PATTERN.matcher(option).matches())
+                    {
+                        return "Text choice value for field '" + field.getName() + "' must not use the reserved format '{json:[...]}': '" + StringUtils.abbreviate(option, 50) + "'";
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     private static String getDomainErrorMessage(@Nullable GWTDomain<?> domain, String message)
     {
         if (domain != null && domain.getName() != null)
@@ -1475,6 +1587,16 @@ public class DomainUtil
             {
                 exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "The field '" + name + "' does not support multiple values.")));
                 continue;
+            }
+
+            if (PropertyType.MULTI_CHOICE.getTypeUri().equals(field.getRangeURI()) || TEXT_CHOICE_CONCEPT_URI.equals(field.getConceptURI()))
+            {
+                String textChoiceError = validateTextChoiceOptions(field);
+                if (textChoiceError != null)
+                {
+                    exception.addFieldError(name, getDomainErrorMessage(updates, textChoiceError));
+                    continue;
+                }
             }
 
             Matcher expMatcher = SUBSTITUTION_EXP_PATTERN.matcher(name);
@@ -1543,8 +1665,6 @@ public class DomainUtil
                 else
                 {
                     altNameMap.put(name, name);
-                    altNameMap.put(DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(name), name);
-                    altNameMap.put(name.replaceAll("%22", "\""), name);
                 }
             }
 

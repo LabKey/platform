@@ -33,6 +33,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AuditHandler;
@@ -1902,7 +1903,7 @@ public class QueryServiceImpl implements QueryService
                 continue;
             for (FieldKey fieldKey : set)
             {
-                ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
+                ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager, null);
                 if (col != null)
                     ret.putIfAbsent(col.getFieldKey(),col);
             }
@@ -1911,11 +1912,29 @@ public class QueryServiceImpl implements QueryService
 
         if (filter != null)
         {
-            for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
+            if (filter instanceof SimpleFilter simpleFilter)
             {
-                ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
-                if (col != null)
-                    ret.putIfAbsent(col.getFieldKey(),col);
+                Map<FieldKey, List<SimpleFilter.FilterClause>> clausesByField = new HashMap<>();
+                for (SimpleFilter.FilterClause clause : simpleFilter.getClauses())
+                {
+                    for (FieldKey fk : clause.getFieldKeys())
+                        clausesByField.computeIfAbsent(fk, k -> new ArrayList<>()).add(clause);
+                }
+                for (FieldKey fieldKey : simpleFilter.getWhereParamFieldKeys())
+                {
+                    ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager, clausesByField.get(fieldKey));
+                    if (col != null)
+                        ret.putIfAbsent(col.getFieldKey(), col);
+                }
+            }
+            else
+            {
+                for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
+                {
+                    ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager, null);
+                    if (col != null)
+                        ret.putIfAbsent(col.getFieldKey(), col);
+                }
             }
         }
 
@@ -1923,7 +1942,7 @@ public class QueryServiceImpl implements QueryService
         {
             for (Sort.SortField field : sort.getSortList())
             {
-                ColumnInfo col = resolveFieldKey(field.getFieldKey(), table, columnMap, unresolvedColumns, manager);
+                ColumnInfo col = resolveFieldKey(field.getFieldKey(), table, columnMap, unresolvedColumns, manager, null);
                 if (col != null)
                 {
                     ret.putIfAbsent(col.getFieldKey(),col);
@@ -1970,7 +1989,7 @@ public class QueryServiceImpl implements QueryService
 
             for (FieldKey key : sortFieldKeys)
             {
-                ColumnInfo sortCol = resolveFieldKey(key, col.getParentTable(), columnMap, null, manager);
+                ColumnInfo sortCol = resolveFieldKey(key, col.getParentTable(), columnMap, null, manager, null);
                 if (sortCol != null)
                 {
                     toAdd.add(sortCol);
@@ -2002,7 +2021,7 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-    private ColumnInfo resolveFieldKey(FieldKey fieldKey, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager)
+    private ColumnInfo resolveFieldKey(FieldKey fieldKey, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager, @Nullable List<SimpleFilter.FilterClause> filterClauses)
     {
         if (fieldKey == null) // TODO: Can this resolve "selectionMethods/selectionMethodId$Sname"?
             return null;
@@ -2029,6 +2048,21 @@ public class QueryServiceImpl implements QueryService
         {
             assert Table.checkColumn(table, column, "ensureRequiredColumns():");
             assert fieldKey.getTable() == null || columnMap.containsKey(fieldKey);
+
+            if (filterClauses != null)
+            {
+                boolean isArrayColumn = column.getJdbcType() == JdbcType.ARRAY;
+                for (SimpleFilter.FilterClause clause : filterClauses)
+                {
+                    boolean isArrayFilter = clause instanceof CompareType.ArrayClause;
+                    boolean invalidArrayFilter = (isArrayFilter && !isArrayColumn) || (!isArrayFilter && isArrayColumn);
+                    if (invalidArrayFilter)
+                    {
+                        unresolvedColumns.add(fieldKey);
+                        return column; // return column, but mark as unresolvedColumns to drop filters
+                    }
+                }
+            }
 
             // getColumn() might return a column with a different field key than we asked for!
             if (!column.getFieldKey().equals(fieldKey))

@@ -141,57 +141,14 @@ public class DataIteratorUtil
 
     // rank of a match of import column NAME matching various properties of target column
     // MatchType.low is used for matches based on something other than name
-    public enum MatchType
+    private enum MatchType
     {
         propertyuri,
         name,
         alias,
         jdbcname,
         tsvColumn,
-        multiPartFormData()
-                {
-                    @Override
-                    public String getMatchedName(@Nullable String name)
-                    {
-                        if (name == null)
-                            return null;
-                        // " is encoded as %22 when content-type is "multipart/form-data" (but is not otherwise encoded so decode() does not work)
-                        return name.replaceAll("\"", "%22");
-                    }
-
-                    @Override
-                    public boolean updateRowMap(@NotNull ColumnInfo col, Map<String, Object> rowMap)
-                    {
-                        if (col.getName().contains("\"") && File.class.equals(col.getJavaClass()))
-                        {
-                            // Issue 52827: File/attachment fields with special characters
-                            String quoteEncodedName = DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(col.getName());
-                            if (rowMap.containsKey(quoteEncodedName))
-                            {
-                                rowMap.put(col.getName(), rowMap.get(quoteEncodedName));
-                                rowMap.remove(quoteEncodedName);
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-                },
-        low;
-
-        public String getMatchedName(@Nullable String name)
-        {
-            return name;
-        }
-
-        /**
-         * Update rowMap content based on passed in col.
-         * For example, the original rowMap may contain encoded field name. This util substitute the key in rowMap to reflect the actual col name
-         * @return If rowMap has been updated
-         */
-        public boolean updateRowMap(@NotNull ColumnInfo col, Map<String, Object> rowMap)
-        {
-            return false;
-        }
+        low
     }
 
 
@@ -208,9 +165,6 @@ public class DataIteratorUtil
                 .toList();
 
         Map<String, Pair<ColumnInfo,MatchType>> targetAliasesMap = new CaseInsensitiveHashMap<>(cols.size()*4);
-
-        for (ColumnInfo col : cols)
-            targetAliasesMap.put(MatchType.multiPartFormData.getMatchedName(col.getName()), new Pair<>(col, MatchType.multiPartFormData));
 
         // should this be under the useImportAliases flag???
         for (ColumnInfo col : cols)

@@ -15,6 +15,8 @@ import {
     generateFieldNameForImport,
     getDataClassRowIdByName,
     initProject,
+    MVTC_FIELD_PROP,
+    TC_FIELD_PROP,
     verifyRequiredLineageInsertUpdate,
 } from './utils';
 import { caseInsensitive, DATA_CLASS_DESIGNER_ROLE } from '@labkey/components';
@@ -498,24 +500,6 @@ describe('Duplicate IDs', () => {
 
 describe('Multi Value Text Choice', () => {
 
-    const mvtcFieldProp = {
-        "propertyId": -1,
-        "propertyValidators": [
-            {
-                "type": "TextChoice",
-                "name": "Text Choice Validator",
-                "new": true,
-                "expression": "Abnormal|agent|cDNA|Plasma"
-            }
-        ],
-        "rangeURI": "http://cpas.fhcrc.org/exp/xml#multiChoice",
-    };
-
-    const tcFieldProp = {
-        ...mvtcFieldProp,
-        rangeURI: 'http://www.w3.org/2001/XMLSchema#string',
-        conceptURI: 'http://www.labkey.org/types#textChoice',
-    }
 
 
     it("MVTC CRUD", async () => {
@@ -542,7 +526,7 @@ describe('Multi Value Text Choice', () => {
 
         const fields = [
             {
-                ...mvtcFieldProp,
+                ...MVTC_FIELD_PROP,
                 name: fieldName
             }
         ];
@@ -767,7 +751,7 @@ describe('Multi Value Text Choice', () => {
                 name: dataType,
                 fields: [
                     {
-                        ...mvtcFieldProp,
+                        ...MVTC_FIELD_PROP,
                         name: fieldName,
                         required: true
                     }
@@ -791,7 +775,7 @@ describe('Multi Value Text Choice', () => {
                 name: dataType,
                 fields: [
                     {
-                        ...tcFieldProp,
+                        ...TC_FIELD_PROP,
                         name: fieldName,
                         propertyId,
                         propertyURI

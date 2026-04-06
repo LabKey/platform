@@ -31,6 +31,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
@@ -233,7 +234,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         Set<String> originalFileNames = new HashSet<>();
         if (context.getRequest() instanceof MultipartHttpServletRequest multipartRequest)
         {
-            Iterator<Map.Entry<String, List<MultipartFile>>> iter = multipartRequest.getMultiFileMap().entrySet().iterator();
+            Iterator<Map.Entry<String, List<MultipartFile>>> iter = PageFlowUtil.getMultiFileMap(context.getRequest()).entrySet().iterator();
             Deque<FileLike> overflowFiles = new ArrayDeque<>();  // using a deque for easy removal of single elements
             Set<String> unusedParameterNames = new HashSet<>(parameterNames);
             while (iter.hasNext())

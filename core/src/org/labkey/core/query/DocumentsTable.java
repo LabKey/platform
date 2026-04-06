@@ -2,6 +2,7 @@ package org.labkey.core.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
@@ -11,6 +12,7 @@ import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserIdQueryForeignKey;
 
@@ -26,7 +28,6 @@ public class DocumentsTable extends FilteredTable<CoreQuerySchema>
         getMutableColumnOrThrow("ModifiedBy").setHidden(true);
         getMutableColumnOrThrow("Modified").setHidden(true);
         MutableColumnInfo owner = getMutableColumnOrThrow("Owner");
-        owner.setHidden(true);
         owner.setFk(new UserIdQueryForeignKey(_userSchema));
         getMutableColumnOrThrow("Parent").setHidden(true);
         getMutableColumnOrThrow("DocumentSize").setFormat("#,##0");
@@ -34,8 +35,14 @@ public class DocumentsTable extends FilteredTable<CoreQuerySchema>
         getMutableColumnOrThrow("LastIndexed").setHidden(true);
         addColumn(new BaseColumnInfo("ParentDescription", this, JdbcType.VARCHAR));
         BaseColumnInfo orphaned = new BaseColumnInfo("Orphaned", this, JdbcType.BOOLEAN);
-        orphaned.setHidden(true);
         addColumn(orphaned);
+
+        setDefaultVisibleColumns(
+            new CsvSet("CreatedBy, Created, Container, DocumentName, DocumentSize, DocumentType, ParentType, ParentDescription")
+                .stream()
+                .map(FieldKey::fromParts)
+                .toList()
+        );
     }
 
     @Override

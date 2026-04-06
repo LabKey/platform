@@ -193,13 +193,12 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     {
         if (canImpersonate(c, user))
         {
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
             boolean canImpersonatePrivilegedRoles = user.hasRootPermission(ImpersonatePrivilegedSiteRolesPermission.class);
 
             // Stream the valid roles
             return RoleManager.getAllRoles().stream()
                 .filter(Role::isAssignable)
-                .filter(role -> role.isApplicable(policy, c))
+                .filter(role -> role.isApplicable(c))
                 .filter(role -> !role.isPrivileged() || canImpersonatePrivilegedRoles);
         }
         else

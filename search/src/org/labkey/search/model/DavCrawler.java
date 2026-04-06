@@ -81,9 +81,6 @@ public class DavCrawler implements ShutdownListener
 {
 //    SearchService.SearchCategory folderCategory = new SearchService.SearchCategory("Folder", "Folder");
 
-    long _defaultWait = TimeUnit.SECONDS.toMillis(60);
-    long _defaultBusyWait = TimeUnit.SECONDS.toMillis(1);
-
     // UNDONE: configurable
     // NOTE: we want to use these to control how fast we SUBMIT jobs to the indexer,
     // we don't want to hold up the actual indexer threads if possible
@@ -194,9 +191,7 @@ public class DavCrawler implements ShutdownListener
             {
                 _crawlerThread.join(1000);
             }
-            catch (InterruptedException x)
-            {
-            }
+            catch (InterruptedException _) {}
     }
 
 
@@ -465,7 +460,7 @@ public class DavCrawler implements ShutdownListener
             while (!_recent.isEmpty() && _recent.getFirst().second.getTime() < d.getTime()-10*60000)
                 _recent.removeFirst();
             String text = r.isCollection() ? r.getName() + "/" : r.getName();
-            _recent.add(new Pair(text,d));
+            _recent.add(new Pair<>(text,d));
         }
     }
 
@@ -479,33 +474,6 @@ public class DavCrawler implements ShutdownListener
             _crawlerEvent.notifyAll();
         }
     }
-
-
-    void _wait(Object event, long wait)
-    {
-        if (wait == 0 || _shuttingDown)
-            return;
-        try
-        {
-            synchronized (event)
-            {
-                event.wait(wait);
-            }
-        }
-        catch (InterruptedException ignored) {}
-    }
-
-
-//    final Runnable pingJob = new Runnable()
-//    {
-//        public void run()
-//        {
-//            synchronized (_crawlerEvent)
-//            {
-//                _crawlerEvent.notifyAll();
-//            }
-//        }
-//    };
 
 
     void waitForIndexerIdle() throws InterruptedException
@@ -526,7 +494,7 @@ public class DavCrawler implements ShutdownListener
         {
             while (!_shuttingDown && null == getSearchService())
             {
-                try { Thread.sleep(1000); } catch (InterruptedException x) {}
+                try { Thread.sleep(1000); } catch (InterruptedException _) {}
             }
 
             int consecutiveConfigExceptionCount = 0;
@@ -544,7 +512,17 @@ public class DavCrawler implements ShutdownListener
                     }
                     else
                     {
-                        _wait(_crawlerEvent, _defaultWait);
+                        if (!_shuttingDown)
+                        {
+                            try
+                            {
+                                synchronized (_crawlerEvent)
+                                {
+                                    _crawlerEvent.wait(TimeUnit.MINUTES.toMillis(1));
+                                }
+                            }
+                            catch (InterruptedException ignored) {}
+                        }
                     }
                     consecutiveConfigExceptionCount = 0;
                 }
@@ -552,11 +530,7 @@ public class DavCrawler implements ShutdownListener
                 catch (ConfigurationException e)
                 {
                     // Issue 49785. Avoid spinning in a tight loop if the DB is unresponsive.
-                    consecutiveConfigExceptionCount++;
-                    _log.error("Unexpected error, delaying next attempt" + (consecutiveConfigExceptionCount > 1 ? (". " + consecutiveConfigExceptionCount + " consecutive ConfigurationExceptions") : ""), e);
-
-                    // Fallback strategy based on the number of consecutive failed attempts
-                    _wait(_crawlerEvent, TimeUnit.MINUTES.toMillis(Math.min(10, consecutiveConfigExceptionCount)));
+                    AbstractSearchService.postFailureDelay(e, "Unexpected error", _log, ++consecutiveConfigExceptionCount, _crawlerEvent);
                 }
                 catch (Throwable t)
                 {
@@ -728,7 +702,7 @@ public class DavCrawler implements ShutdownListener
             recent = new ArrayList<>(_recent);
         }
 
-        recent.sort(Comparator.comparing(Pair::getValue, Comparator.reverseOrder()));
+        recent.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
 
         StringBuilder activity = new StringBuilder("<table cellpadding=1 cellspacing=0>"); //<tr><td><img width=80 height=1 src='" + AppProps.getInstance().getContextPath() + "/_.gif'></td><td><img width=300 height=1 src='" + AppProps.getInstance().getContextPath() + "/_.gif'></td></tr>");
         String last = "";

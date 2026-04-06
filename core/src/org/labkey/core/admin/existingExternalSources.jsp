@@ -92,8 +92,8 @@
             String hostId = "host" + num;
 %>
         <tr>
-            <td><input type="text" id="<%=h(directiveId)%>" name="<%=h(directiveId)%>" value="<%=h(sub.directive().getCspDirective())%>" data-directive="<%=sub.directive()%>" size="20" disabled/></td>
-            <td><input type="text" id="<%=h(hostId)%>" name="<%=h(hostId)%>" value="<%= h(sub.host())%>" size="80"<%=disabled(isTroubleshooter)%>/></td>
+            <td><input type="text" id="<%=h(directiveId)%>" name="<%=hname(directiveId)%>" value="<%=h(sub.directive().getCspDirective())%>" data-directive="<%=sub.directive()%>" size="20" disabled/></td>
+            <td><input type="text" id="<%=h(hostId)%>" name="<%=hname(hostId)%>" value="<%= h(sub.host())%>" size="80"<%=disabled(isTroubleshooter)%>/></td>
 
             <td><%=isTroubleshooter ?
                 HtmlString.EMPTY_STRING :
