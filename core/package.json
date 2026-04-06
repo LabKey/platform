@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.21.3-fb-assayLookupType974.1",
+    "@labkey/components": "7.21.4",
     "@labkey/themes": "1.7.0"
   },
   "devDependencies": {
