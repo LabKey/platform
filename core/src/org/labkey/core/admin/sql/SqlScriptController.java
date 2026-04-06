@@ -1314,7 +1314,7 @@ public class SqlScriptController extends SpringActionController
         - Consolidate all iterative changes (column additions, PK changes, and renames) into the initial CREATE TABLE statements.
         - Remove unnecessary DROP TABLE statements and core.fn_dropifexists calls, for example, those that come before a table has been created.
         - Remove all intermediate DROP and ALTER statements that are superseded by later logic.
-        - Remove CREATE TABLE and ALTER TABLE statements followed by DROP TABLE or and core.fn_dropifexists 'TABLE' call on that same table.
+        - Remove CREATE TABLE and ALTER TABLE statements followed by DROP TABLE or a core.fn_dropifexists 'TABLE' call on that same table.
         
         Include a summary of the changes you made at the end.
         """;
