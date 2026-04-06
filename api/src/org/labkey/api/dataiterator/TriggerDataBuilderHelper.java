@@ -135,24 +135,27 @@ public class TriggerDataBuilderHelper
             di = LoggingDataIterator.wrap(di);
 
             // Incorporate columns managed by triggers that may not overlap with the requested column set
-            var triggerColumns = _target.getTriggerManagedColumns(_c, context.getInsertOption());
-            if (triggerColumns != null && !triggerColumns.isEmpty())
+            if (QueryService.get().isTriggerManagedColumnsEnabled())
             {
-                var columns = triggerColumns.stream().map(_target::getColumn).filter(Objects::nonNull).toList();
-                if (!columns.isEmpty())
+                var triggerColumns = _target.getTriggerManagedColumns(_c, context.getInsertOption());
+                if (triggerColumns != null && !triggerColumns.isEmpty())
                 {
-                    var translator = new SimpleTranslator(di, context);
-                    translator.setDebugName("TriggerDataBuilderHelper.Before.translator");
-                    translator.selectAll();
-
-                    var columnNameMap = translator.getColumnNameMap();
-
-                    for (var column : columns)
+                    var columns = triggerColumns.stream().map(_target::getColumn).filter(Objects::nonNull).toList();
+                    if (!columns.isEmpty())
                     {
-                        if (!columnNameMap.containsKey(column.getName()))
-                            translator.addColumn(column, (Supplier<Object>) () -> null);
+                        var translator = new SimpleTranslator(di, context);
+                        translator.setDebugName("TriggerDataBuilderHelper.Before.translator");
+                        translator.selectAll();
+
+                        var columnNameMap = translator.getColumnNameMap();
+
+                        for (var column : columns)
+                        {
+                            if (!columnNameMap.containsKey(column.getName()))
+                                translator.addColumn(column, (Supplier<Object>) () -> null);
+                        }
+                        di = translator.getDataIterator(context);
                     }
-                    di = translator.getDataIterator(context);
                 }
             }
 
@@ -193,12 +196,10 @@ public class TriggerDataBuilderHelper
     {
         boolean _firstRow = true;
         Map<String, Object> _currentRow = null;
-        private final boolean _manageColumns;
 
         BeforeIterator(DataIterator di, DataIteratorContext context)
         {
             super(di, context);
-            _manageColumns = QueryService.get().isTriggerManagedColumnsEnabled();
         }
 
         @Override
@@ -226,7 +227,7 @@ public class TriggerDataBuilderHelper
                 _currentRow = getInput().getMap();
                 try
                 {
-                    _target.fireRowTrigger(_c, _user, triggerType, _context.getInsertOption(), true, rowNumber, _currentRow, getOldRow(), _extraContext, getExistingRecord(), _manageColumns);
+                    _target.fireRowTrigger(_c, _user, triggerType, _context.getInsertOption(), true, rowNumber, _currentRow, getOldRow(), _extraContext, getExistingRecord(), true);
                     return true;
                 }
                 catch (ValidationException vex)

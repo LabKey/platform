@@ -1911,6 +1911,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     private Collection<Trigger> _triggers = null;
+    private Boolean _isTriggerManagedColumnsEnabled = null;
 
     @NotNull
     public final Collection<Trigger> getTriggers(@Nullable Container c)
@@ -1922,6 +1923,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return _triggers;
     }
 
+    private boolean isTriggerManagedColumnsEnabled()
+    {
+        if (_isTriggerManagedColumnsEnabled == null)
+            _isTriggerManagedColumnsEnabled = QueryService.get().isTriggerManagedColumnsEnabled();
+        return _isTriggerManagedColumnsEnabled;
+    }
 
     @NotNull
     private final Collection<Trigger> loadTriggers(@Nullable Container c)
@@ -1996,7 +2003,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         DeltaTrackingMap<Object> trackedRow = null;
         Map<String, Object> newRowTracked = newRow;
 
-        if (newRow != null && before)
+        if (newRow != null && before && isTriggerManagedColumnsEnabled())
         {
             trackedRow = new DeltaTrackingMap<>(newRow);
             newRowTracked = trackedRow;

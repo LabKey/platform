@@ -22,6 +22,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -162,16 +163,16 @@ public interface Trigger
         @Nullable QueryUpdateService.InsertOption insertOption
     )
     {
-        // A null insertOption indicates a non-data iterator operation
-        if (insertOption == null)
+        // Trigger managed columns are disabled, do not modify the row
+        if (!QueryService.get().isTriggerManagedColumnsEnabled())
             return;
 
         // If this is a merge operation and the existingRecord is not supplied,
         // then throw an error to avoid overwriting managed values to null.
         // existingRow == null indicated the existing row was not queried, so throw an error
         // existingRecord.isEmpty() indicates a new record, so do not throw an error
-        if (insertOption.mergeRows && existingRecord == null)
-            throw new IllegalArgumentException("existingRecord must be non-null for MERGE triggers");
+        if (insertOption != null && insertOption.mergeRows && existingRecord == null)
+            throw new IllegalArgumentException("An existing record must be supplied for all MERGE triggers");
 
         setManagedColumns(newRow, null, TableInfo.TriggerType.INSERT);
     }
@@ -197,12 +198,12 @@ public interface Trigger
         @Nullable QueryUpdateService.InsertOption insertOption
     )
     {
-        // A null insertOption indicates a non-data iterator operation
-        if (insertOption == null)
+        // Trigger managed columns are disabled, do not modify the row
+        if (!QueryService.get().isTriggerManagedColumnsEnabled())
             return;
 
         if (oldRow == null)
-            throw new IllegalArgumentException("oldRow must be non-null for UPDATE triggers");
+            throw new IllegalArgumentException("An existing record must be supplied for all UPDATE triggers");
 
         setManagedColumns(newRow, oldRow, TableInfo.TriggerType.UPDATE);
     }
