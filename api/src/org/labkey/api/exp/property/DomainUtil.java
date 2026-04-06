@@ -984,7 +984,7 @@ public class DomainUtil
                         {
                             var dialect = domainTable.getSchema().getSqlDialect();
                             SQLFragment deletedArray = new SQLFragment("CAST(? AS TEXT[])").add(deletedValues.toArray(new String[0]));
-                            SQLFragment columnFrag = new SQLFragment().appendIdentifier(column.getAlias());
+                            SQLFragment columnFrag = new SQLFragment().appendIdentifier(column.getName());
 
                             SQLFragment sql = new SQLFragment("SELECT 1 FROM ")
                                     .append(domainTable)
