@@ -785,8 +785,9 @@ public class NameGenerator
 
         if (values != null)
         {
+            List<String> valueList = values.toList();
             Set<String> valueSet = new HashSet<>();
-            List<String> duplicates = values.filter(s -> !valueSet.add(s)).toList();
+            List<String> duplicates = valueList.stream().filter(s -> !valueSet.add(s)).toList();
             if (!duplicates.isEmpty())
             {
                 if (errors != null)
@@ -794,6 +795,7 @@ public class NameGenerator
                 else
                     throw new IllegalStateException("Duplicate parent names found: " + StringUtils.join(duplicates, ", "));
             }
+            return valueList.stream();
         }
 
         return values;
