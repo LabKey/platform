@@ -1101,10 +1101,10 @@ public class AttachmentServiceImpl implements AttachmentService
     private record Orphan(String documentName, String parentType){}
 
     @Override
-    public void logOrphanedAttachments()
+    public int logOrphanedAttachments()
     {
-        // Log orphaned attachments in this server, but in dev mode only, since this is for our testing. Also, we
-        // don't yet offer a way to delete orphaned attachments via the UI, so it's not helpful to inform admins.
+        int ret = 0;
+
         if (AppProps.getInstance().isDevMode())
         {
             User user = ElevatedUser.getElevatedUser(User.getSearchUser(), TroubleshooterRole.class);
@@ -1118,7 +1118,8 @@ public class AttachmentServiceImpl implements AttachmentService
                     List<Orphan> orphans = new TableSelector(documents, new CsvSet("DocumentName, ParentType"), filter, null).getArrayList(Orphan.class);
                     if (!orphans.isEmpty())
                     {
-                        LOG.error("Found {}, which likely indicates a problem with a delete method or a container listener.", StringUtilsLabKey.pluralize(orphans.size(), "orphaned attachment"));
+                        ret = orphans.size();
+                        LOG.error("Found {}, which likely indicates a problem with a delete method or a container listener.", StringUtilsLabKey.pluralize(ret, "orphaned attachment"));
 
                         final String message;
                         if (orphans.size() > MAX_ORPHANS_TO_LOG)
@@ -1136,6 +1137,8 @@ public class AttachmentServiceImpl implements AttachmentService
                 }
             }
         }
+
+        return ret;
     }
 
     record OrphanedAttachment(String container, String parent, String parentType, String documentName)

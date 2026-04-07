@@ -3710,6 +3710,20 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @AdminConsoleAction
+    public static class LogOrphanedAttachmentsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            int count = 0;
+            AttachmentService svc = AttachmentService.get();
+            if (svc != null)
+                count = svc.logOrphanedAttachments();
+            return Map.of("count", count);
+        }
+    }
+
     public static ActionURL getMemTrackerURL(boolean clearCaches, boolean gc)
     {
         ActionURL url = new ActionURL(MemTrackerAction.class, ContainerManager.getRoot());
