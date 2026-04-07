@@ -26,6 +26,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -81,6 +82,7 @@ public class ExpDataClassType implements AttachmentParentType
 
             if (null != domain)
             {
+                ExpDataClass dataClass = ExperimentService.get().getDataClass(lsid);
                 // Enumerate columns on the data class TableInfo since it includes the vocabulary domain columns.
                 // For example, Compound has a built-in Structure2D attachment column supplied by a vocabulary domain.
                 TableInfo dataClassTable = new DataClassUserSchema(c, User.getSearchUser()).getTable(domain.getName());
@@ -88,6 +90,10 @@ public class ExpDataClassType implements AttachmentParentType
                 if (dataClassTable == null)
                 {
                     LOG.warn("DataClass table not found for {}", domain.getName());
+                }
+                else if (dataClass == null)
+                {
+                    LOG.warn("DataClass not found for {}", domain.getName());
                 }
                 else if (dataClassTable.getColumns().stream().anyMatch(col -> col.getPropertyType() == PropertyType.ATTACHMENT))
                 {
@@ -103,12 +109,12 @@ public class ExpDataClassType implements AttachmentParentType
                                 new SQLFragment("':'"),
                                 new SQLFragment("Name")
                             ))
-                            .append(" AS Description FROM expdataclass.")
-                            .append(domain.getStorageTableName())
-                            .append(" ds JOIN ")
+                            .append(" AS Description FROM ")
                             .append(ExperimentService.get().getTinfoData())
-                            .append(" d ON d.rowId = ds.rowid")
-                            .append(" WHERE ").append(where)
+                            .append(" WHERE classid = ")
+                            .appendValue(dataClass.getRowId())
+                            .append(" AND ")
+                            .append(where)
                     );
                 }
             }
