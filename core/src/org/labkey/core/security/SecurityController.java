@@ -20,6 +20,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.graphper.api.Graphviz;
+import org.graphper.parser.DotParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -119,9 +121,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.DotRunner;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
@@ -149,7 +148,6 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
@@ -2099,50 +2097,16 @@ public class SecurityController extends SpringActionController
             }
             else
             {
-                String graph = GroupManager.getGroupGraphDot(groups, getUser(), form.getHideUnconnected());
-                File dir = FileUtil.getTempDirectory();
-                File svgFile = null;
-
-                try
-                {
-                    svgFile = FileUtil.createTempFile("groups", ".svg", dir);
-                    svgFile.deleteOnExit();
-                    DotRunner runner = new DotRunner(dir, graph);
-                    runner.addSvgOutput(svgFile);
-                    runner.execute();
-                    String svg = PageFlowUtil.getFileContentsAsString(svgFile);
-
-                    int idx = svg.indexOf("<svg");
-                    html = -1 != idx ? svg.substring(idx) : "Graphviz failed to generate this group diagram";
-                }
-                catch (IOException ioe)
-                {
-                    if (ioe.getMessage().startsWith("Cannot run program \"dot\""))
-                    {
-                        html = "This feature requires graphviz to be installed; ";
-
-                        if (getUser().hasRootPermission(AdminOperationsPermission.class))
-                            html += "see " + new HelpTopic("thirdPartyCode").getSimpleLinkHtml("the LabKey installation instructions") + " for more information.";
-                        else
-                            html += "contact a server administrator about this problem.";
-                    }
-                    else
-                    {
-                        throw ioe;
-                    }
-                }
-                finally
-                {
-                    if (null != svgFile)
-                        svgFile.delete();
-                }
+                String dot = GroupManager.getGroupGraphDot(groups, getUser(), form.getHideUnconnected());
+                Graphviz graph = DotParser.parse(dot);
+                html = graph.toSvgStr();
             }
 
             return new ApiSimpleResponse("html", html);
         }
     }
 
-    private static class GroupDiagramForm
+    public static class GroupDiagramForm
     {
         private boolean _hideUnconnected = false;
 
@@ -2159,7 +2123,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class FolderAccessAction extends SimpleViewAction<FolderAccessForm>
+    public static class FolderAccessAction extends SimpleViewAction<FolderAccessForm>
     {
         @Override
         public ModelAndView getView(FolderAccessForm form, BindException errors)
@@ -2409,7 +2373,7 @@ public class SecurityController extends SpringActionController
                     new UpdatePermissionsAction(),
                     new ShowRegistrationEmailAction(),
                     new GroupDiagramAction(),
-                controller.new FolderAccessAction()
+                    new FolderAccessAction()
             );
 
             // @RequiresPermission(UserManagementPermission.class)

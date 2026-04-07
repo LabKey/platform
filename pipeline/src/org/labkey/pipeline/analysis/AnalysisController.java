@@ -22,6 +22,8 @@ import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.graphper.api.Graphviz;
+import org.graphper.parser.DotParser;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -658,25 +660,45 @@ public class AnalysisController extends SpringActionController
         }
 
         File svgFile = null;
-        try
+        File dir = FileUtil.getTempDirectory();
+        String dot = buildDigraph(pipeline, true);
+
+        if (null != dot)
         {
-            File dir = FileUtil.getTempDirectory();
-            String dot = buildDigraph(pipeline);
-            svgFile = FileUtil.createTempFile("pipeline", ".svg", dir);
-            DotRunner runner = new DotRunner(dir, dot);
-            runner.addSvgOutput(svgFile);
-            runner.execute();
-            return HtmlString.unsafe(PageFlowUtil.getFileContentsAsString(svgFile));
+            String htmlOld = "Oops... error with DotRunner!";
+            try
+            {
+                svgFile = FileUtil.createTempFile("pipeline", ".svg", dir);
+                DotRunner runner = new DotRunner(dir, dot);
+                runner.addSvgOutput(svgFile);
+                runner.execute();
+                htmlOld = PageFlowUtil.getFileContentsAsString(svgFile);
+            }
+            catch (Exception e)
+            {
+                LOG.error("Error running dot", e);
+            }
+            finally
+            {
+                if (svgFile != null)
+                    svgFile.delete();
+            }
+
+            String html = "Oops... error with DotParser!";
+            try
+            {
+                dot = buildDigraph(pipeline, false);
+                Graphviz graph = DotParser.parse(dot);
+                html = graph.toSvgStr();
+            }
+            catch (Exception e)
+            {
+                LOG.error("Error with DotParser!", e);
+            }
+
+            return HtmlString.unsafe(htmlOld + "<br>" + html);
         }
-        catch (Exception e)
-        {
-            LOG.error("Error running dot", e);
-        }
-        finally
-        {
-            if (svgFile != null)
-                svgFile.delete();
-        }
+
         return null;
     }
 
@@ -692,7 +714,7 @@ public class AnalysisController extends SpringActionController
      * +---------+----------+
      * </pre>
      */
-    private String buildDigraph(TaskPipeline<?> pipeline)
+    private String buildDigraph(TaskPipeline<?> pipeline, boolean dotRunner)
     {
         TaskId[] progression = pipeline.getTaskProgression();
         if (progression == null)
@@ -700,6 +722,9 @@ public class AnalysisController extends SpringActionController
 
         StringBuilder sb = new StringBuilder();
         sb.append("digraph pipeline {\n");
+
+        if (!dotRunner)
+            sb.append("style=\"invis\";\nmargin=\"0,0\";\n"); // TODO: graph-support doesn't seem to respect "transparent"
 
         // First, add all the nodes
         for (TaskId taskId : progression)
@@ -730,7 +755,7 @@ public class AnalysisController extends SpringActionController
                 if (factory instanceof CommandTaskImpl.Factory f)
                 {
                     sb.append(StringUtils.join(
-                            Collections2.transform(f.getInputPaths().keySet(), (Function<String, Object>) input -> escapeDotFieldLabel(input) + "\\l"),
+                            Collections2.transform(f.getInputPaths().keySet(), (Function<String, Object>) this::escapeDotFieldLabel), // + "\\l"), TODO: Add this back once graph-support supports it
                             " | "));
                 }
                 else
@@ -747,7 +772,7 @@ public class AnalysisController extends SpringActionController
                 {
 
                     sb.append(StringUtils.join(
-                            Collections2.transform(f.getOutputPaths().keySet(), (Function<String, Object>) input -> escapeDotFieldLabel(input) + "\\r"),
+                            Collections2.transform(f.getOutputPaths().keySet(), (Function<String, Object>) this::escapeDotFieldLabel), // + "\\r"), TODO: Add this back once graph-support supports it
                             " | "));
                 }
                 else
