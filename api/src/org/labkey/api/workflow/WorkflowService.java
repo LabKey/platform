@@ -23,7 +23,12 @@ public interface WorkflowService
         AssayImport("assay types", "Imported assay data"),
         DeriveSamples("derivation sample type parameters", "Derived samples"),
         AliquotSamples("aliquot sample type parameters", "Aliquot samples"),
-        PoolSamples("pooling sample type parameters", "Pooled samples");
+        PoolSamples("pooling sample type parameters", "Pooled samples"),
+        AddToStorage("input parameters", "Added samples to storage"),
+        MoveInStorage("input parameters", "Moved samples in storage"),
+        CheckOut("input parameters", "Checked out samples"),
+        CheckIn("input parameters", "Checked in samples"),
+        RemoveFromStorage("sample status value", "Removed samples from storage");
 
         private final String _inputDescription;
         private final String _auditMessage;
