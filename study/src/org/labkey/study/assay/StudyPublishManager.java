@@ -1126,6 +1126,11 @@ public class StudyPublishManager implements StudyPublishService
                 qs.setQueryName(sampleType.getName());
                 qs.setBaseFilter(new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), keys));
 
+                // GitHub Issue #901 : lineage sourced subject or timepoint information are not resolving in cross folder configurations
+                ContainerFilter cf = QueryService.get().getContainerFilterForFolder(container, user);
+                if (cf != null)
+                    qs.setContainerFilterName(cf.getType().name());
+
                 Map<StudyPublishService.LinkToStudyKeys, FieldKey> fieldKeyMap = StudyPublishService.get().getSamplePublishFieldKeys(user, container, sampleType, qs);
                 UserSchema userSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
                 QueryView view = new QueryView(userSchema, qs, null);
@@ -1231,15 +1236,18 @@ public class StudyPublishManager implements StudyPublishService
                             for (Map<FieldKey, Object> row : results)
                             {
                                 Object timePointValue = getTimepointValue(row, publishKeys, visitBased, translateMap);
-                                if (row.containsKey(publishKeys.get(LinkToStudyKeys.ParticipantId)) && timePointValue != null)
+                                Object subjectId = row.get(publishKeys.get(LinkToStudyKeys.ParticipantId));
+                                if (subjectId != null  && timePointValue != null)
                                 {
                                     dataMaps.add(Map.of(
-                                            LinkToStudyKeys.ParticipantId.name(), row.get(publishKeys.get(LinkToStudyKeys.ParticipantId)),
+                                            LinkToStudyKeys.ParticipantId.name(), subjectId,
                                             timePointPropName, timePointValue,
                                             StudyPublishService.ROWID_PROPERTY_NAME, row.get(FieldKey.fromParts(StudyPublishService.ROWID_PROPERTY_NAME)),
                                             StudyPublishService.SOURCE_LSID_PROPERTY_NAME, sampleType.getLSID()
                                     ));
                                 }
+                                else
+                                    LOG.error("Failed to auto link samples to study for folder {}. Timepoint and subject ID were both not resolved.", container.getPath());
                             }
                         }
 
