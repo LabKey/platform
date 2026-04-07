@@ -313,7 +313,7 @@ public class SecurityManager
     public static void addGroupListener(GroupListener listener, boolean meFirst)
     {
         if (meFirst)
-            _listeners.add(0, listener);
+            _listeners.addFirst(listener);
         else
             _listeners.add(listener);
     }
@@ -2604,16 +2604,20 @@ public class SecurityManager
     public static class RegistrationEmailTemplate extends SecurityEmailTemplate
     {
         protected static final String DEFAULT_SUBJECT =
-                "Welcome to the ^organizationName^ ^siteShortName^ Web Site new user registration";
+            "Welcome to the ^organizationName^ ^siteShortName^ Web Site new user registration";
         protected static final String DEFAULT_BODY =
-                "^optionalMessage^\n\n" +
-                "You now have an account on the ^organizationName^ ^siteShortName^ web site. We are sending " +
-                "you this message to verify your email address and to allow you to create a password that will provide secure " +
-                "access to your data on the web site. To complete the registration process, simply click the link below or " +
-                "copy it to your browser's address bar. You will then be asked to choose a password.\n\n" +
-                "^verificationURL^\n\n" +
-                "The ^siteShortName^ home page is ^homePageURL^. If you have any questions don't hesitate to " +
-                "contact the ^siteShortName^ team at ^systemEmail^.";
+            """
+                ^optionalMessage^
+                
+                You now have an account on the ^organizationName^ ^siteShortName^ web site. We are sending \
+                you this message to verify your email address and to allow you to create a password that will provide secure \
+                access to your data on the web site. To complete the registration process, simply click the link below or \
+                copy it to your browser's address bar. You will then be asked to choose a password.
+                
+                ^verificationURL^
+                
+                The ^siteShortName^ home page is ^homePageURL^. If you have any questions don't hesitate to \
+                contact the ^siteShortName^ team at ^systemEmail^.""";
 
         @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
         public RegistrationEmailTemplate()
@@ -2647,14 +2651,17 @@ public class SecurityManager
     public static class PasswordResetEmailTemplate extends SecurityEmailTemplate
     {
         protected static final String DEFAULT_SUBJECT =
-                "Reset Password Notification from the ^siteShortName^ Web Site";
+            "Reset Password Notification from the ^siteShortName^ Web Site";
         protected static final String DEFAULT_BODY =
-                "We have reset your password on the ^organizationName^ ^siteShortName^ web site. " +
-                "To sign in to the system you will need " +
-                "to specify a new password. Click the link below or copy it to your browser's address bar. You will then be " +
-                "asked to enter a new password.\n\n" +
-                "^verificationURL^\n\n" +
-                "The ^siteShortName^ home page is ^homePageURL^.";
+            """
+                We have reset your password on the ^organizationName^ ^siteShortName^ web site. \
+                To sign in to the system you will need \
+                to specify a new password. Click the link below or copy it to your browser's address bar. You will then be \
+                asked to enter a new password.
+                
+                ^verificationURL^
+                
+                The ^siteShortName^ home page is ^homePageURL^.""";
 
         public PasswordResetEmailTemplate()
         {
@@ -3070,7 +3077,7 @@ public class SecurityManager
      */
     public static Set<Class<? extends Permission>> getPermissions(SecurableResource resource, UserPrincipal principal, Set<Role> contextualRoles)
     {
-        if (null == resource || null == principal)
+        if (null == resource || null == principal || !principal.isActive())
             return Set.of();
 
         if (principal instanceof User user && resource.getResourceContainer().isForbiddenProject(user, contextualRoles))
@@ -3279,7 +3286,7 @@ public class SecurityManager
             for(Object[] groupMemberResponse : groupMemberResponses)
             {
                 addMemberToGroupVerifyResponse((Group) groupMemberResponse[0],
-                        (UserPrincipal) groupMemberResponse[1], (String) groupMemberResponse[2]);
+                    (UserPrincipal) groupMemberResponse[1], (String) groupMemberResponse[2]);
             }
 
             addMember(groupA, groupB);
@@ -3334,6 +3341,30 @@ public class SecurityManager
                 User user2 = AuthenticationManager.authenticate(ViewServlet.mockRequest("GET", new ActionURL(), null, null, null), rawEmail, password);
                 assertNotNull("\"" + rawEmail + "\" failed to authenticate with password \"" + password + "\"; check labkey.log around timestamp " + DateUtil.formatDateTime(new Date(), "HH:mm:ss,SSS") + " for the reason", user2);
                 assertEquals(user, user2);
+
+                // Now test setting that user to inactive
+                Container testContainer = JunitUtil.getTestContainer();
+                if (!testContainer.hasPermission(user, ReadPermission.class))
+                {
+                    addRoleAssignment(new MutableSecurityPolicy(testContainer), user, ReaderRole.class, TestContext.get().getUser());
+                    assertTrue(testContainer.hasPermission(user, ReadPermission.class));
+                }
+                // Set the user to inactive
+                UserManager.setUserActive(TestContext.get().getUser(), user, false);
+                // Refresh the user from the cache
+                user = UserManager.getUser(user.getUserId());
+                assertNotNull(user);
+                assertFalse(user.isActive());
+                try
+                {
+                    user2 = AuthenticationManager.authenticate(ViewServlet.mockRequest("GET", new ActionURL(), null, null, null), rawEmail, password);
+                    fail("Expected authenticate() to throw for inactive user, but it returned " + user2);
+                }
+                catch (UnauthorizedException ue)
+                {
+                    // Expected that inactive user can't authenticate
+                }
+                assertFalse(testContainer.hasPermission(user, ReadPermission.class));
             }
             finally
             {
