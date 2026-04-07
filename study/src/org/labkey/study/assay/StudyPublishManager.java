@@ -1126,7 +1126,7 @@ public class StudyPublishManager implements StudyPublishService
                 qs.setQueryName(sampleType.getName());
                 qs.setBaseFilter(new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), keys));
 
-                // issue GH901 : lineage sourced subject or timepoint information are not resolving in cross folder configurations
+                // GitHub Issue #901 : lineage sourced subject or timepoint information are not resolving in cross folder configurations
                 ContainerFilter cf = QueryService.get().getContainerFilterForFolder(container, user);
                 if (cf != null)
                     qs.setContainerFilterName(cf.getType().name());
