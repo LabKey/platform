@@ -311,7 +311,6 @@ public interface Module
     String getVcsRevision();
     String getVcsUrl();
     String getVcsBranch();
-    String getVcsTag();
     String getBuildNumber();
 
     default String getBuildTime()
