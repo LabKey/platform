@@ -729,7 +729,7 @@ public class NameGenerator
                 .filter(s -> !s.isEmpty());
     }
 
-    public static Stream<String> parentNames(Object value, String parentColName, TSVWriter tsvWriter, @Nullable BatchValidationException errors)
+    public static @Nullable Stream<String> parentNames(Object value, String parentColName, TSVWriter tsvWriter, @Nullable BatchValidationException errors)
     {
         if (value == null)
             return Stream.empty();
@@ -781,6 +781,19 @@ public class NameGenerator
                 errors.addRowError(new ValidationException("Expected comma separated list or a JSONArray of parent names: " + value, parentColName));
             else
                 throw new IllegalStateException("For parent values in naming pattern, expected string or collection for '" + parentColName + "': " + value);
+        }
+
+        if (values != null)
+        {
+            Set<String> valueSet = new HashSet<>();
+            List<String> duplicates = values.filter(s -> !valueSet.add(s)).toList();
+            if (!duplicates.isEmpty())
+            {
+                if (errors != null)
+                    errors.addRowError(new ValidationException("Duplicate parent names found: " + StringUtils.join(duplicates, ", "), parentColName));
+                else
+                    throw new IllegalStateException("Duplicate parent names found: " + StringUtils.join(duplicates, ", "));
+            }
         }
 
         return values;
