@@ -695,6 +695,21 @@ d,seven,twelve,day,month,date,duration,guid
         new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP), CAST('03 Jan 2004' AS TIMESTAMP), SQL_TSI_YEAR) AS INTEGER)", JdbcType.INTEGER, 1),
         new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP), CAST('01 Feb 2004' AS TIMESTAMP), SQL_TSI_MONTH) AS INTEGER)", JdbcType.INTEGER, 12),
         new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP), CAST('02 Feb 2004' AS TIMESTAMP), SQL_TSI_MONTH) AS INTEGER)", JdbcType.INTEGER, 13),
+        // age_in_days() and age(..., SQL_TSI_DAY) - counts calendar-day boundaries (SQL Server semantics)
+        new MethodSqlTest("SELECT CAST(AGE_IN_DAYS(CAST('01 Jan 2003' AS TIMESTAMP), CAST('31 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 395),
+        new MethodSqlTest("SELECT CAST(AGE_IN_DAYS(CAST('31 Jan 2004' AS TIMESTAMP), CAST('01 Jan 2003' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, -395),
+        new MethodSqlTest("SELECT CAST(AGE_IN_DAYS(CAST('01 Jan 2004' AS TIMESTAMP), CAST('02 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 1),
+        new MethodSqlTest("SELECT CAST(AGE(CAST('01 Jan 2003' AS TIMESTAMP), CAST('31 Jan 2004' AS TIMESTAMP), SQL_TSI_DAY) AS INTEGER)", JdbcType.INTEGER, 395),
+        new MethodSqlTest("SELECT CAST(AGE(CAST('31 Jan 2004' AS TIMESTAMP), CAST('01 Jan 2003' AS TIMESTAMP), SQL_TSI_DAY) AS INTEGER)", JdbcType.INTEGER, -395),
+        // age_in_days() with datetime inputs - verifies calendar-boundary counting (not 24-hour elapsed time)
+        new MethodSqlTest("SELECT CAST(AGE_IN_DAYS(CAST('01 Jan 2003 00:00:01' AS TIMESTAMP), CAST('01 Jan 2003 23:59:59' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 0),
+        new MethodSqlTest("SELECT CAST(AGE_IN_DAYS(CAST('01 Jan 2003 23:59:59' AS TIMESTAMP), CAST('02 Jan 2003 00:00:01' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 1),
+        new MethodSqlTest("SELECT CAST(AGE_IN_DAYS(CAST('01 Jan 2003 12:00:00' AS TIMESTAMP), CAST('02 Jan 2003 11:00:00' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 1),
+        new MethodSqlTest("SELECT CAST(AGE_IN_DAYS(CAST('02 Jan 2003 00:00:01' AS TIMESTAMP), CAST('01 Jan 2003 23:59:59' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, -1),
+        new MethodSqlTest("SELECT CAST(AGE_IN_DAYS(CAST('01 Jan 2003 06:00:00' AS TIMESTAMP), CAST('03 Jan 2003 18:00:00' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 2),
+        // age(..., SQL_TSI_DAY) with datetime inputs - same calendar-boundary semantics
+        new MethodSqlTest("SELECT CAST(AGE(CAST('01 Jan 2003 00:00:01' AS TIMESTAMP), CAST('01 Jan 2003 23:59:59' AS TIMESTAMP), SQL_TSI_DAY) AS INTEGER)", JdbcType.INTEGER, 0),
+        new MethodSqlTest("SELECT CAST(AGE(CAST('01 Jan 2003 23:59:59' AS TIMESTAMP), CAST('02 Jan 2003 00:00:01' AS TIMESTAMP), SQL_TSI_DAY) AS INTEGER)", JdbcType.INTEGER, 1),
         new MethodSqlTest("SELECT CAST('1' AS SQL_INTEGER) ", JdbcType.INTEGER, 1),
         new MethodSqlTest("SELECT CAST('1' AS INTEGER) ", JdbcType.INTEGER, 1),
         new MethodSqlTest("SELECT CAST('1.5' AS DOUBLE) ", JdbcType.DOUBLE, 1.5),

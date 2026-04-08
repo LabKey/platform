@@ -1198,8 +1198,22 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         };
     }
 
+    /**
+     * Returns a SQLFragment that computes the whole number of elapsed calendar months between
+     * {@code start} and {@code end} using PostgreSQL's AGE() function for normalized year/month/day
+     * handling (works for positive and negative spans).
+     *
+     * <p><b>Invariant:</b> {@code start} and {@code end} must not contain JDBC parameters. This
+     * helper embeds each fragment more than once into the result, which would duplicate any bound
+     * parameters and cause a parameter-count mismatch at execution time. Current callers
+     * (timestampdiff2 with literal/column expressions) satisfy this; the check below guards
+     * against future misuse.
+     */
     private SQLFragment getWholeElapsedMonths(SQLFragment start, SQLFragment end)
     {
+        if (!start.getParams().isEmpty() || !end.getParams().isEmpty())
+            throw new IllegalArgumentException("getWholeElapsedMonths requires parameter-free SQLFragments; got start.params=" + start.getParams() + ", end.params=" + end.getParams());
+
         // AGE() normalizes the symbolic year/month/day components for both positive and negative spans.
         SQLFragment age = new SQLFragment("AGE((").append(end).append("), (").append(start).append("))");
         return new SQLFragment("((EXTRACT(YEAR FROM ").append(age).append(") * 12) + EXTRACT(MONTH FROM ").append(age)
