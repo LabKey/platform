@@ -437,7 +437,7 @@ public abstract class Method
                 return new TimestampInfo(this);
             }
         });
-        labkeyMethod.put("timestampdiff2", new Method("timestampdiff2", JdbcType.INTEGER, 3, 3)
+        labkeyMethod.put("timestampdiff2", new Method("timestampdiff2", JdbcType.BIGINT, 3, 3)
         {
             @Override
             public MethodInfo getMethodInfo()
