@@ -3,6 +3,8 @@ package org.labkey.api.ontology;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 
@@ -39,7 +41,10 @@ public enum KindOfQuantity
         @Override
         public List<Unit> getCommonUnits()
         {
-            return List.of(Unit.blocks, Unit.bottles, Unit.boxes, Unit.cells, Unit.kits, Unit.packs, Unit.pieces, Unit.slides, Unit.tests, Unit.unit);
+            return Arrays.stream(Unit.values())
+                    .filter(u -> u.getKindOfQuantity() == KindOfQuantity.Count && u != Unit.count)
+                    .sorted(Comparator.comparing(Unit::toString))
+                    .toList();
         }
     };
 
