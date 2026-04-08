@@ -1246,8 +1246,6 @@ public class StudyPublishManager implements StudyPublishService
                                             StudyPublishService.SOURCE_LSID_PROPERTY_NAME, sampleType.getLSID()
                                     ));
                                 }
-                                else
-                                    LOG.error("Failed to auto link samples to study for folder {}. Timepoint and subject ID were both not resolved.", container.getPath());
                             }
                         }
 
