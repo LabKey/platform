@@ -35,6 +35,7 @@ import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.exceptions.OptimisticConflictException;
+import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptor;
@@ -53,6 +54,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -453,20 +455,76 @@ public class ListManager implements SearchService.DocumentProvider
         QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldName, updatedName, new SchemaKey(null, ListQuerySchema.NAME), user, c);
     }
 
-    // CONSIDER: move "list delete" from ListDefinitionImpl.delete() implementation to ListManager for consistency
-    void deleteListDef(Container c, int listid)
+    void deleteList(User user, @NotNull ListDefinitionImpl list, @Nullable String auditUserComment) throws DomainNotFoundException
     {
-        DbScope scope = getListMetadataSchema().getScope();
-        assert scope.isTransactionActive();
+        var table = list.getTable(user);
+        var container = list.getContainer();
+        var listName = list.getName();
+
+        // In certain cases we may create a list that is not viable (i.e., one in which a table was never created because
+        // the metadata wasn't valid). Still allow deleting the list.
+        try (var tx = (table != null) ? table.getSchema().getScope().ensureTransaction() : ExperimentService.get().ensureTransaction())
+        {
+            // remove related full-text search docs and attachments
+            if (table != null && table.getUpdateService() instanceof ListQueryUpdateService qus)
+                qus.deleteRelatedListData(null);
+            else
+                deleteIndexedList(list);
+
+            try
+            {
+                Table.delete(getListMetadataTable(), new Object[]{container, list.getListId()});
+            }
+            catch (OptimisticConflictException x)
+            {
+                // ok
+            }
+            _listDefCache.remove(container.getId());
+
+            list.getDomainOrThrow().delete(user, auditUserComment);
+            addAuditEvent(list, user, String.format("The list %s was deleted", listName));
+
+            tx.commit();
+        }
+
+        QueryService.get().fireQueryDeleted(user, container, null, SchemaKey.fromParts(ListQuerySchema.NAME), Collections.singleton(listName));
+    }
+
+    /**
+     * Deletes all lists and list data in the given container.
+     */
+    public void deleteLists(Container c, User user, @Nullable String auditUserComment)
+    {
         try
         {
-            Table.delete(ListManager.get().getListMetadataTable(), new Object[]{c, listid});
+            var containerId = c.getEntityId().toString();
+            for (var list : ListManager.get().getLists(c, true))
+            {
+                var listDef = ListDefinitionImpl.of(list);
+
+                // Delete the entire list when the list's container is deleted
+                if (containerId.equals(list.getContainerId()))
+                {
+                    deleteList(user, listDef, auditUserComment);
+                    continue;
+                }
+
+                var table = listDef.getTable(user);
+                if (table == null)
+                    continue;
+
+                var qus = table.getUpdateService();
+                if (qus == null)
+                    continue;
+
+                // Otherwise, truncate the rows in this list in this container
+                qus.truncateRows(user, c, null, null);
+            }
         }
-        catch (OptimisticConflictException x)
+        catch (Exception e)
         {
-            // ok
+            throw new RuntimeException(e.getMessage(), e);
         }
-        _listDefCache.remove(c.getId());
     }
 
     public static final SearchService.SearchCategory listCategory = new SearchService.SearchCategory("list", "Lists");
