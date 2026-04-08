@@ -1117,8 +1117,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             return formatFunction(call, nativeFn, arguments);
         else if (fn.equalsIgnoreCase("timestampdiff"))
             return timestampdiff(arguments);
-        else if (fn.equalsIgnoreCase("timestampdiff2"))
-            return timestampdiff2(arguments);
         else
             return super.formatJdbcFunction(fn, arguments);
     }
@@ -1157,67 +1155,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             return epoch.append("/3600.0");
 
         return super.formatJdbcFunction("timestampdiff", arguments);
-    }
-
-    /* Native PostgreSQL implementation for all 9 SQL_TSI intervals.
-     * This returns INTEGER for all intervals and never falls back to the JDBC escape.
-     *
-     * This was specifically created as a work around for PG JDBC parameter swapping issue. This does not use the JDBC
-     * timestampdiff function.
-     */
-    private SQLFragment timestampdiff2(SQLFragment... arguments)
-    {
-        String interval = arguments[0].getSQL();
-        SQLFragment start = arguments[1];
-        SQLFragment end = arguments[2];
-        // Compute whole elapsed months first, then derive quarter/year from that value so all larger
-        // intervals use the same truncation-toward-zero semantics as the epoch-based branches below.
-        SQLFragment wholeMonths = getWholeElapsedMonths(start, end);
-
-        return switch (interval)
-        {
-            case "SQL_TSI_YEAR" ->
-                new SQLFragment("TRUNC((").append(wholeMonths).append(")::NUMERIC / 12)::INT");
-            case "SQL_TSI_QUARTER" ->
-                new SQLFragment("TRUNC((").append(wholeMonths).append(")::NUMERIC / 3)::INT");
-            case "SQL_TSI_MONTH" ->
-                wholeMonths;
-            case "SQL_TSI_WEEK" ->
-                new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")) / 604800)::INT");
-            case "SQL_TSI_DAY" ->
-                new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")) / 86400)::INT");
-            case "SQL_TSI_HOUR" ->
-                new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")) / 3600)::INT");
-            case "SQL_TSI_MINUTE" ->
-                new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")) / 60)::INT");
-            case "SQL_TSI_SECOND" ->
-                new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")))::INT");
-            case "SQL_TSI_FRAC_SECOND" ->
-                new SQLFragment("TRUNC(EXTRACT(EPOCH FROM (").append(end).append(") - (").append(start).append(")) * 1000)::BIGINT");
-            default -> throw new IllegalArgumentException("Unsupported interval for timestampdiff2: " + interval);
-        };
-    }
-
-    /**
-     * Returns a SQLFragment that computes the whole number of elapsed calendar months between
-     * {@code start} and {@code end} using PostgreSQL's AGE() function for normalized year/month/day
-     * handling (works for positive and negative spans).
-     *
-     * <p><b>Invariant:</b> {@code start} and {@code end} must not contain JDBC parameters. This
-     * helper embeds each fragment more than once into the result, which would duplicate any bound
-     * parameters and cause a parameter-count mismatch at execution time. Current callers
-     * (timestampdiff2 with literal/column expressions) satisfy this; the check below guards
-     * against future misuse.
-     */
-    private SQLFragment getWholeElapsedMonths(SQLFragment start, SQLFragment end)
-    {
-        if (!start.getParams().isEmpty() || !end.getParams().isEmpty())
-            throw new IllegalArgumentException("getWholeElapsedMonths requires parameter-free SQLFragments; got start.params=" + start.getParams() + ", end.params=" + end.getParams());
-
-        // AGE() normalizes the symbolic year/month/day components for both positive and negative spans.
-        SQLFragment age = new SQLFragment("AGE((").append(end).append("), (").append(start).append("))");
-        return new SQLFragment("((EXTRACT(YEAR FROM ").append(age).append(") * 12) + EXTRACT(MONTH FROM ").append(age)
-            .append("))::INT");
     }
 
     @Override
