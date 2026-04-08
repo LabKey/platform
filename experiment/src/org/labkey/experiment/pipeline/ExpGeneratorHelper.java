@@ -51,7 +51,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
-import org.labkey.experiment.ExperimentRunGraph;
+import org.labkey.experiment.FileBasedExperimentRunGraph;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpRunImpl;
@@ -274,7 +274,7 @@ public class ExpGeneratorHelper
                 throw new ExperimentException(e);
             }
 
-            ExperimentRunGraph.clearCache(run.getContainer());
+            FileBasedExperimentRunGraph.clearCache(run.getContainer());
         }
         catch (XarFormatException | BatchValidationException e)
         {

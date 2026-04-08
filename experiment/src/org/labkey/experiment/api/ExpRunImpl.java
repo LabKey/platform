@@ -56,14 +56,13 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.DotGraph;
-import org.labkey.experiment.ExperimentRunGraph;
+import org.labkey.experiment.FileBasedExperimentRunGraph;
 
 import java.io.File;
 import java.io.IOException;
@@ -564,7 +563,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
         // Clear the cache in a commit task, which allows us to do a single clear (which is semi-expensive) if multiple
         // runs are being deleted in the same transaction, like deleting a container
-        svc.getSchema().getScope().addCommitTask(ExperimentRunGraph.getCacheClearingCommitTask(getContainer()), DbScope.CommitTaskOption.POSTCOMMIT);
+        svc.getSchema().getScope().addCommitTask(FileBasedExperimentRunGraph.getCacheClearingCommitTask(getContainer()), DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     @Override

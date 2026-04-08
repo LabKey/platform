@@ -27,12 +27,13 @@ import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.graphper.api.GraphResource;
+import org.graphper.parser.DotParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.jspecify.annotations.NonNull;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -266,6 +267,7 @@ import org.labkey.experiment.DotGraph;
 import org.labkey.experiment.ExpDataFileListener;
 import org.labkey.experiment.ExperimentRunDisplayColumn;
 import org.labkey.experiment.ExperimentRunGraph;
+import org.labkey.experiment.FileBasedExperimentRunGraph;
 import org.labkey.experiment.LineageGraphDisplayColumn;
 import org.labkey.experiment.MissingFilesCheckInfo;
 import org.labkey.experiment.MoveRunsBean;
@@ -325,6 +327,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -1875,10 +1878,10 @@ public class ExperimentController extends SpringActionController
             ExpRunImpl experimentRun = (ExpRunImpl) form.lookupRun();
             ensureCorrectContainer(getContainer(), experimentRun, getViewContext());
 
-            ExperimentRunGraph.RunGraphFiles files;
+            FileBasedExperimentRunGraph.RunGraphFiles files;
             try
             {
-                files = ExperimentRunGraph.generateRunGraph(getViewContext(), experimentRun, detail, focus, focusType);
+                files = FileBasedExperimentRunGraph.generateRunGraph(getViewContext(), experimentRun, detail, focus, focusType);
             }
             catch (ExperimentException e)
             {
@@ -1898,6 +1901,10 @@ public class ExperimentController extends SpringActionController
             {
                 files.release();
             }
+
+            String dot = ExperimentRunGraph.getDotGraph(getContainer(), experimentRun, detail, focus, focusType);
+            getViewContext().getResponse().getOutputStream().write(ExperimentRunGraph.getSvg(dot).getBytes(StandardCharsets.UTF_8));
+
             return null;
         }
 

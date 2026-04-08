@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.apache.commons.io.IOUtils" %>
+<%@ page import="org.graphper.draw.ExecuteException" %>
 <%@ page import="org.labkey.api.exp.ExperimentException" %>
 <%@ page import="org.labkey.api.reader.Readers" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
@@ -24,6 +25,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.experiment.ExperimentRunGraph" %>
+<%@ page import="org.labkey.experiment.FileBasedExperimentRunGraph" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentRunGraphModel" %>
 <%@ page import="java.io.IOException" %>
@@ -51,7 +53,7 @@
 
     try
     {
-        ExperimentRunGraph.RunGraphFiles files = ExperimentRunGraph.generateRunGraph(context,
+        FileBasedExperimentRunGraph.RunGraphFiles files = FileBasedExperimentRunGraph.generateRunGraph(context,
                                                                                      model.getRun(),
                                                                                      model.isDetail(),
                                                                                      model.getFocus(),
@@ -94,9 +96,17 @@
             {
                 files.release();
             }
+
+            String dot = ExperimentRunGraph.getDotGraph(getContainer(),
+                model.getRun(),
+                model.isDetail(),
+                model.getFocus(),
+                model.getFocusType()
+            );
+            out.write(ExperimentRunGraph.getSvg(dot));
         }
     }
-    catch (ExperimentException | InterruptedException e)
+    catch (ExperimentException | InterruptedException | ExecuteException e)
     {
 %><p><%=h(e.getMessage(), true)%></p><%
     }

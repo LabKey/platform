@@ -113,7 +113,7 @@ public class DotGraph
         return getGroupId(rowIdD, _pendingDNodes, _writtenDNodes);
     }
 
-    public @Nullable Long getGroupId(Long rowId, Map<Long, DotNode> pendingNodes, Map<Long, DotNode> writtenNodes)
+    private @Nullable Long getGroupId(Long rowId, Map<Long, DotNode> pendingNodes, Map<Long, DotNode> writtenNodes)
     {
         DotNode node = null;
         if (pendingNodes.containsKey(rowId))
@@ -348,7 +348,7 @@ public class DotGraph
         _groupPANodes.clear();
     }
 
-    public void writePending(Map<Long, DotNode> pendingMap, Map<Long, DotNode> writtenMap)
+    private void writePending(Map<Long, DotNode> pendingMap, Map<Long, DotNode> writtenMap)
     {
         Set<Long> nodesToMove = new HashSet<>();
         for (Long key : pendingMap.keySet())

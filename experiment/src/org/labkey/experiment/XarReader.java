@@ -449,7 +449,7 @@ public class XarReader extends AbstractXarImporter
             throw new XarFormatException(e);
         }
 
-        ExperimentRunGraph.clearCache(getContainer());
+        FileBasedExperimentRunGraph.clearCache(getContainer());
 
         try
         {
