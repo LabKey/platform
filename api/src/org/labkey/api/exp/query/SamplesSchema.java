@@ -264,7 +264,15 @@ public class SamplesSchema extends AbstractExpSchema implements UserSchema.HasCo
                 if (domainProperty != null && domainProperty.getPropertyType().getJdbcType().isText())
                     _columnName = "Name";
 
-                return getTable(tableName, getLookupContainerFilter());
+                // GitHub Issue #688
+                if (st != null)
+                    return getTable(tableName, getLookupContainerFilter());
+
+                ExpMaterialTable ret = ExperimentService.get().createMaterialTable(SamplesSchema.this, getLookupContainerFilter(), st);
+                ret.populate();
+                ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
+                ret.setLocked(true);
+                return ret;
             }
 
             @Override
