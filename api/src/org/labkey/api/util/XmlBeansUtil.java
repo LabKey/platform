@@ -147,6 +147,7 @@ public class XmlBeansUtil
             SAX_PARSER_FACTORY_ALLOWING_DOCTYPE = saxParserFactory(true);
 
             DOCUMENT_BUILDER_FACTORY = documentBuilderFactory(false);
+            // Use the ALLOWING_DOCTYPE variant when parsing XML that contains a <!DOCTYPE> declaration (e.g. NCBI's eSummary responses)
             DOCUMENT_BUILDER_FACTORY_ALLOWING_DOCTYPE = documentBuilderFactory(true);
         }
         catch (ParserConfigurationException | SAXException e)
@@ -182,12 +183,8 @@ public class XmlBeansUtil
         result.setNamespaceAware(true);
 
         // Disable features that could lead to XXE or other vulnerabilities.
-        // When allowDocType is true the DOCTYPE declaration is permitted, but external entity
-        // and external DTD resolution remain disabled, so XXE protection stays in effect —
-        // only the strict disallow-doctype-decl flag is relaxed. Use the ALLOWING_DOCTYPE
-        // variant when parsing XML from a source that legitimately emits a <!DOCTYPE>
-        // declaration (e.g. NCBI's eSummary responses, which reference an external DTD that
-        // we don't actually fetch).
+        // When allowDocType is true the DOCTYPE declaration is permitted. External entity
+        // resolution remains disabled, so XXE protection is still in effect.
         if (!allowDocType)
         {
             result.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
