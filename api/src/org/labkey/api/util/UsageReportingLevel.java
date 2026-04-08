@@ -327,9 +327,11 @@ public enum UsageReportingLevel implements SafeToRenderEnum
             moduleBuildInfo.put("vcsUrl", module.getVcsUrl());
             moduleBuildInfo.put("vcsBranch", module.getVcsBranch());
             moduleBuildInfo.put("vcsRevision", module.getVcsRevision());
-            moduleBuildInfo.put("vcsTag", module.getVcsTag());
+            // We stopped capturing the Git tag in module metadata. The release version property serves
+            // the same purpose. Continue reporting as vcsTag for backwards compatibility with mothership reporting.
+            moduleBuildInfo.put("vcsTag", module.getReleaseVersion());
             moduleBuildInfo.put("moduleClass", module.getClass().getName());
-            moduleBuildInfo.put("version", module.getFormattedSchemaVersion()); // TODO: call this "schemaVersion"? Also send "releaseVersion"?
+            moduleBuildInfo.put("version", module.getFormattedSchemaVersion()); // TODO: call this "schemaVersion"?
 
             // Add to the module's info to be included in the submission
             moduleStats.put("buildInfo", moduleBuildInfo);
