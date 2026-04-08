@@ -255,7 +255,16 @@ public class SamplesSchema extends AbstractExpSchema implements UserSchema.HasCo
             {
                 ContainerFilter cf = getLookupContainerFilter();
                 String cacheKey = SamplesSchema.class.getName() + "/" + schemaName + "/" + tableName + "/" + (null==st ? "" : st.getMaterialLSIDPrefix()) + "/" + (null==domainProperty ? "" : domainProperty.getPropertyURI()) + cf.getCacheKey();
-                return SamplesSchema.this.getCachedLookupTableInfo(cacheKey, () -> getTable(tableName, cf));
+                return SamplesSchema.this.getCachedLookupTableInfo(cacheKey, this::createLookupTableInfo);
+            }
+
+            private TableInfo createLookupTableInfo()
+            {
+                // Hack to support lookup via RowId or Name
+                if (domainProperty != null && domainProperty.getPropertyType().getJdbcType().isText())
+                    _columnName = "Name";
+
+                return getTable(tableName, getLookupContainerFilter());
             }
 
             @Override
