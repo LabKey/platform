@@ -46,6 +46,18 @@ public enum Unit implements SimpleConvert
     bottles(KindOfQuantity.Count, unit, 1.0, 2, "bottles",
             Quantity.class,
             "bottle", "bottles"),
+    organisms(KindOfQuantity.Count, unit, 1.0, 2, "organisms",
+            Quantity.class,
+            "organism", "organisms"),
+    vials(KindOfQuantity.Count, unit, 1.0, 2, "vials",
+            Quantity.class,
+            "vial", "vials"),
+    tubes(KindOfQuantity.Count, unit, 1.0, 2, "tubes",
+            Quantity.class,
+            "tube", "tubes"),
+    syringes(KindOfQuantity.Count, unit, 1.0, 2, "syringes",
+            Quantity.class,
+            "syringe", "syringes"),
 
     mL(KindOfQuantity.Volume, null, 1e0, 6, "mL",
             Quantity.Volume_ml.class,
@@ -130,7 +142,7 @@ public enum Unit implements SimpleConvert
         this.quantityClass = quantityClass;
         this.singular = singular;
         this.plural = plural;
-        this.otherNames = null==otherNames || otherNames.length==0 ? null : otherNames;
+        this.otherNames = null == otherNames || otherNames.length == 0 ? null : otherNames;
     }
 
     public boolean isBase()
@@ -173,7 +185,8 @@ public enum Unit implements SimpleConvert
         return print;
     }
 
-    static final HashMap<String,Unit> unitMap = new HashMap<>(Unit.values().length*10);
+    static final HashMap<String, Unit> unitMap = new HashMap<>(Unit.values().length * 10);
+
     static
     {
         for (Unit unit : Unit.values())
@@ -200,7 +213,7 @@ public enum Unit implements SimpleConvert
     }
 
     // don't assume multiplicative relation between units (e.g. Kelvin and Celsius)
-    static Function<Double,Double> convertFn(Unit from, Unit to)
+    static Function<Double, Double> convertFn(Unit from, Unit to)
     {
         if (from == to)
             return Function.identity();
@@ -214,7 +227,7 @@ public enum Unit implements SimpleConvert
         Quantity.LOG.debug("Converting value {} from {} to {}", value, from.name(), to.name());
         if (from.base != to.base)
             throw new IllegalArgumentException("Can't convert " + from.name() + " to " + to.name());
-        return from==to ? value : to.fromBaseUnitValue(from.toBaseUnitValue(value));
+        return from == to ? value : to.fromBaseUnitValue(from.toBaseUnitValue(value));
     }
 
     @Override
