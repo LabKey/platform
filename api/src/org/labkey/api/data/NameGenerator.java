@@ -76,6 +76,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.exp.api.ExpMaterial.ALIQUOTED_FROM_INPUT;
@@ -729,7 +730,7 @@ public class NameGenerator
                 .filter(s -> !s.isEmpty());
     }
 
-    public static Stream<String> parentNames(Object value, String parentColName, TSVWriter tsvWriter, @Nullable BatchValidationException errors)
+    public static @Nullable Stream<String> parentNames(Object value, String parentColName, TSVWriter tsvWriter, @Nullable BatchValidationException errors)
     {
         if (value == null)
             return Stream.empty();
@@ -781,6 +782,21 @@ public class NameGenerator
                 errors.addRowError(new ValidationException("Expected comma separated list or a JSONArray of parent names: " + value, parentColName));
             else
                 throw new IllegalStateException("For parent values in naming pattern, expected string or collection for '" + parentColName + "': " + value);
+        }
+
+        if (values != null)
+        {
+            List<String> valueList = values.toList();
+            Set<String> valueSet = new HashSet<>();
+            Set<String> duplicates = valueList.stream().filter(s -> !valueSet.add(s)).collect(Collectors.toSet());
+            if (!duplicates.isEmpty())
+            {
+                if (errors != null)
+                    errors.addRowError(new ValidationException("Duplicate parent names found: " + StringUtils.join(duplicates, ", "), parentColName));
+                else
+                    throw new IllegalStateException("Duplicate parent names found: " + StringUtils.join(duplicates, ", "));
+            }
+            return valueList.stream();
         }
 
         return values;

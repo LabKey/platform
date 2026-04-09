@@ -182,21 +182,28 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
                     @Override
                     public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
                     {
-                        Container c = getContainer(ctx);
-                        if (c != null)
+                        try
                         {
-                            if (c.hasPermission(getUserSchema().getUser(), ReadPermission.class))
+                            Container c = getContainer(ctx);
+                            if (c != null)
                             {
-                                out.write(LinkBuilder.simpleLink(c.getName(), c.getStartURL(getUserSchema().getUser())));
+                                if (c.hasPermission(getUserSchema().getUser(), ReadPermission.class))
+                                {
+                                    out.write(LinkBuilder.simpleLink(c.getName(), c.getStartURL(getUserSchema().getUser())));
+                                }
+                                else
+                                {
+                                    out.write(c.getName());
+                                }
                             }
                             else
                             {
-                                out.write(c.getName());
+                                super.renderGridCellContents(ctx, out);
                             }
                         }
-                        else
+                        catch (Exception e)
                         {
-                            super.renderGridCellContents(ctx, out);
+                            out.write(e.getMessage());
                         }
                     }
                 };
