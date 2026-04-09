@@ -1897,6 +1897,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         var columns = new CaseInsensitiveHashSet();
         for (var trigger : triggers)
         {
+            // Trigger is disabled, do not modify the column set
+            if (!trigger.isManagedColumnsEnabled())
+                continue;
+
             var managedColumns = trigger.getManagedColumns();
             if (managedColumns == null)
                 continue;

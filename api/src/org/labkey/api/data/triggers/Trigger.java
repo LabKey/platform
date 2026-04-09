@@ -172,7 +172,7 @@ public interface Trigger
     )
     {
         // Trigger managed columns are disabled, do not modify the row
-        if (!QueryService.get().isTriggerManagedColumnsEnabled())
+        if (!QueryService.get().isTriggerManagedColumnsEnabled() || !isManagedColumnsEnabled())
             return;
 
         // If this is a merge operation and the existingRecord is not supplied,
@@ -207,7 +207,7 @@ public interface Trigger
     )
     {
         // Trigger managed columns are disabled, do not modify the row
-        if (!QueryService.get().isTriggerManagedColumnsEnabled())
+        if (!QueryService.get().isTriggerManagedColumnsEnabled() || !isManagedColumnsEnabled())
             return;
 
         if (oldRow == null)
