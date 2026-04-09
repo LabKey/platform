@@ -227,7 +227,7 @@ public class TriggerDataBuilderHelper
                 _currentRow = getInput().getMap();
                 try
                 {
-                    _target.fireRowTrigger(_c, _user, triggerType, _context.getInsertOption(), true, rowNumber, _currentRow, getOldRow(), _extraContext, getExistingRecord(), true);
+                    _target.fireRowTrigger(_c, _user, triggerType, _context.getInsertOption(), true, rowNumber, _currentRow, getOldRow(), _extraContext, getExistingRecord());
                     return true;
                 }
                 catch (ValidationException vex)
@@ -294,7 +294,7 @@ public class TriggerDataBuilderHelper
                     Map<String,Object> newRow = getInput().getMap();
                     try
                     {
-                        _target.fireRowTrigger(_c, _user, getTriggerType(), _context.getInsertOption(), false, rowNumber, newRow, getOldRow(), _extraContext, getExistingRecord(), false);
+                        _target.fireRowTrigger(_c, _user, getTriggerType(), _context.getInsertOption(), false, rowNumber, newRow, getOldRow(), _extraContext, getExistingRecord());
                     }
                     catch (ValidationException vex)
                     {

@@ -3610,6 +3610,7 @@ public class QueryServiceImpl implements QueryService
         return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
     }
 
+    @Override
     public boolean isTriggerManagedColumnsEnabled()
     {
         return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS);

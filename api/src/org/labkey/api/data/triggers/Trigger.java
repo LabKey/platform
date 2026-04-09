@@ -174,7 +174,7 @@ public interface Trigger
         if (insertOption != null && insertOption.mergeRows && existingRecord == null)
             throw new IllegalArgumentException("An existing record must be supplied for all MERGE triggers");
 
-        setManagedColumns(newRow, null, TableInfo.TriggerType.INSERT);
+        setManagedColumns(newRow, existingRecord, TableInfo.TriggerType.INSERT);
     }
 
     /**

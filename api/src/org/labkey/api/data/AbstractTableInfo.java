@@ -1987,8 +1987,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         @Nullable Map<String, Object> newRow,
         @Nullable Map<String, Object> oldRow,
         Map<String, Object> extraContext,
-        @Nullable Map<String, Object> existingRecord,
-        boolean manageColumns
+        @Nullable Map<String, Object> existingRecord
     ) throws ValidationException
     {
         ValidationException errors = new ValidationException();
@@ -2002,8 +2001,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         // Wrap the row once before the loop
         DeltaTrackingMap<Object> trackedRow = null;
         Map<String, Object> newRowTracked = newRow;
+        boolean manageColumns = before && insertOption != null && isTriggerManagedColumnsEnabled();
 
-        if (newRow != null && before && isTriggerManagedColumnsEnabled())
+        if (newRow != null && manageColumns)
         {
             trackedRow = new DeltaTrackingMap<>(newRow);
             newRowTracked = trackedRow;
@@ -2018,6 +2018,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (errors.hasErrors())
                 break;
 
+            // trackedRow should only be null when not manageColumns
             if (trackedRow != null)
             {
                 var managed = script.getManagedColumns();
@@ -2050,13 +2051,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                             diffs.add("remove: " + removed.stream().map(col -> "'" + col + "'").collect(Collectors.joining(", ")));
 
                         String message = "Trigger '" + script.getName() + "' attempted to " + String.join(", ", diffs) + ". Declare managed columns to include them in the column set.";
-                        if (manageColumns)
-                        {
-                            errors.addGlobalError(message);
-                            break;
-                        }
-
-                        LOG.warn(message + " This will be an error if invoked via data iteration.");
+                        errors.addGlobalError(message);
+                        break;
                     }
                 }
 
@@ -2070,15 +2066,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                     {
                         if (!newRowTracked.containsKey(col))
                         {
+                            // Not using errors.addFieldError() here as the managed column may not be visible
                             String message = "Trigger '" + script.getName() + "' declared the managed column '" + col + "' but did not set a value for it. Set null to clear or provide a value.";
-                            if (manageColumns)
-                            {
-                                // Not using errors.addFieldError() here as the managed column may not be visible
-                                errors.addGlobalError(message);
-                                break;
-                            }
-
-                            LOG.warn(message + " This will be an error if invoked via data iteration.");
+                            errors.addGlobalError(message);
+                            break;
                         }
                     }
                 }
