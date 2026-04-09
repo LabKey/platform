@@ -16,6 +16,7 @@
 package org.labkey.api.dataiterator;
 
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.triggers.Trigger;
@@ -30,6 +31,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static org.labkey.api.admin.FolderImportContext.IS_NEW_FOLDER_IMPORT_KEY;
@@ -135,29 +137,7 @@ public class TriggerDataBuilderHelper
             di = LoggingDataIterator.wrap(di);
 
             // Incorporate columns managed by triggers that may not overlap with the requested column set
-            if (QueryService.get().isTriggerManagedColumnsEnabled())
-            {
-                var triggerColumns = _target.getTriggerManagedColumns(_c, context.getInsertOption());
-                if (triggerColumns != null && !triggerColumns.isEmpty())
-                {
-                    var columns = triggerColumns.stream().map(_target::getColumn).filter(Objects::nonNull).toList();
-                    if (!columns.isEmpty())
-                    {
-                        var translator = new SimpleTranslator(di, context);
-                        translator.setDebugName("TriggerDataBuilderHelper.Before.translator");
-                        translator.selectAll();
-
-                        var columnNameMap = translator.getColumnNameMap();
-
-                        for (var column : columns)
-                        {
-                            if (!columnNameMap.containsKey(column.getName()))
-                                translator.addColumn(column, (Supplier<Object>) () -> null);
-                        }
-                        di = translator.getDataIterator(context);
-                    }
-                }
-            }
+            di = getManagedColumnsDataIterator(di, context);
 
             Set<String> existingRecordKeyColumnNames = null;
             Set<String> sharedKeys = null;
@@ -189,6 +169,42 @@ public class TriggerDataBuilderHelper
 
             di = ExistingRecordDataIterator.createBuilder(di, _target, existingRecordKeyColumnNames, sharedKeys, true).getDataIterator(context);
             return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(di), context));
+        }
+
+        private DataIterator getManagedColumnsDataIterator(DataIterator di, DataIteratorContext context)
+        {
+            if (QueryService.get().isTriggerManagedColumnsEnabled())
+            {
+                var triggerColumns = _target.getTriggerManagedColumns(_c, context.getInsertOption());
+                if (triggerColumns != null && !triggerColumns.isEmpty())
+                {
+                    Function<String, ColumnInfo> columnMapper;
+                    if (_target instanceof AbstractTableInfo target)
+                        columnMapper = colName -> target.getColumn(colName, false);
+                    else
+                        columnMapper = _target::getColumn;
+
+                    var columns = triggerColumns.stream().map(columnMapper).filter(Objects::nonNull).toList();
+                    if (!columns.isEmpty())
+                    {
+                        var translator = new SimpleTranslator(di, context);
+                        translator.setDebugName("TriggerDataBuilderHelper.Before.translator");
+                        translator.selectAll();
+
+                        var columnNameMap = translator.getColumnNameMap();
+
+                        for (var column : columns)
+                        {
+                            if (!columnNameMap.containsKey(column.getName()))
+                                translator.addColumn(column, (Supplier<Object>) () -> null);
+                        }
+
+                        di = translator.getDataIterator(context);
+                    }
+                }
+            }
+
+            return di;
         }
     }
 
