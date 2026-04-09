@@ -76,6 +76,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.exp.api.ExpMaterial.ALIQUOTED_FROM_INPUT;
@@ -787,7 +788,7 @@ public class NameGenerator
         {
             List<String> valueList = values.toList();
             Set<String> valueSet = new HashSet<>();
-            List<String> duplicates = valueList.stream().filter(s -> !valueSet.add(s)).toList();
+            Set<String> duplicates = valueList.stream().filter(s -> !valueSet.add(s)).collect(Collectors.toSet());
             if (!duplicates.isEmpty())
             {
                 if (errors != null)
