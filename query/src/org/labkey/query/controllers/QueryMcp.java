@@ -137,7 +137,7 @@ public class QueryMcp implements McpService.McpImpl
                 if (warning.isPresent())
                     throw warning.get();
             }
-            // TODO if that worked, let have the DB check it too
+// CONSIDER: add back code to add database validate, but this seems to have stopped working
 //            if (ti.getSqlDialect().isPostgreSQL())
 //            {
 //                var parameters = ti.getNamedParameters();
