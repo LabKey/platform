@@ -138,6 +138,14 @@ public interface Trigger
     }
 
     /**
+     * Returns true if managed columns are enabled for this trigger.
+     */
+    default boolean isManagedColumnsEnabled()
+    {
+        return true;
+    }
+
+    /**
      * Ensures all columns declared by {@link #getManagedColumns()} are present in {@code newRow}
      * before INSERT trigger fires.
      * <p>

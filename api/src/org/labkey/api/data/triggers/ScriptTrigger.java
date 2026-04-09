@@ -66,6 +66,7 @@ public class ScriptTrigger implements Trigger
     @NotNull protected final TableInfo _table;
     @NotNull protected final ScriptReference _script;
     @Nullable protected volatile ManagedColumns _managedColumns = null;
+    protected volatile Boolean _isManagedColumnsEnabled = null;
 
     protected ScriptTrigger(@NotNull Container c, @NotNull TableInfo table, @NotNull ScriptReference script)
     {
@@ -119,25 +120,34 @@ public class ScriptTrigger implements Trigger
     public @Nullable ManagedColumns getManagedColumns()
     {
         if (_managedColumns == null)
-            _managedColumns = resolveManagedColumns();
+        {
+            var user = _table.getUserSchema() != null ? _table.getUserSchema().getUser() : null;
+            var result = _invokeTableScript(_container, user, Object.class, "managedColumns", null, () -> null);
+            _isManagedColumnsEnabled = !(result instanceof Boolean enabled) || enabled;
+
+            if (result instanceof Map<?, ?> map)
+            {
+                var insert = managedColumnsFromScriptMap(map, "insert");
+                var update = managedColumnsFromScriptMap(map, "update");
+                var ignored = managedColumnsFromScriptMap(map, "ignored");
+
+                _managedColumns = new ManagedColumns(insert, update, ignored);
+            }
+            else
+                _managedColumns = ManagedColumns.empty();
+        }
 
         return _managedColumns;
     }
 
-    private @NotNull ManagedColumns resolveManagedColumns()
+    @Override
+    public boolean isManagedColumnsEnabled()
     {
-        var user = _table.getUserSchema() != null ? _table.getUserSchema().getUser() : null;
-        var result = _invokeTableScript(_container, user, Object.class, "managedColumns", null, () -> null);
-        if (result instanceof Map<?, ?> map)
-        {
-            var insert = managedColumnsFromScriptMap(map, "insert");
-            var update = managedColumnsFromScriptMap(map, "update");
-            var ignored = managedColumnsFromScriptMap(map, "ignored");
+        // Ensure the flag is initialized
+        if (_isManagedColumnsEnabled == null)
+            getManagedColumns();
 
-            return new ManagedColumns(insert, update, ignored);
-        }
-
-        return ManagedColumns.empty();
+        return _isManagedColumnsEnabled;
     }
 
     private @NotNull Set<String> managedColumnsFromScriptMap(@NotNull Map<?, ?> map, String key)

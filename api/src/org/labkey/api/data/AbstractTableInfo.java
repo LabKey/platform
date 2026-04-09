@@ -2019,7 +2019,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 break;
 
             // trackedRow should only be null when not manageColumns
-            if (trackedRow != null)
+            if (trackedRow != null && script.isManagedColumnsEnabled())
             {
                 var managed = script.getManagedColumns();
                 var managedCols = managed != null ? managed.getColumns(type) : null;
