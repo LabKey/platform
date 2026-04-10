@@ -54,13 +54,14 @@ public final class WellTriggerFactory implements TriggerFactory
 
         @Override
         public void beforeUpdate(
-                TableInfo table,
-                Container c,
-                User user,
-                @Nullable QueryUpdateService.InsertOption insertOption, @Nullable Map<String, Object> newRow,
-                @Nullable Map<String, Object> oldRow,
-                ValidationException errors,
-                Map<String, Object> extraContext
+            TableInfo table,
+            Container c,
+            User user,
+            @Nullable QueryUpdateService.InsertOption insertOption,
+            @Nullable Map<String, Object> newRow,
+            @Nullable Map<String, Object> oldRow,
+            ValidationException errors,
+            Map<String, Object> extraContext
         ) throws ValidationException
         {
             if (oldRow == null || errors.hasErrors() || !oldRow.containsKey(WellTable.Column.PlateId.name()))
@@ -92,7 +93,8 @@ public final class WellTriggerFactory implements TriggerFactory
         @Override
         public @Nullable ManagedColumns getManagedColumns()
         {
-            return ManagedColumns.all(WellTable.Column.Type.name());
+            // "Type" is a calculated column, so we do not include it as a managed column
+            return ManagedColumns.ignored(WellTable.Column.Type.name());
         }
 
         private void addTypeSample(
@@ -121,8 +123,8 @@ public final class WellTriggerFactory implements TriggerFactory
             newRow.put(WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name());
         }
 
-        // Since "Type" is a calculated column (i.e. not in the database) its value is not included in
-        // the original row, thus, we need to query for it dynamically.
+        // Since "Type" is a calculated column (i.e., not in the database), its value is not included in
+        // the original row; thus, we need to query for it dynamically.
         private boolean hasWellType(Container c, User user, @Nullable Map<String, Object> oldRow)
         {
             if (oldRow == null)
@@ -157,7 +159,6 @@ public final class WellTriggerFactory implements TriggerFactory
         )
         {
             addTypeSample(c, user, newRow, null, extraContext);
-            setInsertManagedColumns(newRow, existingRecord, insertOption);
         }
 
         @Override
@@ -173,7 +174,6 @@ public final class WellTriggerFactory implements TriggerFactory
         )
         {
             addTypeSample(c, user, newRow, oldRow, extraContext);
-            setUpdateManagedColumns(newRow, oldRow, insertOption);
         }
     }
 

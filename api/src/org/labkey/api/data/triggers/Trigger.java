@@ -112,6 +112,11 @@ public interface Trigger
             return new ManagedColumns(Collections.emptySet(), Collections.emptySet(), null);
         }
 
+        public static ManagedColumns ignored(@NotNull String... ignored)
+        {
+            return new ManagedColumns(Collections.emptySet(), Collections.emptySet(), Sets.newCaseInsensitiveHashSet(ignored));
+        }
+
         public @Nullable Set<String> getColumns(TableInfo.TriggerType type)
         {
             if (type == TableInfo.TriggerType.INSERT)
