@@ -34,7 +34,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static org.labkey.api.admin.FolderImportContext.IS_NEW_FOLDER_IMPORT_KEY;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
 public class TriggerDataBuilderHelper
@@ -150,17 +149,11 @@ public class TriggerDataBuilderHelper
                 sharedKeys = expTable.getExistingRecordSharedKeyColumnNames();
             }
 
-            boolean isNewFolderImport = false;
-            if (_extraContext != null && _extraContext.get(IS_NEW_FOLDER_IMPORT_KEY) != null)
-            {
-                isNewFolderImport = (boolean) _extraContext.get(IS_NEW_FOLDER_IMPORT_KEY);
-            }
-
             di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, _target, !context.getInsertOption().updateOnly));
             context.setWithLookupRemapping(false);
 
             // Skip existing records
-            if (!context.getInsertOption().allowUpdate || existingRecordKeyColumnNames == null || isNewFolderImport)
+            if (!context.getInsertOption().allowUpdate || existingRecordKeyColumnNames == null)
                 return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(di), context));
 
             // Merge request but merge is not supported
