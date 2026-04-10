@@ -35,7 +35,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.Selector.ForEachBatchBlock;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -91,6 +90,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.util.IntegerUtils.isIntegral;
@@ -761,7 +761,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
-    record ListRow(Container container, String entityId){}
+    record ListRow(String container, String entityId){}
 
     // Delete attachments and remove documents from the full-text search index. If Container is non-null, delete only
     // from that container (truncate case). If container is null, delete from all containers (delete list case).
@@ -772,27 +772,25 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         if (hasAttachmentProperties())
         {
-            SimpleFilter filter = null != container ? SimpleFilter.createContainerFilter(container) : null;
+            var filter = container == null ? new SimpleFilter() : SimpleFilter.createContainerFilter(container);
+            filter.addCondition(FieldKey.fromParts("EntityId"), null, CompareType.NONBLANK);
 
-            // Delete attachments associated with a list in batches of 1,000
-            new TableSelector(getDbTable(), new CsvSet("Container, EntityId"), filter, null).forEachBatch(ListRow.class, 1000, new ForEachBatchBlock<>()
-            {
-                @Override
-                public boolean accept(ListRow row)
-                {
-                    return null != row.entityId();
-                }
+            // Delete attachments associated with a list in batches
+            new TableSelector(getDbTable(), new CsvSet("Container, EntityId"), filter, null).forEachBatch(ListRow.class, 1_000, rows -> {
+                var containerMap = new HashMap<String, Container>();
 
-                @Override
-                public void exec(List<ListRow> rows)
-                {
-                    // delete the related attachments for this block
-                    AttachmentService.get().deleteAttachments(
-                        rows.stream()
-                            .map(row -> new ListItemAttachmentParent(row.entityId(), row.container()))
-                            .collect(Collectors.toList())
-                    );
-                }
+                // delete the related attachments for this block
+                AttachmentService.get().deleteAttachments(
+                    rows.stream()
+                        .map(row -> {
+                            var c = containerMap.computeIfAbsent(row.container(), ContainerManager::getForId);
+                            if (c == null)
+                                return null;
+                            return new ListItemAttachmentParent(row.entityId(), c);
+                        })
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList())
+                );
             });
         }
     }

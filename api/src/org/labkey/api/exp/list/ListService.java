@@ -51,6 +51,7 @@ public interface ListService
     boolean hasLists(Container container, boolean includeProjectAndShared);
     ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType);
     ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType, @Nullable TemplateInfo templateInfo, @Nullable ListDefinition.Category category);
+    void deleteLists(Container container, User user, @Nullable String auditUserComment);
     @Nullable ListDefinition getList(Container container, int listId);
     @Nullable ListDefinition getList(Container container, String name);
     @Nullable ListDefinition getList(Container container, String name, boolean includeProjectAndShared);
