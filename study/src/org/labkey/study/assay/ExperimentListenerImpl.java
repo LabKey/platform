@@ -96,16 +96,18 @@ public class ExperimentListenerImpl implements ExperimentListener
             {
                 Map<Container, List<ExpMaterial>> containerSamples = entry.getValue();
 
+                // Need Read permission to check for linked samples
+                User userWithReadPerm = ElevatedUser.getElevatedUser(user, ReaderRole.class);
+
+                UserSchema schemaWithReadPerm = QueryService.get().getUserSchema(userWithReadPerm, dataset.getContainer(), "study");
+                TableInfo tableInfoForRead = schemaWithReadPerm.getTable(dataset.getName());
+                if (null == tableInfoForRead)
+                    throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
+
                 for (Map.Entry<Container, List<ExpMaterial>> containerEntry : containerSamples.entrySet())
                 {
                     Container sampleContainer = containerEntry.getKey();
                     List<ExpMaterial> samples = containerEntry.getValue();
-
-                    // Need Read permission to check for linked samples
-                    User userWithReadPerm = ElevatedUser.getElevatedUser(user, ReaderRole.class);
-
-                    UserSchema schemaWithReadPerm = QueryService.get().getUserSchema(userWithReadPerm, dataset.getContainer(), "study");
-                    TableInfo tableInfoForRead = schemaWithReadPerm.getTable(dataset.getName());
 
                     // GitHub Issue 1028: Can't delete a sample when any sample in the sample type has been linked to study
                     // check if samples are linked to the dataset, if not, skip the permission check for DeletePermission since we won't be deleting any rows

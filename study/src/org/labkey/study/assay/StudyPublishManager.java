@@ -1541,7 +1541,7 @@ public class StudyPublishManager implements StudyPublishService
             AuditLogService.get().addEvent(user, event);
 
             // Create sample timeline event for each of the samples
-            if (sourceType == Dataset.PublishSource.SampleType && rowIds != null && rowIds.isEmpty())
+            if (sourceType == Dataset.PublishSource.SampleType && rowIds != null && !rowIds.isEmpty())
             {
                 var timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.RECALL;
                 Map<String, Object> eventMetadata = new HashMap<>();
