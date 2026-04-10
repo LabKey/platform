@@ -313,6 +313,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
@@ -3106,9 +3107,10 @@ public class StudyController extends BaseStudyController
                 {
                     String sourceLsid = entry.getKey();
                     Collection<Pair<String, Long>> pairs = entry.getValue();
+                    Collection<Long> rowIds = pairs.stream().map(Pair::getValue).collect(Collectors.toList());
                     Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid, _sourceRowId);
                     if (sourceContainer != null)
-                        StudyPublishService.get().addRecallAuditEvent(sourceContainer, getUser(), _def, pairs.size(), pairs);
+                        StudyPublishService.get().addRecallAuditEvent(sourceContainer, getUser(), _def, pairs.size(), rowIds);
                 }
             }
 
