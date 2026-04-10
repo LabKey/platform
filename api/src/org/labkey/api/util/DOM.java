@@ -579,6 +579,23 @@ public class DOM
             }
             return this;
         }
+        public _Attributes aria(String ariakey, Object value)
+        {
+            if (null == expandos)
+                expandos = new ArrayList<>();
+            expandos.add(new Pair<>("aria-" + ariakey,value));
+            return this;
+        }
+        public _Attributes aria(boolean condition, String ariakey, Object value)
+        {
+            if (condition)
+            {
+                if (null == expandos)
+                    expandos = new ArrayList<>();
+                expandos.add(new Pair<>("aria-" + ariakey,value));
+            }
+            return this;
+        }
 
         public _Attributes cl(String...names)
         {
