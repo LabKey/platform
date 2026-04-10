@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.Collections.singleton;
 
@@ -112,8 +113,10 @@ public class ExperimentListenerImpl implements ExperimentListener
                     // GitHub Issue 1028: Can't delete a sample when any sample in the sample type has been linked to study
                     // check if samples are linked to the dataset, if not, skip the permission check for DeletePermission since we won't be deleting any rows
                     SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId.toString()), samples.stream().map(ExpMaterial::getRowId).toList(), CompareType.IN);
-                    List<String> linkedLsids = new TableSelector(tableInfoForRead, singleton("LSID"), filter, null).getArrayList(String.class);
+                    Map<String, Object>[] linkedLsidRowIds = new TableSelector(tableInfoForRead, Set.of("LSID", "RowId"), filter, null).getMapArray();
 
+                    Set<String> linkedLsids = Arrays.stream(linkedLsidRowIds).map(m -> (String)m.get("LSID")).collect(java.util.stream.Collectors.toSet());
+                    Set<Long> linkedRowIds = Arrays.stream(linkedLsidRowIds).map(m -> ((Integer)m.get("RowId")).longValue()).collect(java.util.stream.Collectors.toSet());
                     if (linkedLsids.isEmpty())
                         continue;
 
@@ -123,8 +126,7 @@ public class ExperimentListenerImpl implements ExperimentListener
                         throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
                     }
 
-                    List<Long> linkedIds = samples.stream().filter(s -> linkedLsids.contains(s.getLSID())).map(ExpMaterial::getRowId).toList();
-                    StudyPublishService.get().addRecallAuditEvent(sampleContainer, user, dataset, linkedLsids.size(), linkedIds);
+                    StudyPublishService.get().addRecallAuditEvent(sampleContainer, user, dataset, linkedLsids.size(), linkedRowIds);
                     dataset.deleteDatasetRows(user, linkedLsids);
                 }
             }
