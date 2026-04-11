@@ -373,7 +373,7 @@ public class Attachment implements Serializable
     {
         return DOM.createHtmlFragment(
             DOM.A(DOM.at(DOM.Attribute.href, downloadURL.toString()),
-                DOM.IMG(DOM.at(DOM.Attribute.alt, "").at(DOM.Attribute.aria_hidden, "true").at(DOM.Attribute.src, PageFlowUtil.staticResourceUrl(getFileIcon()))),
+                DOM.IMG(DOM.at(DOM.Attribute.alt, "").at(DOM.Attribute.src, PageFlowUtil.staticResourceUrl(getFileIcon()))),
                 HtmlString.NBSP,
                 linkText
             )
