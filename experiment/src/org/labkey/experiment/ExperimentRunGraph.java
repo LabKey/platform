@@ -11,6 +11,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
+import org.labkey.api.util.SvgUtil;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
@@ -38,7 +39,9 @@ public class ExperimentRunGraph
         Graphviz graph = DotParser.parse(dot);
         String svg = graph.toSvgStr();
 
-        return svg;
+        // Scale down to 50% of default size. This is arbitrary but seems reasonable. Diagrams are larger than
+        // the previous image-based ones, but monitors are much higher resolution than when those were scaled.
+        return SvgUtil.scaleSize(svg, 0.5f);
     }
 
     public static String getDotGraph(Container c, ExpRunImpl run, boolean detail, String focus, String focusType)

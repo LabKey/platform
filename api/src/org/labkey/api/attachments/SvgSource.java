@@ -5,6 +5,8 @@ import org.apache.batik.transcoder.TranscoderException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SvgUtil;
+import org.labkey.api.util.SvgUtil.Size;
 import org.labkey.api.view.NotFoundException;
 
 import java.io.BufferedReader;
@@ -19,8 +21,7 @@ import java.io.StringReader;
 public class SvgSource
 {
     private final String _filteredSvg;
-
-    private Float _height = null;
+    private final Float _height;
 
     public SvgSource(String svg)
     {
@@ -32,16 +33,11 @@ public class SvgSource
         if (!svg.contains("xmlns=\"" + SVGDOMImplementation.SVG_NAMESPACE_URI + "\"") && !svg.contains("xmlns='" + SVGDOMImplementation.SVG_NAMESPACE_URI + "'"))
             svg = svg.replace("<svg", "<svg xmlns='" + SVGDOMImplementation.SVG_NAMESPACE_URI + "'");
 
-        int idx = svg.indexOf("height=\"");
-        if (idx != -1)
-        {
-            int heightStart = idx + 8;
-            int end = svg.indexOf("\"",  heightStart);
-            _height = Float.parseFloat(svg.substring(heightStart, end));
-        }
+        Size size = SvgUtil.readHeight(svg);
+        _height = size != null ? size.value() : null;
 
         // remove xlink:title to prevent org.apache.batik.transcoder.TranscoderException (issue #16173)
-        svg = svg.replaceAll("xlink:title", "title");
+        svg = svg.replace("xlink:title", "title");
 
         // Reject hrefs. See #45819.
         if (Strings.CI.contains(svg, "xlink:href"))
