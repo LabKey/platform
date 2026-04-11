@@ -2009,7 +2009,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         if (newRow != null && manageColumns)
         {
-            trackedRow = new DeltaTrackingMap<>(newRow);
+            trackedRow = DeltaTrackingMap.wrap(newRow);
             newRowTracked = trackedRow;
         }
 

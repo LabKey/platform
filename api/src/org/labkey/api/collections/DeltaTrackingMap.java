@@ -7,6 +7,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -24,7 +25,7 @@ import java.util.Set;
  * Map<String, Object> baseRow = new CaseInsensitiveHashMap<>();
  * baseRow.put("ColumnA", "Value1");
  *
- * DeltaTrackingMap<Object> trackedRow = new DeltaTrackingMap<>(baseRow);
+ * DeltaTrackingMap<Object> trackedRow = DeltaTrackingMap.wrap(baseRow);
  *
  * // Updating an existing key (zero tracking overhead)
  * trackedRow.put("ColumnA", "NewValue");
@@ -58,6 +59,11 @@ public class DeltaTrackingMap<V> implements Map<String, V>
         this.delegate = delegate;
     }
 
+    protected Set<String> newTrackingSet()
+    {
+        return new HashSet<>();
+    }
+
     @Override
     public V put(String key, V value)
     {
@@ -72,7 +78,7 @@ public class DeltaTrackingMap<V> implements Map<String, V>
             else
             {
                 if (added == null)
-                    added = Sets.newCaseInsensitiveHashSet();
+                    added = newTrackingSet();
                 added.add(key);
             }
         }
@@ -94,7 +100,7 @@ public class DeltaTrackingMap<V> implements Map<String, V>
             else
             {
                 if (removed == null)
-                    removed = Sets.newCaseInsensitiveHashSet();
+                    removed = newTrackingSet();
                 removed.add(strKey);
             }
         }
@@ -202,6 +208,41 @@ public class DeltaTrackingMap<V> implements Map<String, V>
         return Collections.unmodifiableSet(delegate.entrySet());
     }
 
+    /**
+     * Returns a {@link CaseInsensitive} wrapper when the delegate implements
+     * {@link CaseInsensitiveCollection}, and a plain {@link DeltaTrackingMap} otherwise.
+     * Prefer this over calling a constructor directly when the case-sensitivity of the
+     * delegate is not known at compile time.
+     */
+    public static <V> DeltaTrackingMap<V> wrap(Map<String, V> delegate)
+    {
+        if (delegate instanceof CaseInsensitiveCollection)
+            return new DeltaTrackingMap.CaseInsensitive<>(delegate);
+        return new DeltaTrackingMap<>(delegate);
+    }
+
+    /**
+     * A case-insensitive variant of {@link DeltaTrackingMap} that also implements
+     * {@link CaseInsensitiveCollection}. Use this when wrapping a case-insensitive delegate such
+     * as {@link CaseInsensitiveHashMap} so that downstream code relying on
+     * {@code instanceof CaseInsensitiveCollection} continues to work correctly.
+     *
+     * @param <V> the type of mapped values
+     */
+    public static class CaseInsensitive<V> extends DeltaTrackingMap<V> implements CaseInsensitiveCollection
+    {
+        public CaseInsensitive(Map<String, V> delegate)
+        {
+            super(delegate);
+        }
+
+        @Override
+        protected Set<String> newTrackingSet()
+        {
+            return new CaseInsensitiveHashSet();
+        }
+    }
+
     public static class TestCase extends Assert
     {
         private static DeltaTrackingMap<String> createTracker()
@@ -210,7 +251,7 @@ public class DeltaTrackingMap<V> implements Map<String, V>
             baseMap.put("ExistingKey1", "Value1");
             baseMap.put("ExistingKey2", "Value2");
             baseMap.put("ExistingKey3", "Value3");
-            return new DeltaTrackingMap<>(baseMap);
+            return new DeltaTrackingMap.CaseInsensitive<>(baseMap);
         }
 
         @Test
@@ -437,6 +478,58 @@ public class DeltaTrackingMap<V> implements Map<String, V>
         }
 
         @Test
+        public void testCaseSensitiveDelegateTracking()
+        {
+            // A case-sensitive delegate must use case-sensitive tracking sets so that
+            // differently cased variants of a key are treated as independent entries.
+            Map<String, String> baseMap = new LinkedHashMap<>();
+            baseMap.put("Key", "Value");
+            DeltaTrackingMap<String> map = new DeltaTrackingMap<>(baseMap);
+
+            // "key" is a brand-new key in a case-sensitive map — must be tracked as an addition
+            map.put("key", "lowerValue");
+            assertTrue(map.hasStructuralChanges());
+            assertEquals(1, map.getAddedKeys().size());
+            assertTrue("Added 'key'", map.getAddedKeys().contains("key"));
+            assertFalse("'Key' was not added", map.getAddedKeys().contains("Key"));
+
+            // Removing "Key" (original casing) must NOT cancel the tracking of the added "key"
+            map.remove("Key");
+            assertEquals("'key' (added) and 'Key' (removed) are independent", 1, map.getAddedKeys().size());
+            assertTrue(map.getAddedKeys().contains("key"));
+            assertEquals(1, map.getRemovedKeys().size());
+            assertTrue(map.getRemovedKeys().contains("Key"));
+            assertFalse("'key' was not removed", map.getRemovedKeys().contains("key"));
+        }
+
+        @Test
+        public void testEntrySetValueUpdate()
+        {
+            DeltaTrackingMap<String> map = createTracker();
+
+            // Get the entry for "ExistingKey1" and update its value directly
+            Map.Entry<String, String> found = null;
+            for (Map.Entry<String, String> e : map.entrySet())
+            {
+                if ("ExistingKey1".equals(e.getKey()))
+                {
+                    found = e;
+                    break;
+                }
+            }
+            assertNotNull(found);
+
+            String oldValue = found.setValue("UpdatedViaEntry");
+            assertEquals("Value1", oldValue);
+            assertEquals("UpdatedViaEntry", map.get("ExistingKey1"));
+
+            // entry.setValue() is a value-only mutation; no key was added or removed
+            assertFalse("entry.setValue() on an existing key must not flag structural changes", map.hasStructuralChanges());
+            assertTrue(map.getAddedKeys().isEmpty());
+            assertTrue(map.getRemovedKeys().isEmpty());
+        }
+
+        @Test
         public void testWithLinkedHashMap()
         {
             // Use a standard, case-sensitive map which preserves insertion order
@@ -480,7 +573,16 @@ public class DeltaTrackingMap<V> implements Map<String, V>
             assertEquals(3, map.size());
             assertFalse(map.containsKey("SecondKey"));
             assertTrue(map.containsKey("secondkey"));
-            assertFalse("Tracker lost the state because case-insensitive matching cancelled out the add/remove", map.hasStructuralChanges());
+
+            // With a case-sensitive delegate, "secondkey" (added) and "SecondKey" (removed)
+            // are different keys and must be tracked independently — no cancellation.
+            assertTrue("Case-sensitive delegate: add and remove of differently-cased keys must not cancel", map.hasStructuralChanges());
+            assertEquals(1, map.getAddedKeys().size());
+            assertTrue(map.getAddedKeys().contains("secondkey"));
+            assertFalse(map.getAddedKeys().contains("SecondKey"));
+            assertEquals(1, map.getRemovedKeys().size());
+            assertTrue(map.getRemovedKeys().contains("SecondKey"));
+            assertFalse(map.getRemovedKeys().contains("secondkey"));
         }
     }
 }
