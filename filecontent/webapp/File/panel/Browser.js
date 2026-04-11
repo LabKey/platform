@@ -1604,6 +1604,11 @@ Ext4.define('File.panel.Browser', {
                 border: false,
                 listeners: {
                     select: this.onTreeSelect,
+                    afterrender: function(tree) {
+                        if (tree.body) {
+                            tree.body.set({'tabIndex': 0});
+                        }
+                    },
                     scope: this
                 }
             });
@@ -2505,6 +2510,9 @@ Ext4.define('File.panel.Browser', {
                 afterrender : function(g) {
                     if (g.getStore().totalCount === undefined) { // totalCount is undefined until first load
                         g.setLoading(true);
+                    }
+                    if (g.body) {
+                        g.body.set({'tabIndex': 0});
                     }
                 },
                 selectionchange : this.onSelection,

@@ -21,9 +21,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.WebdavResolver;
 
@@ -349,5 +353,30 @@ public class Attachment implements Serializable
     public void setDocumentSize(int documentSize)
     {
         _documentSize = documentSize;
+    }
+
+    /**
+     * Returns an HtmlString rendering a download link: an anchor containing a file type icon and the filename.
+     * The icon is marked aria-hidden since it is decorative; the link text serves as the accessible name.
+     */
+    public HtmlString renderDownloadLink(ActionURL downloadURL)
+    {
+        return renderDownloadLink(downloadURL, getName());
+    }
+
+    /**
+     * Returns an HtmlString rendering a download link: an anchor containing a file type icon and custom link text.
+     * Use this overload when the visible link label differs from the filename (e.g. "Study Protocol Document").
+     * The icon is marked aria-hidden since it is decorative; linkText serves as the accessible name.
+     */
+    public HtmlString renderDownloadLink(ActionURL downloadURL, String linkText)
+    {
+        return DOM.createHtmlFragment(
+            DOM.A(DOM.at(DOM.Attribute.href, downloadURL.toString()),
+                DOM.IMG(DOM.at(DOM.Attribute.alt, "").at(DOM.Attribute.aria_hidden, "true").at(DOM.Attribute.src, PageFlowUtil.staticResourceUrl(getFileIcon()))),
+                HtmlString.NBSP,
+                linkText
+            )
+        );
     }
 }

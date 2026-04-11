@@ -127,7 +127,7 @@ if (!announcementModel.getAttachments().isEmpty())
         {
             ActionURL downloadURL = AnnouncementsController.getDownloadURL(announcementModel, d.getName());
         %>
-        <a href="<%=h(downloadURL)%>"><img alt="" src="<%=getWebappURL(d.getFileIcon())%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
+        <%=d.renderDownloadLink(downloadURL)%>&nbsp;<%
         } %>
     </div></td>
 </tr><%
@@ -210,7 +210,7 @@ if (!announcementModel.getResponses().isEmpty())
                 {
                     ActionURL downloadURL = AnnouncementsController.getDownloadURL(r, rd.getName());
                 %>
-                    <a href="<%=h(downloadURL)%>"><img alt="" src="<%=getWebappURL(rd.getFileIcon())%>">&nbsp;<%=h(rd.getName())%></a>&nbsp;<%
+                    <%=rd.renderDownloadLink(downloadURL)%>&nbsp;<%
                 }
                 %>
                 </div></td>
