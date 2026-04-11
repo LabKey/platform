@@ -1518,7 +1518,7 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Pair<String,Long>> pairs)
+    public void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Long> rowIds)
     {
         Dataset.PublishSource sourceType = def.getPublishSource();
         if (sourceType != null)
@@ -1539,15 +1539,14 @@ public class StudyPublishManager implements StudyPublishService
             AuditLogService.get().addEvent(user, event);
 
             // Create sample timeline event for each of the samples
-            if (sourceType == Dataset.PublishSource.SampleType && pairs != null)
+            if (sourceType == Dataset.PublishSource.SampleType && rowIds != null && !rowIds.isEmpty())
             {
                 var timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.RECALL;
                 Map<String, Object> eventMetadata = new HashMap<>();
                 eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, timelineEventType.name());
                 String metadata = AbstractAuditTypeProvider.encodeForDataMap(eventMetadata);
 
-                List<Long> sampleIds = pairs.stream().map(Pair::getValue).collect(toList());
-                List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(sampleIds);
+                List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(rowIds);
                 List<AuditTypeEvent> events = new ArrayList<>(samples.size());
                 for (ExpMaterial sample : samples)
                 {
