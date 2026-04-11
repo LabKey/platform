@@ -34,6 +34,14 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -90,7 +98,6 @@ import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.IntHashMap;
-import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
@@ -160,8 +167,10 @@ import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.mcp.PromptForm;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -197,7 +206,11 @@ import org.labkey.api.query.TempQuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.ai.ClaudeGuidelinesService;
+import org.labkey.api.query.ai.ClaudeTool;
+import org.labkey.api.query.ai.ClaudeToolService;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
@@ -327,6 +340,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.file.Path;
@@ -349,6 +363,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -390,7 +405,16 @@ public class QueryController extends SpringActionController
         ValidateQueriesAction.class,
         GetSchemaQueryTreeAction.class,
         GetQueryDetailsAction.class,
-        ViewQuerySourceAction.class
+        ViewQuerySourceAction.class,
+        SchemaCompareCaptureAction.class,
+        SchemaCompareAction.class,
+        SchemaCompareResultsAction.class,
+        SchemaCompareDashboardAction.class,
+        QueryDataCaptureAction.class,
+        QueryDataDiffAction.class,
+        QueryDataBaselineListAction.class,
+        QueryDataParametersAction.class,
+        QueryDataDashboardAction.class
     );
 
     public QueryController()

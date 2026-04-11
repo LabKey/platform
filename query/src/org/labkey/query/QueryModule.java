@@ -102,6 +102,7 @@ import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.controllers.QueryMcp;
+import org.labkey.query.controllers.SchemaCompareNormalizer;
 import org.labkey.query.controllers.SqlController;
 import org.labkey.query.jdbc.QueryDriver;
 import org.labkey.query.olap.MemberSet;
@@ -428,6 +429,7 @@ public class QueryModule extends DefaultModule
             QNode.TestCase.class,
             Query.TestCase.class,
             ReportsController.SerializationTest.class,
+            SchemaCompareNormalizer.TestCase.class,
             SqlParser.SqlParserTestCase.class,
             TableWriter.TestCase.class
         );

@@ -51,6 +51,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     @Nullable Map<String, Object> _namedParameters = null;
     private ConnectionFactory _connectionFactory = super::getConnection;
     private Integer _fetchSize = null; // By default, use the standard fetch size
+    int _queryTimeout = 0; // seconds, 0 = no timeout
 
     private @Nullable AsyncQueryRequest<?> _asyncRequest = null;
     private @Nullable StackTraceElement[] _loggingStacktrace = null;
@@ -159,6 +160,12 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     public SELECTOR setNamedParameters(@Nullable Map<String, Object> namedParameters)
     {
         _namedParameters = namedParameters;
+        return getThis();
+    }
+
+    public SELECTOR setQueryTimeout(int seconds)
+    {
+        _queryTimeout = seconds;
         return getThis();
     }
 
@@ -522,6 +529,11 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             if (null != _fetchSize)
             {
                 stmt.setFetchSize(_fetchSize);
+            }
+
+            if (_queryTimeout > 0)
+            {
+                stmt.setQueryTimeout(_queryTimeout);
             }
 
             if (asyncRequest != null)
