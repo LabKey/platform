@@ -225,6 +225,17 @@ public class TriggerDataBuilderHelper
             TableInfo.TriggerType triggerType = getTriggerType();
             if (_firstRow)
             {
+                // HACK?: Before initializing the triggers, reset the table triggers.
+                // This is late enough so that the data iteration context is configured properly.
+                // Note: This is not ideal. getTriggers(c) accepts a @Nullable container, however, the underlying
+                // scripts actually depend on this argument. For example, if the first caller passed in a container
+                // and the next calls with null, then the null argument will see the scripts defined in the container.
+                // But if they are called in the opposite order (null, then with a container), the container one will
+                // receive no scripts (or whatever null initialized with).
+                // Ideally, we could decouple loading the triggers and their associated container from the table/trigger
+                // lifecycle.
+                _target.resetTriggers(_c);
+
                 _target.fireBatchTrigger(_c, _user, triggerType, _context.getInsertOption(), true, getErrors(), _extraContext);
                 firedInit = true;
                 _firstRow = false;
