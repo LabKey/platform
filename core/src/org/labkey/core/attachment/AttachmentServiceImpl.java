@@ -1104,36 +1104,33 @@ public class AttachmentServiceImpl implements AttachmentService
     public int logOrphanedAttachments()
     {
         int ret = 0;
+        User user = ElevatedUser.getElevatedUser(User.getSearchUser(), TroubleshooterRole.class);
+        UserSchema core = DefaultSchema.get(user, ContainerManager.getRoot()).getUserSchema(CoreQuerySchema.NAME);
 
-        if (AppProps.getInstance().isDevMode())
+        if (core != null)
         {
-            User user = ElevatedUser.getElevatedUser(User.getSearchUser(), TroubleshooterRole.class);
-            UserSchema core = DefaultSchema.get(user, ContainerManager.getRoot()).getUserSchema(CoreQuerySchema.NAME);
-            if (core != null)
+            TableInfo documents = core.getTable(CoreQuerySchema.DOCUMENTS_TABLE_NAME, new AllFolders(user));
+            if (null != documents)
             {
-                TableInfo documents = core.getTable(CoreQuerySchema.DOCUMENTS_TABLE_NAME, new AllFolders(user));
-                if (null != documents)
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Orphaned"), true);
+                List<Orphan> orphans = new TableSelector(documents, new CsvSet("DocumentName, ParentType"), filter, null).getArrayList(Orphan.class);
+                if (!orphans.isEmpty())
                 {
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Orphaned"), true);
-                    List<Orphan> orphans = new TableSelector(documents, new CsvSet("DocumentName, ParentType"), filter, null).getArrayList(Orphan.class);
-                    if (!orphans.isEmpty())
+                    ret = orphans.size();
+                    LOG.error("Found {}, which likely indicates a problem with a delete method or a container listener.", StringUtilsLabKey.pluralize(ret, "orphaned attachment"));
+
+                    final String message;
+                    if (orphans.size() > MAX_ORPHANS_TO_LOG)
                     {
-                        ret = orphans.size();
-                        LOG.error("Found {}, which likely indicates a problem with a delete method or a container listener.", StringUtilsLabKey.pluralize(ret, "orphaned attachment"));
-
-                        final String message;
-                        if (orphans.size() > MAX_ORPHANS_TO_LOG)
-                        {
-                            orphans = orphans.subList(0, MAX_ORPHANS_TO_LOG);
-                            message = "The first " + MAX_ORPHANS_TO_LOG;
-                        }
-                        else
-                        {
-                            message = "All";
-                        }
-
-                        LOG.error("{} detected orphans are listed below:\n{}", message, orphans.stream().map(Record::toString).collect(Collectors.joining("\n")));
+                        orphans = orphans.subList(0, MAX_ORPHANS_TO_LOG);
+                        message = "The first " + MAX_ORPHANS_TO_LOG;
                     }
+                    else
+                    {
+                        message = "All";
+                    }
+
+                    LOG.error("{} detected orphans are listed below:\n{}", message, orphans.stream().map(Record::toString).collect(Collectors.joining("\n")));
                 }
             }
         }
