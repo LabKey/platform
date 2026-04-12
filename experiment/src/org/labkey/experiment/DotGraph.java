@@ -35,8 +35,6 @@ import java.util.TreeMap;
 /**
  * Represents the GraphViz format for building an experiment run "flowchart", connecting datas, materials through runs
  * and protocol applications.
- * User: migra
- * Date: Jun 13, 2005
  */
 public class DotGraph
 {
@@ -79,17 +77,13 @@ public class DotGraph
     {
         _pwOut = out;
         _c = c;
-
-        if (bSmallFonts)
-            _pwOut.println("digraph G { node[fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_SMALL_FONTSIZE + "]");
-        else
-            _pwOut.println("digraph G { node[fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_DEFAULT_FONTSIZE + "]");
+        _pwOut.println("digraph G { margin=\"0,0\" node[fontname=\"" + LABEL_FONT + "\" fontsize=" + (bSmallFonts ? LABEL_SMALL_FONTSIZE : LABEL_DEFAULT_FONTSIZE) + "]");
     }
 
-    public void setFocus(Integer focusid, String objtype)
+    public void setFocus(Integer focusId, String objType)
     {
-        _focusId = focusid;
-        _objectType = objtype;
+        _focusId = focusId;
+        _objectType = objType;
     }
 
     public void dispose()
@@ -305,9 +299,9 @@ public class DotGraph
         {
             if (null == trgt._shape && src != null)  // it's an output node, drawn just as an arrow to a label
             {
-                String outnodekey = src._key + "out";
-                connect += outnodekey + " [arrowhead = diamond] ";
-                connect += "\n" + outnodekey + "[shape=plaintext label=\"Output\"]";
+                String outNodeKey = src._key + "out";
+                connect += outNodeKey + " [arrowhead = diamond] ";
+                connect += "\n" + outNodeKey + "[shape=plaintext label=\"Output\"]";
             }
             else
                 connect += trgt._key + "[arrowsize = 2]";
@@ -320,7 +314,7 @@ public class DotGraph
         {
             connect += " [ style=\"setlinewidth(3)\" ]";
         }
-        if (!_writtenConnects.contains(connect) && !_pendingConnects.contains(connect))
+        if (!_writtenConnects.contains(connect))
             _pendingConnects.add(connect);
     }
 
@@ -575,10 +569,10 @@ public class DotGraph
             _nodeType = node._type;
         }
 
-        public void addNode(DotNode newnode)
+        public void addNode(DotNode newNode)
         {
-            assert (Objects.equals(_gMap.get(_gMap.firstKey())._type, newnode._type));
-            _gMap.put(newnode._id, newnode);
+            assert (Objects.equals(_gMap.get(_gMap.firstKey())._type, newNode._type));
+            _gMap.put(newNode._id, newNode);
         }
 
         @Override
@@ -596,17 +590,17 @@ public class DotGraph
 
             url.addParameter("rowId~in", sbIn.toString());
 
-            _label += " (" + _gMap.keySet().size() + " entries)";
+            _label += " (" + _gMap.size() + " entries)";
 
             if (null != _shape)
             {
                 out.println(_key + "[label=\"" + escape(_label)
-                        + "\",style=\"filled\", fillcolor=\"" + _color + "\" shape=" + _shape
-                        + ((null != _height) ? ", height=\"" + _height + "\"" : "")
-                        + ((null != _width) ? ", width=\"" + _width + "\"" : "")
-                        + ((null != _width) || (null != _height) ? ", fixedsize=true" : "")
-                        + (",  URL=\"" + escape(url.toString()) + "\"")
-                        + "]");
+                    + "\",style=\"filled\", fillcolor=\"" + _color + "\" shape=" + _shape
+                    + ((null != _height) ? ", height=\"" + _height + "\"" : "")
+                    + ((null != _width) ? ", width=\"" + _width + "\"" : "")
+                    + ((null != _width) || (null != _height) ? ", fixedsize=true" : "")
+                    + (",  URL=\"" + escape(url.toString()) + "\"")
+                    + "]");
             }
         }
     }
