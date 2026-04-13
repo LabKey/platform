@@ -1383,11 +1383,12 @@ public class ListManager implements SearchService.DocumentProvider
         @AfterClass
         public static void cleanup()
         {
-            deleteTestContainer();
-
+            list = null;
             dp = null;
             c = null;
             u = null;
+
+            deleteTestContainer();
         }
 
         private static void deleteTestContainer()
