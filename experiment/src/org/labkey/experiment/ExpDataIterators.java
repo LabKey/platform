@@ -3167,8 +3167,6 @@ public class ExpDataIterators
             validFields.add("EnteredStorage");
             validFields.add("StorageComment"); // GH Issue 1051
             validFields.add("Storage Comment");
-            validFields.add("StorageLocation");
-            validFields.add("Storage Location");
             List<Integer> fieldIndexes = new IntArrayList();
             Map<Integer, String> dependencyIndexes = new IntHashMap<>();
             List<String> header = new ArrayList<>();
