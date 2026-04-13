@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -137,9 +138,13 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
 
         ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
+        Supplier<List<String>> getAssignedToAndIssue = () -> exceptionSummary.getRowDataAsText(exceptionSummary.getRowIndex(String.valueOf(stackTraceId)), "AssignedTo", "Issue");
+        assertEquals("Exception %d should be unassigned", List.of(" ", " "), getAssignedToAndIssue.get());
+
         exceptionSummary.uncheckAllOnPage();
         exceptionSummary.checkCheckboxByPrimaryKey(stackTraceId);
         exceptionSummary.ignoreSelected();
+        assertEquals("Exception %d should be ignored (issue -1)", List.of(" ", "-1"), getAssignedToAndIssue.get());
 
         StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
         assertEquals("Ignoring exception should set GitHub Issue", "-1", detailsPage.githubIssue().get());
