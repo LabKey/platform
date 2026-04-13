@@ -1606,7 +1606,11 @@ Ext4.define('File.panel.Browser', {
                     select: this.onTreeSelect,
                     afterrender: function(tree) {
                         if (tree.body) {
-                            tree.body.set({'tabIndex': 0});
+                            tree.body.set({'tabIndex': -1});
+                        }
+                        const view = tree.getView();
+                        if (view && view.el) {
+                            view.el.set({'tabIndex': 0});
                         }
                     },
                     scope: this
@@ -2455,6 +2459,48 @@ Ext4.define('File.panel.Browser', {
             viewConfig: {
                 emptyText: '<span style="margin-left: 5px; opacity: 0.3;"><i>No Files Found</i></span>',
                 loadMask: false, // Handle masking manually
+                listeners: {
+                    // Wire up keyboard handling for the file list. We want the list to be considered
+                    // a single focusable area, with the ability to navigate through the list using the
+                    // up and down arrows
+                    afterrender: function(view) {
+                        function seedTabIndex() {
+                            if (!view.el) return;
+                            var rows = view.el.select('tr.x4-grid-row');
+                            if (rows.getCount() === 0) {
+                                // No rows yet (data still loading): keep view itself focusable
+                                view.el.set({tabIndex: 0});
+                                return;
+                            }
+                            // View is not a tab stop; individual rows use roving tabindex
+                            view.el.set({tabIndex: -1});
+                            var sel = view.getSelectionModel().getSelection(),
+                                targetRow = sel.length > 0 ? view.getNode(sel[0]) : null;
+                            if (!targetRow) targetRow = rows.item(0).dom;
+                            rows.set({tabIndex: -1});
+                            Ext4.fly(targetRow).set({tabIndex: 0});
+                        }
+                        seedTabIndex();
+                        view._seedTabIndex = seedTabIndex;
+
+                        // ExtJS's built-in keyNav on view.el handles UP/DOWN selection.
+                        // This listener keeps the roving tabindex in sync and moves DOM
+                        // focus to the selected row (for both keyboard and mouse selection).
+                        view.getSelectionModel().on('select', function(sm, record) {
+                            if (!view.el) return;
+                            var node = view.getNode(record);
+                            if (node) {
+                                view.el.select('tr.x4-grid-row').set({tabIndex: -1});
+                                Ext4.fly(node).set({tabIndex: 0});
+                                node.focus();
+                            }
+                        });
+                    },
+                    refresh: function(view) {
+                        // Re-seed after data reloads (DOM rows are replaced)
+                        if (view._seedTabIndex) view._seedTabIndex();
+                    }
+                },
 
                 // https://www.sencha.com/forum/showthread.php?263392-Two-Infinite-Scrolling-grids-PageMap-error
                 handleMouseOverOrOut: function(e) {
@@ -2512,7 +2558,7 @@ Ext4.define('File.panel.Browser', {
                         g.setLoading(true);
                     }
                     if (g.body) {
-                        g.body.set({'tabIndex': 0});
+                        g.body.set({'tabIndex': -1});
                     }
                 },
                 selectionchange : this.onSelection,
