@@ -122,7 +122,7 @@ public class DotGraph
         return null;
     }
 
-    public void addStartingMaterial(ExpMaterial m, Long groupId, Integer actionseq, long runId)
+    public void addStartingMaterial(ExpMaterial m, Long groupId, Integer actionSeq, long runId)
     {
         DotNode node = new MNode(m);
         node.setLinkURL(ExperimentController.getResolveLsidURL(_c, "material", m.getLSID()));
@@ -130,13 +130,13 @@ public class DotGraph
             node.setFocus(true);
         if (null != groupId)
         {
-            node = addNodeToGroup(node, groupId, actionseq, _groupMNodes);
+            node = addNodeToGroup(node, groupId, actionSeq, _groupMNodes);
             node.setLinkURL(ExperimentController.getShowGraphMoreListURL(_c, runId, TYPECODE_MATERIAL));
         }
         _pendingMNodes.put(m.getRowId(), node);
     }
 
-    public void addStartingData(ExpData d, Long groupId, Integer actionseq, long runId)
+    public void addStartingData(ExpData d, Long groupId, Integer actionSeq, long runId)
     {
         DotNode node = new DNode(d);
         node.setLinkURL(ExperimentController.getResolveLsidURL(_c, "data", d.getLSID()));
@@ -145,13 +145,13 @@ public class DotGraph
             node.setFocus(true);
         if (null != groupId)
         {
-            node = addNodeToGroup(node, groupId, actionseq, _groupDNodes);
+            node = addNodeToGroup(node, groupId, actionSeq, _groupDNodes);
             node.setLinkURL(ExperimentController.getShowGraphMoreListURL(_c, runId, TYPECODE_DATA));
         }
         _pendingDNodes.put(d.getRowId(), node);
     }
 
-    private GroupedNode addNodeToGroup(DotNode node, Long groupId, Integer actionseq, Map<Long, GroupedNode> groupNodes)
+    private GroupedNode addNodeToGroup(DotNode node, Long groupId, Integer actionSeq, Map<Long, GroupedNode> groupNodes)
     {
         GroupedNode gnode;
         if (groupNodes.containsKey(groupId))
@@ -161,14 +161,14 @@ public class DotGraph
         }
         else
         {
-            if (null == actionseq) actionseq = 0;
-            gnode = new GroupedNode(groupId, actionseq, node);
+            if (null == actionSeq) actionSeq = 0;
+            gnode = new GroupedNode(groupId, actionSeq, node);
             groupNodes.put(groupId, gnode);
         }
         return gnode;
     }
 
-    public void addMaterial(ExpMaterial m, Long groupId, Integer actionseq, boolean output)
+    public void addMaterial(ExpMaterial m, Long groupId, Integer actionSeq, boolean output)
     {
         if (_writtenMNodes.containsKey(m.getRowId()) || _pendingMNodes.containsKey(m.getRowId()))
             return;
@@ -180,11 +180,11 @@ public class DotGraph
         if (null != _focusId && TYPECODE_MATERIAL.equalsIgnoreCase(_objectType) && _focusId == m.getRowId())
             node.setFocus(true);
         if (null != groupId)
-            node = addNodeToGroup(node, groupId, actionseq, _groupMNodes);
+            node = addNodeToGroup(node, groupId, actionSeq, _groupMNodes);
         _pendingMNodes.put(m.getRowId(), node);
     }
 
-    public void addData(ExpData d, Long groupId, Integer actionseq, boolean output)
+    public void addData(ExpData d, Long groupId, Integer actionSeq, boolean output)
     {
         if (_writtenDNodes.containsKey(d.getRowId()) || _pendingDNodes.containsKey(d.getRowId()))
             return;
@@ -196,11 +196,11 @@ public class DotGraph
         if (null != _focusId && TYPECODE_DATA.equalsIgnoreCase(_objectType) && _focusId == d.getRowId())
             node.setFocus(true);
         if (null != groupId)
-            node = addNodeToGroup(node, groupId, actionseq, _groupDNodes);
+            node = addNodeToGroup(node, groupId, actionSeq, _groupDNodes);
         _pendingDNodes.put(d.getRowId(), node);
     }
 
-    public void addProtApp(Long groupId, long rowId, String name, Integer actionseq)
+    public void addProtApp(Long groupId, long rowId, String name, Integer actionSeq)
     {
         if (_writtenProcNodes.containsKey(rowId) || _pendingProcNodes.containsKey(rowId))
             return;
@@ -208,17 +208,17 @@ public class DotGraph
         if (null != _focusId && TYPECODE_PROT_APP.equalsIgnoreCase(_objectType) && _focusId == rowId)
             node.setFocus(true);
         if (null != groupId)
-            node = addNodeToGroup(node, groupId, actionseq, _groupPANodes);
+            node = addNodeToGroup(node, groupId, actionSeq, _groupPANodes);
         _pendingProcNodes.put(rowId, node);
     }
 
-    public void addOutputNode(Long groupId, long rowId, String name, Integer actionseq)
+    public void addOutputNode(Long groupId, long rowId, String name, Integer actionSeq)
     {
         if (_writtenProcNodes.containsKey(rowId) || _pendingProcNodes.containsKey(rowId))
             return;
         DotNode node = new OutputNode(rowId, name);
         if (null != groupId)
-            node = addNodeToGroup(node, groupId, actionseq, _groupPANodes);
+            node = addNodeToGroup(node, groupId, actionSeq, _groupPANodes);
         _pendingProcNodes.put(rowId, node);
     }
 
@@ -352,11 +352,11 @@ public class DotGraph
                 node.save(_pwOut);
             if (node instanceof GroupedNode)
             {
-                for (Long memberkey : ((GroupedNode) node)._gMap.keySet())
+                for (Long memberKey : ((GroupedNode) node)._gMap.keySet())
                 {
-                    assert (pendingMap.containsKey(memberkey));
-                    writtenMap.put(memberkey, node);
-                    nodesToMove.add(memberkey);
+                    assert (pendingMap.containsKey(memberKey));
+                    writtenMap.put(memberKey, node);
+                    nodesToMove.add(memberKey);
                 }
             }
             else
@@ -558,9 +558,9 @@ public class DotGraph
         private final SortedMap<Long, DotNode> _gMap = new TreeMap<>();
         private final String _nodeType;
 
-        public GroupedNode(Long groupId, Integer actionseq, DotNode node)
+        public GroupedNode(Long groupId, Integer actionSeq, DotNode node)
         {
-            super(GROUP_ID_PREFIX + actionseq + node._type, node._id, "More... ");
+            super(GROUP_ID_PREFIX + actionSeq + node._type, node._id, "More... ");
             _gid = groupId;
             _gMap.put(node._id, node);
             //setShape(node.shape, node.color + GROUP_OPACITY);

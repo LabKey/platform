@@ -51,7 +51,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
-import org.labkey.experiment.FileBasedExperimentRunGraph;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpRunImpl;
@@ -69,9 +68,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Helper class to build experiments from pipeline jobs.  Used by XarGeneratorTask
- * User: dax
- * Date: Apr 24, 2013
+ * Helper class to build experiments from pipeline jobs. Used by XarGeneratorTask
 */
 public class ExpGeneratorHelper
 {
@@ -273,8 +270,6 @@ public class ExpGeneratorHelper
             {
                 throw new ExperimentException(e);
             }
-
-            FileBasedExperimentRunGraph.clearCache(run.getContainer());
         }
         catch (XarFormatException | BatchValidationException e)
         {

@@ -15,21 +15,12 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.io.IOUtils" %>
 <%@ page import="org.graphper.draw.ExecuteException" %>
-<%@ page import="org.labkey.api.exp.ExperimentException" %>
-<%@ page import="org.labkey.api.reader.Readers" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.experiment.ExperimentRunGraph" %>
-<%@ page import="org.labkey.experiment.FileBasedExperimentRunGraph" %>
-<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentRunGraphModel" %>
-<%@ page import="java.io.IOException" %>
-<%@ page import="java.io.Reader" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -40,7 +31,6 @@
     }
 %>
 <%
-    ViewContext context = getViewContext();
     ExperimentRunGraphModel model = (ExperimentRunGraphModel)HttpView.currentModel();
     boolean isSummaryView = !model.isDetail();
     boolean isBetaViewEnabled = getActionURL().getParameter("betaGraph") != null;
@@ -51,21 +41,8 @@
     String graphTabId = "graph-tab-" + uniqueId;
     String graphTabBetaId = "graph-tab-beta-" + uniqueId;
 
-    try
+    if (isSummaryView)
     {
-        FileBasedExperimentRunGraph.RunGraphFiles files = FileBasedExperimentRunGraph.generateRunGraph(context,
-                                                                                     model.getRun(),
-                                                                                     model.isDetail(),
-                                                                                     model.getFocus(),
-                                                                                     model.getFocusType());
-
-        ActionURL imgSrc = ExperimentController.ExperimentUrlsImpl.get().getDownloadGraphURL(model.getRun(),
-                                                                                             model.isDetail(),
-                                                                                             model.getFocus(),
-                                                                                             model.getFocusType());
-
-        if (isSummaryView)
-        {
 %>
 <%=button("Toggle Beta Graph (new!)").id(toggleBtnId).style("display: inline-block; float: right;")%>
 <ul id="run-graph-tab-bar" class="nav nav-tab" role="tablist" style="display: none;">
@@ -75,47 +52,24 @@
 <div class="tab-content">
     <div class="tab-pane <%=h(isBetaViewEnabled ? "" : "active")%>" id="<%=h(graphTabId)%>">
 <%
-        }
-%>
-<p>Click on a node in the graph below for details. Run outputs have a bold outline.</p>
-<img alt="Run Graph" src="<%=h(imgSrc)%>" usemap="#graphmap"/>
-<%
-        if (files.getMapFile().exists())
-        {
-%>
-<map name="graphmap">
-<%
-            try (Reader reader = Readers.getReader(files.getMapFile()))
-            {
-                IOUtils.copy(reader, out);
-%>
-</map>
-<%
-            }
-            finally
-            {
-                files.release();
-            }
-
-            String dot = ExperimentRunGraph.getDotGraph(getContainer(),
-                model.getRun(),
-                model.isDetail(),
-                model.getFocus(),
-                model.getFocusType()
-            );
-            out.write(ExperimentRunGraph.getSvg(dot));
-        }
     }
-    catch (ExperimentException | InterruptedException | ExecuteException e)
-    {
-%><p><%=h(e.getMessage(), true)%></p><%
-    }
-    catch (IOException e)
-    {
 %>
-<p> Error in generating graph:</p>
-<pre><%=h(e.getMessage())%></pre>
+<p>Click on a node in the graph below for details.</p>
 <%
+    try
+    {
+        ExperimentRunGraph.renderSvg(
+            out,
+            getContainer(),
+            model.getRun(),
+            model.isDetail(),
+            model.getFocus(),
+            model.getFocusType()
+        );
+    }
+    catch (ExecuteException e)
+    {
+        throw new RuntimeException(e);
     }
 
     if (isSummaryView)

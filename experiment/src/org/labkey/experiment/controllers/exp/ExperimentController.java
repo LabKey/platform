@@ -27,8 +27,6 @@ import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.graphper.api.GraphResource;
-import org.graphper.parser.DotParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -266,8 +264,6 @@ import org.labkey.experiment.DerivedSamplePropertyHelper;
 import org.labkey.experiment.DotGraph;
 import org.labkey.experiment.ExpDataFileListener;
 import org.labkey.experiment.ExperimentRunDisplayColumn;
-import org.labkey.experiment.ExperimentRunGraph;
-import org.labkey.experiment.FileBasedExperimentRunGraph;
 import org.labkey.experiment.LineageGraphDisplayColumn;
 import org.labkey.experiment.MissingFilesCheckInfo;
 import org.labkey.experiment.MoveRunsBean;
@@ -317,17 +313,14 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -1851,7 +1844,6 @@ public class ExperimentController extends SpringActionController
         return new ActionURL(ShowRunGraphAction.class, c).addParameter("rowId", runId);
     }
 
-
     @RequiresPermission(ReadPermission.class)
     public class ShowRunGraphAction extends AbstractShowRunAction
     {
@@ -1859,59 +1851,9 @@ public class ExperimentController extends SpringActionController
         protected VBox createLowerView(ExpRunImpl experimentRun, BindException errors)
         {
             return new VBox(
-                    createRunViewTabs(experimentRun, false, true, true),
-                    new ExperimentRunGraphView(experimentRun, false));
-        }
-    }
-
-
-    @RequiresPermission(ReadPermission.class)
-    public static class DownloadGraphAction extends SimpleViewAction<ExperimentRunForm>
-    {
-        @Override
-        public ModelAndView getView(ExperimentRunForm form, BindException errors) throws Exception
-        {
-            boolean detail = form.isDetail();
-            String focus = form.getFocus();
-            String focusType = form.getFocusType();
-
-            ExpRunImpl experimentRun = (ExpRunImpl) form.lookupRun();
-            ensureCorrectContainer(getContainer(), experimentRun, getViewContext());
-
-            FileBasedExperimentRunGraph.RunGraphFiles files;
-            try
-            {
-                files = FileBasedExperimentRunGraph.generateRunGraph(getViewContext(), experimentRun, detail, focus, focusType);
-            }
-            catch (ExperimentException e)
-            {
-                PageFlowUtil.streamTextAsImage(getViewContext().getResponse(), "ERROR: " + e.getMessage(), 600, 150, Color.RED);
-                return null;
-            }
-
-            try
-            {
-                PageFlowUtil.streamFile(getViewContext().getResponse(), files.getImageFile().toPath(), false);
-            }
-            catch (FileNotFoundException e)
-            {
-                throw new RedirectException(new URLHelper(getViewContext().getRequest().getContextPath() + "/experiment/ExperimentRunNotFound.gif"));
-            }
-            finally
-            {
-                files.release();
-            }
-
-            String dot = ExperimentRunGraph.getDotGraph(getContainer(), experimentRun, detail, focus, focusType);
-            getViewContext().getResponse().getOutputStream().write(ExperimentRunGraph.getSvg(dot).getBytes(StandardCharsets.UTF_8));
-
-            return null;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            throw new UnsupportedOperationException();
+                createRunViewTabs(experimentRun, false, true, true),
+                new ExperimentRunGraphView(experimentRun, false)
+            );
         }
     }
 
@@ -7115,21 +7057,6 @@ public class ExperimentController extends SpringActionController
         public static ExperimentUrlsImpl get()
         {
             return (ExperimentUrlsImpl) urlProvider(ExperimentUrls.class);
-        }
-
-        public ActionURL getDownloadGraphURL(ExpRun run, boolean detail, String focus, String focusType)
-        {
-            ActionURL result = new ActionURL(DownloadGraphAction.class, run.getContainer());
-            result.addParameter("rowId", run.getRowId()).addParameter("detail", detail);
-            if (focus != null)
-            {
-                result.addParameter("focus", focus);
-            }
-            if (focusType != null)
-            {
-                result.addParameter("focusType", focusType);
-            }
-            return result;
         }
 
         public ActionURL getBeginURL(Container container)

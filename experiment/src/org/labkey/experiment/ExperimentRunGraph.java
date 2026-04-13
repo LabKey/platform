@@ -17,8 +17,10 @@ import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 import org.labkey.experiment.api.ExpRunImpl;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -34,17 +36,23 @@ public class ExperimentRunGraph
     private static final int MAX_SIBLINGS = 5;
     private static final int MIN_SIBLINGS = 3;
 
-    public static String getSvg(String dot) throws ExecuteException
+    public static void renderSvg(Writer out, Container c, ExpRunImpl run, boolean detail, String focus, String focusType) throws ExecuteException, IOException
+    {
+        String dot = getDotGraph(c, run, detail, focus, focusType);
+        out.write(getSvg(dot));
+    }
+
+    private static String getSvg(String dot) throws ExecuteException
     {
         Graphviz graph = DotParser.parse(dot);
         String svg = graph.toSvgStr();
 
         // Scale down to 50% of default size. This is arbitrary but seems reasonable. Diagrams are larger than
-        // the previous image-based ones, but monitors are much higher resolution than when those were scaled.
+        // the old image-based ones, but monitors are much higher resolution than when those were scaled.
         return SvgUtil.scaleSize(svg, 0.5f);
     }
 
-    public static String getDotGraph(Container c, ExpRunImpl run, boolean detail, String focus, String focusType)
+    private static String getDotGraph(Container c, ExpRunImpl run, boolean detail, String focus, String focusType)
     {
         Integer focusId = null;
         String typeCode = focusType;
