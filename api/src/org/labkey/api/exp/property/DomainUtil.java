@@ -1541,7 +1541,7 @@ public class DomainUtil
                     // GitHub Issue 951: Multi-line values converted to text choices lose multi-line editability
                     if (StringUtils.containsAny(option, "\n\r"))
                     {
-                        return "Text choice value for field '" + field.getName() + "' must not contain newline characters: '" + StringUtils.abbreviate(option, 50) + "'";
+                        return "Text choice value for field '" + field.getName() + "' must not be multi-line: '" + StringUtils.abbreviate(option, 50) + "'";
                     }
                 }
             }

@@ -851,7 +851,7 @@ describe('Multi Value Text Choice', () => {
             }
         };
         failedUpdate = await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...adminOptions});
-        expect(failedUpdate?.['body']?.['exception']).toContain('must not contain newline characters');
+        expect(failedUpdate?.['body']?.['exception']).toContain('must not be multi-line:');
 
         // verify cannot convert MultiLine field to Text Choice field
         updatePayload = {
@@ -876,7 +876,7 @@ describe('Multi Value Text Choice', () => {
             }
         };
         failedUpdate = await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...adminOptions});
-        expect(failedUpdate?.['body']?.['exception']).toContain('must not contain newline characters');
+        expect(failedUpdate?.['body']?.['exception']).toContain('must not be multi-line:');
 
     });
 
