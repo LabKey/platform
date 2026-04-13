@@ -37,6 +37,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -983,8 +984,9 @@ public class DomainUtil
                         if (column != null)
                         {
                             var dialect = domainTable.getSchema().getSqlDialect();
+                            DatabaseIdentifier columnId = p.getPropertyDescriptor().getLegalSelectName(dialect);
                             SQLFragment deletedArray = new SQLFragment("CAST(? AS TEXT[])").add(deletedValues.toArray(new String[0]));
-                            SQLFragment columnFrag = new SQLFragment().appendIdentifier(column.getAlias());
+                            SQLFragment columnFrag = new SQLFragment().appendIdentifier(columnId);
 
                             SQLFragment sql = new SQLFragment("SELECT 1 FROM ")
                                     .append(domainTable)
@@ -1535,6 +1537,11 @@ public class DomainUtil
                     if (JSON_FILTER_VALUE_PATTERN.matcher(option).matches())
                     {
                         return "Text choice value for field '" + field.getName() + "' must not use the reserved format '{json:[...]}': '" + StringUtils.abbreviate(option, 50) + "'";
+                    }
+                    // GitHub Issue 951: Multi-line values converted to text choices lose multi-line editability
+                    if (StringUtils.containsAny(option, "\n\r"))
+                    {
+                        return "Text choice value for field '" + field.getName() + "' must not be multi-line: '" + StringUtils.abbreviate(option, 50) + "'";
                     }
                 }
             }
