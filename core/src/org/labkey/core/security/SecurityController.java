@@ -21,6 +21,7 @@ import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.graphper.api.Graphviz;
+import org.graphper.draw.ExecuteException;
 import org.graphper.parser.DotParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -2086,7 +2087,7 @@ public class SecurityController extends SpringActionController
     public static class GroupDiagramAction extends ReadOnlyApiAction<GroupDiagramForm>
     {
         @Override
-        public ApiResponse execute(GroupDiagramForm form, BindException errors) throws Exception
+        public ApiResponse execute(GroupDiagramForm form, BindException errors)
         {
             List<Group> groups = SecurityManager.getGroups(getContainer().getProject(), false);
             String html;
@@ -2099,7 +2100,14 @@ public class SecurityController extends SpringActionController
             {
                 String dot = GroupManager.getGroupGraphDot(groups, getUser(), form.getHideUnconnected());
                 Graphviz graph = DotParser.parse(dot);
-                html = graph.toSvgStr();
+                try
+                {
+                    html = graph.toSvgStr();
+                }
+                catch (ExecuteException e)
+                {
+                    html = "Error while attempting to produce the group diagram: " + e.getMessage();
+                }
             }
 
             return new ApiSimpleResponse("html", html);
