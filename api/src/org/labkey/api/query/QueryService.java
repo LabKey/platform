@@ -16,18 +16,38 @@
 
 package org.labkey.api.query;
 
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.collections4.SetValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MethodInfo;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.ParameterDescription;
+import org.labkey.api.data.ParameterDescriptionImpl;
+import org.labkey.api.data.QueryLogging;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.column.ColumnInfoTransformer;
-import org.labkey.api.data.*;
-import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.module.Module;
 import org.labkey.api.query.column.ConceptURIColumnInfoTransformer;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
@@ -41,7 +61,6 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.springframework.web.servlet.mvc.Controller;
 
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -652,6 +671,13 @@ public interface QueryService
      */
     @Nullable
     ContainerFilter getContainerFilterForLookups(Container container, User user);
+
+    /**
+     * Provides the configured ContainerFilter to utilize when requesting data that is being read
+     * within a folder context. Equivalent to the client side function in @labkey/components
+     */
+    @Nullable
+    ContainerFilter getContainerFilterForFolder(Container container, User user);
 
 
     interface SelectBuilder

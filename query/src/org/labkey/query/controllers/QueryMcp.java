@@ -17,6 +17,9 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryParseWarning;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleSchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
@@ -78,7 +81,7 @@ public class QueryMcp implements McpService.McpImpl
 
     @Tool(description = "Provide list of tables within the provided schema.")
     @RequiresPermission(ReadPermission.class)
-    String listTables(ToolContext toolContext, @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study.Datasets\"") String schemaName)
+    String listTables(ToolContext toolContext, @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study\".\"Datasets\"") String schemaName)
     {
         var json = _listTables(getContext(toolContext), schemaName);
         return json.toString();
@@ -100,7 +103,7 @@ public class QueryMcp implements McpService.McpImpl
     @RequiresPermission(ReadPermission.class)
     String getSourceForSavedQuery(
         ToolContext toolContext,
-        @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study.Datasets\"") String schemaName,
+        @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study\".\"Datasets\"") String schemaName,
         @ToolParam(description = "Table or query name as it would appear in SQL e.g. MyTable, MyQuery, or \"MyTable\"") String queryName
     )
     {
@@ -110,6 +113,49 @@ public class QueryMcp implements McpService.McpImpl
         else
             throw new NotFoundException("Could not find the source for " + schemaName + "." + queryName);
     }
+
+    @Tool(description = "Validate SQL syntax.")
+    @RequiresPermission(ReadPermission.class)
+    String validateSQL(
+            ToolContext toolContext,
+            @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study\".\"Datasets\"") String schemaName,
+            @ToolParam(description = "SQL source") String sql
+    )
+    {
+        var context = getContext(toolContext);
+
+        SchemaKey schemaKey = getSchemaKey(schemaName);
+        QuerySchema schema = DefaultSchema.get(context.getUser(), context.getContainer(), schemaKey);
+
+        try
+        {
+            TableInfo ti = QueryService.get().createTable(schema, sql, null, true);
+            var warnings = ti.getWarnings();
+            if (null != warnings)
+            {
+                var warning = warnings.stream().findFirst();
+                if (warning.isPresent())
+                    throw warning.get();
+            }
+// CONSIDER: add back code to add database validate, but this seems to have stopped working
+//            if (ti.getSqlDialect().isPostgreSQL())
+//            {
+//                var parameters = ti.getNamedParameters();
+//                if (parameters.isEmpty())
+//                {
+//                    SQLFragment sqlPrepare = new SQLFragment("PREPARE validate AS SELECT * FROM ").append(ti.getFromSQL("MYVALIDATEQUERY__"));
+//                    new SqlExecutor(ti.getSchema().getScope()).execute(sqlPrepare);
+//                }
+//            }
+        }
+        catch (Exception x)
+        {
+            // CONSIDER remove line line/character information from DB errors as they won't match the LabKey SQL
+            return "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below:\n```" + x.getMessage() + "```";
+        }
+        return "success";
+    }
+
 
     /* For now, list all schemas. CONSIDER support incremental querying. */
     public static Map<SchemaKey, UserSchema> _listAllSchemas(DefaultSchema root)
@@ -309,7 +355,7 @@ public class QueryMcp implements McpService.McpImpl
         return new SqlParser().parseIdentifier(compoundIdentifier).toSQLString(true).toLowerCase();
     }
 
-    /** JSON schema example provided by GEMINI, using triple tick-marks to delimit the machine-readable structured data
+    /* JSON schema example provided by GEMINI, using triple tick-marks to delimit the machine-readable structured data
      *
      * Here is the database schema in JSON format:
      * ```{
