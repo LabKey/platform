@@ -41,7 +41,7 @@ public class SvgUtil
     {
         Size ret = null;
         String value = readAttribute(svg, attribute);
-        if (value != null)
+        if (value != null && value.length() < 100) // Prevent DOS on regex
         {
             Matcher fbMatcher = floatingPointPattern.matcher(value);
             if (fbMatcher.find())

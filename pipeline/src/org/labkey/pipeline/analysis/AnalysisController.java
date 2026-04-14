@@ -657,7 +657,7 @@ public class AnalysisController extends SpringActionController
 
         if (null != dot)
         {
-            String html = "Oops... error with DotParser!";
+            String html = "Unable to render pipeline diagram.";
             try
             {
                 Graphviz graph = DotParser.parse(dot);
