@@ -54,7 +54,7 @@
 <%
     }
 %>
-<p>Click on a node in the graph below for details.</p>
+<p>Click on a node in the graph below for details. Run outputs have a bold outline.</p>
 <%
     try
     {

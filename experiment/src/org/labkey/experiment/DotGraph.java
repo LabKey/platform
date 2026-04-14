@@ -308,11 +308,11 @@ public class DotGraph
         }
         if (label != null && !(src instanceof GroupedNode) && !(trgt instanceof GroupedNode))
         {
-            connect += " [ style=\"setlinewidth(3)\" label = \"" + escape(label) + "\" fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_SMALL_FONTSIZE + " ]";
+            connect += " [ penwidth=3 label = \"" + escape(label) + "\" fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_SMALL_FONTSIZE + " ]";
         }
         else
         {
-            connect += " [ style=\"setlinewidth(3)\" ]";
+            connect += " [ penwidth=3 ]";
         }
         if (!_writtenConnects.contains(connect))
             _pendingConnects.add(connect);
@@ -473,7 +473,7 @@ public class DotGraph
             {
                 out.println(_key + "["
                         + "label=\"" + escape(_label) + "\", tooltip=\"" + escape(tooltip) + "\" "
-                        + ",style=\"filled" + (_bold ? ", setlinewidth(6)" : ", setlinewidth(2)") + "\" "
+                        + ", style=\"filled\", penwidth=" + (_bold ? "6" : "2")
                         + ", fillcolor=\"" + _color + "\" shape=" + _shape
                         + ((null != _height) ? ", height=\"" + _height + "\"" : "")
                         + ((null != _width) ? ", width=\"" + _width + "\"" : "")
