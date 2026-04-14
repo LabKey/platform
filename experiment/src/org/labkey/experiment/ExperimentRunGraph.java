@@ -1,5 +1,6 @@
 package org.labkey.experiment;
 
+import org.apache.logging.log4j.Logger;
 import org.graphper.api.Graphviz;
 import org.graphper.draw.ExecuteException;
 import org.graphper.parser.DotParser;
@@ -12,6 +13,7 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.util.SvgUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
@@ -31,6 +33,8 @@ import java.util.TreeMap;
 
 public class ExperimentRunGraph
 {
+    private static final Logger LOG = LogHelper.getLogger(ExperimentRunGraph.class, "DotGraph warnings");
+
     private static final int MAX_WIDTH_SMALL_FONT = 8;
     private static final int MAX_WIDTH_BIG_FONT = 3;
     private static final int MAX_SIBLINGS = 5;
@@ -69,7 +73,14 @@ public class ExperimentRunGraph
                 focusId = Integer.parseInt(focus);
                 run.trimRunTree(focusId, typeCode);
             }
-            catch (NumberFormatException | ExperimentException ignored) {}
+            catch (ExperimentException ee)
+            {
+                LOG.warn("Exception while trimming run tree", ee);
+            }
+            catch (NumberFormatException nfe)
+            {
+                LOG.warn("Exception while parsing focus {}", focus, nfe);
+            }
         }
 
         StringWriter writer = new StringWriter();

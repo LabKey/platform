@@ -69,6 +69,7 @@
     }
     catch (ExecuteException e)
     {
+        out.print("<p>Error rendering graph</p>");
         throw new RuntimeException(e);
     }
 
