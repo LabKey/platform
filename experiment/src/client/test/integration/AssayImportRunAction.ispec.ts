@@ -5,6 +5,7 @@ import {
     AssayDesignFieldOptions,
     createAssayDesign,
     createDomainField,
+    generateFieldNameForImport,
     getAuditLogsForTransaction,
     getRunQueryRow,
     ImportRunOptions,
@@ -34,7 +35,7 @@ const RUN_TEXT_CHOICE_FIELD_NAME = 'runTextChoiceField';
 const RESULT_FIELD_NAME = 'resultStringField';
 const RESULT_FILE_FIELD_NAME = 'resultFileField';
 const RESULT_TC_FIELD_NAME = 'resultTextChoiceField';
-const RESULT_MVTC_FIELD_NAME = 'resultMultiChoiceField';
+const RESULT_MVTC_FIELD_NAME = 'resultMC ' + generateFieldNameForImport();
 
 let context;
 let ASSAY_A_ID: number;
@@ -46,7 +47,6 @@ let supportMultiChoice = false;
 beforeAll(async () => {
     context = await initProject(server, PROJECT_NAME, ASSAY_DESIGNER_ROLE, ['assay', 'experiment']);
 
-    let supportMultiChoice = false;
     const createTestPayload = {
         kind: 'DataClass',
         domainDesign: { name: 'Test_mvtc_support_check', fields: [{ name: 'Prop' }] },
@@ -67,8 +67,10 @@ beforeAll(async () => {
         createDomainField({name: RESULT_TC_FIELD_NAME, ...TC_FIELD_PROP} as Partial<IDomainField>)
     ];
 
-    if (supportMultiChoice)
+    if (supportMultiChoice) {
+        console.log("Assay result MVTC field name: " + RESULT_MVTC_FIELD_NAME);
         resultFields.push(createDomainField({name: RESULT_MVTC_FIELD_NAME, ...MVTC_FIELD_PROP} as Partial<IDomainField>));
+    }
 
     let assayFields: AssayDesignFieldOptions = {
         batchFields: [

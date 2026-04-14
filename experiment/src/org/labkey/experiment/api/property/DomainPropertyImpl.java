@@ -68,6 +68,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
+
 public class DomainPropertyImpl implements DomainProperty
 {
     private final DomainImpl _domain;
@@ -858,6 +860,13 @@ public class DomainPropertyImpl implements DomainProperty
             // Issue 44711: Prevent attachment and file field types from being converted to a different type
             if (PropertyType.FILE_LINK.getInputType().equalsIgnoreCase(oldType.getInputType()) && oldType != newType)
                 throw new ChangePropertyDescriptorException("Cannot convert an instance of " + oldType.name() + " to " + newType.name() + ".");
+
+            // GitHub Issue 951: Multi-line values converted to text choices lose multi-line editability
+            if (oldType == PropertyType.MULTI_LINE &&
+                    (PropertyType.MULTI_CHOICE == newType ||TEXT_CHOICE_CONCEPT_URI.equals(_pd.getConceptURI())))
+            {
+                throw new ChangePropertyDescriptorException("Cannot convert a multiline text field to a text choice field.");
+            }
 
             OntologyManager.validatePropertyDescriptor(_pd);
             Table.update(user, OntologyManager.getTinfoPropertyDescriptor(), _pd, _pdOld.getPropertyId());

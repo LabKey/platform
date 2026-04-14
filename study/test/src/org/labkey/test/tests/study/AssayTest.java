@@ -279,7 +279,6 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText("view results"));
         assertElementPresent("Sample lookup failed for: OS_1", new Locator.LinkLocator("OS_1"), 1);
 
-
         log("Edit assay design and change Sample field to point to created Sample Type");
         goToManageAssays();
         clickAndWait(Locator.LinkLocator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
@@ -294,9 +293,20 @@ public class AssayTest extends AbstractAssayTest
         importAssayData(SAMPLE_FIELD_TEST_ASSAY, TEST_RUN2, "SampleField\nS_1");
         goToManageAssays().clickAndWait(Locator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
         clickAndWait(Locator.linkWithText("view results"));
-//        assertElementPresent("Sample lookup failed for: OS_1", new Locator.LinkLocator("OS_1"), 1); //TODO this becomes the RowId "<123>" after change. Issue #40047
-
+        DataRegionTable table = new DataRegionTable("Data", getDriver());
+        List<String> sampleFieldValues = table.getColumnDataAsText("SampleField");
+        assertTrue("First sample should not resolve to sample type", sampleFieldValues.get(0).startsWith("<"));
+        assertEquals("Second sample should resolve to sample type", "S_1", sampleFieldValues.get(1));
         assertElementPresent("Sample lookup failed for: S_1", new Locator.LinkLocator("S_1"), 1);
+
+        log("GitHub Issue #688: verify sample lookup to createdBy");
+        _customizeViewsHelper.openCustomizeViewPanel();
+        _customizeViewsHelper.addColumn("SampleField/CreatedBy");
+        _customizeViewsHelper.applyCustomView();
+        table = new DataRegionTable("Data", getDriver());
+        List<String> createdByValues = table.getColumnDataAsText("SampleField/CreatedBy");
+        assertEquals("First sample should not have a createdBy since it doesn't resolve", " ", createdByValues.get(0));
+        assertEquals("Second sample should have a createdBy since it resolves to a sample type", getCurrentUserName(), createdByValues.get(1));
 
         log("Edit assay design and change Sample field to point back to 'All Samples'");
         goToManageAssays();
@@ -319,6 +329,10 @@ public class AssayTest extends AbstractAssayTest
         assertElementPresent("Sample lookup failed for: S_2", new Locator.LinkLocator("S_2"), 1);
         assertElementPresent("Sample lookup failed for: OS_2", new Locator.LinkLocator("OS_2"), 1);
 
+        log("GitHub Issue #688: verify sample lookup to createdBy");
+        table = new DataRegionTable("Data", getDriver());
+        for (int i = 0; i < table.getDataRowCount(); i++)
+            assertEquals("Row " + i + " should have current user as createdBy since they all resolve to samples", getCurrentUserName(), table.getDataAsText(i, "SampleField/CreatedBy"));
     }
 
     private void importAssayData(String assayName, String runName, String runDataStr)
