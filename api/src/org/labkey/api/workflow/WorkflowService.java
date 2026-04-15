@@ -48,5 +48,5 @@ public interface WorkflowService
     Job getJob(Long jobId);
 
     @Nullable
-    Job getELNReferencePlaceholderJob(GUID container);
+    Job getELNReferencePlaceholderJob(Container container);
 }
