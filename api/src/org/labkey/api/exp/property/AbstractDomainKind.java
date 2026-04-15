@@ -206,7 +206,7 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
         else
         {
             // Issue 29047
-            blankRowsSQL.appendIdentifier(columnId).append(" IS NOT NULL");
+            blankRowsSQL.appendIdentifier(columnId).append(" IS NULL");
         }
         if (prop.isMvEnabled())
         {
