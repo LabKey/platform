@@ -192,7 +192,7 @@ public class ConditionalFormat extends GWTConditionalFormat
      * Converts the XML filter entries for a single conditional format into a URL query string suitable for
      * use as a {@link GWTConditionalFormat} filter value.
      */
-    @NotNull
+    @Nullable
     public static String buildFilterQueryString(@Nullable ConditionalFormatFiltersType filters)
     {
         SimpleFilter simpleFilter = new SimpleFilter();
