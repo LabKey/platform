@@ -166,7 +166,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
-import static org.labkey.api.util.PageFlowUtil.filter;
 
 public class SecurityController extends SpringActionController
 {
@@ -544,7 +543,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class StandardDeleteGroupAction extends FormHandlerAction<GroupForm>
+    public static class StandardDeleteGroupAction extends FormHandlerAction<GroupForm>
     {
         @Override
         public void validateCommand(GroupForm form, Errors errors) {}
@@ -799,7 +798,7 @@ public class SecurityController extends SpringActionController
                 // Ignore lines of all whitespace, otherwise show an error.
                 String e = trimToNull(rawEmail);
                 if (null != e)
-                    errors.reject(ERROR_MSG, "Could not add user " + filter(e) + ": Invalid email address");
+                    errors.reject(ERROR_MSG, "Could not add user " + h(e) + ": Invalid email address");
             }
 
             String[] removeNames = form.getDelete();
@@ -833,7 +832,7 @@ public class SecurityController extends SpringActionController
                 // Ignore lines of all whitespace, otherwise show an error.
                 String e = trimToNull(rawEmail);
                 if (null != e)
-                    errors.reject(ERROR_MSG, "Could not remove user " + filter(e) + ": Invalid email address");
+                    errors.reject(ERROR_MSG, "Could not remove user " + h(e) + ": Invalid email address");
             }
 
             if (_group != null)
@@ -876,7 +875,7 @@ public class SecurityController extends SpringActionController
                         if (null != user)
                         {
                             if (!user.isActive())
-                                errors.reject(ERROR_MSG, "You may not add the user '" + PageFlowUtil.filter(email)
+                                errors.reject(ERROR_MSG, "You may not add the user '" + h(email)
                                         + "' to this group because that user account is currently deactivated." +
                                         " To reactivate this account, contact your system administrator.");
                             else
@@ -1157,7 +1156,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class GroupPermissionAction extends SimpleViewAction<GroupAccessForm>
+    public static class GroupPermissionAction extends SimpleViewAction<GroupAccessForm>
     {
         private Group _requestedGroup;
 
@@ -1491,7 +1490,7 @@ public class SecurityController extends SpringActionController
                     if (HtmlString.isBlank(result))
                     {
                         ActionURL url = urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), newUser.getUserId(), returnUrl);
-                        result = HtmlString.unsafe(PageFlowUtil.filter(email) + " was already a registered system user. Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.");
+                        result = HtmlString.unsafe(h(email) + " was already a registered system user. Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.");
                     }
                     else if (userToClone != null)
                     {
@@ -1510,7 +1509,7 @@ public class SecurityController extends SpringActionController
                             }
                         }
                     }
-                    form.addMessage(HtmlString.unsafe(String.format("%s<meta userId='%d' email='%s'/>", result, newUser.getUserId(), PageFlowUtil.filter(newUser.getEmail()))));
+                    form.addMessage(HtmlString.unsafe(String.format("%s<meta userId='%d' email='%s'/>", result, newUser.getUserId(), h(newUser.getEmail()))));
                 }
             }
 
@@ -1584,7 +1583,7 @@ public class SecurityController extends SpringActionController
             user.refreshGroups(); // We just deleted them all; refresh so subsequent operations see that
 
             // Delete direct role assignments
-            handleDirectRoleAssignments(user, (policy, roles) -> {
+            handleDirectRoleAssignments(user, (policy, _) -> {
                 policy.clearAssignedRoles(user);
                 SecurityPolicyManager.savePolicy(policy, getUser());
             });
@@ -1806,7 +1805,7 @@ public class SecurityController extends SpringActionController
 
                 if (LoginManager.isVerified(affectedUser))
                 {
-                    out.write("Can't display " + message.getType().toLowerCase() + "; " + PageFlowUtil.filter(affectedUser.getEmail()) + " has already chosen a password.");
+                    out.write("Can't display " + message.getType().toLowerCase() + "; " + h(affectedUser.getEmail()) + " has already chosen a password.");
                 }
                 else
                 {
@@ -1939,9 +1938,9 @@ public class SecurityController extends SpringActionController
 
             String page = String.format(
                 "<p>%1$s: Password %2$s.</p><p>Email sent. Click <a href=\"%3$s\" target=\"_blank\">here</a> to see the email.</p>%4$s",
-                PageFlowUtil.filter(affectedUser.getEmail()),
+                h(affectedUser.getEmail()),
                 _loginExists ? "reset" : "created",
-                PageFlowUtil.filter(actionURL.getLocalURIString()),
+                h(actionURL.getLocalURIString()),
                 PageFlowUtil.button("Done").href(form.getReturnUrlHelper(AppProps.getInstance().getHomePageActionURL()))
             );
 
@@ -2106,7 +2105,7 @@ public class SecurityController extends SpringActionController
                 }
                 catch (ExecuteException e)
                 {
-                    html = "Error while attempting to produce the group diagram: " + e.getMessage();
+                    html = "Error while attempting to produce the group diagram: " + h(e.getMessage());
                 }
             }
 
@@ -2372,12 +2371,12 @@ public class SecurityController extends SpringActionController
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
                     new PermissionsAction(),
-                controller.new StandardDeleteGroupAction(),
+                    new StandardDeleteGroupAction(),
                 controller.new GroupAction(),
                     new CompleteMemberAction(),
                     new CompleteUserAction(),
                     new GroupExportAction(),
-                controller.new GroupPermissionAction(),
+                    new GroupPermissionAction(),
                     new UpdatePermissionsAction(),
                     new ShowRegistrationEmailAction(),
                     new GroupDiagramAction(),
