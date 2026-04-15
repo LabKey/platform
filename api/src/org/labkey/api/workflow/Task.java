@@ -5,11 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
-import org.labkey.api.collections.ArrayListMap;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CreatedModified;
-import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.util.GUID;
 
 import java.util.Date;
@@ -203,10 +200,7 @@ public abstract class Task extends CreatedModified implements Comparable<Task>
 
     public abstract Job getJob();
 
-    public Map<String, Object> toMap()
-    {
-        return new CaseInsensitiveHashMap<>(ObjectFactory.Registry.getFactory(Task.class).toMap(this, new ArrayListMap<>()));
-    }
+    public abstract Map<String, Object> toMap();
 
     // Determine if the template task with existing jobs can be updated to the new task definition
     // Only entityFilter field is allowed to be changed for a referenced template task

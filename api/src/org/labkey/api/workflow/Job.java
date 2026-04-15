@@ -5,12 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.collections.ArrayListMap;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CreatedModified;
-import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
@@ -323,10 +320,7 @@ public abstract class Job extends CreatedModified implements Identifiable
         _hasMedia = hasMedia;
     }
 
-    public Map<String, Object> toMap()
-    {
-        return new CaseInsensitiveHashMap<>(ObjectFactory.Registry.getFactory(Job.class).toMap(this, new ArrayListMap<>()));
-    }
+    public abstract Map<String, Object> toMap();
 
     @JsonIgnore
     public List<Task> getSubsequentTasks(long taskId)
