@@ -260,6 +260,7 @@ public abstract class Task extends CreatedModified implements Comparable<Task>
             Map<String, Object> actionMap = action.toAuditDetailMap();
             for (Map.Entry<String, Object> entry : actionMap.entrySet())
                 map.put("action" + actionIndex + "." + entry.getKey(), entry.getValue());
+            actionIndex++;
         }
         return map;
     }
