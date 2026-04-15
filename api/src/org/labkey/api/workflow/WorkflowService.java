@@ -41,4 +41,6 @@ public interface WorkflowService
 
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long actionId);
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long taskId, @NotNull ActionType actionType);
+
+    Job getJob(Long jobId);
 }
