@@ -565,36 +565,8 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void delete(User user, @Nullable String auditUserComment) throws DomainNotFoundException
     {
-        TableInfo table = getTable(user);
-        QueryUpdateService qus = null;
-
-        if (null != table)
-            qus = table.getUpdateService();
-
-        // In certain cases we may create a list that is not viable (i.e., one in which a table was never created because
-        // the metadata wasn't valid). Still allow deleting the list
-        try (DbScope.Transaction transaction = (table != null) ? table.getSchema().getScope().ensureTransaction() :
-             ExperimentService.get().ensureTransaction())
-        {
-            // remove related full-text search docs and attachments
-            ListManager.get().deleteIndexedList(this);
-            if (qus instanceof ListQueryUpdateService listQus)
-                listQus.deleteRelatedListData(null);
-
-            // then delete the list itself
-            ListManager.get().deleteListDef(getContainer(), getListId());
-            Domain domain = getDomainOrThrow();
-            domain.delete(user, auditUserComment);
-
-            ListManager.get().addAuditEvent(this, user, String.format("The list %s was deleted", _def.getName()));
-
-            transaction.commit();
-        }
-
-        SchemaKey schemaPath = SchemaKey.fromParts(ListQuerySchema.NAME);
-        QueryService.get().fireQueryDeleted(user, getContainer(), null, schemaPath, Collections.singleton(getName()));
+        ListManager.get().deleteList(user, this, auditUserComment);
     }
-
 
     @Override
     public int insertListItems(User user, Container container, List<ListItem> listItems)
