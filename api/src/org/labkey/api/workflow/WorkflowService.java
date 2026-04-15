@@ -1,6 +1,7 @@
 package org.labkey.api.workflow;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;import org.labkey.api.security.User;import org.labkey.api.services.ServiceRegistry;
 
 public interface WorkflowService
@@ -42,5 +43,6 @@ public interface WorkflowService
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long actionId);
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long taskId, @NotNull ActionType actionType);
 
+    @Nullable
     Job getJob(Long jobId);
 }
