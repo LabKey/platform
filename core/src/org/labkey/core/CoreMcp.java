@@ -132,4 +132,23 @@ public class CoreMcp implements McpService.McpImpl
             )
         ));
     }
+
+    @McpResource(
+            uri = "resource://org/labkey/core/DataAnalysis_Python.md",
+            mimeType = "application/markdown",
+            name = "Python Data Analysis Development Guide",
+            description = "Provide documentation for developers using Python to analyze LabKey data")
+    public ReadResourceResult getPythonDataAnalysisGuide() throws IOException
+    {
+        incrementResourceRequestCount("Python Data Analysis");
+        String markdown = IOUtils.resourceToString("org/labkey/core/DataAnalysis_Python.md", null, CoreModule.class.getClassLoader());
+        return new ReadResourceResult(List.of(
+                new McpSchema.TextResourceContents(
+                        "resource://org/labkey/core/DataAnalysis_Python.md",
+                        "application/markdown",
+                        markdown
+                )
+        ));
+    }
+
 }
