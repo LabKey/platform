@@ -151,4 +151,22 @@ public class CoreMcp implements McpService.McpImpl
         ));
     }
 
+    @McpResource(
+            uri = "resource://org/labkey/core/DataAnalysis_R.md",
+            mimeType = "application/markdown",
+            name = "R Data Analysis Development Guide",
+            description = "Provide documentation for developers using R to analyze LabKey data")
+    public ReadResourceResult getRDataAnalysisGuide() throws IOException
+    {
+        incrementResourceRequestCount("R Data Analysis");
+        String markdown = IOUtils.resourceToString("org/labkey/core/DataAnalysis_R.md", null, CoreModule.class.getClassLoader());
+        return new ReadResourceResult(List.of(
+                new McpSchema.TextResourceContents(
+                        "resource://org/labkey/core/DataAnalysis_R.md",
+                        "application/markdown",
+                        markdown
+                )
+        ));
+    }
+
 }
