@@ -118,6 +118,7 @@ public class ScriptReorderer
             patterns.add(new SqlPattern("DROP INDEX (IF EXISTS )?\\w+ ON " + TABLE_NAME_REGEX + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
 
             patterns.add(new SqlPattern("(CREATE|ALTER) PROCEDURE .+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
+            patterns.add(new SqlPattern("(CREATE|ALTER) TRIGGER .+?" + "END GO\\s*$", Type.NonTable, Operation.Other));
             patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " CHECK CONSTRAINT " + CONSTRAINT_NAME_REGEX + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
         }
         else

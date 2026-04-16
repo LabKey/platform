@@ -1944,7 +1944,9 @@ public class ContainerManager
                 setContainerTabDeleted(c.getParent(), c.getName(), c.getParent().getFolderType().getName());
             }
 
-            AttachmentService.get().logOrphanedAttachments();
+            // Log orphaned attachments in this server, but only in dev mode, since this is for our testing
+            if (AppProps.getInstance().isDevMode())
+                AttachmentService.get().logOrphanedAttachments();
 
             fireDeleteContainer(c, user);
 

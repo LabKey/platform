@@ -15,6 +15,7 @@
  */
 package org.labkey.api.dataiterator;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
@@ -42,6 +43,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class AttachmentDataIterator extends WrapperDataIterator
 {
@@ -49,6 +53,7 @@ public class AttachmentDataIterator extends WrapperDataIterator
     final BatchValidationException errors;
     final int entityIdIndex;
     final ArrayList<_AttachmentUploadHelper> attachmentColumns;
+    final Map<String, String> attachmentColumnsAliases;
     final QueryUpdateService.InsertOption insertOption;
     final User user;
     final Container container;
@@ -60,6 +65,7 @@ public class AttachmentDataIterator extends WrapperDataIterator
                            @Nullable VirtualFile attachmentDir,
                            int entityIdIndex,
                            ArrayList<_AttachmentUploadHelper> attachmentColumns,
+                           Map<String, String> attachmentColumnsAliases,
                            QueryUpdateService.InsertOption insertOption,
                            Container container,
                            AttachmentParentFactory parentFactory)
@@ -69,6 +75,7 @@ public class AttachmentDataIterator extends WrapperDataIterator
         this.errors = errors;
         this.entityIdIndex = entityIdIndex;
         this.attachmentColumns = attachmentColumns;
+        this.attachmentColumnsAliases = attachmentColumnsAliases;
         this.insertOption = insertOption;
         this.user = user;
         this.container = container;
@@ -83,19 +90,53 @@ public class AttachmentDataIterator extends WrapperDataIterator
             return false;
 
         ArrayList<AttachmentFile> attachmentFiles = null;
+        List<String> oldAttachments = new ArrayList<>();
+
         try
         {
+            Map<String, Object> existing = getExistingRecord();
+
             for (_AttachmentUploadHelper p : attachmentColumns)
             {
                 Object attachmentValue = get(p.index);
+                String oldAttachmentValue = null;
+                if (insertOption.allowUpdate && existing != null)
+                {
+                    // GitHub Issue 915: Bulk edit doesn't completely remove attachments for sources
+                    Object oldValue = existing.get(p.domainProperty.getName());
+                    if (oldValue == null)
+                        oldValue = existing.get(attachmentColumnsAliases.get(p.domainProperty.getName()));
+                    if (oldValue != null)
+                        oldAttachmentValue = oldValue.toString();
+                }
+
                 if (null == attachmentValue)
+                {
+                    // Remove existing attachment
+                    if (!StringUtils.isEmpty(oldAttachmentValue))
+                        oldAttachments.add(oldAttachmentValue);
                     continue;
+                }
 
                 String filename;
                 AttachmentFile attachmentFile;
 
                 if (attachmentValue instanceof String str)
                 {
+                    if (StringUtils.isEmpty(str))
+                    {
+                        // Remove existing attachment
+                        if (!StringUtils.isEmpty(oldAttachmentValue))
+                            oldAttachments.add(oldAttachmentValue);
+                        continue;
+                    }
+
+                    if (str.equals(oldAttachmentValue)) // no change
+                        continue;
+
+                    if (!StringUtils.isEmpty(oldAttachmentValue)) // replace old attachment with new attachment, so mark old attachment for deletion
+                        oldAttachments.add(oldAttachmentValue);
+
                     if (null == attachmentDir)
                     {
                         errors.addRowError(propertyValidationException(p.domainProperty, attachmentValue));
@@ -115,11 +156,15 @@ public class AttachmentDataIterator extends WrapperDataIterator
                 {
                     attachmentFile = file;
                     filename = attachmentFile.getFilename();
+                    if (!StringUtils.isEmpty(oldAttachmentValue))
+                        oldAttachments.add(oldAttachmentValue);
                 }
                 else if (attachmentValue instanceof File file)
                 {
                     attachmentFile = new FileAttachmentFile(file);
                     filename = attachmentFile.getFilename();
+                    if (!StringUtils.isEmpty(oldAttachmentValue))
+                        oldAttachments.add(oldAttachmentValue);
                 }
                 else
                 {
@@ -141,11 +186,18 @@ public class AttachmentDataIterator extends WrapperDataIterator
                 attachmentFiles.add(attachmentFile);
             }
 
+            if ((null == attachmentFiles || attachmentFiles.isEmpty()) && oldAttachments.isEmpty())
+                return ret;
+
+            String entityId = String.valueOf(get(entityIdIndex));
+            var attachmentParent = getAttachmentParent(entityId, container);
+
+            if (!oldAttachments.isEmpty())
+                AttachmentService.get().deleteAttachments(attachmentParent, oldAttachments, user);
+
             if (null != attachmentFiles && !attachmentFiles.isEmpty())
-            {
-                String entityId = String.valueOf(get(entityIdIndex));
-                AttachmentService.get().addAttachments(getAttachmentParent(entityId, container), attachmentFiles, user);
-            }
+                AttachmentService.get().addAttachments(attachmentParent, attachmentFiles, user);
+
             return ret;
         }
         catch (AttachmentService.DuplicateFilenameException | AttachmentService.FileTooLargeException e)
@@ -212,6 +264,7 @@ public class AttachmentDataIterator extends WrapperDataIterator
             // find attachment columns
             int entityIdIndex = 0;
             final ArrayList<_AttachmentUploadHelper> attachmentColumns = new ArrayList<>();
+            final Map<String, String> attachmentColumnsAliases = new HashMap<>();
 
             for (int c = 1; c <= it.getColumnCount(); c++)
             {
@@ -229,6 +282,7 @@ public class AttachmentDataIterator extends WrapperDataIterator
                         continue;
 
                     attachmentColumns.add(new _AttachmentUploadHelper(c,domainProperty));
+                    attachmentColumnsAliases.put(domainProperty.getName(), col.getAlias().getId());
                 }
                 catch (IndexOutOfBoundsException ignored) // Until issue is resolved between StatementDataIterator.getColumnCount() and SimpleTranslator.getColumnCount()
                 {
@@ -236,7 +290,9 @@ public class AttachmentDataIterator extends WrapperDataIterator
             }
 
             if (!attachmentColumns.isEmpty())
-                return new AttachmentDataIterator(it, context.getErrors(), user, attachmentDir, entityIdIndex, attachmentColumns, context.getInsertOption(), container, parentFactory );
+            {
+                return new AttachmentDataIterator(it, context.getErrors(), user, attachmentDir, entityIdIndex, attachmentColumns, attachmentColumnsAliases, context.getInsertOption(), container, parentFactory);
+            }
 
             return it;
         };
