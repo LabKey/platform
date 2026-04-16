@@ -23,12 +23,15 @@
 <%@ page import="java.util.regex.Matcher" %>
 <%@ page import="java.util.regex.Pattern" %>
 <%@ page import="org.apache.commons.lang3.Strings" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<IssueObject> me = HttpView.currentView();
-    final IssueObject issue = me.getModelBean();
+    JspView<Pair<IssueObject, Boolean>> me = HttpView.currentView();
+    final Pair<IssueObject, Boolean> rec = me.getModelBean();
     final User user = getUser();
+    final IssueObject issue = rec.first;
+    final Boolean isRestricted = rec.second;
     final boolean isClosed = Strings.CI.equals(issue.getStatus(),"closed");
     final boolean isOpen = Strings.CI.equals(issue.getStatus(),"open");
 %>
@@ -47,29 +50,36 @@
     <%
         StringBuilder html = new StringBuilder();
         boolean hasTextComment = false;
-        for (IssueObject.CommentObject comment : issue.getCommentObjects())
+        if (isRestricted)
         {
-            String s = comment.getHtmlComment().toString();
-            String pattern1 = "<div class=\"labkey-wiki\">";
-            String pattern2 = "</div>";
-            String regexString = Pattern.quote(pattern1) + "(?s)(.*?)" + Pattern.quote(pattern2);
-            Pattern p = Pattern.compile(regexString);
-            Matcher matcher = p.matcher(s);
-            while (matcher.find())
+            html.append("<div class=\"labkey-error\">Restricted Issue: You do not have access. Contact your administrator for access.</div>");
+        }
+        else
+        {
+            for (IssueObject.CommentObject comment : issue.getCommentObjects())
             {
-                String commentContentText = matcher.group(1);
-                if (!StringUtils.isEmpty(commentContentText))
+                String s = comment.getHtmlComment().toString();
+                String pattern1 = "<div class=\"labkey-wiki\">";
+                String pattern2 = "</div>";
+                String regexString = Pattern.quote(pattern1) + "(?s)(.*?)" + Pattern.quote(pattern2);
+                Pattern p = Pattern.compile(regexString);
+                Matcher matcher = p.matcher(s);
+                while (matcher.find())
                 {
-                    hasTextComment = true;
-                    html.append(commentContentText);
-                    html.append("<br>");
-                    if (html.length() > 500)
-                        break;
+                    String commentContentText = matcher.group(1);
+                    if (!StringUtils.isEmpty(commentContentText))
+                    {
+                        hasTextComment = true;
+                        html.append(commentContentText);
+                        html.append("<br>");
+                        if (html.length() > 500)
+                            break;
+                    }
                 }
             }
         }
 
-    if (hasTextComment) { %>
+    if (hasTextComment && !isRestricted) { %>
         <label style="text-decoration: underline">Comments</label>
     <% } %>
     <div style="max-height:4em; overflow-y:hidden; word-wrap:break-word; white-space: normal; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"><%= unsafe(html.toString()) %></div>
