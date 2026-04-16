@@ -93,7 +93,7 @@ public class CoreMcp implements McpService.McpImpl
     @Tool(description = "Every tool in this MCP requires a container path, e.g. MyProject/MyFolder. A container is also called a folder or project. " +
         "Please prompt the user for a container path and use this tool to save the path for this MCP session. The user can also change the container " +
         "during the session using this tool. The user must have read permissions in the container, in other words, the path must be on the list that " +
-        "the listContainers tool returns. Don't suggest a leading slash on the path because typing a slash in some LLM clients triggers custom shortcuts." +
+        "the listContainers tool returns. Don't suggest a leading slash on the path because typing a slash in some LLM clients triggers custom shortcuts. " +
         "Alternately, the user may provide a LabKey server URL like http://localhost:8080/StudyVerifyProject/My%20Study/project-begin.view. " +
         "The container path is encoded in the URL and can be accepted as a valid parameter.")
     @RequiresNoPermission // Because we don't have a container yet, but the tool will verify read permission before setting the container
