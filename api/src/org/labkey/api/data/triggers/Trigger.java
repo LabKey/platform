@@ -165,12 +165,14 @@ public interface Trigger
      * This method is a no-op when {@code insertOption} is {@code null}, which signals a non-data-iterator
      * operation where managed-column enforcement does not apply.
      *
+     * @param table          the table the trigger is operating on; used to determine the operations supported by the table
      * @param newRow         the incoming row map to be inserted; modified in place to add missing managed columns
      * @param existingRecord the existing database row for MERGE operations; an empty map indicates no
      *                       matching row yet (new record); must be non-null when {@code insertOption.mergeRows} is true
      * @param insertOption   the insert mode in effect, or {@code null} for non-data-iterator operations
      */
     default void setInsertManagedColumns(
+        @NotNull TableInfo table,
         Map<String, Object> newRow,
         @Nullable Map<String, Object> existingRecord,
         @Nullable QueryUpdateService.InsertOption insertOption
@@ -184,7 +186,7 @@ public interface Trigger
         // then throw an error to avoid overwriting managed values to null.
         // existingRow == null indicated the existing row was not queried, so throw an error
         // existingRecord.isEmpty() indicates a new record, so do not throw an error
-        if (insertOption != null && insertOption.mergeRows && existingRecord == null)
+        if (insertOption != null && existingRecord == null && insertOption.mergeRows && table.supportsInsertOption(insertOption))
             throw new IllegalArgumentException("An existing record must be supplied for all MERGE triggers");
 
         setManagedColumns(newRow, existingRecord, TableInfo.TriggerType.INSERT);
