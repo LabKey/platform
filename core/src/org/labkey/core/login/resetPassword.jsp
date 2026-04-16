@@ -46,7 +46,7 @@
     <% } %>
     <div class="auth-form-body">
         <p>To reset your password, type in your email address and click the Reset button.</p>
-        <input id="email" name="email" type="text" class="input-block" tabindex="1" autocomplete="off" value="<%=h(form.getEmail())%>">
+        <input id="email" aria-label="Email address" name="email" type="text" class="input-block" tabindex="1" autocomplete="off" value="<%=h(form.getEmail())%>">
         <div class="auth-item">
             <%= button("Reset").submit(true).name("reset")%>
             <%= button("Cancel").href(urlProvider(LoginUrls.class).getLoginURL(doneURL)) %>

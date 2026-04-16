@@ -140,7 +140,6 @@ if (settings.hasExpires())
             <tbody>
                 <%
                     int x = -1;
-                    String id;
                     for (Attachment att : ann.getAttachments())
                 {
                     x++;
