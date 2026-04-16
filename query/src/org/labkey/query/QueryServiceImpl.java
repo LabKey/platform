@@ -1372,6 +1372,7 @@ public class QueryServiceImpl implements QueryService
             Map<Pair<String, String>, QueryDefinition> queryDefs = new HashMap<>();
             Container viewContainer = containerCstmViews.getKey();
             List<CstmView> views = containerCstmViews.getValue();
+            DefaultSchema defaultSchema = DefaultSchema.get(user, viewContainer);
 
             for (CstmView cstmView : views)
             {
@@ -1382,7 +1383,7 @@ public class QueryServiceImpl implements QueryService
                     UserSchema schema = schemas.get(cstmView.getSchema());
                     if (schema == null)
                     {
-                        schema = getUserSchema(user, viewContainer, cstmView.getSchema());
+                        schema = defaultSchema.getUserSchema(cstmView.getSchema());
                         schemas.put(cstmView.getSchema(), schema);
                     }
                     if (schema != null)
