@@ -2489,7 +2489,7 @@ Ext4.define('File.panel.Browser', {
                         view.getSelectionModel().on('select', function(sm, record) {
                             if (!view.el) return;
                             var node = view.getNode(record);
-                            if (node) {
+                            if (node && node.nodeType === 1) {
                                 view.el.select('tr.x4-grid-row').set({tabIndex: -1});
                                 Ext4.fly(node).set({tabIndex: 0});
                                 node.focus();
