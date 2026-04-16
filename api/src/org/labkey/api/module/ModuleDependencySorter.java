@@ -18,14 +18,16 @@ package org.labkey.api.module;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.graphper.api.GraphResource;
+import org.graphper.api.Graphviz;
+import org.graphper.parser.DotParser;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -34,12 +36,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Orders modules so that each module will always be after all of the modules it depends on.
- * User: jeckels
- * Date: Jun 6, 2006
+ * Orders modules so that each module will always be after all the modules it depends on.
  */
 public class ModuleDependencySorter
 {
+    private static final Logger LOG = LogHelper.getLogger(ModuleDependencySorter.class, "Module dependency information");
+
     public List<Module> sortModulesByDependencies(List<Module> modules)
     {
         List<Pair<Module, Set<String>>> dependencies = new ArrayList<>();
@@ -101,7 +103,7 @@ public class ModuleDependencySorter
             if (module.getName().equalsIgnoreCase("core"))
             {
                 result.remove(i);
-                result.add(0, module);
+                result.addFirst(module);
                 break;
             }
         }
@@ -128,41 +130,36 @@ public class ModuleDependencySorter
                 throw new IllegalArgumentException("Module '" + moduleName + "' (" + entry.getKey().getClass().getName() + ") is listed as being dependent on itself.");
         }
 
-        StringBuilder sb = new StringBuilder();
-        for (Pair<Module, Set<String>> dependencyInfo : dependencies)
-        {
-            if (!sb.isEmpty())
-            {
-                sb.append(", ");
-            }
-            sb.append(dependencyInfo.getKey().getName());
-        }
+        String involved = dependencies.stream()
+            .map(pair -> pair.getKey().getName())
+            .collect(Collectors.joining(", "));
 
         // Generate an SVG diagram that shows all remaining dependencies
         graphModuleDependencies(dependencies, "involved");
 
-        throw new IllegalArgumentException("Unable to resolve module dependencies. The following modules are somehow involved: " + sb);
+        throw new IllegalArgumentException("Unable to resolve module dependencies. The following modules are somehow involved: " + involved);
     }
 
 
     private void graphModuleDependencies(List<Pair<Module, Set<String>>> dependencies, @SuppressWarnings("SameParameterValue") String adjective)
     {
-        Logger log = LogManager.getLogger(ModuleDependencySorter.class);
-
         try
         {
             File dir = FileUtil.getTempDirectory();
             String dot = buildDigraph(dependencies);
+            Graphviz graph = DotParser.parse(dot);
             File svgFile = FileUtil.createTempFile("modules", ".svg", dir);
-            DotRunner runner = new DotRunner(dir, dot);
-            runner.addSvgOutput(svgFile);
-            runner.execute();
 
-            log.info("For a diagram of " + adjective + " module dependencies, see " + svgFile.getAbsolutePath());
+            try (GraphResource resource = graph.toSvg())
+            {
+                resource.save(svgFile.getParent(), svgFile.getName());
+            }
+
+            LOG.info("For a diagram of {} module dependencies, see {}", adjective, svgFile.getAbsolutePath());
         }
         catch (Exception e)
         {
-            log.error("Error running dot", e);
+            LOG.error("Error running dot", e);
         }
     }
 

@@ -384,6 +384,32 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
+            "org.graphper:graph-support-core:${graphSupportVersion}",
+            "graph-support-core",
+            "graph-support",
+            "https://github.com/jamisonjiang/graph-support",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Graphviz Java API",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.graphper:graph-support-dot:${graphSupportVersion}",
+            "graph-support-dot",
+            "graph-support",
+            "https://github.com/jamisonjiang/graph-support",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "DOT parsing support",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
             "com.google.guava:guava:${guavaVersion}",
             "Guava: Google Core Libraries for Java",
             "guava-libraries",
