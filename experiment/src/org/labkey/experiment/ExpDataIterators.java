@@ -3165,6 +3165,8 @@ public class ExpDataIterators
             validFields.add("Storage Unit Label");
             // For consistency with other storage fields that are imported without spaces in the names
             validFields.add("EnteredStorage");
+            validFields.add("StorageComment"); // GH Issue 1051
+            validFields.add("Storage Comment");
             List<Integer> fieldIndexes = new IntArrayList();
             Map<Integer, String> dependencyIndexes = new IntHashMap<>();
             List<String> header = new ArrayList<>();

@@ -29,11 +29,11 @@ import java.util.function.Supplier;
 /// ### MCP Development Guide
 /// `McpService` lets you expose functionality over the MCP protocol (only simple http for now). This allows external
 /// chat sessions to pull information from LabKey Server. Exposed functionality is also made available to chat sessions
-/// hosted by LabKey (see `AbstractAgentAction``).
+/// hosted by LabKey (see `AbstractAgentAction`).
 ///
 /// ### Adding a new MCP class
 /// 1. Create a new class that implements `McpImpl` (see below) in the appropriate module
-/// 2. Register that class in your module `init()` method: `McpService.get().register(new MyMcp())`
+/// 2. Register that class in your module's `startup()` method: `McpService.get().register(new MyMcp())`
 /// 3. Add tools and resources
 ///
 /// ### Adding a new MCP tool
@@ -44,13 +44,13 @@ import java.util.function.Supplier;
 ///     permission annotation is required, otherwise your tool will not be registered.**
 /// 4.  Add `ToolContext` as the first parameter to the method
 /// 5.  Add additional required or optional parameters to the method signature, as needed. Note that "required" is the
-///     default. Again here, the parameter descriptions are very important. Provide examples.
+///     default. Again here, the parameter descriptions are very important. Provide examples of parameter values.
 /// 6.  Use the helper method `getContext(ToolContext)` to retrieve the current `Container` and `User`
 /// 7.  Use the helper method `getUser(ToolContext)` in the rare cases where you need just a `User`
 /// 8.  Perform additional permissions checking (beyond what the annotations offer), where appropriate
 /// 9.  Filter all results to the current container, of course
 /// 10. For any error conditions, throw exceptions with detailed information. These will get translated into appropriate
-///     failure responses and the LLM client will attempt to correct the problem.
+///     failure responses and the LLM client will attempt to correct any problems (hopefully).
 /// 11. For success cases, return a String with a message or JSON content, for example, `JSONObject.toString()`. Spring
 ///     has some limited ability to convert other objects into JSON strings, but we haven't experimented with that. See
 ///     `DefaultToolCallResultConverter` and the ability to provide a custom result converter via the `@Tool` annotation.
@@ -126,6 +126,7 @@ public interface McpService extends ToolCallbackProvider
 
     boolean isReady();
 
+    // Register MCPs in Module.startup()
     default void register(McpImpl mcp)
     {
         try
