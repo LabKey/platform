@@ -1,6 +1,7 @@
 ### **LabKey SQL Documentation**
 
 LabKey SQL is a unique SQL dialect that extends standard SQL functionality with features tailored for the LabKey Server platform, particularly for scientific data management.
+LabKey SQL only implements data read operations.  It does not support INSERT/UPDATE/DELETE, nor does it support creating or altering tables.
 
 -----
 
