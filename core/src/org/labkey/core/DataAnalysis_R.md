@@ -2,13 +2,27 @@
 
 This project is for performing data analysis against a LabKey Server instance using AI assistance.
 
-**Connection defaults:** The LabKey server URL and API key can be inferred from `.mcp.json` in this directory. The `url` field (minus the `/mcp` path) provides the server endpoint, and the `apikey` header value provides the authentication token. When writing R scripts, read these values from `.mcp.json` (via `jsonlite::fromJSON`) to pre-populate `labkey.setDefaults()` and the `baseUrl`/`folderPath` parameters. Before running any script, confirm with the data analyst:
+**Connection defaults:** The LabKey server URL and API key can be inferred from `.mcp.json` in this directory. The `url` field (minus the `/mcp` path) provides the server endpoint, and the `apikey` header value provides the authentication token.
+
+**Do not embed API keys in generated scripts.** Instead, ensure a `.netrc` file (Linux/Mac) or `_netrc` file (Windows) exists in the user's home directory with the server credentials. If the file does not exist, offer to create it using the API key from `.mcp.json`. The format is:
+
+```
+machine <hostname>
+login apikey
+password <api-key-from-mcp.json>
+```
+
+The `machine` value is the hostname only — no protocol (`https://`), no port, no path. For example, for `https://myserver.labkey.com:8443/labkey/mcp`, use `myserver.labkey.com`. On Linux/Mac, set permissions to 600 (`chmod 600 ~/.netrc`). On Windows, ensure the `_netrc` file is a plain file (not a "Text Document") and that a `HOME` environment variable points to the directory containing it.
+
+When writing R scripts, read the server URL from `.mcp.json` (via `jsonlite::fromJSON`) to pre-populate `labkey.setDefaults(baseUrl=)`, but omit `apiKey` — Rlabkey reads `.netrc` automatically. Before running any script, confirm with the data analyst:
 - Is this the correct server?
 - Should the URL use `http://` or `https://`? (infer from the URL scheme in `.mcp.json`)
-- Do they want to use the API key from `.mcp.json` or provide a different one?
 - What container path should be used? (use MCP `listContainers` to show available options)
 
 Confirm all of these settings with the analyst before writing any script.
+
+## Online Reference Material
+https://www.labkey.org/Documentation/wiki-page.view?name=rAPI
 
 ## MCP Tools Available
 
@@ -42,16 +56,15 @@ A LabKey MCP server is configured (see `.mcp.json`). Use these tools to explore 
 
 ### Connection Setup
 
-Rlabkey functions take `baseUrl` and `folderPath` as explicit arguments on every call. Use `labkey.setDefaults()` to avoid repeating credentials:
+Rlabkey functions take `baseUrl` and `folderPath` as explicit arguments on every call. Use `labkey.setDefaults()` to set the server URL:
+
+**Preferred: `.netrc` authentication (no credentials in scripts)**
 
 ```r
 library(Rlabkey)
 
-# Option 1: Set defaults (recommended for scripts)
-labkey.setDefaults(
-    baseUrl = "http://localhost:8080/",
-    apiKey  = "your-api-key"
-)
+# Set the server URL only — credentials are read from ~/.netrc automatically
+labkey.setDefaults(baseUrl = "http://localhost:8080/")
 
 # Then call functions without baseUrl:
 rows <- labkey.selectRows(
@@ -60,7 +73,7 @@ rows <- labkey.selectRows(
     queryName  = "MyTable"
 )
 
-# Option 2: Pass baseUrl explicitly on every call (no defaults needed)
+# Or pass baseUrl explicitly on every call:
 rows <- labkey.selectRows(
     baseUrl    = "http://localhost:8080/",
     folderPath = "/home",
@@ -69,10 +82,20 @@ rows <- labkey.selectRows(
 )
 ```
 
-Authentication options:
-- **API key**: Pass to `labkey.setDefaults(apiKey=)`. An API key avoids storing credentials on the client. API keys can be revoked and set to expire. If an API key is set, it takes precedence over email/password.
+Rlabkey automatically reads credentials from `~/.netrc` (Linux/Mac) or `~/_netrc` (Windows). The `.netrc` entry should use `apikey` as the login and the API key as the password:
+
+```
+machine localhost
+login apikey
+password TheUniqueAPIKeyGeneratedForYou
+```
+
+The `machine` value must be the hostname only — no protocol, no port, no path. Set file permissions to 600 on Linux/Mac (`chmod 600 ~/.netrc`). Use `labkey.setCurlOptions(NETRC_FILE='/path/to/_netrc')` for a non-standard location.
+
+Authentication options (in order of preference):
+- **.netrc file** (recommended): Create `~/.netrc` with `machine`, `login apikey`, `password <key>` fields (chmod 600). No credentials appear in scripts.
+- **API key in code** (avoid in generated scripts): Pass to `labkey.setDefaults(apiKey=)`. Only use this for quick interactive testing, not in saved scripts.
 - **Email/password**: `labkey.setDefaults(email="user@example.com", password="pass")`
-- **.netrc file**: Create `~/.netrc` with `machine`, `login`, `password` fields (chmod 600). Rlabkey reads this automatically. Use `labkey.setCurlOptions(NETRC_FILE='/path/to/_netrc')` for a custom location.
 - **Session key**: Pass a session key via `labkey.setDefaults(apiKey=)`. Session keys tie R access to the user's browser session context (same authorizations, impersonation state, etc.).
 
 To clear credentials: `labkey.setDefaults()` (called with no arguments resets all defaults).
@@ -277,29 +300,6 @@ makeFilter(c("RowId", "IN", "2;3;6"))
 makeFilter(c("IntFld", "MISSING", ""))
 ```
 
-### Pagination
-
-```r
-# Page through results:
-page1 <- labkey.selectRows(baseUrl = "http://localhost:8080/",
-    folderPath = "/home", schemaName = "lists",
-    queryName = "LargeTable",
-    maxRows = 100,
-    rowOffset = 0,          # first 100 rows
-    colSort = "+Name"
-)
-
-page2 <- labkey.selectRows(baseUrl = "http://localhost:8080/",
-    folderPath = "/home", schemaName = "lists",
-    queryName = "LargeTable",
-    maxRows = 100,
-    rowOffset = 100,        # next 100 rows
-    colSort = "+Name"
-)
-```
-
-Note: When `maxRows` is NULL (the default), **all rows are returned**. Always set an explicit `maxRows` for large tables.
-
 ### Container Filters
 
 Control which containers are searched. Pass as `containerFilter=` to `labkey.selectRows`/`labkey.executeSql`:
@@ -429,13 +429,12 @@ Data frames passed to modification functions must be created with `stringsAsFact
 library(Rlabkey)
 library(jsonlite)
 
-# 1. Read connection settings from .mcp.json
+# 1. Read server URL from .mcp.json (credentials come from ~/.netrc)
 config <- fromJSON(".mcp.json")
 server_url <- sub("/mcp$", "/", config$mcpServers$labkey$url)
-api_key    <- config$mcpServers$labkey$headers$apikey
 
-# 2. Set defaults
-labkey.setDefaults(baseUrl = server_url, apiKey = api_key)
+# 2. Set defaults (no apiKey — .netrc provides authentication)
+labkey.setDefaults(baseUrl = server_url)
 
 # 3. Explore (or use MCP tools for interactive exploration)
 schemas <- labkey.getSchemas(baseUrl = server_url, folderPath = "/home")

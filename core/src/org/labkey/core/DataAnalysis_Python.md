@@ -2,13 +2,27 @@
 
 This project is for performing data analysis against a LabKey Server instance using AI assistance.
 
-**Connection defaults:** The LabKey server URL and API key can be inferred from `.mcp.json` in this directory. The `url` field (minus the `/mcp` path) provides the server endpoint, and the `apikey` header value provides the authentication token. When writing Python scripts, read these values from `.mcp.json` to pre-populate the `APIWrapper` connection parameters. Before running any script, confirm with the data analyst:
+**Connection defaults:** The LabKey server URL and API key can be inferred from `.mcp.json` in this directory. The `url` field (minus the `/mcp` path) provides the server endpoint, and the `apikey` header value provides the authentication token.
+
+**Do not embed API keys in generated scripts.** Instead, ensure a `.netrc` file (Linux/Mac) or `_netrc` file (Windows) exists in the user's home directory with the server credentials. If the file does not exist, offer to create it using the API key from `.mcp.json`. The format is:
+
+```
+machine <hostname>
+login apikey
+password <api-key-from-mcp.json>
+```
+
+The `machine` value is the hostname only — no protocol (`https://`), no port, no path. For example, for `https://myserver.labkey.com:8443/labkey/mcp`, use `myserver.labkey.com`. On Linux/Mac, set permissions to 600 (`chmod 600 ~/.netrc`).
+
+When writing Python scripts, read the server URL from `.mcp.json` to pre-populate the `APIWrapper` connection parameters, but omit `api_key` — the `labkey` package reads `.netrc` automatically. Before running any script, confirm with the data analyst:
 - Is this the correct server?
 - Should `use_ssl` be True or False? (infer from the URL scheme in `.mcp.json`)
-- Do they want to use the API key from `.mcp.json` or provide a different one?
 - What container path should be used? (use MCP `listContainers` to show available options)
 
 Confirm all of these settings with the analyst before writing any script.
+
+## Online Reference Material
+https://www.labkey.org/Documentation/wiki-page.view?name=python
 
 ## MCP Tools Available
 
@@ -41,6 +55,8 @@ A LabKey MCP server is configured (see `.mcp.json`). Use these tools to explore 
 
 ### Connection Setup
 
+**Preferred: `.netrc` authentication (no credentials in scripts)**
+
 ```python
 from labkey.api_wrapper import APIWrapper
 
@@ -50,13 +66,22 @@ api = APIWrapper(
     context_path=None,         # URL path segment after domain, e.g. "labkey"
     use_ssl=False,             # True for https
     verify_ssl=True,           # False for self-signed dev certs
-    api_key="your-api-key",    # alternative: use ~/.netrc
 )
 ```
 
-Authentication options:
-- **API key**: Pass `api_key=` to APIWrapper (sent as `apikey` header)
-- **.netrc file**: Create `~/.netrc` with `machine`, `login`, `password` fields (chmod 600)
+The `labkey` package automatically reads credentials from `~/.netrc` (Linux/Mac) or `~/_netrc` (Windows). The `.netrc` entry should use `apikey` as the login and the API key as the password:
+
+```
+machine localhost
+login apikey
+password TheUniqueAPIKeyGeneratedForYou
+```
+
+The `machine` value must be the hostname only — no protocol, no port, no path. Set file permissions to 600 on Linux/Mac (`chmod 600 ~/.netrc`).
+
+Authentication options (in order of preference):
+- **.netrc file** (recommended): Create `~/.netrc` with `machine`, `login apikey`, `password <key>` fields (chmod 600). No credentials appear in scripts.
+- **API key in code** (avoid in generated scripts): Pass `api_key=` to APIWrapper. Only use this for quick interactive testing, not in saved scripts.
 
 ### Data Retrieval APIs
 
@@ -192,25 +217,6 @@ result = api.query.select_rows("study", "Demographics", filter_array=filters)
 
 **Ontology:** `ONTOLOGY_IN_SUBTREE`, `ONTOLOGY_NOT_IN_SUBTREE`
 
-### Pagination
-
-```python
-# Page through results:
-result = api.query.select_rows("lists", "LargeTable",
-    max_rows=100,
-    offset=0,                      # page 1
-    include_total_count=True,
-    sort="Name"
-)
-total = result["rowCount"]
-page_rows = result["rows"]
-
-# Pagination enum:
-from labkey.query import Pagination
-result = api.query.select_rows("lists", "Table", show_rows=Pagination.ALL)
-# Values: PAGINATED, SELECTED, UNSELECTED, ALL, NONE
-```
-
 ### Container Filters
 
 Control which containers are searched. Pass as `container_filter=` to select_rows/execute_sql:
@@ -293,8 +299,8 @@ from labkey.api_wrapper import APIWrapper
 from labkey.query import QueryFilter
 import pandas as pd
 
-# 1. Connect
-api = APIWrapper("localhost:8080", "MyProject", use_ssl=False, api_key="...")
+# 1. Connect (credentials read from ~/.netrc automatically)
+api = APIWrapper("localhost:8080", "MyProject", use_ssl=False)
 
 # 2. Explore (or use MCP tools for interactive exploration)
 schemas = api.query.get_queries("lists", include_columns=True)
