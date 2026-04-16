@@ -1338,11 +1338,10 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public List<CustomView> getDatabaseCustomViews(@NotNull Container container, @Nullable String schemaName, @Nullable String queryName)
+    public List<CustomView> getDatabaseCustomViews(@NotNull User user, @NotNull Container container, @Nullable String schemaName, @Nullable String queryName)
     {
-        User searchUser = User.getSearchUser();
         // GitHub Issue 1058: Sample Finder saved views in subfolder break after MVTC to TC conversion
-        Collection<GUID> containerIds = container.getProductFoldersDataContainerFilter(searchUser).getIds();
+        Collection<GUID> containerIds = container.getProductFoldersDataContainerFilter(user).getIds();
 
         SimpleFilter filter = new SimpleFilter();
         if (containerIds != null)
@@ -1383,7 +1382,7 @@ public class QueryServiceImpl implements QueryService
                     UserSchema schema = schemas.get(cstmView.getSchema());
                     if (schema == null)
                     {
-                        schema = getUserSchema(searchUser, viewContainer, cstmView.getSchema());
+                        schema = getUserSchema(user, viewContainer, cstmView.getSchema());
                         schemas.put(cstmView.getSchema(), schema);
                     }
                     if (schema != null)

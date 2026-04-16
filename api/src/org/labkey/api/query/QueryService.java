@@ -180,7 +180,7 @@ public interface QueryService
      * Returns custom views stored in the database (not module custom views) that meet the criteria. This is not appropriate
      * for UI operations (see getCustomViews() for that), but it's important for query change listeners. See #21641 and #21862.
      */
-    List<CustomView> getDatabaseCustomViews(@NotNull Container container, @Nullable String schemaName, @Nullable String queryName);
+    List<CustomView> getDatabaseCustomViews(@NotNull User user, @NotNull Container container, @Nullable String schemaName, @Nullable String queryName);
 
     int importCustomViews(User user, Container container, VirtualFile viewDir) throws IOException;
 
