@@ -2,8 +2,9 @@ package org.labkey.api.workflow;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;import org.labkey.api.security.User;import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.GUID;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 
 public interface WorkflowService
 {
