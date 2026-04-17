@@ -4,11 +4,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** use MapDataIterator.of() */
+/**
+ * @deprecated Use {@link MapDataIterator#of(List)}
+ */
 @Deprecated
 public class ListofMapsDataIterator extends AbstractMapDataIterator.ListOfMapsDataIterator
 {
-    public ListofMapsDataIterator(Set<String> colNames, List<Map<String,Object>> rows)
+    public ListofMapsDataIterator(Set<String> colNames, List<Map<String, Object>> rows)
     {
         super(new DataIteratorContext(), colNames, rows);
     }
@@ -16,7 +18,7 @@ public class ListofMapsDataIterator extends AbstractMapDataIterator.ListOfMapsDa
     @Deprecated
     public static class Builder extends DataIteratorBuilder.Wrapper
     {
-        public Builder(Set<String> colNames, List<Map<String,Object>> rows)
+        public Builder(Set<String> colNames, List<Map<String, Object>> rows)
         {
             super(new ListofMapsDataIterator(colNames, rows));
         }
