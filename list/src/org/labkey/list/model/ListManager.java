@@ -1219,7 +1219,7 @@ public class ListManager implements SearchService.DocumentProvider
 
         if (null != ti)
         {
-            Map<String, String> recordChangedMap = new CaseInsensitiveHashMap<>();
+            Map<String, Object> recordChangedMap = new CaseInsensitiveHashMap<>();
             Set<String> reserved = list.getDomain().getDomainKind().getReservedPropertyNames(list.getDomain(), user);
 
             // Match props to columns
@@ -1241,7 +1241,7 @@ public class ListManager implements SearchService.DocumentProvider
                     continue;
 
                 ColumnInfo col = ti.getColumn(FieldKey.fromParts(baseKey));
-                String value = Objects.toString(entry.getValue(), "");
+                Object value = entry.getValue();
                 String key = null;
 
                 if (null != col)

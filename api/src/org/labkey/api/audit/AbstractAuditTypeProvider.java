@@ -29,6 +29,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -376,6 +377,12 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 // Issue 36472 - use iso format to show date-time values
                 String formatted = DateUtil.toISO(date);
                 stringMap.put(entry.getKey(), formatted);
+            }
+            else if (value instanceof java.sql.Array arr)
+            {
+                // GitHub Issue 1073: Updating a List MVTC field shows array in audit for values with quotes
+                var arrayVal = MultiChoice.Converter.getInstance().convert(MultiChoice.Array.class, arr);
+                stringMap.put(entry.getKey(), PageFlowUtil.joinValuesToStringForExport(arrayVal));
             }
             else
                 stringMap.put(entry.getKey(), value == null ? null : value.toString());
