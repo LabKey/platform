@@ -33,7 +33,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AuditHandler;
@@ -3677,6 +3676,12 @@ public class QueryServiceImpl implements QueryService
     public boolean isProductFoldersDataListingScopedToProject()
     {
         return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
+    }
+
+    @Override
+    public boolean isTriggerManagedColumnsEnabled()
+    {
+        return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS);
     }
 
     public static class TestCase extends Assert

@@ -27,9 +27,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
+import org.labkey.api.collections.DeltaTrackingMap;
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.triggers.ScriptTriggerFactory;
 import org.labkey.api.data.triggers.Trigger;
@@ -1884,8 +1887,35 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return true;
     }
 
+    @Override
+    public @Nullable Set<String> getTriggerManagedColumns(@Nullable Container c, QueryUpdateService.InsertOption insertOption)
+    {
+        var triggers = getTriggers(c);
+        if (triggers.isEmpty())
+            return null;
+
+        var columns = new CaseInsensitiveHashSet();
+        for (var trigger : triggers)
+        {
+            // Trigger is disabled, do not modify the column set
+            if (!trigger.isManagedColumnsEnabled())
+                continue;
+
+            var managedColumns = trigger.getManagedColumns();
+            if (managedColumns == null)
+                continue;
+
+            if (insertOption.updateOnly)
+                columns.addAll(managedColumns.update());
+            else
+                columns.addAll(managedColumns.insert());
+        }
+
+        return columns.isEmpty() ? null : columns;
+    }
 
     private Collection<Trigger> _triggers = null;
+    private Boolean _isTriggerManagedColumnsEnabled = null;
 
     @NotNull
     public final Collection<Trigger> getTriggers(@Nullable Container c)
@@ -1897,6 +1927,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return _triggers;
     }
 
+    private boolean isTriggerManagedColumnsEnabled()
+    {
+        if (_isTriggerManagedColumnsEnabled == null)
+            _isTriggerManagedColumnsEnabled = QueryService.get().isTriggerManagedColumnsEnabled();
+        return _isTriggerManagedColumnsEnabled;
+    }
 
     @NotNull
     private final Collection<Trigger> loadTriggers(@Nullable Container c)
@@ -1926,7 +1962,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
-    public final void fireBatchTrigger(Container c, User user, TriggerType type, boolean before, BatchValidationException batchErrors, Map<String, Object> extraContext)
+    public final void fireBatchTrigger(Container c, User user, TriggerType type, @Nullable QueryUpdateService.InsertOption insertOption, boolean before, BatchValidationException batchErrors, Map<String, Object> extraContext)
             throws BatchValidationException
     {
         assert batchErrors != null;
@@ -1945,9 +1981,18 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
-    public void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber,
-                               @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord)
-            throws ValidationException
+    public void fireRowTrigger(
+        Container c,
+        User user,
+        TriggerType type,
+        @Nullable QueryUpdateService.InsertOption insertOption,
+        boolean before,
+        int rowNumber,
+        @Nullable Map<String, Object> newRow,
+        @Nullable Map<String, Object> oldRow,
+        Map<String, Object> extraContext,
+        @Nullable Map<String, Object> existingRecord
+    ) throws ValidationException
     {
         ValidationException errors = new ValidationException();
         errors.setSchemaName(getPublicSchemaName());
@@ -1957,9 +2002,83 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         Collection<Trigger> triggers = getTriggers(c);
 
+        // Wrap the row once before the loop
+        DeltaTrackingMap<Object> trackedRow = null;
+        Map<String, Object> newRowTracked = newRow;
+        boolean manageColumns = before && insertOption != null && isTriggerManagedColumnsEnabled();
+
+        if (newRow != null && manageColumns)
+        {
+            trackedRow = DeltaTrackingMap.wrap(newRow);
+            newRowTracked = trackedRow;
+        }
+
         for (Trigger script : triggers)
         {
-            script.rowTrigger(this, c, user, type, before, rowNumber, newRow, oldRow, errors, extraContext, existingRecord);
+            if (trackedRow != null)
+                trackedRow.resetTracking();
+
+            script.rowTrigger(this, c, user, type, insertOption, before, rowNumber, newRowTracked, oldRow, errors, extraContext, existingRecord);
+            if (errors.hasErrors())
+                break;
+
+            // trackedRow should only be null when not manageColumns
+            if (trackedRow != null && script.isManagedColumnsEnabled())
+            {
+                var managed = script.getManagedColumns();
+                var managedCols = managed != null ? managed.getColumns(type) : null;
+
+                // Verify the trigger did not add or remove columns that are not managed
+                if (trackedRow.hasStructuralChanges())
+                {
+                    var added = Sets.newCaseInsensitiveHashSet(trackedRow.getAddedKeys());
+                    var removed = Sets.newCaseInsensitiveHashSet(trackedRow.getRemovedKeys());
+
+                    if (managedCols != null)
+                    {
+                        added.removeAll(managedCols);
+                        removed.removeAll(managedCols);
+                        if (managed.ignored() != null)
+                        {
+                            added.removeAll(managed.ignored());
+                            removed.removeAll(managed.ignored());
+                        }
+                    }
+
+                    if (!added.isEmpty() || !removed.isEmpty())
+                    {
+                        var diffs = new ArrayList<String>();
+
+                        if (!added.isEmpty())
+                            diffs.add("add: " + added.stream().map(col -> "'" + col + "'").collect(Collectors.joining(", ")));
+                        if (!removed.isEmpty())
+                            diffs.add("remove: " + removed.stream().map(col -> "'" + col + "'").collect(Collectors.joining(", ")));
+
+                        String message = "Trigger '" + script.getName() + "' attempted to " + String.join(", ", diffs) + ". Declare managed columns to include them in the column set.";
+                        errors.addGlobalError(message);
+                        break;
+                    }
+                }
+
+                if (errors.hasErrors())
+                    break;
+
+                // Verify the trigger handles all managed columns
+                if (managedCols != null)
+                {
+                    for (var col : managedCols)
+                    {
+                        if (!newRowTracked.containsKey(col))
+                        {
+                            // Not using errors.addFieldError() here as the managed column may not be visible
+                            String message = "Trigger '" + script.getName() + "' declared the managed column '" + col + "' but did not set a value for it. Set null to clear or provide a value.";
+                            errors.addGlobalError(message);
+                            break;
+                        }
+                    }
+                }
+            }
+
             if (errors.hasErrors())
                 break;
         }

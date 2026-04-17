@@ -647,7 +647,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         }
         for (var entry : values.entrySet())
         {
-            PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(entry.getKey(), st.getContainer());
+            PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(entry.getKey(), st == null ? getContainer() : st.getContainer());
             if (null != pd)
                 super.setProperty(user, pd, entry.getValue(), insertNullValues);
         }

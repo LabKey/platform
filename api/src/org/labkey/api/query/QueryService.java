@@ -73,6 +73,7 @@ import java.util.Set;
 public interface QueryService
 {
     String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
+    String EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS = "queryDisableManagedTriggerColumns";
     String EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS = "queryProductAllFolderLookups";
     String EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED = "queryProductProjectDataListingScoped";
     String MAX_QUERY_SELECTION = "maxQuerySelection";
@@ -726,4 +727,9 @@ public interface QueryService
      * Returns true if the "Product projects display project-specific data" experimental feature is enabled.
      */
     boolean isProductFoldersDataListingScopedToProject();
+
+    /**
+     * Returns false if the "Disable managed columns in query triggers" experimental feature is enabled.
+     */
+    boolean isTriggerManagedColumnsEnabled();
 }
