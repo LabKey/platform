@@ -172,6 +172,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.SvgUtil;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenanceStartupListener;
 import org.labkey.api.util.URIUtil;
@@ -439,6 +440,7 @@ public class ApiModule extends CodeOnlyModule
             StringExpressionFactory.TestCase.class,
             StringUtilsLabKey.TestCase.class,
             SubfolderWriter.TestCase.class,
+            SvgUtil.TestCase.class,
             SwapQueue.TestCase.class,
             TSVMapWriter.Tests.class,
             TSVWriter.TestCase.class,
