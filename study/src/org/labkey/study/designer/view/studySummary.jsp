@@ -84,10 +84,7 @@
                         {
                             Attachment attachment = protocolDocs.get(0);
                     %>
-                    <a href="<%= h(StudyController.getProtocolDocumentDownloadURL(c, attachment.getName())) %>">
-                        <img src="<%=getWebappURL(attachment.getFileIcon())%>" alt="[<%= h(attachment.getName()) %>]">
-                        Study Protocol Document
-                    </a>
+                    <%=attachment.renderDownloadLink(StudyController.getProtocolDocumentDownloadURL(c, attachment.getName()), "Study Protocol Document")%>
                     <%
                         }
                         else if (protocolDocs.size() > 1)
@@ -98,10 +95,7 @@
                             for (Attachment doc : protocolDocs)
                             {
                     %>
-                        <br><a href="<%= h(StudyController.getProtocolDocumentDownloadURL(c, doc.getName())) %>">
-                            <img src="<%=getWebappURL(doc.getFileIcon())%>" alt="[<%= h(doc.getName()) %>]">
-                            <%= h(doc.getName()) %>
-                        </a><%
+                        <br><%=doc.renderDownloadLink(StudyController.getProtocolDocumentDownloadURL(c, doc.getName()))%><%
                             }
                         }
                     %>
