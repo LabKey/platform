@@ -175,6 +175,16 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return new ArrayList<>(_classToDescriptor.values());
     }
 
+    protected static String h(@Nullable CharSequence s)
+    {
+        return PageFlowUtil.filter(s);
+    }
+
+    protected static String h(@Nullable Object o)
+    {
+        return PageFlowUtil.filter(o);
+    }
+
     // I don't think there is an interface for this
     public interface ActionResolver
     {
