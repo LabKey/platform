@@ -49,6 +49,10 @@ public class ExperimentRunGraph
     private static String getSvg(String dot) throws ExecuteException
     {
         Graphviz graph = DotParser.parse(dot);
+
+        if (graph.isEmpty())
+            return ""; // Graphviz.toSvgStr() throws an exception if the graph is empty.
+
         String svg = graph.toSvgStr();
 
         // Scale down to 50% of default size. This is arbitrary but seems reasonable. Diagrams are larger than
