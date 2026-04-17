@@ -103,7 +103,7 @@ public class CoreMcp implements McpService.McpImpl
 
         Container container = ContainerManager.getForPath(containerPath);
 
-        if (null == container)
+        if (null == container && containerPath.startsWith("http://") || containerPath.startsWith("https://"))
         {
             try
             {
