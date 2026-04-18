@@ -16,20 +16,24 @@
 package org.labkey.api.dataiterator;
 
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
-import static org.labkey.api.admin.FolderImportContext.IS_NEW_FOLDER_IMPORT_KEY;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
 public class TriggerDataBuilderHelper
@@ -55,7 +59,6 @@ public class TriggerDataBuilderHelper
     {
         return new Before(in);
     }
-
 
     public DataIteratorBuilder after(DataIteratorBuilder in)
     {
@@ -114,20 +117,26 @@ public class TriggerDataBuilderHelper
 
     class Before implements DataIteratorBuilder
     {
-        final DataIteratorBuilder _pre;
+        final DataIteratorBuilder _in;
 
         Before(DataIteratorBuilder in)
         {
-            _pre = in;
+            _in = in;
         }
 
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator di = _pre.getDataIterator(context);
+            DataIterator di = _in.getDataIterator(context);
+            if (di == null)
+                return null; // can happen if context has errors
+
             if (!_target.hasTriggers(_c))
                 return di;
             di = LoggingDataIterator.wrap(di);
+
+            // Incorporate columns managed by triggers that may not overlap with the requested column set
+            di = getManagedColumnsDataIterator(di, context);
 
             Set<String> existingRecordKeyColumnNames = null;
             Set<String> sharedKeys = null;
@@ -140,17 +149,11 @@ public class TriggerDataBuilderHelper
                 sharedKeys = expTable.getExistingRecordSharedKeyColumnNames();
             }
 
-            boolean isNewFolderImport = false;
-            if (_extraContext != null && _extraContext.get(IS_NEW_FOLDER_IMPORT_KEY) != null)
-            {
-                isNewFolderImport = (boolean) _extraContext.get(IS_NEW_FOLDER_IMPORT_KEY);
-            }
-
             di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, _target, !context.getInsertOption().updateOnly));
             context.setWithLookupRemapping(false);
 
             // Skip existing records
-            if (!context.getInsertOption().allowUpdate || existingRecordKeyColumnNames == null || isNewFolderImport)
+            if (!context.getInsertOption().allowUpdate || existingRecordKeyColumnNames == null)
                 return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(di), context));
 
             // Merge request but merge is not supported
@@ -160,13 +163,48 @@ public class TriggerDataBuilderHelper
             di = ExistingRecordDataIterator.createBuilder(di, _target, existingRecordKeyColumnNames, sharedKeys, true).getDataIterator(context);
             return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(di), context));
         }
-    }
 
+        private DataIterator getManagedColumnsDataIterator(DataIterator di, DataIteratorContext context)
+        {
+            if (QueryService.get().isTriggerManagedColumnsEnabled())
+            {
+                var triggerColumns = _target.getTriggerManagedColumns(_c, context.getInsertOption());
+                if (triggerColumns != null && !triggerColumns.isEmpty())
+                {
+                    Function<String, ColumnInfo> columnMapper;
+                    if (_target instanceof AbstractTableInfo target)
+                        columnMapper = colName -> target.getColumn(colName, false);
+                    else
+                        columnMapper = _target::getColumn;
+
+                    var columns = triggerColumns.stream().map(columnMapper).filter(Objects::nonNull).toList();
+                    if (!columns.isEmpty())
+                    {
+                        var translator = new SimpleTranslator(di, context);
+                        translator.setDebugName("TriggerDataBuilderHelper.Before.translator");
+                        translator.selectAll();
+
+                        var columnNameMap = translator.getColumnNameMap();
+
+                        for (var column : columns)
+                        {
+                            if (!columnNameMap.containsKey(column.getName()))
+                                translator.addColumn(column, (Supplier<Object>) () -> null);
+                        }
+
+                        di = translator.getDataIterator(context);
+                    }
+                }
+            }
+
+            return di;
+        }
+    }
 
     class BeforeIterator extends TriggerDataIterator
     {
         boolean _firstRow = true;
-        Map<String,Object> _currentRow = null;
+        Map<String, Object> _currentRow = null;
 
         BeforeIterator(DataIterator di, DataIteratorContext context)
         {
@@ -180,7 +218,6 @@ public class TriggerDataBuilderHelper
             return false;
         }
 
-
         @Override
         public boolean next() throws BatchValidationException
         {
@@ -188,7 +225,18 @@ public class TriggerDataBuilderHelper
             TableInfo.TriggerType triggerType = getTriggerType();
             if (_firstRow)
             {
-                _target.fireBatchTrigger(_c, _user, triggerType, true, getErrors(), _extraContext);
+                // HACK?: Before initializing the triggers, reset the table triggers.
+                // This is late enough so that the data iteration context is configured properly.
+                // Note: This is not ideal. getTriggers(c) accepts a @Nullable container, however, the underlying
+                // scripts actually depend on this argument. For example, if the first caller passed in a container
+                // and the next calls with null, then the null argument will see the scripts defined in the container.
+                // But if they are called in the opposite order (null, then with a container), the container one will
+                // receive no scripts (or whatever null initialized with).
+                // Ideally, we could decouple loading the triggers and their associated container from the table/trigger
+                // lifecycle.
+                _target.resetTriggers(_c);
+
+                _target.fireBatchTrigger(_c, _user, triggerType, _context.getInsertOption(), true, getErrors(), _extraContext);
                 firedInit = true;
                 _firstRow = false;
             }
@@ -199,7 +247,7 @@ public class TriggerDataBuilderHelper
                 _currentRow = getInput().getMap();
                 try
                 {
-                    _target.fireRowTrigger(_c, _user, triggerType, true, rowNumber, _currentRow, getOldRow(), _extraContext, getExistingRecord());
+                    _target.fireRowTrigger(_c, _user, triggerType, _context.getInsertOption(), true, rowNumber, _currentRow, getOldRow(), _extraContext, getExistingRecord());
                     return true;
                 }
                 catch (ValidationException vex)
@@ -212,7 +260,6 @@ public class TriggerDataBuilderHelper
             return false;
         }
 
-
         @Override
         public Object get(int i)
         {
@@ -224,26 +271,28 @@ public class TriggerDataBuilderHelper
         }
     }
 
-
     class After implements DataIteratorBuilder
     {
-        final DataIteratorBuilder _post;
+        final DataIteratorBuilder _in;
 
         After(DataIteratorBuilder in)
         {
-            _post = in;
+            _in = in;
         }
 
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator it = _post.getDataIterator(context);
+            DataIterator di = _in.getDataIterator(context);
+            if (di == null)
+                return null; // can happen if context has errors
+
             if (!_target.hasTriggers(_c))
-                return it;
-            return new AfterIterator(LoggingDataIterator.wrap(it), context);
+                return di;
+
+            return new AfterIterator(LoggingDataIterator.wrap(di), context);
         }
     }
-
 
     class AfterIterator extends TriggerDataIterator
     {
@@ -265,7 +314,7 @@ public class TriggerDataBuilderHelper
                     Map<String,Object> newRow = getInput().getMap();
                     try
                     {
-                        _target.fireRowTrigger(_c, _user, getTriggerType(), false, rowNumber, newRow, getOldRow(), _extraContext, getExistingRecord());
+                        _target.fireRowTrigger(_c, _user, getTriggerType(), _context.getInsertOption(), false, rowNumber, newRow, getOldRow(), _extraContext, getExistingRecord());
                     }
                     catch (ValidationException vex)
                     {
@@ -277,7 +326,7 @@ public class TriggerDataBuilderHelper
             finally
             {
                 if (!hasNext && firedInit && !getErrors().hasErrors())
-                    _target.fireBatchTrigger(_c, _user, getTriggerType(), false, getErrors(), _extraContext);
+                    _target.fireBatchTrigger(_c, _user, getTriggerType(), _context.getInsertOption(), false, getErrors(), _extraContext);
             }
         }
     }

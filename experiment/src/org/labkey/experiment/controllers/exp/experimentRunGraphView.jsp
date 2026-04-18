@@ -69,7 +69,7 @@
     }
     catch (ExecuteException e)
     {
-        out.print("<p>Error rendering graph</p>");
+        out.write("<p class=\"labkey-error\">Error rendering graph</p>");
     }
 
     if (isSummaryView)

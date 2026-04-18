@@ -9685,7 +9685,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // Since those tables already wire up trigger scripts, we'll use that mechanism here as well for the move event.
                 BatchValidationException errors = new BatchValidationException();
                 Map<String, Object> extraContext = Map.of("targetContainer", targetContainer, "classObjects", classObjects, "dataIds", dataIds);
-                dataClassTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, false, errors, extraContext);
+                dataClassTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, null, false, errors, extraContext);
                 if (errors.hasErrors())
                     throw errors;
 

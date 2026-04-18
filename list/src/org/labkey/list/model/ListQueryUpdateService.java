@@ -551,7 +551,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
                     // Before trigger per batch
                     Map<String, Object> extraContext = Map.of("targetContainer", targetContainer, "keys", rowPks);
-                    listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, true, errors, extraContext);
+                    listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, null, true, errors, extraContext);
                     if (errors.hasErrors())
                         throw errors;
 
@@ -574,7 +574,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                         listAuditEventsCreatedCount += addDetailedMoveAuditEvents(user, sourceContainer, targetContainer, batch);
 
                     // After trigger per batch
-                    listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, false, errors, extraContext);
+                    listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, null, false, errors, extraContext);
                     if (errors.hasErrors())
                         throw errors;
                 }

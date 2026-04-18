@@ -49,11 +49,23 @@ public class ExperimentRunGraph
     private static String getSvg(String dot) throws ExecuteException
     {
         Graphviz graph = DotParser.parse(dot);
-        String svg = graph.toSvgStr();
 
-        // Scale down to 50% of default size. This is arbitrary but seems reasonable. Diagrams are larger than
-        // the old image-based ones, but monitors are much higher resolution than when those were scaled.
-        return SvgUtil.scaleSize(svg, 0.5f);
+        if (graph.isEmpty())
+            return ""; // Graphviz.toSvgStr() throws an exception if the graph is empty.
+
+        try
+        {
+            String svg = graph.toSvgStr();
+
+            // Scale down to 50% of default size. This is arbitrary but seems reasonable. Diagrams are larger than
+            // the old image-based ones, but monitors are much higher resolution than when those were scaled.
+            return SvgUtil.scaleSize(svg, 0.5f);
+        }
+        catch (ExecuteException ex)
+        {
+            LOG.warn("Error generating graph", ex);
+            throw ex;
+        }
     }
 
     private static String getDotGraph(Container c, ExpRunImpl run, boolean detail, String focus, String focusType)
