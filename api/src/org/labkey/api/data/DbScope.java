@@ -126,7 +126,7 @@ import java.util.stream.Collectors;
  * The DbScope.Transaction class implements AutoCloseable, so it will be cleaned up automatically via try-with-resources.
  * <p>
  * All return pathways inside the transaction must commit, or the transaction will be considered abandoned to be rolled
- * back. There should be no further database work prior to existing the try block after the commit. Example:
+ * back. There should be no further database work prior to exiting the try block after the commit. Example:
  * <pre>{@code
  * DbScope scope = dbSchemaInstance.getScope();
  * try (DbScope.Transaction transaction = scope.ensureTransaction())
