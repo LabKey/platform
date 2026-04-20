@@ -25,7 +25,7 @@ public interface WorkflowService
         AliquotSamples("aliquot sample type parameters", "Aliquot samples"),
         PoolSamples("pooling sample type parameters", "Pooled samples"),
         AddToStorage("input parameters", "Added samples to storage"),
-        MoveInStorage("input parameters", "Moved samples to storage"),
+        MoveInStorage("input parameters", "Moved samples in storage"),
         CheckOut("input parameters", "Checked out samples"),
         CheckIn("input parameters", "Checked in samples"),
         RemoveFromStorage("sample status value", "Removed samples from storage");
