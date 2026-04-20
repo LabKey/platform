@@ -195,7 +195,7 @@ for (AnnouncementModel a : bean.announcementModels)
         for (Attachment d : a.getAttachments())
         {
             ActionURL downloadURL = AnnouncementsController.getDownloadURL(a, d.getName());
-            %><a href="<%=h(downloadURL)%>"><img src="<%=getWebappURL(d.getFileIcon())%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
+            %><%=d.renderDownloadLink(downloadURL)%>&nbsp;<%
         }
         %></td></tr><%
     }

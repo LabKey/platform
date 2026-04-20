@@ -124,6 +124,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.script.ScriptEngine;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.sql.ResultSet;
@@ -1274,9 +1275,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     if (!(engine instanceof ExternalScriptEngine && ((ExternalScriptEngine) engine).isBinary(scriptFile)))
                     {
                         String scriptText;
-                        try
+                        try (InputStream is = scriptFile.openInputStream())
                         {
-                            scriptText = IOUtils.toString(scriptFile.openInputStream(), StringUtilsLabKey.DEFAULT_CHARSET);
+                            scriptText = IOUtils.toString(is, StringUtilsLabKey.DEFAULT_CHARSET);
                         }
                         catch (IOException e)
                         {

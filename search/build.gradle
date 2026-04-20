@@ -328,7 +328,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.codelibs:jhighlight:1.1.1",
+            "org.codelibs:jhighlight:2.0.0",
             "JHighlight",
             "codelibs",
             "https://github.com/codelibs/jhighlight",
