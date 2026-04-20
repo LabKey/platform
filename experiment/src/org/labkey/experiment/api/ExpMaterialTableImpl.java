@@ -875,7 +875,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(RawAliquotUnit).getRenderer().addQueryFieldKeys(new HashSet<>(Set.of(AliquotUnit.fieldKey())));
 
         if (InventoryService.get() != null && (st == null || !st.isMedia()))
-            defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
+        {
+            List<FieldKey> inventoryCols = InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser());
+            defaultCols.addAll(inventoryCols.stream().filter(fk -> !fk.equals(InventoryService.InventoryStatusColumn.StorageTerminalLocation.fieldKey())).toList());
+        }
 
         SQLFragment sql;
         UserSchema plateUserSchema;
