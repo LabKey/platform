@@ -33,7 +33,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AuditHandler;
@@ -3552,6 +3551,40 @@ public class QueryServiceImpl implements QueryService
 
     @Override
     @Nullable
+    public ContainerFilter getContainerFilterForFolder(Container container, User user)
+    {
+        // Check to see if product folders support is enabled.
+        if (container == null || !container.isProductFoldersEnabled())
+            return null;
+
+        if (isProductFoldersDataListingScopedToProject())
+        {
+            // When requesting data from a top-level folder context the ContainerFilter filters
+            // "down" the folder hierarchy for data.
+            if (container.isProject())
+            {
+                if (isProductFoldersAllFolderScopeEnabled())
+                    return ContainerFilter.Type.AllInProjectPlusShared.create(container, user);
+                return ContainerFilter.Type.CurrentAndSubfoldersPlusShared.create(container, user);
+            }
+
+            // When listing data in a folder scope return data scoped to the current
+            // folder when the experimental feature is enabled.
+            return ContainerFilter.Type.Current.create(container, user);
+        }
+
+        // When requesting data from a top-level folder context the ContainerFilter filters
+        // "down" the folder hierarchy for data.
+        if (container.isProject())
+            return ContainerFilter.Type.CurrentAndSubfoldersPlusShared.create(container, user);
+
+        // When requesting data from a sub-folder context the ContainerFilter filters
+        // "up" the folder hierarchy for data.
+        return ContainerFilter.Type.CurrentPlusProjectAndShared.create(container, user);
+    }
+
+    @Override
+    @Nullable
     public ContainerFilter.Type getContainerFilterTypeForLookups(Container container)
     {
         if (container != null && container.isProductFoldersEnabled())
@@ -3575,6 +3608,12 @@ public class QueryServiceImpl implements QueryService
     public boolean isProductFoldersDataListingScopedToProject()
     {
         return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
+    }
+
+    @Override
+    public boolean isTriggerManagedColumnsEnabled()
+    {
+        return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS);
     }
 
     public static class TestCase extends Assert

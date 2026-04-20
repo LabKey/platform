@@ -61,7 +61,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static org.labkey.api.admin.FolderImportContext.IS_NEW_FOLDER_IMPORT_KEY;
 import static org.labkey.api.dataiterator.SimpleTranslator.getContainerFileRootPath;
 import static org.labkey.api.dataiterator.SimpleTranslator.getFileRootSubstitutedFilePath;
 import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
@@ -312,15 +311,8 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                                     options.put(ExperimentService.QueryOptions.DeferRequiredLineageValidation, true);
                                     context.setConfigParameters(options);
 
-                                    Map<String, Object> extraContext = null;
-                                    if (ctx.isNewFolderImport())
-                                    {
-                                        extraContext = new HashMap<>();
-                                        extraContext.put(IS_NEW_FOLDER_IMPORT_KEY, true);
-                                    }
-
                                     DataIterator data = new ResolveLsidAndFileLinkDataIterator(loader.getDataIterator(context), xarContext, expObject instanceof ExpDataClass ? "DataClass" : ExpMaterial.DEFAULT_CPAS_TYPE, tinfo);
-                                    int count = qus.loadRows(ctx.getUser(), ctx.getContainer(), data, context, extraContext);
+                                    int count = qus.loadRows(ctx.getUser(), ctx.getContainer(), data, context, null);
                                     log.info("Imported a total of " + count + " rows into : " + tableName);
 
                                     if (context.getErrors().hasErrors())

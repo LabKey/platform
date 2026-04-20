@@ -818,6 +818,83 @@ describe('Multi Value Text Choice', () => {
         result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual('Abnormal, Plasma'); // convert from ['Abnormal', 'Plasma'] to 'Abnormal, Plasma'
 
+
+        const textChoiceMultiLineOption = {
+            propertyValidators: [
+                {
+                    "type": "TextChoice",
+                    "name": "Text Choice Validator",
+                    "new": true,
+                    "expression": "Abnormal|multi\nline|cDNA|Plasma"
+                }
+            ],
+            rangeURI: 'http://www.w3.org/2001/XMLSchema#string',
+            conceptURI: 'http://www.labkey.org/types#textChoice',
+        }
+
+        const textMultiChoiceMultiLineOption = {
+            propertyValidators: [
+                {
+                    "type": "TextChoice",
+                    "name": "Text Choice Validator",
+                    "new": true,
+                    "expression": "Abnormal|multi\nline|cDNA|Plasma"
+                }
+            ],
+            rangeURI: "http://cpas.fhcrc.org/exp/xml#multiChoice",
+        }
+
+        // GitHub Issue 951: Multi-line values converted to text choices lose multi-line editability
+        // verify cannot convert MultiLine field to MultiValue Text Choice
+        updatePayload = {
+            domainId,
+            domainDesign: {
+                name: dataType,
+                fields: [
+                    {
+                        ...textChoiceMultiLineOption,
+                        name: fieldName,
+                        propertyId,
+                        propertyURI,
+                    }
+                ],
+                domainId,
+                domainURI
+            },
+            options: {
+                rowId: dataClassRowId,
+                name: dataType,
+                nameExpression: 'S-${' + fieldNameInExpression + '}'
+            }
+        };
+        failedUpdate = await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...adminOptions});
+        expect(failedUpdate?.['body']?.['exception']).toContain('must not be multi-line:');
+
+        // verify cannot convert MultiLine field to Text Choice field
+        updatePayload = {
+            domainId,
+            domainDesign: {
+                name: dataType,
+                fields: [
+                    {
+                        ...textMultiChoiceMultiLineOption,
+                        name: fieldName,
+                        propertyId,
+                        propertyURI,
+                    }
+                ],
+                domainId,
+                domainURI
+            },
+            options: {
+                rowId: dataClassRowId,
+                name: dataType,
+                nameExpression: 'S-${genId}'
+            }
+        };
+        failedUpdate = await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...adminOptions});
+        expect(failedUpdate?.['body']?.['exception']).toContain('must not be multi-line:');
+
     });
 
 });

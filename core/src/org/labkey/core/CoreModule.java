@@ -105,7 +105,6 @@ import org.labkey.api.notification.EmailService;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.AntiVirusProviderRegistry;
-import org.labkey.api.products.Product;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.DefaultSchema;
@@ -267,7 +266,6 @@ import org.labkey.core.notification.NotificationServiceImpl;
 import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.PortalJUnitTest;
 import org.labkey.core.portal.ProjectController;
-import org.labkey.core.portal.UtilController;
 import org.labkey.core.products.ProductController;
 import org.labkey.core.project.FolderNavigationForm;
 import org.labkey.core.qc.CoreQCStateHandler;
@@ -443,7 +441,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("core", CoreController.class);
         addController("analytics", AnalyticsController.class);
         addController("project", ProjectController.class);
-        addController("util", UtilController.class);
         addController("logger", LoggerController.class);
         addController("mini-profiler", MiniProfilerController.class);
         addController("notification", NotificationController.class);
@@ -562,7 +559,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         ScriptEngineManagerImpl.registerEncryptionMigrationHandler();
 
-        McpService.get().register(new CoreMcp());
         PostgreSqlService.setInstance(PostgreSqlDialectFactory::getLatestSupportedDialect);
 
         deleteTempFiles();
@@ -1289,6 +1285,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UserManager.addUserListener(new EmailPreferenceUserListener());
 
         Encryption.checkMigration();
+
+        McpService.get().register(new CoreMcp());
     }
 
     // Issue 7527: Auto-detect missing SQL views and attempt to recreate

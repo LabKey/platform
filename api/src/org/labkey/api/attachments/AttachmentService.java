@@ -140,7 +140,10 @@ public interface AttachmentService
 
     HttpView<?> getFindAttachmentParentsView();
 
-    void logOrphanedAttachments();
+    /**
+     * Logs the first 20 orphaned attachments it detects. Returns the total number of orphaned attachments detected.
+     */
+    int logOrphanedAttachments();
 
     void deleteOrphanedAttachments();
 

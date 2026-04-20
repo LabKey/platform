@@ -44,6 +44,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.issue.query.IssueDefDomainKind;
 
 import java.util.Collection;
@@ -159,6 +160,8 @@ public class IssueListDef extends Entity
     private static String generateDomainURI(Container c, User user, String name, String kindName)
     {
         DomainKind<?> domainKind = PropertyService.get().getDomainKindByName(kindName);
+        if (domainKind == null)
+            throw new NotFoundException("Domain kind not found: " + kindName);
         return domainKind.generateDomainURI(IssuesSchema.getInstance().getSchemaName(), name, c, user);
     }
 

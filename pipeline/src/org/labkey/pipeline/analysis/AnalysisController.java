@@ -22,6 +22,8 @@ import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.graphper.api.Graphviz;
+import org.graphper.parser.DotParser;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -55,11 +57,8 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.DOM;
-import org.labkey.api.util.DotRunner;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -74,7 +73,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.Charset;
@@ -407,8 +405,6 @@ public class AnalysisController extends SpringActionController
         {
             return form.getReturnActionURL();
         }
-
-
     }
 
     public static class ProtocolManagementForm extends ViewForm
@@ -657,26 +653,24 @@ public class AnalysisController extends SpringActionController
             return null;
         }
 
-        File svgFile = null;
-        try
+        String dot = buildDigraph(pipeline);
+
+        if (null != dot)
         {
-            File dir = FileUtil.getTempDirectory();
-            String dot = buildDigraph(pipeline);
-            svgFile = FileUtil.createTempFile("pipeline", ".svg", dir);
-            DotRunner runner = new DotRunner(dir, dot);
-            runner.addSvgOutput(svgFile);
-            runner.execute();
-            return HtmlString.unsafe(PageFlowUtil.getFileContentsAsString(svgFile));
+            String html = "Unable to render pipeline diagram.";
+            try
+            {
+                Graphviz graph = DotParser.parse(dot);
+                html = graph.toSvgStr();
+            }
+            catch (Exception e)
+            {
+                LOG.error("Error with DotParser!", e);
+            }
+
+            return HtmlString.unsafe(html);
         }
-        catch (Exception e)
-        {
-            LOG.error("Error running dot", e);
-        }
-        finally
-        {
-            if (svgFile != null)
-                svgFile.delete();
-        }
+
         return null;
     }
 
@@ -700,6 +694,7 @@ public class AnalysisController extends SpringActionController
 
         StringBuilder sb = new StringBuilder();
         sb.append("digraph pipeline {\n");
+        sb.append("style=\"invis\";\nmargin=\"0,0\";\n"); // TODO: graph-support doesn't seem to respect "transparent"
 
         // First, add all the nodes
         for (TaskId taskId : progression)
@@ -730,7 +725,7 @@ public class AnalysisController extends SpringActionController
                 if (factory instanceof CommandTaskImpl.Factory f)
                 {
                     sb.append(StringUtils.join(
-                            Collections2.transform(f.getInputPaths().keySet(), (Function<String, Object>) input -> escapeDotFieldLabel(input) + "\\l"),
+                            Collections2.transform(f.getInputPaths().keySet(), (Function<String, Object>) this::escapeDotFieldLabel), // + "\\l"), TODO: Add this back once graph-support supports it
                             " | "));
                 }
                 else
@@ -745,9 +740,8 @@ public class AnalysisController extends SpringActionController
                 sb.append("{");
                 if (factory instanceof CommandTaskImpl.Factory f)
                 {
-
                     sb.append(StringUtils.join(
-                            Collections2.transform(f.getOutputPaths().keySet(), (Function<String, Object>) input -> escapeDotFieldLabel(input) + "\\r"),
+                            Collections2.transform(f.getOutputPaths().keySet(), (Function<String, Object>) this::escapeDotFieldLabel), // + "\\r"), TODO: Add this back once graph-support supports it
                             " | "));
                 }
                 else
@@ -785,5 +779,4 @@ public class AnalysisController extends SpringActionController
         field = field.replaceAll("[\\[\\]{}<>]", "\\\\$0");
         return field.replaceAll("\\s", "&#92;");
     }
-
 }

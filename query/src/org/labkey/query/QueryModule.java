@@ -247,8 +247,8 @@ public class QueryModule extends DefaultModule
             "Allow for lookup fields in product folders to query across all folders within the top-level folder.", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product folders display folder-specific data",
             "Only list folder-specific data within product folders.", false);
-
-        McpService.get().register(new QueryMcp());
+        OptionalFeatureService.get().addExperimentalFeatureFlag(QueryService.EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS, "Disable managed columns in query triggers",
+                "By default LabKey enforces managed columns for triggers and errors when the data does not align. Enabling this feature will result in them only logging warnings.", false);
     }
 
 
@@ -350,11 +350,14 @@ public class QueryModule extends DefaultModule
             trustedAnalystRole.addPermission(EditQueriesPermission.class);
 
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(R_REPORT_CUSTOM_SHARING,
-                "Restore custom R report sharing",
-                "Allows R reports to be shared on a per user basis. This option will be removed in LabKey Server 26.7.",
-                false,
-                false,
-                OptionalFeatureService.FeatureType.Deprecated));
+            "Restore custom R report sharing",
+            "Allows R reports to be shared on a per user basis. This option will be removed in LabKey Server 26.7.",
+            false,
+            false,
+            OptionalFeatureService.FeatureType.Deprecated)
+        );
+
+        McpService.get().register(new QueryMcp());
     }
 
     @Override
@@ -390,13 +393,13 @@ public class QueryModule extends DefaultModule
         return Set.of(
             ModuleReportCache.TestCase.class,
             OlapController.TestCase.class,
-            QueryController.TestCase.class,
             QueryController.SaveRowsTestCase.class,
+            QueryController.TestCase.class,
             QueryServiceImpl.TestCase.class,
             RolapReader.RolapTest.class,
             RolapTestCase.class,
-            ServerManager.TestCase.class,
-            SelectRowsStreamHack.TestCase.class
+            SelectRowsStreamHack.TestCase.class,
+            ServerManager.TestCase.class
         );
     }
 

@@ -78,7 +78,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.ontology.OntologyService;
-import org.labkey.api.ontology.Quantity;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.TabLoader;
@@ -611,7 +610,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         errors.setExtraContext(extraScriptContext);
         if (hasTableScript)
-            getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, true, errors, extraScriptContext);
+            getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, null, true, errors, extraScriptContext);
 
         List<Map<String, Object>> result = new ArrayList<>(rows.size());
         List<Map<String, Object>> providedValues = new ArrayList<>(rows.size());
@@ -665,7 +664,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         if (hasTableScript)
-            getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
+            getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, null, false, errors, extraScriptContext);
 
         addAuditEvent(user, container, QueryService.AuditAction.INSERT, null, result, null, providedValues);
 
@@ -843,7 +842,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         assert(getQueryTable().supportsInsertOption(InsertOption.UPDATE));
 
         errors.setExtraContext(extraScriptContext);
-        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, true, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, null, true, errors, extraScriptContext);
 
         List<Map<String, Object>> result = new ArrayList<>(rows.size());
         List<Map<String, Object>> oldRows = new ArrayList<>(rows.size());
@@ -895,7 +894,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         // Fire triggers, if any, and also throw if there are any errors
-        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, null, false, errors, extraScriptContext);
         afterInsertUpdate(null==result?0:result.size(), errors, true);
 
         if (errors.hasErrors())
@@ -1063,7 +1062,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         BatchValidationException errors = new BatchValidationException();
         errors.setExtraContext(extraScriptContext);
-        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, true, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, null, true, errors, extraScriptContext);
 
         // TODO: Support update/delete without selecting the existing row -- unfortunately, we currently get the existing row to check its container matches the incoming container
         boolean streaming = false; //_queryTable.canStreamTriggers(container) && _queryTable.getAuditBehavior() != AuditBehaviorType.NONE;
@@ -1108,7 +1107,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         // Fire triggers, if any, and also throw if there are any errors
-        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, null, false, errors, extraScriptContext);
 
         addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result, null, null);
 
@@ -1130,11 +1129,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         BatchValidationException errors = new BatchValidationException();
         errors.setExtraContext(extraScriptContext);
-        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.TRUNCATE, true, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.TRUNCATE, null, true, errors, extraScriptContext);
 
         int result = truncateRows(user, container);
 
-        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.TRUNCATE, false, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.TRUNCATE, null, false, errors, extraScriptContext);
         addAuditEvent(user, container,  QueryService.AuditAction.TRUNCATE, configParameters, null, null, null);
 
         return result;
