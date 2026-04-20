@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.security.User;
@@ -35,6 +36,7 @@ public class WorkEntity
     protected Long _workRowId;
     protected EntityType _entityType;
     protected Long _entityValue;
+    protected Long _actionId;
     protected Long _created;
     protected User _createdBy;
 
@@ -54,6 +56,7 @@ public class WorkEntity
         else
             _entityType = (EntityType) map.get("entityType");
         _entityValue = MapUtils.getLong(map, "entityValue");
+        _actionId = MapUtils.getLong(map, "actionId");
         if (map.get("Container") != null)
             this.setContainerId(new GUID((String) map.get("Container")));
     }
@@ -64,11 +67,12 @@ public class WorkEntity
         _entityValue = sample.getRowId();
     }
 
-    public WorkEntity(ExpMaterial sample, WorkType workType, Long workRowId)
+    public WorkEntity(ExpMaterial sample, WorkType workType, Long workRowId, @Nullable Long actionId)
     {
         this(sample);
         _workType = workType;
         _workRowId = workRowId;
+        _actionId = actionId;
     }
 
 
@@ -90,6 +94,16 @@ public class WorkEntity
     public void setContainerId(GUID containerId)
     {
         _containerId = containerId;
+    }
+
+    public Long getActionId()
+    {
+        return _actionId;
+    }
+
+    public void setActionId(Long actionId)
+    {
+        _actionId = actionId;
     }
 
     @JsonProperty("created")

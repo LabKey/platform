@@ -10,6 +10,7 @@ import org.labkey.api.data.CreatedModified;
 import org.labkey.api.util.GUID;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -182,6 +183,15 @@ public abstract class Task extends CreatedModified implements Comparable<Task>
     public abstract boolean isPending();
 
     public abstract List<Action> getActions();
+
+    @JsonIgnore
+    public Map<Long, Action> getActionsByRowId()
+    {
+        Map<Long, Action> map = new HashMap<>();
+        for (Action action : getActions())
+            map.put(action.getRowId(), action);
+        return map;
+    }
 
     public void setActions(List<Action> actions)
     {
