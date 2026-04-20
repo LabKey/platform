@@ -561,7 +561,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         ScriptEngineManagerImpl.registerEncryptionMigrationHandler();
 
-        McpService.get().register(new CoreMcp());
         PostgreSqlService.setInstance(PostgreSqlDialectFactory::getLatestSupportedDialect);
 
         deleteTempFiles();
@@ -1288,6 +1287,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UserManager.addUserListener(new EmailPreferenceUserListener());
 
         Encryption.checkMigration();
+
+        McpService.get().register(new CoreMcp());
     }
 
     // Issue 7527: Auto-detect missing SQL views and attempt to recreate
