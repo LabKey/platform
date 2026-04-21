@@ -667,7 +667,7 @@ public class SecurityManager
         if (null == apiKey)
         {
             String authorization = request.getHeader("Authorization");
-            if (Strings.CS.startsWith(authorization, "Bearer "))
+            if (Strings.CI.startsWith(authorization, "Bearer "))
                 apiKey = StringUtils.trimToNull(authorization.substring("Bearer ".length()));
         }
 
