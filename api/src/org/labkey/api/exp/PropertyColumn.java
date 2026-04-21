@@ -267,7 +267,7 @@ public class PropertyColumn extends LookupColumn
         if (isMvIndicatorColumn())
             return null;
         PropertyType pt = _pd.getPropertyType();
-        if (PropertyType.DOUBLE == pt || PropertyType.DATE_TIME == pt)
+        if (PropertyType.DOUBLE == pt || PropertyType.DATE_TIME == pt || PropertyType.DECIMAL == pt || PropertyType.FLOAT == pt)
             return null;
         else if (PropertyType.TIME == pt)
             return "TIME";
