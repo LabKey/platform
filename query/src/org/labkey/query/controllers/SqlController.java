@@ -29,12 +29,17 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
@@ -485,6 +490,17 @@ public class SqlController extends SpringActionController
             list.getDomain().addProperty(new PropertyStorageSpec("Name", JdbcType.VARCHAR));
             list.getDomain().addProperty(new PropertyStorageSpec("Age", JdbcType.INTEGER));
             list.getDomain().addProperty(new PropertyStorageSpec("Score", JdbcType.DOUBLE));
+
+            if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
+            {
+                DomainProperty tagsProp = list.getDomain().addProperty(new PropertyStorageSpec("Tags", JdbcType.VARCHAR));
+                tagsProp.setRangeURI(PropertyType.MULTI_CHOICE.getTypeUri());
+                IPropertyValidator tcValidator = PropertyService.get().createValidator("urn:lsid:labkey.com:PropertyValidator:textchoice");
+                tcValidator.setName("Text Choice Validator");
+                tcValidator.setExpressionValue("Red|Green|Blue");
+                tagsProp.addValidator(tcValidator);
+            }
+
             list.save(user);
 
             TableInfo table = DefaultSchema.get(user, _folder).getSchema("lists").getTable(LIST_NAME, null);
@@ -492,9 +508,9 @@ public class SqlController extends SpringActionController
 
             BatchValidationException errors = new BatchValidationException();
             table.getUpdateService().insertRows(user, _folder, List.of(
-                CaseInsensitiveHashMap.<Object>of("Name", "Alice", "Age", 30, "Score", 95.5),
-                CaseInsensitiveHashMap.<Object>of("Name", "Bob", "Age", 30, "Score", 87.3),
-                CaseInsensitiveHashMap.<Object>of("Name", "Carol", "Age", 35, "Score", 91.0)
+                CaseInsensitiveHashMap.<Object>of("Name", "Alice", "Age", 30, "Score", 95.5, "Tags", List.of("Red", "Green")),
+                CaseInsensitiveHashMap.<Object>of("Name", "Bob", "Age", 30, "Score", 87.3, "Tags", List.of("Blue")),
+                CaseInsensitiveHashMap.<Object>of("Name", "Carol", "Age", 35, "Score", 91.0, "Tags", List.of("Red", "Blue", "Green"))
             ), errors, null, null);
             if (errors.hasErrors())
                 fail(errors.getRowErrors().get(0).toString());
@@ -522,10 +538,10 @@ public class SqlController extends SpringActionController
         }
 
         @Test
-        public void testExecute() throws Exception
+        public void testExecute_mssql() throws Exception
         {
             MockHttpServletResponse response = executeSql("lists",
-                "SELECT Name, Age, Score FROM " + LIST_NAME + " ORDER BY Name", false);
+                    "SELECT Name, Age, Score FROM " + LIST_NAME + " ORDER BY Name", false);
             assertEquals(HttpServletResponse.SC_OK, response.getStatus());
 
             String content = response.getContentAsString();
@@ -557,6 +573,54 @@ public class SqlController extends SpringActionController
             assertEquals("30", tokens[13]);
             assertEquals("Carol", tokens[15]);
             assertEquals("35", tokens[16]);
+        }
+        @Test
+        public void testExecute() throws Exception
+        {
+            if (!CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
+            {
+                testExecute_mssql();
+                return;
+            }
+
+            MockHttpServletResponse response = executeSql("lists",
+                "SELECT Name, Age, Score, Tags FROM " + LIST_NAME + " ORDER BY Name", false);
+            assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+
+            String content = response.getContentAsString();
+            String[] tokens = content.split("\t");
+
+            // Header: meta-meta-data (3) + column names (4) + types (4) = 11
+            // Data: 3 rows * 4 columns = 12
+            assertTrue("Expected at least 23 tokens, got " + tokens.length, tokens.length >= 23);
+
+            // Meta-meta-data
+            assertEquals("18.2", tokens[0]);
+            assertEquals("name", tokens[1]);
+            assertEquals("jdbcType", tokens[2]);
+
+            // Column names
+            assertEquals("Name", tokens[3]);
+            assertEquals("Age", tokens[4]);
+            assertEquals("Score", tokens[5]);
+            assertEquals("Tags", tokens[6]);
+
+            // JDBC types
+            assertEquals("VARCHAR", tokens[7]);
+            assertEquals("INTEGER", tokens[8]);
+            assertEquals("DOUBLE", tokens[9]);
+            assertEquals("ARRAY", tokens[10]);
+
+            // Data rows ordered by Name (4 columns per row)
+            assertEquals("Alice", tokens[11]);
+            assertEquals("30", tokens[12]);
+            assertTrue("Alice Tags", tokens[14].contains("Red") && tokens[14].contains("Green"));
+            assertEquals("Bob", tokens[15]);
+            assertEquals("30", tokens[16]);
+            assertTrue("Bob Tags", tokens[18].contains("Blue"));
+            assertEquals("Carol", tokens[19]);
+            assertEquals("35", tokens[20]);
+            assertTrue("Carol Tags", tokens[22].contains("Red") && tokens[22].contains("Blue") && tokens[22].contains("Green"));
         }
 
         @Test
