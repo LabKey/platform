@@ -669,6 +669,7 @@ public class Encryption
                     cipherProps.save();
                     LOG.info("Migration from existing encrypted content from legacy AES configuration to current AES configuration is complete.");
                 }
+                DECRYPTION_EXCEPTIONS.set(0);
             }
         }
 
