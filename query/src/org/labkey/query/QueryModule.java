@@ -397,7 +397,8 @@ public class QueryModule extends DefaultModule
             RolapReader.RolapTest.class,
             RolapTestCase.class,
             SelectRowsStreamHack.TestCase.class,
-            ServerManager.TestCase.class
+            ServerManager.TestCase.class,
+            SqlController.TestCase.class
         );
     }
 

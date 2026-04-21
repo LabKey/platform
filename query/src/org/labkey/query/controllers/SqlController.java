@@ -17,13 +17,25 @@ package org.labkey.query.controllers;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
@@ -31,18 +43,26 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewServlet;
 import org.springframework.beans.PropertyValue;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -441,5 +461,156 @@ public class SqlController extends SpringActionController
             row = t;
         }
         out.flush();
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        private static final String FOLDER_NAME = "sqlControllerTest";
+        private static final String LIST_NAME = "SqlTestList";
+
+        private Container _folder;
+
+        @Before
+        public void setUp() throws Exception
+        {
+            tearDown();
+            Assume.assumeTrue("Requires list module", ListService.get() != null);
+
+            User user = TestContext.get().getUser();
+            _folder = ContainerManager.ensureContainer(JunitUtil.getTestContainer().getPath() + "/" + FOLDER_NAME, user);
+
+            ListDefinition list = ListService.get().createList(_folder, LIST_NAME, ListDefinition.KeyType.AutoIncrementInteger);
+            list.setKeyName("Key");
+            list.getDomain().addProperty(new PropertyStorageSpec("Name", JdbcType.VARCHAR));
+            list.getDomain().addProperty(new PropertyStorageSpec("Age", JdbcType.INTEGER));
+            list.getDomain().addProperty(new PropertyStorageSpec("Score", JdbcType.DOUBLE));
+            list.save(user);
+
+            TableInfo table = DefaultSchema.get(user, _folder).getSchema("lists").getTable(LIST_NAME, null);
+            assertNotNull("List table not found", table);
+
+            BatchValidationException errors = new BatchValidationException();
+            table.getUpdateService().insertRows(user, _folder, List.of(
+                CaseInsensitiveHashMap.<Object>of("Name", "Alice", "Age", 30, "Score", 95.5),
+                CaseInsensitiveHashMap.<Object>of("Name", "Bob", "Age", 30, "Score", 87.3),
+                CaseInsensitiveHashMap.<Object>of("Name", "Carol", "Age", 35, "Score", 91.0)
+            ), errors, null, null);
+            if (errors.hasErrors())
+                fail(errors.getRowErrors().get(0).toString());
+        }
+
+        @After
+        public void tearDown()
+        {
+            Container folder = ContainerManager.getForPath(JunitUtil.getTestContainer().getPath() + "/" + FOLDER_NAME);
+            if (folder != null)
+                ContainerManager.deleteAll(folder, TestContext.get().getUser());
+            _folder = null;
+        }
+
+        private MockHttpServletResponse executeSql(String schemaName, String sql, boolean compact) throws Exception
+        {
+            ActionURL url = new ActionURL("sql", "execute", _folder);
+            if (schemaName != null)
+                url.addParameter("schemaName", schemaName);
+            if (sql != null)
+                url.addParameter("sql", sql);
+            if (compact)
+                url.addParameter("compact", true);
+            return ViewServlet.GET(url, TestContext.get().getUser(), null);
+        }
+
+        @Test
+        public void testExecute() throws Exception
+        {
+            MockHttpServletResponse response = executeSql("lists",
+                "SELECT Name, Age, Score FROM " + LIST_NAME + " ORDER BY Name", false);
+            assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+
+            String content = response.getContentAsString();
+            String[] tokens = content.split("\t");
+
+            // Header: meta-meta-data (3) + column names (3) + types (3) = 9
+            // Data: 3 rows * 3 columns = 9
+            assertTrue("Expected at least 18 tokens, got " + tokens.length, tokens.length >= 18);
+
+            // Meta-meta-data
+            assertEquals("18.2", tokens[0]);
+            assertEquals("name", tokens[1]);
+            assertEquals("jdbcType", tokens[2]);
+
+            // Column names
+            assertEquals("Name", tokens[3]);
+            assertEquals("Age", tokens[4]);
+            assertEquals("Score", tokens[5]);
+
+            // JDBC types
+            assertEquals("VARCHAR", tokens[6]);
+            assertEquals("INTEGER", tokens[7]);
+            assertEquals("DOUBLE", tokens[8]);
+
+            // Data rows ordered by Name
+            assertEquals("Alice", tokens[9]);
+            assertEquals("30", tokens[10]);
+            assertEquals("Bob", tokens[12]);
+            assertEquals("30", tokens[13]);
+            assertEquals("Carol", tokens[15]);
+            assertEquals("35", tokens[16]);
+        }
+
+        @Test
+        public void testExecuteCompact() throws Exception
+        {
+            MockHttpServletResponse response = executeSql("lists",
+                "SELECT Name, Age FROM " + LIST_NAME + " ORDER BY Age, Name", true);
+            assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+
+            String content = response.getContentAsString();
+            String sep = "\u001f";
+            String eol = "\u001e";
+            String ditto = "\u0008";
+
+            String[] records = content.split(eol);
+            // records: [0]=meta, [1]=column names, [2]=types, [3..5]=data rows
+            assertTrue("Expected at least 6 records", records.length >= 6);
+
+            // Column names
+            String[] colNames = records[1].split(sep);
+            assertEquals("Name", colNames[0]);
+            assertEquals("Age", colNames[1]);
+
+            // First data row: Alice, 30
+            String[] row1 = records[3].split(sep, -1);
+            assertEquals("Alice", row1[0]);
+            assertEquals("30", row1[1]);
+
+            // Second data row: Bob, 30 (ditto marker since Age repeats)
+            String[] row2 = records[4].split(sep, -1);
+            assertEquals("Bob", row2[0]);
+            assertEquals(ditto, row2[1]);
+
+            // Third data row: Carol, 35
+            String[] row3 = records[5].split(sep, -1);
+            assertEquals("Carol", row3[0]);
+            assertEquals("35", row3[1]);
+        }
+
+        @Test
+        public void testNoSql() throws Exception
+        {
+            MockHttpServletResponse response = executeSql("lists", null, false);
+            assertTrue("Expected error about missing SQL",
+                response.getContentAsString().contains("no sql provided"));
+        }
+
+        @Test
+        public void testSchemaNotFound() throws Exception
+        {
+            MockHttpServletResponse response = executeSql("nonexistent",
+                "SELECT 1", false);
+            assertTrue("Expected schema not found error",
+                response.getContentAsString().contains("schema not found"));
+        }
     }
 }
