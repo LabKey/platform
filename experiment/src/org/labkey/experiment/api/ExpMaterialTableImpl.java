@@ -877,6 +877,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (InventoryService.get() != null && (st == null || !st.isMedia()))
         {
             List<FieldKey> inventoryCols = InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser());
+            // GH Issue 1035: Don't include StorageTerminalLocation in the default view
             defaultCols.addAll(inventoryCols.stream().filter(fk -> !fk.equals(InventoryService.InventoryStatusColumn.StorageTerminalLocation.fieldKey())).toList());
         }
 
