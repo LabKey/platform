@@ -28,6 +28,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -662,6 +663,13 @@ public class SecurityManager
         // Passing via the "apikey" HTTP header is our preferred approach and used by most
         // LabKey client API implementations
         String apiKey = request.getHeader(API_KEY);
+        
+        if (null == apiKey)
+        {
+            String authorization = request.getHeader("Authorization");
+            if (Strings.CS.startsWith(authorization, "Bearer "))
+                apiKey = StringUtils.trimToNull(authorization.substring("Bearer ".length()));
+        }
 
         if (null == apiKey)
         {
