@@ -181,8 +181,13 @@ public class DataClassUpdateAddColumnsDataIterator extends WrapperDataIterator
         // NOTE: we have to call mark() before we call next() if we want the 'next' row to be cached
         _unwrapped.mark();  // unwrapped _delegate
         boolean ret = super.next();
-        if (ret)
+        if (!_context.getErrors().hasErrors() && ret)
+        {
             prefetchExisting();
+            if (_context.getErrors().hasErrors())
+                return false;
+        }
+
         return ret;
     }
 }
