@@ -17,6 +17,7 @@ import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.data.triggers.TriggerFactory;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -56,6 +57,7 @@ public final class WellTriggerFactory implements TriggerFactory
             TableInfo table,
             Container c,
             User user,
+            @Nullable QueryUpdateService.InsertOption insertOption,
             @Nullable Map<String, Object> newRow,
             @Nullable Map<String, Object> oldRow,
             ValidationException errors,
@@ -88,6 +90,13 @@ public final class WellTriggerFactory implements TriggerFactory
     {
         private final Map<Long, String> wellTypeMap = new LRUMap<>(PlateSet.MAX_PLATE_SET_WELLS);
 
+        @Override
+        public @Nullable ManagedColumns getManagedColumns()
+        {
+            // "Type" is a calculated column, so we do not include it as a managed column
+            return ManagedColumns.ignored(WellTable.Column.Type.name());
+        }
+
         private void addTypeSample(
             Container c,
             User user,
@@ -114,8 +123,8 @@ public final class WellTriggerFactory implements TriggerFactory
             newRow.put(WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name());
         }
 
-        // Since "Type" is a calculated column (i.e. not in the database) its value is not included in
-        // the original row, thus, we need to query for it dynamically.
+        // Since "Type" is a calculated column (i.e., not in the database), its value is not included in
+        // the original row; thus, we need to query for it dynamically.
         private boolean hasWellType(Container c, User user, @Nullable Map<String, Object> oldRow)
         {
             if (oldRow == null)
@@ -142,9 +151,11 @@ public final class WellTriggerFactory implements TriggerFactory
             TableInfo table,
             Container c,
             User user,
+            @Nullable QueryUpdateService.InsertOption insertOption,
             @Nullable Map<String, Object> newRow,
             ValidationException errors,
-            Map<String, Object> extraContext
+            Map<String, Object> extraContext,
+            @Nullable Map<String, Object> existingRecord
         )
         {
             addTypeSample(c, user, newRow, null, extraContext);
@@ -155,6 +166,7 @@ public final class WellTriggerFactory implements TriggerFactory
             TableInfo table,
             Container c,
             User user,
+            @Nullable QueryUpdateService.InsertOption insertOption,
             @Nullable Map<String, Object> newRow,
             @Nullable Map<String, Object> oldRow,
             ValidationException errors,

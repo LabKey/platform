@@ -10,6 +10,6 @@
 <!-- list of standard tasks (remove this comment to enable)
 #### Tasks 📍
 - [ ] Manual Testing
-- [ ] Needs Automation
+- [ ] Test Automation
 - [ ] Verify Fix
 -->

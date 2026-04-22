@@ -757,7 +757,6 @@ public class JunitController extends SpringActionController
         }
     }
 
-
     private static List<String> filterStackTrace(Throwable t)
     {
         List<String> lines = new ArrayList<>();
@@ -788,10 +787,5 @@ public class JunitController extends SpringActionController
         {
             out.println(PageFlowUtil.filter(line, true));
         }
-    }
-
-    private static String h(String s)
-    {
-        return PageFlowUtil.filter(s);
     }
 }

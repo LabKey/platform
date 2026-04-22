@@ -156,7 +156,7 @@ public class LinkBuilder extends DisplayElementBuilder<LinkBuilder.Link, LinkBui
                     .data(null != lb.tooltip, "tt", "tooltip")
                     .data(null != lb.tooltip, "placement","top")
                     .data(null != lb.tooltip, "original-title", lb.tooltip)
-                    .aria(lb.iconCls != null && lb.tooltip != null, "label", lb.tooltip),
+                    .at(lb.iconCls != null && lb.tooltip != null, DOM.Attribute.aria_label, lb.tooltip),
                     (lb.iconCls != null ? null : lb.html)
             ).appendTo(out);
         }

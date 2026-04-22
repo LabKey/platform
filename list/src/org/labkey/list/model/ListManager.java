@@ -16,16 +16,18 @@
 
 package org.labkey.list.model;
 
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
@@ -35,6 +37,7 @@ import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.exceptions.OptimisticConflictException;
+import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptor;
@@ -49,6 +52,7 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
@@ -57,7 +61,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -76,6 +80,7 @@ import org.labkey.list.model.ListImporter.ValidatorImporter;
 import org.labkey.list.view.ListItemAttachmentParent;
 import org.springframework.jdbc.BadSqlGrammarException;
 
+import java.io.File;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -453,20 +458,76 @@ public class ListManager implements SearchService.DocumentProvider
         QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldName, updatedName, new SchemaKey(null, ListQuerySchema.NAME), user, c);
     }
 
-    // CONSIDER: move "list delete" from ListDefinitionImpl.delete() implementation to ListManager for consistency
-    void deleteListDef(Container c, int listid)
+    void deleteList(User user, @NotNull ListDefinitionImpl list, @Nullable String auditUserComment) throws DomainNotFoundException
     {
-        DbScope scope = getListMetadataSchema().getScope();
-        assert scope.isTransactionActive();
+        var table = list.getTable(user);
+        var container = list.getContainer();
+        var listName = list.getName();
+
+        // In certain cases we may create a list that is not viable (i.e., one in which a table was never created because
+        // the metadata wasn't valid). Still allow deleting the list.
+        try (var tx = (table != null) ? table.getSchema().getScope().ensureTransaction() : ExperimentService.get().ensureTransaction())
+        {
+            // remove related full-text search docs and attachments
+            if (table != null && table.getUpdateService() instanceof ListQueryUpdateService qus)
+                qus.deleteRelatedListData(null);
+            else
+                deleteIndexedList(list);
+
+            try
+            {
+                Table.delete(getListMetadataTable(), new Object[]{container, list.getListId()});
+            }
+            catch (OptimisticConflictException x)
+            {
+                // ok
+            }
+            _listDefCache.remove(container.getId());
+
+            list.getDomainOrThrow().delete(user, auditUserComment);
+            addAuditEvent(list, user, String.format("The list %s was deleted", listName));
+
+            tx.commit();
+        }
+
+        QueryService.get().fireQueryDeleted(user, container, null, SchemaKey.fromParts(ListQuerySchema.NAME), Collections.singleton(listName));
+    }
+
+    /**
+     * Deletes all lists and list data in the given container.
+     */
+    public void deleteLists(Container c, User user, @Nullable String auditUserComment)
+    {
         try
         {
-            Table.delete(ListManager.get().getListMetadataTable(), new Object[]{c, listid});
+            var containerId = c.getEntityId().toString();
+            for (var list : ListManager.get().getLists(c, true))
+            {
+                var listDef = ListDefinitionImpl.of(list);
+
+                // Delete the entire list when the list's container is deleted
+                if (containerId.equals(list.getContainerId()))
+                {
+                    deleteList(user, listDef, auditUserComment);
+                    continue;
+                }
+
+                var table = listDef.getTable(user);
+                if (table == null)
+                    continue;
+
+                var qus = table.getUpdateService();
+                if (qus == null)
+                    continue;
+
+                // Otherwise, truncate the rows in this list in this container
+                qus.truncateRows(user, c, null, null);
+            }
         }
-        catch (OptimisticConflictException x)
+        catch (Exception e)
         {
-            // ok
+            throw new RuntimeException(e.getMessage(), e);
         }
-        _listDefCache.remove(c.getId());
     }
 
     public static final SearchService.SearchCategory listCategory = new SearchService.SearchCategory("list", "Lists");
@@ -1158,7 +1219,7 @@ public class ListManager implements SearchService.DocumentProvider
 
         if (null != ti)
         {
-            Map<String, String> recordChangedMap = new CaseInsensitiveHashMap<>();
+            Map<String, Object> recordChangedMap = new CaseInsensitiveHashMap<>();
             Set<String> reserved = list.getDomain().getDomainKind().getReservedPropertyNames(list.getDomain(), user);
 
             // Match props to columns
@@ -1180,7 +1241,7 @@ public class ListManager implements SearchService.DocumentProvider
                     continue;
 
                 ColumnInfo col = ti.getColumn(FieldKey.fromParts(baseKey));
-                String value = Objects.toString(entry.getValue(), "");
+                Object value = entry.getValue();
                 String key = null;
 
                 if (null != col)
@@ -1264,61 +1325,78 @@ public class ListManager implements SearchService.DocumentProvider
 
     public static class TestCase extends Assert
     {
+        private static final String PROJECT_NAME = "BiologicsManagerTest Project";
         private static final String LIST_NAME = "Unit Test list";
-        private static final String WORKBOOK1_NAME = "Unit Test Workbook 1";
-        private static final String WORKBOOK2_NAME = "Unit Test Workbook 2";
         private static final String FIELD_NAME = "field";
+        private static final String ATTACHMENT_FIELD_NAME = "attachment";
         private static final String PARENT_LIST_ITEM = "parentItem";
-        private static final String WORKBOOK1_LIST_ITEM = "workbook1Item";
-        private static final String WORKBOOK2_LIST_ITEM = "workbook2Item";
-        private static final Integer PARENT_LI_KEY = 1;
-        private static final Integer WB1_LI_KEY = 2;
-        private static final Integer WB2_LI_KEY = 3;
+        private static final String CHILD1_LIST_ITEM = "child1Item";
+        private static final String CHILD2_LIST_ITEM = "child2Item";
+        private static final String KEY_FIELD_NAME = "Unit test list key";
+        private static Integer PARENT_LI_KEY;
 
-        private ListDefinitionImpl list;
-        private Container c;
-        private User u;
-        private DomainProperty dp;
+        private static ListDefinitionImpl list;
+        private static DomainProperty dp;
+        private static User u;
+        private static Container c;
 
-        @Before
-        public void setUp() throws Exception
+        @BeforeClass
+        public static void setup() throws Exception
         {
-            JunitUtil.deleteTestContainer();
-            cleanup();
-            c = JunitUtil.getTestContainer();
-            TestContext context = TestContext.get();
-            u = context.getUser();
+            u = TestContext.get().getUser();
+
+            deleteTestContainer();
+
+            c = ContainerManager.ensureContainer(PROJECT_NAME, u);
             list = (ListDefinitionImpl)ListService.get().createList(c, LIST_NAME, ListDefinition.KeyType.AutoIncrementInteger);
-            list.setKeyName("Unit test list Key");
+            list.setKeyName(KEY_FIELD_NAME);
 
             dp = list.getDomain().addProperty();
             dp.setName(FIELD_NAME);
             dp.setType(PropertyService.get().getType(c, PropertyType.STRING.getXmlName()));
             dp.setPropertyURI(ListDomainKind.createPropertyURI(list.getName(), FIELD_NAME, c, list.getKeyType()).toString());
+
+            var attachmentDp = list.getDomain().addProperty();
+            attachmentDp.setName(ATTACHMENT_FIELD_NAME);
+            attachmentDp.setType(PropertyService.get().getType(c, PropertyType.ATTACHMENT.getXmlName()));
+            attachmentDp.setPropertyURI(ListDomainKind.createPropertyURI(list.getName(), ATTACHMENT_FIELD_NAME, c, list.getKeyType()).toString());
             list.save(u);
 
-            addListItem(c, list, PARENT_LIST_ITEM);
+            PARENT_LI_KEY = addListItem(c, list, PARENT_LIST_ITEM, null);
         }
 
-        private void addListItem(Container scopedContainer, ListDefinition scopedList, String value)
+        private static int addListItem(Container scopedContainer, ListDefinition scopedList, String value, @Nullable File attachment) throws Exception
         {
-            List<ListItem> lis = new ArrayList<>();
-            ListItem li = scopedList.createListItem();
-            li.setProperty(dp, value);
-            lis.add(li);
-            list.insertListItems(u, scopedContainer, lis);
+            var row = new CaseInsensitiveHashMap<>();
+            row.put(FIELD_NAME, value);
+            if (attachment != null)
+                row.put(ATTACHMENT_FIELD_NAME, new FileAttachmentFile(attachment));
+
+            var errors = new BatchValidationException();
+            var result = scopedList.getTable(u).getUpdateService().insertRows(u, scopedContainer, List.of(row), errors, null, null);
+            if (errors.hasErrors())
+                throw errors.getLastRowError();
+
+            return MapUtils.getIntValue(result.getFirst(), KEY_FIELD_NAME);
         }
 
-        @After
-        public void tearDown() throws Exception
+        @AfterClass
+        public static void cleanup()
         {
-            cleanup();
+            list = null;
+            dp = null;
+            c = null;
+            u = null;
+
+            deleteTestContainer();
         }
 
-        private void cleanup() throws Exception
+        private static void deleteTestContainer()
         {
-            //TestContext context = TestContext.get();
-            ExperimentService.get().deleteAllExpObjInContainer(c, u);
+            var project = ContainerManager.getForPath(PROJECT_NAME);
+
+            if (project != null)
+                ContainerManager.deleteAll(project, TestContext.get().getUser());
         }
 
         @Test
@@ -1326,39 +1404,81 @@ public class ListManager implements SearchService.DocumentProvider
         {
             Map<String, ListDefinition> lists = ListService.get().getLists(c);
             assertTrue("Test List not found in own container", lists.containsKey(LIST_NAME));
-            ListItem li = lists.get(LIST_NAME).getListItem(1, u, c);
+            ListItem li = lists.get(LIST_NAME).getListItem(PARENT_LI_KEY, u, c);
             assertEquals("Item not found in own container", PARENT_LIST_ITEM, li.getProperty(dp));
         }
 
         @Test
-        public void testListServiceInWorkbook()
+        public void testListServiceInWorkbook() throws Exception
         {
-            Container workbook1 = setupWorkbook(WORKBOOK1_NAME);
-            Container workbook2 = setupWorkbook(WORKBOOK2_NAME);
+            Container workbook1 = createWorkbook("Unit Test Workbook 1");
+            Container workbook2 = createWorkbook("Unit Test Workbook 2");
             Map<String, ListDefinition> lists = ListService.get().getLists(workbook1);
             assertTrue("Test List not found in workbook", lists.containsKey(LIST_NAME));
 
-            checkListItemScoping(workbook1, workbook2);
+            ListDefinition childList1 = ListService.get().getLists(workbook1).get(LIST_NAME);
+            ListDefinition childList2 = ListService.get().getLists(workbook2).get(LIST_NAME);
+
+            assertEquals("Lists available to each child container are not the same", childList1.toString(), childList2.toString());
+            int childKey1 = addListItem(workbook1, childList1, CHILD1_LIST_ITEM, null);
+            int childKey2 = addListItem(workbook2, childList2, CHILD2_LIST_ITEM, null);
+
+            assertNull("Parent item should not be visible in child container", childList1.getListItem(PARENT_LI_KEY, u, workbook1));
+            assertNull("Sibling child item should not be visible in another child container", childList1.getListItem(childKey2, u, workbook1));
+            assertEquals("Parent container should be able to see child container item", CHILD1_LIST_ITEM, childList1.getListItem(childKey1, u, c).getProperty(dp));
+            assertEquals("Child container should be able to see its own list item", CHILD1_LIST_ITEM, childList1.getListItem(childKey1, u, workbook1).getProperty(dp));
         }
 
-        private Container setupWorkbook(String title)
+        /**
+         * GitHub Issue #1013: Rows added to a list in a subfolder must be cleaned up when that subfolder
+         * is deleted. Previously, those rows were left orphaned in the database.
+         */
+        @Test
+        public void testSubfolderDeletionCleansUpListData() throws Exception
+        {
+            Container subfolder1 = createSubfolder("subfolder1");
+            Container subfolder2 = createSubfolder("subfolder2");
+
+            File attachment1 = FileUtil.createTempFile("subfolder1", ".txt");
+            attachment1.deleteOnExit();
+            File attachment2 = FileUtil.createTempFile("subfolder2", ".txt");
+            attachment2.deleteOnExit();
+
+            int key1 = addListItem(subfolder1, list, "subfolder1Item", attachment1);
+            int key2 = addListItem(subfolder2, list, "subfolder2Item", attachment2);
+
+            // Precondition: parent can see both subfolder items (setUp inserts key 1; subfolders get keys 2 and 3)
+            assertNotNull("Subfolder1 item should be visible from subfolder1 before deletion", list.getListItem(key1, u, subfolder1));
+            assertNotNull("Subfolder2 item should be visible from subfolder2 before deletion", list.getListItem(key2, u, subfolder2));
+
+            TableInfo table = list.getTable(u, c, ContainerFilter.getUnsafeEverythingFilter());
+            assertNotNull("Expected list table to resolve", table);
+
+            // Preverify rows in the database
+            long rowCount = new TableSelector(table, Set.of("Container")).getRowCount();
+            assertEquals("Expected only two rows (parent, subfolder1, subfolder2)", 3, rowCount);
+
+            // Delete subfolder1 — should delete its list rows and attachments,
+            // not touch subfolder2 or the parent or the list definition
+            ListService.get().deleteLists(subfolder1, u, null);
+
+            // Verify row is deleted from underlying table
+            rowCount = new TableSelector(table, Set.of("Container")).getRowCount();
+            assertEquals("Expected only two rows (parent, subfolder2)", 2, rowCount);
+
+            // Items belonging to other containers should be unaffected
+            assertNotNull("Parent item should survive subfolder1 deletion", list.getListItem(PARENT_LI_KEY, u, c));
+            assertNotNull("Subfolder2 item should survive subfolder1 deletion", list.getListItem(key2, u, subfolder2));
+        }
+
+        private Container createSubfolder(String folderName)
+        {
+            return ContainerManager.createContainer(c, folderName, u);
+        }
+
+        private Container createWorkbook(String title)
         {
             return ContainerManager.createContainer(c, null, title, null, WorkbookContainerType.NAME, u);
-        }
-
-        private void checkListItemScoping(Container wb1, Container wb2)
-        {
-            ListDefinition wbList1 = ListService.get().getLists(wb1).get(LIST_NAME);
-            ListDefinition wbList2 = ListService.get().getLists(wb2).get(LIST_NAME);
-
-            assertEquals("Lists available to each workbook are not the same", wbList1.toString(), wbList2.toString());
-            addListItem(wb1, wbList1, WORKBOOK1_LIST_ITEM);
-            addListItem(wb2, wbList2, WORKBOOK2_LIST_ITEM);
-
-            assertNull("Parent item visible in workbook", wbList1.getListItem(PARENT_LI_KEY, u, wb1));
-            assertNull("Sibling workbook item visible in another workbook", wbList1.getListItem(WB2_LI_KEY, u, wb1));
-            assertEquals("Parent container can not see child workbook item", WORKBOOK1_LIST_ITEM, wbList1.getListItem(WB1_LI_KEY, u, c).getProperty(dp));
-            assertEquals("Workbook can not see its own list item", WORKBOOK1_LIST_ITEM, wbList1.getListItem(WB1_LI_KEY, u, wb1).getProperty(dp));
         }
     }
 }

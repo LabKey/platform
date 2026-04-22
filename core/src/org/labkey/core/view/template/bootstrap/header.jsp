@@ -154,7 +154,7 @@
                 </div>
             </li>
             <li id="global-search-xs" class="dropdown visible-xs">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-label="<%=h(SearchUtils.getPlaceholder(c))%>" aria-haspopup="true" role="button">
                     <i class="fa fa-search"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
@@ -209,7 +209,7 @@
     {
 %>
             <li class="dropdown dropdown-rollup" id="headerProductDropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-label="Product navigation" aria-haspopup="menu" role="button">
                     <i class="fa fa-th-large" style="font-size: 18px; padding-top: 2px;"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
@@ -223,7 +223,7 @@
     {
 %>
             <li class="dropdown dropdown-rollup" id="headerAdminDropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-label="Admin menu" aria-haspopup="menu" role="button">
                     <i class="fa fa-cog"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
@@ -260,7 +260,7 @@
     {
 %>
             <li class="dropdown dropdown-rollup" id="headerUserDropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown" >
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-label="User menu" aria-haspopup="menu" role="button">
                     <i class="fa fa-user"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right" >

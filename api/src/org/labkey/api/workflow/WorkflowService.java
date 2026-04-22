@@ -9,6 +9,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
 public interface WorkflowService
 {
@@ -25,7 +26,7 @@ public interface WorkflowService
         AliquotSamples("aliquot sample type parameters", "Aliquot samples"),
         PoolSamples("pooling sample type parameters", "Pooled samples"),
         AddToStorage("input parameters", "Added samples to storage"),
-        MoveInStorage("input parameters", "Moved samples to storage"),
+        MoveInStorage("input parameters", "Moved samples in storage"),
         CheckOut("input parameters", "Checked out samples"),
         CheckIn("input parameters", "Checked in samples"),
         RemoveFromStorage("sample status value", "Removed samples from storage");
@@ -70,4 +71,10 @@ public interface WorkflowService
     DataIteratorBuilder getSampleCreationDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
 
     DataIteratorBuilder getActionAuditDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
+
+    @Nullable
+    Job getJob(Long jobId);
+
+    @Nullable
+    Job getELNReferencePlaceholderJob(Container container);
 }
