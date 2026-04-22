@@ -266,7 +266,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     // Convenience method
     protected static <P extends UrlProvider> P urlProvider(Class<P> inter)
     {
-        return Objects.requireNonNull(PageFlowUtil.urlProvider(inter));
+        return PageFlowUtil.urlProvider(inter);
     }
 
     protected void requiresLogin()

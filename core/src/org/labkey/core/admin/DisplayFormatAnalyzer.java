@@ -215,10 +215,6 @@ public class DisplayFormatAnalyzer
 
     private <P extends UrlProvider> @NotNull P urlProvider(Class<P> inter)
     {
-        P provider = PageFlowUtil.urlProvider(inter);
-        if (provider == null)
-            throw new IllegalStateException("No urlProvider found for " + inter.getName());
-
-        return provider;
+        return PageFlowUtil.urlProvider(inter);
     }
 }
