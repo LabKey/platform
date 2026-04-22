@@ -717,6 +717,23 @@ describe('assay-importRun.api', () => {
             expect(response.text).toContain('One or more values cannot be removed from the multi-choice list');
         });
 
+        // GitHub Issue 1082: Server exception "Badly formatted list of strings" on assay run import with invalid MVTC field value
+        it('blocks deleting in-use multi-choice value used as part of an array value', async () => {
+            if (!supportMultiChoice) {
+                return;
+            }
+
+            const { topFolderOptions } = context;
+
+            // Import a run with ['Abnormal', 'cDNA'] as multi-choice values
+            const importPayload: ImportRunOptions = {
+                assayId: ASSAY_A_ID,
+                dataRows: [{ [RESULT_MVTC_FIELD_NAME]: ['""x,y""'] }],
+            };
+            const importResponse = await importRunToServer(server, importPayload, topFolderOptions);
+            expect(importResponse.body.exception).toContain('for field \'' + RESULT_MVTC_FIELD_NAME + '\' is invalid.');
+        });
+
         // GitHub Issue 925: Not providing a MVTC value in an assay result throws error
         it('errors when required MVTC column not provided in assay import', async () => {
             if (!supportMultiChoice) {
