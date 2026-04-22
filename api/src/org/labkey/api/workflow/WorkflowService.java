@@ -9,6 +9,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
 public interface WorkflowService
 {
@@ -70,4 +71,10 @@ public interface WorkflowService
     DataIteratorBuilder getSampleCreationDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
 
     DataIteratorBuilder getActionAuditDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
+
+    @Nullable
+    Job getJob(Long jobId);
+
+    @Nullable
+    Job getELNReferencePlaceholderJob(Container container);
 }
