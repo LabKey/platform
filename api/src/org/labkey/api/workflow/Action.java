@@ -4,10 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CreatedModified;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.util.GUID;
 
 import java.util.ArrayList;
@@ -22,9 +25,12 @@ public abstract class Action extends CreatedModified
 {
     public static final String ASSAY_TYPES_KEY = "assayTypes";
     public static final String NUM_PER_PARENT_KEY = "numPerParent";
+    public static final String UPDATE_STATUS_KEY = "updateStatus";
+    public static final String STATUS_KEY = "sampleStatus";
     protected Long _rowId;
     protected int _ordinal;
     protected GUID _containerId;
+    private Container _container;
     protected String _name;
     protected boolean _isUpdatable = false;
     protected Long _taskId;
@@ -50,6 +56,14 @@ public abstract class Action extends CreatedModified
     public void setContainerId(GUID containerId)
     {
         _containerId = containerId;
+    }
+
+    @JsonIgnore
+    public Container getContainer()
+    {
+        if (_container == null && _containerId != null)
+            _container = ContainerManager.getForId(_containerId);
+        return _container;
     }
 
     public String getName()
@@ -113,7 +127,7 @@ public abstract class Action extends CreatedModified
     }
 
     @JsonIgnore
-    public List<String> validateInputParameters(int ordinal)
+    public List<String> validateInputParameters(int ordinal, Container container)
     {
         String prefix = "Action #" + ordinal + ": ";
         if (_type == WorkflowService.ActionType.AssayImport)
@@ -169,7 +183,7 @@ public abstract class Action extends CreatedModified
                 }
             }
         }
-        else
+        else if (_type == WorkflowService.ActionType.DeriveSamples || _type == WorkflowService.ActionType.PoolSamples)
         {
             if (_inputParameters == null || _inputParameters.isEmpty())
                 return List.of(prefix + "data about sample types and sample counts per parent is required for action of type " + _type + ".");
@@ -214,6 +228,33 @@ public abstract class Action extends CreatedModified
             if (!invalidCounts.isEmpty())
                 messages.add(prefix + "invalid sample count values " + invalidCounts + ".");
             return messages;
+        }
+        else if (_type == WorkflowService.ActionType.RemoveFromStorage)
+        {
+            if (_inputParameters == null || _inputParameters.isEmpty())
+                return Collections.emptyList();
+            boolean updateStatus = _inputParameters.getBoolean(UPDATE_STATUS_KEY);
+            if (updateStatus && !_inputParameters.has(STATUS_KEY))
+                return List.of(prefix + STATUS_KEY + " is required for action of type " + _type + " when " + UPDATE_STATUS_KEY + " is true.");
+            if (!updateStatus && _inputParameters.has(STATUS_KEY))
+                return List.of(prefix + STATUS_KEY + " is not allowed for action of type " + _type + " when " + UPDATE_STATUS_KEY + " is false.");
+            if (updateStatus && container != null)
+            {
+                try
+                {
+                    long statusId = _inputParameters.getLong(STATUS_KEY);
+                    SampleStatusService sampleStatusService = SampleStatusService.get();
+                    if (sampleStatusService.getStateForRowId(container, statusId) == null)
+                        return List.of(prefix + "Invalid " + STATUS_KEY + " (" + statusId + ").");
+                }
+                catch (Exception e)
+                {
+                    return List.of(prefix + "Invalid " + STATUS_KEY + ".");
+                }
+            }
+        } else {
+            if (_inputParameters != null && !_inputParameters.isEmpty())
+                return List.of(prefix + "input parameters are not allowed for action of type " + _type + ".");
         }
         return Collections.emptyList();
     }
