@@ -490,7 +490,7 @@ public class DotGraph
         {
             return null;
         }
-        return s.replace("\"", "\\\"").replace("\n", " ").replace("\r", " ");
+        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", " ");
     }
 
     private class MNode extends DotNode

@@ -4,6 +4,7 @@ import org.apache.logging.log4j.Logger;
 import org.graphper.api.Graphviz;
 import org.graphper.draw.ExecuteException;
 import org.graphper.parser.DotParser;
+import org.graphper.parser.ParseException;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
@@ -48,22 +49,22 @@ public class ExperimentRunGraph
 
     private static String getSvg(String dot) throws ExecuteException
     {
-        Graphviz graph = DotParser.parse(dot);
-
-        if (graph.isEmpty())
-            return ""; // Graphviz.toSvgStr() throws an exception if the graph is empty.
-
         try
         {
+            Graphviz graph = DotParser.parse(dot);
+
+            if (graph.isEmpty())
+                return ""; // Graphviz.toSvgStr() throws an exception if the graph is empty.
+
             String svg = graph.toSvgStr();
 
             // Scale down to 50% of default size. This is arbitrary but seems reasonable. Diagrams are larger than
             // the old image-based ones, but monitors are much higher resolution than when those were scaled.
             return SvgUtil.scaleSize(svg, 0.5f);
         }
-        catch (ExecuteException ex)
+        catch (ExecuteException | ParseException ex)
         {
-            LOG.warn("Error generating graph", ex);
+            LOG.error("Error generating graph", ex);
             throw ex;
         }
     }
