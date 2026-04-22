@@ -1345,7 +1345,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     context.getErrors().addRowError(new ValidationException(String.format(DUPLICATE_COLUMN_IN_DATA_ERROR, RowId.name())));
                     return null;
                 }
-                di = new SampleUpdateAddColumnsDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId(), keyColumnAlias);
+                di = new SampleUpdateAddColumnsDataIterator(new CachingDataIterator(addAliquotedFrom), context, materialTable, sampleType.getRowId(), keyColumnAlias);
 
                 di = new _SamplesCoerceDataIterator(di, context, sampleType, materialTable);
                 context.setWithLookupRemapping(false);

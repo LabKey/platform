@@ -1,6 +1,7 @@
 package org.labkey.api.dataiterator;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
@@ -33,6 +34,7 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
     final int _aliquotedFromColIndex;
     final int _rootMaterialRowIdColIndex;
     final int _currentSampleStateColIndex;
+    final DataIteratorContext _context;
 
     // prefetch of existing records
     int lastPrefetchRowNumber = -1;
@@ -40,10 +42,11 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
     final IntHashMap<Integer> aliquotRoots = new IntHashMap<>();
     final IntHashMap<Integer> sampleState = new IntHashMap<>();
 
-    public SampleUpdateAddColumnsDataIterator(DataIterator in, TableInfo target, long sampleTypeId, String keyColumnName)
+    public SampleUpdateAddColumnsDataIterator(DataIterator in, @NotNull DataIteratorContext context, TableInfo target, long sampleTypeId, String keyColumnName)
     {
         super(in);
         this._unwrapped = (CachingDataIterator)in;
+        this._context = context;
         this.target = target;
         this._sampleTypeId = sampleTypeId;
 
@@ -167,11 +170,19 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
     @Override
     public boolean next() throws BatchValidationException
     {
+        if (_context.getErrors().hasErrors())
+            return false;
+
         // NOTE: we have to call mark() before we call next() if we want the 'next' row to be cached
         _unwrapped.mark();  // unwrapped _delegate
         boolean ret = super.next();
-        if (ret)
+        if (!_context.getErrors().hasErrors() && ret)
+        {
             prefetchExisting();
+            if (_context.getErrors().hasErrors())
+                return false;
+        }
+
         return ret;
     }
 }
