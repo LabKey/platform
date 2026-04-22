@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.graphper.draw.ExecuteException" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -67,7 +66,7 @@
             model.getFocusType()
         );
     }
-    catch (ExecuteException e)
+    catch (Exception e)
     {
         out.write("<p class=\"labkey-error\">Error rendering graph</p>");
     }
