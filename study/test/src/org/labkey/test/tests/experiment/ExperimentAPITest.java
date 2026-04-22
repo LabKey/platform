@@ -326,6 +326,66 @@ public class ExperimentAPITest extends BaseWebDriverTest
         assertEquals("Run not found", addedRunLsid, resultLsid);
     }
 
+    @Test // GitHub Issue #1026
+    public void testDataRowsIncludeRowId() throws IOException, CommandException
+    {
+        String assayName = "RowIdAssay";
+
+        goToManageAssays();
+        APIAssayHelper assayHelper = new APIAssayHelper(this);
+        ReactAssayDesignerPage assayDesignerPage = assayHelper.createAssayDesign("General", assayName);
+        assayDesignerPage.clickFinish();
+
+        final int assayId = assayHelper.getIdFromAssayName(assayName, getProjectName(), false);
+
+        List<Map<String, Object>> dataRows = List.of(
+            Maps.of("ptid", "p01", "date", "2017-05-10"),
+            Maps.of("ptid", "p02", "date", "2017-05-11")
+        );
+
+        Run run = new Run();
+        run.setName("RowIdRun");
+        run.setResultData(dataRows);
+
+        Batch batch = new Batch();
+        batch.setName("RowIdBatch");
+        batch.getRuns().add(run);
+
+        Connection connection = createDefaultConnection();
+        SaveAssayBatchResponse saveResponse = new SaveAssayBatchCommand(assayId, batch).execute(connection, getProjectName());
+        assertDataRowsHaveRowId("SaveAssayBatch response", saveResponse.getParsedData(), dataRows.size());
+
+        int batchId = saveResponse.getBatch().getId();
+        LoadAssayBatchCommand loadCmd = new LoadAssayBatchCommand(null, batchId)
+        {
+            @Override
+            public JSONObject getJsonObject()
+            {
+                JSONObject json = super.getJsonObject();
+                json.put("assayId", assayId);
+                return json;
+            }
+        };
+        LoadAssayBatchResponse loadResponse = loadCmd.execute(connection, getProjectName());
+        assertDataRowsHaveRowId("LoadAssayBatch response", loadResponse.getParsedData(), dataRows.size());
+    }
+
+    @SuppressWarnings("unchecked")
+    private void assertDataRowsHaveRowId(String context, Map<String, Object> parsedData, int expectedRowCount)
+    {
+        Map<String, Object> batchData = (Map<String, Object>) parsedData.get("batch");
+        List<Map<String, Object>> runs = (List<Map<String, Object>>) batchData.get("runs");
+        assertEquals(context + ": expected one run", 1, runs.size());
+        List<Map<String, Object>> responseDataRows = (List<Map<String, Object>>) runs.getFirst().get("dataRows");
+        assertEquals(context + ": unexpected data row count", expectedRowCount, responseDataRows.size());
+        for (Map<String, Object> row : responseDataRows)
+        {
+            Object rowId = row.get("RowId");
+            assertTrue(context + ": RowId missing or not a number in " + row, rowId instanceof Number);
+            assertTrue(context + ": RowId should be non-zero in " + row, ((Number) rowId).intValue() > 0);
+        }
+    }
+
     @Test
     public void testImportRunWithAdhocProperties() throws IOException, CommandException
     {
