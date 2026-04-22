@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
@@ -47,7 +46,6 @@ import org.labkey.remoteapi.domain.ListDomainsResponse;
 import org.labkey.remoteapi.domain.PropertyDescriptor;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.ReactAssayDesignerPage;
 import org.labkey.test.params.FieldDefinition;
@@ -59,7 +57,6 @@ import org.labkey.test.util.SampleTypeHelper;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,17 +68,10 @@ import static org.junit.Assert.fail;
 @Category({Daily.class})
 public class ExperimentAPITest extends BaseWebDriverTest
 {
-    @Override
-    protected void doCleanup(boolean afterTest) throws TestTimeoutException
-    {
-        super.doCleanup(afterTest);
-    }
-
     @BeforeClass
     public static void setupProject()
     {
         ExperimentAPITest init = getCurrentTest();
-
         init.doSetup();
     }
 
@@ -99,94 +89,51 @@ public class ExperimentAPITest extends BaseWebDriverTest
     @Test
     public void testSaveBatchSampleSetMaterials() throws Exception
     {
-        final String sampleSetName = "My Set";
+        final String sampleTypeName = "My Set";
 
-        createSampleSet(sampleSetName);
+        log("Create sample type");
+        new SampleTypeDefinition(sampleTypeName).setFields(
+            List.of(
+                new FieldDefinition("IntCol", FieldDefinition.ColumnType.Integer),
+                new FieldDefinition("StringCol", FieldDefinition.ColumnType.String),
+                new FieldDefinition("DateCol", FieldDefinition.ColumnType.DateAndTime),
+                new FieldDefinition("BoolCol", FieldDefinition.ColumnType.Boolean)
+            )
+        ).create(createDefaultConnection(), getProjectName());
+
+        goToModule("Experiment");
+        new SampleTypeHelper(this)
+                .goToSampleType(sampleTypeName)
+                .bulkImport(TestFileUtils.getSampleData("sampleType.xlsx"));
 
         Batch batch = new Batch();
         batch.setName("testSaveBatchSampleSetMaterials Batch");
 
-        JSONObject sampleSet = new JSONObject();
-        sampleSet.put("name", sampleSetName);
-
-        JSONObject sampleSetMaterial1 = new JSONObject();
-        sampleSetMaterial1.put("name", "testSaveBatchSampleSetMaterials-ss-1");
-        sampleSetMaterial1.put("sampleSet", sampleSet);
-
-        JSONObject sampleSetMaterial2 = new JSONObject();
-        sampleSetMaterial2.put("name", "testSaveBatchSampleSetMaterials-ss-2");
-        sampleSetMaterial2.put("sampleSet", sampleSet);
-
-        Run run1 = new Run();
-        run1.setName("testSaveBatchMaterials Run 1");
-        run1.setMaterialOutputs(Arrays.asList(new Material(sampleSetMaterial1)));
-
-        Run run2 = new Run();
-        run2.setName("testSaveBatchMaterials Run 2");
-        run2.setMaterialInputs(Arrays.asList(new Material(sampleSetMaterial1)));
-        run2.setMaterialOutputs(Arrays.asList(new Material(sampleSetMaterial2)));
-
-        batch.getRuns().add(run1);
-        batch.getRuns().add(run2);
-
-        SaveAssayBatchCommand cmd = new SaveAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, batch);
-        cmd.setTimeout(10000);
-        Connection connection = createDefaultConnection();
-        SaveAssayBatchResponse response = cmd.execute(connection, getProjectName());
-        int batchId = response.getBatch().getId();
-
-        Batch responseBatch = getBatch(connection, batchId);
-        assertEquals("Runs in batch: " + responseBatch.toJSONObject(),
-                2, responseBatch.getRuns().size());
-        assertEquals("Materials in run: " + responseBatch.toJSONObject(),
-                3, responseBatch.getRuns().stream().mapToInt(run -> run.getMaterialInputs().size() + run.getMaterialOutputs().size()).sum());
-        assertEquals("Matching experiment materials should have the same id: " + responseBatch.toJSONObject(),
-                responseBatch.getRuns().get(0).getMaterialOutputs().get(0).getId(), responseBatch.getRuns().get(1).getMaterialInputs().get(0).getId());
-    }
-
-    private void createSampleSet(String sampleSetName) throws IOException, CommandException
-    {
-        log("Create sample type");
-        new SampleTypeDefinition(sampleSetName).setFields(
-                List.of(
-                    new FieldDefinition("IntCol", FieldDefinition.ColumnType.Integer),
-                    new FieldDefinition("StringCol", FieldDefinition.ColumnType.String),
-                    new FieldDefinition("DateCol", FieldDefinition.ColumnType.DateAndTime),
-                    new FieldDefinition("BoolCol", FieldDefinition.ColumnType.Boolean)))
-                .create(createDefaultConnection(), getProjectName());
-
-        goToModule("Experiment");
-        new SampleTypeHelper(this)
-                .goToSampleType(sampleSetName)
-                .bulkImport(TestFileUtils.getSampleData("sampleType.xlsx"));
-    }
-
-    @Test @Ignore(/*TODO*/"Issue 35654: Can't reference experiment materials by name if they aren't associated with a sampleset")
-    public void testSaveBatchMaterials() throws Exception
-    {
-        Batch batch = new Batch();
-        batch.setName("testSaveBatchMaterials Batch");
+        JSONObject sampleType = new JSONObject();
+        sampleType.put("name", sampleTypeName);
 
         JSONObject material1 = new JSONObject();
-        material1.put("name", "testSaveBatchMaterials-1");
+        material1.put("name", "testSaveBatchSampleSetMaterials-ss-1");
+        material1.put("sampleSet", sampleType);
 
         JSONObject material2 = new JSONObject();
-        material2.put("name", "testSaveBatchMaterials-2");
+        material2.put("name", "testSaveBatchSampleSetMaterials-ss-2");
+        material2.put("sampleSet", sampleType);
 
         Run run1 = new Run();
         run1.setName("testSaveBatchMaterials Run 1");
-        run1.setMaterialOutputs(Arrays.asList(new Material(material1)));
+        run1.setMaterialOutputs(List.of(new Material(material1)));
 
         Run run2 = new Run();
         run2.setName("testSaveBatchMaterials Run 2");
-        run2.setMaterialInputs(Arrays.asList(new Material(material1)));
-        run2.setMaterialOutputs(Arrays.asList(new Material(material2)));
+        run2.setMaterialInputs(List.of(new Material(material1)));
+        run2.setMaterialOutputs(List.of(new Material(material2)));
 
         batch.getRuns().add(run1);
         batch.getRuns().add(run2);
 
         SaveAssayBatchCommand cmd = new SaveAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, batch);
-        cmd.setTimeout(10000);
+        cmd.setTimeout(10_000);
         Connection connection = createDefaultConnection();
         SaveAssayBatchResponse response = cmd.execute(connection, getProjectName());
         int batchId = response.getBatch().getId();
@@ -197,7 +144,7 @@ public class ExperimentAPITest extends BaseWebDriverTest
         assertEquals("Materials in run: " + responseBatch.toJSONObject(),
                 3, responseBatch.getRuns().stream().mapToInt(run -> run.getMaterialInputs().size() + run.getMaterialOutputs().size()).sum());
         assertEquals("Matching experiment materials should have the same id: " + responseBatch.toJSONObject(),
-                responseBatch.getRuns().get(0).getMaterialOutputs().get(0).getId(), responseBatch.getRuns().get(1).getMaterialInputs().get(0).getId());
+                responseBatch.getRuns().getFirst().getMaterialOutputs().getFirst().getId(), responseBatch.getRuns().get(1).getMaterialInputs().getFirst().getId());
     }
 
     @Test
@@ -209,9 +156,6 @@ public class ExperimentAPITest extends BaseWebDriverTest
         _fileBrowserHelper.uploadFile(file1);
         _fileBrowserHelper.uploadFile(file2);
 
-        Batch batch = new Batch();
-        batch.setName("testSaveBatchDatas Batch");
-
         JSONObject d1 = new JSONObject();
         d1.put("pipelinePath", file1.getName());
 
@@ -220,48 +164,49 @@ public class ExperimentAPITest extends BaseWebDriverTest
 
         Run run1 = new Run();
         run1.setName("testSaveBatchDatas Run 1");
-        run1.setDataOutputs(Arrays.asList(new Data(d1)));
+        run1.setDataOutputs(List.of(new Data(d1)));
 
         Run run2 = new Run();
         run2.setName("testSaveBatchDatas Run 2");
-        run2.setDataInputs(Arrays.asList(new Data(d1)));
-        run2.setDataOutputs(Arrays.asList(new Data(d2)));
+        run2.setDataInputs(List.of(new Data(d1)));
+        run2.setDataOutputs(List.of(new Data(d2)));
 
+        Batch batch = new Batch();
+        batch.setName("testSaveBatchDatas Batch");
         batch.getRuns().add(run1);
         batch.getRuns().add(run2);
 
         Connection connection = createDefaultConnection();
         SaveAssayBatchCommand cmd = new SaveAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, batch);
-        cmd.setTimeout(10000);
+        cmd.setTimeout(10_000);
         SaveAssayBatchResponse saveResponse = cmd.execute(connection, getProjectName());
         int batchId = saveResponse.getBatch().getId();
 
         Batch responseBatch = getBatch(connection, batchId);
         assertEquals("Runs in batch: " + responseBatch.toJSONObject(),
                 2, responseBatch.getRuns().size());
-        assertEquals("Datas in run: " + responseBatch.toJSONObject(),
+        assertEquals("Data in run: " + responseBatch.toJSONObject(),
                 3, responseBatch.getRuns().stream().mapToInt(run -> run.getDataInputs().size() + run.getDataOutputs().size()).sum());
-        assertEquals("Matching experiment datas should have the same id: " + responseBatch.toJSONObject(),
-                responseBatch.getRuns().get(0).getDataOutputs().get(0).getId(), responseBatch.getRuns().get(1).getDataInputs().get(0).getId());
+        assertEquals("Matching experiment data should have the same id: " + responseBatch.toJSONObject(),
+                responseBatch.getRuns().getFirst().getDataOutputs().getFirst().getId(), responseBatch.getRuns().get(1).getDataInputs().getFirst().getId());
     }
 
     @Test
     public void testRunDataBadAbsolutePath() throws Exception
     {
-        Batch batch = new Batch();
-        batch.setName("testRunDataBadAbsolutePath Batch");
-
         JSONObject d1 = new JSONObject();
         d1.put("absolutePath", new File(TestFileUtils.getDefaultFileRoot(getProjectName()), "../../../../labkey.xml").getAbsolutePath());
 
         Run run1 = new Run();
         run1.setName("testRunDataBadAbsolutePath Run 1");
-        run1.setDataOutputs(Arrays.asList(new Data(d1)));
+        run1.setDataOutputs(List.of(new Data(d1)));
 
+        Batch batch = new Batch();
+        batch.setName("testRunDataBadAbsolutePath Batch");
         batch.getRuns().add(run1);
 
         SaveAssayBatchCommand cmd = new SaveAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, batch);
-        cmd.setTimeout(10000);
+        cmd.setTimeout(10_000);
         try
         {
             SaveAssayBatchResponse response = cmd.execute(createDefaultConnection(), getProjectName());
@@ -296,33 +241,29 @@ public class ExperimentAPITest extends BaseWebDriverTest
     @Test
     public void testSaveBatchWithAdHocProperties() throws IOException, CommandException
     {
-        String domainKind = "Vocabulary";
-        String domainName = "TestVocabulary";
-        String domainDescription = "Test Ad Hoc Properties";
         String prop1Name = "testIntField";
         String prop2Name = "testStringField";
-        String prop1range = "int";
-        String prop2range = "string";
 
-        //Create VocabularyDomain with adhoc properties
-        List<PropertyDescriptor> fields = new ArrayList<>();
-        fields.add(new PropertyDescriptor(prop1Name, prop1range));
-        fields.add(new PropertyDescriptor(prop2Name, prop2range));
+        // Create VocabularyDomain with adhoc properties
+        List<PropertyDescriptor> fields = List.of(
+            new PropertyDescriptor(prop1Name, "int"),
+            new PropertyDescriptor(prop2Name, "string")
+        );
 
-        DomainDetailsResponse domainResponse = createDomain(domainKind, domainName, domainDescription,fields);
+        DomainDetailsResponse domainResponse = createDomain("Vocabulary", "TestVocabulary", "Test Ad Hoc Properties", fields);
 
-        //verifying properties got added in domainResponse
-        assertEquals("First Adhoc property not found.", prop1Name, domainResponse.getDomain().getFields().get(0).getName());
+        // Verifying properties got added in domainResponse
+        assertEquals("First Adhoc property not found.", prop1Name, domainResponse.getDomain().getFields().getFirst().getName());
         assertEquals("Second Adhoc property not found.", prop2Name, domainResponse.getDomain().getFields().get(1).getName());
 
-        //Save Batch - Use Vocabulary Domain properties while saving batch
+        // Save Batch - Use Vocabulary Domain properties while saving batch
         List<PropertyDescriptor> propertyURIS = domainResponse.getDomain().getFields();
         Run run = new Run();
         run.setName("testAdHocPropertiesRun");
         run.setProperties(Map.of(propertyURIS.get(1).getPropertyURI(), "testAdHocRunProperty"));
 
         Batch batch = new Batch();
-        batch.setProperties(Map.of(propertyURIS.get(0).getPropertyURI(), 123));
+        batch.setProperties(Map.of(propertyURIS.getFirst().getPropertyURI(), 123));
         batch.setRuns(List.of(run));
 
         SaveAssayBatchCommand saveAssayBatchCommand = new SaveAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, batch);
@@ -332,8 +273,8 @@ public class ExperimentAPITest extends BaseWebDriverTest
         LoadAssayBatchResponse loadAssayBatchResponse = loadDomainCommand.execute(createDefaultConnection(), getProjectName());
         List<String> addedPropertyURIs = new ArrayList<>(loadAssayBatchResponse.getBatch().getProperties().keySet());
 
-        //Verify property in added batch
-        assertEquals("Ad hoc property not found." , propertyURIS.get(0).getPropertyURI(), addedPropertyURIs.get(0));
+        // Verify property in the added batch
+        assertEquals("Ad hoc property not found." , propertyURIS.getFirst().getPropertyURI(), addedPropertyURIs.getFirst());
     }
 
     @Test
@@ -345,20 +286,18 @@ public class ExperimentAPITest extends BaseWebDriverTest
         String propertyName = "testRunField";
         String rangeURI = "string";
 
-        List<PropertyDescriptor> fields = new ArrayList<>();
-        fields.add(new PropertyDescriptor(propertyName, rangeURI));
-
+        List<PropertyDescriptor> fields = List.of(new PropertyDescriptor(propertyName, rangeURI));
         DomainDetailsResponse domainResponse = createDomain(domainKind, domainName, domainDescription, fields);
 
-        assertEquals("Property not added in Domain.", propertyName, domainResponse.getDomain().getFields().get(0).getName());
+        assertEquals("Property not added in Domain.", propertyName, domainResponse.getDomain().getFields().getFirst().getName());
 
-        String vocabDomainPropURI = domainResponse.getDomain().getFields().get(0).getPropertyURI();
+        String vocabDomainPropURI = domainResponse.getDomain().getFields().getFirst().getPropertyURI();
         String vocabDomainPropVal = "Value 1";
 
         ListDomainsCommand listDomainsCommand = new ListDomainsCommand(true, false, Set.of("UserAuditDomain"), "/Shared");
         ListDomainsResponse listDomainsResponse = listDomainsCommand.execute(createDefaultConnection(), "Shared");
 
-        String userAuditDomainPropURI = listDomainsResponse.getDomains().get(0).getFields().get(0).getPropertyURI();
+        String userAuditDomainPropURI = listDomainsResponse.getDomains().getFirst().getFields().getFirst().getPropertyURI();
 
         Run runA = new Run();
         runA.setName("testRunA");
@@ -371,9 +310,9 @@ public class ExperimentAPITest extends BaseWebDriverTest
         SaveAssayRunsCommand saveAssayRunsCommand = new SaveAssayRunsCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, List.of(runA, runB));
         SaveAssayRunsResponse saveAssayRunsResponse = saveAssayRunsCommand.execute(createDefaultConnection(), getProjectName());
 
-        String addedRunLsid = saveAssayRunsResponse.getRuns().get(0).getLsid();
+        String addedRunLsid = saveAssayRunsResponse.getRuns().getFirst().getLsid();
 
-        assertEquals("Vocabulary domain property not found in new saved run.", vocabDomainPropVal, saveAssayRunsResponse.getRuns().get(0).getProperties().get(vocabDomainPropURI));
+        assertEquals("Vocabulary domain property not found in new saved run.", vocabDomainPropVal, saveAssayRunsResponse.getRuns().getFirst().getProperties().get(vocabDomainPropURI));
         //assert Non vocabulary domain property not added
         assertTrue("Non Vocabulary domain property found in new saved run.",  saveAssayRunsResponse.getRuns().get(1).getProperties().isEmpty());
 
@@ -400,9 +339,9 @@ public class ExperimentAPITest extends BaseWebDriverTest
         // 1. Create Vocabulary Domain with one adhoc property with CreateDomainApi
         DomainDetailsResponse domainResponse = createDomain(domainKind, domainName, domainDescription, List.of(new PropertyDescriptor(propertyName,  rangeURI)));
 
-        assertEquals("Property not added in Vocabulary Domain.", propertyName, domainResponse.getDomain().getFields().get(0).getName());
+        assertEquals("Property not added in Vocabulary Domain.", propertyName, domainResponse.getDomain().getFields().getFirst().getName());
 
-        String vocabDomainPropURI = domainResponse.getDomain().getFields().get(0).getPropertyURI();
+        String vocabDomainPropURI = domainResponse.getDomain().getFields().getFirst().getPropertyURI();
         int vocabDomainPropVal = 2;
 
         // 2. Use this adhoc property as a run property and batch a property in ImportRun api
@@ -417,7 +356,7 @@ public class ExperimentAPITest extends BaseWebDriverTest
 
         int assayId = assayHelper.getIdFromAssayName(assayName, getProjectName(), false);
 
-        List<Map<String, Object>> dataRows = Arrays.asList(
+        List<Map<String, Object>> dataRows = List.of(
                 Maps.of("ptid", "p01", "date", "2017-05-10")
         );
 
@@ -433,7 +372,7 @@ public class ExperimentAPITest extends BaseWebDriverTest
         LoadAssayBatchCommand loadAssayBatchCommand = new LoadAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, importRunResponse.getBatchId());
         LoadAssayBatchResponse loadAssayBatchResponse = loadAssayBatchCommand.execute(createDefaultConnection(), getProjectName());
         assertTrue("Ad hoc property is not present in Batch.", loadAssayBatchResponse.getBatch().getProperties().containsKey(vocabDomainPropURI));
-        assertTrue("Ad hoc property is not present in Run.", loadAssayBatchResponse.getBatch().getRuns().get(0).getProperties().containsKey(vocabDomainPropURI));
+        assertTrue("Ad hoc property is not present in Run.", loadAssayBatchResponse.getBatch().getRuns().getFirst().getProperties().containsKey(vocabDomainPropURI));
     }
 
     @Override
@@ -451,6 +390,6 @@ public class ExperimentAPITest extends BaseWebDriverTest
     @Override
     public List<String> getAssociatedModules()
     {
-        return Arrays.asList("experiment");
+        return List.of("experiment");
     }
 }
