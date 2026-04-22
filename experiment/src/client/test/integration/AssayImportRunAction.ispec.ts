@@ -718,7 +718,7 @@ describe('assay-importRun.api', () => {
         });
 
         // GitHub Issue 1082: Server exception "Badly formatted list of strings" on assay run import with invalid MVTC field value
-        it('blocks deleting in-use multi-choice value used as part of an array value', async () => {
+        it('illegal tsv string', async () => {
             if (!supportMultiChoice) {
                 return;
             }
