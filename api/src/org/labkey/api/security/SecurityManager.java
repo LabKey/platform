@@ -2000,18 +2000,13 @@ public class SecurityManager
         return userIds;
     }
 
-    /**
-     * @return an immutable list of Users who have been assigned all the requested permissions in the given container
-     */
+    @Deprecated // Call the other variant
     public static List<User> getUsersWithPermissions(Container c, boolean includeInactive, Set<Class<? extends Permission>> perms)
     {
         if (includeInactive)
             throw new IllegalArgumentException("includeInactive parameter is no longer supported since inactive users have no permissions");
 
-        // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
-        return UserManager.getUsers(false).stream()
-            .filter(user -> hasAllPermissions(null, c, user, perms, Set.of()))
-            .toList();
+        return getUsersWithPermissions(c, perms);
     }
 
     /**
@@ -2019,7 +2014,10 @@ public class SecurityManager
      */
     public static List<User> getUsersWithPermissions(Container c, Set<Class<? extends Permission>> perms)
     {
-        return getUsersWithPermissions(c, false, perms);
+        // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
+        return UserManager.getUsers(false).stream()
+            .filter(user -> hasAllPermissions(null, c, user, perms, Set.of()))
+            .toList();
     }
 
     /**
