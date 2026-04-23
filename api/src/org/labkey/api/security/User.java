@@ -313,7 +313,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         return hasRootPermissions(TRUSTED_BROWSER_DEV);
     }
 
-    public boolean isTroubleShooter()
+    public boolean isTroubleshooter()
     {
         return hasRootPermission(TroubleshooterPermission.class);
     }
