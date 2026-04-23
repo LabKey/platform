@@ -481,7 +481,7 @@ public class CoreQuerySchema extends UserSchema
             {
                 Set<Integer> projectUserIds = new HashSet<>(SecurityManager.getFolderUserids(getContainer()));
                 // Add app admins and site admins (they both have ApplicationAdminPermission)
-                SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), true, Set.of(ApplicationAdminPermission.class)).stream()
+                SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), false, Set.of(ApplicationAdminPermission.class)).stream()
                     .map(User::getUserId)
                     .forEach(projectUserIds::add);
                 _projectUserIds = projectUserIds;

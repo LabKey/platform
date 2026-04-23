@@ -163,7 +163,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         else if (project != null && project.hasPermission(adminUser, ImpersonatePermission.class))
         {
             // The read permission check is not for security; it just seems useless to offer impersonation on a user who lacks read.
-            validUsers = new ArrayList<>(SecurityManager.getUsersWithPermissions(project, true, Set.of(ReadPermission.class)));
+            validUsers = new ArrayList<>(SecurityManager.getUsersWithPermissions(project, false, Set.of(ReadPermission.class)));
         }
         else
         {

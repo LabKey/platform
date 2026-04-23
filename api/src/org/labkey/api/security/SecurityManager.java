@@ -2005,8 +2005,11 @@ public class SecurityManager
      */
     public static List<User> getUsersWithPermissions(Container c, boolean includeInactive, Set<Class<? extends Permission>> perms)
     {
+        if (includeInactive)
+            throw new IllegalArgumentException("includeInactive parameter is no longer supported since inactive users have no permissions");
+
         // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
-        return UserManager.getUsers(includeInactive).stream()
+        return UserManager.getUsers(false).stream()
             .filter(user -> hasAllPermissions(null, c, user, perms, Set.of()))
             .toList();
     }
