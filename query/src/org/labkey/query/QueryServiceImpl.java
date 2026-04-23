@@ -1295,6 +1295,7 @@ public class QueryServiceImpl implements QueryService
         return new ArrayList<>(views);
     }
 
+    @Deprecated
     @Override
     public List<CustomView> getDatabaseCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean sharedOnly)
     {
@@ -1334,6 +1335,73 @@ public class QueryServiceImpl implements QueryService
         Collection<CustomView> allViews = getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly).values();
         return allViews.stream().filter(view -> !(view instanceof ModuleCustomView)).collect(Collectors.toList());
     }
+
+    @Override
+    public List<CustomView> getDatabaseCustomViews(@NotNull User user, @NotNull Container container, @Nullable String schemaName, @Nullable String queryName)
+    {
+        // GitHub Issue 1058: Sample Finder saved views in subfolder break after MVTC to TC conversion
+        Collection<GUID> containerIds = container.getProductFoldersDataContainerFilter(user).getIds();
+
+        SimpleFilter filter = new SimpleFilter();
+        if (containerIds != null)
+            filter.addInClause(FieldKey.fromParts("Container"), containerIds);
+        else
+            filter = SimpleFilter.createContainerFilter(container, "Container");
+
+        if (schemaName != null)
+            filter.addCondition(FieldKey.fromParts("Schema"), schemaName);
+        if (queryName != null)
+            filter.addCondition(FieldKey.fromParts("QueryName"), queryName);
+
+        List<CstmView> cstmViews = new TableSelector(QueryManager.get().getTableInfoCustomView(), filter, null).getArrayList(CstmView.class);
+
+        List<CustomView> result = new ArrayList<>();
+
+        Map<Container, List<CstmView>> containerViews = new HashMap<>();
+        for (CstmView cstmView : cstmViews)
+        {
+            Container viewContainer = cstmView.lookupContainer();
+            if (viewContainer != null)
+                containerViews.computeIfAbsent(viewContainer, k -> new ArrayList<>()).add(cstmView);
+        }
+
+        for (Map.Entry<Container, List<CstmView>> containerCstmViews: containerViews.entrySet())
+        {
+            Map<String, UserSchema> schemas = new HashMap<>();
+            Map<Pair<String, String>, QueryDefinition> queryDefs = new HashMap<>();
+            Container viewContainer = containerCstmViews.getKey();
+            List<CstmView> views = containerCstmViews.getValue();
+            DefaultSchema defaultSchema = DefaultSchema.get(user, viewContainer);
+
+            for (CstmView cstmView : views)
+            {
+                Pair<String, String> key = new Pair<>(cstmView.getSchema(), cstmView.getQueryName());
+                QueryDefinition queryDef = queryDefs.get(key);
+                if (queryDef == null)
+                {
+                    UserSchema schema = schemas.get(cstmView.getSchema());
+                    if (schema == null)
+                    {
+                        schema = defaultSchema.getUserSchema(cstmView.getSchema());
+                        schemas.put(cstmView.getSchema(), schema);
+                    }
+                    if (schema != null)
+                    {
+                        queryDef = schema.getQueryDefForTable(cstmView.getQueryName());
+                        queryDefs.put(key, queryDef);
+                    }
+                }
+
+                if (queryDef != null)
+                {
+                    result.add(new CustomViewImpl(queryDef, cstmView));
+                }
+            }
+        }
+
+        return result;
+    }
+
 
     @Override
     public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query, Module... extraModules)

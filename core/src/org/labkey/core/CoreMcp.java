@@ -103,14 +103,14 @@ public class CoreMcp implements McpService.McpImpl
 
         Container container = ContainerManager.getForPath(containerPath);
 
-        if (null == container)
+        if (null == container && (containerPath.startsWith("http://") || containerPath.startsWith("https://")))
         {
             try
             {
                 var url = new ActionURL(containerPath);
                 container = ContainerManager.getForURL(url);
             }
-            catch (IllegalArgumentException x)
+            catch (IllegalArgumentException _)
             {
             }
         }
