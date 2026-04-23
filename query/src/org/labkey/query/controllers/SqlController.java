@@ -16,6 +16,8 @@
 package org.labkey.query.controllers;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -27,8 +29,10 @@ import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -40,6 +44,7 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
@@ -50,7 +55,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
@@ -60,13 +64,12 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.sql.Array;
 import java.sql.SQLException;
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -94,14 +97,30 @@ public class SqlController extends SpringActionController
         }
     }
 
+    public enum Format
+    {
+        split,  // respose that can be parsed using String.split(), configure with 'sep' and 'eol'
+
+        compact,    // same as split, but with ditto markers (cheap way to compress and save space on client)
+
+        //  Tab separated (RFC 4180)
+        //   - Wrap a field in double quotes if it contains a tab, newline, or double quote
+        //  - Escape double quotes by doubling them: " becomes ""
+        //  - Fields that don't contain special characters are left unquoted
+        tsv
+
+        // We could support CSV here, I can't think of a scenario for this API where this would be preferable
+        // csv     // Comma separated, google sheets style quoting (see PageFlowUtil.joinValuesToStringForExport())
+    }
+
     public static class SqlForm
     {
+        private Format format = Format.split;
         private Double apiVersion = null;
         private String schema;
         private String sql;
         private String sep = null;
         private String eol = null;
-        private boolean compact = false;
         private final Parameters parameters = new Parameters();
 
         public Double getApiVersion()
@@ -154,9 +173,19 @@ public class SqlController extends SpringActionController
             return parameters.map;
         }
 
+        public Format getFormat()
+        {
+            return format;
+        }
+
+        public void setFormat(Format format)
+        {
+            this.format = format;
+        }
+
         public String getSep()
         {
-            return null!=sep ? sep : compact ? "\u001f" : "\t";
+            return null!=sep ? sep : format==Format.compact ? "\u001f" : "\t";
         }
 
         public void setSep(String sep)
@@ -167,7 +196,7 @@ public class SqlController extends SpringActionController
 
         public String getEol()
         {
-            return null!=eol ? eol : compact ? "\u001e" : "\t";
+            return null!=eol ? eol : format==Format.compact ? "\u001e" : "\n";
         }
 
         public void setEol(String eol)
@@ -178,16 +207,22 @@ public class SqlController extends SpringActionController
 
         public boolean isCompact()
         {
-            return compact;
+            return Format.compact == format;
         }
 
         public void setCompact(boolean compact)
         {
-            this.compact = compact;
+            if (compact)
+                this.format = Format.compact;
         }
     }
 
-
+    /// Execute a LabKey SQL query and return results as plain text. Designed for lightweight programmatic access without the overhead of QueryView/JSON API responses.
+    ///
+    /// Note this is still experimental as this API does not work well with some features.
+    /// In particular, some columns rely on custom DisplayColumn implmentations to return meaningful data,
+    /// and this code path does not use DisplayColumn.  In particular group_concat result (e.g. multi-value foreign keys)
+    /// may not render correctly, as well as lineage columns like MaterialInputs/*.
     @RequiresPermission(ReadPermission.class)
     @Marshal(Marshaller.Jackson)
     public class ExecuteAction extends ReadOnlyApiAction<SqlForm>
@@ -239,10 +274,18 @@ public class SqlController extends SpringActionController
             try (Results rs = QueryService.get().selectResults(schema, form.getSql(), null, form.getParameterMap(), true, false))
             {
                 getViewContext().getResponse().setContentType("text/plain");
-                if (form.compact)
-                    writeResults_compact(getViewContext().getResponse().getWriter(), rs, form.getSep(),form.getEol());
-                else
-                    writeResults_text(getViewContext().getResponse().getWriter(), rs, form.getSep(),form.getEol());
+                switch (form.getFormat())
+                {
+                    case tsv:
+                        writeResults_tsv(getViewContext().getResponse().getWriter(), rs);
+                        break;
+                    case split:
+                        writeResults_text(getViewContext().getResponse().getWriter(), rs, form.getSep(),form.getEol());
+                        break;
+                    case compact:
+                        writeResults_compact(getViewContext().getResponse().getWriter(), rs, form.getSep(),form.getEol());
+                        break;
+                }
             }
             catch (QueryParseException x)
             {
@@ -257,102 +300,135 @@ public class SqlController extends SpringActionController
     }
 
 
-    void writeResults_text(PrintWriter out, Results rs, String sep, String eol) throws SQLException
+    JdbcType[] types;
+    Unit[] units;
+
+    void initWriter(Results rs) throws SQLException
     {
         final int count = rs.getMetaData().getColumnCount();
-        final boolean serializeDateAsNumber=false;
+        types = new JdbcType[count];
+        units = new Unit[count];
+
+        for (int column = 1; column <= count; column++)
+        {
+            int index = column-1;
+            types[index] = JdbcType.valueOf(rs.getMetaData().getColumnType(column));
+            ColumnInfo ci = rs.getColumn(column);
+            if (null != ci)
+            {
+                units[index] = ci.getDisplayUnit();
+            }
+        }
+    }
+
+
+    void getStringData(Results rs, ArrayList<String> out) throws SQLException
+    {
+        out.clear();
+        for (int column = 1; column <= types.length; column++)
+        {
+            int index = column - 1;
+            String value = null;
+
+            if (null != units[index])
+            {
+                Number storageValue = types[index] == JdbcType.DECIMAL ? rs.getBigDecimal(column) : rs.getDouble(column);
+                if (!rs.wasNull())
+                    value = String.valueOf(units[index].fromStorageUnitValue(storageValue));
+            }
+            else
+            {
+                switch (types[index])
+                {
+                    case TINYINT:
+                    case SMALLINT:
+                    case INTEGER:
+                    {
+                        int i = rs.getInt(column);
+                        value = rs.wasNull() ? null : String.valueOf(i);
+                        break;
+                    }
+                    case CHAR:
+                    case VARCHAR:
+                    case LONGVARCHAR:
+                    {
+                        value = rs.getString(column);
+                        break;
+                    }
+                    case DOUBLE:
+                    case REAL:
+                    {
+                        double d = rs.getDouble(column);
+                        value = rs.wasNull() ? null : String.valueOf(d);
+                        break;
+                    }
+                    case BOOLEAN:
+                    {
+                        boolean b = rs.getBoolean(column);
+                        value = rs.wasNull() ? null : b ? "1" : "0";
+                        break;
+                    }
+                    case DECIMAL:
+                    {
+                        BigDecimal dec = rs.getBigDecimal(column);
+                        value = null == dec ? null : dec.toPlainString();
+                        break;
+                    }
+                    case ARRAY:
+                    {
+                        Array array = rs.getArray(column);
+                        if (null != array)
+                        {
+                            String[] strs = ConvertHelper.convert(array.getArray(), String[].class);
+                            if (null != strs)
+                                value = PageFlowUtil.joinValuesToStringForExport(List.of(strs));
+                        }
+                        break;
+                    }
+                    default:
+                    {
+                        value = rs.getString(column);
+                        break;
+                    }
+                }
+            }
+            out.add(value);
+        }
+    }
+
+
+    void writeResults_text(PrintWriter out, Results rs, String sep, String eol) throws SQLException
+    {
+        initWriter(rs);
+        final int count = rs.getMetaData().getColumnCount();
 
         // meta-meta-data
         out.write("18.2"+sep+"name"+sep+"jdbcType"+eol);
 
-        for (int i = 1; i <= count; i++)
+        for (int column = 1; column <= count; column++)
         {
-            out.write(rs.getColumn(i).getName());
-            out.write(i == count ? eol : sep);
+            out.write(rs.getColumn(column).getName());
+            out.write(column == count ? eol : sep);
         }
 
-        // pull types from ResultSetMetaData, not ColumnInfo
-        JdbcType[] types = new JdbcType[count + 1];
-        for (int i = 1; i <= count; i++)
+        for (int column = 1; column <= count; column++)
         {
-            JdbcType jdbc = JdbcType.valueOf(rs.getMetaData().getColumnType(i));
-            types[i] = jdbc;
-            out.write(jdbc.name());
-            out.write(i == count ? eol : sep);
+            int index = column-1;
+            out.write(types[index].name());
+            out.write(column == count ? eol : sep);
         }
+
+        ArrayList<String> values = new ArrayList<>(count);
 
         while (rs.next())
         {
-            for (int column = 1; column <= count; column++)
+            getStringData(rs, values);
+            for (int index = 0; index < count; index++)
             {
-                // let's try to avoid tons of inspection if possible, and allocating tons of objects
-                // handle the most common types
-                printValue:
-                {
-                    switch (types[column])
-                    {
-                        case TINYINT:
-                        case SMALLINT:
-                        case INTEGER:
-                        {
-                            int i = rs.getInt(column);
-                            if (!rs.wasNull())
-                                out.print(i);
-                            break printValue;
-                        }
-                        case CHAR:
-                        case VARCHAR:
-                        {
-                            String s = rs.getString(column);
-                            if (null != s)
-                                out.write(s);
-                            break printValue;
-                        }
-                        case DOUBLE:
-                        case REAL:
-                        {
-                            double d = rs.getDouble(column);
-                            if (!rs.wasNull())
-                                out.print(d);
-                            break printValue;
-                        }
-                        case TIMESTAMP:
-                        {
-                            Date date = rs.getTimestamp(column);
-                            if (null != date)
-                            {
-                                if (serializeDateAsNumber)
-                                    out.print(date.getTime());
-                                else
-                                    //out.write(DateUtil.formatJsonDateTime(date));
-                                    out.write(DateUtil.formatIsoDateShortTime(date));
-                            }
-                            break printValue;
-                        }
-                        case BOOLEAN:
-                        {
-                            boolean b = rs.getBoolean(column);
-                            if (!rs.wasNull())
-                                out.write(b ? '1' : '0');
-                            break printValue;
-                        }
-                        case DECIMAL:
-                        {
-                            BigDecimal dec = rs.getBigDecimal(column);
-                            if (null != dec)
-                                out.write(dec.toPlainString());
-                            break printValue;
-                        }
-                        default:
-                        {
-                            String obj = rs.getString(column);
-                            if (null != obj)
-                                out.write(obj);
-                            break printValue;
-                        }
-                    }
-                }
-                out.write(column == count ? eol : sep);
+                String s = values.get(index);
+                if (null != s)
+                    out.write(s);
+                out.write(index == count - 1 ? eol : sep);
             }
         }
         out.flush();
@@ -375,95 +451,72 @@ public class SqlController extends SpringActionController
      */
     void writeResults_compact(PrintWriter out, Results rs, String sep, String eol) throws SQLException
     {
+        initWriter(rs);
         final int count = rs.getMetaData().getColumnCount();
-        final boolean serializeDateAsNumber=false;
 
         // meta-meta-data
         out.write("18.2"+sep+"name"+sep+"jdbcType"+eol);
 
-        for (int i = 1; i <= count; i++)
+        for (int column = 1; column <= count; column++)
         {
-            out.write(rs.getColumn(i).getName());
-            out.write(i == count ? eol : sep);
+            out.write(rs.getColumn(column).getName());
+            out.write(column == count ? eol : sep);
         }
 
-        // pull types from ResultSetMetaData, not ColumnInfo
-        JdbcType[] types = new JdbcType[count + 1];
-        for (int i = 1; i <= count; i++)
+        for (int index = 0; index < count; index++)
         {
-            JdbcType jdbc = JdbcType.valueOf(rs.getMetaData().getColumnType(i));
-            types[i] = jdbc;
-            out.write(jdbc.name());
-            out.write(i == count ? eol : sep);
+            out.write(types[index].name());
+            out.write(index == count-1 ? eol : sep);
         }
 
         String DITTO = "\u0008";
-        String[] prev = new String[count+1];
-        String[] row = new String[count+1];
+        ArrayList<String> prev = new ArrayList<>(count);
+        ArrayList<String> row = new ArrayList<>(count);
 
         while (rs.next())
         {
-            for (int column = 1; column <= count; column++)
+            getStringData(rs, row);
+
+            for (int index = 0; index < count; index++)
             {
-                switch (types[column])
-                {
-                    case TINYINT:
-                    case SMALLINT:
-                    case INTEGER:
-                    case CHAR:
-                    case VARCHAR:
-                    case DOUBLE:
-                    case REAL:
-                    default:
-                    {
-                        row[column] = rs.getString(column);
-                        break;
-                    }
-                    case TIMESTAMP:
-                    {
-                        Date date = rs.getTimestamp(column);
-                        if (null == date)
-                            row[column] = null;
-                        else if (serializeDateAsNumber)
-                            row[column] = Long.toString(date.getTime());
-                        else
-                        {
-                            String d = DateUtil.formatIsoDateShortTime(date);
-                            if (d.endsWith(" 00:00"))
-                                d = d.substring(0,d.length()-6);
-                            row[column] = d;
-                        }
-                        break;
-                    }
-                    case BOOLEAN:
-                    {
-                        boolean b = rs.getBoolean(column);
-                        row[column] = rs.wasNull() ? null : b ? "1": "0";
-                        break;
-                    }
-                    case DECIMAL:
-                    {
-                        BigDecimal dec = rs.getBigDecimal(column);
-                        row[column] = null==dec ? null : dec.toPlainString();
-                        break;
-                    }
-                }
-            }
-            for (int column = 1; column <= count; column++)
-            {
-                String s = row[column];
+                String s = row.get(index);
                 if (null != s && !s.isEmpty())
                 {
-                    if (s.equals(prev[column]))
+                    if (index < prev.size() && s.equals(prev.get(index)))
                         out.write(DITTO);
                     else
                         out.write(s);
                 }
-                out.write(column == count ? eol : sep);
+                out.write(index == count - 1 ? eol : sep);
             }
-            String[] t = prev;
+            ArrayList<String> t = prev;
             prev = row;
             row = t;
+        }
+        out.flush();
+    }
+
+
+    /// export a Result set using  RFC4180 formatting
+    ///  use PageFlowUtil.joinValuesWithTabs4180
+    void writeResults_tsv(PrintWriter out, Results rs) throws SQLException
+    {
+        initWriter(rs);
+        final int count = rs.getMetaData().getColumnCount();
+
+        List<String> names = new ArrayList<>(count);
+        for (int column = 1; column <= count; column++)
+            names.add(rs.getColumn(column).getName());
+        out.write(PageFlowUtil.joinValuesWithTabs4180(names));
+        out.write('\n');
+
+        ArrayList<String> values = new ArrayList<>(count);
+
+        while (rs.next())
+        {
+            getStringData(rs, values);
+            out.write(PageFlowUtil.joinValuesWithTabs4180(values));
+            out.write('\n');
         }
         out.flush();
     }
@@ -525,15 +578,15 @@ public class SqlController extends SpringActionController
             _folder = null;
         }
 
-        private MockHttpServletResponse executeSql(String schemaName, String sql, boolean compact) throws Exception
+        private MockHttpServletResponse executeSql(String schemaName, String sql, Format format) throws Exception
         {
             ActionURL url = new ActionURL("sql", "execute", _folder);
             if (schemaName != null)
                 url.addParameter("schemaName", schemaName);
             if (sql != null)
                 url.addParameter("sql", sql);
-            if (compact)
-                url.addParameter("compact", true);
+            if (null != format)
+                url.addParameter("format", format.name());
             return ViewServlet.GET(url, TestContext.get().getUser(), null);
         }
 
@@ -541,11 +594,11 @@ public class SqlController extends SpringActionController
         public void testExecute_mssql() throws Exception
         {
             MockHttpServletResponse response = executeSql("lists",
-                    "SELECT Name, Age, Score FROM " + LIST_NAME + " ORDER BY Name", false);
+                    "SELECT Name, Age, Score FROM " + LIST_NAME + " ORDER BY Name", Format.split);
             assertEquals(HttpServletResponse.SC_OK, response.getStatus());
 
             String content = response.getContentAsString();
-            String[] tokens = content.split("\t");
+            String[] tokens = content.split("[\t\n]");
 
             // Header: meta-meta-data (3) + column names (3) + types (3) = 9
             // Data: 3 rows * 3 columns = 9
@@ -574,6 +627,7 @@ public class SqlController extends SpringActionController
             assertEquals("Carol", tokens[15]);
             assertEquals("35", tokens[16]);
         }
+
         @Test
         public void testExecute() throws Exception
         {
@@ -584,11 +638,11 @@ public class SqlController extends SpringActionController
             }
 
             MockHttpServletResponse response = executeSql("lists",
-                "SELECT Name, Age, Score, Tags FROM " + LIST_NAME + " ORDER BY Name", false);
+                "SELECT Name, Age, Score, Tags FROM " + LIST_NAME + " ORDER BY Name", Format.split);
             assertEquals(HttpServletResponse.SC_OK, response.getStatus());
 
             String content = response.getContentAsString();
-            String[] tokens = content.split("\t");
+            String[] tokens = content.split("[\t\n]");
 
             // Header: meta-meta-data (3) + column names (4) + types (4) = 11
             // Data: 3 rows * 4 columns = 12
@@ -627,7 +681,7 @@ public class SqlController extends SpringActionController
         public void testExecuteCompact() throws Exception
         {
             MockHttpServletResponse response = executeSql("lists",
-                "SELECT Name, Age FROM " + LIST_NAME + " ORDER BY Age, Name", true);
+                "SELECT Name, Age FROM " + LIST_NAME + " ORDER BY Age, Name", Format.compact);
             assertEquals(HttpServletResponse.SC_OK, response.getStatus());
 
             String content = response.getContentAsString();
@@ -661,9 +715,43 @@ public class SqlController extends SpringActionController
         }
 
         @Test
+        public void testExecuteTsv() throws Exception
+        {
+            MockHttpServletResponse response = executeSql("lists",
+                "SELECT Name, Age, Score FROM " + LIST_NAME + " ORDER BY Name", Format.tsv);
+            assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+
+            String content = response.getContentAsString();
+            String[] lines = content.split("\n");
+            assertTrue("Expected at least 4 lines (header + 3 data rows), got " + lines.length, lines.length >= 4);
+
+            // Header row: column names
+            String[] headers = lines[0].split("\t");
+            assertEquals("Name", headers[0]);
+            assertEquals("Age", headers[1]);
+            assertEquals("Score", headers[2]);
+
+            // Data rows ordered by Name
+            String[] row1 = lines[1].split("\t");
+            assertEquals("Alice", row1[0]);
+            assertEquals("30", row1[1]);
+            assertEquals("95.5", row1[2]);
+
+            String[] row2 = lines[2].split("\t");
+            assertEquals("Bob", row2[0]);
+            assertEquals("30", row2[1]);
+            assertEquals("87.3", row2[2]);
+
+            String[] row3 = lines[3].split("\t");
+            assertEquals("Carol", row3[0]);
+            assertEquals("35", row3[1]);
+            assertEquals("91.0", row3[2]);
+        }
+
+        @Test
         public void testNoSql() throws Exception
         {
-            MockHttpServletResponse response = executeSql("lists", null, false);
+            MockHttpServletResponse response = executeSql("lists", null, Format.split);
             assertTrue("Expected error about missing SQL",
                 response.getContentAsString().contains("no sql provided"));
         }
@@ -672,7 +760,7 @@ public class SqlController extends SpringActionController
         public void testSchemaNotFound() throws Exception
         {
             MockHttpServletResponse response = executeSql("nonexistent",
-                "SELECT 1", false);
+                "SELECT 1", Format.tsv);
             assertTrue("Expected schema not found error",
                 response.getContentAsString().contains("schema not found"));
         }
