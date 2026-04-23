@@ -2482,11 +2482,14 @@ public class ExpDataIterators
                     .setCommitRowsBeforeContinuing(true)
                     .setFailOnEmptyUpdate(false));
 
+            // Biologics reclassify uses afterUpdate to update other data that depend on the completion of update of the triggering data
+            boolean shouldCommitRowsBeforeContinuing = colNameMap.containsKey(".reclassify");
             // pass in remap columns to help reconcile columns that may be aliased in the virtual table
             dib = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(dib, _propertiesTable, _container)
                     .setKeyColumns(propertyKeyColumns)
                     .setDontUpdate(dontUpdate)
                     .setRemapSchemaColumns(((UpdateableTableInfo) _expTable).remapSchemaColumns())
+                    .setCommitRowsBeforeContinuing(shouldCommitRowsBeforeContinuing)
                     .setFailOnEmptyUpdate(false));
 
             if (colNameMap.containsKey(Flag.name()) || colNameMap.containsKey("comment"))
