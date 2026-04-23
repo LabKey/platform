@@ -99,7 +99,7 @@ public class SqlController extends SpringActionController
 
     public enum Format
     {
-        split,  // respose that can be parsed using String.split(), configure with 'sep' and 'eol'
+        split,  // response that can be parsed using String.split(), configure with 'sep' and 'eol'
 
         compact,    // same as split, but with ditto markers (cheap way to compress and save space on client)
 
@@ -220,7 +220,7 @@ public class SqlController extends SpringActionController
     /// Execute a LabKey SQL query and return results as plain text. Designed for lightweight programmatic access without the overhead of QueryView/JSON API responses.
     ///
     /// Note this is still experimental as this API does not work well with some features.
-    /// In particular, some columns rely on custom DisplayColumn implmentations to return meaningful data,
+    /// In particular, some columns rely on custom DisplayColumn implementations to return meaningful data,
     /// and this code path does not use DisplayColumn.  In particular group_concat result (e.g. multi-value foreign keys)
     /// may not render correctly, as well as lineage columns like MaterialInputs/*.
     @RequiresPermission(ReadPermission.class)
@@ -622,10 +622,13 @@ public class SqlController extends SpringActionController
             // Data rows ordered by Name
             assertEquals("Alice", tokens[9]);
             assertEquals("30", tokens[10]);
+            assertEquals("95.5", tokens[11]);
             assertEquals("Bob", tokens[12]);
             assertEquals("30", tokens[13]);
+            assertEquals("87.3", tokens[14]);
             assertEquals("Carol", tokens[15]);
             assertEquals("35", tokens[16]);
+            assertEquals("91.0", tokens[17]);
         }
 
         @Test
@@ -668,12 +671,15 @@ public class SqlController extends SpringActionController
             // Data rows ordered by Name (4 columns per row)
             assertEquals("Alice", tokens[11]);
             assertEquals("30", tokens[12]);
+            assertEquals("95.5", tokens[13]);
             assertTrue("Alice Tags", tokens[14].contains("Red") && tokens[14].contains("Green"));
             assertEquals("Bob", tokens[15]);
             assertEquals("30", tokens[16]);
+            assertEquals("87.3", tokens[17]);
             assertTrue("Bob Tags", tokens[18].contains("Blue"));
             assertEquals("Carol", tokens[19]);
             assertEquals("35", tokens[20]);
+            assertEquals("91.0", tokens[21]);
             assertTrue("Carol Tags", tokens[22].contains("Red") && tokens[22].contains("Blue") && tokens[22].contains("Green"));
         }
 
