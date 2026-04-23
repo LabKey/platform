@@ -8083,7 +8083,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(CrossFolderSelectionForm form, BindException errors)
         {
-            Pair<Integer, Integer> result = ExperimentServiceImpl.getCurrentAndCrossFolderDataCount(form.getIds(false), form.getDataType(), getContainer());
+            Pair<Integer, Integer> result = ExperimentServiceImpl.get().getCurrentAndCrossFolderDataCount(form.getIds(false), form.getDataType(), getContainer());
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
