@@ -3188,10 +3188,23 @@ public class PageFlowUtil
         }
     }
 
-    /** @return true if the UrlProvider exists. */
-    static public <P extends UrlProvider> boolean hasUrlProvider(Class<P> inter)
+    /**
+     * Returns a specified <code>UrlProvider</code> interface implementation, for use
+     * in writing URLs implemented in other modules.
+     *
+     * @param inter interface extending UrlProvider
+     * @return an implementation of the interface
+     * @throws IllegalArgumentException if the provider is not available. Use urlProviderOptional() if you're OK with it not being present
+     */
+    @NotNull
+    static public <P extends UrlProvider> P urlProvider(Class<P> inter)
     {
-        return UrlProviderService.getInstance().hasUrlProvider(inter);
+        P result = urlProviderOptional(inter);
+        if (result == null)
+        {
+            throw new IllegalArgumentException("No provider registered for " + inter.getName());
+        }
+        return result;
     }
 
     /**
@@ -3202,7 +3215,7 @@ public class PageFlowUtil
      * @return an implementation of the interface.
      */
     @Nullable
-    static public <P extends UrlProvider> P urlProvider(Class<P> inter)
+    static public <P extends UrlProvider> P urlProviderOptional(Class<P> inter)
     {
         return UrlProviderService.getInstance().getUrlProvider(inter);
     }
@@ -3218,7 +3231,7 @@ public class PageFlowUtil
      * @param checkForOverrides true to check for module overrides to this interface
      * @return an implementation of the interface.
      */
-    @Nullable
+    @NotNull
     static public <P extends UrlProvider> P urlProvider(Class<P> inter, boolean checkForOverrides)
     {
         if (checkForOverrides)

@@ -2217,7 +2217,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                         {
                             Class<?>[] supr = inter.getInterfaces();
                             if (supr.length == 1 && UrlProvider.class.equals(supr[0]))
-                                UrlProviderService.getInstance().registerUrlProvider((Class<UrlProvider>) inter, innerClass);
+                                UrlProviderService.getInstance().registerUrlProvider((Class<UrlProvider>) inter, (Class<? extends UrlProvider>) innerClass);
                         }
                     }
                 }
@@ -2323,7 +2323,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             return;
 
         ResourceFinder finder = new ResourceFinder(name, sourcePath, buildPath);
-        Collection<ResourceFinder> col = _resourceFinders.computeIfAbsent(prefix, k -> new ArrayList<>());
+        Collection<ResourceFinder> col = _resourceFinders.computeIfAbsent(prefix, _ -> new ArrayList<>());
 
         synchronized (col)
         {
@@ -2334,8 +2334,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     public @NotNull Collection<ResourceFinder> getResourceFindersForPath(String path)
     {
         //NOTE: jasper encodes underscores and dashes in JSPs, so decode them here
-        path = path.replaceAll("_005f", "_");
-        path = path.replaceAll("_002d", "-");
+        path = path.replace("_005f", "_");
+        path = path.replace("_002d", "-");
 
         Collection<ResourceFinder> finders = new LinkedList<>();
 

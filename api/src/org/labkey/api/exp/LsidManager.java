@@ -216,7 +216,7 @@ public class LsidManager
         @Override
         public @Nullable ActionURL detailsURL()
         {
-            var urls = PageFlowUtil.urlProvider(AssayUrls.class);
+            var urls = PageFlowUtil.urlProviderOptional(AssayUrls.class);
             if (urls == null)
                 return null;
 
