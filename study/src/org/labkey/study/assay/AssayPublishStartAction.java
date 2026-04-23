@@ -143,8 +143,7 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
 
             // Copy url parameters to hidden inputs
             ActionURL url = urlProvider(StudyUrls.class).getLinkToStudyConfirmURL(getContainer(), _protocol);
-            for (Pair<String, String> parameter : url.getParameters())
-                inputs.add(parameter);
+            inputs.addAll(url.getParameters());
 
             url.deleteParameters();
             getPageConfig().setTemplate(PageConfig.Template.None);

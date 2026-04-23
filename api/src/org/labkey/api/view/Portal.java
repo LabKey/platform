@@ -199,7 +199,7 @@ public class Portal implements ModuleChangeListener
 
     @NotNull static ProjectUrls urlProvider()
     {
-        return Objects.requireNonNull(PageFlowUtil.urlProvider(ProjectUrls.class));
+        return PageFlowUtil.urlProvider(ProjectUrls.class);
     }
 
     /** Issue 51727 - metrics to track web part usage */

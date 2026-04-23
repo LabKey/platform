@@ -9345,7 +9345,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Map<String, Object> metrics = new HashMap<>();
         Pair<Long, Long> samplesMetrics = getParentAliasMetrics(getTinfoSampleType(), "materialparentimportaliasmap");
         metrics.put("RequiredSampleParentsForSampleTypes", samplesMetrics.first);
-        metrics.put("RequiredSourceParentsForSampleTypes", samplesMetrics.first);
+        metrics.put("RequiredSourceParentsForSampleTypes", samplesMetrics.second);
         Pair<Long, Long> dataMetrics = getParentAliasMetrics(getTinfoDataClass(), "dataparentimportaliasmap");
         metrics.put("RequiredSampleParentsForDataClasses", dataMetrics.first);
         metrics.put("RequiredSourceParentsForDataClasses", dataMetrics.second);

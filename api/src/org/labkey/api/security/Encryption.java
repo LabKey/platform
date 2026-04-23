@@ -127,7 +127,7 @@ public class Encryption
                         if (context != null && context.getUser().hasSiteAdminPermission())
                         {
                             who = "you";
-                            link = LinkBuilder.simpleLink("this link", Objects.requireNonNull(PageFlowUtil.urlProvider(AdminUrls.class)).getDeleteEncryptedContentURL());
+                            link = LinkBuilder.simpleLink("this link", PageFlowUtil.urlProvider(AdminUrls.class).getDeleteEncryptedContentURL());
                         }
                         else
                         {

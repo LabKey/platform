@@ -866,8 +866,17 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     Object o = map.get(pd.getName());
                     if (PropertyType.MULTI_CHOICE == pd.getPropertyType())
                     {
-                        o = MultiChoice.Converter.getInstance().convert(MultiChoice.Array.class, o);
-                        map.put(pd.getName(), o);
+                        try
+                        {
+                            // GitHub Issue 1082: Server exception "Badly formatted list of strings" on assay run import with invalid MVTC field value
+                            o = MultiChoice.Converter.getInstance().convert(MultiChoice.Array.class, o);
+                            map.put(pd.getName(), o);
+                        }
+                        catch (ConversionException e)
+                        {
+                            errors.add(new PropertyValidationError(e.getMessage(), pd.getName()));
+                        }
+
                     }
                     else if (o instanceof String)
                     {
