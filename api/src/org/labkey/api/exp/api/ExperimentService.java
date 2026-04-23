@@ -151,6 +151,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     enum QueryOptions
     {
+        UseProvidedLsidForXarImport,
         GetSampleRecomputeCol,
         SkipBulkRemapCache,
         DeferRequiredLineageValidation,

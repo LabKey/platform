@@ -23,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LongHashSet;
@@ -1319,7 +1318,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 context.getErrors().addRowError(new ValidationException(message, LSID.name()));
                 return null;
             }
-
+            if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseProvidedLsidForXarImport))
+                drop.remove(LSID.name());
             if (!drop.isEmpty())
                 di = new DropColumnsDataIterator(di, drop);
 
@@ -1488,12 +1488,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             _nameState = sampleType.getNameGenState(skipDuplicateCheck, true, _container, user);
             lsidBuilder = sampleType.generateSampleLSID();
 
-            selectAll(CaseInsensitiveHashSet.of(Name.name(), LSID.name(), RootMaterialRowId.name()));
+            boolean useProvidedLsidForImport = context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseProvidedLsidForXarImport);
+            if (useProvidedLsidForImport)
+                selectAll(CaseInsensitiveHashSet.of(Name.name(), RootMaterialRowId.name()));
+            else
+                selectAll(CaseInsensitiveHashSet.of(Name.name(), LSID.name(), RootMaterialRowId.name()));
 
             addColumn(new BaseColumnInfo(Name.fieldKey(), JdbcType.VARCHAR), (Supplier<String>)() -> generatedName);
 
-            DbSequence lsidDbSeq = sampleType.getSampleLsidDbSeq(batchSize, sampleType.getContainer());
-            addColumn(new BaseColumnInfo(LSID.name(), JdbcType.VARCHAR), (Supplier<String>) () -> lsidBuilder.setObjectId(String.valueOf(lsidDbSeq.next())).toString());
+            if (!useProvidedLsidForImport)
+            {
+                DbSequence lsidDbSeq = sampleType.getSampleLsidDbSeq(batchSize, sampleType.getContainer());
+                addColumn(new BaseColumnInfo(LSID.name(), JdbcType.VARCHAR), (Supplier<String>) () -> lsidBuilder.setObjectId(String.valueOf(lsidDbSeq.next())).toString());
+            }
 
             addColumn(new BaseColumnInfo(CpasType.fieldKey(), JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
             addColumn(new BaseColumnInfo(MaterialSourceId.fieldKey(), JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));

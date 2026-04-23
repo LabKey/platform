@@ -309,6 +309,7 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                                     if (isUpdate)
                                         options.put(QueryUpdateService.ConfigParameters.SkipRequiredFieldValidation, true);
                                     options.put(ExperimentService.QueryOptions.DeferRequiredLineageValidation, true);
+                                    options.put(ExperimentService.QueryOptions.UseProvidedLsidForXarImport, !isUpdate);
                                     context.setConfigParameters(options);
 
                                     DataIterator data = new ResolveLsidAndFileLinkDataIterator(loader.getDataIterator(context), xarContext, expObject instanceof ExpDataClass ? "DataClass" : ExpMaterial.DEFAULT_CPAS_TYPE, tinfo);
