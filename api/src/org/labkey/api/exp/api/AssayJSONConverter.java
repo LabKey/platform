@@ -75,18 +75,18 @@ public class AssayJSONConverter
     public static JSONArray serializeDataRows(ExpData data, AssayProvider provider, ExpProtocol protocol, User user, Long... objectIds)
     {
         Domain dataDomain = provider.getResultsDomain(protocol);
+        TableInfo tableInfo = provider.createProtocolSchema(user, data.getContainer(), protocol, null).createDataTable(null);
+        if (tableInfo == null)
+            return new JSONArray();
+
+        // GitHub Issue #1026: Include rowId in serialized data rows
         List<FieldKey> fieldKeys = new ArrayList<>();
+        fieldKeys.add(FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
         for (DomainProperty property : dataDomain.getProperties())
         {
             fieldKeys.add(FieldKey.fromParts(property.getName()));
         }
 
-        if (fieldKeys.isEmpty())
-        {
-            return new JSONArray();
-        }
-
-        TableInfo tableInfo = provider.createProtocolSchema(user, data.getContainer(), protocol, null).createDataTable(null);
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, fieldKeys);
         assert columns.size() == fieldKeys.size() : "Missing a column for at least one of the properties";
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME), data.getRowId());
