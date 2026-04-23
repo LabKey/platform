@@ -176,13 +176,10 @@ public class WarningServiceImpl implements WarningService
         appendMessageContent(warnings, html);
         html.unsafeAppend("</div>\n");
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
-        if (coreUrls != null)
-        {
-            String dismissURL = coreUrls.getDismissWarningsActionURL(context).toString();
-            html.unsafeAppend("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
-            html.unsafeAppend(String.format(DISMISSAL_SCRIPT_FORMAT, PageFlowUtil.jsString(dismissURL)));
-            html.unsafeAppend("</script>\n");
-        }
+        String dismissURL = coreUrls.getDismissWarningsActionURL(context).toString();
+        html.unsafeAppend("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+        html.unsafeAppend(String.format(DISMISSAL_SCRIPT_FORMAT, PageFlowUtil.jsString(dismissURL)));
+        html.unsafeAppend("</script>\n");
         html.unsafeAppend("</div>");
 
         return html.getHtmlString();

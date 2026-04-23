@@ -83,7 +83,7 @@
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     ModuleLoader moduleLoader = ModuleLoader.getInstance();
     boolean isStartupComplete = moduleLoader.isStartupComplete();
-    boolean showSearch = isStartupComplete && hasUrlProvider(SearchUrls.class);
+    boolean showSearch = isStartupComplete && PageFlowUtil.urlProviderOptional(SearchUrls.class) != null;
 
     HtmlView headerHtml = new HeaderProperties(getContainer()).getView();
     String siteShortName = (laf.getShortName() != null && !laf.getShortName().isEmpty()) ? laf.getShortName() : null;
@@ -182,9 +182,7 @@
 <%
     CoreUrls coreUrls = urlProvider(CoreUrls.class);
 
-    if (coreUrls != null)
-    {
-        String displayUrl = coreUrls.getDisplayWarningsActionURL(getViewContext()).toString();
+    String displayUrl = coreUrls.getDisplayWarningsActionURL(getViewContext()).toString();
 %>
             <script type="text/javascript" nonce="<%=getScriptNonce()%>">
                 +function($){
@@ -203,8 +201,6 @@
                 }(jQuery)
             </script>
 <%
-    }
-
     if (showProductMenu)
     {
 %>
