@@ -445,7 +445,7 @@ describe('Duplicate IDs', () => {
             expect(errorResp['exception']).toBe('Duplicate key provided: ' + data2RowId);
         });
 
-        // update date twice specifying the name across multiple partitions
+        // update data twice specifying the name across multiple partitions
         await server.post('query', 'updateRows', {
             schemaName: 'exp.data',
             queryName: dataType,
@@ -464,7 +464,7 @@ describe('Duplicate IDs', () => {
             expect(errorResp['exception']).toBe('Duplicate key provided: ' + dataName1);
         });
 
-        // update date twice specifying the rowId across multiple partitions
+        // update data twice specifying the rowId across multiple partitions
         await server.post('query', 'updateRows', {
             schemaName: 'exp.data',
             queryName: dataType,

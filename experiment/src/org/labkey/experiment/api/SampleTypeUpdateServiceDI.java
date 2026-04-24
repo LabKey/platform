@@ -535,7 +535,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         List<Map<String, Object>> results;
         Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
-        recordDataIteratorUsed(configParameters);
+        recordDataIteratorUsed(finalConfigParameters);
 
         try
         {

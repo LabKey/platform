@@ -35,7 +35,6 @@ import static org.labkey.api.util.IntegerUtils.asInteger;
 public class DataClassUpdateAddColumnsDataIterator extends WrapperDataIterator
 {
     private final Container _targetContainer;
-    private final TableInfo _tableInfo;
     final CachingDataIterator _unwrapped;
 
     private final long _dataClassId;
@@ -52,7 +51,6 @@ public class DataClassUpdateAddColumnsDataIterator extends WrapperDataIterator
         super(in);
         this._unwrapped = (CachingDataIterator)in;
         _context = context;
-        _tableInfo = target;
         _targetContainer = container;
         _dataClassId = dataClassId;
 
