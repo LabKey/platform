@@ -2561,12 +2561,10 @@ public class OntologyManager
         return getCacheKey(dd.getDomainURI(), dd.getContainer());
     }
 
-
     public static Pair<String, GUID> getCacheKey(PropertyDescriptor pd)
     {
         return getCacheKey(pd.getPropertyURI(), pd.getContainer());
     }
-
 
     public static Pair<String, GUID> getCacheKey(String uri, Container c)
     {
@@ -2661,7 +2659,6 @@ public class OntologyManager
         }
     }
 
-
     static final String parameters = "propertyuri,name,description,rangeuri,concepturi,label," +
             "format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
             "mvenabled,importaliases,url,urltarget,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale," +
@@ -2704,71 +2701,6 @@ public class OntologyManager
         return new ParameterMapStatement(t.getSchema().getScope(), conn, sql, null);
     }
 
-    static ParameterMapStatement getUpdateStmt(Connection conn, User user, TableInfo t) throws SQLException
-    {
-        user = null==user ? User.guest : user;
-        SQLFragment sql = new SQLFragment("UPDATE exp.propertydescriptor SET ");
-        ColumnInfo c;
-        String comma = "";
-        for (var p : parametersArray)
-        {
-            if (null == (c = t.getColumn(p)))
-                continue;
-            sql.append(comma).append(p).append("=?");
-            comma = ", ";
-            sql.add(new Parameter(p, c.getJdbcType()));
-        }
-        sql.append(", modifiedby=" + user.getUserId() + ", modified={fn now()}");
-        sql.append("\nWHERE propertyid=?");
-        sql.add(new Parameter("propertyid", JdbcType.INTEGER));
-        return new ParameterMapStatement(t.getSchema().getScope(), conn, sql, null);
-    }
-
-
-    public static void insertPropertyDescriptors(User user, List<PropertyDescriptor> pds) throws SQLException
-    {
-        if (null == pds || pds.isEmpty())
-            return;
-        TableInfo t = getTinfoPropertyDescriptor();
-        try (Connection conn = t.getSchema().getScope().getConnection();
-             ParameterMapStatement stmt = getInsertStmt(conn, user, t, false))
-        {
-            ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
-            Map<String, Object> m = null;
-            for (PropertyDescriptor pd : pds)
-            {
-                m = f.toMap(pd, m);
-                stmt.clearParameters();
-                stmt.putAll(m);
-                stmt.addBatch();
-            }
-            stmt.executeBatch();
-        }
-    }
-
-
-    public static void updatePropertyDescriptors(User user, List<PropertyDescriptor> pds) throws SQLException
-    {
-        if (null == pds || pds.isEmpty())
-            return;
-        TableInfo t = getTinfoPropertyDescriptor();
-        try (Connection conn = t.getSchema().getScope().getConnection();
-             ParameterMapStatement stmt = getUpdateStmt(conn, user, t))
-        {
-            ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
-            Map<String, Object> m = null;
-            for (PropertyDescriptor pd : pds)
-            {
-                m = f.toMap(pd, m);
-                stmt.clearParameters();
-                stmt.putAll(m);
-                stmt.addBatch();
-            }
-            stmt.executeBatch();
-        }
-    }
-
-
     public static PropertyDescriptor insertPropertyDescriptor(PropertyDescriptor pd) throws ChangePropertyDescriptorException
     {
         assert pd.getPropertyId() == 0;
@@ -2778,7 +2710,6 @@ public class OntologyManager
         PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
         return pd;
     }
-
 
     //todo:  we automatically update a pd to the last  one in?
     public static PropertyDescriptor updatePropertyDescriptor(PropertyDescriptor pd)
