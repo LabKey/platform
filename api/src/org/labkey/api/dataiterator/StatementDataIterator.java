@@ -540,7 +540,7 @@ public class StatementDataIterator extends AbstractDataIterator
         {
             Object value = _keyValues.get(i);
             if (value != null)
-                return value;
+                return value; // TODO, why is this needed?
         }
 
         return _data.get(i);

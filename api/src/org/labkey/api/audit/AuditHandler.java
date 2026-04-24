@@ -124,7 +124,7 @@ public interface AuditHandler
                 }
             }
 
-            boolean isAliasInput = row.containsKey(ExperimentService.ALIASCOLUMNALIAS) && ExpMaterialTable.Column.Alias.name().equalsIgnoreCase(lcName);
+            boolean isAliasInput = row.containsKey(ExperimentService.ALIASCOLUMNALIAS) && "Alias".equalsIgnoreCase(lcName);
 
             boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(nameFromAlias);
             if (!excludedFromDetailDiff.contains(nameFromAlias) && (row.containsKey(nameFromAlias) || isExpInput || isAliasInput))

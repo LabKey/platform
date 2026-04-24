@@ -58,7 +58,10 @@ public class DataClassUpdateAddColumnsDataIterator extends WrapperDataIterator
 
         var map = DataIteratorUtil.createColumnNameMap(in);
 
-        this._lsidColIndex = map.get(ExpDataTable.Column.LSID.name());
+        Integer lsidIdx = map.get(ExpDataTable.Column.LSID.name());
+        if (lsidIdx == null)
+            throw new IllegalStateException("LSID column not found in input.");
+        this._lsidColIndex = lsidIdx;
 
         Integer index = map.get(keyColumnName);
         ColumnInfo col = target.getColumn(keyColumnName);

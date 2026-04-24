@@ -914,7 +914,7 @@ public class ExpDataIterators
             else if (_isSample)
                 di = new SampleUpdateDerivationDataIterator(di, context, _container, _user, _currentDataType, _checkRequiredParents);
             else
-                di = new DataUpdateDerivationDataIterator(di, context, _container, _user, _currentDataType, _checkRequiredParents);//
+                di = new DataUpdateDerivationDataIterator(di, context, _container, _user, _currentDataType, _checkRequiredParents);
 
             return LoggingDataIterator.wrap(di);
         }
@@ -1185,7 +1185,7 @@ public class ExpDataIterators
             // For each iteration, collect the parent col values
             if (hasNext)
             {
-                String lsid = (String) get(_lsidCol); // why lsid?, insert or merge
+                String lsid = (String) get(_lsidCol);
                 String name = null;
                 if (_nameCol != null)
                     name = (String) get(_nameCol);

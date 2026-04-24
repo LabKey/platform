@@ -819,7 +819,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from exp-26.004-26.005.sql
+     * Called from exp-26.005-26.006.sql
      * Drop the lsid column from existing provisioned DataClass tables.
      */
     @SuppressWarnings("unused")

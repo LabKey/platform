@@ -170,11 +170,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
 
     public static final Set<String> DATA_CLASS_ALT_MERGE_KEYS;
-    public static final Set<String> DATA_CLASS_ALT_UPDATE_KEYS;
     private static final Set<String> ALLOWED_IMPORT_HEADERS;
     static {
         DATA_CLASS_ALT_MERGE_KEYS = new HashSet<>(Arrays.asList(Column.ClassId.name(), Name.name()));
-        DATA_CLASS_ALT_UPDATE_KEYS = new HashSet<>(Arrays.asList(Column.RowId.name()));
         ALLOWED_IMPORT_HEADERS = new HashSet<>(Arrays.asList("description", "flag", "comment", "alias", "datafileurl"));
     }
 
@@ -863,13 +861,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     }
 
     @Override
-    @NotNull
-    public Set<String> getAltKeysForUpdate()
-    {
-        return DATA_CLASS_ALT_UPDATE_KEYS;
-    }
-
-    @Override
     public @Nullable Set<String> getExistingRecordKeyColumnNames(DataIteratorContext context, Map<String, Integer> colNameMap)
     {
         Set<String> keyColumnNames = new CaseInsensitiveHashSet();
@@ -1318,7 +1309,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             Set<String> lsids = new HashSet<>();
             for (Map<String, Object> dataRow : dataRows.values())
-                lsids.add((String) dataRow.get("lsid")); // ?
+                lsids.add((String) dataRow.get("lsid"));
             List<ExpDataImpl> seeds = ExperimentServiceImpl.get().getExpDatasByLSID(lsids);
 
             ExperimentServiceImpl.get().addRowsParentsFields(new HashSet<>(seeds), dataRows, user, container);
