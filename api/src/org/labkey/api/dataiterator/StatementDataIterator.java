@@ -537,11 +537,7 @@ public class StatementDataIterator extends AbstractDataIterator
     public Object get(int i)
     {
         if (null != _keyColumnInfo.get(i))
-        {
-            Object value = _keyValues.get(i);
-            if (value != null)
-                return value; // TODO, why is this needed?
-        }
+            return _keyValues.get(i);
 
         return _data.get(i);
     }
