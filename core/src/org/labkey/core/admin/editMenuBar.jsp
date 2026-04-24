@@ -23,7 +23,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    HttpView me = HttpView.currentView();
+    HttpView<?> me = HttpView.currentView();
     ActionURL refreshURL = urlProvider(AdminUrls.class).getProjectSettingsMenuURL(getContainer());
     boolean isAdminMode = PageFlowUtil.isPageAdminMode(getViewContext());
     String toggleUrl = urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(getContainer(), getViewContext().getActionURL()).toString();

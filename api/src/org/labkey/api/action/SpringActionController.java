@@ -175,6 +175,16 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return new ArrayList<>(_classToDescriptor.values());
     }
 
+    protected static String h(@Nullable CharSequence s)
+    {
+        return PageFlowUtil.filter(s);
+    }
+
+    protected static String h(@Nullable Object o)
+    {
+        return PageFlowUtil.filter(o);
+    }
+
     // I don't think there is an interface for this
     public interface ActionResolver
     {
@@ -256,7 +266,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     // Convenience method
     protected static <P extends UrlProvider> P urlProvider(Class<P> inter)
     {
-        return Objects.requireNonNull(PageFlowUtil.urlProvider(inter));
+        return PageFlowUtil.urlProvider(inter);
     }
 
     protected void requiresLogin()

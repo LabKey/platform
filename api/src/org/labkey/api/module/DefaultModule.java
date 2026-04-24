@@ -817,12 +817,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _vcsBranch = vcsBranch;
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void setVcsTag(String vcsTag)
-    {
-        // Ignored - present in module.xml but not used
-    }
-
     public final String getBuildUser()
     {
         return _buildUser;

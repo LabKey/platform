@@ -199,7 +199,7 @@ public class PopupMenu extends DisplayElement
 
                 UL(
                     cl("dropdown-menu dropdown-menu-left"),
-                    (DOM.Renderable) ret2 -> PopupMenuView.renderTree(_navTree, out)
+                    (DOM.Renderable) _ -> PopupMenuView.renderTree(_navTree, out)
                 ).appendTo(out);
 
                 return ret;
@@ -245,7 +245,7 @@ public class PopupMenu extends DisplayElement
         LEFT("tl-bl?"),
         RIGHT("tr-br?");
 
-        String extPosition;
+        final String extPosition;
         Align(String position)
         {
             extPosition = position;

@@ -73,7 +73,7 @@ public class AssayRunType extends ExperimentRunType
             Domain domain = provider.getResultsDomain(_protocol);
             if (domain != null && domain.getTypeId() > 0)
             {
-                StudyUrls urls = PageFlowUtil.urlProvider(StudyUrls.class);
+                StudyUrls urls = PageFlowUtil.urlProviderOptional(StudyUrls.class);
 
                 if (null != urls)
                 {

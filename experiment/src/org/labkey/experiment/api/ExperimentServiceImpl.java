@@ -5497,18 +5497,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 deleteExperimentRunsByRowIds(c, user, runId);
             }
-            ListService ls = ListService.get();
-            if (ls != null)
-            {
-                for (ListDefinition list : ListService.get().getLists(c, null, false).values())
-                {
-                    // Temporary fix for Issue 21400: **Deleting workbook deletes lists defined in parent container
-                    if (list.getContainer().equals(c))
-                    {
-                        list.delete(user);
-                    }
-                }
-            }
+
+            // Delete lists (because for some reason lists are under the purview of experiment...)
+            ListService.get().deleteLists(c, user, null);
 
             // Delete DataClasses and their exp.Data members
             // Need to delete DataClass before SampleTypes since they may be referenced by the DataClass
@@ -9354,7 +9345,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Map<String, Object> metrics = new HashMap<>();
         Pair<Long, Long> samplesMetrics = getParentAliasMetrics(getTinfoSampleType(), "materialparentimportaliasmap");
         metrics.put("RequiredSampleParentsForSampleTypes", samplesMetrics.first);
-        metrics.put("RequiredSourceParentsForSampleTypes", samplesMetrics.first);
+        metrics.put("RequiredSourceParentsForSampleTypes", samplesMetrics.second);
         Pair<Long, Long> dataMetrics = getParentAliasMetrics(getTinfoDataClass(), "dataparentimportaliasmap");
         metrics.put("RequiredSampleParentsForDataClasses", dataMetrics.first);
         metrics.put("RequiredSourceParentsForDataClasses", dataMetrics.second);
@@ -9694,7 +9685,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // Since those tables already wire up trigger scripts, we'll use that mechanism here as well for the move event.
                 BatchValidationException errors = new BatchValidationException();
                 Map<String, Object> extraContext = Map.of("targetContainer", targetContainer, "classObjects", classObjects, "dataIds", dataIds);
-                dataClassTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, false, errors, extraContext);
+                dataClassTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, null, false, errors, extraContext);
                 if (errors.hasErrors())
                     throw errors;
 

@@ -122,7 +122,7 @@ public class RunGroupWebPart extends QueryView
         super.populateButtonBar(view, bb);
         if (!_narrow)
         {
-            AssayUrls urls = PageFlowUtil.urlProvider(AssayUrls.class);
+            AssayUrls urls = PageFlowUtil.urlProviderOptional(AssayUrls.class);
             if (null != urls)
             {
                 ActionButton addXarFile = new ActionButton(urls.getImportAssayDesignURL(getViewContext().getContainer()), "Upload XAR");

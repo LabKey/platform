@@ -1,22 +1,10 @@
-/*
- * Copyright (c) 2008-2019 LabKey Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.labkey.experiment;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.graphper.api.Graphviz;
+import org.graphper.draw.ExecuteException;
+import org.graphper.parser.DotParser;
+import org.graphper.parser.ParseException;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
@@ -25,345 +13,216 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.util.DotRunner;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.ImageUtil;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.SvgUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 import org.labkey.experiment.api.ExpRunImpl;
 
-import javax.imageio.ImageIO;
-import java.lang.ref.Cleaner;
-import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/**
- * User: migra
- * Date: Jun 15, 2005
- * Time: 12:57:02 AM
- */
 public class ExperimentRunGraph
 {
-    private static File baseDirectory;
-    private static final Logger _log = LogManager.getLogger(ExperimentRunGraph.class);
+    private static final Logger LOG = LogHelper.getLogger(ExperimentRunGraph.class, "DotGraph warnings");
+
     private static final int MAX_WIDTH_SMALL_FONT = 8;
     private static final int MAX_WIDTH_BIG_FONT = 3;
     private static final int MAX_SIBLINGS = 5;
     private static final int MIN_SIBLINGS = 3;
 
-    /**
-     * It's safe for lots of threads to be reading but only one should be creating or deleting at a time.
-     * We could make separate locks for each folder but leaving it with one global lock for now.
-     */
-    private static final ReentrantReadWriteLock LOCK = new ReentrantReadWriteLock();
-
-    public synchronized static File getBaseDirectory() throws IOException
+    public static void renderSvg(Writer out, Container c, ExpRunImpl run, boolean detail, String focus, String focusType) throws ExecuteException, IOException
     {
-        if (baseDirectory == null)
+        String dot = getDotGraph(c, run, detail, focus, focusType);
+        out.write(getSvg(dot));
+    }
+
+    private static String getSvg(String dot) throws ExecuteException
+    {
+        try
         {
-            File tempDir = FileUtil.appendName(FileUtil.getTempDirectory(), "ExperimentRunGraphs");
-            if (tempDir.exists())
+            Graphviz graph = DotParser.parse(dot);
+
+            if (graph.isEmpty())
+                return ""; // Graphviz.toSvgStr() throws an exception if the graph is empty.
+
+            String svg = graph.toSvgStr();
+
+            // Scale down to 50% of default size. This is arbitrary but seems reasonable. Diagrams are larger than
+            // the old image-based ones, but monitors are much higher resolution than when those were scaled.
+            return SvgUtil.scaleSize(svg, 0.5f);
+        }
+        catch (ExecuteException | ParseException ex)
+        {
+            LOG.error("Error generating graph", ex);
+            throw ex;
+        }
+    }
+
+    private static String getDotGraph(Container c, ExpRunImpl run, boolean detail, String focus, String focusType)
+    {
+        Integer focusId = null;
+        String typeCode = focusType;
+
+        if (null != focus && !focus.isEmpty())
+        {
+            if (!Character.isDigit(focus.charAt(0)))
             {
-                FileUtil.deleteDirectoryContents(tempDir);
+                typeCode = focus.substring(0, 1);
+                focus = focus.substring(1);
             }
+            try
+            {
+                focusId = Integer.parseInt(focus);
+                run.trimRunTree(focusId, typeCode);
+            }
+            catch (ExperimentException ee)
+            {
+                LOG.warn("Exception while trimming run tree", ee);
+            }
+            catch (NumberFormatException nfe)
+            {
+                LOG.warn("Exception while parsing focus {}", focus, nfe);
+            }
+        }
+
+        StringWriter writer = new StringWriter();
+
+        try (PrintWriter out = new PrintWriter(writer))
+        {
+            GraphCtrlProps ctrlProps = analyzeGraph(run);
+
+            DotGraph dg = new DotGraph(out, c, ctrlProps.fUseSmallFonts);
+
+            if (!detail)
+                generateSummaryGraph(run, dg, ctrlProps);
             else
             {
-                if (!FileUtil.mkdirs(tempDir))
+                if (null != focusId)
+                    dg.setFocus(focusId, typeCode);
+
+                // add starting inputs to graph if they need grouping
+                Map<? extends ExpMaterial, String> materialRoles = run.getMaterialInputs();
+                List<ExpMaterial> inputMaterials = new ArrayList<>(materialRoles.keySet());
+                inputMaterials.sort(new RoleAndNameComparator<>(materialRoles));
+                Map<? extends ExpData, String> dataRoles = run.getDataInputs();
+                List<ExpData> inputDatas = new ArrayList<>(dataRoles.keySet());
+                inputDatas.sort(new RoleAndNameComparator<>(dataRoles));
+                if (!run.getProtocolApplications().isEmpty())
                 {
-                    throw new IOException("Unable to create temporary directory for experiment run graphs: " + tempDir.getPath());
+                    long groupId = run.getProtocolApplications().getFirst().getRowId();
+                    addStartingInputs(inputMaterials, inputDatas, groupId, dg, run.getRowId(), ctrlProps);
+                    generateDetailGraph(run, dg, ctrlProps);
                 }
             }
-            baseDirectory = tempDir;
+            dg.dispose();
         }
-        return baseDirectory;
+
+        return writer.getBuffer().toString();
     }
 
-    private synchronized static File getFolderDirectory(Container container) throws IOException
+    private static GraphCtrlProps analyzeGraph(ExpRunImpl exp)
     {
-        File result = FileUtil.appendName(getBaseDirectory(), "Folder" + container.getRowId());
-        FileUtil.mkdirs(result);
-        for (int i = 0; i < 5; i++)
+        int maxSiblingsPerParent = MAX_SIBLINGS;
+        int maxMD = MIN_SIBLINGS;
+        int iMaxLevelStart = 0;
+        int iMaxLevelEnd = 0;
+        int curMI = 0;
+        int curDI = 0;
+        int curMO = 0;
+        int curDO = 0;
+        int prevS = 0;
+        int iLevelStart = 0;
+        int iLevelEnd = 0;
+        GraphCtrlProps ctrlProps = new GraphCtrlProps();
+
+        int i = 0;
+        List<ExpProtocolApplicationImpl> steps = exp.getProtocolApplications();
+        for (ExpProtocolApplicationImpl step : steps)
         {
-            if (result.isDirectory())
-            {
-                return result;
-            }
+            int curS = step.getActionSequence();
+
+            Integer countSeq = ctrlProps.mPANodesPerSequence.get(curS);
+            if (null == countSeq)
+                countSeq = Integer.valueOf(1);
             else
+                countSeq++;
+            ctrlProps.mPANodesPerSequence.put(curS, countSeq);
+
+            if (curS != prevS)
             {
-                try
+                if (curMI + curDI > maxMD)
                 {
-                    Thread.sleep(1);
+                    maxMD = curMI + curDI;
+                    iMaxLevelStart = iLevelStart;
+                    iMaxLevelEnd = iLevelEnd;
                 }
-                catch (InterruptedException e) {}
-                FileUtil.mkdirs(result);
-            }
-        }
-        if (!result.isDirectory())
-        {
-            throw new IOException("Failed to create directory " + result);
-        }
-        return result;
-    }
-
-    /**
-     * Creates a run graph, given the configuration parameters. Note that this creates a lock on the directory
-     * that contains the files, which must be cleared by calling release() on the resulting RunGraphFiles object. 
-     */
-    public static RunGraphFiles generateRunGraph(ViewContext ctx, ExpRunImpl run, boolean detail, String focus, String focusType) throws ExperimentException, IOException, InterruptedException
-    {
-        boolean success = false;
-
-        File imageFile = new File(getBaseFileName(run, detail, focus) + ".png");
-        File mapFile = new File(getBaseFileName(run, detail, focus) + ".map");
-
-        // First acquire a read lock so we know that another thread won't be deleting these files out from under us
-        Lock readLock = LOCK.readLock();
-        readLock.lock();
-
-        try
-        {
-            if (!AppProps.getInstance().isDevMode() && imageFile.exists() && mapFile.exists())
-            {
-                success = true;
-                return new RunGraphFiles(mapFile, imageFile, readLock);
-            }
-        }
-        finally
-        {
-            // If we found useful files, don't release the lock because the caller will want to read them
-            if (!success)
-            {
-                readLock.unlock();
-            }
-        }
-
-        // We need to create files to open up a write lock
-        Lock writeLock = LOCK.writeLock();
-        writeLock.lock();
-
-        try
-        {
-            testDotPath();
-
-            Integer focusId = null;
-            String typeCode = focusType;
-
-            if (null != focus && !focus.isEmpty())
-            {
-                if (!Character.isDigit(focus.charAt(0)))
+                if (curMO + curDO > maxMD)
                 {
-                    typeCode = focus.substring(0, 1);
-                    focus = focus.substring(1);
+                    maxMD = curMO + curDO;
+                    iMaxLevelStart = iLevelStart;
+                    iMaxLevelEnd = iLevelEnd;
                 }
-                try
-                {
-                    focusId = Integer.parseInt(focus);
-                    run.trimRunTree(focusId, typeCode);
-                }
-                catch (NumberFormatException ignored) {}
+                prevS = curS;
+                curMI = 0;
+                curDI = 0;
+                curMO = 0;
+                curDO = 0;
+                iLevelStart = i;
             }
+            iLevelEnd = i;
+            curMI += Math.min(step.getInputMaterials().size(), maxSiblingsPerParent);
+            curDI += Math.min(step.getInputDatas().size(), maxSiblingsPerParent);
+            curMO += Math.min(step.getOutputMaterials().size(), maxSiblingsPerParent);
+            curDO += Math.min(step.getOutputDatas().size(), maxSiblingsPerParent);
+            i++;
+        }
 
-            StringWriter writer = new StringWriter();
+        if (maxMD > MAX_WIDTH_BIG_FONT)
+        {
+            ctrlProps.fUseSmallFonts = true;
+            ctrlProps.maxNodesWidth = MAX_WIDTH_SMALL_FONT;
+        }
+        else
+        {
+            ctrlProps.fUseSmallFonts  = false;
+            ctrlProps.maxNodesWidth = MAX_WIDTH_BIG_FONT;
+        }
 
-            try (PrintWriter out = new PrintWriter(writer))
+        // try to adjust the number of siblings to fit the levels within the max width
+        while ((maxMD > ctrlProps.maxNodesWidth) && (maxSiblingsPerParent > MIN_SIBLINGS))
+        {
+            curMI = 0;
+            curDI = 0;
+            curMO = 0;
+            curDO = 0;
+            maxSiblingsPerParent--;
+            for (i = iMaxLevelStart; i <= (Math.min(iMaxLevelEnd, iMaxLevelStart + maxSiblingsPerParent - 1)); i++)
             {
-                GraphCtrlProps ctrlProps = analyzeGraph(run);
-
-                DotGraph dg = new DotGraph(out, ctx.getContainer(), ctrlProps.fUseSmallFonts);
-
-                if (!detail)
-                    generateSummaryGraph(run, dg, ctrlProps);
-                else
-                {
-                    if (null != focusId)
-                        dg.setFocus(focusId, typeCode);
-
-                    // add starting inputs to graph if they need grouping
-                    Map<? extends ExpMaterial, String> materialRoles = run.getMaterialInputs();
-                    List<ExpMaterial> inputMaterials = new ArrayList<>(materialRoles.keySet());
-                    inputMaterials.sort(new RoleAndNameComparator<>(materialRoles));
-                    Map<? extends ExpData, String> dataRoles = run.getDataInputs();
-                    List<ExpData> inputDatas = new ArrayList<>(dataRoles.keySet());
-                    inputDatas.sort(new RoleAndNameComparator<>(dataRoles));
-                    if (!run.getProtocolApplications().isEmpty())
-                    {
-                        long groupId = run.getProtocolApplications().get(0).getRowId();
-                        addStartingInputs(inputMaterials, inputDatas, groupId, dg, run.getRowId(), ctrlProps);
-                        generateDetailGraph(run, dg, ctrlProps);
-                    }
-                }
-                dg.dispose();
+                ExpProtocolApplication step = steps.get(i);
+                curMI += Math.min(step.getInputMaterials().size(), maxSiblingsPerParent);
+                curDI += Math.min(step.getInputDatas().size(), maxSiblingsPerParent);
+                curMO += Math.min(step.getOutputMaterials().size(), maxSiblingsPerParent);
+                curDO += Math.min(step.getOutputDatas().size(), maxSiblingsPerParent);
             }
-
-            String dotInput = writer.getBuffer().toString();
-            DotRunner runner = new DotRunner(getFolderDirectory(run.getContainer()), dotInput);
-            runner.addCmapOutput(mapFile);
-            runner.addPngOutput(imageFile);
-            runner.execute();
-
-            mapFile.deleteOnExit();
-            imageFile.deleteOnExit();
-
-            BufferedImage originalImage = ImageIO.read(imageFile);
-            if (originalImage == null)
-            {
-                throw new IOException("Unable to read image file " + imageFile.getAbsolutePath() + " of size " + imageFile.length() + " - disk may be full?");
-            }
-
-            try (FileOutputStream fOut = new FileOutputStream(imageFile))
-            {
-                // Write it back out to disk
-                double scale = ImageUtil.resizeImage(originalImage, fOut, .85, 6, BufferedImage.TYPE_INT_RGB);
-
-                // Need to rewrite the image map to change the coordinates according to the scaling factor
-                resizeImageMap(mapFile, scale);
-            }
-
-            // Start the procedure of downgrade our lock from write to read so that the caller can use the files
-            readLock.lock();
-            return new RunGraphFiles(mapFile, imageFile, readLock);
-        }
-        catch (UnsatisfiedLinkError | NoClassDefFoundError e)
-        {
-            throw new ConfigurationException("Unable to resize image, likely a problem with missing Java Runtime libraries not being available", e);
-        }
-        finally
-        {
-            writeLock.unlock();
-        }
-    }
-
-    /**
-     * Shrink all the coordinates in an image map by a fixed ratio
-     */
-    private static void resizeImageMap(File mapFile, double finalScale) throws IOException
-    {
-        StringBuilder sb = new StringBuilder();
-
-        try (FileInputStream fIn = new FileInputStream(mapFile))
-        {
-            // Read in the original file, line by line
-            BufferedReader reader = new BufferedReader(new InputStreamReader(fIn));
-            String line;
-            while ((line = reader.readLine()) != null)
-            {
-                int coordsIndex = line.indexOf("coords=\"");
-                if (coordsIndex != -1)
-                {
-                    int openIndex = coordsIndex + "coords=\"".length();
-                    int closeIndex = line.indexOf("\"", openIndex);
-                    if (closeIndex != -1)
-                    {
-                        // Parse and scale the coordinates
-                        String coordsOriginal = line.substring(openIndex, closeIndex);
-                        String[] coords = coordsOriginal.split(",|(\\s)");
-                        StringBuilder newLine = new StringBuilder();
-                        newLine.append(line.substring(0, openIndex));
-                        String separator = "";
-                        for (String coord : coords)
-                        {
-                            newLine.append(separator);
-                            separator = ",";
-                            newLine.append((int) (Integer.parseInt(coord.trim()) * finalScale));
-                        }
-                        newLine.append(line.substring(closeIndex));
-                        line = newLine.toString();
-                    }
-                }
-                sb.append(line);
-                sb.append("\n");
-            }
+            maxMD = Math.max(curMO + curDO, curMI + curDI);
         }
 
-        // Write the file back to the disk
-        try (FileOutputStream mapOut = new FileOutputStream(mapFile))
-        {
-            OutputStreamWriter mapWriter = new OutputStreamWriter(mapOut);
-            mapWriter.write(sb.toString());
-            mapWriter.flush();
-        }
-    }
+        ctrlProps.maxSiblingNodes = maxSiblingsPerParent;
+        if (exp.getMaterialInputs().size() + exp.getDataInputs().size() > ctrlProps.maxNodesWidth)
+            ctrlProps.fGroupInputs = true;
 
-    private static class CacheClearer implements Runnable
-    {
-        private final Container _container;
-
-        public CacheClearer(Container container)
-        {
-            _container = container;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            CacheClearer that = (CacheClearer) o;
-            return Objects.equals(_container, that._container);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return Objects.hash(_container);
-        }
-
-        @Override
-        public void run()
-        {
-            clearCache(_container);
-        }
-    }
-
-    public static Runnable getCacheClearingCommitTask(Container c)
-    {
-        return new CacheClearer(c);
-    }
-
-    /**
-     * Clears out the cache of files for this container. Must be called after any operation that changes the way a graph
-     * would be generated. Typically, this includes deleting or inserting any run in the container, because that
-     * can change the connections between the runs, which is reflected in the graphs.
-     */
-    public static void clearCache(Container container)
-    {
-        Lock deleteLock = LOCK.writeLock();
-        deleteLock.lock();
-        try
-        {
-            FileUtil.deleteDir(getFolderDirectory(container));
-        }
-        catch (IOException e)
-        {
-            // Non-fatal
-            _log.error("Failed to clear cached experiment run graphs for container " + container, e);
-        }
-        finally
-        {
-            deleteLock.unlock();
-        }
+        return ctrlProps;
     }
 
     /**
@@ -421,7 +280,7 @@ public class ExperimentRunGraph
             {
                 continue;
             }
-            
+
             List<ExpMaterialImpl> inputMaterials = protApp.getInputMaterials();
             List<ExpDataImpl> inputDatas = protApp.getInputDatas();
             List<ExpMaterialImpl> outputMaterials = protApp.getOutputMaterials();
@@ -641,200 +500,6 @@ public class ExperimentRunGraph
             if (null==c)
                 return 0;
             return c.intValue();
-        }
-    }
-
-
-    private static GraphCtrlProps analyzeGraph(ExpRunImpl exp)
-    {
-        int maxSiblingsPerParent = MAX_SIBLINGS;
-        int maxMD = MIN_SIBLINGS;
-        int iMaxLevelStart = 0;
-        int iMaxLevelEnd = 0;
-        int curMI = 0;
-        int curDI = 0;
-        int curMO = 0;
-        int curDO = 0;
-        int prevS = 0;
-        int iLevelStart = 0;
-        int iLevelEnd = 0;
-        GraphCtrlProps ctrlProps = new GraphCtrlProps();
-
-        int i = 0;
-        List<ExpProtocolApplicationImpl> steps = exp.getProtocolApplications();
-        for (ExpProtocolApplicationImpl step : steps)
-        {
-            int curS = step.getActionSequence();
-
-            Integer countSeq = ctrlProps.mPANodesPerSequence.get(curS);
-            if (null == countSeq)
-                countSeq = Integer.valueOf(1);
-            else
-                countSeq++;
-            ctrlProps.mPANodesPerSequence.put(curS, countSeq);
-
-            if (curS != prevS)
-            {
-                if (curMI + curDI > maxMD)
-                {
-                    maxMD = curMI + curDI;
-                    iMaxLevelStart = iLevelStart;
-                    iMaxLevelEnd = iLevelEnd;
-                }
-                if (curMO + curDO > maxMD)
-                {
-                    maxMD = curMO + curDO;
-                    iMaxLevelStart = iLevelStart;
-                    iMaxLevelEnd = iLevelEnd;
-                }
-                prevS = curS;
-                curMI = 0;
-                curDI = 0;
-                curMO = 0;
-                curDO = 0;
-                iLevelStart = i;
-            }
-            iLevelEnd = i;
-            curMI += Math.min(step.getInputMaterials().size(), maxSiblingsPerParent);
-            curDI += Math.min(step.getInputDatas().size(), maxSiblingsPerParent);
-            curMO += Math.min(step.getOutputMaterials().size(), maxSiblingsPerParent);
-            curDO += Math.min(step.getOutputDatas().size(), maxSiblingsPerParent);
-            i++;
-        }
-
-        if (maxMD > MAX_WIDTH_BIG_FONT)
-        {
-            ctrlProps.fUseSmallFonts = true;
-            ctrlProps.maxNodesWidth = MAX_WIDTH_SMALL_FONT;
-        }
-        else
-        {
-            ctrlProps.fUseSmallFonts  = false;
-            ctrlProps.maxNodesWidth = MAX_WIDTH_BIG_FONT;
-        }
-
-        // try to adjust the number of siblings to fit the levels within the max width
-        while ((maxMD > ctrlProps.maxNodesWidth) && (maxSiblingsPerParent > MIN_SIBLINGS))
-        {
-            curMI = 0;
-            curDI = 0;
-            curMO = 0;
-            curDO = 0;
-            maxSiblingsPerParent--;
-            for (i = iMaxLevelStart; i <= (Math.min(iMaxLevelEnd, iMaxLevelStart + maxSiblingsPerParent - 1)); i++)
-            {
-                ExpProtocolApplication step = steps.get(i);
-                curMI += Math.min(step.getInputMaterials().size(), maxSiblingsPerParent);
-                curDI += Math.min(step.getInputDatas().size(), maxSiblingsPerParent);
-                curMO += Math.min(step.getOutputMaterials().size(), maxSiblingsPerParent);
-                curDO += Math.min(step.getOutputDatas().size(), maxSiblingsPerParent);
-            }
-            maxMD = Math.max(curMO + curDO, curMI + curDI);
-        }
-
-        ctrlProps.maxSiblingNodes = maxSiblingsPerParent;
-        if (exp.getMaterialInputs().size() + exp.getDataInputs().size() > ctrlProps.maxNodesWidth)
-            ctrlProps.fGroupInputs = true;
-
-        return ctrlProps;
-    }
-
-    private static void testDotPath() throws ExperimentException
-    {
-        File dir;
-
-        try
-        {
-            dir = getBaseDirectory();
-        }
-        catch (IOException e)
-        {
-            throw new ExperimentException(DotRunner.getConfigurationError(e));
-        }
-
-        DotRunner.testDotPath(dir);
-    }
-
-
-    private static String getBaseFileName(ExpRun run, boolean detail, String focus) throws IOException
-    {
-        String fileName;
-        if (null != focus)
-            fileName = getFolderDirectory(run.getContainer()) + File.separator + "run" + run.getRowId() + "Focus" + focus;
-        else
-            fileName = getFolderDirectory(run.getContainer()) + File.separator + "run" + run.getRowId() + (detail ? "Detail" : "");
-        return fileName;
-    }
-
-    private static final Cleaner CLEANER = Cleaner.create();
-
-    private static class FileLockState implements Runnable
-    {
-        private final Throwable _allocation;
-        private Lock _lock;
-
-        private FileLockState(Throwable allocation, Lock lock)
-        {
-            _allocation = allocation;
-            _lock = lock;
-        }
-
-        @Override
-        public void run()
-        {
-            if (_lock != null)
-            {
-                _log.error("Lock was not released. Creation was at:", _allocation);
-                _lock.unlock();
-                _lock = null;
-            }
-        }
-
-        private void release()
-        {
-            if (_lock != null)
-            {
-                _lock.unlock();
-                _lock = null;
-            }
-        }
-    }
-
-    /**
-     * Results for run graph generation. Must be released once the files have been consumed by the caller.
-     */
-    public static class RunGraphFiles
-    {
-        private final File _mapFile;
-        private final File _imageFile;
-        private final FileLockState _state;
-        private final Cleaner.Cleanable _cleanable;
-
-        public RunGraphFiles(File mapFile, File imageFile, Lock lock)
-        {
-            _mapFile = mapFile;
-            _imageFile = imageFile;
-            _state = new FileLockState(new Throwable(), lock);
-            _cleanable = CLEANER.register(this, _state);
-        }
-
-        public File getMapFile()
-        {
-            return _mapFile;
-        }
-
-        public File getImageFile()
-        {
-            return _imageFile;
-        }
-
-        /**
-         * Release the lock on the files.
-         */
-        public void release()
-        {
-            _state.release();
-            _cleanable.clean();
         }
     }
 }

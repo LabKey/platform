@@ -1479,12 +1479,9 @@ public class StorageProvisionerImpl implements StorageProvisioner
             if (!domainReport.getErrors().isEmpty())
             {
                 ExperimentUrls urls = PageFlowUtil.urlProvider(ExperimentUrls.class);
-                if (null != urls)
-                {
-                    ActionURL fix = urls.getRepairTypeURL(domain.getContainer());
-                    fix.addParameter("domainUri", domain.getTypeURI());
-                    domainReport.addError("See this page for more info: " + fix.getURIString());
-                }
+                ActionURL fix = urls.getRepairTypeURL(domain.getContainer());
+                fix.addParameter("domainUri", domain.getTypeURI());
+                domainReport.addError("See this page for more info: " + fix.getURIString());
             }
         }
 

@@ -18,7 +18,9 @@ package org.labkey.api.action;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.Module;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +29,7 @@ import java.util.Map;
 public class UrlProviderService
 {
     private static final UrlProviderService instance = new UrlProviderService();
-    private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<>();
+    private static final Map<Class<?>, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<>();
     private static final Map<Class<? extends UrlProvider>, List<Pair<Module, UrlProvider>>> _urlProviderToOverrideImpls = new HashMap<>();
 
     public static UrlProviderService getInstance()
@@ -35,15 +37,9 @@ public class UrlProviderService
         return instance;
     }
 
-    public <P extends UrlProvider> void registerUrlProvider(Class<P> inter, Class innerClass)
+    public <P extends UrlProvider> void registerUrlProvider(Class<P> inter, Class<? extends UrlProvider> innerClass)
     {
         _urlProviderToImpl.put(inter, innerClass);
-    }
-
-    /** @return true if the UrlProvider exists. */
-    public <P extends UrlProvider> boolean hasUrlProvider(Class<P> inter)
-    {
-        return _urlProviderToImpl.get(inter) != null;
     }
 
     @Nullable
@@ -56,16 +52,11 @@ public class UrlProviderService
 
         try
         {
-            P impl = (P) clazz.newInstance();
-            return impl;
+            return (P) clazz.getDeclaredConstructor().newInstance();
         }
-        catch (InstantiationException e)
+        catch (InstantiationException | InvocationTargetException | IllegalAccessException | NoSuchMethodException e)
         {
-            throw new RuntimeException("Failed to instantiate provider class " + clazz.getName() + " for " + inter.getName(), e);
-        }
-        catch (IllegalAccessException e)
-        {
-            throw new RuntimeException("Illegal access of provider class " + clazz.getName() + " for " + inter.getName(), e);
+            throw UnexpectedException.wrap(e, "Failed to instantiate provider class " + clazz.getName() + " for " + inter.getName());
         }
     }
 

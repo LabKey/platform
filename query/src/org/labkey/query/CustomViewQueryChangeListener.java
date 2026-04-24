@@ -93,7 +93,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
 
             String columnName = newDp.getName() == null ? oldDp.getName() : newDp.getName();
 
-            List<CustomView> databaseCustomViews = QueryService.get().getDatabaseCustomViews(user, container, null, schema.toString(), queryName, false, false);
+            List<CustomView> databaseCustomViews = QueryService.get().getDatabaseCustomViews(user, container, schema.toString(), queryName);
 
             for (CustomView customView : databaseCustomViews)
             {
@@ -230,7 +230,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
             queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
         }
 
-        List<CustomView> databaseCustomViews = QueryService.get().getDatabaseCustomViews(user, container, null, schemaKey.toString(), null, false, false);
+        List<CustomView> databaseCustomViews = QueryService.get().getDatabaseCustomViews(user, container, schemaKey.toString(), null);
 
         for (CustomView customView : databaseCustomViews)
         {
@@ -279,7 +279,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
         {
             String newSchema = schemaNameChangeMap.get(oldSchema);
 
-            List<CustomView> databaseCustomViews = QueryService.get().getDatabaseCustomViews(user, container, null, oldSchema, null, false, false);
+            List<CustomView> databaseCustomViews = QueryService.get().getDatabaseCustomViews(user, container, oldSchema, null);
 
             for (CustomView customView : databaseCustomViews)
             {

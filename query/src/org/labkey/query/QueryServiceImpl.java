@@ -33,7 +33,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AuditHandler;
@@ -1296,6 +1295,7 @@ public class QueryServiceImpl implements QueryService
         return new ArrayList<>(views);
     }
 
+    @Deprecated
     @Override
     public List<CustomView> getDatabaseCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean sharedOnly)
     {
@@ -1335,6 +1335,73 @@ public class QueryServiceImpl implements QueryService
         Collection<CustomView> allViews = getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly).values();
         return allViews.stream().filter(view -> !(view instanceof ModuleCustomView)).collect(Collectors.toList());
     }
+
+    @Override
+    public List<CustomView> getDatabaseCustomViews(@NotNull User user, @NotNull Container container, @Nullable String schemaName, @Nullable String queryName)
+    {
+        // GitHub Issue 1058: Sample Finder saved views in subfolder break after MVTC to TC conversion
+        Collection<GUID> containerIds = container.getProductFoldersDataContainerFilter(user).getIds();
+
+        SimpleFilter filter = new SimpleFilter();
+        if (containerIds != null)
+            filter.addInClause(FieldKey.fromParts("Container"), containerIds);
+        else
+            filter = SimpleFilter.createContainerFilter(container, "Container");
+
+        if (schemaName != null)
+            filter.addCondition(FieldKey.fromParts("Schema"), schemaName);
+        if (queryName != null)
+            filter.addCondition(FieldKey.fromParts("QueryName"), queryName);
+
+        List<CstmView> cstmViews = new TableSelector(QueryManager.get().getTableInfoCustomView(), filter, null).getArrayList(CstmView.class);
+
+        List<CustomView> result = new ArrayList<>();
+
+        Map<Container, List<CstmView>> containerViews = new HashMap<>();
+        for (CstmView cstmView : cstmViews)
+        {
+            Container viewContainer = cstmView.lookupContainer();
+            if (viewContainer != null)
+                containerViews.computeIfAbsent(viewContainer, k -> new ArrayList<>()).add(cstmView);
+        }
+
+        for (Map.Entry<Container, List<CstmView>> containerCstmViews: containerViews.entrySet())
+        {
+            Map<String, UserSchema> schemas = new HashMap<>();
+            Map<Pair<String, String>, QueryDefinition> queryDefs = new HashMap<>();
+            Container viewContainer = containerCstmViews.getKey();
+            List<CstmView> views = containerCstmViews.getValue();
+            DefaultSchema defaultSchema = DefaultSchema.get(user, viewContainer);
+
+            for (CstmView cstmView : views)
+            {
+                Pair<String, String> key = new Pair<>(cstmView.getSchema(), cstmView.getQueryName());
+                QueryDefinition queryDef = queryDefs.get(key);
+                if (queryDef == null)
+                {
+                    UserSchema schema = schemas.get(cstmView.getSchema());
+                    if (schema == null)
+                    {
+                        schema = defaultSchema.getUserSchema(cstmView.getSchema());
+                        schemas.put(cstmView.getSchema(), schema);
+                    }
+                    if (schema != null)
+                    {
+                        queryDef = schema.getQueryDefForTable(cstmView.getQueryName());
+                        queryDefs.put(key, queryDef);
+                    }
+                }
+
+                if (queryDef != null)
+                {
+                    result.add(new CustomViewImpl(queryDef, cstmView));
+                }
+            }
+        }
+
+        return result;
+    }
+
 
     @Override
     public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query, Module... extraModules)
@@ -3552,6 +3619,40 @@ public class QueryServiceImpl implements QueryService
 
     @Override
     @Nullable
+    public ContainerFilter getContainerFilterForFolder(Container container, User user)
+    {
+        // Check to see if product folders support is enabled.
+        if (container == null || !container.isProductFoldersEnabled())
+            return null;
+
+        if (isProductFoldersDataListingScopedToProject())
+        {
+            // When requesting data from a top-level folder context the ContainerFilter filters
+            // "down" the folder hierarchy for data.
+            if (container.isProject())
+            {
+                if (isProductFoldersAllFolderScopeEnabled())
+                    return ContainerFilter.Type.AllInProjectPlusShared.create(container, user);
+                return ContainerFilter.Type.CurrentAndSubfoldersPlusShared.create(container, user);
+            }
+
+            // When listing data in a folder scope return data scoped to the current
+            // folder when the experimental feature is enabled.
+            return ContainerFilter.Type.Current.create(container, user);
+        }
+
+        // When requesting data from a top-level folder context the ContainerFilter filters
+        // "down" the folder hierarchy for data.
+        if (container.isProject())
+            return ContainerFilter.Type.CurrentAndSubfoldersPlusShared.create(container, user);
+
+        // When requesting data from a sub-folder context the ContainerFilter filters
+        // "up" the folder hierarchy for data.
+        return ContainerFilter.Type.CurrentPlusProjectAndShared.create(container, user);
+    }
+
+    @Override
+    @Nullable
     public ContainerFilter.Type getContainerFilterTypeForLookups(Container container)
     {
         if (container != null && container.isProductFoldersEnabled())
@@ -3575,6 +3676,12 @@ public class QueryServiceImpl implements QueryService
     public boolean isProductFoldersDataListingScopedToProject()
     {
         return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
+    }
+
+    @Override
+    public boolean isTriggerManagedColumnsEnabled()
+    {
+        return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS);
     }
 
     public static class TestCase extends Assert
