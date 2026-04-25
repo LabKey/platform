@@ -13,6 +13,21 @@ interface Props {
     onCancel: () => void;
 }
 
+/**
+ * Persistent action bar pinned to the top of the designer.
+ *
+ * Button behavior:
+ *  - "Save & Close": saves if dirty, then navigates to the returnURL (or plate list).
+ *    Always enabled so users can leave even when clean.
+ *  - "Save": persists the current state and updates the page URL to the canonical
+ *    ?templateName=...&plateId=... form so a browser refresh reloads the same plate.
+ *    Disabled when the plate is clean to prevent redundant requests.
+ *  - "Cancel": navigates away without saving. The browser's beforeunload handler
+ *    will prompt if there are unsaved changes.
+ *
+ * The "Unsaved changes" indicator and transient status text ("Saving…", "Saved.")
+ * use `role="status"` so screen readers announce them as they appear.
+ */
 export function StatusBar({ isDirty, status, onSaveAndClose, onSave, onCancel }: Props): JSX.Element {
     return (
         <div className="status-bar">
@@ -25,8 +40,8 @@ export function StatusBar({ isDirty, status, onSaveAndClose, onSave, onCancel }:
             <button className="status-bar__btn" onClick={onCancel}>
                 Cancel
             </button>
-            {isDirty && <span className="status-bar__dirty">Unsaved changes</span>}
-            {status && <span className="status-bar__status">{status}</span>}
+            <span role="status" className="status-bar__dirty">{isDirty ? 'Unsaved changes' : ''}</span>
+            <span role="status" className="status-bar__status">{status}</span>
         </div>
     );
 }

@@ -4,6 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import classNames from 'classnames';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
 
 import { PlateTemplate, WellGroup, computeWarnings } from './models';
@@ -15,6 +16,47 @@ import { WellGroupProperties } from './components/WellGroupProperties';
 import { WarningPanel } from './components/WarningPanel';
 
 import './PlateTemplateDesigner.scss';
+
+/**
+ * Root component of the Plate Template Designer.
+ *
+ * ─── User workflow ──────────────────────────────────────────────────────────────
+ * 1. On mount, URL parameters are read (templateName, plateId, assayType, rowCount,
+ *    colCount, copy) and the plate definition is fetched from the server.
+ * 2. The user selects a group type tab (e.g. CONTROL, SPECIMEN, REPLICATE).
+ * 3. Within that type, the user selects or creates a named group.
+ * 4. The user clicks or drags wells on the grid to paint them onto the active group.
+ * 5. The user optionally edits well group properties in the right panel.
+ * 6. "Save" persists without leaving; "Save & Close" saves then navigates to returnURL
+ *    (or the plate list). "Cancel" navigates away without saving.
+ *
+ * ─── State architecture ─────────────────────────────────────────────────────────
+ * `plate` is the single source of truth for all template data. All mutations go
+ * through `setPlate` with functional updaters to avoid stale-closure bugs.
+ *
+ * `activeGroup` is a denormalized mirror of the currently selected group, kept in
+ * sync with `plate` via the sync effect below. It exists separately because:
+ *   - Callbacks that use `setPlate(prev => ...)` don't have access to the current
+ *     group data inside the updater; they use `activeGroup` from their closure.
+ *   - Components that show the active group (WellGroupProperties, TemplateGrid
+ *     cell highlighting) need a stable reference that doesn't require traversing
+ *     `plate.groups` on every access.
+ *
+ * ─── ID conventions ─────────────────────────────────────────────────────────────
+ * Server-assigned group IDs are positive integers. Client-side created groups
+ * receive temporary negative IDs (nextGroupIdRef counts down from -1). This ensures
+ * new groups never collide with existing ones before the first save. The server
+ * replaces all IDs with permanent values on save; the client does not update
+ * individual group IDs — only the top-level `plate.rowId` is updated after save.
+ *
+ * ─── Cell interaction ───────────────────────────────────────────────────────────
+ * Two cell callbacks are distinguished:
+ *   `handleCellAssign` — idempotent add; also evicts the cell from any other group
+ *     of the same type (one cell can only belong to one group per type). Used during
+ *     drag operations.
+ *   `handleCellToggle` — pure on/off; does not steal from siblings. Used for
+ *     single-click (no drag movement).
+ */
 
 const COLORS = [
     '#4e79a7', '#f28e2b', '#e15759', '#76b7b2', '#59a14f',
@@ -40,9 +82,9 @@ export function PlateTemplateDesigner(): JSX.Element {
     const [status, setStatus] = useState('');
     const [colorMap, setColorMap] = useState<Map<number, string>>(new Map());
     const [error, setError] = useState<string | null>(null);
-    const plateNameRef = useRef<string>('');
+    const plateNameRef = useRef<string>('');  // Mirrors plate.name; used in save-success to update URL without stale closure
     const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const nextGroupIdRef = useRef(-1);
+    const nextGroupIdRef = useRef(-1);  // Temporary negative IDs for client-created groups (see ID conventions above)
 
     useEffect(() => {
         const templateName = ActionURL.getParameter('templateName');
@@ -233,32 +275,42 @@ export function PlateTemplateDesigner(): JSX.Element {
         window.location.href = (returnURL && isSameOrigin(returnURL)) ? returnURL : ActionURL.buildURL('plate', 'plateList');
     }, []);
 
-    const handleSave = useCallback(() => {
-        if (!plate) return;
+    /**
+     * Shared Ajax save logic. Takes the plate snapshot and a success callback to avoid
+     * duplicating the request setup and failure handler in handleSave / handleSaveAndClose.
+     * The plate is passed as a parameter (rather than closed over) so callers can pass the
+     * latest snapshot without worrying about stale state.
+     */
+    const requestSave = useCallback((currentPlate: PlateTemplate, onSuccess: (response: { data: { rowId: number } }) => void) => {
         setStatus('Saving...');
         Ajax.request({
             url: ActionURL.buildURL('plate', 'saveTemplate.api'),
             method: 'POST',
-            jsonData: plate,
-            success: Utils.getCallbackWrapper((response: { data: { rowId: number } }) => {
-                const rowId = response.data.rowId;
-                setIsDirty(false);
-                setPlate(prev => prev ? { ...prev, rowId } : null);
-                // Update URL to canonical form so a refresh reloads this plate
-                const url = new URL(window.location.href);
-                url.search = '';
-                url.searchParams.set('templateName', plate.name);
-                url.searchParams.set('plateId', String(rowId));
-                window.history.replaceState(null, '', url.toString());
-                setStatus('Saved.');
-                if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
-                statusTimerRef.current = setTimeout(() => setStatus(''), 5000);
-            }),
+            jsonData: currentPlate,
+            success: Utils.getCallbackWrapper(onSuccess),
             failure: Utils.getCallbackWrapper((response: any) => {
                 setStatus('Save failed: ' + (response?.exception ?? 'unknown error'));
             }, null, true),
         });
-    }, [plate]);
+    }, []);
+
+    const handleSave = useCallback(() => {
+        if (!plate) return;
+        requestSave(plate, (response) => {
+            const rowId = response.data.rowId;
+            setIsDirty(false);
+            setPlate(prev => prev ? { ...prev, rowId } : null);
+            // Update URL to canonical form so a refresh reloads this plate
+            const url = new URL(window.location.href);
+            url.search = '';
+            url.searchParams.set('templateName', plateNameRef.current);
+            url.searchParams.set('plateId', String(rowId));
+            window.history.replaceState(null, '', url.toString());
+            setStatus('Saved.');
+            if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+            statusTimerRef.current = setTimeout(() => setStatus(''), 5000);
+        });
+    }, [plate, requestSave]);
 
     const handleSaveAndClose = useCallback(() => {
         if (!plate) return;
@@ -266,20 +318,11 @@ export function PlateTemplateDesigner(): JSX.Element {
             navigateAway();
             return;
         }
-        setStatus('Saving...');
-        Ajax.request({
-            url: ActionURL.buildURL('plate', 'saveTemplate.api'),
-            method: 'POST',
-            jsonData: plate,
-            success: Utils.getCallbackWrapper(() => {
-                setIsDirty(false);
-                navigateAway();
-            }),
-            failure: Utils.getCallbackWrapper((response: any) => {
-                setStatus('Save failed: ' + (response?.exception ?? 'unknown error'));
-            }, null, true),
+        requestSave(plate, () => {
+            setIsDirty(false);
+            navigateAway();
         });
-    }, [plate, isDirty, navigateAway]);
+    }, [plate, isDirty, navigateAway, requestSave]);
 
     const handleCancel = useCallback(() => {
         navigateAway();
@@ -297,7 +340,17 @@ export function PlateTemplateDesigner(): JSX.Element {
         return () => window.removeEventListener('beforeunload', handler);
     }, [isDirty]);
 
-    // Keep activeGroup in sync when plate changes
+    // Keep activeGroup in sync when plate changes.
+    //
+    // Most plate mutations go through setPlate(prev => ...) updaters which don't have
+    // access to the current activeGroup. After each plate update, this effect finds the
+    // matching group by rowId and refreshes activeGroup so downstream components (e.g.
+    // WellGroupProperties, TemplateGrid cell highlight) see the latest data.
+    //
+    // activeGroup is intentionally excluded from the deps array: adding it would cause
+    // an infinite loop (effect sets activeGroup → triggers effect → sets activeGroup …).
+    // handleDeleteGroup handles the "group no longer exists" case by explicitly setting
+    // activeGroup to null before this effect can run.
     useEffect(() => {
         if (activeGroup && plate) {
             const updated = plate.groups.find(g => g.rowId === activeGroup.rowId);
@@ -346,6 +399,8 @@ export function PlateTemplateDesigner(): JSX.Element {
                         onDeleteGroup={handleDeleteGroup}
                         onRenameGroup={handleRenameGroup}
                     >
+                        {/* The grid and shift panel are passed as children so they render
+                            inside GroupTypesPanel's flex row, visually adjacent to the group list. */}
                         <div className="plate-grid-area">
                             <TemplateGrid
                                 plate={plate}
@@ -359,17 +414,31 @@ export function PlateTemplateDesigner(): JSX.Element {
                         </div>
                     </GroupTypesPanel>
                 </div>
+                {/* Right panel: WellGroupProperties and (if enabled) a Warnings tab.
+                    The tab strip only renders when showWarningPanel is true; otherwise
+                    WellGroupProperties fills the full right column without tabs. */}
                 <div className="plate-template-designer__right">
                     {plate.showWarningPanel && (
-                        <div className="right-panel-tabs">
+                        <div className="right-panel-tabs" role="tablist">
                             <button
-                                className={'right-panel-tabs__tab' + (rightTab === 'properties' ? ' right-panel-tabs__tab--active' : '')}
+                                id="right-tab-properties"
+                                role="tab"
+                                aria-selected={rightTab === 'properties'}
+                                className={classNames('right-panel-tabs__tab', {
+                                    'right-panel-tabs__tab--active': rightTab === 'properties',
+                                })}
                                 onClick={() => setRightTab('properties')}
                             >
                                 Well Group Properties
                             </button>
                             <button
-                                className={'right-panel-tabs__tab' + (rightTab === 'warnings' ? ' right-panel-tabs__tab--active' : '') + (warningCount > 0 ? ' right-panel-tabs__tab--warn' : '')}
+                                id="right-tab-warnings"
+                                role="tab"
+                                aria-selected={rightTab === 'warnings'}
+                                className={classNames('right-panel-tabs__tab', {
+                                    'right-panel-tabs__tab--active': rightTab === 'warnings',
+                                    'right-panel-tabs__tab--warn': warningCount > 0,
+                                })}
                                 onClick={() => setRightTab('warnings')}
                             >
                                 {warningCount > 0 ? `Warnings (${warningCount})` : 'Warnings'}
@@ -377,14 +446,21 @@ export function PlateTemplateDesigner(): JSX.Element {
                         </div>
                     )}
                     {(!plate.showWarningPanel || rightTab === 'properties') && (
-                        <WellGroupProperties
-                            activeGroup={activeGroup}
-                            onPropertyChange={handlePropertyChange}
-                            onDeleteProperty={handleDeleteProperty}
-                        />
+                        <div
+                            role={plate.showWarningPanel ? 'tabpanel' : undefined}
+                            aria-labelledby={plate.showWarningPanel ? 'right-tab-properties' : undefined}
+                        >
+                            <WellGroupProperties
+                                activeGroup={activeGroup}
+                                onPropertyChange={handlePropertyChange}
+                                onDeleteProperty={handleDeleteProperty}
+                            />
+                        </div>
                     )}
                     {plate.showWarningPanel && rightTab === 'warnings' && (
-                        <WarningPanel plate={plate} />
+                        <div role="tabpanel" aria-labelledby="right-tab-warnings">
+                            <WarningPanel plate={plate} />
+                        </div>
                     )}
                 </div>
             </div>

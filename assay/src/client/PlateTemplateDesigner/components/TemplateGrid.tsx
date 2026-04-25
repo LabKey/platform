@@ -3,7 +3,8 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
+import classNames from 'classnames';
 
 import { PlateTemplate, WellGroup } from '../models';
 
@@ -20,23 +21,60 @@ function getRowLabel(row: number): string {
     return String.fromCharCode(65 + row);
 }
 
-function getCellColor(row: number, col: number, activeTab: string, plate: PlateTemplate, colorMap: Map<number, string>): string | undefined {
-    // Only color cells belonging to groups of the currently active tab type,
-    // matching the GWT behavior of showing one type's layout at a time.
-    let color: string | undefined;
-    for (const group of plate.groups) {
-        if (group.type === activeTab && group.positions.some(p => p.row === row && p.col === col)) {
-            color = colorMap.get(group.rowId);
-        }
-    }
-    return color;
-}
-
+/**
+ * A scrollable well grid that lets the user paint cells onto the active well group.
+ *
+ * ─── Coloring ──────────────────────────────────────────────────────────────────
+ * Only wells belonging to groups of the *active tab type* are coloured. Wells from
+ * other types are invisible in the current view. This matches the original GWT
+ * behaviour of presenting one group type at a time.
+ *
+ * ─── Drag / click interaction ──────────────────────────────────────────────────
+ * Cell assignment uses a three-phase state machine tracked entirely via refs
+ * (no re-renders on drag):
+ *
+ *   Phase 1 – mousedown on a cell:
+ *     Enter drag mode. Record the start cell. Do NOT assign it yet — we first need
+ *     to know whether the user is clicking (toggle) or dragging (assign-only).
+ *
+ *   Phase 2 – mouseenter a *different* cell while dragging:
+ *     We now know it's a drag. Retroactively assign the original start cell
+ *     (deferred assign), then assign each subsequently entered cell.
+ *     `dragCells` deduplicates entries so fast mouse movement can't assign the
+ *     same cell twice.
+ *
+ *   Phase 3 – mouseup:
+ *     If the pointer never left the start cell (hasMoved === false), treat the
+ *     interaction as a click and toggle that cell (add if absent, remove if present).
+ *     Either way, reset all drag state.
+ *
+ * Drag state is also cleaned up on mouseleave of the outer div, preventing stuck
+ * drag state when the pointer exits the grid.
+ *
+ * `onCellAssign` is idempotent (ignores duplicates) and also removes the assigned
+ * cell from any other group of the same type, enforcing the one-group-per-cell-per-
+ * type constraint. `onCellToggle` does a pure add/remove with no stealing.
+ */
 export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onCellAssign, onCellToggle }: Props): JSX.Element {
     const isDragging = useRef(false);
     const hasMoved = useRef(false);
     const startCell = useRef<{ row: number; col: number } | null>(null);
     const dragCells = useRef<Set<string>>(new Set());
+
+    // Pre-compute a "row,col" → {color, groupName} map for the active tab type.
+    // This lets each cell do an O(1) lookup rather than scanning all groups and
+    // positions on every render (which would be O(groups × positions) per cell).
+    const positionMap = useMemo(() => {
+        const map = new Map<string, { color: string; groupName: string }>();
+        for (const group of plate.groups) {
+            if (group.type !== activeTab) continue;
+            const color = colorMap.get(group.rowId) ?? '#f5f5f5';
+            for (const p of group.positions) {
+                map.set(`${p.row},${p.col}`, { color, groupName: group.name });
+            }
+        }
+        return map;
+    }, [plate, activeTab, colorMap]);
 
     const handleMouseDown = useCallback((row: number, col: number, e: React.MouseEvent) => {
         if (e.button !== 0) return;
@@ -51,7 +89,8 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onCellAs
         if (!isDragging.current) return;
         if (!hasMoved.current) {
             hasMoved.current = true;
-            // Deferred: assign the mousedown cell now that we know it's a drag
+            // Deferred assign: now that we know this is a drag, assign the cell
+            // the user originally pressed down on.
             if (startCell.current) {
                 onCellAssign(startCell.current.row, startCell.current.col);
             }
@@ -85,30 +124,26 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onCellAs
                     <tr>
                         <th className="template-grid__corner" />
                         {Array.from({ length: plate.cols }, (_, col) => (
-                            <th key={col} className="template-grid__col-header">{col + 1}</th>
+                            <th key={col} scope="col" className="template-grid__col-header">{col + 1}</th>
                         ))}
                     </tr>
                 </thead>
                 <tbody>
                     {Array.from({ length: plate.rows }, (_, row) => (
                         <tr key={row}>
-                            <td className="template-grid__row-header">{getRowLabel(row)}</td>
+                            <th scope="row" className="template-grid__row-header">{getRowLabel(row)}</th>
                             {Array.from({ length: plate.cols }, (_, col) => {
-                                const color = getCellColor(row, col, activeTab, plate, colorMap);
+                                const entry = positionMap.get(`${row},${col}`);
                                 const isActiveGroupCell = activeGroup?.positions.some(p => p.row === row && p.col === col);
                                 const location = `${getRowLabel(row)}${col + 1}`;
-                                const groupForCell = plate.groups.find(
-                                    g => g.type === activeTab && g.positions.some(p => p.row === row && p.col === col)
-                                );
-                                const tooltip = groupForCell ? `${location}: ${groupForCell.name}` : location;
+                                const tooltip = entry ? `${location}: ${entry.groupName}` : location;
                                 return (
                                     <td
                                         key={col}
-                                        className={
-                                            'template-grid__cell' +
-                                            (isActiveGroupCell ? ' template-grid__cell--active' : '')
-                                        }
-                                        style={{ backgroundColor: color ?? '#f5f5f5' }}
+                                        className={classNames('template-grid__cell', {
+                                            'template-grid__cell--active': isActiveGroupCell,
+                                        })}
+                                        style={{ backgroundColor: entry?.color ?? '#f5f5f5' }}
                                         title={tooltip}
                                         onMouseDown={e => handleMouseDown(row, col, e)}
                                         onMouseEnter={() => handleMouseEnter(row, col)}

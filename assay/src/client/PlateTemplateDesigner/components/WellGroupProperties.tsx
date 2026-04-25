@@ -13,6 +13,20 @@ interface Props {
     onDeleteProperty: (groupRowId: number, key: string) => void;
 }
 
+/**
+ * Shows and edits the key/value property bag for the currently selected well group.
+ *
+ * Properties are assay-type-specific metadata attached to a group (e.g. concentration,
+ * dilution factor, sample ID). They are stored as plain strings and round-tripped through
+ * the server without interpretation by the designer.
+ *
+ * Interaction pattern:
+ *  - Existing properties: each row has an inline text input for the value; changes propagate
+ *    immediately to the parent (no separate submit step) via onPropertyChange.
+ *  - Deleting: the trash button removes a property key entirely.
+ *  - Adding: the footer row accepts a new key + value; "Add" (or Enter) commits the pair.
+ *    The new-key input is the gate — the Add button stays disabled until a key is typed.
+ */
 export function WellGroupProperties({ activeGroup, onPropertyChange, onDeleteProperty }: Props): JSX.Element {
     const [newKey, setNewKey] = useState('');
     const [newValue, setNewValue] = useState('');
@@ -52,6 +66,7 @@ export function WellGroupProperties({ activeGroup, onPropertyChange, onDeletePro
                                 <input
                                     className="well-group-properties__value"
                                     type="text"
+                                    aria-label={key}
                                     value={value ?? ''}
                                     onChange={e => onPropertyChange(activeGroup.rowId, key, e.target.value)}
                                 />
@@ -60,9 +75,10 @@ export function WellGroupProperties({ activeGroup, onPropertyChange, onDeletePro
                                 <button
                                     className="well-group-properties__delete-btn"
                                     title="Delete property"
+                                    aria-label={`Delete property ${key}`}
                                     onClick={() => onDeleteProperty(activeGroup.rowId, key)}
                                 >
-                                    <span className="fa fa-trash-o" />
+                                    <span className="fa fa-trash-o" aria-hidden="true" />
                                 </button>
                             </td>
                         </tr>
@@ -75,6 +91,7 @@ export function WellGroupProperties({ activeGroup, onPropertyChange, onDeletePro
                                 className="well-group-properties__new-key"
                                 type="text"
                                 placeholder="Property name"
+                                aria-label="Property name"
                                 value={newKey}
                                 onChange={e => setNewKey(e.target.value)}
                                 onKeyDown={e => { if (e.key === 'Enter' && newKey.trim()) handleAdd(); }}
@@ -85,6 +102,7 @@ export function WellGroupProperties({ activeGroup, onPropertyChange, onDeletePro
                                 className="well-group-properties__new-value"
                                 type="text"
                                 placeholder="Value"
+                                aria-label="Property value"
                                 value={newValue}
                                 onChange={e => setNewValue(e.target.value)}
                                 onKeyDown={e => { if (e.key === 'Enter' && newKey.trim()) handleAdd(); }}
