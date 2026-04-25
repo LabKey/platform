@@ -211,7 +211,6 @@ public class PropertyColumn extends LookupColumn
     @Override
     public SQLFragment getValueSql(String tableAlias)
     {
-        String cast = getPropertySqlCastType();
         SQLFragment sql = new SQLFragment("(SELECT ");
         if (isMvIndicatorColumn())
         {
@@ -232,6 +231,8 @@ public class PropertyColumn extends LookupColumn
         else
             sql.append(getTableAlias(tableAlias)).append(".ObjectId");
         sql.append(")");
+
+        String cast = getPropertySqlCastType();
         if (null != cast)
         {
             sql.insert(0, "CAST(");
@@ -262,23 +263,21 @@ public class PropertyColumn extends LookupColumn
                 };
     }
 
-    private String getPropertySqlCastType()
+    private @Nullable String getPropertySqlCastType()
     {
         if (isMvIndicatorColumn())
             return null;
-        PropertyType pt = _pd.getPropertyType();
-        if (PropertyType.DOUBLE == pt || PropertyType.DATE_TIME == pt)
-            return null;
-        else if (PropertyType.TIME == pt)
-            return "TIME";
-        else if (PropertyType.DATE == pt)
-            return "DATE";
-        else if (PropertyType.INTEGER == pt)
-            return "INT";
-        else if (PropertyType.BOOLEAN == pt)
-            return getParentTable().getSqlDialect().getBooleanDataType();
-        else
-            return getParentTable().getSqlDialect().getSqlTypeName(JdbcType.VARCHAR) + "(" + PropertyStorageSpec.DEFAULT_SIZE + ")";
+
+        return switch (_pd.getPropertyType())
+        {
+            case DOUBLE, DATE_TIME, DECIMAL, FLOAT -> null;
+            case TIME -> "TIME";
+            case DATE -> "DATE";
+            case INTEGER -> "INT";
+            case BOOLEAN -> getParentTable().getSqlDialect().getBooleanDataType();
+            case null, default -> getParentTable().getSqlDialect().getSqlTypeName(JdbcType.VARCHAR) +
+                    "(" + PropertyStorageSpec.DEFAULT_SIZE + ")";
+        };
     }
 
     public PropertyDescriptor getPropertyDescriptor()
