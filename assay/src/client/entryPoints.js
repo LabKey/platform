@@ -9,5 +9,13 @@ module.exports = {
         title: 'New Assay Design',
         permissionClasses: ['org.labkey.api.assay.security.DesignAssayPermission'],
         path: './src/client/AssayTypeSelect'
+    }, {
+        name: 'plateTemplateDesigner',
+        title: 'Plate Template Designer',
+        permissionClasses: [
+            'org.labkey.api.security.permissions.InsertPermission',
+            'org.labkey.api.assay.security.DesignAssayPermission'
+        ],
+        path: './src/client/PlateTemplateDesigner'
     }]
 };

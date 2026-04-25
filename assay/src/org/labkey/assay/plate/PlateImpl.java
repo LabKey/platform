@@ -237,7 +237,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     }
 
     @JsonIgnore
-    protected WellGroupImpl storeWellGroup(WellGroupImpl group)
+    public WellGroupImpl storeWellGroup(WellGroupImpl group)
     {
         group.setPlate(this);
 

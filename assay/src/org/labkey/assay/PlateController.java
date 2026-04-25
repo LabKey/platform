@@ -15,11 +15,15 @@
  */
 package org.labkey.assay;
 
+import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonForm;
+import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
@@ -32,9 +36,12 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
+import org.labkey.api.assay.plate.PlateLayoutHandler;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateType;
+import org.labkey.api.assay.plate.Position;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.Container;
@@ -62,6 +69,8 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataViewSnapshotSelectionForm;
@@ -76,6 +85,7 @@ import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateSetExport;
 import org.labkey.assay.plate.PlateUrls;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
+import org.labkey.assay.plate.WellGroupImpl;
 import org.labkey.assay.plate.model.CreatePlateSetOptions;
 import org.labkey.assay.plate.model.ReformatOptions;
 import org.labkey.assay.view.AssayGWTView;
@@ -91,6 +101,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -122,7 +133,7 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class BeginAction extends SimpleRedirectAction
+    public static class BeginAction extends SimpleRedirectAction<Object>
     {
         @Override
         public ActionURL getRedirectURL(Object o)
@@ -211,7 +222,365 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
-    public class DesignerAction extends SimpleViewAction<DesignerForm>
+    public class GetTemplateDefinitionAction extends ReadOnlyApiAction<DesignerForm>
+    {
+        @Override
+        public Object execute(DesignerForm form, BindException errors) throws Exception
+        {
+            String templateName = form.getTemplateName();
+            Long plateId = form.getPlateId();
+            boolean copyTemplate = form.isCopy();
+
+            if (templateName == null && plateId != null)
+            {
+                Plate plate = PlateManager.get().getPlate(getContainer(), plateId);
+                if (plate != null)
+                {
+                    templateName = plate.getName();
+                }
+            }
+
+            Plate template;
+            PlateLayoutHandler handler;
+
+            if (templateName != null)
+            {
+                if (plateId == null)
+                    throw new Exception("plateId is required when templateName is specified.");
+                template = PlateService.get().getPlate(getContainer(), plateId);
+                if (template == null)
+                    throw new NotFoundException("Plate '" + templateName + "' does not exist.");
+                handler = PlateManager.get().getPlateLayoutHandler(template.getAssayType());
+                if (handler == null)
+                    throw new Exception("Plate template type '" + template.getAssayType() + "' does not exist.");
+            }
+            else
+            {
+                String assayTypeName = form.getAssayType();
+                String templateTypeName = form.getTemplateType();
+                int rowCount = form.getRowCount();
+                int colCount = form.getColCount();
+
+                handler = PlateManager.get().getPlateLayoutHandler(assayTypeName);
+                if (handler == null)
+                    throw new Exception("Plate template type '" + assayTypeName + "' does not exist.");
+                PlateType plateType = PlateService.get().getPlateType(rowCount, colCount);
+                if (plateType == null)
+                    throw new Exception("The plate type (" + rowCount + " x " + colCount + ") does not exist.");
+                template = handler.createPlate(templateTypeName, getContainer(), plateType);
+            }
+
+            // Build groups list
+            List<? extends WellGroup> groups = template.getWellGroups();
+            List<Map<String, Object>> groupList = new ArrayList<>();
+            for (int i = 0; i < groups.size(); i++)
+            {
+                WellGroup group = groups.get(i);
+                List<Map<String, Object>> positions = new ArrayList<>();
+                for (Position position : group.getPositions())
+                {
+                    Map<String, Object> pos = new HashMap<>();
+                    pos.put("row", position.getRow());
+                    pos.put("col", position.getColumn());
+                    positions.add(pos);
+                }
+                Map<String, Object> groupProps = new HashMap<>();
+                for (String propName : group.getPropertyNames())
+                {
+                    Object propValue = group.getProperty(propName);
+                    groupProps.put(propName, (propValue == null || propValue == JSONObject.NULL) ? null : propValue.toString());
+                }
+
+                int wellGroupId = copyTemplate || group.getRowId() == null ? -1 * (i + 1) : group.getRowId();
+                Map<String, Object> g = new HashMap<>();
+                g.put("rowId", wellGroupId);
+                g.put("type", group.getType().name());
+                g.put("name", group.getName());
+                g.put("positions", positions);
+                g.put("properties", groupProps);
+                g.put("allowNewGroups", handler.canCreateNewGroups(group.getType()));
+                groupList.add(g);
+            }
+
+            Map<String, Object> templateProperties = new HashMap<>();
+            for (String propName : template.getPropertyNames())
+                templateProperties.put(propName, template.getProperty(propName) == null ? null : template.getProperty(propName).toString());
+
+            // Build type list
+            List<String> typeList = new ArrayList<>();
+            for (WellGroup.Type type : handler.getWellGroupTypes())
+                typeList.add(type.name());
+
+            // Build canCreateGroupsByType
+            Map<String, Boolean> canCreateGroupsByType = new LinkedHashMap<>();
+            for (WellGroup.Type type : handler.getWellGroupTypes())
+                canCreateGroupsByType.put(type.name(), handler.canCreateNewGroups(type));
+
+            // Build typesToDefaultGroups
+            Map<String, List<String>> typesToDefaultGroups = handler.getDefaultGroupsForTypes();
+
+            // Existing template names in container
+            List<String> existingTemplateNames = new ArrayList<>();
+            for (Plate p : PlateService.get().getPlates(getContainer()))
+                existingTemplateNames.add(p.getName());
+
+            long responseRowId = copyTemplate || template.getRowId() == null ? -1 : template.getRowId();
+            String defaultPlateName;
+            if (templateName != null)
+            {
+                defaultPlateName = copyTemplate ? getUniqueName(getContainer(), templateName) : templateName;
+            }
+            else
+            {
+                defaultPlateName = "";
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("rowId", responseRowId);
+            result.put("name", template.getName());
+            result.put("type", template.getAssayType());
+            result.put("rows", template.getRows());
+            result.put("cols", template.getColumns());
+            result.put("groupTypes", typeList);
+            result.put("canCreateGroupsByType", canCreateGroupsByType);
+            result.put("groups", groupList);
+            result.put("plateProperties", templateProperties);
+            result.put("typesToDefaultGroups", typesToDefaultGroups);
+            result.put("showWarningPanel", handler.showEditorWarningPanel());
+            result.put("existingTemplateNames", existingTemplateNames);
+            result.put("copyMode", copyTemplate);
+            result.put("defaultPlateName", defaultPlateName);
+
+            return success(result);
+        }
+    }
+
+    public static class SaveTemplateForm implements ApiJsonForm
+    {
+        private JSONObject _json;
+
+        @Override
+        public void bindJson(JSONObject json)
+        {
+            _json = json;
+        }
+
+        public JSONObject getJson()
+        {
+            return _json != null ? _json : new JSONObject();
+        }
+    }
+
+    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
+    public static class SaveTemplateAction extends MutatingApiAction<SaveTemplateForm>
+    {
+        private static final int MAX_BODY_BYTES = 10 * 1024 * 1024; // 10 MB
+
+        @Override
+        protected BaseApiAction.FormAndErrors<SaveTemplateForm> populateJacksonForm() throws Exception
+        {
+            byte[] bytes;
+            try (BoundedInputStream bounded = BoundedInputStream.builder()
+                    .setInputStream(getViewContext().getRequest().getInputStream())
+                    .setMaxCount((long) MAX_BODY_BYTES + 1)
+                    .get())
+            {
+                bytes = bounded.readAllBytes();
+            }
+            if (bytes.length > MAX_BODY_BYTES)
+                throw new ApiUsageException("Request body exceeds maximum allowed size of 10 MB.");
+            String body = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+            JSONObject jsonObj = body.isEmpty() ? new JSONObject() : new JSONObject(body);
+            SaveTemplateForm form = new SaveTemplateForm();
+            form.bindJson(jsonObj);
+            return new BaseApiAction.FormAndErrors<>(form, new NullSafeBindException(form, "form"));
+        }
+
+        @Override
+        public Object execute(SaveTemplateForm form, BindException errors) throws Exception
+        {
+            JSONObject json = form.getJson();
+
+            long rowId = json.optLong("rowId", -1);
+            String name = json.getString("name");
+            String type = json.getString("type");
+            int rows = json.getInt("rows");
+            int cols = json.getInt("cols");
+            JSONArray groupsJson = json.optJSONArray("groups");
+            JSONObject platePropsJson = json.optJSONObject("plateProperties");
+
+            Map<String, Object> plateProperties = new HashMap<>();
+            if (platePropsJson != null)
+            {
+                for (String key : platePropsJson.keySet())
+                    plateProperties.put(key, platePropsJson.get(key));
+            }
+
+            boolean updateExisting = false;
+            Plate plate;
+            if (rowId > 0)
+            {
+                plate = PlateManager.get().getPlate(getContainer(), rowId);
+                if (plate == null)
+                    throw new NotFoundException("Plate template not found: " + rowId);
+                // Check for a conflicting name from a different plate
+                Plate conflict = PlateManager.get().getPlateByName(getContainer(), name);
+                if (conflict != null && !conflict.getRowId().equals(plate.getRowId()))
+                    throw new ApiUsageException("A plate template with name '" + name + "' already exists.");
+                if (!plate.getAssayType().equals(type))
+                    throw new ApiUsageException("Plate template type '" + plate.getAssayType() + "' cannot be changed for '" + name + "'");
+                if (plate.getRows() != rows || plate.getColumns() != cols)
+                    throw new ApiUsageException("Plate template dimensions cannot be changed for '" + name + "'");
+                updateExisting = true;
+            }
+            else
+            {
+                if (PlateManager.get().getPlateByName(getContainer(), name) != null)
+                    throw new ApiUsageException("A plate template with name '" + name + "' already exists.");
+                PlateType plateType = PlateService.get().getPlateType(rows, cols);
+                if (plateType == null)
+                    throw new NotFoundException("The plate type (" + rows + " x " + cols + ") does not exist.");
+                plate = PlateManager.get().createPlate(getContainer(), type, plateType);
+            }
+
+            plate.setName(name);
+            plate.setProperties(plateProperties);
+
+            // Parse groups from JSON
+            List<Map<String, Object>> submittedGroups = new ArrayList<>();
+            Set<Integer> submittedGroupIds = new HashSet<>();
+            if (groupsJson != null)
+            {
+                for (int i = 0; i < groupsJson.length(); i++)
+                {
+                    JSONObject g = groupsJson.getJSONObject(i);
+                    Map<String, Object> gm = new HashMap<>();
+                    gm.put("rowId", g.optInt("rowId", -1));
+                    gm.put("type", g.getString("type"));
+                    gm.put("name", g.getString("name"));
+                    JSONArray posArr = g.optJSONArray("positions");
+                    List<int[]> positions = new ArrayList<>();
+                    if (posArr != null)
+                    {
+                        for (int j = 0; j < posArr.length(); j++)
+                        {
+                            JSONObject p = posArr.getJSONObject(j);
+                            positions.add(new int[]{p.getInt("row"), p.getInt("col")});
+                        }
+                    }
+                    gm.put("positions", positions);
+                    JSONObject propsObj = g.optJSONObject("properties");
+                    Map<String, Object> props = new HashMap<>();
+                    if (propsObj != null)
+                    {
+                        for (String key : propsObj.keySet())
+                        {
+                            Object val = propsObj.get(key);
+                            props.put(key, val == JSONObject.NULL ? null : val);
+                        }
+                    }
+                    gm.put("properties", props);
+                    submittedGroups.add(gm);
+                    if ((int) gm.get("rowId") > 0)
+                        submittedGroupIds.add((int) gm.get("rowId"));
+                }
+            }
+
+            // Mark well groups not in submission for deletion
+            List<WellGroup> existingWellGroups = plate.getWellGroups();
+            for (WellGroup existingGroup : existingWellGroups)
+            {
+                if (existingGroup.getRowId() != null && !submittedGroupIds.contains(existingGroup.getRowId()))
+                    ((PlateImpl) plate).markWellGroupForDeletion(existingGroup);
+            }
+
+            // Update or create well groups
+            for (Map<String, Object> gm : submittedGroups)
+            {
+                int gRowId = (int) gm.get("rowId");
+                String groupTypeName = (String) gm.get("type");
+                WellGroup.Type groupType;
+                try
+                {
+                    groupType = WellGroup.Type.valueOf(groupTypeName);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new ApiUsageException("Unknown well group type: '" + groupTypeName + "'");
+                }
+                @SuppressWarnings("unchecked")
+                List<int[]> posList = (List<int[]>) gm.get("positions");
+                List<Position> positions = new ArrayList<>();
+                for (int[] p : posList)
+                    positions.add(plate.getPosition(p[0], p[1]));
+
+                @SuppressWarnings("unchecked")
+                Map<String, Object> props = (Map<String, Object>) gm.get("properties");
+
+                WellGroupImpl group;
+                if (updateExisting && gRowId > 0)
+                {
+                    WellGroupImpl existing = findExistingWellGroup(existingWellGroups, gRowId);
+                    if (existing == null)
+                        throw new Exception("Well group " + gRowId + " was not found.");
+                    if (existing.getType() != groupType)
+                        throw new Exception("Well group type cannot be changed: " + gm.get("name"));
+                    existing.setName((String) gm.get("name"));
+                    existing.setPositions(positions);
+                    ((PlateImpl) plate).storeWellGroup(existing);
+                    group = existing;
+                }
+                else
+                {
+                    group = (WellGroupImpl) plate.addWellGroup((String) gm.get("name"), groupType, positions);
+                }
+                group.setProperties(props);
+            }
+
+            PlateLayoutHandler plateLayoutHandler = PlateManager.get().getPlateLayoutHandler(plate.getAssayType());
+
+            if (plateLayoutHandler == null)
+            {
+                throw new NotFoundException("Invalid assay type");
+            }
+            plateLayoutHandler.validatePlate(getContainer(), getUser(), plate);
+            long savedRowId = PlateService.get().save(getContainer(), getUser(), plate);
+            return success(Map.of("rowId", savedRowId));
+        }
+
+        private WellGroupImpl findExistingWellGroup(List<WellGroup> wellGroups, int rowId)
+        {
+            for (WellGroup wg : wellGroups)
+            {
+                if (wg.getRowId() != null && wg.getRowId() == rowId)
+                    return (WellGroupImpl) wg;
+            }
+            return null;
+        }
+    }
+
+    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
+    public static class DesignerAction extends SimpleViewAction<DesignerForm>
+    {
+        @Override
+        public ModelAndView getView(DesignerForm form, BindException errors)
+        {
+            return ModuleHtmlView.get(
+                ModuleLoader.getInstance().getModule("assay"),
+                ModuleHtmlView.getGeneratedViewPath("plateTemplateDesigner")
+            );
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("editPlateTemplate");
+            root.addChild("Plate Editor");
+        }
+    }
+
+    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
+    public class DesignerGwtAction extends SimpleViewAction<DesignerForm>
     {
         @Override
         public ModelAndView getView(DesignerForm form, BindException errors)
@@ -262,7 +631,7 @@ public class PlateController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("editPlateTemplate");
-            root.addChild("Plate Editor");
+            root.addChild("Plate Editor (GWT)");
         }
     }
 
