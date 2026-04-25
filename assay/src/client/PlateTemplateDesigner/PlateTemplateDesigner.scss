@@ -230,6 +230,17 @@
         border-radius: 3px;
         font-size: 12px;
         min-width: 0;
+
+        &--error {
+            border-color: #c00;
+        }
+    }
+
+    // Validation error shown below the create row or the rename input
+    &__name-error {
+        color: #c00;
+        font-size: 12px;
+        margin-top: 2px;
     }
 
     // Rename + delete buttons, visible only for the active group row

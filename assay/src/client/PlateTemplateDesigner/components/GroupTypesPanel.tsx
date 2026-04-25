@@ -78,6 +78,7 @@ export function GroupTypesPanel({
     const [newGroupName, setNewGroupName] = useState('');
     const [renamingId, setRenamingId] = useState<number | null>(null);
     const [renameValue, setRenameValue] = useState('');
+    const [renameError, setRenameError] = useState<string | null>(null);
     const [multiCreateOpen, setMultiCreateOpen] = useState(false);
     const [multiBaseName, setMultiBaseName] = useState('');
     const [multiCount, setMultiCount] = useState('2');
@@ -88,6 +89,9 @@ export function GroupTypesPanel({
     // Stable derived list — memoized so useMemo and useEffect deps are stable.
     const groupsOfType = useMemo(() => plate.groups.filter(g => g.type === activeTab), [plate, activeTab]);
     const canAdd = plate.canCreateGroupsByType?.[activeTab] ?? false;
+
+    // True when the current create-input value is already taken by a group of this type.
+    const createNameConflicts = newGroupName.trim() !== '' && groupsOfType.some(g => g.name === newGroupName.trim());
 
     // Predefined slot names not yet occupied by an existing group of this type.
     // Drives the <select> vs free-text <input> toggle in the create row.
@@ -139,8 +143,9 @@ export function GroupTypesPanel({
 
     const handleCreate = () => {
         const trimmed = newGroupName.trim();
-        if (!trimmed) return;
+        if (!trimmed || createNameConflicts) return;
         onAddGroup(activeTab, trimmed);
+        setNewGroupName('');
     };
 
     const openMultiCreate = () => {
@@ -159,9 +164,14 @@ export function GroupTypesPanel({
         }
         const baseName = multiBaseName.trim();
         if (!baseName) return;
-        for (let i = 1; i <= count; i++) {
-            onAddGroup(activeTab, `${baseName} ${i}`);
+        const existingNames = new Set(groupsOfType.map(g => g.name));
+        const namesToCreate = Array.from({ length: count }, (_, i) => `${baseName} ${i + 1}`)
+            .filter(name => !existingNames.has(name));
+        if (namesToCreate.length === 0) {
+            setMultiCountError(`All ${count} generated name${count === 1 ? '' : 's'} already exist in this type.`);
+            return;
         }
+        namesToCreate.forEach(name => onAddGroup(activeTab, name));
         setMultiCreateOpen(false);
     };
 
@@ -176,12 +186,25 @@ export function GroupTypesPanel({
         e.stopPropagation();
         setRenamingId(group.rowId);
         setRenameValue(group.name);
+        setRenameError(null);
     };
 
-    const handleRenameCommit = (rowId: number) => {
+    // revertOnConflict=true: silently discard (used on blur so moving focus away doesn't leave the input frozen).
+    // revertOnConflict=false: show an inline error and keep the input open (used on Enter so the user sees feedback).
+    const handleRenameCommit = (rowId: number, revertOnConflict: boolean) => {
         const trimmed = renameValue.trim();
+        if (trimmed && groupsOfType.some(g => g.rowId !== rowId && g.name === trimmed)) {
+            if (revertOnConflict) {
+                setRenamingId(null);
+                setRenameError(null);
+            } else {
+                setRenameError(`"${trimmed}" is already used by another group of this type.`);
+            }
+            return;
+        }
         if (trimmed) onRenameGroup(rowId, trimmed);
         setRenamingId(null);
+        setRenameError(null);
     };
 
     return (
@@ -213,108 +236,125 @@ export function GroupTypesPanel({
                         const isActive = activeGroup?.rowId === group.rowId;
                         const isRenaming = renamingId === group.rowId;
                         return (
-                            <div
-                                key={group.rowId}
-                                className={classNames('group-types-panel__group', {
-                                    'group-types-panel__group--active': isActive,
-                                })}
-                                tabIndex={0}
-                                onClick={() => { if (!isRenaming) onGroupSelect(group); }}
-                                onKeyDown={e => {
-                                    if (!isRenaming && (e.key === 'Enter' || e.key === ' ')) {
-                                        e.preventDefault();
-                                        onGroupSelect(group);
-                                    }
-                                }}
-                            >
-                                <span
-                                    className="group-types-panel__color-swatch"
-                                    style={{ backgroundColor: color ?? '#ccc' }}
-                                />
-                                {isRenaming ? (
-                                    <input
-                                        autoFocus
-                                        aria-label={`Rename ${group.name}`}
-                                        className="group-types-panel__rename-input"
-                                        value={renameValue}
-                                        onChange={e => setRenameValue(e.target.value)}
-                                        onKeyDown={e => {
-                                            if (e.key === 'Enter') handleRenameCommit(group.rowId);
-                                            if (e.key === 'Escape') setRenamingId(null);
-                                        }}
-                                        onBlur={() => handleRenameCommit(group.rowId)}
-                                        onClick={e => e.stopPropagation()}
+                            <React.Fragment key={group.rowId}>
+                                <div
+                                    className={classNames('group-types-panel__group', {
+                                        'group-types-panel__group--active': isActive,
+                                    })}
+                                    tabIndex={0}
+                                    onClick={() => { if (!isRenaming) onGroupSelect(group); }}
+                                    onKeyDown={e => {
+                                        if (!isRenaming && (e.key === 'Enter' || e.key === ' ')) {
+                                            e.preventDefault();
+                                            onGroupSelect(group);
+                                        }
+                                    }}
+                                >
+                                    <span
+                                        className="group-types-panel__color-swatch"
+                                        style={{ backgroundColor: color ?? '#ccc' }}
                                     />
-                                ) : (
-                                    <span className="group-types-panel__group-name">{group.name}</span>
-                                )}
-                                {/* Rename/delete actions appear only on the active group row */}
-                                {isActive && !isRenaming && group.allowNewGroups && (
-                                    <span className="group-types-panel__group-actions">
-                                        <button
-                                            className="group-types-panel__action-btn"
-                                            title="Rename"
+                                    {isRenaming ? (
+                                        <input
+                                            autoFocus
                                             aria-label={`Rename ${group.name}`}
-                                            onClick={e => handleRenameClick(e, group)}
-                                        >
-                                            <span className="fa fa-pencil" aria-hidden="true" />
-                                        </button>
-                                        <button
-                                            className="group-types-panel__action-btn group-types-panel__action-btn--delete"
-                                            title="Delete"
-                                            aria-label={`Delete ${group.name}`}
-                                            onClick={e => handleDeleteClick(e, group)}
-                                        >
-                                            <span className="fa fa-trash-o" aria-hidden="true" />
-                                        </button>
-                                    </span>
+                                            aria-describedby={renameError ? 'rename-error' : undefined}
+                                            aria-invalid={!!renameError}
+                                            className={classNames('group-types-panel__rename-input', {
+                                                'group-types-panel__rename-input--error': !!renameError,
+                                            })}
+                                            value={renameValue}
+                                            onChange={e => { setRenameValue(e.target.value); setRenameError(null); }}
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter') handleRenameCommit(group.rowId, false);
+                                                if (e.key === 'Escape') { setRenamingId(null); setRenameError(null); }
+                                            }}
+                                            onBlur={() => handleRenameCommit(group.rowId, true)}
+                                            onClick={e => e.stopPropagation()}
+                                        />
+                                    ) : (
+                                        <span className="group-types-panel__group-name">{group.name}</span>
+                                    )}
+                                    {/* Rename/delete actions appear only on the active group row */}
+                                    {isActive && !isRenaming && group.allowNewGroups && (
+                                        <span className="group-types-panel__group-actions">
+                                            <button
+                                                className="group-types-panel__action-btn"
+                                                title="Rename"
+                                                aria-label={`Rename ${group.name}`}
+                                                onClick={e => handleRenameClick(e, group)}
+                                            >
+                                                <span className="fa fa-pencil" aria-hidden="true" />
+                                            </button>
+                                            <button
+                                                className="group-types-panel__action-btn group-types-panel__action-btn--delete"
+                                                title="Delete"
+                                                aria-label={`Delete ${group.name}`}
+                                                onClick={e => handleDeleteClick(e, group)}
+                                            >
+                                                <span className="fa fa-trash-o" aria-hidden="true" />
+                                            </button>
+                                        </span>
+                                    )}
+                                </div>
+                                {isRenaming && renameError && (
+                                    <div id="rename-error" className="group-types-panel__name-error">{renameError}</div>
                                 )}
-                            </div>
+                            </React.Fragment>
                         );
                     })}
                     {canAdd && (
-                        <div className="group-types-panel__create-row">
-                            {/*
-                             * Show a <select> while predefined defaults remain (prevents typos and
-                             * ensures canonical names). Switch to a free-text <input> once all
-                             * defaults are consumed or if there are none defined for this type.
-                             */}
-                            {unusedDefaults.length > 0 ? (
-                                <select
-                                    aria-label="Group name"
-                                    className="group-types-panel__new-name-input"
-                                    value={newGroupName}
-                                    onChange={e => setNewGroupName(e.target.value)}
+                        <>
+                            <div className="group-types-panel__create-row">
+                                {/*
+                                 * Show a <select> while predefined defaults remain (prevents typos and
+                                 * ensures canonical names). Switch to a free-text <input> once all
+                                 * defaults are consumed or if there are none defined for this type.
+                                 */}
+                                {unusedDefaults.length > 0 ? (
+                                    <select
+                                        aria-label="Group name"
+                                        className="group-types-panel__new-name-input"
+                                        value={newGroupName}
+                                        onChange={e => setNewGroupName(e.target.value)}
+                                    >
+                                        {unusedDefaults.map(d => (
+                                            <option key={d} value={d}>{d}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        aria-label="Group name"
+                                        aria-describedby={createNameConflicts ? 'create-name-error' : undefined}
+                                        aria-invalid={createNameConflicts}
+                                        className="group-types-panel__new-name-input"
+                                        placeholder="Group name"
+                                        value={newGroupName}
+                                        onChange={e => setNewGroupName(e.target.value)}
+                                        onKeyDown={e => { if (e.key === 'Enter' && newGroupName.trim() && !createNameConflicts) handleCreate(); }}
+                                    />
+                                )}
+                                <button
+                                    className="group-types-panel__add-btn"
+                                    disabled={!newGroupName.trim() || createNameConflicts}
+                                    onClick={handleCreate}
                                 >
-                                    {unusedDefaults.map(d => (
-                                        <option key={d} value={d}>{d}</option>
-                                    ))}
-                                </select>
-                            ) : (
-                                <input
-                                    type="text"
-                                    aria-label="Group name"
-                                    className="group-types-panel__new-name-input"
-                                    placeholder="Group name"
-                                    value={newGroupName}
-                                    onChange={e => setNewGroupName(e.target.value)}
-                                    onKeyDown={e => { if (e.key === 'Enter' && newGroupName.trim()) handleCreate(); }}
-                                />
+                                    Create
+                                </button>
+                                <button
+                                    className="group-types-panel__add-btn"
+                                    onClick={openMultiCreate}
+                                >
+                                    Create multiple...
+                                </button>
+                            </div>
+                            {createNameConflicts && (
+                                <div id="create-name-error" className="group-types-panel__name-error">
+                                    A group named "{newGroupName.trim()}" already exists in this type.
+                                </div>
                             )}
-                            <button
-                                className="group-types-panel__add-btn"
-                                disabled={!newGroupName.trim()}
-                                onClick={handleCreate}
-                            >
-                                Create
-                            </button>
-                            <button
-                                className="group-types-panel__add-btn"
-                                onClick={openMultiCreate}
-                            >
-                                Create multiple...
-                            </button>
-                        </div>
+                        </>
                     )}
                 </div>
                 {children}

@@ -7,7 +7,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import classNames from 'classnames';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
 
-import { PlateTemplate, WellGroup, computeWarnings } from './models';
+import { PlateTemplate, Position, WellGroup, computeWarnings } from './models';
 import { StatusBar } from './components/StatusBar';
 import { GroupTypesPanel } from './components/GroupTypesPanel';
 import { ShiftPanel } from './components/ShiftPanel';
@@ -85,6 +85,10 @@ export function PlateTemplateDesigner(): JSX.Element {
     const plateNameRef = useRef<string>('');  // Mirrors plate.name; used in save-success to update URL without stale closure
     const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const nextGroupIdRef = useRef(-1);  // Temporary negative IDs for client-created groups (see ID conventions above)
+    // Always-current ref so callbacks can read the latest activeGroup without stale-closure bugs.
+    const activeGroupRef = useRef<WellGroup | null>(null);
+    activeGroupRef.current = activeGroup;
+    const nextColorIndexRef = useRef(0);  // Monotonically increasing; never decrements on delete so colors stay unique
 
     useEffect(() => {
         const templateName = ActionURL.getParameter('templateName');
@@ -113,6 +117,11 @@ export function PlateTemplateDesigner(): JSX.Element {
                 plateNameRef.current = plate.defaultPlateName || plate.name || '';
                 setPlate({ ...plate, name: plateNameRef.current });
                 setColorMap(assignColors(plate.groups));
+                nextColorIndexRef.current = plate.groups.length;
+                // Initialize below the minimum server rowId to avoid collisions.
+                // Server IDs should be positive, but guard against zero or negative values.
+                const minRowId = plate.groups.reduce((min, g) => Math.min(min, g.rowId), 0);
+                nextGroupIdRef.current = Math.min(-1, minRowId - 1);
                 setActiveTab(plate.groupTypes[0] ?? '');
                 if (plate.copyMode) setIsDirty(true);
             }),
@@ -132,48 +141,75 @@ export function PlateTemplateDesigner(): JSX.Element {
         setActiveGroup(group);
     }, []);
 
-    const handleCellAssign = useCallback((row: number, col: number) => {
-        if (!activeGroup || !plate) return;
+    // Called on every mouseenter during a drag with the rectangle defined by the
+    // mousedown cell and the current cell. preDragPositions is the snapshot of the
+    // active group's positions taken at mousedown (in TemplateGrid), before any drag
+    // events can modify state.
+    //
+    // Select mode (drag started on an empty cell): adds the rectangle to the group's
+    // pre-drag positions, so existing wells outside the rectangle are preserved.
+    // Also evicts rectangle cells from sibling groups of the same type.
+    //
+    // Unselect mode (drag started on a cell already in the group): removes all
+    // rectangle cells from the pre-drag positions without affecting other groups.
+    const handleDragRect = useCallback((r1: number, c1: number, r2: number, c2: number, isUnselect: boolean, preDragPositions: Position[]) => {
+        const activeGroup = activeGroupRef.current;
+        if (!activeGroup) return;
+        const minRow = Math.min(r1, r2);
+        const maxRow = Math.max(r1, r2);
+        const minCol = Math.min(c1, c2);
+        const maxCol = Math.max(c1, c2);
+        const rectPositions: Position[] = [];
+        for (let r = minRow; r <= maxRow; r++) {
+            for (let c = minCol; c <= maxCol; c++) {
+                rectPositions.push({ row: r, col: c });
+            }
+        }
+        const rectKeys = new Set(rectPositions.map(p => `${p.row},${p.col}`));
         setPlate(prev => {
             if (!prev) return null;
+            // Look up the active group's current type from prev to avoid stale-closure issues.
+            const currentType = prev.groups.find(g => g.rowId === activeGroup.rowId)?.type;
             const updatedGroups = prev.groups.map(g => {
                 if (g.rowId === activeGroup.rowId) {
-                    const alreadyHas = g.positions.some(p => p.row === row && p.col === col);
-                    if (alreadyHas) return g;
-                    return { ...g, positions: [...g.positions, { row, col }] };
-                }
-                if (g.type === activeGroup.type) {
-                    // Remove from other groups of the same type to avoid conflicts
-                    return { ...g, positions: g.positions.filter(p => !(p.row === row && p.col === col)) };
-                }
-                return g;
-            });
-            return { ...prev, groups: updatedGroups };
-        });
-        setIsDirty(true);
-    }, [activeGroup, plate]);
-
-    const handleCellToggle = useCallback((row: number, col: number) => {
-        if (!activeGroup || !plate) return;
-        setPlate(prev => {
-            if (!prev) return null;
-            const updatedGroups = prev.groups.map(g => {
-                if (g.rowId === activeGroup.rowId) {
-                    const hasCell = g.positions.some(p => p.row === row && p.col === col);
-                    if (hasCell) {
-                        return { ...g, positions: g.positions.filter(p => !(p.row === row && p.col === col)) };
+                    if (isUnselect) {
+                        // Remove rect from pre-drag snapshot
+                        return { ...g, positions: preDragPositions.filter(p => !rectKeys.has(`${p.row},${p.col}`)) };
                     }
-                    return { ...g, positions: [...g.positions, { row, col }] };
+                    // Add rect to pre-drag snapshot (union, deduped)
+                    const preDragKeys = new Set(preDragPositions.map(p => `${p.row},${p.col}`));
+                    const added = rectPositions.filter(p => !preDragKeys.has(`${p.row},${p.col}`));
+                    return { ...g, positions: [...preDragPositions, ...added] };
                 }
-                if (g.type === activeGroup.type) {
-                    return { ...g, positions: g.positions.filter(p => !(p.row === row && p.col === col)) };
+                if (!isUnselect && currentType !== undefined && g.type === currentType) {
+                    // Evict rectangle cells from sibling groups of the same type
+                    return { ...g, positions: g.positions.filter(p => !rectKeys.has(`${p.row},${p.col}`)) };
                 }
                 return g;
             });
             return { ...prev, groups: updatedGroups };
         });
         setIsDirty(true);
-    }, [activeGroup, plate]);
+    }, []);
+
+    // Pure toggle: add the cell if absent, remove it if present
+    const handleCellToggle = useCallback((row: number, col: number) => {
+        const activeGroup = activeGroupRef.current;
+        if (!activeGroup) return;
+        setPlate(prev => {
+            if (!prev) return null;
+            const updatedGroups = prev.groups.map(g => {
+                if (g.rowId !== activeGroup.rowId) return g;
+                const hasCell = g.positions.some(p => p.row === row && p.col === col);
+                if (hasCell) {
+                    return { ...g, positions: g.positions.filter(p => !(p.row === row && p.col === col)) };
+                }
+                return { ...g, positions: [...g.positions, { row, col }] };
+            });
+            return { ...prev, groups: updatedGroups };
+        });
+        setIsDirty(true);
+    }, []);
 
     const handleAddGroup = useCallback((type: string, name: string) => {
         if (!plate) return;
@@ -187,9 +223,10 @@ export function PlateTemplateDesigner(): JSX.Element {
             allowNewGroups: plate.canCreateGroupsByType?.[type] ?? false,
         };
         setPlate(prev => prev ? { ...prev, groups: [...prev.groups, newGroup] } : null);
+        const colorIndex = nextColorIndexRef.current++;
         setColorMap(prev => {
             const next = new Map(prev);
-            next.set(rowId, COLORS[prev.size % COLORS.length]);
+            next.set(rowId, COLORS[colorIndex % COLORS.length]);
             return next;
         });
         setActiveGroup(newGroup);
@@ -352,9 +389,12 @@ export function PlateTemplateDesigner(): JSX.Element {
     // handleDeleteGroup handles the "group no longer exists" case by explicitly setting
     // activeGroup to null before this effect can run.
     useEffect(() => {
-        if (activeGroup && plate) {
+        if (!plate) return;
+        if (activeGroup) {
             const updated = plate.groups.find(g => g.rowId === activeGroup.rowId);
-            if (updated) setActiveGroup(updated);
+            if (updated) {
+                setActiveGroup(updated);
+            }
         }
     }, [plate]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -407,7 +447,7 @@ export function PlateTemplateDesigner(): JSX.Element {
                                 activeGroup={activeGroup}
                                 activeTab={activeTab}
                                 colorMap={colorMap}
-                                onCellAssign={handleCellAssign}
+                                onDragRect={handleDragRect}
                                 onCellToggle={handleCellToggle}
                             />
                             <ShiftPanel onShift={handleShift} />

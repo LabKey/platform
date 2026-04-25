@@ -6,14 +6,14 @@
 import React, { useCallback, useMemo, useRef } from 'react';
 import classNames from 'classnames';
 
-import { PlateTemplate, WellGroup } from '../models';
+import { PlateTemplate, Position, WellGroup } from '../models';
 
 interface Props {
     plate: PlateTemplate;
     activeGroup: WellGroup | null;
     activeTab: string;
     colorMap: Map<number, string>;
-    onCellAssign: (row: number, col: number) => void;
+    onDragRect: (r1: number, c1: number, r2: number, c2: number, isUnselect: boolean, preDragPositions: Position[]) => void;
     onCellToggle: (row: number, col: number) => void;
 }
 
@@ -34,14 +34,14 @@ function getRowLabel(row: number): string {
  * (no re-renders on drag):
  *
  *   Phase 1 – mousedown on a cell:
- *     Enter drag mode. Record the start cell. Do NOT assign it yet — we first need
- *     to know whether the user is clicking (toggle) or dragging (assign-only).
+ *     Enter drag mode. Record the start cell. Do NOT assign anything yet — we
+ *     first need to know whether the user is clicking (toggle) or dragging (rect).
  *
  *   Phase 2 – mouseenter a *different* cell while dragging:
- *     We now know it's a drag. Retroactively assign the original start cell
- *     (deferred assign), then assign each subsequently entered cell.
- *     `dragCells` deduplicates entries so fast mouse movement can't assign the
- *     same cell twice.
+ *     We now know it's a drag. Call onDragRect with the axis-aligned rectangle
+ *     defined by the mousedown cell and the current cell, plus the drag mode
+ *     (select vs unselect) determined at mousedown. The parent replaces or removes
+ *     cells on every call, so the selection dynamically resizes as the mouse moves.
  *
  *   Phase 3 – mouseup:
  *     If the pointer never left the start cell (hasMoved === false), treat the
@@ -50,16 +50,13 @@ function getRowLabel(row: number): string {
  *
  * Drag state is also cleaned up on mouseleave of the outer div, preventing stuck
  * drag state when the pointer exits the grid.
- *
- * `onCellAssign` is idempotent (ignores duplicates) and also removes the assigned
- * cell from any other group of the same type, enforcing the one-group-per-cell-per-
- * type constraint. `onCellToggle` does a pure add/remove with no stealing.
  */
-export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onCellAssign, onCellToggle }: Props): JSX.Element {
+export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRect, onCellToggle }: Props): JSX.Element {
     const isDragging = useRef(false);
     const hasMoved = useRef(false);
     const startCell = useRef<{ row: number; col: number } | null>(null);
-    const dragCells = useRef<Set<string>>(new Set());
+    const dragIsUnselect = useRef(false);  // true when the drag started on a cell already in the active group
+    const preDragPositions = useRef<Position[]>([]);  // snapshot of activeGroup.positions at mousedown
 
     // Pre-compute a "row,col" → {color, groupName} map for the active tab type.
     // This lets each cell do an O(1) lookup rather than scanning all groups and
@@ -81,26 +78,17 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onCellAs
         isDragging.current = true;
         hasMoved.current = false;
         startCell.current = { row, col };
-        dragCells.current = new Set([`${row},${col}`]);
+        dragIsUnselect.current = activeGroup?.positions.some(p => p.row === row && p.col === col) ?? false;
+        // Snapshot the current positions NOW, from the prop, before any drag events can modify state.
+        preDragPositions.current = activeGroup?.positions ?? [];
         e.preventDefault();
-    }, []);
+    }, [activeGroup]);
 
     const handleMouseEnter = useCallback((row: number, col: number) => {
-        if (!isDragging.current) return;
-        if (!hasMoved.current) {
-            hasMoved.current = true;
-            // Deferred assign: now that we know this is a drag, assign the cell
-            // the user originally pressed down on.
-            if (startCell.current) {
-                onCellAssign(startCell.current.row, startCell.current.col);
-            }
-        }
-        const key = `${row},${col}`;
-        if (!dragCells.current.has(key)) {
-            dragCells.current.add(key);
-            onCellAssign(row, col);
-        }
-    }, [onCellAssign]);
+        if (!isDragging.current || !startCell.current) return;
+        hasMoved.current = true;
+        onDragRect(startCell.current.row, startCell.current.col, row, col, dragIsUnselect.current, preDragPositions.current);
+    }, [onDragRect]);
 
     // Called on mouseup over a specific cell — handles click-toggle
     const handleCellMouseUp = useCallback((row: number, col: number) => {
@@ -114,7 +102,7 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onCellAs
         isDragging.current = false;
         hasMoved.current = false;
         startCell.current = null;
-        dragCells.current = new Set();
+        dragIsUnselect.current = false;
     }, []);
 
     return (
