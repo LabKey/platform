@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
 
 import { PlateTemplate, Position, WellGroup } from '../models';
@@ -25,9 +25,8 @@ function getRowLabel(row: number): string {
  * A scrollable well grid that lets the user paint cells onto the active well group.
  *
  * ─── Coloring ──────────────────────────────────────────────────────────────────
- * Only wells belonging to groups of the *active tab type* are coloured. Wells from
- * other types are invisible in the current view. This matches the original GWT
- * behaviour of presenting one group type at a time.
+ * Only wells belonging to groups of the *active tab type* are colored. Wells from
+ * other types are invisible in the current view.
  *
  * ─── Drag / click interaction ──────────────────────────────────────────────────
  * Cell assignment uses a three-phase state machine tracked entirely via refs
@@ -57,6 +56,11 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
     const startCell = useRef<{ row: number; col: number } | null>(null);
     const dragIsUnselect = useRef(false);  // true when the drag started on a cell already in the active group
     const preDragPositions = useRef<Position[]>([]);  // snapshot of activeGroup.positions at mousedown
+
+    // Roving-tabindex state: tracks which cell holds tabIndex=0. Null means no cell has been
+    // focused yet, in which case (0,0) is the tab entry point.
+    const [focusedCell, setFocusedCell] = useState<{ row: number; col: number } | null>(null);
+    const cellRefs = useRef<Map<string, HTMLTableCellElement>>(new Map());
 
     // Pre-compute a "row,col" → {color, groupName} map for the active tab type.
     // This lets each cell do an O(1) lookup rather than scanning all groups and
@@ -105,9 +109,44 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
         dragIsUnselect.current = false;
     }, []);
 
+    const handleCellFocus = useCallback((row: number, col: number) => {
+        setFocusedCell({ row, col });
+    }, []);
+
+    // Keyboard interaction for grid cells:
+    //   Space / Enter → toggle the cell (same as a click with no drag)
+    //   Arrow keys    → move focus to the adjacent cell (wraps are intentionally prevented
+    //                   at plate edges to avoid confusing wrap-around focus jumps)
+    const handleCellKeyDown = useCallback((row: number, col: number, e: React.KeyboardEvent) => {
+        const moveFocus = (r: number, c: number) => {
+            e.preventDefault();
+            setFocusedCell({ row: r, col: c });
+            cellRefs.current.get(`${r},${c}`)?.focus();
+        };
+        switch (e.key) {
+            case ' ':
+            case 'Enter':
+                e.preventDefault();
+                onCellToggle(row, col);
+                break;
+            case 'ArrowUp':
+                if (row > 0) moveFocus(row - 1, col);
+                break;
+            case 'ArrowDown':
+                if (row < plate.rows - 1) moveFocus(row + 1, col);
+                break;
+            case 'ArrowLeft':
+                if (col > 0) moveFocus(row, col - 1);
+                break;
+            case 'ArrowRight':
+                if (col < plate.cols - 1) moveFocus(row, col + 1);
+                break;
+        }
+    }, [onCellToggle, plate.rows, plate.cols]);
+
     return (
         <div className="template-grid" onMouseLeave={handleDragEnd} onMouseUp={handleDragEnd}>
-            <table className="template-grid__table">
+            <table className="template-grid__table" role="grid">
                 <thead>
                     <tr>
                         <th className="template-grid__corner" />
@@ -125,17 +164,29 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
                                 const isActiveGroupCell = activeGroup?.positions.some(p => p.row === row && p.col === col);
                                 const location = `${getRowLabel(row)}${col + 1}`;
                                 const tooltip = entry ? `${location}: ${entry.groupName}` : location;
+                                const isTabStop = focusedCell
+                                    ? focusedCell.row === row && focusedCell.col === col
+                                    : row === 0 && col === 0;
                                 return (
                                     <td
                                         key={col}
+                                        ref={el => {
+                                            const key = `${row},${col}`;
+                                            if (el) cellRefs.current.set(key, el);
+                                            else cellRefs.current.delete(key);
+                                        }}
+                                        tabIndex={isTabStop ? 0 : -1}
                                         className={classNames('template-grid__cell', {
                                             'template-grid__cell--active': isActiveGroupCell,
                                         })}
                                         style={{ backgroundColor: entry?.color ?? '#f5f5f5' }}
                                         title={tooltip}
+                                        aria-label={tooltip}
                                         onMouseDown={e => handleMouseDown(row, col, e)}
                                         onMouseEnter={() => handleMouseEnter(row, col)}
                                         onMouseUp={() => handleCellMouseUp(row, col)}
+                                        onFocus={() => handleCellFocus(row, col)}
+                                        onKeyDown={e => handleCellKeyDown(row, col, e)}
                                     />
                                 );
                             })}

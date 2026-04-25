@@ -463,6 +463,7 @@ export function PlateTemplateDesigner(): JSX.Element {
                             <button
                                 id="right-tab-properties"
                                 role="tab"
+                                aria-controls="right-panel-properties"
                                 aria-selected={rightTab === 'properties'}
                                 className={classNames('right-panel-tabs__tab', {
                                     'right-panel-tabs__tab--active': rightTab === 'properties',
@@ -474,6 +475,7 @@ export function PlateTemplateDesigner(): JSX.Element {
                             <button
                                 id="right-tab-warnings"
                                 role="tab"
+                                aria-controls="right-panel-warnings"
                                 aria-selected={rightTab === 'warnings'}
                                 className={classNames('right-panel-tabs__tab', {
                                     'right-panel-tabs__tab--active': rightTab === 'warnings',
@@ -487,6 +489,7 @@ export function PlateTemplateDesigner(): JSX.Element {
                     )}
                     {(!plate.showWarningPanel || rightTab === 'properties') && (
                         <div
+                            id={plate.showWarningPanel ? 'right-panel-properties' : undefined}
                             role={plate.showWarningPanel ? 'tabpanel' : undefined}
                             aria-labelledby={plate.showWarningPanel ? 'right-tab-properties' : undefined}
                         >
@@ -498,7 +501,7 @@ export function PlateTemplateDesigner(): JSX.Element {
                         </div>
                     )}
                     {plate.showWarningPanel && rightTab === 'warnings' && (
-                        <div role="tabpanel" aria-labelledby="right-tab-warnings">
+                        <div id="right-panel-warnings" role="tabpanel" aria-labelledby="right-tab-warnings">
                             <WarningPanel plate={plate} />
                         </div>
                     )}

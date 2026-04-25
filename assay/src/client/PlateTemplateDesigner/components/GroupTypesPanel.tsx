@@ -83,7 +83,6 @@ export function GroupTypesPanel({
     const [multiBaseName, setMultiBaseName] = useState('');
     const [multiCount, setMultiCount] = useState('2');
     const [multiCountError, setMultiCountError] = useState('');
-    const multiBaseNameRef = useRef<HTMLInputElement>(null);
     const dialogRef = useRef<HTMLDivElement>(null);
 
     // Stable derived list — memoized so useMemo and useEffect deps are stable.
@@ -215,6 +214,7 @@ export function GroupTypesPanel({
                         key={type}
                         id={`group-tab-${type}`}
                         role="tab"
+                        aria-controls={`group-panel-${type}`}
                         aria-selected={type === activeTab}
                         className={classNames('group-types-panel__tab', {
                             'group-types-panel__tab--active': type === activeTab,
@@ -226,6 +226,7 @@ export function GroupTypesPanel({
                 ))}
             </div>
             <div
+                id={`group-panel-${activeTab}`}
                 className="group-types-panel__tab-body"
                 role="tabpanel"
                 aria-labelledby={`group-tab-${activeTab}`}
@@ -253,6 +254,7 @@ export function GroupTypesPanel({
                                     <span
                                         className="group-types-panel__color-swatch"
                                         style={{ backgroundColor: color ?? '#ccc' }}
+                                        aria-hidden="true"
                                     />
                                     {isRenaming ? (
                                         <input
@@ -376,7 +378,6 @@ export function GroupTypesPanel({
                                     <td id="multi-create-base-name-label" className="multi-create-dialog__label">Base Name</td>
                                     <td>
                                         <input
-                                            ref={multiBaseNameRef}
                                             className="multi-create-dialog__input"
                                             type="text"
                                             aria-labelledby="multi-create-base-name-label"

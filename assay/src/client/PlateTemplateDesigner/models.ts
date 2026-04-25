@@ -35,13 +35,7 @@ export interface PlateTemplate {
     defaultPlateName: string;
 }
 
-export interface SaveTemplateResponse {
-    rowId: number;
-}
-
 /**
- * Replicates the GWT TemplateGridCell.getWarnings() logic exactly.
- *
  * Two conditions produce warnings:
  *  1. A REPLICATE well that belongs to neither a SPECIMEN nor a CONTROL group is almost certainly
  *     a configuration error — replicates are only meaningful relative to a specimen or control.
