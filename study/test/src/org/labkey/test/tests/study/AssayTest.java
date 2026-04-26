@@ -132,7 +132,6 @@ public class AssayTest extends AbstractAssayTest
     public void testAssayMultiFileImportForMVTC() throws Exception
     {
         Assume.assumeTrue("Multi-choice text fields are only supported on PostgreSQL", WebTestHelper.getDatabaseType() == WebTestHelper.DatabaseType.PostgreSQL);
-        OptionalFeatureHelper.enableOptionalFeature(getCurrentTest().createDefaultConnection(), "multiChoiceDataType");
         _containerHelper.createProject(MVTC_MULTI_FILE_IMPORT_PROJECT, "Assay");
         new GeneralAssayDesign(MVTC_MULTI_FILE_IMPORT_ASSAY)
                 .setRunFields(List.of(new FieldDefinition("runText", FieldDefinition.ColumnType.String)), true)

@@ -50,7 +50,6 @@ public interface AppProps
     String ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES = "allowedExternalResources";
     String QUANTITY_COLUMN_SUFFIX_TESTING = "quantityColumnSuffixTesting";
     String REJECT_CONTROLLER_FIRST_URLS = "rejectControllerFirstUrls";
-    String MULTI_VALUE_TEXT_CHOICE = "multiChoiceDataType";
 
     String UNKNOWN_VERSION = "Unknown Release Version";
 
