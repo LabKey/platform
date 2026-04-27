@@ -564,6 +564,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
+    protected PartitionKeyColumns getPartitionKeyColumns()
+    {
+        return new PartitionKeyColumns(RowId.name(), Name.name());
+    }
+
+    @Override
     public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws BatchValidationException
     {
@@ -709,7 +715,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation)
     {
-        throw new UnsupportedOperationException("_update() is no longer supported for samples");
+        throw new UnsupportedOperationException("updateRow() is no longer supported for samples");
 
     }
 

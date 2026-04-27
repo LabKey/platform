@@ -1,12 +1,9 @@
 package org.labkey.api.dataiterator;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -14,7 +11,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -22,45 +19,29 @@ import java.util.function.Supplier;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
-public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
+public class SampleUpdateAddColumnsDataIterator extends AbstractPrefetchingDataIterator
 {
     public static final String CURRENT_SAMPLE_STATUS_COLUMN_NAME = "_CurrentSampleState_";
 
-    final CachingDataIterator _unwrapped;
-    final TableInfo target;
     final long _sampleTypeId;
-    final ColumnInfo pkColumn;
-    final Supplier<Object> pkSupplier;
     final int _aliquotedFromColIndex;
     final int _rootMaterialRowIdColIndex;
     final int _currentSampleStateColIndex;
-    final DataIteratorContext _context;
 
     // prefetch of existing records
-    int lastPrefetchRowNumber = -1;
     final IntHashMap<String> aliquotParents = new IntHashMap<>();
     final IntHashMap<Integer> aliquotRoots = new IntHashMap<>();
     final IntHashMap<Integer> sampleState = new IntHashMap<>();
 
-    public SampleUpdateAddColumnsDataIterator(DataIterator in, @NotNull DataIteratorContext context, TableInfo target, long sampleTypeId, String keyColumnName)
+    public SampleUpdateAddColumnsDataIterator(CachingDataIterator in, @NotNull DataIteratorContext context, TableInfo target, long sampleTypeId, String keyColumnName)
     {
-        super(in);
-        this._unwrapped = (CachingDataIterator)in;
-        this._context = context;
-        this.target = target;
+        super(in, context, target, keyColumnName);
         this._sampleTypeId = sampleTypeId;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
         this._aliquotedFromColIndex = map.get(AliquotedFromLSID.name());
         this._rootMaterialRowIdColIndex = map.get(RootMaterialRowId.name());
         this._currentSampleStateColIndex = map.get(CURRENT_SAMPLE_STATUS_COLUMN_NAME);
-
-        Integer index = map.get(keyColumnName);
-        ColumnInfo col = target.getColumn(keyColumnName);
-        if (null == index || null == col)
-            throw new IllegalArgumentException("Key column not found: " + keyColumnName);
-        pkSupplier = in.getSupplier(index);
-        pkColumn = col;
     }
 
     @Override
@@ -102,6 +83,7 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
         return null;
     }
 
+    @Override
     protected void prefetchExisting() throws BatchValidationException
     {
         Integer rowNumber = asInteger(_delegate.get(0));
@@ -112,34 +94,18 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
         aliquotRoots.clear();
         sampleState.clear();
 
-        int rowsToFetch = 50;
-        String keyFieldName = pkColumn.getName();
-        boolean numericKey = pkColumn.isNumericType();
-        JdbcType jdbcType = pkColumn.getJdbcType();
-        Map<Integer, Object> rowKeyMap = new LinkedHashMap<>();
-        Map<Object, Integer> keyRowMap = new LinkedHashMap<>();
-        do
+        BatchResult batch = buildBatch();
+        Map<Integer, Object> rowKeyMap = batch.rowKeyMap();
+        Map<Object, List<Integer>> keyRowMap = batch.keyRowMap();
+
+        for (Integer rowInd : rowKeyMap.keySet())
         {
-            lastPrefetchRowNumber = asInteger(_delegate.get(0));
-            Object keyObj = pkSupplier.get();
-            Object key = jdbcType.convert(keyObj);
-
-            if (numericKey)
-            {
-                if (null == key)
-                    throw new IllegalArgumentException(keyFieldName + " value not provided on row " + lastPrefetchRowNumber);
-            }
-            else if (StringUtils.isEmpty((String) key))
-                throw new IllegalArgumentException(keyFieldName + " value not provided on row " + lastPrefetchRowNumber);
-
-            rowKeyMap.put(lastPrefetchRowNumber, key);
-            keyRowMap.put(key, lastPrefetchRowNumber);
-            aliquotParents.put(lastPrefetchRowNumber, null);
-            aliquotRoots.put(lastPrefetchRowNumber, null);
-            sampleState.put(lastPrefetchRowNumber, null);
+            aliquotParents.put(rowInd, null);
+            aliquotRoots.put(rowInd, null);
+            sampleState.put(rowInd, null);
         }
-        while (--rowsToFetch > 0 && _delegate.next());
 
+        String keyFieldName = pkColumn.getName();
         SimpleFilter filter = new SimpleFilter(MaterialSourceId.fieldKey(), _sampleTypeId);
         filter.addCondition(pkColumn.getFieldKey(), rowKeyMap.values(), CompareType.IN);
         filter.addCondition(FieldKey.fromParts("Container"), target.getUserSchema().getContainer());
@@ -153,36 +119,17 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
             Object aliquotedFromLSIDObj = result.get(AliquotedFromLSID.name());
             Object rootMaterialRowIdObj = result.get(RootMaterialRowId.name());
             Object sampleStateObj = result.get(SampleState.name());
-            Integer rowInd = keyRowMap.get(key);
-            if (aliquotedFromLSIDObj != null)
-                aliquotParents.put(rowInd, (String) aliquotedFromLSIDObj);
-            if (rootMaterialRowIdObj != null)
-                aliquotRoots.put(rowInd, (Integer) rootMaterialRowIdObj);
-            if (sampleStateObj != null)
-                sampleState.put(rowInd, (Integer) sampleStateObj);
+            for (Integer rowInd : keyRowMap.get(key))
+            {
+                if (aliquotedFromLSIDObj != null)
+                    aliquotParents.put(rowInd, (String) aliquotedFromLSIDObj);
+                if (rootMaterialRowIdObj != null)
+                    aliquotRoots.put(rowInd, (Integer) rootMaterialRowIdObj);
+                if (sampleStateObj != null)
+                    sampleState.put(rowInd, (Integer) sampleStateObj);
+            }
         }
 
-        // backup to where we started so caller can iterate through them one at a time
-        _unwrapped.reset(); // unwrapped _delegate
-        _delegate.next();
-    }
-
-    @Override
-    public boolean next() throws BatchValidationException
-    {
-        if (_context.getErrors().hasErrors())
-            return false;
-
-        // NOTE: we have to call mark() before we call next() if we want the 'next' row to be cached
-        _unwrapped.mark();  // unwrapped _delegate
-        boolean ret = super.next();
-        if (!_context.getErrors().hasErrors() && ret)
-        {
-            prefetchExisting();
-            if (_context.getErrors().hasErrors())
-                return false;
-        }
-
-        return ret;
+        resetAfterBatch();
     }
 }

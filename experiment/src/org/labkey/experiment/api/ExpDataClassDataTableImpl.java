@@ -83,7 +83,6 @@ import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataTable;
-import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
@@ -1011,7 +1010,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                         // to opt-in to the old behavior where RowId is accepted and ignored.
                         if (isMerge && !OptionalFeatureService.get().isFeatureEnabled(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE))
                         {
-                            context.getErrors().addRowError(new ValidationException("RowId is not accepted when merging data. Specify only the data name instead.", ExpMaterialTable.Column.RowId.name()));
+                            context.getErrors().addRowError(new ValidationException("RowId is not accepted when merging data. Specify only the data name instead.", Column.RowId.name()));
                             return null;
                         }
                     }
@@ -1061,10 +1060,30 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     context.getErrors().addRowError(new ValidationException(String.format(DUPLICATE_COLUMN_IN_DATA_ERROR, ExpDataTable.Column.RowId.name())));
                     return null;
                 }
-                step0.addNullColumn(Column.LSID.name(), JdbcType.VARCHAR);
-                step0.selectAll();
 
                 // add lsid column (for Attachment) but need to re-query it
+                boolean hasAttachmentCol = false;
+                for (String columnName : columnNameMap.keySet())
+                {
+                    ColumnInfo checkAttachmentCol = getColumn(columnName);
+                    if (checkAttachmentCol != null)
+                    {
+                        if (checkAttachmentCol.getPropertyType() == PropertyType.ATTACHMENT)
+                        {
+                            hasAttachmentCol = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!hasAttachmentCol)
+                {
+                    step0.selectAll();
+                    return LoggingDataIterator.wrap(step0);
+                }
+
+                step0.addNullColumn(Column.LSID.name(), JdbcType.VARCHAR);
+                step0.selectAll();
                 var added = new DataClassUpdateAddColumnsDataIterator(new CachingDataIterator(step0), context, expData, c ,_dataClass.getRowId(), keyColumnAlias);
                 return LoggingDataIterator.wrap(added);
             }
@@ -1169,6 +1188,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             _expDataClassDataTableImpl = table;
             // Note that this class actually overrides createImportDIB(), so currently we're not looking at this flag.
             _enableExistingRecordsDataIterator = false;
+        }
+
+        @Override
+        protected PartitionKeyColumns getPartitionKeyColumns()
+        {
+            return new PartitionKeyColumns(ExpDataTable.Column.RowId.name(), ExpDataTable.Column.Name.name());
         }
 
         @Override
@@ -1414,7 +1439,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation)
         {
-            throw new UnsupportedOperationException("_update() is no longer supported for dataclass");
+            throw new UnsupportedOperationException("updateRow() is no longer supported for dataclass");
         }
 
         @Override

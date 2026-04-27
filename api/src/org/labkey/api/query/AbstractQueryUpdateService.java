@@ -123,8 +123,6 @@ import static java.util.Objects.requireNonNull;
 import static org.labkey.api.audit.TransactionAuditProvider.DB_SEQUENCE_NAME;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
 import static org.labkey.api.util.FileUtil.toFileForRead;
 import static org.labkey.api.util.FileUtil.toFileForWrite;
@@ -909,12 +907,32 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
+    /**
+     * Hook called by {@link #updateRowsUsingPartitionedDIB} once per partition before that partition is processed.
+     * A partition is a maximal consecutive run of rows that all share the same set of column names (keys).
+     * <p>
+     * Subclasses can override to enforce invariants on a particular key-column combination — for example,
+     * requiring that certain columns always appear together. Throw a runtime exception to reject the partition.
+     *
+     * @param columns the set of column names present in the rows of the current partition
+     */
     protected void validatePartitionedRowKeys(Collection<String> columns)
     {
         // do nothing
     }
 
-    public List<Map<String, Object>> updateRowsUsingPartitionedDIB(
+    /**
+     * Updates a list of rows through the DataIteratorBuilder pipeline, automatically partitioning the input
+     * into consecutive groups that share the same set of column names (keys). Each partition is processed
+     * independently through {@link #_updateRowsUsingDIB}, allowing a single call to handle heterogeneous
+     * row maps (e.g. some rows keyed by RowId, others by Name) without requiring the caller to pre-split them.
+     * <p>
+     * Audit summary logging is suppressed for individual partitions and emitted once at the end.
+     * Cross-partition duplicate keys are detected and reported as errors.
+     * If any partition produces errors, a {@link DbScope.RetryPassthroughException} is thrown so that
+     * an enclosing {@code executeWithRetry()} block will not attempt to commit the transaction.
+     */
+    protected List<Map<String, Object>> updateRowsUsingPartitionedDIB(
             DbScope.Transaction tx,
             User user,
             Container container,
@@ -985,22 +1003,42 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return ret;
     }
 
+    /**
+     * Identifies the column names used to detect duplicate keys across partitions in
+     * {@link #updateRowsUsingPartitionedDIB}. Return {@code null} for either field to skip that check.
+     * The base implementation returns {@code (null, null)}, disabling duplicate detection.
+     * Subclasses whose tables support partitioned updates should override with the appropriate column names.
+     */
+    public record PartitionKeyColumns(@Nullable String numericKey, @Nullable String stringKey) {}
+
+    protected PartitionKeyColumns getPartitionKeyColumns()
+    {
+        return new PartitionKeyColumns(null, null);
+    }
+
     private void checkPartitionForDuplicates(List<Map<String, Object>> partitionRows, Set<Long> globalRowIds, Set<String> globalNames, BatchValidationException errors)
     {
+        PartitionKeyColumns keys = getPartitionKeyColumns();
         for (Map<String, Object> row : partitionRows)
         {
-            Long rowId = MapUtils.getLong(row, RowId.name());
-            if (rowId != null && !globalRowIds.add(rowId))
+            if (keys.numericKey() != null)
             {
-                errors.addRowError(new ValidationException("Duplicate key provided: " + rowId));
-                return;
+                Long rowId = MapUtils.getLong(row, keys.numericKey());
+                if (rowId != null && !globalRowIds.add(rowId))
+                {
+                    errors.addRowError(new ValidationException("Duplicate key provided: " + rowId));
+                    return;
+                }
             }
 
-            Object nameObj = row.get(Name.name());
-            if (nameObj != null && !globalNames.add(nameObj.toString()))
+            if (keys.stringKey() != null)
             {
-                errors.addRowError(new ValidationException("Duplicate key provided: " + nameObj));
-                return;
+                Object nameObj = row.get(keys.stringKey());
+                if (nameObj != null && !globalNames.add(nameObj.toString()))
+                {
+                    errors.addRowError(new ValidationException("Duplicate key provided: " + nameObj));
+                    return;
+                }
             }
         }
     }
