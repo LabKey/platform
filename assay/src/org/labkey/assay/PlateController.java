@@ -112,6 +112,45 @@ public class PlateController extends SpringActionController
     private static final SpringActionController.DefaultActionResolver _actionResolver = new DefaultActionResolver(PlateController.class);
     private static final Logger LOG = LogHelper.getLogger(PlateController.class, "Controller for plate related actions");
 
+    record SubmittedGroup(int rowId, String type, String name, List<PlatePosition> positions, Map<String, Object> properties)
+    {
+        public static SubmittedGroup from(JSONObject g)
+        {
+            int rowId = g.optInt("rowId", -1);
+            String type = g.getString("type");
+            String name = g.getString("name");
+            JSONArray posArr = g.optJSONArray("positions");
+            List<PlatePosition> positions = new ArrayList<>();
+            if (posArr != null)
+            {
+                for (int j = 0; j < posArr.length(); j++)
+                {
+                    JSONObject p = posArr.getJSONObject(j);
+                    positions.add(PlatePosition.from(p));
+                }
+            }
+            JSONObject propsObj = g.optJSONObject("properties");
+            Map<String, Object> props = new HashMap<>();
+            if (propsObj != null)
+            {
+                for (String key : propsObj.keySet())
+                {
+                    Object val = propsObj.get(key);
+                    props.put(key, val == JSONObject.NULL ? null : val);
+                }
+            }
+            return new SubmittedGroup(rowId, type, name, positions, props);
+        }
+    }
+
+    record PlatePosition(int row, int col)
+    {
+        public static PlatePosition from(JSONObject p)
+        {
+            return new PlatePosition(p.getInt("row"), p.getInt("col"));
+        }
+    }
+
     public PlateController()
     {
         setActionResolver(_actionResolver);
@@ -165,7 +204,7 @@ public class PlateController extends SpringActionController
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             setHelpTopic("editPlateTemplate");
-            List<Plate> plateTemplates = PlateService.get().getPlates(getContainer())
+            List<? extends Plate> plateTemplates = PlateService.get().getPlates(getContainer())
                     .stream()
                     .filter(p -> !TsvPlateLayoutHandler.TYPE.equalsIgnoreCase(p.getAssayType()))
                     .toList();
@@ -180,6 +219,7 @@ public class PlateController extends SpringActionController
         }           
     }
 
+    /** Delete soon! */
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     public static class DesignerServiceAction extends GWTServiceAction
     {
@@ -417,7 +457,7 @@ public class PlateController extends SpringActionController
             }
 
             boolean updateExisting = false;
-            Plate plate;
+            PlateImpl plate;
             if (rowId > 0)
             {
                 plate = PlateManager.get().getPlate(getContainer(), rowId);
@@ -447,42 +487,16 @@ public class PlateController extends SpringActionController
             plate.setProperties(plateProperties);
 
             // Parse groups from JSON
-            List<Map<String, Object>> submittedGroups = new ArrayList<>();
+            List<SubmittedGroup> submittedGroups = new ArrayList<>();
             Set<Integer> submittedGroupIds = new HashSet<>();
             if (groupsJson != null)
             {
                 for (int i = 0; i < groupsJson.length(); i++)
                 {
-                    JSONObject g = groupsJson.getJSONObject(i);
-                    Map<String, Object> gm = new HashMap<>();
-                    gm.put("rowId", g.optInt("rowId", -1));
-                    gm.put("type", g.getString("type"));
-                    gm.put("name", g.getString("name"));
-                    JSONArray posArr = g.optJSONArray("positions");
-                    List<int[]> positions = new ArrayList<>();
-                    if (posArr != null)
-                    {
-                        for (int j = 0; j < posArr.length(); j++)
-                        {
-                            JSONObject p = posArr.getJSONObject(j);
-                            positions.add(new int[]{p.getInt("row"), p.getInt("col")});
-                        }
-                    }
-                    gm.put("positions", positions);
-                    JSONObject propsObj = g.optJSONObject("properties");
-                    Map<String, Object> props = new HashMap<>();
-                    if (propsObj != null)
-                    {
-                        for (String key : propsObj.keySet())
-                        {
-                            Object val = propsObj.get(key);
-                            props.put(key, val == JSONObject.NULL ? null : val);
-                        }
-                    }
-                    gm.put("properties", props);
-                    submittedGroups.add(gm);
-                    if ((int) gm.get("rowId") > 0)
-                        submittedGroupIds.add((int) gm.get("rowId"));
+                    SubmittedGroup g = SubmittedGroup.from(groupsJson.getJSONObject(i));
+                    submittedGroups.add(g);
+                    if (g.rowId > 0)
+                        submittedGroupIds.add(g.rowId);
                 }
             }
 
@@ -491,14 +505,14 @@ public class PlateController extends SpringActionController
             for (WellGroup existingGroup : existingWellGroups)
             {
                 if (existingGroup.getRowId() != null && !submittedGroupIds.contains(existingGroup.getRowId()))
-                    ((PlateImpl) plate).markWellGroupForDeletion(existingGroup);
+                    plate.markWellGroupForDeletion(existingGroup);
             }
 
             // Update or create well groups
-            for (Map<String, Object> gm : submittedGroups)
+            for (SubmittedGroup gm : submittedGroups)
             {
-                int gRowId = (int) gm.get("rowId");
-                String groupTypeName = (String) gm.get("type");
+                int gRowId = gm.rowId();
+                String groupTypeName = gm.type();
                 WellGroup.Type groupType;
                 try
                 {
@@ -508,14 +522,12 @@ public class PlateController extends SpringActionController
                 {
                     throw new ApiUsageException("Unknown well group type: '" + groupTypeName + "'");
                 }
-                @SuppressWarnings("unchecked")
-                List<int[]> posList = (List<int[]>) gm.get("positions");
+                List<PlatePosition> posList = gm.positions();
                 List<Position> positions = new ArrayList<>();
-                for (int[] p : posList)
-                    positions.add(plate.getPosition(p[0], p[1]));
+                for (PlatePosition p : posList)
+                    positions.add(plate.getPosition(p.row, p.col));
 
-                @SuppressWarnings("unchecked")
-                Map<String, Object> props = (Map<String, Object>) gm.get("properties");
+                Map<String, Object> props = gm.properties();
 
                 WellGroupImpl group;
                 if (updateExisting && gRowId > 0)
@@ -524,15 +536,15 @@ public class PlateController extends SpringActionController
                     if (existing == null)
                         throw new Exception("Well group " + gRowId + " was not found.");
                     if (existing.getType() != groupType)
-                        throw new Exception("Well group type cannot be changed: " + gm.get("name"));
-                    existing.setName((String) gm.get("name"));
+                        throw new Exception("Well group type cannot be changed: " + gm.name());
+                    existing.setName(gm.name);
                     existing.setPositions(positions);
-                    ((PlateImpl) plate).storeWellGroup(existing);
+                    plate.storeWellGroup(existing);
                     group = existing;
                 }
                 else
                 {
-                    group = (WellGroupImpl) plate.addWellGroup((String) gm.get("name"), groupType, positions);
+                    group = plate.addWellGroup(gm.name, groupType, positions);
                 }
                 group.setProperties(props);
             }
@@ -579,6 +591,7 @@ public class PlateController extends SpringActionController
         }
     }
 
+    /** Delete soon! */
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     public class DesignerGwtAction extends SimpleViewAction<DesignerForm>
     {
@@ -664,7 +677,7 @@ public class PlateController extends SpringActionController
         private HtmlString _treeHtml;
         private Plate _plate;
         private String _selectedDestination;
-        private List<Plate> _destinationTemplates;
+        private List<? extends Plate> _destinationTemplates;
 
         public CopyTemplateBean(final Container container, final User user, final Integer plateId, final String selectedDestination)
         {
@@ -1083,7 +1096,7 @@ public class PlateController extends SpringActionController
                 PlateImpl newPlate = new PlateImpl(getContainer(), form.getName(), form.getBarcode(), form.getAssayType(), _plateType);
                 if (form.getData() == null && form.getTemplateId() != null && TsvPlateLayoutHandler.TYPE.equalsIgnoreCase(newPlate.getAssayType()))
                 {
-                    newPlate = (PlateImpl) PlateManager.get().copyPlate(
+                    newPlate = PlateManager.get().copyPlate(
                         getContainer(),
                         getUser(),
                         form.getTemplateId(),
@@ -1104,7 +1117,7 @@ public class PlateController extends SpringActionController
                     if (form.isTemplate() && data == null)
                         data = PlateManager.get().prepareEmptyPlateTemplateData(getContainer(), _plateType);
 
-                    newPlate = (PlateImpl) PlateManager.get().createAndSavePlate(getContainer(), getUser(), newPlate, form.getPlateSetId(), data);
+                    newPlate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), newPlate, form.getPlateSetId(), data);
                 }
 
                 return success(newPlate);

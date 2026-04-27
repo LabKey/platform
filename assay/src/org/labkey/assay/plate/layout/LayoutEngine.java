@@ -19,7 +19,7 @@ public class LayoutEngine
     private final ReformatOptions _options;
     private Collection<Long> _sampleIds;
     private List<Plate> _sourcePlates;
-    private List<Plate> _targetPlates;
+    private List<? extends Plate> _targetPlates;
     private List<PlateManager.PlateData> _targetPlateData;
     private PlateType _targetPlateType;
     private Plate _targetTemplate;
@@ -93,7 +93,7 @@ public class LayoutEngine
         _sourcePlates = sourcePlates;
     }
 
-    public void setTargetPlates(List<Plate> targetPlates)
+    public void setTargetPlates(List<? extends Plate> targetPlates)
     {
         _targetPlates = targetPlates;
     }
