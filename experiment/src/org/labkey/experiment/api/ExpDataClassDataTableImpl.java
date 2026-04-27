@@ -1189,7 +1189,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
                     try
                     {
-                        Map<String, Integer> response = ExperimentService.get().moveDataClassObjects(containerObjects.get(c), c, targetContainer, user, auditUserComment, auditType);
+                        Map<String, Integer> response = ExperimentServiceImpl.get().moveDataClassObjects(containerObjects.get(c), c, targetContainer, user, errors, auditUserComment, auditType);
                         incrementCounts(allContainerResponse, response);
                     }
                     catch (ExperimentException e)

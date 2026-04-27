@@ -36,8 +36,6 @@ import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jfree.chart.encoders.EncoderUtil;
-import org.jfree.chart.encoders.ImageFormat;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -89,7 +87,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
-import org.springframework.web.util.WebUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -111,7 +108,6 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -147,7 +143,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -569,8 +564,6 @@ public class PageFlowUtil
         for (PropertyValue entry : pvs.getPropertyValues())
         {
             Object key = entry.getName();
-            if (null == key)
-                continue;
             String encKey = encodeURIComponent(String.valueOf(key));
             Object v = entry.getValue();
             if (v == null || v instanceof String || !v.getClass().isArray())
@@ -2129,7 +2122,7 @@ public class PageFlowUtil
                 if ("_blank".equals(target))
                 {
                     String rel = href.getAttribute("rel");
-                    if (rel == null || !rel.contains("noopener") || !rel.contains("noreferrer"))
+                    if (!rel.contains("noopener") || !rel.contains("noreferrer"))
                     {
                         modified = true;
                         href.setAttribute("rel", "noopener noreferrer");
@@ -2169,7 +2162,7 @@ public class PageFlowUtil
         }
         catch (TransformerException tEx)
         {
-            tEx.printStackTrace();
+            _log.error("Failed to convert XML document to string", tEx);
         }
         return null;
     }
@@ -2625,7 +2618,7 @@ public class PageFlowUtil
                 }
                 case AFTERTOKEN ->
                 {
-                    assert currentToken.length() == 0;
+                    assert currentToken.isEmpty();
                     if (Character.isWhitespace(c))
                         continue;
                     if (c == ',' || c == '\0')
@@ -2710,8 +2703,7 @@ public class PageFlowUtil
         if (!StringUtils.containsAny(name, unclean))
             return name;
         // CONSIDER: use encode(name) for simplicity or only encode the unclean chars?
-        var ret = FIELD_ENCODED_PREFIX + encode(name);
-        return ret;
+        return FIELD_ENCODED_PREFIX + encode(name);
     }
 
 
@@ -2728,7 +2720,6 @@ public class PageFlowUtil
     {
         if (!(req instanceof MultipartHttpServletRequest mpreq))
             return Collections.emptyMap();
-        @SuppressWarnings("SSBasedInspection")
         Map<String, MultipartFile> htmlMap = mpreq.getFileMap();
         Map<String, MultipartFile> formMap = new LinkedHashMap<>();
         htmlMap.forEach((key, value) -> formMap.put(PageFlowUtil.decodeFormName(key), value));
@@ -2740,7 +2731,6 @@ public class PageFlowUtil
         MultiValueMap<String, MultipartFile> formMap = new LinkedMultiValueMap<>();
         if (!(req instanceof MultipartHttpServletRequest mpreq))
             return formMap;
-        @SuppressWarnings("SSBasedInspection")
         MultiValueMap<String, MultipartFile> htmlMap = mpreq.getMultiFileMap();
         htmlMap.forEach((key, value) -> formMap.put(PageFlowUtil.decodeFormName(key), value));
         return formMap;
@@ -3198,10 +3188,23 @@ public class PageFlowUtil
         }
     }
 
-    /** @return true if the UrlProvider exists. */
-    static public <P extends UrlProvider> boolean hasUrlProvider(Class<P> inter)
+    /**
+     * Returns a specified <code>UrlProvider</code> interface implementation, for use
+     * in writing URLs implemented in other modules.
+     *
+     * @param inter interface extending UrlProvider
+     * @return an implementation of the interface
+     * @throws IllegalArgumentException if the provider is not available. Use urlProviderOptional() if you're OK with it not being present
+     */
+    @NotNull
+    static public <P extends UrlProvider> P urlProvider(Class<P> inter)
     {
-        return UrlProviderService.getInstance().hasUrlProvider(inter);
+        P result = urlProviderOptional(inter);
+        if (result == null)
+        {
+            throw new IllegalArgumentException("No provider registered for " + inter.getName());
+        }
+        return result;
     }
 
     /**
@@ -3212,7 +3215,7 @@ public class PageFlowUtil
      * @return an implementation of the interface.
      */
     @Nullable
-    static public <P extends UrlProvider> P urlProvider(Class<P> inter)
+    static public <P extends UrlProvider> P urlProviderOptional(Class<P> inter)
     {
         return UrlProviderService.getInstance().getUrlProvider(inter);
     }
@@ -3228,7 +3231,7 @@ public class PageFlowUtil
      * @param checkForOverrides true to check for module overrides to this interface
      * @return an implementation of the interface.
      */
-    @Nullable
+    @NotNull
     static public <P extends UrlProvider> P urlProvider(Class<P> inter, boolean checkForOverrides)
     {
         if (checkForOverrides)
@@ -3297,52 +3300,6 @@ public class PageFlowUtil
     {
         return url.addParameter(scope + DataRegion.LAST_FILTER_PARAM, "true");
     }
-
-    public static String getSessionId(HttpServletRequest request)
-    {
-        return WebUtils.getSessionId(request);
-    }
-
-    /**
-     * Stream the text back to the browser as a PNG
-     */
-    public static void streamTextAsImage(HttpServletResponse response, String text, int width, int height, Color textColor) throws IOException
-    {
-        Font font = new Font("SansSerif", Font.PLAIN, 12);
-
-        BufferedImage buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g2 = buffer.createGraphics();
-        g2.setColor(Color.WHITE);
-        g2.fillRect(0, 0, width, height);
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setColor(textColor);
-        g2.setFont(font);
-        FontMetrics metrics = g2.getFontMetrics();
-        int fontHeight = metrics.getHeight();
-        int spaceWidth = metrics.stringWidth(" ");
-
-        int x = 5;
-        int y = fontHeight + 5;
-
-        StringTokenizer st = new StringTokenizer(text, " ");
-        // Line wrap to fit
-        while (st.hasMoreTokens())
-        {
-            String token = st.nextToken();
-            int tokenWidth = metrics.stringWidth(token);
-            if (x != 5 && tokenWidth + x > width)
-            {
-                x = 5;
-                y += fontHeight;
-            }
-            g2.drawString(token, x, y);
-            x += tokenWidth + spaceWidth;
-        }
-
-        response.setContentType("image/png");
-        EncoderUtil.writeBufferedImage(buffer, ImageFormat.PNG, response.getOutputStream());
-    }
-
     public static JSONObject getModuleClientContext(ContainerUser context, @Nullable LinkedHashSet<ClientDependency> resources)
     {
         JSONObject ret = new JSONObject();

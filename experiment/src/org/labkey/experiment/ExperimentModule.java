@@ -20,8 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
@@ -631,9 +633,23 @@ public class ExperimentModule extends SpringModule
                         assayMetrics.put(assayProvider.getName(), protocolMetrics);
                     }
                     assayMetrics.put("autoLinkedAssayCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.propertyuri = 'terms.labkey.org#AutoCopyTargetContainer'").getObject(Long.class));
-                    assayMetrics.put("protocolsWithTransformScriptCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'TransformScript' AND status = 'Active'").getObject(Long.class));
-                    assayMetrics.put("protocolsWithTransformScriptRunOnEditCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'TransformScript' AND status = 'Active' AND OP.stringvalue LIKE '%\"INSERT\"%'").getObject(Long.class));
-                    assayMetrics.put("protocolsWithTransformScriptRunOnImportCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'TransformScript' AND status = 'Active' AND OP.stringvalue LIKE '%\"INSERT\"%'").getObject(Long.class));
+                    assayMetrics.put("protocolsWithTransformScriptCount", new SqlSelector(schema,
+                            "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = ? AND status = ?",
+                            AbstractAssayProvider.TRANSFORM_SCRIPT_PROPERTY_NAME,
+                            ExpProtocol.Status.Active.toString()
+                    ).getObject(Long.class));
+                    assayMetrics.put("protocolsWithTransformScriptRunOnEditCount", new SqlSelector(schema,
+                            "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = ? AND status = ? AND OP.stringvalue LIKE ?",
+                            AbstractAssayProvider.TRANSFORM_SCRIPT_PROPERTY_NAME,
+                            ExpProtocol.Status.Active.toString(),
+                            "%\"" + DataTransformService.TransformOperation.UPDATE + "\"%"
+                    ).getObject(Long.class));
+                    assayMetrics.put("protocolsWithTransformScriptRunOnImportCount", new SqlSelector(schema,
+                            "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = ? AND status = ? AND OP.stringvalue LIKE ?",
+                            AbstractAssayProvider.TRANSFORM_SCRIPT_PROPERTY_NAME,
+                            ExpProtocol.Status.Active.toString(),
+                            "%\"" + DataTransformService.TransformOperation.INSERT + "\"%"
+                    ).getObject(Long.class));
 
                     assayMetrics.put("standardAssayWithPlateSupportCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'PlateMetadata' AND floatValue = 1").getObject(Long.class));
                     SQLFragment runsWithPlateSQL = new SQLFragment("""
