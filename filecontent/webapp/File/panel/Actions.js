@@ -45,12 +45,12 @@ Ext4.define('File.panel.Action', {
     renderTpl: [
         '<span id="{id}-btnEl" class="iconbtn">',
             '<tpl if="stacked">',
-                '<span class="fa-stack fa-1x labkey-fa-stacked-wrapper">',
+                '<span class="fa-stack fa-1x labkey-fa-stacked-wrapper" aria-hidden="true">',
                     '<span class="fa {fontCls} fa-stack-2x"></span>',
                     '<span class="fa fa-stack-1x {stackedCls}"></span>',
                 '</span>',
             '<tpl else>',
-                '<span class="fa {fontCls}"></span>',
+                '<span class="fa {fontCls}" aria-hidden="true"></span>',
             '</tpl>',
             '<span id="{id}-btnInnerEl" class="iconbtn-label">',
                 '<tpl if="text.length &gt; 0 && !hideText">',
@@ -73,6 +73,20 @@ Ext4.define('File.panel.Action', {
             hideIcon: config.hideIcon === true,
             hideText: config.hideText === true
         };
+
+        // Add aria-label for accessibility (used by screen readers when button text is hidden)
+        if (config.hardText) {
+            var hardText = config.hardText;
+            var existingListeners = config.listeners || {};
+            var existingAfterRender = existingListeners.afterRender;
+            existingListeners.afterRender = function(btn) {
+                btn.getEl().dom.setAttribute('aria-label', hardText);
+                if (Ext4.isFunction(existingAfterRender)) {
+                    existingAfterRender.call(this, btn);
+                }
+            };
+            config.listeners = existingListeners;
+        }
 
         this.callParent([config]);
     },

@@ -362,6 +362,54 @@ public class DOM
         action,
         align,
         alt,
+        aria_activedescendant,
+        aria_atomic,
+        aria_autocomplete,
+        aria_busy,
+        aria_checked,
+        aria_colcount,
+        aria_colindex,
+        aria_colspan,
+        aria_controls,
+        aria_current,
+        aria_describedby,
+        aria_details,
+        aria_disabled,
+        aria_dropeffect,
+        aria_errormessage,
+        aria_expanded,
+        aria_flowto,
+        aria_grabbed,
+        aria_haspopup,
+        aria_hidden,
+        aria_invalid,
+        aria_keyshortcuts,
+        aria_label,
+        aria_labelledby,
+        aria_level,
+        aria_live,
+        aria_modal,
+        aria_multiline,
+        aria_multiselectable,
+        aria_orientation,
+        aria_owns,
+        aria_placeholder,
+        aria_posinset,
+        aria_pressed,
+        aria_readonly,
+        aria_relevant,
+        aria_required,
+        aria_roledescription,
+        aria_rowcount,
+        aria_rowindex,
+        aria_rowspan,
+        aria_selected,
+        aria_setsize,
+        aria_sort,
+        aria_valuemax,
+        aria_valuemin,
+        aria_valuenow,
+        aria_valuetext,
         async,
         autocomplete,
         autofocus,
@@ -570,7 +618,6 @@ public class DOM
             }
             return this;
         }
-
         public _Attributes cl(String...names)
         {
             if (null != names)
@@ -891,7 +938,7 @@ public class DOM
         if (null==value)
             return html;
         html.append(" ");
-        html.append(key.name());
+        html.append(key.name().replace('_', '-'));
         html.append("=\"");
         // NOTE it is somewhat unusual to pass in a Renderable, but it is possible that we
         // want to render HTML into an attribute.  We still need to re-encode the value before trying to wrap with "".

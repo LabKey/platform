@@ -5497,18 +5497,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 deleteExperimentRunsByRowIds(c, user, runId);
             }
-            ListService ls = ListService.get();
-            if (ls != null)
-            {
-                for (ListDefinition list : ListService.get().getLists(c, null, false).values())
-                {
-                    // Temporary fix for Issue 21400: **Deleting workbook deletes lists defined in parent container
-                    if (list.getContainer().equals(c))
-                    {
-                        list.delete(user);
-                    }
-                }
-            }
+
+            // Delete lists (because for some reason lists are under the purview of experiment...)
+            ListService.get().deleteLists(c, user, null);
 
             // Delete DataClasses and their exp.Data members
             // Need to delete DataClass before SampleTypes since they may be referenced by the DataClass
