@@ -562,6 +562,8 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                     _viewName = strs;
                 else if (value instanceof String str)
                     _viewName = new String[] { str };
+                else
+                    LOG.error("Unexpected viewName parameter type: " + String.valueOf(value));
             }
             return BaseViewAction.springBindParameters(this, "form", params);
         }
