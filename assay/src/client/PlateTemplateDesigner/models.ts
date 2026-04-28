@@ -47,6 +47,10 @@ export interface PlateTemplate {
  * - A cell can appear in multiple groups of different types (e.g. SPECIMEN + REPLICATE together is fine).
  * - Cell labels use spreadsheet notation: row → letter (A=0, B=1, …), col → 1-based number.
  */
+export const GROUP_TYPE_REPLICATE = 'REPLICATE';
+export const GROUP_TYPE_SPECIMEN = 'SPECIMEN';
+export const GROUP_TYPE_CONTROL = 'CONTROL';
+
 export function computeWarnings(plate: PlateTemplate): string[] {
     // Build a map from cell position → set of group types that include it.
     const cellTypes = new Map<string, Set<string>>();
@@ -61,9 +65,9 @@ export function computeWarnings(plate: PlateTemplate): string[] {
     for (const [key, types] of cellTypes.entries()) {
         const [row, col] = key.split(',').map(Number);
         const cellLabel = `${String.fromCharCode(65 + row)}${col + 1}`;
-        const hasReplicate = types.has('REPLICATE');
-        const hasSpecimen = types.has('SPECIMEN');
-        const hasControl = types.has('CONTROL');
+        const hasReplicate = types.has(GROUP_TYPE_REPLICATE);
+        const hasSpecimen = types.has(GROUP_TYPE_SPECIMEN);
+        const hasControl = types.has(GROUP_TYPE_CONTROL);
         if (hasReplicate && !(hasSpecimen || hasControl)) {
             warnings.push(`${cellLabel}: Well is a replicate, but is not part of a specimen or control group.`);
         }

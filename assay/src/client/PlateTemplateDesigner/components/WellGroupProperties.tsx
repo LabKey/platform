@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 
 import { WellGroup } from '../models';
 
-interface Props {
+interface WellGroupPropertiesProps {
     activeGroup: WellGroup | null;
     onPropertyChange: (groupRowId: number, key: string, value: string) => void;
     onDeleteProperty: (groupRowId: number, key: string) => void;
@@ -27,7 +27,7 @@ interface Props {
  *  - Adding: the footer row accepts a new key + value; "Add" (or Enter) commits the pair.
  *    The new-key input is the gate — the Add button stays disabled until a key is typed.
  */
-export function WellGroupProperties({ activeGroup, onPropertyChange, onDeleteProperty }: Props): JSX.Element {
+export function WellGroupProperties({ activeGroup, onPropertyChange, onDeleteProperty }: WellGroupPropertiesProps): JSX.Element {
     const [newKey, setNewKey] = useState('');
     const [newValue, setNewValue] = useState('');
 
@@ -53,6 +53,13 @@ export function WellGroupProperties({ activeGroup, onPropertyChange, onDeletePro
         <div className="well-group-properties">
             <div className="well-group-properties__title">{activeGroup.name}</div>
             <table className="well-group-properties__table">
+                <thead>
+                    <tr>
+                        <th scope="col" className="well-group-properties__key">Property</th>
+                        <th scope="col">Value</th>
+                        <th scope="col"><span className="sr-only">Actions</span></th>
+                    </tr>
+                </thead>
                 <tbody>
                     {propEntries.length === 0 && (
                         <tr>
@@ -67,7 +74,7 @@ export function WellGroupProperties({ activeGroup, onPropertyChange, onDeletePro
                                     className="well-group-properties__value"
                                     type="text"
                                     aria-label={key}
-                                    value={value ?? ''}
+                                    value={value}
                                     onChange={e => onPropertyChange(activeGroup.rowId, key, e.target.value)}
                                 />
                             </td>

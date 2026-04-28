@@ -5,7 +5,7 @@
  */
 import React from 'react';
 
-interface Props {
+interface ShiftPanelProps {
     onShift: (verticalShift: number, horizontalShift: number) => void;
 }
 
@@ -23,7 +23,7 @@ interface Props {
  * Shifts apply to every group of the active type simultaneously, preserving relative layout
  * between groups. Only the active tab's type is affected; other types are unchanged.
  */
-export function ShiftPanel({ onShift }: Props): JSX.Element {
+export function ShiftPanel({ onShift }: ShiftPanelProps): JSX.Element {
     return (
         <div className="shift-panel">
             <div className="shift-panel__grid">

@@ -4,16 +4,14 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import classNames from 'classnames';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
 
 import { PlateTemplate, Position, WellGroup, computeWarnings } from './models';
 import { StatusBar } from './components/StatusBar';
 import { GroupTypesPanel } from './components/GroupTypesPanel';
+import { RightPanel } from './components/RightPanel';
 import { ShiftPanel } from './components/ShiftPanel';
 import { TemplateGrid } from './components/TemplateGrid';
-import { WellGroupProperties } from './components/WellGroupProperties';
-import { WarningPanel } from './components/WarningPanel';
 
 import './PlateTemplateDesigner.scss';
 
@@ -51,26 +49,61 @@ import './PlateTemplateDesigner.scss';
  *
  * ─── Cell interaction ───────────────────────────────────────────────────────────
  * Two cell callbacks are distinguished:
- *   `handleCellAssign` — idempotent add; also evicts the cell from any other group
- *     of the same type (one cell can only belong to one group per type). Used during
- *     drag operations.
- *   `handleCellToggle` — pure on/off; does not steal from siblings. Used for
- *     single-click (no drag movement).
+ *   `handleDragRect` — paints a rectangle; also evicts those cells from sibling
+ *     groups of the same type (one cell can only belong to one group per type).
+ *     Used during drag operations.
+ *   `handleCellToggle` — toggle: if the cell is already in the active group, remove
+ *     it; otherwise add it and evict it from any sibling group of the same type.
+ *     Used for single-click (no drag movement).
  */
 
 const COLORS = [
     '#4e79a7', '#f28e2b', '#e15759', '#76b7b2', '#59a14f',
-    '#edc948', '#b07aa1', '#ff9da7', '#9c755f', '#bab0ac',
-    '#6ba3be', '#ffbe7d', '#ff9d9a', '#86bcb6', '#8cd17d',
-    '#f1ce63', '#d4a6c8', '#ffb7c5', '#c7a97e', '#d7d5cf',
+    '#ecb830', '#9b59b6', '#e84878', '#7a4222', '#888888',
+    '#30c068', '#ccd828', '#4848cc', '#d04018', '#18a8c0',
+    '#c030a8', '#8caa28', '#583848', '#c8d8e8', '#204888',
 ];
 
-function assignColors(groups: WellGroup[]): Map<number, string> {
+export function assignColors(groups: WellGroup[]): Map<number, string> {
     const map = new Map<number, string>();
     groups.forEach((g, i) => {
         map.set(g.rowId, COLORS[i % COLORS.length]);
     });
     return map;
+}
+
+/**
+ * Toggles a single cell in the active group:
+ *  - If the cell is already in the active group → remove it (no sibling changes).
+ *  - If the cell is absent → add it to the active group and evict it from any
+ *    other group of the same type so a cell never belongs to two groups of one type.
+ */
+export function toggleCell(groups: WellGroup[], activeGroupRowId: number, row: number, col: number): WellGroup[] {
+    const activeGroup = groups.find(g => g.rowId === activeGroupRowId);
+    if (!activeGroup) return groups;
+    const isInActiveGroup = activeGroup.positions.some(p => p.row === row && p.col === col);
+    const activeType = activeGroup.type;
+    return groups.map(g => {
+        if (g.rowId === activeGroupRowId) {
+            if (isInActiveGroup) {
+                return { ...g, positions: g.positions.filter(p => !(p.row === row && p.col === col)) };
+            }
+            return { ...g, positions: [...g.positions, { row, col }] };
+        }
+        // When adding: evict the cell from every sibling group of the same type
+        if (!isInActiveGroup && g.type === activeType) {
+            return { ...g, positions: g.positions.filter(p => !(p.row === row && p.col === col)) };
+        }
+        return g;
+    });
+}
+
+export function isSameOrigin(url: string): boolean {
+    try {
+        return new URL(url, window.location.origin).origin === window.location.origin;
+    } catch {
+        return false;
+    }
 }
 
 export function PlateTemplateDesigner(): JSX.Element {
@@ -192,46 +225,37 @@ export function PlateTemplateDesigner(): JSX.Element {
         setIsDirty(true);
     }, []);
 
-    // Pure toggle: add the cell if absent, remove it if present
     const handleCellToggle = useCallback((row: number, col: number) => {
         const activeGroup = activeGroupRef.current;
         if (!activeGroup) return;
-        setPlate(prev => {
-            if (!prev) return null;
-            const updatedGroups = prev.groups.map(g => {
-                if (g.rowId !== activeGroup.rowId) return g;
-                const hasCell = g.positions.some(p => p.row === row && p.col === col);
-                if (hasCell) {
-                    return { ...g, positions: g.positions.filter(p => !(p.row === row && p.col === col)) };
-                }
-                return { ...g, positions: [...g.positions, { row, col }] };
-            });
-            return { ...prev, groups: updatedGroups };
-        });
+        setPlate(prev => prev ? { ...prev, groups: toggleCell(prev.groups, activeGroup.rowId, row, col) } : null);
         setIsDirty(true);
     }, []);
 
     const handleAddGroup = useCallback((type: string, name: string) => {
-        if (!plate) return;
         const rowId = nextGroupIdRef.current--;
-        const newGroup: WellGroup = {
-            rowId,
-            type,
-            name,
-            positions: [],
-            properties: {},
-            allowNewGroups: plate.canCreateGroupsByType?.[type] ?? false,
-        };
-        setPlate(prev => prev ? { ...prev, groups: [...prev.groups, newGroup] } : null);
         const colorIndex = nextColorIndexRef.current++;
+        setPlate(prev => {
+            if (!prev) return null;
+            const newGroup: WellGroup = {
+                rowId,
+                type,
+                name,
+                positions: [],
+                properties: {},
+                allowNewGroups: prev.canCreateGroupsByType?.[type] ?? false,
+            };
+            return { ...prev, groups: [...prev.groups, newGroup] };
+        });
         setColorMap(prev => {
             const next = new Map(prev);
             next.set(rowId, COLORS[colorIndex % COLORS.length]);
             return next;
         });
-        setActiveGroup(newGroup);
+        // allowNewGroups is a stub here; the plate-sync effect re-derives it from the updated plate.
+        setActiveGroup({ rowId, type, name, positions: [], properties: {}, allowNewGroups: false });
         setIsDirty(true);
-    }, [plate]);
+    }, []);
 
     const handleShift = useCallback((verticalShift: number, horizontalShift: number) => {
         setPlate(prev => {
@@ -295,20 +319,13 @@ export function PlateTemplateDesigner(): JSX.Element {
         setIsDirty(true);
     }, []);
 
-    const warningCount = useMemo(() => {
-        if (!plate?.showWarningPanel) return 0;
-        return computeWarnings(plate).length;
+    const warnings = useMemo(() => {
+        if (!plate?.showWarningPanel) return [];
+        return computeWarnings(plate);
     }, [plate]);
 
     const navigateAway = useCallback(() => {
         const returnURL = ActionURL.getParameter('returnURL') || ActionURL.getParameter('returnUrl');
-        const isSameOrigin = (url: string) => {
-            try {
-                return new URL(url, window.location.origin).origin === window.location.origin;
-            } catch {
-                return false;
-            }
-        };
         window.location.href = (returnURL && isSameOrigin(returnURL)) ? returnURL : ActionURL.buildURL('plate', 'plateList');
     }, []);
 
@@ -365,6 +382,11 @@ export function PlateTemplateDesigner(): JSX.Element {
         navigateAway();
     }, [navigateAway]);
 
+    const handleTabChange = useCallback((tab: string) => {
+        setActiveTab(tab);
+        setActiveGroup(null);
+    }, []);
+
     // Warn on unsaved navigation
     useEffect(() => {
         const handler = (e: BeforeUnloadEvent) => {
@@ -411,6 +433,7 @@ export function PlateTemplateDesigner(): JSX.Element {
             <StatusBar
                 isDirty={isDirty}
                 status={status}
+                plateName={plate.name}
                 onSaveAndClose={handleSaveAndClose}
                 onSave={handleSave}
                 onCancel={handleCancel}
@@ -434,7 +457,7 @@ export function PlateTemplateDesigner(): JSX.Element {
                         activeTab={activeTab}
                         colorMap={colorMap}
                         onGroupSelect={handleGroupSelect}
-                        onTabChange={(tab) => { setActiveTab(tab); setActiveGroup(null); }}
+                        onTabChange={handleTabChange}
                         onAddGroup={handleAddGroup}
                         onDeleteGroup={handleDeleteGroup}
                         onRenameGroup={handleRenameGroup}
@@ -457,55 +480,15 @@ export function PlateTemplateDesigner(): JSX.Element {
                 {/* Right panel: WellGroupProperties and (if enabled) a Warnings tab.
                     The tab strip only renders when showWarningPanel is true; otherwise
                     WellGroupProperties fills the full right column without tabs. */}
-                <div className="plate-template-designer__right">
-                    {plate.showWarningPanel && (
-                        <div className="right-panel-tabs" role="tablist">
-                            <button
-                                id="right-tab-properties"
-                                role="tab"
-                                aria-controls="right-panel-properties"
-                                aria-selected={rightTab === 'properties'}
-                                className={classNames('right-panel-tabs__tab', {
-                                    'right-panel-tabs__tab--active': rightTab === 'properties',
-                                })}
-                                onClick={() => setRightTab('properties')}
-                            >
-                                Well Group Properties
-                            </button>
-                            <button
-                                id="right-tab-warnings"
-                                role="tab"
-                                aria-controls="right-panel-warnings"
-                                aria-selected={rightTab === 'warnings'}
-                                className={classNames('right-panel-tabs__tab', {
-                                    'right-panel-tabs__tab--active': rightTab === 'warnings',
-                                    'right-panel-tabs__tab--warn': warningCount > 0,
-                                })}
-                                onClick={() => setRightTab('warnings')}
-                            >
-                                {warningCount > 0 ? `Warnings (${warningCount})` : 'Warnings'}
-                            </button>
-                        </div>
-                    )}
-                    {(!plate.showWarningPanel || rightTab === 'properties') && (
-                        <div
-                            id={plate.showWarningPanel ? 'right-panel-properties' : undefined}
-                            role={plate.showWarningPanel ? 'tabpanel' : undefined}
-                            aria-labelledby={plate.showWarningPanel ? 'right-tab-properties' : undefined}
-                        >
-                            <WellGroupProperties
-                                activeGroup={activeGroup}
-                                onPropertyChange={handlePropertyChange}
-                                onDeleteProperty={handleDeleteProperty}
-                            />
-                        </div>
-                    )}
-                    {plate.showWarningPanel && rightTab === 'warnings' && (
-                        <div id="right-panel-warnings" role="tabpanel" aria-labelledby="right-tab-warnings">
-                            <WarningPanel plate={plate} />
-                        </div>
-                    )}
-                </div>
+                <RightPanel
+                    showWarningPanel={plate.showWarningPanel}
+                    rightTab={rightTab}
+                    onRightTabChange={setRightTab}
+                    warnings={warnings}
+                    activeGroup={activeGroup}
+                    onPropertyChange={handlePropertyChange}
+                    onDeleteProperty={handleDeleteProperty}
+                />
             </div>
         </div>
     );

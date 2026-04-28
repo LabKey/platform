@@ -3,11 +3,12 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-interface Props {
+interface StatusBarProps {
     isDirty: boolean;
     status: string;
+    plateName: string;
     onSaveAndClose: () => void;
     onSave: () => void;
     onCancel: () => void;
@@ -28,13 +29,33 @@ interface Props {
  * The "Unsaved changes" indicator and transient status text ("Saving…", "Saved.")
  * use `role="status"` so screen readers announce them as they appear.
  */
-export function StatusBar({ isDirty, status, onSaveAndClose, onSave, onCancel }: Props): JSX.Element {
+export function StatusBar({ isDirty, status, plateName, onSaveAndClose, onSave, onCancel }: StatusBarProps): JSX.Element {
+    const [error, setError] = useState<string | null>(null);
+
+    // Clear stale validation error once the user has filled in the plate name
+    useEffect(() => {
+        if (plateName.trim()) setError(null);
+    }, [plateName]);
+
+    const validate = (): boolean => {
+        if (!plateName.trim()) {
+            setError('Please enter a plate name before saving.');
+            return false;
+        }
+        setError(null);
+        return true;
+    };
+
+    const validateAndSave = () => { if (validate()) onSave(); };
+
+    const validateAndSaveAndClose = () => { if (validate()) onSaveAndClose(); };
+
     return (
         <div className="status-bar">
-            <button className="status-bar__btn status-bar__btn--primary" onClick={onSaveAndClose}>
+            <button className="status-bar__btn status-bar__btn--primary" onClick={validateAndSaveAndClose}>
                 Save &amp; Close
             </button>
-            <button className="status-bar__btn" onClick={onSave} disabled={!isDirty}>
+            <button className="status-bar__btn" onClick={validateAndSave} disabled={!isDirty}>
                 Save
             </button>
             <button className="status-bar__btn" onClick={onCancel}>
@@ -42,6 +63,7 @@ export function StatusBar({ isDirty, status, onSaveAndClose, onSave, onCancel }:
             </button>
             <span role="status" className="status-bar__dirty">{isDirty ? 'Unsaved changes' : ''}</span>
             <span role="status" className="status-bar__status">{status}</span>
+            {error && <span role="alert" className="status-bar__error">{error}</span>}
         </div>
     );
 }

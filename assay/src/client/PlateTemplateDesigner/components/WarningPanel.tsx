@@ -3,28 +3,24 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useMemo } from 'react';
+import React from 'react';
 
-import { PlateTemplate, computeWarnings } from '../models';
-
-interface Props {
-    plate: PlateTemplate;
+interface WarningPanelProps {
+    warnings: string[];
 }
 
 /**
  * Displays the list of validation warnings for the current plate layout.
  *
- * Warnings are recomputed synchronously from the latest plate state on each render.
+ * Warnings are computed in the parent (PlateTemplateDesigner) and passed as a prop so the
+ * computation is not duplicated between the count badge and this panel.
  * The panel is only shown when `plate.showWarningPanel` is true, which is controlled by the
  * server-side assay type configuration (not all assay types use the REPLICATE/SPECIMEN/CONTROL
  * group semantics that produce warnings).
  */
-export function WarningPanel({ plate }: Props): JSX.Element {
-    const warnings = useMemo(() => computeWarnings(plate), [plate]);
-
+export function WarningPanel({ warnings }: WarningPanelProps): JSX.Element {
     return (
         <div className="warning-panel">
-            <div className="warning-panel__title">Warnings</div>
             {warnings.length === 0 ? (
                 <div className="warning-panel__none">No warnings.</div>
             ) : (

@@ -8,7 +8,7 @@ import classNames from 'classnames';
 
 import { PlateTemplate, Position, WellGroup } from '../models';
 
-interface Props {
+interface TemplateGridProps {
     plate: PlateTemplate;
     activeGroup: WellGroup | null;
     activeTab: string;
@@ -50,7 +50,7 @@ function getRowLabel(row: number): string {
  * Drag state is also cleaned up on mouseleave of the outer div, preventing stuck
  * drag state when the pointer exits the grid.
  */
-export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRect, onCellToggle }: Props): JSX.Element {
+export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRect, onCellToggle }: TemplateGridProps): JSX.Element {
     const isDragging = useRef(false);
     const hasMoved = useRef(false);
     const startCell = useRef<{ row: number; col: number } | null>(null);
@@ -76,6 +76,18 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
         }
         return map;
     }, [plate, activeTab, colorMap]);
+
+    // Pre-compute a Set of "row,col" keys for the active group's positions so each cell
+    // can do an O(1) membership check instead of scanning the positions array on every render.
+    const activeGroupPositionSet = useMemo(() => {
+        const set = new Set<string>();
+        if (activeGroup) {
+            for (const p of activeGroup.positions) {
+                set.add(`${p.row},${p.col}`);
+            }
+        }
+        return set;
+    }, [activeGroup]);
 
     const handleMouseDown = useCallback((row: number, col: number, e: React.MouseEvent) => {
         if (e.button !== 0) return;
@@ -146,7 +158,7 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
 
     return (
         <div className="template-grid" onMouseLeave={handleDragEnd} onMouseUp={handleDragEnd}>
-            <table className="template-grid__table" role="grid">
+            <table className="template-grid__table">
                 <thead>
                     <tr>
                         <th className="template-grid__corner" />
@@ -161,7 +173,7 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
                             <th scope="row" className="template-grid__row-header">{getRowLabel(row)}</th>
                             {Array.from({ length: plate.cols }, (_, col) => {
                                 const entry = positionMap.get(`${row},${col}`);
-                                const isActiveGroupCell = activeGroup?.positions.some(p => p.row === row && p.col === col);
+                                const isActiveGroupCell = activeGroupPositionSet.has(`${row},${col}`);
                                 const location = `${getRowLabel(row)}${col + 1}`;
                                 const tooltip = entry ? `${location}: ${entry.groupName}` : location;
                                 const isTabStop = focusedCell
@@ -180,7 +192,6 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
                                             'template-grid__cell--active': isActiveGroupCell,
                                         })}
                                         style={{ backgroundColor: entry?.color ?? '#f5f5f5' }}
-                                        title={tooltip}
                                         aria-label={tooltip}
                                         onMouseDown={e => handleMouseDown(row, col, e)}
                                         onMouseEnter={() => handleMouseEnter(row, col)}

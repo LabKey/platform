@@ -10,12 +10,8 @@ import { ServerContextProvider, withAppUser } from '@labkey/components';
 
 import { PlateTemplateDesigner } from './PlateTemplateDesigner';
 
-const render = () => {
-    createRoot(document.getElementById('app')).render(
-        <ServerContextProvider initialContext={withAppUser(getServerContext())}>
-            <PlateTemplateDesigner />
-        </ServerContextProvider>
-    );
-};
-
-render();
+createRoot(document.getElementById('app')).render(
+    <ServerContextProvider initialContext={withAppUser(getServerContext())}>
+        <PlateTemplateDesigner />
+    </ServerContextProvider>
+);
