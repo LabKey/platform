@@ -869,6 +869,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ContainerManager.getHomeContainer();
              }
         });
+
+        // Install a fallback decryption algorithm if AES migration is pending. This prevents concurrent HTTP requests
+        // from failing to decrypt not-yet-migrated values during the migration window. Called here (afterUpdate) rather
+        // than in startupAfterSpringConfig so the fallback is active before any long-running upgrade steps run.
+        Encryption.prepareMigrationFallback();
     }
 
     private void bootstrap()

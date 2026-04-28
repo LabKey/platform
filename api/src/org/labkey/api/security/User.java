@@ -42,6 +42,7 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.AbstractRootContainerRole;
@@ -310,6 +311,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     public boolean isTrustedBrowserDev()
     {
         return hasRootPermissions(TRUSTED_BROWSER_DEV);
+    }
+
+    public boolean isTroubleshooter()
+    {
+        return hasRootPermission(TroubleshooterPermission.class);
     }
 
     public boolean isBrowserDev()
