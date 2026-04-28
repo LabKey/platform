@@ -156,6 +156,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
         GetSampleRecomputeCol,
         SkipBulkRemapCache,
         DeferRequiredLineageValidation,
+        AddLsidColForDataClassUpdate,
+        ShouldCommitRowsBeforeContinuing
     }
 
     enum DataTypeForExclusion

@@ -1061,31 +1061,36 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     return null;
                 }
 
+                boolean shouldAddLsidColumn = getCustomTableConfigBoolean(ExperimentService.QueryOptions.AddLsidColForDataClassUpdate);
+
                 // add lsid column (for Attachment) but need to re-query it
                 boolean hasAttachmentCol = false;
-                for (String columnName : columnNameMap.keySet())
+                if (!shouldAddLsidColumn)
                 {
-                    ColumnInfo checkAttachmentCol = getColumn(columnName);
-                    if (checkAttachmentCol != null)
+                    for (String columnName : columnNameMap.keySet())
                     {
-                        if (checkAttachmentCol.getPropertyType() == PropertyType.ATTACHMENT)
+                        ColumnInfo checkAttachmentCol = getColumn(columnName);
+                        if (checkAttachmentCol != null)
                         {
-                            hasAttachmentCol = true;
-                            break;
+                            if (checkAttachmentCol.getPropertyType() == PropertyType.ATTACHMENT)
+                            {
+                                hasAttachmentCol = true;
+                                break;
+                            }
                         }
                     }
                 }
 
-                if (!hasAttachmentCol)
+                if (shouldAddLsidColumn || hasAttachmentCol)
                 {
+                    step0.addNullColumn(Column.LSID.name(), JdbcType.VARCHAR);
                     step0.selectAll();
-                    return LoggingDataIterator.wrap(step0);
+                    var added = new DataClassUpdateAddColumnsDataIterator(new CachingDataIterator(step0), context, expData, c ,_dataClass.getRowId(), keyColumnAlias);
+                    return LoggingDataIterator.wrap(added);
                 }
 
-                step0.addNullColumn(Column.LSID.name(), JdbcType.VARCHAR);
                 step0.selectAll();
-                var added = new DataClassUpdateAddColumnsDataIterator(new CachingDataIterator(step0), context, expData, c ,_dataClass.getRowId(), keyColumnAlias);
-                return LoggingDataIterator.wrap(added);
+                return LoggingDataIterator.wrap(step0);
             }
 
             step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId")); //TODO can this be moved up?

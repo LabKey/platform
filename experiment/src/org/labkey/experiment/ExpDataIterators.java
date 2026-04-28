@@ -117,7 +117,6 @@ import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
@@ -125,6 +124,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
+import org.labkey.experiment.api.ExpRunItemTableImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
@@ -155,6 +155,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -2483,7 +2484,8 @@ public class ExpDataIterators
                     .setFailOnEmptyUpdate(false));
 
             // Biologics reclassify uses afterUpdate to update other data that depend on the completion of update of the triggering data
-            boolean shouldCommitRowsBeforeContinuing = colNameMap.containsKey(".reclassify");
+            Object checkShouldCommitFn = ((ExpRunItemTableImpl<?>) _expTable).getCustomTableConfig(ExperimentService.QueryOptions.ShouldCommitRowsBeforeContinuing);
+            boolean shouldCommitRowsBeforeContinuing = checkShouldCommitFn instanceof Predicate<?> fn && ((Predicate<Set<String>>) fn).test(colNameMap.keySet());
             // pass in remap columns to help reconcile columns that may be aliased in the virtual table
             dib = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(dib, _propertiesTable, _container)
                     .setKeyColumns(propertyKeyColumns)
