@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { WellGroup } from '../models';
 
@@ -30,6 +30,13 @@ interface WellGroupPropertiesProps {
 export function WellGroupProperties({ activeGroup, onPropertyChange, onDeleteProperty }: WellGroupPropertiesProps): JSX.Element {
     const [newKey, setNewKey] = useState('');
     const [newValue, setNewValue] = useState('');
+
+    // Reset draft inputs when the selected group changes so stale text from a
+    // previous group cannot accidentally be committed to the newly selected one.
+    useEffect(() => {
+        setNewKey('');
+        setNewValue('');
+    }, [activeGroup?.rowId]);
 
     if (!activeGroup) {
         return (

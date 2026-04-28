@@ -48,7 +48,8 @@ export function StatusBar({ isDirty, status, plateName, onSaveAndClose, onSave, 
 
     const validateAndSave = () => { if (validate()) onSave(); };
 
-    const validateAndSaveAndClose = () => { if (validate()) onSaveAndClose(); };
+    // Skip validation when there is nothing to save — the parent will navigate away without writing.
+    const validateAndSaveAndClose = () => { if (!isDirty || validate()) onSaveAndClose(); };
 
     return (
         <div className="status-bar">

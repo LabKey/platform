@@ -8,6 +8,7 @@ import classNames from 'classnames';
 
 import { PlateTemplate, WellGroup } from '../models';
 import { MultiCreateDialog } from './MultiCreateDialog';
+import { TabButton } from './TabButton';
 
 interface GroupTypesPanelProps {
     plate: PlateTemplate;
@@ -81,6 +82,8 @@ export function GroupTypesPanel({
     const [renameValue, setRenameValue] = useState('');
     const [renameError, setRenameError] = useState<string | null>(null);
     const [multiCreateOpen, setMultiCreateOpen] = useState(false);
+    // rowId of the group awaiting inline delete confirmation; null when no confirmation is pending.
+    const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
     // Stable derived list — memoized so useMemo and useEffect deps are stable.
     const groupsOfType = useMemo(() => plate.groups.filter(g => g.type === activeTab), [plate, activeTab]);
@@ -96,10 +99,11 @@ export function GroupTypesPanel({
         return defaults.filter(d => !groupsOfType.some(g => g.name === d));
     }, [plate, activeTab, groupsOfType]);
 
-    // Reset create-input when tab changes
+    // Reset create-input and transient UI state when tab changes
     useEffect(() => {
         setNewGroupName(unusedDefaults[0] ?? '');
         setRenamingId(null);
+        setConfirmDeleteId(null);
     }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Advance to next unused default when the current one gets used
@@ -118,9 +122,18 @@ export function GroupTypesPanel({
 
     const handleDeleteClick = (e: React.MouseEvent, group: WellGroup) => {
         e.stopPropagation();
-        if (window.confirm(`Delete well group "${group.name}"?`)) {
-            onDeleteGroup(group.rowId);
-        }
+        setConfirmDeleteId(group.rowId);
+    };
+
+    const handleDeleteConfirm = (e: React.MouseEvent, rowId: number) => {
+        e.stopPropagation();
+        onDeleteGroup(rowId);
+        setConfirmDeleteId(null);
+    };
+
+    const handleDeleteCancel = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setConfirmDeleteId(null);
     };
 
     const handleRenameClick = (e: React.MouseEvent, group: WellGroup) => {
@@ -150,21 +163,33 @@ export function GroupTypesPanel({
 
     return (
         <div className="group-types-panel">
-            <div className="group-types-panel__tabs" role="tablist">
+            <div
+                className="group-types-panel__tabs"
+                role="tablist"
+                onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+                    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+                    const tabs = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+                    const currentIndex = tabs.findIndex(t => t === document.activeElement);
+                    if (currentIndex === -1) return;
+                    e.preventDefault();
+                    const next = e.key === 'ArrowLeft'
+                        ? (currentIndex - 1 + tabs.length) % tabs.length
+                        : (currentIndex + 1) % tabs.length;
+                    tabs[next].click();
+                    tabs[next].focus();
+                }}
+            >
                 {plate.groupTypes.map(type => (
-                    <button
+                    <TabButton
                         key={type}
                         id={`group-tab-${type}`}
-                        role="tab"
-                        aria-controls={`group-panel-${type}`}
-                        aria-selected={type === activeTab}
-                        className={classNames('group-types-panel__tab', {
-                            'group-types-panel__tab--active': type === activeTab,
-                        })}
+                        panelId={`group-panel-${type}`}
+                        isActive={type === activeTab}
+                        baseClass="group-types-panel__tab"
                         onClick={() => onTabChange(type)}
                     >
                         {type}
-                    </button>
+                    </TabButton>
                 ))}
             </div>
             {plate.groupTypes.map(type => (
@@ -178,7 +203,7 @@ export function GroupTypesPanel({
                 >
                     {type === activeTab && (
                         <>
-                            <div className="group-types-panel__groups" role="listbox" aria-label="Well groups">
+                            <div className="group-types-panel__groups" role="list" aria-label="Well groups">
                                 {groupsOfType.map(group => {
                                     const color = colorMap.get(group.rowId);
                                     const isActive = activeGroup?.rowId === group.rowId;
@@ -189,8 +214,8 @@ export function GroupTypesPanel({
                                                 className={classNames('group-types-panel__group', {
                                                     'group-types-panel__group--active': isActive,
                                                 })}
-                                                role="option"
-                                                aria-selected={isActive}
+                                                role="listitem"
+                                                aria-current={isActive ? true : undefined}
                                                 tabIndex={0}
                                                 onClick={() => { if (!isRenaming) onGroupSelect(group); }}
                                                 onKeyDown={e => {
@@ -231,31 +256,52 @@ export function GroupTypesPanel({
                                                     The --hidden modifier keeps them invisible and
                                                     non-interactive on unselected / renaming rows. */}
                                                 {group.allowNewGroups && (
-                                                    <span
-                                                        className={classNames('group-types-panel__group-actions', {
-                                                            'group-types-panel__group-actions--hidden': !isActive || isRenaming,
-                                                        })}
-                                                        aria-hidden={(!isActive || isRenaming) ? true : undefined}
-                                                    >
-                                                        <button
-                                                            className="group-types-panel__action-btn"
-                                                            title="Rename"
-                                                            aria-label={`Rename ${group.name}`}
-                                                            tabIndex={(!isActive || isRenaming) ? -1 : 0}
-                                                            onClick={e => handleRenameClick(e, group)}
+                                                    confirmDeleteId === group.rowId ? (
+                                                        // Inline confirmation replaces the normal action buttons.
+                                                        <span className="group-types-panel__group-actions">
+                                                            <span className="group-types-panel__confirm-text">Delete?</span>
+                                                            <button
+                                                                className="group-types-panel__action-btn group-types-panel__action-btn--delete"
+                                                                aria-label={`Confirm delete ${group.name}`}
+                                                                onClick={e => handleDeleteConfirm(e, group.rowId)}
+                                                            >
+                                                                Yes
+                                                            </button>
+                                                            <button
+                                                                className="group-types-panel__action-btn"
+                                                                aria-label={`Cancel delete ${group.name}`}
+                                                                onClick={handleDeleteCancel}
+                                                            >
+                                                                No
+                                                            </button>
+                                                        </span>
+                                                    ) : (
+                                                        <span
+                                                            className={classNames('group-types-panel__group-actions', {
+                                                                'group-types-panel__group-actions--hidden': !isActive || isRenaming,
+                                                            })}
+                                                            aria-hidden={(!isActive || isRenaming) ? true : undefined}
                                                         >
-                                                            <span className="fa fa-pencil" aria-hidden="true" />
-                                                        </button>
-                                                        <button
-                                                            className="group-types-panel__action-btn group-types-panel__action-btn--delete"
-                                                            title="Delete"
-                                                            aria-label={`Delete ${group.name}`}
-                                                            tabIndex={(!isActive || isRenaming) ? -1 : 0}
-                                                            onClick={e => handleDeleteClick(e, group)}
-                                                        >
-                                                            <span className="fa fa-trash-o" aria-hidden="true" />
-                                                        </button>
-                                                    </span>
+                                                            <button
+                                                                className="group-types-panel__action-btn"
+                                                                title="Rename"
+                                                                aria-label={`Rename ${group.name}`}
+                                                                tabIndex={(!isActive || isRenaming) ? -1 : 0}
+                                                                onClick={e => handleRenameClick(e, group)}
+                                                            >
+                                                                <span className="fa fa-pencil" aria-hidden="true" />
+                                                            </button>
+                                                            <button
+                                                                className="group-types-panel__action-btn group-types-panel__action-btn--delete"
+                                                                title="Delete"
+                                                                aria-label={`Delete ${group.name}`}
+                                                                tabIndex={(!isActive || isRenaming) ? -1 : 0}
+                                                                onClick={e => handleDeleteClick(e, group)}
+                                                            >
+                                                                <span className="fa fa-trash-o" aria-hidden="true" />
+                                                            </button>
+                                                        </span>
+                                                    )
                                                 )}
                                             </div>
                                             {isRenaming && renameError && (

@@ -97,7 +97,9 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
         dragIsUnselect.current = activeGroup?.positions.some(p => p.row === row && p.col === col) ?? false;
         // Snapshot the current positions NOW, from the prop, before any drag events can modify state.
         preDragPositions.current = activeGroup?.positions ?? [];
-        e.preventDefault();
+        // Note: text selection during drag is already prevented by `user-select: none` in CSS,
+        // so e.preventDefault() is not needed here and is intentionally omitted so the browser's
+        // default focus-on-mousedown behaviour is preserved.
     }, [activeGroup]);
 
     const handleMouseEnter = useCallback((row: number, col: number) => {
@@ -109,6 +111,9 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
     // Called on mouseup over a specific cell — handles click-toggle
     const handleCellMouseUp = useCallback((row: number, col: number) => {
         if (isDragging.current && !hasMoved.current) {
+            // Explicitly move focus to the clicked cell so arrow-key navigation
+            // picks up from the correct position after a mouse interaction.
+            cellRefs.current.get(`${row},${col}`)?.focus();
             onCellToggle(row, col);
         }
     }, [onCellToggle]);
@@ -158,7 +163,7 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
 
     return (
         <div className="template-grid" onMouseLeave={handleDragEnd} onMouseUp={handleDragEnd}>
-            <table className="template-grid__table">
+            <table className="template-grid__table" role="grid" aria-label="Plate template grid">
                 <thead>
                     <tr>
                         <th className="template-grid__corner" />
@@ -182,6 +187,7 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
                                 return (
                                     <td
                                         key={col}
+                                        role="gridcell"
                                         ref={el => {
                                             const key = `${row},${col}`;
                                             if (el) cellRefs.current.set(key, el);

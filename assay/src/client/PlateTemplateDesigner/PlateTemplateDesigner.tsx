@@ -9,7 +9,7 @@ import { ActionURL, Ajax, Utils } from '@labkey/api';
 import { PlateTemplate, Position, WellGroup, computeWarnings } from './models';
 import { StatusBar } from './components/StatusBar';
 import { GroupTypesPanel } from './components/GroupTypesPanel';
-import { RightPanel } from './components/RightPanel';
+import { RIGHT_TAB_PROPERTIES, RightPanel, RightTab } from './components/RightPanel';
 import { ShiftPanel } from './components/ShiftPanel';
 import { TemplateGrid } from './components/TemplateGrid';
 
@@ -110,7 +110,7 @@ export function PlateTemplateDesigner(): JSX.Element {
     const [plate, setPlate] = useState<PlateTemplate | null>(null);
     const [activeGroup, setActiveGroup] = useState<WellGroup | null>(null);
     const [activeTab, setActiveTab] = useState<string>('');
-    const [rightTab, setRightTab] = useState<'properties' | 'warnings'>('properties');
+    const [rightTab, setRightTab] = useState<RightTab>(RIGHT_TAB_PROPERTIES);
     const [isDirty, setIsDirty] = useState(false);
     const [status, setStatus] = useState('');
     const [colorMap, setColorMap] = useState<Map<number, string>>(new Map());
@@ -387,6 +387,13 @@ export function PlateTemplateDesigner(): JSX.Element {
         setActiveGroup(null);
     }, []);
 
+    // Clear pending status timer on unmount to prevent setState on an unmounted component.
+    useEffect(() => {
+        return () => {
+            if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+        };
+    }, []);
+
     // Warn on unsaved navigation
     useEffect(() => {
         const handler = (e: BeforeUnloadEvent) => {
@@ -425,7 +432,7 @@ export function PlateTemplateDesigner(): JSX.Element {
     }
 
     if (!plate) {
-        return <div className="plate-template-designer__loading">Loading...</div>;
+        return <div className="plate-template-designer__loading" role="status">Loading...</div>;
     }
 
     return (

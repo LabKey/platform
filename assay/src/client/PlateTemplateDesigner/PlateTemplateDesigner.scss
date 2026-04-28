@@ -314,6 +314,14 @@
         }
     }
 
+    // Inline "Delete?" prompt label shown before the Yes / No confirmation buttons.
+    &__confirm-text {
+        font-size: 0.75rem;
+        color: #333;
+        margin-right: 2px;
+        white-space: nowrap;
+    }
+
     // Row that holds the new-group name input + Create / Create multiple buttons
     &__create-row {
         display: flex;
@@ -364,9 +372,10 @@
 }
 
 // ── Multi-create dialog ───────────────────────────────────────────────────────
-// Modal overlay + dialog for batch-creating N numbered groups.
-// The overlay captures click-outside-to-close; the inner dialog stops propagation.
-// Focus is trapped inside the dialog while open (see GroupTypesPanel focus-trap effect).
+// Modal dialog for batch-creating N numbered groups.
+// Uses the native <dialog> element with showModal() for top-layer placement, focus
+// restoration on close, and a browser-managed backdrop. Focus is trapped inside the
+// dialog while open (see MultiCreateDialog focus-trap effect).
 .multi-create-dialog {
     background: #fff;
     border: 1px solid #ccc;
@@ -375,14 +384,8 @@
     padding: 20px;
     min-width: 300px;
 
-    &__overlay {
-        position: fixed;
-        inset: 0;
+    &::backdrop {
         background: rgba(0, 0, 0, 0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
     }
 
     &__title {
