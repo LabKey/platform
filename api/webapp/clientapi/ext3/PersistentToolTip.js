@@ -167,7 +167,7 @@ LABKEY.ext.CalloutTip = Ext.extend(LABKEY.ext.PersistentToolTip, {
       if (!this.targetAutoEl) {
           this.targetAutoEl =
               '<span class="labkey-callout-tip' + (this.leftPlacement ? ' labkey-callout-tip-left' : '' ) + '">' +
-              '<img src="' + LABKEY.contextPath + '/_.gif">' +
+              '<img src="' + LABKEY.contextPath + '/_.gif" alt="Show details">' +
               '</span>';
       }
 

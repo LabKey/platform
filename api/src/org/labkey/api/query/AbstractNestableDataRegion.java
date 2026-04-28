@@ -38,6 +38,7 @@ import java.util.Map;
 
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.align;
+import static org.labkey.api.util.DOM.Attribute.alt;
 import static org.labkey.api.util.DOM.Attribute.colspan;
 import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.Attribute.src;
@@ -94,7 +95,8 @@ public abstract class AbstractNestableDataRegion extends DataRegion
                 at(
                     id, getName() + "-Handle" + value,
                     valign, "middle",
-                    src, ctx.getViewContext().getContextPath() + "/_images/" + (_expanded ? "minus" : "plus") + ".gif"
+                    src, ctx.getViewContext().getContextPath() + "/_images/" + (_expanded ? "minus" : "plus") + ".gif",
+                    alt, _expanded ? "Collapse row" : "Expand row"
                 )
             )
         ).appendTo(out);
