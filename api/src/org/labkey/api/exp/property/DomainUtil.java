@@ -85,8 +85,6 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
@@ -443,8 +441,6 @@ public class DomainUtil
     public static boolean allowMultiChoice(DomainKind<?> kind)
     {
         if (!kind.allowMultiChoiceProperties())
-            return false;
-        if (!OptionalFeatureService.get().isFeatureEnabled(AppProps.MULTI_VALUE_TEXT_CHOICE))
             return false;
         return CoreSchema.getInstance().getSqlDialect().isPostgreSQL();
     }
