@@ -199,6 +199,7 @@ Here is a summary of the available functions and methods in LabKey SQL.
 #### **Date and Time Functions**
 
 * `age(date1, date2, [interval])`: Supplies the difference in age.
+* `age_in_days(date1, date2)`: Returns age in days.
 * `age_in_months(date1, date2)`: Returns age in months.
 * `age_in_years(date1, date2)`: Returns age in years.
 * `curdate()`, `curtime()`: Returns the current date/time.
