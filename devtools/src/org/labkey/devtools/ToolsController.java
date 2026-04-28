@@ -36,6 +36,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
@@ -556,7 +557,7 @@ public class ToolsController extends SpringActionController
 
             List<ControllerActionId> actionIds = new LinkedList<>();
 
-            // As of now, Crawler.java and the study tests are the only classes that specify crawler actions
+            // As of now, these are the only classes that specify crawler actions
             for (String path : List.of(
                 sourcePath + "/../../clientModules/adjudication/test/src/org/labkey/test/tests/adjudication/AdjudicationAbstractBaseTest.java",
                 sourcePath + "/../../ehrModules/ehr/test/src/org/labkey/test/tests/ehr/ComplianceTrainingTest.java",
@@ -734,9 +735,9 @@ public class ToolsController extends SpringActionController
     public class OverlappingIndicesAction extends AbstractOverlappingIndicesAction
     {
         @Override
-        public ModelAndView getView(Object o, boolean reshow, BindException errors)
+        public ModelAndView getView(OverlappingIndicesForm form, boolean reshow, BindException errors)
         {
-            MultiValuedMap<OverlapType, Overlap> multiMap = getOverlappingIndices();
+            MultiValuedMap<OverlapType, Overlap> multiMap = getOverlappingIndices(form);
 
             return new VBox(
                 new HtmlView(DOM.createHtmlFragment(
@@ -747,17 +748,18 @@ public class ToolsController extends SpringActionController
                             DOM.TABLE(
                                 multiMap.get(type).stream()
                                     .map(overlap -> DOM.TR(
-                                        DOM.TD(at(style, "width:120px;"), overlap.schemaName()),
+                                        DOM.TD(at(style, "width:120px;"), LinkBuilder.simpleLink(overlap.schemaName(), new ActionURL(OverlappingIndicesAction.class, getContainer()).addParameter("schemaName", overlap.schemaName()))),
                                         DOM.TD(type.getMessage(overlap)),
                                         "\n"
-                                    ))
+                                    )
+                                )
                             )
                         )
                     )
                 )),
                 new HtmlView(DOM.createHtmlFragment(
                     BR(),
-                    new ButtonBuilder("Create SQL Scripts That Drop Overlapping Indices").href(OverlappingIndicesAction.class, getContainer()).usePost())
+                    new ButtonBuilder("Create SQL Scripts That Drop Overlapping Indices").href(getViewContext().getActionURL()).usePost())
                 )
             );
         }
@@ -770,9 +772,9 @@ public class ToolsController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(Object o, BindException errors)
+        public boolean handlePost(OverlappingIndicesForm form, BindException errors)
         {
-            MultiValuedMap<OverlapType, Overlap> multiMap = getOverlappingIndices();
+            MultiValuedMap<OverlapType, Overlap> multiMap = getOverlappingIndices(form);
 
             try
             {
@@ -896,26 +898,43 @@ public class ToolsController extends SpringActionController
         }
 
         @Override
-        public void validateCommand(Object target, Errors errors)
+        public void validateCommand(OverlappingIndicesForm form, Errors errors)
         {
         }
 
         @Override
-        public URLHelper getSuccessURL(Object o)
+        public URLHelper getSuccessURL(OverlappingIndicesForm form)
         {
             return new ActionURL(BeginAction.class, getContainer());
         }
     }
 
-    protected static abstract class AbstractOverlappingIndicesAction extends FormViewAction<Object>
+    public static class OverlappingIndicesForm
     {
-        protected MultiValuedMap<OverlapType, Overlap> getOverlappingIndices()
+        private @Nullable String _schemaName;
+
+        public @Nullable String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        @SuppressWarnings("unused")
+        public void setSchemaName(@Nullable String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+    }
+
+    protected static abstract class AbstractOverlappingIndicesAction extends FormViewAction<OverlappingIndicesForm>
+    {
+        protected MultiValuedMap<OverlapType, Overlap> getOverlappingIndices(OverlappingIndicesForm form)
         {
             MultiValuedMap<OverlapType, Overlap> multiMap = new ArrayListValuedHashMap<>();
             DbScope scope = DbScope.getLabKeyScope();
 
             ModuleLoader.getInstance().getModules().stream()
                 .flatMap(module -> module.getSchemaNames().stream().filter(name -> !module.getProvisionedSchemaNames().contains(name)))
+                .filter(schemaName -> form.getSchemaName() == null || schemaName.equals(form.getSchemaName()))
                 .sorted(String.CASE_INSENSITIVE_ORDER)
                 .map(name -> scope.getSchema(name, DbSchemaType.Module))
                 .flatMap(schema -> schema.getTableNames().stream().map(schema::getTable))
@@ -971,13 +990,6 @@ public class ToolsController extends SpringActionController
             return cols.stream()
                 .map(col -> col.getName().toLowerCase())
                 .collect(Collectors.joining(delim)) + delim;
-        }
-
-        private List<String> join(List<ColumnInfo> cols)
-        {
-            return cols.stream()
-                .map(ColumnInfo::getName)
-                .toList();
         }
     }
 

@@ -61,10 +61,13 @@ public class DevtoolsModule extends CodeOnlyModule
         addController("testsso", TestSsoController.class);
         AuthenticationManager.registerProvider(new TestSsoProvider());
 
-        OptionalFeatureService.get().addExperimentalFeatureFlag(Domain.EXPERIMENTAL_FUZZ_STORAGE_NAME,
+        OptionalFeatureService.get().addExperimentalFeatureFlag(
+            Domain.EXPERIMENTAL_FUZZ_STORAGE_NAME,
             "'fuzz' name of database columns used to back domain properties",
             "This is dev/test feature and not intended for any production usage.",
-            false, true);
+            false,
+            true
+        );
     }
 
     @Override
