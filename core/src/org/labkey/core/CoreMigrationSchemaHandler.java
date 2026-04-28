@@ -104,11 +104,6 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
     {
         super.beforeVerification();
 
-        // Clear prop.Properties and prop.PropertySets first: bootstrap (e.g., Encryption.checkMigration) can leave
-        // PropertySets rows whose ObjectId references the bootstrap containers, blocking the Containers delete below.
-        Table.delete(PropertySchema.getInstance().getTableInfoProperties());
-        Table.delete(PropertySchema.getInstance().getTableInfoPropertySets());
-
         // Delete root and shared containers that were needed for bootstrapping
         Table.delete(CoreSchema.getInstance().getTableInfoContainers());
         DbScope targetScope = DbScope.getLabKeyScope();

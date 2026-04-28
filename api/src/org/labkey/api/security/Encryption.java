@@ -570,7 +570,10 @@ public class Encryption
      */
     public static void prepareMigrationFallback()
     {
-        if (!isEncryptionPassPhraseSpecified())
+        // Skip if no pass phrase is configured (nothing to fall back to) or we're not inserting data such
+        // as during database migration (checkMigration() is gated the same way, so the fallback would be unused).
+        // The latter avoids constructing an AES instance, which would lazily create a salt row in the property store.
+        if (!isEncryptionPassPhraseSpecified() || !ModuleLoader.getInstance().shouldInsertData())
             return;
 
         String oldPassPhrase = getOldEncryptionPassPhrase();
