@@ -74,8 +74,8 @@ import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractPermission;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -1998,15 +1998,6 @@ public class SecurityManager
         }
 
         return userIds;
-    }
-
-    @Deprecated // Call the other variant
-    public static List<User> getUsersWithPermissions(Container c, boolean includeInactive, Set<Class<? extends Permission>> perms)
-    {
-        if (includeInactive)
-            throw new IllegalArgumentException("includeInactive parameter is no longer supported since inactive users have no permissions");
-
-        return getUsersWithPermissions(c, perms);
     }
 
     /**
