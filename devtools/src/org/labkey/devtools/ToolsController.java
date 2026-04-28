@@ -914,21 +914,7 @@ public class ToolsController extends SpringActionController
         }
     }
 
-    public static class OverlappingIndicesForm
-    {
-        private @Nullable String _schemaName;
-
-        public @Nullable String getSchemaName()
-        {
-            return _schemaName;
-        }
-
-        @SuppressWarnings("unused")
-        public void setSchemaName(@Nullable String schemaName)
-        {
-            _schemaName = schemaName;
-        }
-    }
+    public record OverlappingIndicesForm(String schemaName) {}
 
     protected static abstract class AbstractOverlappingIndicesAction extends FormViewAction<OverlappingIndicesForm>
     {
@@ -939,7 +925,7 @@ public class ToolsController extends SpringActionController
 
             ModuleLoader.getInstance().getModules().stream()
                 .flatMap(module -> module.getSchemaNames().stream().filter(name -> !module.getProvisionedSchemaNames().contains(name)))
-                .filter(schemaName -> form.getSchemaName() == null || schemaName.equals(form.getSchemaName()))
+                .filter(schemaName -> form.schemaName() == null || schemaName.equals(form.schemaName()))
                 .sorted(String.CASE_INSENSITIVE_ORDER)
                 .map(name -> scope.getSchema(name, DbSchemaType.Module))
                 .flatMap(schema -> schema.getTableNames().stream().map(schema::getTable))
