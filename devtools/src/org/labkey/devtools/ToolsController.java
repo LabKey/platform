@@ -10,6 +10,8 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ArrayListValuedTreeMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.BaseColumnInfo;
@@ -18,7 +20,9 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.TableInfo.IndexType;
@@ -69,6 +73,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -106,7 +111,7 @@ public class ToolsController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new ActionListView(ToolsController.this, actionDescriptor->BeginAction.class != actionDescriptor.getActionClass());
+            return new ActionListView(ToolsController.this, actionDescriptor -> BeginAction.class != actionDescriptor.getActionClass());
         }
 
         @Override
@@ -164,7 +169,7 @@ public class ToolsController extends SpringActionController
                     {
                         out.println("Files listed in " + gaPath + " that don't exist:\n");
                         List<String> missing = getMissingFiles(gaPath, stream);
-                        missing.forEach(filename->out.println(filter(filename)));
+                        missing.forEach(filename -> out.println(filter(filename)));
                         if (!missing.isEmpty())
                         {
                             out.println();
@@ -381,14 +386,14 @@ public class ToolsController extends SpringActionController
                 Set<String> copyOfJspFiles = new HashSet<>(jspFiles);
 
                 jspFiles.removeAll(jspReferences);
-                jspFiles.forEach(path->out.println(filter(path)));
+                jspFiles.forEach(path -> out.println(filter(path)));
 
                 out.println();
                 out.println("JSP references that couldn't be resolved to JSP files [plus any candidates for resolution]:");
                 out.println();
 
                 jspReferences.removeAll(copyOfJspFiles);
-                jspReferences.forEach(path-> {
+                jspReferences.forEach(path -> {
                     List<String> candidates = jspFiles.stream()
                         .filter(s -> s.endsWith(path))
                         .toList();
@@ -411,7 +416,7 @@ public class ToolsController extends SpringActionController
                     out.println();
                     out.println("The following " + (jspFiles.size() == 1 ? "JSP file is a strong candidate" : jspFiles.size() + " JSP files are strong candidates") + " for removal:");
                     out.println();
-                    jspFiles.forEach(path->out.println(filter(path)));
+                    jspFiles.forEach(path -> out.println(filter(path)));
                 }
 
                 out.println("</pre>");
@@ -462,7 +467,8 @@ public class ToolsController extends SpringActionController
                                     String code = PageFlowUtil.getFileContentsAsString(file.toFile());
                                     JavaScanner scanner = new JavaScanner(code);
 
-                                    scanner.scan(0, new Handler(){
+                                    scanner.scan(0, new Handler()
+                                    {
                                         @Override
                                         public boolean string(int beginIndex, int endIndex)
                                         {
@@ -604,7 +610,7 @@ public class ToolsController extends SpringActionController
                 builder
                     .append("The following " + (missingModuleActions.size() > 1 ? "actions' controllers" : "action's controller") + " could not be resolved to a module running in this deployment:")
                     .unsafeAppend("<br><br>\n");
-                missingModuleActions.forEach(id->builder.append(id.toString()).unsafeAppend("<br>\n"));
+                missingModuleActions.forEach(id -> builder.append(id.toString()).unsafeAppend("<br>\n"));
                 builder.unsafeAppend("<br>\n");
                 builder.append("The associated module(s) might not support " + DbScope.getLabKeyScope().getDatabaseProductName() + ".");
                 builder.unsafeAppend("<br><br>\n");
@@ -615,7 +621,7 @@ public class ToolsController extends SpringActionController
                 builder
                     .append("The following " + (missingActions.size() > 1 ? "actions were" : "action was") + " not found in the action's controller:")
                     .unsafeAppend("<br><br>\n");
-                missingActions.forEach(id->builder.append(id.toString()).unsafeAppend("<br>\n"));
+                missingActions.forEach(id -> builder.append(id.toString()).unsafeAppend("<br>\n"));
             }
 
             return new HtmlView(builder);
@@ -751,8 +757,7 @@ public class ToolsController extends SpringActionController
                                         DOM.TD(at(style, "width:120px;"), LinkBuilder.simpleLink(overlap.schemaName(), new ActionURL(OverlappingIndicesAction.class, getContainer()).addParameter("schemaName", overlap.schemaName()))),
                                         DOM.TD(type.getMessage(overlap)),
                                         "\n"
-                                    )
-                                )
+                                    ))
                             )
                         )
                     )
@@ -1113,6 +1118,26 @@ public class ToolsController extends SpringActionController
             else
                 writer.write("DROP INDEX " + dropIndex + " ON " + schemaName + "." + tableName + ";\n");
         }
+    }
+
+    private record IndexKey(String schemaName, String indexName) {}
+
+    // Most, but not all, unique indexes are created by adding a unique constraint; in those cases, we need to drop
+    // the associated constraint. However, for explicitly created unique indexes, we need to drop the index instead.
+    // If this is a unique index associated with a constraint, return that constraint name. Otherwise, return null.
+    private static @Nullable String getConstraintForIndex(String schemaName, String indexName)
+    {
+        Cache<String, Map<IndexKey, String>> sharedCache = CacheManager.getSharedCache();
+        var constraintMap = sharedCache.get("ConstraintForIndexMap", null, (_, _) -> Collections.unmodifiableMap(
+            new SqlSelector(DbScope.getLabKeyScope(), new SQLFragment("""
+                SELECT NspName AS SchemaName, RelName AS IndexName, ConName AS ConstraintName FROM pg_index i
+                INNER JOIN pg_class cl ON cl.oid = i.indexrelid
+                INNER JOIN pg_namespace schema ON schema.oid = cl.relnamespace
+                INNER JOIN pg_constraint c ON ConNamespace = schema.oid AND ConIndId = cl.oid AND ConType = 'u'
+                WHERE IndIsUnique AND NOT NspName IN ('pg_toast', 'pg_catalog')"""
+            )).mapStream()
+                .collect(Collectors.toMap(map -> new IndexKey((String)map.get("SchemaName"), (String)map.get("IndexName")), map -> (String)map.get("ConstraintName")))));
+        return constraintMap.get(new IndexKey(schemaName, indexName));
     }
 
     @RequiresPermission(AdminPermission.class)
