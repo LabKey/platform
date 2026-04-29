@@ -433,7 +433,8 @@ public class QueryModule extends DefaultModule
             Query.TestCase.class,
             ReportsController.SerializationTest.class,
             SqlParser.SqlParserTestCase.class,
-            TableWriter.TestCase.class
+            TableWriter.TestCase.class,
+            QueryUserSchema.TestCase.class
         );
     }
 
