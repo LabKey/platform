@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.InternalSourceViewForm" %>
 <%@ page import="org.labkey.query.controllers.QueryController.InternalSourceViewAction" %>
-<%@ page import="org.labkey.query.controllers.QueryController.ManageViewsAction" %>
 <%@ page import="org.labkey.query.persist.CstmView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -43,12 +42,15 @@
 <%
     InternalSourceViewForm form = (InternalSourceViewForm) HttpView.currentModel();
     ActionURL urlPost = new ActionURL(InternalSourceViewAction.class, getContainer());
-    urlPost.addParameter("customViewId", Integer.toString(form.getCustomViewId()));
-    ActionURL urlCancel = new ActionURL(ManageViewsAction.class, getContainer());
+    if (form.getReturnActionURL() != null)
+        urlPost.addReturnUrl(form.getReturnActionURL());
+
+    ActionURL urlCancel = form.getReturnActionURL();
     CstmView view = form.getViewAndCheckPermission();
 %>
 <labkey:errors />
 <labkey:form method = "POST" action="<%=urlPost%>">
+    <input type="hidden" name="customViewId" value="<%=form.getCustomViewId()%>">
     <p>
         Schema: <%=h(view.getSchema())%><br>
         Query: <%=h(view.getQueryName())%><br>

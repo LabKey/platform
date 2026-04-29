@@ -358,6 +358,7 @@ public class QueryModule extends DefaultModule
         );
 
         McpService.get().register(new QueryMcp());
+        QueryUserSchema.register(this);
     }
 
     @Override

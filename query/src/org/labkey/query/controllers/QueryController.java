@@ -6422,7 +6422,7 @@ public class QueryController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(InternalSourceViewForm form)
         {
-            return new ActionURL(ManageViewsAction.class, getContainer());
+            return form.getReturnActionURL();
         }
 
         @Override
@@ -6511,6 +6511,7 @@ public class QueryController extends SpringActionController
         {
             ActionURL forward = new ActionURL(InternalSourceViewAction.class, getContainer());
             forward.addParameter("customViewId", Integer.toString(_customViewId));
+            forward.addReturnUrl(form.getReturnActionURL());
             return forward;
         }
 

@@ -19,16 +19,19 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.InternalNewViewForm" %>
 <%@ page import="org.labkey.query.controllers.QueryController.InternalNewViewAction" %>
-<%@ page import="org.labkey.query.controllers.QueryController.ManageViewsAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     InternalNewViewForm form = (InternalNewViewForm) HttpView.currentModel();
     ActionURL urlPost = new ActionURL(InternalNewViewAction.class, getContainer());
-    ActionURL urlCancel = new ActionURL(ManageViewsAction.class, getContainer());
+    if (form.getReturnActionURL() != null)
+        urlPost.addReturnUrl(form.getReturnActionURL());
+
+    ActionURL urlCancel = form.getReturnActionURL();
 %>
 <labkey:errors />
 <labkey:form method="POST" action="<%=urlPost%>">
+    <input type="hidden" name="returnUrl" value="<%=h(form.getReturnUrl())%>" />
     <p>Create New Custom View</p>
     <p>Schema Name: <br><input type="text" name="ff_schemaName" value="<%=h(form.ff_schemaName)%>"></p>
     <p>Query Name: <br><input type="text" name="ff_queryName" value="<%=h(form.ff_queryName)%>"></p>

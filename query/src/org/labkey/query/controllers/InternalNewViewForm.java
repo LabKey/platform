@@ -16,7 +16,9 @@
 
 package org.labkey.query.controllers;
 
-public class InternalNewViewForm
+import org.labkey.api.action.ReturnUrlForm;
+
+public class InternalNewViewForm extends ReturnUrlForm
 {
     public String ff_schemaName;
     public String ff_queryName;
