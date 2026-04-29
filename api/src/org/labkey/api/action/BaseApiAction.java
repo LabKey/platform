@@ -388,7 +388,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             errors = new NullSafeBindException(new Object(), "form");
             errors.reject(SpringActionController.ERROR_MSG, "Error binding property: " + x.getMessage());
         }
-        catch (JsonProcessingException x)
+        catch (JsonProcessingException | StrictBoundedReader.LimitExceededException x)
         {
             // Bad JSON
             throw new BadRequestException(x.getMessage(), x);
