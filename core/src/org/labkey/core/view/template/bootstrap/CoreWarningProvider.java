@@ -33,7 +33,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.DbLoginService;
 import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
 import org.labkey.api.security.permissions.SiteAdminPermission;
-import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
@@ -130,7 +129,7 @@ public class CoreWarningProvider implements WarningProvider
                 warnings.add(UsageReportingLevel.getMarketingUpdate());
         }
 
-        if (context == null || context.getUser().hasRootPermission(TroubleshooterPermission.class))
+        if (context == null || context.getUser().isTroubleshooter())
         {
             addUserRequestedAdminOnlyModeWarnings(warnings, showAllWarnings, context == null || context.getUser().hasSiteAdminPermission());
 

@@ -40,7 +40,6 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.PropertyStore;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HasHtmlString;
@@ -113,7 +112,7 @@ public class Encryption
             @Override
             public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
             {
-                if (context == null || context.getUser().hasRootPermission(TroubleshooterPermission.class))
+                if (context == null || context.getUser().isTroubleshooter())
                 {
                     if (!isEncryptionPassPhraseSpecified() || showAllWarnings)
                         warnings.add(HtmlStringBuilder.of("The encryption key property is not set in " + AppProps.getInstance().getWebappConfigurationFilename() +
