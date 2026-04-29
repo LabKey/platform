@@ -142,7 +142,7 @@ export function PlateTemplateDesigner(): JSX.Element {
         params.copy = copy;
 
         Ajax.request({
-            url: ActionURL.buildURL('plate', 'getTemplateDefinition.api'),
+            url: ActionURL.buildURL('plate', 'getDesignerTemplateDefinition.api'),
             method: 'GET',
             params,
             success: Utils.getCallbackWrapper((response: { data: PlateTemplate }) => {
@@ -338,7 +338,7 @@ export function PlateTemplateDesigner(): JSX.Element {
     const requestSave = useCallback((currentPlate: PlateTemplate, onSuccess: (response: { data: { rowId: number } }) => void) => {
         setStatus('Saving...');
         Ajax.request({
-            url: ActionURL.buildURL('plate', 'saveTemplate.api'),
+            url: ActionURL.buildURL('plate', 'saveDesignerTemplate.api'),
             method: 'POST',
             jsonData: currentPlate,
             success: Utils.getCallbackWrapper(onSuccess),

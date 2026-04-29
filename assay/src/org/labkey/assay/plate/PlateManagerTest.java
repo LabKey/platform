@@ -230,14 +230,14 @@ public final class PlateManagerTest
         assertNotNull(savedTemplate.getLSID());
         assertEquals(plateType.getRowId(), savedTemplate.getPlateType().getRowId());
 
-        List<WellGroup> wellGroups = savedTemplate.getWellGroups();
+        List<? extends WellGroup> wellGroups = savedTemplate.getWellGroups();
         assertEquals(3, wellGroups.size());
 
         // TsvPlateTypeHandler creates two CONTROL well groups "Positive" and "Negative"
-        List<WellGroup> controlWellGroups = savedTemplate.getWellGroups(WellGroup.Type.CONTROL);
+        List<? extends WellGroup> controlWellGroups = savedTemplate.getWellGroups(WellGroup.Type.CONTROL);
         assertEquals(2, controlWellGroups.size());
 
-        List<WellGroup> sampleWellGroups = savedTemplate.getWellGroups(WellGroup.Type.SAMPLE);
+        List<? extends WellGroup> sampleWellGroups = savedTemplate.getWellGroups(WellGroup.Type.SAMPLE);
         assertEquals(1, sampleWellGroups.size());
         WellGroup savedWg1 = sampleWellGroups.getFirst();
         assertEquals("wg1", savedWg1.getName());
@@ -292,7 +292,7 @@ public final class PlateManagerTest
         assertNotNull(updatedWg2);
 
         // verify deleted well group
-        List<WellGroup> updatedControlWellGroups = updatedTemplate.getWellGroups(WellGroup.Type.CONTROL);
+        List<? extends WellGroup> updatedControlWellGroups = updatedTemplate.getWellGroups(WellGroup.Type.CONTROL);
         assertEquals(1, updatedControlWellGroups.size());
 
         // verify added positions

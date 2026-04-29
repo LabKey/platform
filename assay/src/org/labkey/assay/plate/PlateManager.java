@@ -1213,9 +1213,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             // create/update well groups
             QueryUpdateService wellGroupQus = getWellGroupUpdateService(container, user);
-            for (WellGroup group : plate.getWellGroups())
+            for (WellGroupImpl wellgroup : plate.getWellGroups())
             {
-                WellGroupImpl wellgroup = (WellGroupImpl) group;
+
                 assert !wellgroup._deleted;
                 String wellGroupInstanceLsid = wellgroup.getLSID();
                 Map<String, Object> wellGroupRow;
@@ -1239,8 +1239,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     if (wellGroupErrors.hasErrors())
                         throw wellGroupErrors;
 
-                    wellGroupInstanceLsid = (String) insertedRows.get(0).get(WellTable.Column.Lsid.name());
-                    wellgroup = ObjectFactory.Registry.getFactory(WellGroupImpl.class).fromMap(wellgroup, insertedRows.get(0));
+                    wellGroupInstanceLsid = (String) insertedRows.getFirst().get(WellTable.Column.Lsid.name());
+                    wellgroup = ObjectFactory.Registry.getFactory(WellGroupImpl.class).fromMap(wellgroup, insertedRows.getFirst());
                     savePropertyBag(container, user, wellGroupInstanceLsid, wellgroup.getProperties(), false);
                 }
             }
@@ -1398,7 +1398,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     // return a list of wellId and wellGroupId pairs
     private List<List<Integer>> getWellGroupPositions(Plate plate, Position position)
     {
-        List<WellGroup> groups = plate.getWellGroups(position);
+        List<? extends WellGroup> groups = plate.getWellGroups(position);
         List<List<Integer>> wellGroupPositions = new ArrayList<>(groups.size());
 
         for (WellGroup group : groups)
@@ -1583,7 +1583,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         DbScope scope = schema.getSchema().getScope();
         assert scope.isTransactionActive();
 
-        new SqlExecutor(scope).execute("" +
+        new SqlExecutor(scope).execute(
                 "DELETE FROM " + schema.getTableInfoWellGroupPositions() +
                 " WHERE wellGroupId = ?", wellGroupId);
     }
@@ -1594,7 +1594,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         DbScope scope = schema.getSchema().getScope();
         assert scope.isTransactionActive();
 
-        new SqlExecutor(scope).execute("" +
+        new SqlExecutor(scope).execute(
                 "DELETE FROM " + schema.getTableInfoWellGroupPositions() +
                 " WHERE wellId IN (SELECT rowId FROM " + schema.getTableInfoWell() + " WHERE plateId=?)", plate.getRowId());
     }
@@ -2025,7 +2025,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             // Save the plate
             long plateId = savePlateImpl(container, user, newPlate, true, null, true);
-            newPlate = (PlateImpl) getPlate(container, plateId);
+            newPlate = getPlate(container, plateId);
             if (newPlate == null)
                 throw new IllegalStateException("Unexpected failure. Failed to retrieve plate after save (pre-commit).");
 

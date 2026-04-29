@@ -15,15 +15,12 @@
  */
 package org.labkey.assay;
 
-import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonForm;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.action.JsonInputLimit;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
@@ -112,7 +109,7 @@ public class PlateController extends SpringActionController
     private static final SpringActionController.DefaultActionResolver _actionResolver = new DefaultActionResolver(PlateController.class);
     private static final Logger LOG = LogHelper.getLogger(PlateController.class, "Controller for plate related actions");
 
-    record SubmittedGroup(int rowId, String type, String name, List<PlatePosition> positions, Map<String, Object> properties)
+    public record SubmittedGroup(int rowId, String type, String name, List<PlatePosition> positions, Map<String, Object> properties)
     {
         public static SubmittedGroup from(JSONObject g)
         {
@@ -245,6 +242,130 @@ public class PlateController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.JSONObject)
+    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
+    @JsonInputLimit(10 * 1024 * 1024)
+    public static class SaveDesignerTemplateAction extends MutatingApiAction<CreatePlateForm>
+    {
+        private PlateType _plateType;
+
+        @Override
+        public Object execute(CreatePlateForm form, BindException errors) throws Exception
+        {
+            Long rowId = form.getRowId();
+            String name = form.getName();
+            boolean updateExisting = false;
+            PlateImpl plate;
+
+            if (rowId != null && rowId > 0)
+            {
+                plate = PlateManager.get().getPlate(getContainer(), rowId);
+                if (plate == null)
+                    throw new NotFoundException("Plate template not found: " + rowId);
+                Plate conflict = PlateManager.get().getPlateByName(getContainer(), name);
+                if (conflict != null && !conflict.getRowId().equals(plate.getRowId()))
+                    throw new ValidationException("A plate template with name '" + name + "' already exists.");
+                if (!plate.getAssayType().equals(form.getAssayType()))
+                    throw new ValidationException("Plate template type '" + plate.getAssayType() + "' cannot be changed for '" + name + "'");
+                if (plate.getRows() != form.getRows() || plate.getColumns() != form.getCols())
+                    throw new ValidationException("Plate template dimensions cannot be changed for '" + name + "'");
+                updateExisting = true;
+            }
+            else
+            {
+                if (PlateManager.get().getPlateByName(getContainer(), name) != null)
+                    throw new ValidationException("A plate template with name '" + name + "' already exists.");
+                plate = PlateManager.get().createPlate(getContainer(), form.getAssayType(), _plateType);
+                plate.setTemplate(true);
+            }
+
+            plate.setName(name);
+            plate.setProperties(form.getPlateProperties());
+
+            List<SubmittedGroup> submittedGroups = form.getGroups();
+            Set<Integer> submittedGroupIds = new HashSet<>();
+            for (SubmittedGroup g : submittedGroups)
+                if (g.rowId() > 0)
+                    submittedGroupIds.add(g.rowId());
+
+            // Mark well groups absent from the submission for deletion
+            List<WellGroupImpl> existingWellGroups = plate.getWellGroups();
+            for (WellGroup existingGroup : existingWellGroups)
+                if (existingGroup.getRowId() != null && !submittedGroupIds.contains(existingGroup.getRowId()))
+                    plate.markWellGroupForDeletion(existingGroup);
+
+            // Update existing or create new well groups
+            for (SubmittedGroup gm : submittedGroups)
+            {
+                WellGroup.Type groupType;
+                try
+                {
+                    groupType = WellGroup.Type.valueOf(gm.type());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new ValidationException("Unknown well group type: '" + gm.type() + "'");
+                }
+
+                List<Position> positions = new ArrayList<>();
+                for (PlatePosition p : gm.positions())
+                    positions.add(plate.getPosition(p.row(), p.col()));
+
+                WellGroupImpl group;
+                if (updateExisting && gm.rowId() > 0)
+                {
+                    group = findExistingWellGroup(existingWellGroups, gm.rowId());
+                    if (group == null)
+                        throw new ValidationException("Well group " + gm.rowId() + " was not found.");
+                    if (group.getType() != groupType)
+                        throw new ValidationException("Well group type cannot be changed: " + gm.name());
+                    group.setName(gm.name());
+                    group.setPositions(positions);
+                    plate.storeWellGroup(group);
+                }
+                else
+                {
+                    group = plate.addWellGroup(gm.name(), groupType, positions);
+                }
+                group.setProperties(gm.properties());
+            }
+
+            PlateLayoutHandler handler = PlateManager.get().getPlateLayoutHandler(plate.getAssayType());
+            if (handler == null)
+                throw new NotFoundException("Invalid assay type");
+            handler.validatePlate(getContainer(), getUser(), plate);
+            long savedRowId = PlateService.get().save(getContainer(), getUser(), plate);
+            return success(Map.of("rowId", savedRowId));
+        }
+
+        private WellGroupImpl findExistingWellGroup(List<WellGroupImpl> wellGroups, int rowId)
+        {
+            for (WellGroupImpl wg : wellGroups)
+                if (wg.getRowId() != null && wg.getRowId() == rowId)
+                    return wg;
+            return null;
+        }
+
+        @Override
+        public void validateForm(CreatePlateForm form, Errors errors)
+        {
+            if (form.getGroups() == null || form.getGroups().isEmpty())
+            {
+                errors.reject(ERROR_REQUIRED, "At least one group is required.");
+            }
+            // Template designer (groups) path: plateType resolved by rowId lookup on update,
+            // or by rows×cols on create.
+            if (form.getRowId() == null || form.getRowId() <= 0)
+            {
+                _plateType = form.getPlateType() != null
+                        ? PlateManager.get().getPlateType(form.getPlateType())
+                        : PlateService.get().getPlateType(form.getRows(), form.getCols());
+                if (_plateType == null)
+                    errors.reject(ERROR_REQUIRED, "The plate type (" + form.getRows() + " x " + form.getCols() + ") does not exist.");
+            }
+        }
+    }
+
     @RequiresPermission(ReadPermission.class)
     public static class PlateDetailsAction extends SimpleRedirectAction<RowIdForm>
     {
@@ -262,7 +383,7 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
-    public class GetTemplateDefinitionAction extends ReadOnlyApiAction<DesignerForm>
+    public class GetDesignerTemplateDefinitionAction extends ReadOnlyApiAction<DesignerForm>
     {
         @Override
         public Object execute(DesignerForm form, BindException errors) throws Exception
@@ -286,13 +407,13 @@ public class PlateController extends SpringActionController
             if (templateName != null)
             {
                 if (plateId == null)
-                    throw new Exception("plateId is required when templateName is specified.");
+                    throw new NotFoundException("plateId is required when templateName is specified.");
                 template = PlateService.get().getPlate(getContainer(), plateId);
                 if (template == null)
-                    throw new NotFoundException("Plate '" + templateName + "' does not exist.");
+                    throw new NotFoundException("Plate referenced by plateId does not exist.");
                 handler = PlateManager.get().getPlateLayoutHandler(template.getAssayType());
                 if (handler == null)
-                    throw new Exception("Plate template type '" + template.getAssayType() + "' does not exist.");
+                    throw new ValidationException("Plate template type '" + template.getAssayType() + "' does not exist.");
             }
             else
             {
@@ -303,10 +424,10 @@ public class PlateController extends SpringActionController
 
                 handler = PlateManager.get().getPlateLayoutHandler(assayTypeName);
                 if (handler == null)
-                    throw new Exception("Plate template type '" + assayTypeName + "' does not exist.");
+                    throw new ValidationException("Plate template type '" + assayTypeName + "' does not exist.");
                 PlateType plateType = PlateService.get().getPlateType(rowCount, colCount);
                 if (plateType == null)
-                    throw new Exception("The plate type (" + rowCount + " x " + colCount + ") does not exist.");
+                    throw new ValidationException("The plate type (" + rowCount + " x " + colCount + ") does not exist.");
                 template = handler.createPlate(templateTypeName, getContainer(), plateType);
             }
 
@@ -392,182 +513,6 @@ public class PlateController extends SpringActionController
             result.put("defaultPlateName", defaultPlateName);
 
             return success(result);
-        }
-    }
-
-    public static class SaveTemplateForm implements ApiJsonForm
-    {
-        private JSONObject _json;
-
-        @Override
-        public void bindJson(JSONObject json)
-        {
-            _json = json;
-        }
-
-        public JSONObject getJson()
-        {
-            return _json != null ? _json : new JSONObject();
-        }
-    }
-
-    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
-    public static class SaveTemplateAction extends MutatingApiAction<SaveTemplateForm>
-    {
-        private static final int MAX_BODY_BYTES = 10 * 1024 * 1024; // 10 MB
-
-        @Override
-        protected BaseApiAction.FormAndErrors<SaveTemplateForm> populateJacksonForm() throws Exception
-        {
-            byte[] bytes;
-            try (BoundedInputStream bounded = BoundedInputStream.builder()
-                    .setInputStream(getViewContext().getRequest().getInputStream())
-                    .setMaxCount((long) MAX_BODY_BYTES + 1)
-                    .get())
-            {
-                bytes = bounded.readAllBytes();
-            }
-            if (bytes.length > MAX_BODY_BYTES)
-                throw new ApiUsageException("Request body exceeds maximum allowed size of 10 MB.");
-            String body = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
-            JSONObject jsonObj = body.isEmpty() ? new JSONObject() : new JSONObject(body);
-            SaveTemplateForm form = new SaveTemplateForm();
-            form.bindJson(jsonObj);
-            return new BaseApiAction.FormAndErrors<>(form, new NullSafeBindException(form, "form"));
-        }
-
-        @Override
-        public Object execute(SaveTemplateForm form, BindException errors) throws Exception
-        {
-            JSONObject json = form.getJson();
-
-            long rowId = json.optLong("rowId", -1);
-            String name = json.getString("name");
-            String type = json.getString("type");
-            int rows = json.getInt("rows");
-            int cols = json.getInt("cols");
-            JSONArray groupsJson = json.optJSONArray("groups");
-            JSONObject platePropsJson = json.optJSONObject("plateProperties");
-
-            Map<String, Object> plateProperties = new HashMap<>();
-            if (platePropsJson != null)
-            {
-                for (String key : platePropsJson.keySet())
-                    plateProperties.put(key, platePropsJson.get(key));
-            }
-
-            boolean updateExisting = false;
-            PlateImpl plate;
-            if (rowId > 0)
-            {
-                plate = PlateManager.get().getPlate(getContainer(), rowId);
-                if (plate == null)
-                    throw new NotFoundException("Plate template not found: " + rowId);
-                // Check for a conflicting name from a different plate
-                Plate conflict = PlateManager.get().getPlateByName(getContainer(), name);
-                if (conflict != null && !conflict.getRowId().equals(plate.getRowId()))
-                    throw new ApiUsageException("A plate template with name '" + name + "' already exists.");
-                if (!plate.getAssayType().equals(type))
-                    throw new ApiUsageException("Plate template type '" + plate.getAssayType() + "' cannot be changed for '" + name + "'");
-                if (plate.getRows() != rows || plate.getColumns() != cols)
-                    throw new ApiUsageException("Plate template dimensions cannot be changed for '" + name + "'");
-                updateExisting = true;
-            }
-            else
-            {
-                if (PlateManager.get().getPlateByName(getContainer(), name) != null)
-                    throw new ApiUsageException("A plate template with name '" + name + "' already exists.");
-                PlateType plateType = PlateService.get().getPlateType(rows, cols);
-                if (plateType == null)
-                    throw new NotFoundException("The plate type (" + rows + " x " + cols + ") does not exist.");
-                plate = PlateManager.get().createPlate(getContainer(), type, plateType);
-            }
-
-            plate.setName(name);
-            plate.setProperties(plateProperties);
-
-            // Parse groups from JSON
-            List<SubmittedGroup> submittedGroups = new ArrayList<>();
-            Set<Integer> submittedGroupIds = new HashSet<>();
-            if (groupsJson != null)
-            {
-                for (int i = 0; i < groupsJson.length(); i++)
-                {
-                    SubmittedGroup g = SubmittedGroup.from(groupsJson.getJSONObject(i));
-                    submittedGroups.add(g);
-                    if (g.rowId > 0)
-                        submittedGroupIds.add(g.rowId);
-                }
-            }
-
-            // Mark well groups not in submission for deletion
-            List<WellGroup> existingWellGroups = plate.getWellGroups();
-            for (WellGroup existingGroup : existingWellGroups)
-            {
-                if (existingGroup.getRowId() != null && !submittedGroupIds.contains(existingGroup.getRowId()))
-                    plate.markWellGroupForDeletion(existingGroup);
-            }
-
-            // Update or create well groups
-            for (SubmittedGroup gm : submittedGroups)
-            {
-                int gRowId = gm.rowId();
-                String groupTypeName = gm.type();
-                WellGroup.Type groupType;
-                try
-                {
-                    groupType = WellGroup.Type.valueOf(groupTypeName);
-                }
-                catch (IllegalArgumentException e)
-                {
-                    throw new ApiUsageException("Unknown well group type: '" + groupTypeName + "'");
-                }
-                List<PlatePosition> posList = gm.positions();
-                List<Position> positions = new ArrayList<>();
-                for (PlatePosition p : posList)
-                    positions.add(plate.getPosition(p.row, p.col));
-
-                Map<String, Object> props = gm.properties();
-
-                WellGroupImpl group;
-                if (updateExisting && gRowId > 0)
-                {
-                    WellGroupImpl existing = findExistingWellGroup(existingWellGroups, gRowId);
-                    if (existing == null)
-                        throw new Exception("Well group " + gRowId + " was not found.");
-                    if (existing.getType() != groupType)
-                        throw new Exception("Well group type cannot be changed: " + gm.name());
-                    existing.setName(gm.name);
-                    existing.setPositions(positions);
-                    plate.storeWellGroup(existing);
-                    group = existing;
-                }
-                else
-                {
-                    group = plate.addWellGroup(gm.name, groupType, positions);
-                }
-                group.setProperties(props);
-            }
-
-            PlateLayoutHandler plateLayoutHandler = PlateManager.get().getPlateLayoutHandler(plate.getAssayType());
-
-            if (plateLayoutHandler == null)
-            {
-                throw new NotFoundException("Invalid assay type");
-            }
-            plateLayoutHandler.validatePlate(getContainer(), getUser(), plate);
-            long savedRowId = PlateService.get().save(getContainer(), getUser(), plate);
-            return success(Map.of("rowId", savedRowId));
-        }
-
-        private WellGroupImpl findExistingWellGroup(List<WellGroup> wellGroups, int rowId)
-        {
-            for (WellGroup wg : wellGroups)
-            {
-                if (wg.getRowId() != null && wg.getRowId() == rowId)
-                    return (WellGroupImpl) wg;
-            }
-            return null;
         }
     }
 
@@ -959,6 +904,13 @@ public class PlateController extends SpringActionController
         private boolean _template;
         private Long _templateId;
 
+        // Template designer fields (groups path)
+        private Long _rowId;
+        private int _rows;
+        private int _cols;
+        private List<SubmittedGroup> _groups;       // non-null activates the template-upsert path
+        private final Map<String, Object> _plateProperties = new HashMap<>();
+
         public String getDescription()
         {
             return _description;
@@ -1004,6 +956,31 @@ public class PlateController extends SpringActionController
             return _templateId;
         }
 
+        public Long getRowId()
+        {
+            return _rowId;
+        }
+
+        public int getRows()
+        {
+            return _rows;
+        }
+
+        public int getCols()
+        {
+            return _cols;
+        }
+
+        public List<SubmittedGroup> getGroups()
+        {
+            return _groups;
+        }
+
+        public Map<String, Object> getPlateProperties()
+        {
+            return _plateProperties;
+        }
+
         @Override
         public void bindJson(JSONObject json)
         {
@@ -1031,6 +1008,33 @@ public class PlateController extends SpringActionController
             if (json.has("templateId"))
                 _templateId = json.getLong("templateId");
 
+            // Template designer fields
+            if (json.has("rowId"))
+                _rowId = json.getLong("rowId");
+            // "type" is how the React designer sends assayType
+            if (json.has("type") && !json.has("assayType"))
+                _assayType = json.getString("type");
+            if (json.has("rows"))
+                _rows = json.getInt("rows");
+            if (json.has("cols"))
+                _cols = json.getInt("cols");
+            if (json.has("plateProperties"))
+            {
+                JSONObject props = json.getJSONObject("plateProperties");
+                for (String key : props.keySet())
+                {
+                    Object val = props.get(key);
+                    _plateProperties.put(key, val == JSONObject.NULL ? null : val);
+                }
+            }
+            if (json.has("groups"))
+            {
+                _groups = new ArrayList<>();
+                JSONArray arr = json.getJSONArray("groups");
+                for (int i = 0; i < arr.length(); i++)
+                    _groups.add(SubmittedGroup.from(arr.getJSONObject(i)));
+            }
+
             if (json.has("data"))
             {
                 _data = new ArrayList<>();
@@ -1052,6 +1056,7 @@ public class PlateController extends SpringActionController
 
     @Marshal(Marshaller.JSONObject)
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
+    @JsonInputLimit(10 * 1024 * 1024)
     public static class CreatePlateAction extends MutatingApiAction<CreatePlateForm>
     {
         private PlateType _plateType;
@@ -1061,6 +1066,8 @@ public class PlateController extends SpringActionController
         {
             if (form.getPlateType() == null)
                 errors.reject(ERROR_REQUIRED, "Plate \"plateType\" is required.");
+            if (form.getGroups() != null)
+                errors.reject(ERROR_REQUIRED, "Group values are not supported.");
 
             _plateType = PlateManager.get().getPlateType(form.getPlateType());
             if (_plateType == null)

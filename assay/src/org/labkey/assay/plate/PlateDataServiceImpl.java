@@ -198,7 +198,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
 
             // first, mark well groups not submitted for saving as deleted
             Set<GWTWellGroup> groups = gwtPlate.getGroups();
-            List<WellGroup> existingWellGroups = plate.getWellGroups();
+            List<? extends WellGroup> existingWellGroups = plate.getWellGroups();
             for (WellGroup existingWellGroup : existingWellGroups)
             {
                 if (groups.stream().noneMatch(g-> g.getRowId() == existingWellGroup.getRowId()))
@@ -246,7 +246,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
         }
     }
 
-    private WellGroupImpl findExistingWellGroup(List<WellGroup> wellGroups, int rowId)
+    private WellGroupImpl findExistingWellGroup(List<? extends WellGroup> wellGroups, int rowId)
     {
         for (WellGroup wellGroup : wellGroups)
         {

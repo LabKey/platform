@@ -66,11 +66,11 @@ public interface Plate extends PropertySet, Identifiable
 
     @Nullable WellGroup getWellGroup(int rowId);
 
-    @NotNull List<WellGroup> getWellGroups();
+    @NotNull List<? extends WellGroup> getWellGroups();
 
-    @NotNull List<WellGroup> getWellGroups(Position position);
+    @NotNull List<? extends WellGroup> getWellGroups(Position position);
 
-    @NotNull List<WellGroup> getWellGroups(WellGroup.Type type);
+    @NotNull List<? extends WellGroup> getWellGroups(WellGroup.Type type);
 
     @NotNull Map<WellGroup.Type, Map<String, WellGroup>> getWellGroupMap();
 
