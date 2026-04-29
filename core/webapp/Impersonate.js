@@ -34,15 +34,15 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
     },
 
     getPanel: function(){
-        var instructions = LABKEY.Security.currentUser.isRootAdmin ?
-            "As a site or application administrator, you can impersonate any user on the site." +
-            (!LABKEY.Security.currentUser.isSystemAdmin ? " While impersonating you will not inherit the user's "
-                + "site-level roles (e.g., Site Administrator, Developer)." : "") :
+        const instructions = LABKEY.Security.currentUser.canImpersonateSiteRoles ?
+            "As " + getRootAdminRole(LABKEY.Security.currentUser) + ", you can impersonate any user on the site." +
+            (!LABKEY.Security.currentUser.canImpersonatePrivilegedRoles ? " While impersonating, you will not inherit the user's "
+                + "privileged roles (e.g., Site Administrator, Platform Developer)." : "") :
 
-            "As a project administrator, you can impersonate any project user within this project. While impersonating you will be " +
-            "restricted to this project and will not inherit the user's site-level roles (e.g., Site Administrator, Developer).";
+            "As a Project Administrator, you can impersonate any project user within this project. While impersonating, you will be " +
+            "restricted to this project and will not inherit the user's privileged roles (e.g., Site Administrator, Platform Developer).";
 
-        var divContainer = Ext4.create('Ext.container.Container', {
+        const divContainer = Ext4.create('Ext.container.Container', {
             html: "<div>" + instructions + "<br><br>Select a user from the list below and click the 'Impersonate' button</div>",
             margin: '0 0 15 0'
         });
@@ -190,11 +190,14 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
     },
 
     getPanel: function(){
-        var instructions = LABKEY.Security.currentUser.isRootAdmin ?
-            "As a site or application administrator, you can impersonate any site or project group." :
-            "As a project administrator, you can impersonate any project group in this project or any site group in which you're member. While impersonating you will be restricted to this project.";
+        const instructions = LABKEY.Security.currentUser.canImpersonateSiteRoles ?
+            "As " + getRootAdminRole(LABKEY.Security.currentUser) + ", you can impersonate any site or project group. " +
+                (!LABKEY.Security.currentUser.canImpersonatePrivilegedRoles ? " While impersonating, you will not inherit the group's "
+                    + "privileged roles (e.g., Site Administrator, Platform Developer)." : "") :
+            "As a Project Administrator, you can impersonate any project group in this project or any site group of which you're a member. " +
+                "While impersonating, you will be restricted to this project.";
 
-        var divContainer = Ext4.create('Ext.container.Container', {
+        const divContainer = Ext4.create('Ext.container.Container', {
             html: "<div>" + instructions + "<br><br>Select a group from the list below and click the 'Impersonate' button</div>",
             margin: '0 0 15 0'
         });
@@ -314,12 +317,12 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
     },
 
     getPanel: function(){
-        var instructions = LABKEY.Security.currentUser.canImpersonateSiteRoles ?
-            "As a site administrator, application administrator, or impersonating troubleshooter you can impersonate one or more security roles. While impersonating you will have access to " +
-                "the entire site, limited to the permissions provided by the selected roles(s)." :
-            "As a project administrator, you can impersonate one or more security roles. While impersonating you will be restricted to this project.";
+        const instructions = LABKEY.Security.currentUser.canImpersonateSiteRoles ?
+            "As " + getRootAdminRole(LABKEY.Security.currentUser) + ", you can impersonate one or more security roles. " +
+                "While impersonating, you will have access to the entire site, limited to the permissions provided by the role(s) you select." :
+            "As a Project Administrator, you can impersonate one or more security roles. While impersonating, you will be restricted to this project.";
 
-        var divContainer = Ext4.create('Ext.container.Container', {
+        const divContainer = Ext4.create('Ext.container.Container', {
             html: "<div>" + instructions + "<br><br>Select roles from the list below and click the 'Impersonate' button</div>",
             margin: '0 0 15 0'
         });
@@ -449,3 +452,15 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
         });
     }
 });
+
+// Return the "highest" role that the current root admin has
+function getRootAdminRole(user)
+{
+    if (user.isSiteAdmin)
+        return "a Site Administrator";
+
+    if (user.canImpersonatePrivilegedRoles)
+        return "an Impersonating Troubleshooter";
+
+    return "an Application Administrator";
+}

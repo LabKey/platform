@@ -140,6 +140,13 @@ public interface AttachmentService
 
     HttpView<?> getFindAttachmentParentsView();
 
+    /**
+     * Logs the first 20 orphaned attachments it detects. Returns the total number of orphaned attachments detected.
+     */
+    int logOrphanedAttachments();
+
+    void deleteOrphanedAttachments();
+
     class DuplicateFilenameException extends IOException implements SkipMothershipLogging
     {
         private final List<String> _errors = new ArrayList<>();

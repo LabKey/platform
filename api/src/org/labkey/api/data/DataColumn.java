@@ -742,6 +742,8 @@ public class DataColumn extends DisplayColumn
     private void renderSelectFormInput(HtmlWriter out, String formFieldName, Object value, List<String> strValues, boolean disabledInput, NamedObjectList entryList)
     {
         boolean isMultiple = "select.multiple".equalsIgnoreCase(_inputType);
+        if (isMultiple && !formFieldName.startsWith(MultiChoice.ARRAY_MARKER))
+            formFieldName = MultiChoice.ARRAY_MARKER + formFieldName;
         SelectBuilder select = new SelectBuilder()
             .disabled(disabledInput)
             .multiple(isMultiple)
@@ -750,7 +752,7 @@ public class DataColumn extends DisplayColumn
         List<OptionBuilder.Option> options = new ArrayList<>();
 
         // add empty option
-        if (!isMultiple)
+        if (!_boundColumn.isRequired() || !isMultiple)
             options.add(new OptionBuilder().build());
 
         Set<String> selectedValues = strValues.isEmpty() ? Set.of() :

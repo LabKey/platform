@@ -53,7 +53,6 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -109,7 +108,7 @@ public class AuditController extends SpringActionController
     public class BeginAction extends SimpleRedirectAction
     {
         @Override
-        public URLHelper getRedirectURL(Object o)
+        public ActionURL getRedirectURL(Object o)
         {
             if (getContainer() != null && getContainer().isRoot())
                 return new ActionURL(ShowAuditLogAction.class, getContainer());
@@ -384,11 +383,12 @@ public class AuditController extends SpringActionController
         public Object execute(AuditTransactionForm form, BindException errors)
         {
             List<Long> rowIds;
-            ContainerFilter cf = ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getContainer(), getUser());
+            User elevatedUser = ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser());
+            ContainerFilter cf = ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getContainer(), elevatedUser);
             if (form.isSampleType())
-                rowIds = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser()), getContainer(), cf);
+                rowIds = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), elevatedUser, getContainer(), cf);
             else
-                rowIds = AuditLogImpl.get().getTransactionSourceIds(form.getTransactionAuditId(), ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser()), getContainer(), cf);
+                rowIds = AuditLogImpl.get().getTransactionSourceIds(form.getTransactionAuditId(), elevatedUser, getContainer(), cf);
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", true);

@@ -18,9 +18,11 @@ package org.labkey.core.admin;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,6 +48,7 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jspecify.annotations.NonNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
@@ -192,11 +195,13 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Directive;
 import org.labkey.api.security.ElevatedUser;
+import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -211,7 +216,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
-import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
@@ -410,12 +414,14 @@ import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.href;
 import static org.labkey.api.util.DOM.Attribute.method;
 import static org.labkey.api.util.DOM.Attribute.name;
+import static org.labkey.api.util.DOM.Attribute.src;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.Attribute.title;
 import static org.labkey.api.util.DOM.Attribute.type;
 import static org.labkey.api.util.DOM.Attribute.value;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.LI;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.STYLE;
@@ -885,10 +891,22 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ActionURL getCspReportToURL(@NotNull String cspVersion)
+        public ActionURL getCspReportToURL()
         {
-            return new ActionURL(ContentSecurityPolicyReportToAction.class, ContainerManager.getRoot())
-                .addParameter("cspVersion", cspVersion);
+            return new ActionURL(ContentSecurityPolicyReportToAction.class, ContainerManager.getRoot());
+        }
+
+        @Override
+        public ActionURL getAllowedExternalRedirectHostsURL()
+        {
+            return new ActionURL(AllowListAction.class, ContainerManager.getRoot())
+                .addParameter("type", AllowListType.Redirect.name());
+        }
+
+        @Override
+        public ActionURL getDeleteEncryptedContentURL()
+        {
+            return new ActionURL(DeleteEncryptedContentAction.class, ContainerManager.getRoot());
         }
 
         public static ActionURL getDeprecatedFeaturesURL()
@@ -3670,7 +3688,7 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             String parentType = getViewContext().getActionURL().getParameter("core.ParentType~eq");
-            addAdminNavTrail(root, "Documents Belonging to Parent Type" + (parentType != null ? " \"" + parentType + "\"" : ""), getClass());
+            addAdminNavTrail(root, parentType != null ? "Documents Belonging to Parent Type \"" + parentType + "\"" : "Documents", getClass());
         }
     }
 
@@ -3689,6 +3707,20 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             addAdminNavTrail(root, "Find Attachment Parents", getClass());
+        }
+    }
+
+    @AdminConsoleAction
+    public static class LogOrphanedAttachmentsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            int count = 0;
+            AttachmentService svc = AttachmentService.get();
+            if (svc != null)
+                count = svc.logOrphanedAttachments();
+            return Map.of("count", count);
         }
     }
 
@@ -8248,7 +8280,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public @Nullable URLHelper getRedirectURL(ReturnUrlForm form) throws Exception
+        public @Nullable ActionURL getRedirectURL(ReturnUrlForm form) throws Exception
         {
             Set<String> ids = DataRegionSelection.getSelected(getViewContext(), true);
 
@@ -8548,6 +8580,28 @@ public class AdminController extends SpringActionController
         private String _to;
         private String _body;
         private ConfigurationException _exception;
+        private boolean _success;
+        private boolean _attachmentSuccess;
+
+        public boolean isSuccess()
+        {
+            return _success;
+        }
+
+        public void setSuccess(boolean success)
+        {
+            _success = success;
+        }
+
+        public boolean isAttachmentSuccess()
+        {
+            return _attachmentSuccess;
+        }
+
+        public void setAttachmentSuccess(boolean attachmentSuccess)
+        {
+            _attachmentSuccess = attachmentSuccess;
+        }
 
         public String getTo()
         {
@@ -8590,6 +8644,8 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class EmailTestAction extends FormViewAction<EmailTestForm>
     {
+        private static final String EMAIL_TEST_SUCCESS_KEY = "EmailTestAction.success";
+
         @Override
         public void validateCommand(EmailTestForm form, Errors errors)
         {
@@ -8614,10 +8670,28 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(EmailTestForm form, boolean reshow, BindException errors)
         {
+            // Check for flash message from previous successful send
+            if (Boolean.TRUE.equals(getViewContext().getSession().getAttribute(EMAIL_TEST_SUCCESS_KEY)))
+            {
+                getViewContext().getSession().removeAttribute(EMAIL_TEST_SUCCESS_KEY);
+                form.setSuccess(true);
+            }
+            if (Boolean.TRUE.equals(getViewContext().getSession().getAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_SUCCESS_KEY)))
+            {
+                getViewContext().getSession().removeAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_SUCCESS_KEY);
+                form.setAttachmentSuccess(true);
+            }
+            String attachmentError = (String) getViewContext().getSession().getAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_ERROR_KEY);
+            if (attachmentError != null)
+            {
+                getViewContext().getSession().removeAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_ERROR_KEY);
+                form.setException(new ConfigurationException(attachmentError));
+            }
+
             JspView<EmailTestForm> testView = new JspView<>("/org/labkey/core/admin/emailTest.jsp", form);
             testView.setTitle("Send a Test Email");
 
-            if(null != MailHelper.getSession() && null != MailHelper.getSession().getProperties())
+            if(MailHelper.hasActiveProvider())
             {
                 JspView<?> emailPropsView = new JspView<>("/org/labkey/core/admin/emailProps.jsp");
                 emailPropsView.setTitle("Current Email Settings");
@@ -8646,6 +8720,7 @@ public class AdminController extends SpringActionController
                     try
                     {
                         MailHelper.send(msg, getUser(), getContainer());
+                        getViewContext().getSession().setAttribute(EMAIL_TEST_SUCCESS_KEY, Boolean.TRUE);
                     }
                     catch (ConfigurationException e)
                     {
@@ -8676,6 +8751,110 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             addAdminNavTrail(root, "Test Email Configuration", getClass());
+        }
+    }
+
+    /**
+     * Tests the Microsoft Graph API email transport with HTML content and a large attachment.
+     * This action tests the Graph API upload session workflow for attachments over 3MB,
+     * and data URI to CID attachment conversion (embedded base64 images in HTML).
+     * Use {@link EmailTestAction} for general email testing for both SMTP and Graph API.
+     */
+    @AdminConsoleAction
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class GraphEmailTestWithAttachmentAction extends FormHandlerAction<EmailTestForm>
+    {
+        private static final String EMAIL_TEST_ATTACHMENT_SUCCESS_KEY = "GraphEmailTestWithAttachmentAction.success";
+        private static final String EMAIL_TEST_ATTACHMENT_ERROR_KEY = "GraphEmailTestWithAttachmentAction.error";
+
+        @Override
+        public void validateCommand(EmailTestForm form, Errors errors)
+        {
+            if (form.getTo() == null || form.getTo().isEmpty())
+            {
+                errors.reject(ERROR_MSG, "To field cannot be blank.");
+            }
+        }
+
+        @Override
+        public boolean handlePost(EmailTestForm form, BindException errors) throws Exception
+        {
+            if (errors.hasErrors())
+                return false;
+
+            if (!MailHelper.hasActiveProvider())
+            {
+                form.setException(new ConfigurationException("No email provider configured"));
+                return false;
+            }
+
+            ValidEmail recipient = new ValidEmail(form.getTo());
+
+            // Create a temp file for attachment, deleting any leftover from previous test
+            File tempFile = FileUtil.appendPath(FileUtil.getTempDirectory(), org.labkey.api.util.Path.parse("email_test_attachment.txt"));
+            FileUtil.deleteTempFile(tempFile);
+
+            // Generate ~4MB of content to test Graph API upload session chunked upload
+            StringBuilder sb = new StringBuilder();
+            sb.append("LabKey Server Email Attachment Test\n");
+            sb.append("Provider: ").append(MailHelper.getActiveProvider().getName()).append("\n");
+            sb.append("Timestamp: ").append(java.time.Instant.now()).append("\n\n");
+            String line = "This is test data for email attachment upload testing. ";
+            while (sb.length() < 4 * 1024 * 1024)
+            {
+                sb.append(line);
+            }
+            java.nio.file.Files.writeString(tempFile.toPath(), sb.toString());//creates the actual file and writes the content
+
+            try
+            {
+                // Use the Graph provider's configured from address
+                String fromAddress = MailHelper.getActiveProvider().getProperties().getProperty("mail.graph.fromAddress");
+                MailHelper.MultipartMessage msg = MailHelper.createMultipartMessage();
+                msg.setFrom(fromAddress);
+                msg.addRecipient(Message.RecipientType.TO, recipient.getAddress());
+                msg.setSubject("Test Email with HTML and Attachment");
+
+                // Test both external URL images and data URI images.
+                // External URLs should be left unchanged, while data URIs should be converted to CID attachments.
+
+                // External image URL served by the running LabKey server (should NOT be converted - left as-is)
+                String logoUrl = "https://www.labkey.org/_webdav/Documentation/%40files/badge.png";
+
+                // Data URI image built from actual webapp image (should be converted to CID attachment by GraphTransportProvider)
+                FileLike imagesDir = ModuleLoader.getInstance().getModule("Core").getStaticFileDirectories().stream()
+                    .map(dir -> dir.resolveChild("_images"))
+                    .filter(FileLike::isDirectory)
+                    .findFirst()
+                    .orElseThrow(() -> new ConfigurationException("Could not find _images directory in core module"));
+                String gifDataUri = "data:image/gif;base64," + java.util.Base64.getEncoder().encodeToString(java.nio.file.Files.readAllBytes(imagesDir.resolveChild("paperclip.gif").toNioPathForRead()));
+
+                msg.setEncodedHtmlContent(createHtmlFragment(
+                    DIV("This is a ", SPAN(at(style, "font-weight:bold"), "test email"), " with HTML content, attachment, and multiple images."),
+                    DIV(SPAN(at(style, "font-weight:bold"), "External URL image"), " (should remain unchanged):"),
+                    IMG(at(src, logoUrl, style, "height:30px")),
+                    DIV(SPAN(at(style, "font-weight:bold"), "Data URI image"), " (should be converted to CID attachment):"),
+                    IMG(at(src, gifDataUri, style, "height:30px")),
+                    DIV("Sent via ", MailHelper.getActiveProvider().getName(), ".")
+                ).toString());
+                msg.addAttachment(tempFile);
+
+                MailHelper.send(msg, getUser(), getContainer());
+                getViewContext().getSession().setAttribute(EMAIL_TEST_ATTACHMENT_SUCCESS_KEY, Boolean.TRUE);
+            }
+            catch (Exception e)
+            {
+                getViewContext().getSession().setAttribute(EMAIL_TEST_ATTACHMENT_ERROR_KEY, e.getMessage());
+                return true;
+            }
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(EmailTestForm form)
+        {
+            return new ActionURL(EmailTestAction.class, getContainer());
         }
     }
 
@@ -11985,7 +12164,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(TroubleshooterPermission.class)
-    public class ViewUsageStatistics extends SimpleViewAction<Object>
+    public class ViewUsageStatisticsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -12031,6 +12210,14 @@ public class AdminController extends SpringActionController
 
             if (!reportsToForward.isEmpty())
                 forwardReports(LABKEY_ORG_REPORT_TO_ACTION, request, reportsToForward.toString(2));
+        }
+
+        @Override
+        protected ObjectMapper createRequestObjectMapper()
+        {
+            // Annoyingly, Chrome posts an array of JSON objects but Safari posts individual JSON objects. Set a flag
+            // that ensures both cases deserialize into List<JSONObject>.
+            return JsonUtil.DEFAULT_MAPPER.copy().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
         }
     }
 
@@ -12125,6 +12312,8 @@ public class AdminController extends SpringActionController
                             boolean forwarded = jsonObj.optBoolean("forwarded", false);
                             if (!forwarded)
                             {
+                                jsonObj.put("labkeyVersion", AppProps.getInstance().getReleaseVersion());
+                                jsonObj.put("cspVersion", ContentSecurityPolicyFilter.getCspVersion(cspReport.optString("disposition", null)));
                                 User user = getUser();
                                 String email = null;
                                 // If the user is not logged in, we may still be able to snag the email address from our cookie
@@ -12139,12 +12328,6 @@ public class AdminController extends SpringActionController
                                 jsonObj.put("ip", ipAddress);
                                 if (isNotBlank(userAgent) && !jsonObj.has("user_agent"))
                                     jsonObj.put("user_agent", userAgent);
-                                String labkeyVersion = request.getParameter("labkeyVersion");
-                                if (null != labkeyVersion)
-                                    jsonObj.put("labkeyVersion", labkeyVersion);
-                                String cspVersion = request.getParameter("cspVersion");
-                                if (null != cspVersion)
-                                    jsonObj.put("cspVersion", cspVersion);
                             }
 
                             var jsonStr = jsonObj.toString(2);
@@ -12197,6 +12380,39 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @RequiresPermission(AdminOperationsPermission.class) // Must be site administrator
+    public static class DeleteEncryptedContentAction extends ConfirmAction<Object>
+    {
+        @Override
+        public void validateCommand(Object o, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getConfirmView(Object o, BindException errors) throws Exception
+        {
+            getPageConfig().setShowHeader(false);
+            getPageConfig().setTitle("Delete Encrypted Content?");
+            return HtmlView.of("Are you sure you want to delete all encrypted content in the server? This " +
+                "content can include passwords to external systems, authentication configurations, users' TOTP " +
+                "settings, etc. The encrypted content will be cleared and can't be recovered. Restart the server " +
+                "after clearing encrypted content.");
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            Encryption.deleteEncryptedContent(getUser());
+            return true;
+        }
+
+        @Override
+        public @NonNull URLHelper getSuccessURL(Object o)
+        {
+            return getShowAdminURL();
+        }
+    }
+
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override
@@ -12207,6 +12423,11 @@ public class AdminController extends SpringActionController
             assertTrue(user.hasSiteAdminPermission());
 
             AdminController controller = new AdminController();
+
+            assertForNoPermission(user,
+                new ContentSecurityPolicyReportAction(),
+                new ContentSecurityPolicyReportToAction()
+            );
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
@@ -12263,7 +12484,8 @@ public class AdminController extends SpringActionController
                 controller.new ValidateDomainsAction(),
                 new OptionalFeatureAction(),
                 new GetSchemaXmlDocAction(),
-                new RecreateViewsAction()
+                new RecreateViewsAction(),
+                new DeleteEncryptedContentAction()
             );
 
             // @AdminConsoleAction
@@ -12305,7 +12527,8 @@ public class AdminController extends SpringActionController
             assertForTroubleshooterPermission(ContainerManager.getRoot(), user,
                 controller.new OptionalFeaturesAction(),
                 controller.new ShowModuleErrorsAction(),
-                new ModuleStatusAction()
+                new ModuleStatusAction(),
+                controller.new ViewUsageStatisticsAction()
             );
         }
     }
@@ -12314,9 +12537,9 @@ public class AdminController extends SpringActionController
     {
         static class TestJob extends PipelineJob
         {
-            ImpersonationContext _impersonationContext;
-            ImpersonationContext _impersonationContext1;
-            ImpersonationContext _impersonationContext2;
+            PermissionsContext _permissionsContext;
+            PermissionsContext _permissionsContext1;
+            PermissionsContext _permissionsContext2;
 
             @Override
             public URLHelper getStatusHref()
@@ -12342,13 +12565,13 @@ public class AdminController extends SpringActionController
             RoleImpersonationContextFactory factory = new RoleImpersonationContextFactory(
                 viewContext.getContainer(), viewContext.getUser(),
                 Collections.singleton(RoleManager.getRole(SharedViewEditorRole.class)), Collections.emptySet(), null);
-            job._impersonationContext = factory.getImpersonationContext();
+            job._permissionsContext = factory.getImpersonationContext();
 
             try
             {
                 UserImpersonationContextFactory factory1 = new UserImpersonationContextFactory(viewContext.getContainer(), viewContext.getUser(),
                     UserManager.getGuestUser(), null);
-                job._impersonationContext1 = factory1.getImpersonationContext();
+                job._permissionsContext1 = factory1.getImpersonationContext();
             }
             catch (Exception e)
             {
@@ -12357,7 +12580,7 @@ public class AdminController extends SpringActionController
 
             GroupImpersonationContextFactory factory2 = new GroupImpersonationContextFactory(viewContext.getContainer(), viewContext.getUser(),
                 GroupManager.getGroup(ContainerManager.getRoot(), "Users", GroupEnumType.SITE), null);
-            job._impersonationContext2 = factory2.getImpersonationContext();
+            job._permissionsContext2 = factory2.getImpersonationContext();
             testSerialize(job, LOG);
         }
     }

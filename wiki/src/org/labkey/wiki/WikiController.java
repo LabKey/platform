@@ -427,7 +427,7 @@ public class WikiController extends SpringActionController
         @Override
         public ActionURL getFailURL(WikiNameForm wikiNameForm, BindException errors)
         {
-            return new ManageAction(getViewContext(), _wiki).getUrl();
+            return _wiki != null ? new ManageAction(getViewContext(), _wiki).getUrl() : null;
         }
     }
 
@@ -1173,7 +1173,7 @@ public class WikiController extends SpringActionController
                 String realName = WikiSelectManager.getNameForAlias(getContainer(), name);
                 if (null != realName)
                 {
-                    LOG.debug("PageAction: requested wiki name, \"" + name + "\", is an alias; redirecting to \"" + realName + "\". Referrer: " + getViewContext().getRequest().getHeader("Referer"));
+                    LOG.debug("PageAction: requested wiki name, \"{}\", is an alias; redirecting to \"{}\". Referrer: {}", name, realName, getViewContext().getRequest().getHeader("Referer"));
                     throw new PermanentRedirectException(getViewContext().getActionURL().clone().replaceParameter("name", realName));
                 }
 

@@ -132,12 +132,6 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     }
 
     @Override
-    public boolean isVisitTagQuery()
-    {
-        return _queryName.startsWith("VisualizationVisitTag");
-    }
-
-    @Override
     public boolean isRequireLeftJoin()
     {
         return _requireLeftJoin;
@@ -213,7 +207,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
 
     private static void addToColMap(Map<String, Set<VisualizationSourceColumn>> colMap, String name, VisualizationSourceColumn alias)
     {
-        Set<VisualizationSourceColumn> aliases = colMap.computeIfAbsent(name, k -> new LinkedHashSet<>());
+        Set<VisualizationSourceColumn> aliases = colMap.computeIfAbsent(name, _ -> new LinkedHashSet<>());
         aliases.add(alias);
     }
 
@@ -434,7 +428,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
             return "";
     }
 
-    private void appendValueList(StringBuilder sql, VisualizationSourceColumn col) throws org.labkey.api.visualization.SQLGenerationException
+    private void appendValueList(StringBuilder sql, VisualizationSourceColumn col)
     {
         if (col.getValues() != null && !col.getValues().isEmpty())
         {
@@ -457,7 +451,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         }
     }
 
-    public String getPivotClause() throws org.labkey.api.visualization.SQLGenerationException
+    public String getPivotClause()
     {
         if (_pivot != null)
         {
@@ -560,7 +554,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         return separator;
     }
 
-    public String getWhereClause() throws org.labkey.api.visualization.SQLGenerationException
+    public String getWhereClause()
     {
         StringBuilder where = new StringBuilder();
         String sep = "WHERE ";
@@ -598,12 +592,11 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     @Override
     public String getSQL(VisualizationSourceColumn.Factory factory) throws SQLGenerationException
     {
-        String sql = getSelectClause(factory) + "\n" +
+        return getSelectClause(factory) + "\n" +
                 getFromClause() + "\n" +
                 getWhereClause() + "\n" +
                 getGroupByClause() + "\n" +
                 getPivotClause() + "\n";
-        return sql;
     }
 
     @Override

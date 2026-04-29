@@ -21,6 +21,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
@@ -163,6 +164,7 @@ public class AssayPlateTriggerFactory implements TriggerFactory
             TableInfo table,
             Container c,
             User user,
+            @Nullable QueryUpdateService.InsertOption insertOption,
             @Nullable Map<String, Object> newRow,
             @Nullable Map<String, Object> oldRow,
             ValidationException errors,

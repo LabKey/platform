@@ -15,19 +15,23 @@
  */
 package org.labkey.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewChangeListener;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
+
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -65,6 +69,73 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
         {
             _updateCustomViewSchemaNameChange(user, container, changes);
         }
+        if (property.equals(QueryProperty.ColumnType))
+        {
+            _updateCustomViewColumnTypeChange(user, container, schema, changes);
+        }
+    }
+
+
+    private void _updateCustomViewColumnTypeChange(User user, Container container, SchemaKey schema, @NotNull Collection<QueryPropertyChange<?>> changes)
+    {
+        for (QueryPropertyChange<?> qpc : changes)
+        {
+            QueryDefinition queryDefinition = qpc.getSource();
+            if (queryDefinition == null)
+                continue;
+            String queryName = queryDefinition.getName();
+
+            PropertyDescriptor oldDp = (PropertyDescriptor) qpc.getOldValue();
+            PropertyDescriptor newDp = (PropertyDescriptor) qpc.getNewValue();
+
+            if (oldDp == null || newDp == null)
+                continue;
+
+            String columnName = newDp.getName() == null ? oldDp.getName() : newDp.getName();
+
+            List<CustomView> databaseCustomViews = QueryService.get().getDatabaseCustomViews(user, container, schema.toString(), queryName);
+
+            for (CustomView customView : databaseCustomViews)
+            {
+                try
+                {
+                    // update custom view filter and sort based on column type change
+                    String filterAndSort = customView.getFilterAndSort();
+                    if (filterAndSort == null || filterAndSort.isEmpty())
+                        continue;
+
+                    /* Example:
+                     *   "/?filter.MCF2~arrayisnotempty=&filter.Name~in=S-5%3BS-6%3BS-8%3BS-9&filter.MCF~arraycontainsall=2%3B1%3B3&filter.sort=zz"
+                    */
+                    String prefix = filterAndSort.startsWith("/?") ? "/?" : (filterAndSort.startsWith("?") ? "?" : "");
+                    String[] filterComponents = filterAndSort.substring(prefix.length()).split("&");
+                    StringBuilder updatedFilterAndSort = new StringBuilder(prefix);
+                    String sep = "";
+                    for (String filterPart : filterComponents)
+                    {
+                        String updatedPart = QueryChangeListener.getUpdatedFilterStrOnColumnTypeUpdate(filterPart, "filter", columnName, oldDp, newDp);
+                        if (!StringUtils.isEmpty(updatedPart))
+                        {
+                            updatedFilterAndSort.append(sep).append(updatedPart);
+                            sep = "&";
+                        }
+                    }
+
+                    String updatedFilterAndSortStr = updatedFilterAndSort.toString();
+                    if (!updatedFilterAndSortStr.equals(filterAndSort))
+                    {
+                        customView.setFilterAndSort(updatedFilterAndSortStr);
+                        HttpServletRequest request = new MockHttpServletRequest();
+                        customView.save(customView.getModifiedBy(), request);
+                    }
+                }
+                catch (Exception e)
+                {
+                    LogManager.getLogger(CustomViewQueryChangeListener.class).error("An error occurred upgrading custom view properties: ", e);
+                }
+            }
+        }
+
     }
 
     @Override
@@ -159,7 +230,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
             queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
         }
 
-        List<CustomView> databaseCustomViews = QueryService.get().getDatabaseCustomViews(user, container, null, schemaKey.toString(), null, false, false);
+        List<CustomView> databaseCustomViews = QueryService.get().getDatabaseCustomViews(user, container, schemaKey.toString(), null);
 
         for (CustomView customView : databaseCustomViews)
         {
@@ -208,7 +279,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
         {
             String newSchema = schemaNameChangeMap.get(oldSchema);
 
-            List<CustomView> databaseCustomViews = QueryService.get().getDatabaseCustomViews(user, container, null, oldSchema, null, false, false);
+            List<CustomView> databaseCustomViews = QueryService.get().getDatabaseCustomViews(user, container, oldSchema, null);
 
             for (CustomView customView : databaseCustomViews)
             {

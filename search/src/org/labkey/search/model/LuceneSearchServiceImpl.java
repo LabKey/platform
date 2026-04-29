@@ -447,9 +447,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     }
 
     @Override
-    public void updateIndex()
+    public void updateIndex(String reason)
     {
-        super.updateIndex();
+        super.updateIndex(reason);
 
         // Commit and close current index
         commit();
@@ -464,7 +464,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
         // Initialize new index and clear last indexed
         initializeIndex();
-        clearLastIndexed();
+        clearLastIndexed(reason);
     }
 
     @Override
@@ -547,7 +547,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             try
             {
                 if (getNumDocs() == 0)
-                    clearLastIndexed();
+                    clearLastIndexed("the index is empty or missing");
 
                 Map<String, String> map = getProperties();
                 @NotNull String serverGuid = AppProps.getInstance().getServerGUID();
@@ -619,7 +619,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         {
             // Queue the work to run on the indexing thread to avoid deadlocks with concurrent
             // database operations (e.g., truncating lastIndexed while indexing threads are querying)
-            _log.info("Queuing deletion of full-text search index because: " + reason);
+            _log.info("Queuing deletion of full-text search index because: {}", reason);
             final CountDownLatch latch = new CountDownLatch(1);
             _IndexTask task = createTask("DeleteIndex", new TaskListener()
             {
@@ -654,7 +654,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
     private void deleteIndexImpl(String reason)
     {
-        _log.info("Deleting full-text search index and clearing last indexed because: " + reason);
+        _log.info("Deleting full-text search index because: {}", reason);
         if (isIndexManagerReady())
             closeIndex();
 
@@ -663,16 +663,16 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         if (indexDir != null && indexDir.exists())
             FileUtil.deleteDir(indexDir);
 
-        clearLastIndexed();
+        clearLastIndexed(reason);
     }
 
     @Override
-    public void clearLastIndexed()
+    public void clearLastIndexed(String reason)
     {
         // Short circuit if nothing has been indexed since clearLastIndexed() was last called
         if (_countIndexedSinceClearLastIndexed.get() > 0)
         {
-            super.clearLastIndexed();
+            super.clearLastIndexed(reason);
             _countIndexedSinceClearLastIndexed.set(0);
         }
     }
@@ -1573,7 +1573,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     }
 
     @Override
-    protected void commitIndex()
+    protected void commitIndex() throws ConfigurationException, IndexCommitException
     {
         try
         {
@@ -1588,9 +1588,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         catch (Throwable t)
         {
             // If any exceptions happen during commit() the IndexManager will attempt to close the IndexWriter, making
-            // the IndexManager unusable. Attempt to reset the index.
+            // the IndexManager unusable. Attempt to reset the index, then let the outer loop handle backoff.
             ExceptionUtil.logExceptionToMothership(null, t);
             initializeIndex();
+            throw new IndexCommitException(t);
         }
     }
 

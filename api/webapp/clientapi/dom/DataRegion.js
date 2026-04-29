@@ -1713,8 +1713,8 @@ if (!LABKEY.DataRegions) {
 
                     ct.append([
                         '<div class="btn-group" style="padding-left: 5px; display: inline-block">',
-                        '<button id="' + prevId + '" class="btn btn-default"><i class="fa fa-chevron-left"></i></button>',
-                        '<button id="' + nextId + '" class="btn btn-default"><i class="fa fa-chevron-right"></i></button>',
+                        '<button id="' + prevId + '" class="btn btn-default" aria-label="Previous page"><i class="fa fa-chevron-left" aria-hidden="true"></i></button>',
+                        '<button id="' + nextId + '" class="btn btn-default" aria-label="Next page"><i class="fa fa-chevron-right" aria-hidden="true"></i></button>',
                         '</div>'
                     ].join(''));
 
@@ -2997,10 +2997,6 @@ if (!LABKEY.DataRegions) {
                     newSorts.push(sort);
                 }
             });
-        }
-
-        if (!direction) {
-            direction = SORT_ASC;
         }
 
         if (LABKEY.Utils.isString(direction)) {

@@ -1050,52 +1050,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         return null;
     }
 
-    public ActionButton createDeleteAllRowsButton(String tableNoun)
-    {
-        ActionButton deleteAllRows = new ActionButton("Delete All Rows");
-        deleteAllRows.setDisplayPermission(AdminPermission.class);
-        deleteAllRows.setActionType(ActionButton.Action.SCRIPT);
-        deleteAllRows.setScript(
-                "LABKEY.requiresExt4Sandbox(function() {" +
-                    "Ext4.Msg.confirm('Confirm Deletion', 'Are you sure you wish to delete all rows in this " + tableNoun + "? This action cannot be undone and will result in an empty " + tableNoun + ".', function(button){" +
-                        "if (button == 'yes'){" +
-                            "var waitMask = Ext4.Msg.wait('Deleting Rows...', 'Delete Rows'); " +
-                            "Ext4.Ajax.request({ " +
-                                "url : LABKEY.ActionURL.buildURL('query', 'truncateTable'), " +
-                                "method : 'POST', " +
-                                "success: function(response) " +
-                                "{" +
-                                    "waitMask.close(); " +
-                                    "var data = Ext4.JSON.decode(response.responseText); " +
-                                    "Ext4.Msg.show({ " +
-                                        "title : 'Success', " +
-                                        "buttons : Ext4.MessageBox.OK, " +
-                                        "msg : data.deletedRows + ' rows deleted', " +
-                                        "fn: function(btn) " +
-                                        "{ " +
-                                            "if(btn == 'ok') " +
-                                            "{ " +
-                                                "window.location.reload(); " +
-                                            "} " +
-                                        "} " +
-                                    "})" +
-                                "}, " +
-                                "failure : function(response, opts) " +
-                                "{ " +
-                                    "waitMask.close(); " +
-                                    "Ext4.getBody().unmask(); " +
-                                    "LABKEY.Utils.displayAjaxErrorResponse(response, opts); " +
-                                "}, " +
-                                "jsonData : {schemaName : " + PageFlowUtil.jsString(getQueryDef().getSchema().getName()) + ", queryName : " + PageFlowUtil.jsString(getQueryDef().getName()) + "}, " +
-                                "scope : this " +
-                            "});" +
-                        "}" +
-                    "});" +
-                "});"
-        );
-        return deleteAllRows;
-    }
-
     public ActionButton createInsertMenuButton()
     {
         return createInsertMenuButton(null, null);

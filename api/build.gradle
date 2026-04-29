@@ -49,6 +49,12 @@ List runtime = [
     "com.google.code.kaptcha:kaptcha:${kaptchaVersion}",
 ]
 
+configurations.configureEach {
+    // spring-ai pulls in spring-boot and tomcat-embed. We don't want multiple copies of these dependencies, especially
+    // versions that conflict with those in our embedded jar.
+    exclude group: "org.springframework.boot"
+}
+
 configurations {
     // Exclude the bundled org.json library from com.fasterxml.jackson.datatype:jackson-datatype-json-org dependency
     all*.exclude group: "org.apache.geronimo.bundles", module: "json"
@@ -372,6 +378,32 @@ dependencies {
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Used to export SVG visualizations to image and PDF formats",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.graphper:graph-support-core:${graphSupportVersion}",
+            "graph-support-core",
+            "graph-support",
+            "https://github.com/jamisonjiang/graph-support",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Graphviz Java API",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.graphper:graph-support-dot:${graphSupportVersion}",
+            "graph-support-dot",
+            "graph-support",
+            "https://github.com/jamisonjiang/graph-support",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "DOT parsing support",
         )
     )
 

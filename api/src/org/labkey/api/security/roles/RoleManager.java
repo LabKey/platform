@@ -134,6 +134,7 @@ public class RoleManager
         registerRole(new SubmitterRole());
         registerRole(new NoPermissionsRole());
         registerRole(new OwnerRole());
+        registerRole(new CanSeeAuditLogFolderRole());
     }
 
     public static void addAdminRoleListener(AdminRoleListener listener)
@@ -189,9 +190,8 @@ public class RoleManager
 
     public static Set<Role> getSiteRoles()
     {
-        SecurityPolicy policy = ContainerManager.getRoot().getPolicy();
         return _roles.stream().
-            filter(r -> r.isAssignable() && r.isApplicable(policy, ContainerManager.getRoot())).
+            filter(r -> r.isAssignable() && r.isApplicable(ContainerManager.getRoot())).
             collect(Collectors.toSet());
     }
 

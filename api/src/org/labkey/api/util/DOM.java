@@ -34,12 +34,80 @@ import static org.labkey.api.util.DOM.Element.script;
 import static org.labkey.api.util.HtmlString.unsafe;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
-/**
- * Builders to safely create properly encoded HTML.
- * Many of the element classes take a var-arg Object array to represent their children,
- * see {@link DOM#appendBody(Appendable, Object)} for details about what's supported, and {@link DomTestCase} for
- * example usages.
- */
+/// A Java DSL for safely building properly encoded HTML. All text content is automatically
+/// HTML-encoded via [PageFlowUtil#filter], preventing XSS vulnerabilities. Uppercase static
+/// factory methods (`DIV()`, `TABLE()`, `SPAN()`, etc.) return [Renderable] objects that nest
+/// to compose an HTML tree.
+///
+/// ## Recommended imports
+///
+/// ```java
+/// import static org.labkey.api.util.DOM.*;
+/// import static org.labkey.api.util.DOM.Attribute.*;
+/// ```
+///
+/// ## Elements, attributes, and classes
+///
+/// Elements accept an optional [Attributes] argument followed by var-arg children.
+/// Use [#at(Attribute, Object, Object...)] for attributes, [#cl(String...)] for CSS classes,
+/// and chain them together via the [_Attributes] builder:
+///
+/// ```java
+/// DIV(cl("container"),
+///     H1(id("title"), "Hello World"),
+///     A(at(href, "https://example.com").cl("nav-link").data("section", "main"), "Click here"),
+///     P(at(style, "color:red"), "Styled text"),
+///     TR(cl(isOdd, "labkey-alternate-row", "labkey-row"), TD("cell"))
+/// )
+/// ```
+///
+/// ## Dynamic content
+///
+/// Children can be arrays, [Iterable]s, or [Stream]s of supported types:
+///
+/// ```java
+/// // Stream of options in a select
+/// SELECT(id("users"), Stream.of("alice", "bob", "charles").map(DOM::OPTION))
+///
+/// // Building rows in a loop
+/// List<Renderable> rows = new ArrayList<>();
+/// for (var item : items)
+///     rows.add(TR(TD(item.getName()), TD(String.valueOf(item.getCount()))));
+/// TABLE(cl("labkey-data-region"), THEAD(TR(TH("Name"), TH("Count"))), TBODY(rows))
+/// ```
+///
+/// ## LabKey extensions ([LK])
+///
+/// ```java
+/// LK.FORM(at(method, "POST", action, url), INPUT(at(type, "text", name, "q")), INPUT(at(type, "submit")))
+/// LK.CHECKBOX(at(name, "enabled"))    // checkbox + hidden field marker
+/// LK.FA("plus-square")               // font-awesome icon
+/// LK.ERRORS(bindingResult)           // render Spring validation errors
+/// ```
+///
+/// ## Rendering to output
+///
+/// ```java
+/// HtmlString html = DOM.createHtmlFragment(DIV("hello"), BR(), DIV("world"));  // to HtmlString
+/// myRenderable.appendTo(out);                                                  // to Appendable (JspWriter, StringBuilder)
+/// String raw = DIV("test").renderToString();                                   // to String
+/// ```
+///
+/// ## Template support
+///
+/// Use [#renderTemplate(Renderable, Appendable)] with [#BODY_PLACE_HOLDER] to split rendering
+/// around a body that is not yet available (e.g. for JSP `BodyTagSupport` or `WebPartFrame`):
+///
+/// ```java
+/// Renderable frame = DIV(cl("frame"), DIV(cl("header"), "Title"), BODY_PLACE_HOLDER, DIV(cl("footer"), "Footer"));
+/// HtmlString endMarkup = DOM.renderTemplate(frame, out);
+/// // ... render body content to out ...
+/// out.write(endMarkup.toString());
+/// ```
+///
+/// Supported child types: `null` (ignored), [CharSequence] (HTML-encoded), [Number]/[Boolean]
+/// (rendered as-is), [Renderable], [HtmlString] (no encoding), arrays, [Iterable]s, and [Stream]s
+/// of these types. See [#appendBody(Appendable, Object)] for details and [DomTestCase] for more examples.
 public class DOM
 {
     public interface Attributes extends Iterable<Map.Entry<Object,Object>> {}
@@ -294,6 +362,54 @@ public class DOM
         action,
         align,
         alt,
+        aria_activedescendant,
+        aria_atomic,
+        aria_autocomplete,
+        aria_busy,
+        aria_checked,
+        aria_colcount,
+        aria_colindex,
+        aria_colspan,
+        aria_controls,
+        aria_current,
+        aria_describedby,
+        aria_details,
+        aria_disabled,
+        aria_dropeffect,
+        aria_errormessage,
+        aria_expanded,
+        aria_flowto,
+        aria_grabbed,
+        aria_haspopup,
+        aria_hidden,
+        aria_invalid,
+        aria_keyshortcuts,
+        aria_label,
+        aria_labelledby,
+        aria_level,
+        aria_live,
+        aria_modal,
+        aria_multiline,
+        aria_multiselectable,
+        aria_orientation,
+        aria_owns,
+        aria_placeholder,
+        aria_posinset,
+        aria_pressed,
+        aria_readonly,
+        aria_relevant,
+        aria_required,
+        aria_roledescription,
+        aria_rowcount,
+        aria_rowindex,
+        aria_rowspan,
+        aria_selected,
+        aria_setsize,
+        aria_sort,
+        aria_valuemax,
+        aria_valuemin,
+        aria_valuenow,
+        aria_valuetext,
         async,
         autocomplete,
         autofocus,
@@ -354,7 +470,16 @@ public class DOM
         min,
         multiple,
         muted,
-        name,
+        name
+        {
+            @Override
+            Appendable render(Appendable builder, Object value) throws IOException
+            {
+                if (value instanceof String s)
+                    value = PageFlowUtil.encodeFormName(s);
+                return super.render(builder, value);
+            }
+        },
         nonce,
         novalidate
         {
@@ -502,7 +627,6 @@ public class DOM
             }
             return this;
         }
-
         public _Attributes cl(String...names)
         {
             if (null != names)
@@ -823,7 +947,7 @@ public class DOM
         if (null==value)
             return html;
         html.append(" ");
-        html.append(key.name());
+        html.append(key.name().replace('_', '-'));
         html.append("=\"");
         // NOTE it is somewhat unusual to pass in a Renderable, but it is possible that we
         // want to render HTML into an attribute.  We still need to re-encode the value before trying to wrap with "".

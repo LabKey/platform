@@ -60,7 +60,6 @@ import org.labkey.api.reports.report.r.view.TextOutput;
 import org.labkey.api.reports.report.r.view.TsvOutput;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
@@ -71,7 +70,6 @@ import org.labkey.vfs.FileLike;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.ResultSetMetaData;
@@ -218,27 +216,32 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return getReportDirFileLike(executingContainerId, isPipeline);
     }
 
-    protected FileLike getReportDirFileLike(@NotNull String executingContainerId, boolean isPipeline)
+    protected FileLike getBackgroundOutputDirFileLike(@NotNull String executingContainerId)
     {
         FileLike tempRoot = getTempRootFileLike(getDescriptor());
         String reportId = FileUtil.makeLegalName(String.valueOf(getDescriptor().getReportId())).replaceAll(" ", "_");
+
+        // Build FileLike paths from VFS path segments instead of File.separator so Windows
+        // backslashes do not get folded into a single org.labkey.api.util.Path segment.
+        return tempRoot.resolveChild(executingContainerId).resolveChild("Report_" + reportId);
+    }
+
+    protected FileLike getReportDirFileLike(@NotNull String executingContainerId, boolean isPipeline)
+    {
         FileLike tempFolder;
 
         try
         {
+            tempFolder = getBackgroundOutputDirFileLike(executingContainerId);
+
             if (isPipeline)
             {
                 String identifier = RReportJob.getJobIdentifier();
                 if (identifier != null)
-                    tempFolder = FileUtil.appendPath(tempRoot,
-                            Path.parse(executingContainerId + File.separator + "Report_" + reportId + File.separator + identifier));
-                else
-                    tempFolder = FileUtil.appendPath(tempRoot,
-                            Path.parse(executingContainerId + File.separator + "Report_" + reportId));
+                    tempFolder = tempFolder.resolveChild(identifier);
             }
             else
-                tempFolder = FileUtil.appendPath(tempRoot,
-                        Path.parse(executingContainerId + File.separator + "Report_" + reportId + File.separator + Thread.currentThread().getId()));
+                tempFolder = tempFolder.resolveChild(String.valueOf(Thread.currentThread().getId()));
 
             FileUtil.mkdirs(tempFolder);
             return tempFolder;

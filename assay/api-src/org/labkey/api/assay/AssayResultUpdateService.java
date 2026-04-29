@@ -254,9 +254,6 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 ColumnInfo col = columnInfoMap.get(entry.getKey());
                 if (col != null && !row.containsKey(entry.getKey()))
                 {
-                    if (DataIteratorUtil.MatchType.multiPartFormData.updateRowMap(col, row))
-                        continue;
-
                     // use column names for existing row values
                     row.put(col.getName(), entry.getValue());
                 }

@@ -20,6 +20,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -75,6 +76,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbSchema;
@@ -178,6 +180,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
@@ -252,6 +255,7 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.workflow.WorkflowService;
 import org.labkey.experiment.ChooseExperimentTypeBean;
 import org.labkey.experiment.ConfirmDeleteView;
 import org.labkey.experiment.CustomPropertiesView;
@@ -260,7 +264,6 @@ import org.labkey.experiment.DerivedSamplePropertyHelper;
 import org.labkey.experiment.DotGraph;
 import org.labkey.experiment.ExpDataFileListener;
 import org.labkey.experiment.ExperimentRunDisplayColumn;
-import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.LineageGraphDisplayColumn;
 import org.labkey.experiment.MissingFilesCheckInfo;
 import org.labkey.experiment.MoveRunsBean;
@@ -310,12 +313,10 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -1843,7 +1844,6 @@ public class ExperimentController extends SpringActionController
         return new ActionURL(ShowRunGraphAction.class, c).addParameter("rowId", runId);
     }
 
-
     @RequiresPermission(ReadPermission.class)
     public class ShowRunGraphAction extends AbstractShowRunAction
     {
@@ -1851,55 +1851,9 @@ public class ExperimentController extends SpringActionController
         protected VBox createLowerView(ExpRunImpl experimentRun, BindException errors)
         {
             return new VBox(
-                    createRunViewTabs(experimentRun, false, true, true),
-                    new ExperimentRunGraphView(experimentRun, false));
-        }
-    }
-
-
-    @RequiresPermission(ReadPermission.class)
-    public static class DownloadGraphAction extends SimpleViewAction<ExperimentRunForm>
-    {
-        @Override
-        public ModelAndView getView(ExperimentRunForm form, BindException errors) throws Exception
-        {
-            boolean detail = form.isDetail();
-            String focus = form.getFocus();
-            String focusType = form.getFocusType();
-
-            ExpRunImpl experimentRun = (ExpRunImpl) form.lookupRun();
-            ensureCorrectContainer(getContainer(), experimentRun, getViewContext());
-
-            ExperimentRunGraph.RunGraphFiles files;
-            try
-            {
-                files = ExperimentRunGraph.generateRunGraph(getViewContext(), experimentRun, detail, focus, focusType);
-            }
-            catch (ExperimentException e)
-            {
-                PageFlowUtil.streamTextAsImage(getViewContext().getResponse(), "ERROR: " + e.getMessage(), 600, 150, Color.RED);
-                return null;
-            }
-
-            try
-            {
-                PageFlowUtil.streamFile(getViewContext().getResponse(), files.getImageFile().toPath(), false);
-            }
-            catch (FileNotFoundException e)
-            {
-                getViewContext().getResponse().sendRedirect(getViewContext().getRequest().getContextPath() + "/experiment/ExperimentRunNotFound.gif");
-            }
-            finally
-            {
-                files.release();
-            }
-            return null;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            throw new UnsupportedOperationException();
+                createRunViewTabs(experimentRun, false, true, true),
+                new ExperimentRunGraphView(experimentRun, false)
+            );
         }
     }
 
@@ -2511,7 +2465,7 @@ public class ExperimentController extends SpringActionController
                     URLHelper url = h.getShowFileURL(_data);
                     if (url != null)
                     {
-                        throw new RedirectException(url, false);
+                        throw new RedirectException(url);
                     }
                 }
             }
@@ -4447,6 +4401,17 @@ public class ExperimentController extends SpringActionController
             {
                 tInfo = ExperimentService.get().createMaterialTable(new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(this), null);
                 updateService = tInfo.getUpdateService();
+            }
+            if (WorkflowService.get() != null)
+            {
+                try
+                {
+                    WorkflowService.get().populateConfigParams(getViewContext().getRequest(), _context.getConfigParameters());
+                }
+                catch (ValidationException e)
+                {
+                    errors.addRowError(e);
+                }
             }
 
             int count = importData(dl, tInfo, updateService, _context, auditEvent, getUser(), getContainer());
@@ -6434,7 +6399,7 @@ public class ExperimentController extends SpringActionController
 
                     if (form.getReturnUrl() != null)
                     {
-                        throw new RedirectException(form.getReturnUrl());
+                        throw new RedirectException(form.getReturnActionURL());
                     }
                     throw new RedirectException(ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer()));
                 }
@@ -6757,7 +6722,7 @@ public class ExperimentController extends SpringActionController
             ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), xarFile,
                     "Uploaded file", true, pipeRoot);
             PipelineService.get().queueJob(job);
-            
+
             response.put("success", true);
             return response;
         }
@@ -7092,21 +7057,6 @@ public class ExperimentController extends SpringActionController
         public static ExperimentUrlsImpl get()
         {
             return (ExperimentUrlsImpl) urlProvider(ExperimentUrls.class);
-        }
-
-        public ActionURL getDownloadGraphURL(ExpRun run, boolean detail, String focus, String focusType)
-        {
-            ActionURL result = new ActionURL(DownloadGraphAction.class, run.getContainer());
-            result.addParameter("rowId", run.getRowId()).addParameter("detail", detail);
-            if (focus != null)
-            {
-                result.addParameter("focus", focus);
-            }
-            if (focusType != null)
-            {
-                result.addParameter("focusType", focusType);
-            }
-            return result;
         }
 
         public ActionURL getBeginURL(Container container)
@@ -7479,15 +7429,7 @@ public class ExperimentController extends SpringActionController
 
             QueryUpdateForm tableForm = (QueryUpdateForm)bind.getTarget();
 
-            int sampleId;
-            try
-            {
-                sampleId = Integer.parseInt((String) tableForm.getPkVal());
-            }
-            catch (NumberFormatException e)
-            {
-                throw new NotFoundException("Invalid RowId: " + tableForm.getPkVal());
-            }
+            long sampleId = getSampleId(tableForm);
 
             ExpMaterial material = ExperimentService.get().getExpMaterial(sampleId);
             if (material == null)
@@ -7496,10 +7438,25 @@ public class ExperimentController extends SpringActionController
             return bind;
         }
 
+        private static long getSampleId(QueryUpdateForm tableForm)
+        {
+            Long sampleId = null;
+            try
+            {
+                sampleId = ConvertHelper.convert(tableForm.getPkVal(), Long.class);
+            }
+            catch (ConversionException e)
+            {
+            }
+            if (null == sampleId)
+                throw new NotFoundException("Invalid RowId: " + tableForm.getPkVal());
+            return sampleId;
+        }
+
         @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
-            int sampleId = Integer.parseInt((String) tableForm.getPkVal());
+            long sampleId = getSampleId(tableForm);
 
             ExpMaterial material = ExperimentService.get().getExpMaterial(sampleId);
             if (material == null)
@@ -8126,7 +8083,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(CrossFolderSelectionForm form, BindException errors)
         {
-            Pair<Integer, Integer> result = ExperimentServiceImpl.getCurrentAndCrossFolderDataCount(form.getIds(false), form.getDataType(), getContainer());
+            Pair<Integer, Integer> result = ExperimentServiceImpl.get().getCurrentAndCrossFolderDataCount(form.getIds(false), form.getDataType(), getContainer());
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);

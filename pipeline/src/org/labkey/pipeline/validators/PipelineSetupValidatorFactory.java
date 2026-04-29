@@ -71,15 +71,8 @@ public class PipelineSetupValidatorFactory implements SiteValidationProviderFact
                         SiteValidationResultList results = new SiteValidationResultList();
                         for (String error : errors)
                         {
-                            if (null != pipelineUrls)
-                            {
-                                SiteValidationResult result = results.addError(error, pipelineUrls.urlSetup(c));
-                                result.append(" Click link to go to pipeline setup for this folder.");
-                            }
-                            else
-                            {
-                                results.addError(error);
-                            }
+                            SiteValidationResult result = results.addError(error, pipelineUrls.urlSetup(c));
+                            result.append(" Click link to go to pipeline setup for this folder.");
                         }
                         return results;
                     }

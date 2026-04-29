@@ -59,10 +59,13 @@ import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
-import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
+import org.labkey.api.security.permissions.ImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.SiteAdminRole;
+import org.labkey.api.thumbnail.ThumbnailProvider;
+import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
@@ -162,7 +165,7 @@ public class UserManager
     public static void addUserListener(UserListener listener, boolean meFirst)
     {
         if (meFirst)
-            _listeners.add(0, listener);
+            _listeners.addFirst(listener);
         else
             _listeners.add(listener);
     }
@@ -455,7 +458,7 @@ public class UserManager
         Aggregate maxLoginValue = new Aggregate(createdFk, Aggregate.BaseType.MAX, null, true);
 
         TableSelector logins = getRecentLoginOrOuts(LoggedInOrOut.in, null, uat, Collections.singleton(createdCol));
-        Aggregate.Result result = logins.getAggregates(Collections.singletonList(maxLoginValue)).get(createdCol.getName()).get(0);
+        Aggregate.Result result = logins.getAggregates(Collections.singletonList(maxLoginValue)).get(createdCol.getName()).getFirst();
         return (Date) result.getValue();
     }
 
@@ -472,7 +475,7 @@ public class UserManager
         Aggregate countDistinctDates = new Aggregate(datePartCol.getFieldKey(), Aggregate.BaseType.COUNT, null, true);
 
         TableSelector logins = getRecentLoginOrOuts(LoggedInOrOut.in, since, uat, Collections.singleton(datePartCol));
-        Aggregate.Result result = logins.getAggregates(Collections.singletonList(countDistinctDates)).get(datePartCol.getName()).get(0);
+        Aggregate.Result result = logins.getAggregates(Collections.singletonList(countDistinctDates)).get(datePartCol.getName()).getFirst();
         return Math.toIntExact((long) result.getValue());
     }
 
@@ -501,7 +504,6 @@ public class UserManager
 
         sql.append(" AND uat.Comment LIKE ");
         sql.appendStringLiteral("%" + UserAuditEvent.LOGGED_IN + "%", uat.getSqlDialect());
-
 
         if (apiKeyOnly)
         {
@@ -670,12 +672,14 @@ public class UserManager
     }
 
     @NotNull
+    // Returns a mutable collection
     public static Collection<User> getActiveUsers()
     {
         return getUsers(false);
     }
 
     @NotNull
+    // Returns a mutable collection
     public static Collection<User> getUsers(boolean includeInactive)
     {
         return includeInactive ? UserCache.getActiveAndInactiveUsers() : UserCache.getActiveUsers() ;
@@ -906,17 +910,17 @@ public class UserManager
 
     public static void deleteUser(int userId) throws UserManagementException
     {
-        User deletUser = getUser(userId);
-        if (null == deletUser)
+        User deleteUser = getUser(userId);
+        if (null == deleteUser)
             return;
 
-        removeRecentUser(deletUser);
+        removeRecentUser(deleteUser);
 
-        List<Throwable> errors = fireDeleteUser(deletUser);
+        List<Throwable> errors = fireDeleteUser(deleteUser);
 
         if (!errors.isEmpty())
         {
-            Throwable first = errors.get(0);
+            Throwable first = errors.getFirst();
             if (first instanceof RuntimeException)
                 throw (RuntimeException)first;
             else
@@ -925,19 +929,25 @@ public class UserManager
 
         try (Transaction transaction = CORE.getScope().ensureTransaction())
         {
-            boolean needToEnsureRootAdmins = SecurityManager.isRootAdmin(deletUser);
+            boolean needToEnsureRootAdmins = SecurityManager.isRootAdmin(deleteUser);
 
             SqlExecutor executor = new SqlExecutor(CORE.getSchema());
             executor.execute("DELETE FROM " + CORE.getTableInfoRoleAssignments() + " WHERE UserId=?", userId);
             executor.execute("DELETE FROM " + CORE.getTableInfoMembers() + " WHERE UserId=?", userId);
-            addToUserHistory(deletUser, deletUser.getEmail() + " was deleted from the system");
+            addToUserHistory(deleteUser, deleteUser.getEmail() + " was deleted from the system");
 
             executor.execute("DELETE FROM " + CORE.getTableInfoUsersData() + " WHERE UserId=?", userId);
-            LoginManager.deleteLoginsRow(deletUser, null);
+            LoginManager.deleteLoginsRow(deleteUser, null);
             executor.execute("DELETE FROM " + CORE.getTableInfoPrincipals() + " WHERE UserId=?", userId);
             ApiKeyManager.get().deleteKeys(new SimpleFilter(FieldKey.fromParts("CreatedBy"), userId));
 
-            OntologyManager.deleteOntologyObject(deletUser.getEntityId(), ContainerManager.getSharedContainer(), true);
+            OntologyManager.deleteOntologyObject(deleteUser.getEntityId(), ContainerManager.getSharedContainer(), true);
+
+            // GitHub Issue #714: Delete the user's avatar. Avatars use ImageType.Large, but delete all types just in case that changes.
+            ThumbnailService svc = ThumbnailService.get();
+            ThumbnailProvider provider = new AvatarThumbnailProvider(deleteUser);
+            Arrays.stream(ImageType.values())
+                .forEach(imageType -> svc.deleteThumbnail(provider, imageType));
 
             // Clear user list immediately (before the last root admin check) and again after commit/rollback
             transaction.addCommitTask(UserManager::clearUserList, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
@@ -950,7 +960,7 @@ public class UserManager
         catch (Exception e)
         {
             LOG.error("deleteUser", e);
-            throw new UserManagementException(deletUser.getEmail(), e);
+            throw new UserManagementException(deleteUser.getEmail(), e);
         }
 
         //TODO: Delete User files
@@ -984,7 +994,7 @@ public class UserManager
 
         if (!errors.isEmpty())
         {
-            Throwable first = errors.get(0);
+            Throwable first = errors.getFirst();
             if (first instanceof RuntimeException)
                 throw (RuntimeException)first;
             else
@@ -1025,7 +1035,7 @@ public class UserManager
         }
         catch(RuntimeSQLException e)
         {
-            LOG.error("setUserActive: " + e);
+            LOG.error("setUserActive", e);
             throw new UserManagementException(userToAdjust.getEmail(), e);
         }
     }
@@ -1305,7 +1315,7 @@ public class UserManager
             assertTrue("Expected all SiteAdmins to be in the AppAdmins list",
                 appAdmins.containsAll(siteAdmins));
 
-            List<User> privilegedUsers = SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), Set.of(CanImpersonatePrivilegedSiteRolesPermission.class));
+            List<User> privilegedUsers = SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), Set.of(ImpersonatePrivilegedSiteRolesPermission.class));
             assertTrue("Expected all users with privileged role impersonation permissions to have a privileged role",
                 privilegedUsers.stream().allMatch(User::hasPrivilegedRole));
 

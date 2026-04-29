@@ -1295,6 +1295,7 @@ public class QueryServiceImpl implements QueryService
         return new ArrayList<>(views);
     }
 
+    @Deprecated
     @Override
     public List<CustomView> getDatabaseCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean sharedOnly)
     {
@@ -1334,6 +1335,73 @@ public class QueryServiceImpl implements QueryService
         Collection<CustomView> allViews = getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly).values();
         return allViews.stream().filter(view -> !(view instanceof ModuleCustomView)).collect(Collectors.toList());
     }
+
+    @Override
+    public List<CustomView> getDatabaseCustomViews(@NotNull User user, @NotNull Container container, @Nullable String schemaName, @Nullable String queryName)
+    {
+        // GitHub Issue 1058: Sample Finder saved views in subfolder break after MVTC to TC conversion
+        Collection<GUID> containerIds = container.getProductFoldersDataContainerFilter(user).getIds();
+
+        SimpleFilter filter = new SimpleFilter();
+        if (containerIds != null)
+            filter.addInClause(FieldKey.fromParts("Container"), containerIds);
+        else
+            filter = SimpleFilter.createContainerFilter(container, "Container");
+
+        if (schemaName != null)
+            filter.addCondition(FieldKey.fromParts("Schema"), schemaName);
+        if (queryName != null)
+            filter.addCondition(FieldKey.fromParts("QueryName"), queryName);
+
+        List<CstmView> cstmViews = new TableSelector(QueryManager.get().getTableInfoCustomView(), filter, null).getArrayList(CstmView.class);
+
+        List<CustomView> result = new ArrayList<>();
+
+        Map<Container, List<CstmView>> containerViews = new HashMap<>();
+        for (CstmView cstmView : cstmViews)
+        {
+            Container viewContainer = cstmView.lookupContainer();
+            if (viewContainer != null)
+                containerViews.computeIfAbsent(viewContainer, k -> new ArrayList<>()).add(cstmView);
+        }
+
+        for (Map.Entry<Container, List<CstmView>> containerCstmViews: containerViews.entrySet())
+        {
+            Map<String, UserSchema> schemas = new HashMap<>();
+            Map<Pair<String, String>, QueryDefinition> queryDefs = new HashMap<>();
+            Container viewContainer = containerCstmViews.getKey();
+            List<CstmView> views = containerCstmViews.getValue();
+            DefaultSchema defaultSchema = DefaultSchema.get(user, viewContainer);
+
+            for (CstmView cstmView : views)
+            {
+                Pair<String, String> key = new Pair<>(cstmView.getSchema(), cstmView.getQueryName());
+                QueryDefinition queryDef = queryDefs.get(key);
+                if (queryDef == null)
+                {
+                    UserSchema schema = schemas.get(cstmView.getSchema());
+                    if (schema == null)
+                    {
+                        schema = defaultSchema.getUserSchema(cstmView.getSchema());
+                        schemas.put(cstmView.getSchema(), schema);
+                    }
+                    if (schema != null)
+                    {
+                        queryDef = schema.getQueryDefForTable(cstmView.getQueryName());
+                        queryDefs.put(key, queryDef);
+                    }
+                }
+
+                if (queryDef != null)
+                {
+                    result.add(new CustomViewImpl(queryDef, cstmView));
+                }
+            }
+        }
+
+        return result;
+    }
+
 
     @Override
     public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query, Module... extraModules)
@@ -1413,7 +1481,7 @@ public class QueryServiceImpl implements QueryService
 
             // Delete them
             for (CstmView view : views)
-                mgr.delete(view);
+                mgr.delete(user, view);
 
             // owner == null since we're exporting/importing only shared views
             CustomView cv = qd.createSharedCustomView(reader.getName());
@@ -1902,7 +1970,7 @@ public class QueryServiceImpl implements QueryService
                 continue;
             for (FieldKey fieldKey : set)
             {
-                ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
+                ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager, null);
                 if (col != null)
                     ret.putIfAbsent(col.getFieldKey(),col);
             }
@@ -1911,11 +1979,29 @@ public class QueryServiceImpl implements QueryService
 
         if (filter != null)
         {
-            for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
+            if (filter instanceof SimpleFilter simpleFilter)
             {
-                ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
-                if (col != null)
-                    ret.putIfAbsent(col.getFieldKey(),col);
+                Map<FieldKey, List<SimpleFilter.FilterClause>> clausesByField = new HashMap<>();
+                for (SimpleFilter.FilterClause clause : simpleFilter.getClauses())
+                {
+                    for (FieldKey fk : clause.getFieldKeys())
+                        clausesByField.computeIfAbsent(fk, k -> new ArrayList<>()).add(clause);
+                }
+                for (FieldKey fieldKey : simpleFilter.getWhereParamFieldKeys())
+                {
+                    ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager, clausesByField.get(fieldKey));
+                    if (col != null)
+                        ret.putIfAbsent(col.getFieldKey(), col);
+                }
+            }
+            else
+            {
+                for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
+                {
+                    ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager, null);
+                    if (col != null)
+                        ret.putIfAbsent(col.getFieldKey(), col);
+                }
             }
         }
 
@@ -1923,7 +2009,7 @@ public class QueryServiceImpl implements QueryService
         {
             for (Sort.SortField field : sort.getSortList())
             {
-                ColumnInfo col = resolveFieldKey(field.getFieldKey(), table, columnMap, unresolvedColumns, manager);
+                ColumnInfo col = resolveFieldKey(field.getFieldKey(), table, columnMap, unresolvedColumns, manager, null);
                 if (col != null)
                 {
                     ret.putIfAbsent(col.getFieldKey(),col);
@@ -1970,7 +2056,7 @@ public class QueryServiceImpl implements QueryService
 
             for (FieldKey key : sortFieldKeys)
             {
-                ColumnInfo sortCol = resolveFieldKey(key, col.getParentTable(), columnMap, null, manager);
+                ColumnInfo sortCol = resolveFieldKey(key, col.getParentTable(), columnMap, null, manager, null);
                 if (sortCol != null)
                 {
                     toAdd.add(sortCol);
@@ -2002,7 +2088,7 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-    private ColumnInfo resolveFieldKey(FieldKey fieldKey, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager)
+    private ColumnInfo resolveFieldKey(FieldKey fieldKey, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager, @Nullable List<SimpleFilter.FilterClause> filterClauses)
     {
         if (fieldKey == null) // TODO: Can this resolve "selectionMethods/selectionMethodId$Sname"?
             return null;
@@ -2029,6 +2115,21 @@ public class QueryServiceImpl implements QueryService
         {
             assert Table.checkColumn(table, column, "ensureRequiredColumns():");
             assert fieldKey.getTable() == null || columnMap.containsKey(fieldKey);
+
+            if (filterClauses != null)
+            {
+                boolean isArrayColumn = column.getJdbcType() == JdbcType.ARRAY;
+                for (SimpleFilter.FilterClause clause : filterClauses)
+                {
+                    boolean isArrayFilter = clause instanceof CompareType.ArrayClause;
+                    boolean invalidArrayFilter = (isArrayFilter && !isArrayColumn) || (!isArrayFilter && isArrayColumn);
+                    if (invalidArrayFilter)
+                    {
+                        unresolvedColumns.add(fieldKey);
+                        return column; // return column, but mark as unresolvedColumns to drop filters
+                    }
+                }
+            }
 
             // getColumn() might return a column with a different field key than we asked for!
             if (!column.getFieldKey().equals(fieldKey))
@@ -3274,6 +3375,12 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
+    public void fireQueryColumnChanged(User user, Container container, @NotNull SchemaKey schemaPath, QueryChangeListener.QueryProperty property, Collection<QueryPropertyChange<?>> changes)
+    {
+        QueryManager.get().fireQueryChanged(user, container, null, schemaPath, property, changes);
+    }
+
+    @Override
     public void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
         QueryManager.get().fireQueryDeleted(user, container, scope, schema, queries);
@@ -3512,6 +3619,40 @@ public class QueryServiceImpl implements QueryService
 
     @Override
     @Nullable
+    public ContainerFilter getContainerFilterForFolder(Container container, User user)
+    {
+        // Check to see if product folders support is enabled.
+        if (container == null || !container.isProductFoldersEnabled())
+            return null;
+
+        if (isProductFoldersDataListingScopedToProject())
+        {
+            // When requesting data from a top-level folder context the ContainerFilter filters
+            // "down" the folder hierarchy for data.
+            if (container.isProject())
+            {
+                if (isProductFoldersAllFolderScopeEnabled())
+                    return ContainerFilter.Type.AllInProjectPlusShared.create(container, user);
+                return ContainerFilter.Type.CurrentAndSubfoldersPlusShared.create(container, user);
+            }
+
+            // When listing data in a folder scope return data scoped to the current
+            // folder when the experimental feature is enabled.
+            return ContainerFilter.Type.Current.create(container, user);
+        }
+
+        // When requesting data from a top-level folder context the ContainerFilter filters
+        // "down" the folder hierarchy for data.
+        if (container.isProject())
+            return ContainerFilter.Type.CurrentAndSubfoldersPlusShared.create(container, user);
+
+        // When requesting data from a sub-folder context the ContainerFilter filters
+        // "up" the folder hierarchy for data.
+        return ContainerFilter.Type.CurrentPlusProjectAndShared.create(container, user);
+    }
+
+    @Override
+    @Nullable
     public ContainerFilter.Type getContainerFilterTypeForLookups(Container container)
     {
         if (container != null && container.isProductFoldersEnabled())
@@ -3535,6 +3676,12 @@ public class QueryServiceImpl implements QueryService
     public boolean isProductFoldersDataListingScopedToProject()
     {
         return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
+    }
+
+    @Override
+    public boolean isTriggerManagedColumnsEnabled()
+    {
+        return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS);
     }
 
     public static class TestCase extends Assert

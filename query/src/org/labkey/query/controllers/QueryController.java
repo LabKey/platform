@@ -19,7 +19,6 @@ package org.labkey.query.controllers;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.genai.Chat;
 import com.google.genai.errors.ClientException;
 import com.google.genai.errors.ServerException;
 import jakarta.servlet.ServletException;
@@ -28,7 +27,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
@@ -132,6 +130,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
@@ -142,7 +141,6 @@ import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
@@ -246,6 +244,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.SqlUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
@@ -267,6 +266,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.workflow.WorkflowService;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.ColumnType;
@@ -729,7 +729,8 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors)
         {
             // Site Admin or Troubleshooter? Troubleshooters can see all the information but can't test data sources.
-            boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
+            // Dev mode only, since "Test" is meant for LabKey's own development and testing purposes.
+            boolean showTestButton = getContainer().hasPermission(getUser(), AdminOperationsPermission.class) && AppProps.getInstance().isDevMode();
             List<ExternalSchemaDef> allDefs = QueryManager.get().getExternalSchemaDefs(null);
 
             MultiValuedMap<String, ExternalSchemaDef> byDataSourceName = new ArrayListValuedHashMap<>();
@@ -744,7 +745,7 @@ public class QueryController extends SpringActionController
                 BR(),
                 TABLE(cl("labkey-data-region"),
                     TR(cl("labkey-show-borders"),
-                        hasAdminOpsPerms ? TD(cl("labkey-column-header"), "Test") : null,
+                        showTestButton ? TD(cl("labkey-column-header"), "Test") : null,
                         TD(cl("labkey-column-header"), "Data Source"),
                         TD(cl("labkey-column-header"), "Current Status"),
                         TD(cl("labkey-column-header"), "URL"),
@@ -774,7 +775,7 @@ public class QueryController extends SpringActionController
                             return Stream.of(
                                 TR(
                                     cl(rowStyle),
-                                    hasAdminOpsPerms ? TD(connected ? new ButtonBuilder("Test").href(new ActionURL(TestDataSourceConfirmAction.class, getContainer()).addParameter("dataSource", scope.getDataSourceName())) : "") : null,
+                                    showTestButton ? TD(connected ? new ButtonBuilder("Test").href(new ActionURL(TestDataSourceConfirmAction.class, getContainer()).addParameter("dataSource", scope.getDataSourceName())) : "") : null,
                                     TD(HtmlString.NBSP, scope.getDisplayName()),
                                     TD(status),
                                     TD(scope.getDatabaseUrl()),
@@ -4651,18 +4652,20 @@ public class QueryController extends SpringActionController
                         LOG.error("Row contained conflicting casing for key names in the incoming row: {}", jsonObj);
                     }
                     if (allowRowAttachments())
-                        addRowAttachments(table, rowMap, idx, commandIndex);
+                        addRowAttachments(rowMap, idx, commandIndex);
 
                     rowsToProcess.add(rowMap);
                     rowsAffected++;
                 }
             }
 
-            Map<String, Object> extraContext = json.has("extraContext") ? json.getJSONObject("extraContext").toMap() : new CaseInsensitiveHashMap<>();
+            Map<String, Object> extraContext = json.has("extraContext") ? new CaseInsensitiveHashMap<>(json.getJSONObject("extraContext").toMap()) : new CaseInsensitiveHashMap<>();
 
             Map<String, Object> auditDetails = json.has("auditDetails") ? json.getJSONObject("auditDetails").toMap() : new CaseInsensitiveHashMap<>();
 
             Map<Enum, Object> configParameters = new HashMap<>();
+            if (WorkflowService.get() != null)
+                WorkflowService.get().populateConfigParams(extraContext, configParameters);
 
             // Check first if the audit behavior has been defined for the table either in code or through XML.
             // If not defined there, check for the audit behavior defined in the action form (json).
@@ -4738,10 +4741,7 @@ public class QueryController extends SpringActionController
                 }
                 else if (commandType != CommandType.importRows)
                 {
-                    response.put("rows", responseRows.stream()
-                        .map(JsonUtil::toMapPreserveNonFinite)
-                        .map(JsonUtil::toJsonPreserveNulls)
-                        .collect(LabKeyCollectors.toJSONArray()));
+                    response.put("rows", AbstractQueryImportAction.prepareRowsResponse(responseRows));
                 }
 
                 // if there is any provenance information, save it here
@@ -4816,7 +4816,7 @@ public class QueryController extends SpringActionController
             return false;
         }
 
-        private void addRowAttachments(TableInfo tableInfo, Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
+        private void addRowAttachments(Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
         {
             if (getFileMap() != null)
             {
@@ -4860,9 +4860,6 @@ public class QueryController extends SpringActionController
                     rowMap.put(fieldKey, file.isEmpty() ? null : file);
                 }
             }
-
-            for (ColumnInfo col : tableInfo.getColumns())
-                DataIteratorUtil.MatchType.multiPartFormData.updateRowMap(col, rowMap);
         }
 
         protected boolean isSuccessOnValidationError()
@@ -6371,7 +6368,7 @@ public class QueryController extends SpringActionController
         public boolean handlePost(InternalViewForm form, BindException errors)
         {
             CstmView view = form.getViewAndCheckPermission();
-            QueryManager.get().delete(view);
+            QueryManager.get().delete(getUser(), view);
             return true;
         }
 
@@ -7567,7 +7564,7 @@ public class QueryController extends SpringActionController
     public static class QueryExportAuditRedirectAction extends SimpleRedirectAction<QueryExportAuditForm>
     {
         @Override
-        public URLHelper getRedirectURL(QueryExportAuditForm form)
+        public ActionURL getRedirectURL(QueryExportAuditForm form)
         {
             if (form.getRowId() == 0)
                 throw new NotFoundException("Query export audit rowid required");
@@ -8931,9 +8928,17 @@ public class QueryController extends SpringActionController
                             if (warning.isPresent())
                                 throw warning.get();
                         }
+                        // if that worked, let have the DB check it too
+                        if (ti.getSqlDialect().isPostgreSQL())
+                        {
+                            // CONSIDER: will this work with LabKey SQL named parameters?
+                            SQLFragment sql = new SQLFragment("PREPARE validate AS SELECT * FROM ").append(ti.getFromSQL("MYVALIDATEQUERY__"));
+                            new SqlExecutor(ti.getSchema().getScope()).execute(sql);
+                        }
                     }
-                    catch (QueryException x)
+                    catch (Exception x)
                     {
+                        // CONSIDER remove line line/character information from DB errors as they won't match the LabKey SQL
                         String validationPrompt = "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below, can you attempt to fix this?\n```" + x.getMessage() + "```";
                         responses = McpService.get().sendMessageEx(chatSession, validationPrompt);
                         var newSqlResponse = extractSql(responses);
@@ -8975,7 +8980,7 @@ public class QueryController extends SpringActionController
             if (null == sql)
             {
                 var text = response.text();
-                String sqlFind = extractSql(text);
+                String sqlFind = SqlUtil.extractSql(text);
                 if (null != sqlFind)
                 {
                     sql = sqlFind;
@@ -8986,24 +8991,6 @@ public class QueryController extends SpringActionController
             html.append(response.html());
         }
         return new SqlResponse(html.getHtmlString(), sql);
-    }
-
-    static String extractSql(String text)
-    {
-        if (text.startsWith("SELECT "))
-            return text;
-        if (text.startsWith("WITH ") && text.contains("SELECT "))
-            return text;
-        if (text.startsWith("PARAMETERS ") && text.contains("SELECT "))
-            return text;
-        var sql = text.indexOf("```sql\n");
-        if (sql >= 0)
-        {
-            var end = text.indexOf("```", sql+7);
-            if (end >= 0)
-                return text.substring(sql+7,end);
-        }
-        return null;
     }
 
     @RequiresPermission(ReadPermission.class)

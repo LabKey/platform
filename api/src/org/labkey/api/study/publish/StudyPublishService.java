@@ -156,7 +156,7 @@ public interface StudyPublishService
 
     String checkForLockedLinks(Dataset def, @Nullable List<Long> rowIds);
 
-    void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Pair<String,Long>> datasetRowLsidAndSourceRowIds);
+    void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Long> rowIds);
 
     /**
      * Adds columns to an assay data table, providing a link to any datasets that have

@@ -417,16 +417,9 @@ public class TableViewForm extends ViewForm implements HasBindParameters
 
             try
             {
-                Object val;
                 if (col != null)
-                {
                     propType = col.getJavaClass();
-                    val = col.convert(bindValue);
-                }
-                else
-                {
-                    val = getSimpleConvert(propName).convert(bindValue);
-                }
+                Object val = getSimpleConvert(propName).convert(bindValue);
 
                 boolean requiredError = false;
                 if (_validateRequired && null != _tinfo && null != col && col.isRequired() && !col.isAutoIncrement())
@@ -560,24 +553,21 @@ public class TableViewForm extends ViewForm implements HasBindParameters
 
         for (ColumnInfo column : getTable().getColumns())
         {
+            var fieldName = getFormFieldName(column);
+
             if (hasTypedValue(column))
             {
                 values.put(column.getName(), getTypedValue(column));
             }
-            else if (includeUntyped && _stringValues.containsKey(getFormFieldName(column)))
+            else if (includeUntyped && _stringValues.containsKey(fieldName))
             {
-                values.put(column.getName(), _stringValues.get(getFormFieldName(column)));
+                values.put(column.getName(), _stringValues.get(fieldName));
             }
             else if (getRequest() instanceof MultipartHttpServletRequest request)
             {
-                String fieldName = getMultiPartFormFieldName(column);
-                Object typedValue = _getTypedValues().get(fieldName);
-
-                if (typedValue != null)
-                    values.put(column.getName(), typedValue);
-                else if (File.class.equals(column.getJavaClass()))
+                if (File.class.equals(column.getJavaClass()))
                 {
-                    MultipartFile file = request.getFile(fieldName);
+                    MultipartFile file = PageFlowUtil.getFileMap(request).get(fieldName);
                     if (file != null)
                     {
                         // Check if the file was removed
@@ -594,10 +584,11 @@ public class TableViewForm extends ViewForm implements HasBindParameters
                 ColumnInfo mvColumn = getTable().getColumn(column.getMvColumnName());
                 if (null != mvColumn)
                 {
+                    var mvFieldName = getFormFieldName(mvColumn);
                     if (hasTypedValue(mvColumn))
                         values.put(mvColumn.getName(), getTypedValue(mvColumn));
-                    else if (includeUntyped && _stringValues.containsKey(getFormFieldName(mvColumn)))
-                        values.put(mvColumn.getName(), _stringValues.get(getFormFieldName(mvColumn)));
+                    else if (includeUntyped && _stringValues.containsKey(mvFieldName))
+                        values.put(mvColumn.getName(), _stringValues.get(mvFieldName));
                 }
             }
         }
@@ -744,11 +735,6 @@ public class TableViewForm extends ViewForm implements HasBindParameters
     public String getFormFieldName(@NotNull ColumnInfo column)
     {
         return column.getName();
-    }
-
-    public String getMultiPartFormFieldName(@NotNull ColumnInfo column)
-    {
-        return getFormFieldName(column);
     }
 
     @Nullable

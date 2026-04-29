@@ -34,7 +34,7 @@ public class StudyToolsWebPartFactory extends ToolsWebPartFactory
         String iconBase = portalCtx.getContextPath() + "/study/tools/";
         List<StudyToolsWebPart.Item> items = new ArrayList<>();
 
-        VisualizationUrls visUrlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
+        VisualizationUrls visUrlProvider = PageFlowUtil.urlProviderOptional(VisualizationUrls.class);
         if (visUrlProvider != null)
         {
             URLHelper timeChartURL = visUrlProvider.getTimeChartDesignerURL(portalCtx.getContainer());

@@ -103,6 +103,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
+import org.labkey.api.view.ExternalRedirectException;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -110,6 +111,7 @@ import org.labkey.api.view.LabKeyKaptchaServlet;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnsafeExternalRedirectException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
@@ -121,7 +123,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -586,7 +587,7 @@ public class LoginController extends SpringActionController
             LoginReturnProperties properties = null != returnUrl || form.getSkipProfile()
                     ? new LoginReturnProperties(returnUrl, form.getUrlhash(), form.getSkipProfile()) : null;
 
-            return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()), true);
+            throw new ExternalRedirectException(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()));
         }
         return null;
     }
@@ -1431,15 +1432,9 @@ public class LoginController extends SpringActionController
         {
             if (null != _redirectURL)
             {
-                try
-                {
-                    getViewContext().getResponse().sendRedirect(_redirectURL.getURIString());
-                    return null;
-                }
-                catch (IOException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                // It's safe to bypass checking the external redirect allow list in this case because we are redirecting
+                // to the administrator-provided URL from the SSO authentication configuration (e.g., CAS logout).
+                throw new UnsafeExternalRedirectException(_redirectURL);
             }
             return form.getReturnUrlHelper(AuthenticationManager.getWelcomeURL());
         }
@@ -1461,7 +1456,7 @@ public class LoginController extends SpringActionController
         @Override
         public boolean handlePost(ReturnUrlForm form, BindException errors) throws Exception
         {
-            SecurityManager.stopImpersonating(getViewContext().getRequest(), getUser().getImpersonationContext().getFactory());
+            SecurityManager.stopImpersonating(getViewContext().getRequest(), getUser().getPermissionsContext().getFactory());
 
             return true;
         }
@@ -1490,7 +1485,7 @@ public class LoginController extends SpringActionController
         @Override
         public Object execute(Object o, BindException errors) throws Exception
         {
-            SecurityManager.stopImpersonating(getViewContext().getRequest(), getUser().getImpersonationContext().getFactory());
+            SecurityManager.stopImpersonating(getViewContext().getRequest(), getUser().getPermissionsContext().getFactory());
 
             return new ApiSimpleResponse("success", true);
         }
@@ -1562,19 +1557,18 @@ public class LoginController extends SpringActionController
                 AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), properties);
             }
 
-            String csrf = CSRFUtil.getExpectedToken(getViewContext());
-
             final URLHelper url;
             int rowId = form.getConfiguration();
-
             SSOAuthenticationConfiguration<?> configuration = AuthenticationManager.getActiveSSOConfiguration(rowId);
 
             if (null == configuration)
                 throw new NotFoundException("Authentication configuration is not valid");
 
-            url = configuration.getUrl(csrf, getViewContext());
+            url = configuration.getUrl(getViewContext());
 
-            return HttpView.redirect(url, true);
+            // It's safe to bypass checking the external redirect allow list in this case because we are redirecting to
+            // the administrator-provided URL from the SSO authentication configuration.
+            throw new UnsafeExternalRedirectException(url);
         }
 
         @Override
@@ -1777,7 +1771,7 @@ public class LoginController extends SpringActionController
                 _successUrl = AppProps.getInstance().getHomePageActionURL();
 
             // Issue 33599: allow the returnUrl for this action to redirect to an absolute URL (ex. labkey.org back to accounts.trial.labkey.host)
-            return HttpView.redirect(_successUrl, true);
+            throw new ExternalRedirectException(_successUrl);
         }
     }
 

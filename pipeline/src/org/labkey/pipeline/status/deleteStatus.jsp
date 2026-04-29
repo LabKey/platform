@@ -53,7 +53,7 @@
 
         Container c = file.lookupContainer();
         PipelineStatusUrls provider = urlProvider(PipelineStatusUrls.class);
-        ActionURL detailsURL = null != provider ? provider.urlDetails(c, file.getRowId()) : null;
+        ActionURL detailsURL = provider.urlDetails(c, file.getRowId());
         sb.append("<span>job: <a href='").append(h(detailsURL)).append("'>").append(h(file.getDescription())).append("</a></span>");
 
         // Directory that will be deleted if they aren't any usages

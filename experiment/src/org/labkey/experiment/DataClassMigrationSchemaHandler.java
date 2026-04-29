@@ -174,15 +174,16 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
     @Override
     public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
     {
-        // Experiment shouldn't mess with Biologics tables, but it gets the job done
+        // Experiment shouldn't really mess with Biologics tables, but it gets the job done
 
         DbScope sourceScope = configuration.getSourceScope();
         DbScope targetScope = configuration.getTargetScope();
-        DbSchema biologicsSourceSchema = sourceScope.getSchema("biologics", DbSchemaType.Migration);
-        DbSchema biologicsTargetSchema = targetScope.getSchema("biologics", DbSchemaType.Module);
 
-        if (biologicsSourceSchema.existsInDatabase() && biologicsTargetSchema.existsInDatabase())
+        if (sourceScope.getSchemaNames().contains("biologics") && targetScope.getSchemaNames().contains("biologics"))
         {
+            DbSchema biologicsSourceSchema = sourceScope.getSchema("biologics", DbSchemaType.Migration);
+            DbSchema biologicsTargetSchema = targetScope.getSchema("biologics", DbSchemaType.Module);
+
             TableInfo sourceTable = biologicsSourceSchema.getTable("SequenceIdentity");
             TableInfo targetTable = biologicsTargetSchema.getTable("SequenceIdentity");
 

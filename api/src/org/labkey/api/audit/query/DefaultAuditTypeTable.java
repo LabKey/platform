@@ -119,6 +119,11 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
+        // TODO: Setting a contextual role on the container filter clause should not be necessary; the user passed
+        // (separately) to the ContainerFilter should have the appropriate permission. However, some app actions
+        // (GetTransactionRowIdsAction, maybe GetLocationHistoryAction, etc.) have been relying on this behavior. Clean
+        // this up soon, but not for 26.3. Note that this is the only code path that passes contextual roles into
+        // createFilterClause(), so we could eliminate that option during clean up.
         User user = (null == getUserSchema()) ? null : getUserSchema().getUser();
         Set<Role> roles = SecurityManager.canSeeAuditLog(user) ? RoleManager.roleSet(CanSeeAuditLogRole.class) : null;
         return filter.createFilterClause(getSchema(), fieldKey, CanSeeAuditLogPermission.class, roles);

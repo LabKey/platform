@@ -92,7 +92,7 @@ public class SampleTypeContentsView extends QueryView
         if (null == StudyPublishService.get() || StudyPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class).isEmpty())
             return null;
 
-        StudyUrls urls = PageFlowUtil.urlProvider(StudyUrls.class);
+        StudyUrls urls = PageFlowUtil.urlProviderOptional(StudyUrls.class);
         if (urls == null)
             return null;
 

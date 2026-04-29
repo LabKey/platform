@@ -328,7 +328,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.codelibs:jhighlight:1.1.0",
+            "org.codelibs:jhighlight:2.0.0",
             "JHighlight",
             "codelibs",
             "https://github.com/codelibs/jhighlight",
@@ -406,7 +406,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.googlecode.plist:dd-plist:1.28",
+            "com.googlecode.plist:dd-plist:1.29",
             "DD Plist",
             "com.dd.plist",
             "https://github.com/3breadt/dd-plist",

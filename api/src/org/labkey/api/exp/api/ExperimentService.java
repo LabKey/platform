@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -245,6 +246,15 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable
     ExpData getExpData(ExpDataClass dataClass, long rowId);
+
+    /**
+     * Build an {@link org.labkey.api.attachments.AttachmentParent} that points at an ExpData's
+     * attachment storage. Useful for callers outside the experiment module (for example, module
+     * triggers) that need to move, read, or delete ExpData attachments without referencing
+     * experiment-internal classes.
+     */
+    @NotNull
+    AttachmentParent getDataClassAttachmentParent(@NotNull Container container, @NotNull String dataLsid);
 
     /**
      * Get a Data with name at a specific time.
@@ -804,6 +814,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpRun> getRunsUsingDataClasses(Collection<ExpDataClass> dataClasses);
 
+    /** Get derivation run IDs for a data class — runs with SAMPLE_DERIVATION_PROTOCOL that have no material inputs/outputs */
+    List<Long> getDerivationRunIdsForDataClassExport(long dataClassRowId);
+
+    /** Get derivation/aliquot run IDs for sample types — filtered by protocol and optionally excluding runs with data inputs/outputs */
+    List<Long> getDerivationRunIdsForSampleTypesExport(Collection<String> sampleTypeLsids, Container c, boolean includeRunsWithDataIO);
+
     /**
      * @return the subset of these runs which are supposed to be deleted when one of their inputs is deleted.
      */
@@ -1143,10 +1159,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     Map<String, Integer> moveAssayRuns(List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior) throws ExperimentException;
 
     int aliasMapRowContainerUpdate(TableInfo aliasMapTable, List<Long> dataIds, Container targetContainer);
-
-    Map<String, Integer> moveDataClassObjects(Collection<? extends ExpData> dataObjects, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
-
-    int moveAuditEvents(Container targetContainer, List<String> runLsids);
 
     /**
      * From a list of barcodes, find material lsids

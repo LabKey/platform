@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
 
 import java.util.HashMap;

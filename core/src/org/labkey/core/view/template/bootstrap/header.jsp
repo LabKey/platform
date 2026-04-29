@@ -83,7 +83,7 @@
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     ModuleLoader moduleLoader = ModuleLoader.getInstance();
     boolean isStartupComplete = moduleLoader.isStartupComplete();
-    boolean showSearch = isStartupComplete && hasUrlProvider(SearchUrls.class);
+    boolean showSearch = isStartupComplete && PageFlowUtil.urlProviderOptional(SearchUrls.class) != null;
 
     HtmlView headerHtml = new HeaderProperties(getContainer()).getView();
     String siteShortName = (laf.getShortName() != null && !laf.getShortName().isEmpty()) ? laf.getShortName() : null;
@@ -143,18 +143,18 @@
     {
 %>
             <li class="navbar-search hidden-xs">
-                <a class="fa fa-search" id="global-search-trigger"></a>
+                <a class="fa fa-search" id="global-search-trigger" aria-label="<%=h(SearchUtils.getPlaceholder(c))%>" role="button"></a>
                 <div id="global-search" class="global-search">
                     <labkey:form id="global-search-form" action="<%=urlProvider(SearchUrls.class).getSearchURL(c, null)%>" method="GET">
                         <input type="text" class="search-box" name="q" placeholder="<%=h(SearchUtils.getPlaceholder(c))%>" value="">
                         <input type="submit" hidden>
-                        <a id="a_header_search" href="#" class="btn-search fa fa-search"></a>
+                        <a id="a_header_search" href="#" class="btn-search fa fa-search" aria-label="Search" role="button"></a>
                     </labkey:form>
                     <% pageConfig.addHandler("a_header_search","click","document.getElementById('global-search-form').submit(); return false;"); %>
                 </div>
             </li>
             <li id="global-search-xs" class="dropdown visible-xs">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-label="<%=h(SearchUtils.getPlaceholder(c))%>" aria-haspopup="true" role="button">
                     <i class="fa fa-search"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
@@ -182,9 +182,7 @@
 <%
     CoreUrls coreUrls = urlProvider(CoreUrls.class);
 
-    if (coreUrls != null)
-    {
-        String displayUrl = coreUrls.getDisplayWarningsActionURL(getViewContext()).toString();
+    String displayUrl = coreUrls.getDisplayWarningsActionURL(getViewContext()).toString();
 %>
             <script type="text/javascript" nonce="<%=getScriptNonce()%>">
                 +function($){
@@ -203,13 +201,11 @@
                 }(jQuery)
             </script>
 <%
-    }
-
     if (showProductMenu)
     {
 %>
             <li class="dropdown dropdown-rollup" id="headerProductDropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-label="Product navigation" aria-haspopup="menu" role="button">
                     <i class="fa fa-th-large" style="font-size: 18px; padding-top: 2px;"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
@@ -223,7 +219,7 @@
     {
 %>
             <li class="dropdown dropdown-rollup" id="headerAdminDropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-label="Admin menu" aria-haspopup="menu" role="button">
                     <i class="fa fa-cog"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
@@ -260,7 +256,7 @@
     {
 %>
             <li class="dropdown dropdown-rollup" id="headerUserDropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown" >
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-label="User menu" aria-haspopup="menu" role="button">
                     <i class="fa fa-user"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right" >
@@ -275,7 +271,7 @@
 
     if (user != null && user.isImpersonated())
     {
-        ActionURL stopUrl = urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnUrl());
+        ActionURL stopUrl = urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getPermissionsContext().getReturnUrl());
 %>
             <li>
                 <%=simpleLink("Stop impersonating", stopUrl).addClass("btn btn-primary").usePost()%>

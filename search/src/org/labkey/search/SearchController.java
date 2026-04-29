@@ -345,7 +345,7 @@ public class SearchController extends SpringActionController
             else if (form.isPath())
             {
                 SearchPropertyManager.setIndexPath(getUser(), form.getIndexPath());
-                ss.updateIndex();
+                ss.updateIndex("a site admin changed the full-text search index path");
                 _msgid = 2;
             }
             else if (form.isDirectory())
@@ -438,7 +438,7 @@ public class SearchController extends SpringActionController
     public static class WaitForIdleAction extends SimpleRedirectAction<Object>
     {
         @Override
-        public URLHelper getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o) throws Exception
         {
             SearchService ss = AbstractSearchService.get();
             ss.waitForIdle();

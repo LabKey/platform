@@ -42,4 +42,5 @@ public interface WarningService
     Warnings getWarnings(@Nullable ViewContext context);
     HtmlString getWarningsHtml(Warnings warnings, ViewContext context);
     void rerunSchemaCheck(); // Doesn't really fit on this service, but there's no better existing service
+    void clearStaticWarnings();
 }

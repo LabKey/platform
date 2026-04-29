@@ -56,14 +56,12 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.DotGraph;
-import org.labkey.experiment.ExperimentRunGraph;
 
 import java.io.File;
 import java.io.IOException;
@@ -82,6 +80,8 @@ import static org.labkey.experiment.api.ExperimentServiceImpl.getExpSchema;
 
 public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> implements ExpRun
 {
+    private static final Logger LOG = LogManager.getLogger(ExpRunImpl.class);
+
     public static final String NAMESPACE_PREFIX = "Run";
 
     private boolean _populated;
@@ -92,8 +92,6 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     private List<ExpData> _dataOutputs = new ArrayList<>();
     private ExpRunImpl _replacedByRun;
     private Integer _maxOutputActionSequence = null;
-    private static final Logger LOG = LogManager.getLogger(ExpRunImpl.class);
-    private ExpProtocolApplication _workflowTask;
 
     static public List<ExpRunImpl> fromRuns(List<ExperimentRun> runs)
     {
@@ -561,10 +559,6 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         deleteRunProtocolApps();
 
         clearCache();
-
-        // Clear the cache in a commit task, which allows us to do a single clear (which is semi-expensive) if multiple
-        // runs are being deleted in the same transaction, like deleting a container
-        svc.getSchema().getScope().addCommitTask(ExperimentRunGraph.getCacheClearingCommitTask(getContainer()), DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     @Override

@@ -36,8 +36,6 @@ import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jfree.chart.encoders.EncoderUtil;
-import org.jfree.chart.encoders.ImageFormat;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -85,7 +83,10 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.vfs.FileLike;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
-import org.springframework.web.util.WebUtils;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -107,7 +108,6 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -143,7 +143,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -565,8 +564,6 @@ public class PageFlowUtil
         for (PropertyValue entry : pvs.getPropertyValues())
         {
             Object key = entry.getName();
-            if (null == key)
-                continue;
             String encKey = encodeURIComponent(String.valueOf(key));
             Object v = entry.getValue();
             if (v == null || v instanceof String || !v.getClass().isArray())
@@ -745,6 +742,14 @@ public class PageFlowUtil
     public static @NotNull String encodeURIComponent(String s)
     {
         return encode(s, true);
+    }
+
+    public static @NotNull String encodeURIComponent(String s, boolean decodeSingleQuote)
+    {
+        String encoded = encodeURIComponent(s);
+        if (!decodeSingleQuote)
+            return encoded;
+        return Strings.CS.replace(encoded, "%27", "'");
     }
 
     /**
@@ -2117,7 +2122,7 @@ public class PageFlowUtil
                 if ("_blank".equals(target))
                 {
                     String rel = href.getAttribute("rel");
-                    if (rel == null || !rel.contains("noopener") || !rel.contains("noreferrer"))
+                    if (!rel.contains("noopener") || !rel.contains("noreferrer"))
                     {
                         modified = true;
                         href.setAttribute("rel", "noopener noreferrer");
@@ -2157,7 +2162,7 @@ public class PageFlowUtil
         }
         catch (TransformerException tEx)
         {
-            tEx.printStackTrace();
+            _log.error("Failed to convert XML document to string", tEx);
         }
         return null;
     }
@@ -2174,7 +2179,7 @@ public class PageFlowUtil
         // Expose some experimental flags to the client
         // Note: If you update this set of flags please update enum on client in @labkey/api
         JSONObject experimental = new JSONObject();
-        experimental.put("containerRelativeURL", appProps.getUseContainerRelativeURL());
+        experimental.put("containerRelativeURL", true);
         experimental.put(AppProps.EXPERIMENTAL_NO_GUESTS, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS));
         json.put("experimental", experimental);
 
@@ -2613,7 +2618,7 @@ public class PageFlowUtil
                 }
                 case AFTERTOKEN ->
                 {
-                    assert currentToken.length() == 0;
+                    assert currentToken.isEmpty();
                     if (Character.isWhitespace(c))
                         continue;
                     if (c == ',' || c == '\0')
@@ -2662,9 +2667,14 @@ public class PageFlowUtil
     // Google Sheets compatible version of joinValuesToString()
     public static String joinValuesToStringForExport(@NotNull List<String> values)
     {
+        return joinValuesToStringForExport(values, ", ");
+    }
+
+    public static String joinValuesToStringForExport(@NotNull List<String> values, String delimiter)
+    {
         return values.stream()
                 .map(value -> null==value ? "" : shouldEscapeForExport(value) ? "\"" + Strings.CS.replace(value,"\"", "\"\"") + "\"": value)
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.joining(delimiter));
     }
 
     private static boolean shouldEscapeForExport(@NotNull String value)
@@ -2677,18 +2687,55 @@ public class PageFlowUtil
     }
 
 
-    /**
-     * Issue 52925: App export to csv/tsv ignores filter with column containing double quote
-     * Issue 52119: App issues with assay run properties with special characters
-     * @param encodedKey The encoded form key by client side `encodeFormDataQuote` util
-     * @return The decoded raw field name
-     */
-    public static String decodeQuoteEncodedFormDataKey(@Nullable String encodedKey)
+    static final String FIELD_ENCODED_PREFIX = "%_";
+
+    /// Because of various bugs related encoding of INPUT.name values in multipart/formdata, we now recommend encoding
+    /// all names in all forms.
+    /// The choice of using encodeURI component is somewhat arbitrary, any encoding that can remove
+    /// double-quote and backslash from the name would be fine.
+    ///
+    ///  This must be kept in sync with org.labkey.test.util.EscapeUtil#getFormFieldName
+    public static String encodeFormName(String name)
     {
-        if (encodedKey == null)
-            return null;
-        return encodedKey.replaceAll("%22", "\"").replaceAll("%2522", "%22");
+        final String escapeChar = "%";
+        final String problemChars = "\\\"";
+        final String unclean = escapeChar + problemChars;
+        if (!StringUtils.containsAny(name, unclean))
+            return name;
+        // CONSIDER: use encode(name) for simplicity or only encode the unclean chars?
+        return FIELD_ENCODED_PREFIX + encode(name);
     }
+
+
+    public static String decodeFormName(@NotNull String name)
+    {
+        if (!name.startsWith(FIELD_ENCODED_PREFIX))
+            return name;
+        return decode(name.substring(FIELD_ENCODED_PREFIX.length()));
+    }
+
+
+    /** Use in preference to {@link MultipartHttpServletRequest#getFileMap()} */
+    static public Map<String, MultipartFile> getFileMap(HttpServletRequest req)
+    {
+        if (!(req instanceof MultipartHttpServletRequest mpreq))
+            return Collections.emptyMap();
+        Map<String, MultipartFile> htmlMap = mpreq.getFileMap();
+        Map<String, MultipartFile> formMap = new LinkedHashMap<>();
+        htmlMap.forEach((key, value) -> formMap.put(PageFlowUtil.decodeFormName(key), value));
+        return formMap;
+    }
+
+    static public MultiValueMap<String, MultipartFile> getMultiFileMap(HttpServletRequest req)
+    {
+        MultiValueMap<String, MultipartFile> formMap = new LinkedMultiValueMap<>();
+        if (!(req instanceof MultipartHttpServletRequest mpreq))
+            return formMap;
+        MultiValueMap<String, MultipartFile> htmlMap = mpreq.getMultiFileMap();
+        htmlMap.forEach((key, value) -> formMap.put(PageFlowUtil.decodeFormName(key), value));
+        return formMap;
+    }
+
 
     public static class TestCase extends Assert
     {
@@ -3045,6 +3092,22 @@ public class PageFlowUtil
             );
             for (List<String> test : quickTests)
                 assertEquals(test, splitStringToValuesForImport(joinValuesToStringForExport(test)));
+
+            List<String> specialCharArrays = Arrays.asList(
+                    "&^G'{\"И<2&)&]#~%:\uD83D\uDC7E*!안GaC;",
+                    ",~-",
+                    "<=0\\!41%d!By&]b",
+                    "A)D'z:&",
+                    "b$Dyf)D;C@",
+                    "c_x-eИ",
+                    "d[dF2cは=&G&1",
+                    "e^\"#x"
+            );
+
+            String specialCharStr = "\"&^G'{\"\"И<2&)&]#~%:\uD83D\uDC7E*!안GaC;\", \",~-\", <=0\\!41%d!By&]b, A)D'z:&, b$Dyf)D;C@, c_x-eИ, d[dF2cは=&G&1, \"e^\"\"#x\"";
+
+            assertEquals(specialCharStr, joinValuesToStringForExport(specialCharArrays));
+            assertEquals(specialCharArrays, splitStringToValuesForImport(specialCharStr));
         }
 
         @Test
@@ -3079,26 +3142,69 @@ public class PageFlowUtil
             assertEquals("/a/b/c/", PageFlowUtil.encodePath("/a/b/c/"));
         }
 
-        @Test
-        public void testDecodeQuoteEncodedFormDataKey()
+        private void assertEncodeDecode(String test)
         {
-            assertEquals("test", decodeQuoteEncodedFormDataKey("test"));
-            assertEquals("a/b/c", decodeQuoteEncodedFormDataKey("a/b/c"));
-            assertEquals("a'b.c", decodeQuoteEncodedFormDataKey("a'b.c"));
-            assertEquals("%", decodeQuoteEncodedFormDataKey("%"));
-            assertEquals("\"", decodeQuoteEncodedFormDataKey("%22"));
-            assertEquals("\"\"", decodeQuoteEncodedFormDataKey("%22%22"));
-            assertEquals("%22", decodeQuoteEncodedFormDataKey("%2522"));
-            assertEquals("%22%22", decodeQuoteEncodedFormDataKey("%2522%2522"));
-            assertEquals("%22\"", decodeQuoteEncodedFormDataKey("%2522%22"));
-            assertEquals("\"22", decodeQuoteEncodedFormDataKey("%2222"));
+            assertFalse(StringUtils.containsAny(encodeFormName(test), "\\\""));
+            assertEquals(test, decodeFormName(encodeFormName(test)));
+        }
+
+        private void assertReencode(String a)
+        {
+            // We want to make sure there are no ambiguous encodings
+            var b = encodeFormName(a);
+            var c = encodeFormName(b);
+            assertFalse(StringUtils.containsAny(b, "\\\""));
+            assertFalse(StringUtils.containsAny(c, "\\\""));
+            if (a.equals(b))
+                assertEquals(a,c);
+            else
+                assertNotEquals(b,c);
+        }
+
+        @Test
+        public void testFormNameEncoding()
+        {
+            assertEncodeDecode("test");
+            assertEncodeDecode("a/b/c");
+            assertEncodeDecode("a'b.c");
+            assertEncodeDecode("%");
+            assertEncodeDecode("\"");
+            assertEncodeDecode("\"\"");
+            assertEncodeDecode("%22");
+            assertEncodeDecode("%22%22");
+            assertEncodeDecode("%22\"");
+            assertEncodeDecode("\"22");
+
+            assertReencode("test");
+            assertReencode("a/b/c");
+            assertReencode("a'b.c");
+            assertReencode("%");
+            assertReencode("\"");
+            assertReencode("\"\"");
+            assertReencode("%22");
+            assertReencode("%22%22");
+            assertReencode("%22\"");
+            assertReencode("\"22");
         }
     }
 
-    /** @return true if the UrlProvider exists. */
-    static public <P extends UrlProvider> boolean hasUrlProvider(Class<P> inter)
+    /**
+     * Returns a specified <code>UrlProvider</code> interface implementation, for use
+     * in writing URLs implemented in other modules.
+     *
+     * @param inter interface extending UrlProvider
+     * @return an implementation of the interface
+     * @throws IllegalArgumentException if the provider is not available. Use urlProviderOptional() if you're OK with it not being present
+     */
+    @NotNull
+    static public <P extends UrlProvider> P urlProvider(Class<P> inter)
     {
-        return UrlProviderService.getInstance().hasUrlProvider(inter);
+        P result = urlProviderOptional(inter);
+        if (result == null)
+        {
+            throw new IllegalArgumentException("No provider registered for " + inter.getName());
+        }
+        return result;
     }
 
     /**
@@ -3109,7 +3215,7 @@ public class PageFlowUtil
      * @return an implementation of the interface.
      */
     @Nullable
-    static public <P extends UrlProvider> P urlProvider(Class<P> inter)
+    static public <P extends UrlProvider> P urlProviderOptional(Class<P> inter)
     {
         return UrlProviderService.getInstance().getUrlProvider(inter);
     }
@@ -3125,7 +3231,7 @@ public class PageFlowUtil
      * @param checkForOverrides true to check for module overrides to this interface
      * @return an implementation of the interface.
      */
-    @Nullable
+    @NotNull
     static public <P extends UrlProvider> P urlProvider(Class<P> inter, boolean checkForOverrides)
     {
         if (checkForOverrides)
@@ -3194,52 +3300,6 @@ public class PageFlowUtil
     {
         return url.addParameter(scope + DataRegion.LAST_FILTER_PARAM, "true");
     }
-
-    public static String getSessionId(HttpServletRequest request)
-    {
-        return WebUtils.getSessionId(request);
-    }
-
-    /**
-     * Stream the text back to the browser as a PNG
-     */
-    public static void streamTextAsImage(HttpServletResponse response, String text, int width, int height, Color textColor) throws IOException
-    {
-        Font font = new Font("SansSerif", Font.PLAIN, 12);
-
-        BufferedImage buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g2 = buffer.createGraphics();
-        g2.setColor(Color.WHITE);
-        g2.fillRect(0, 0, width, height);
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setColor(textColor);
-        g2.setFont(font);
-        FontMetrics metrics = g2.getFontMetrics();
-        int fontHeight = metrics.getHeight();
-        int spaceWidth = metrics.stringWidth(" ");
-
-        int x = 5;
-        int y = fontHeight + 5;
-
-        StringTokenizer st = new StringTokenizer(text, " ");
-        // Line wrap to fit
-        while (st.hasMoreTokens())
-        {
-            String token = st.nextToken();
-            int tokenWidth = metrics.stringWidth(token);
-            if (x != 5 && tokenWidth + x > width)
-            {
-                x = 5;
-                y += fontHeight;
-            }
-            g2.drawString(token, x, y);
-            x += tokenWidth + spaceWidth;
-        }
-
-        response.setContentType("image/png");
-        EncoderUtil.writeBufferedImage(buffer, ImageFormat.PNG, response.getOutputStream());
-    }
-
     public static JSONObject getModuleClientContext(ContainerUser context, @Nullable LinkedHashSet<ClientDependency> resources)
     {
         JSONObject ret = new JSONObject();

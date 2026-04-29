@@ -1,5 +1,6 @@
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -44,6 +45,7 @@ import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.SortHelpers.CASE_INSENSITIVE_UPPERCASE_FIRST;
 
 public class MultiChoice
 {
@@ -54,6 +56,7 @@ public class MultiChoice
         public DisplayColumn(ColumnInfo col)
         {
             super(col, false);
+            setTextAlign("left"); //  GitHub Issue 933: Left align MV cells in grids
         }
 
         @Override
@@ -213,11 +216,16 @@ public class MultiChoice
 
         protected Array(Stream<Object> str)
         {
-            TreeSet<String> setCaseSensitive = new TreeSet<>();
+            TreeSet<String> setCaseSensitive = new TreeSet<>(CASE_INSENSITIVE_UPPERCASE_FIRST);
             str.filter(Objects::nonNull)
                     .map(s -> StringUtils.trimToNull(s.toString()))
                     .filter(Objects::nonNull)
-                    .forEach(setCaseSensitive::add);
+                    .forEach(s ->
+                    {
+                        // GitHub Issue 942: Add error for duplicate values for MVTC fields
+                        if (!setCaseSensitive.add(s))
+                            throw new ConversionExceptionWithMessage("Duplicate value provided: " + s);
+                    });
             array = setCaseSensitive.toArray(new String[0]);
         }
 
@@ -272,6 +280,17 @@ public class MultiChoice
         {
             if (isBlank(s))
                 return EMPTY;
+            if (s.startsWith("{") && s.endsWith("}"))
+            {
+                try
+                {
+                    return parsePgArray(s);
+                }
+                catch (ConversionException ignore)
+                {
+                }
+
+            }
             List<String> split = PageFlowUtil.splitStringToValuesForImport(s);
             return from(split.toArray());
         }
@@ -299,6 +318,94 @@ public class MultiChoice
             {
                 throw new RuntimeException(x);
             }
+        }
+
+        /**
+         * Parse a PostgreSQL array text representation, e.g. {@code {a,b,"c d"}}.
+         * <p>
+         * PostgreSQL uses backslash escaping inside quoted elements ({@code \"} for a literal
+         * double-quote, {@code \\} for a literal backslash), unlike CSV which doubles quotes.
+         * Unquoted elements are trimmed of whitespace.
+         */
+        public static Array parsePgArray(@NotNull String s)
+        {
+            if (isBlank(s))
+                return EMPTY;
+
+            s = s.trim();
+            if (!s.startsWith("{") || !s.endsWith("}"))
+                throw new ConversionException("PostgreSQL array literal must be wrapped in {}: " + s);
+
+            String inner = s.substring(1, s.length() - 1);
+            if (inner.isEmpty())
+                return EMPTY;
+
+            List<Object> values = new ArrayList<>();
+            int len = inner.length();
+            int i = 0;
+
+            while (i < len)
+            {
+                // skip leading whitespace before element
+                while (i < len && Character.isWhitespace(inner.charAt(i)))
+                    i++;
+
+                if (i >= len)
+                    break;
+
+                if (inner.charAt(i) == '"')
+                {
+                    // quoted element — backslash escaping
+                    i++; // skip opening quote
+                    StringBuilder sb = new StringBuilder();
+                    while (i < len)
+                    {
+                        char c = inner.charAt(i);
+                        if (c == '\\' && i + 1 < len)
+                        {
+                            sb.append(inner.charAt(i + 1));
+                            i += 2;
+                        }
+                        else if (c == '"')
+                        {
+                            i++; // skip closing quote
+                            break;
+                        }
+                        else
+                        {
+                            sb.append(c);
+                            i++;
+                        }
+                        if (i >= len)
+                            throw new ConversionException("Unterminated quoted string in PostgreSQL array literal");
+                    }
+                    values.add(sb.toString());
+
+                    // after closing quote, expect comma or end
+                    while (i < len && Character.isWhitespace(inner.charAt(i)))
+                        i++;
+                    if (i < len)
+                    {
+                        if (inner.charAt(i) == ',')
+                            i++; // consume delimiter
+                        else
+                            throw new ConversionException("Unexpected character after closing quote in PostgreSQL array literal at position " + i);
+                    }
+                }
+                else
+                {
+                    // unquoted element — read until comma
+                    int start = i;
+                    while (i < len && inner.charAt(i) != ',')
+                        i++;
+                    String token = inner.substring(start, i).trim();
+                    values.add(token);
+                    if (i < len)
+                        i++; // skip comma
+                }
+            }
+
+            return from(values.toArray());
         }
 
         //
@@ -524,7 +631,7 @@ public class MultiChoice
     }
 
 
-    public static class Converter implements org.apache.commons.beanutils.Converter, Function<Object,Object>
+    public static class Converter implements org.apache.commons.beanutils.Converter, SimpleConvert
     {
         private Converter()
         {
@@ -549,13 +656,15 @@ public class MultiChoice
                 return (T) Array.from((Object[]) o);
             if (o instanceof org.json.JSONArray json)
                 return (T) Array.from(json);
+            if (o instanceof java.sql.Array arr)
+                return (T) Array.from(arr);
             if (o instanceof List<?> list)
                 return (T) new Array(((List<Object>)list).stream());
             return (T) Array.from(o.toString());
         }
 
         @Override
-        final public Object apply(Object o)
+        final public Object convert(Object o)
         {
             return convert(MultiChoice.Array.class, o);
         }
@@ -582,6 +691,67 @@ public class MultiChoice
             assertEquals(0, _converter.convert(Array.class, " ").size());
             assertEquals(0, _converter.convert(Array.class, "").size());
             assertEquals(0, _converter.convert(Array.class, null).size());
+        }
+
+        @Test
+        public void testParsePgArray()
+        {
+            // simple unquoted values
+            assertEquals(Array.from(new String[]{"a", "b", "c"}), Array.parsePgArray("{a,b,c}"));
+
+            // quoted values with special chars: comma, escaped quote, escaped backslash
+            assertEquals(Array.from(new String[]{"a,b", "c\"d", "e\\f"}), Array.parsePgArray("{\"a,b\",\"c\\\"d\",\"e\\\\f\"}"));
+
+            // empty array
+            assertEquals(Array.EMPTY, Array.parsePgArray("{}"));
+
+            // blank/empty input
+            assertEquals(Array.EMPTY, Array.parsePgArray(""));
+            assertEquals(Array.EMPTY, Array.parsePgArray("  "));
+
+            // quoted empty string — filtered by Array constructor (trimToNull)
+            assertEquals(Array.from(new String[]{"a"}), Array.parsePgArray("{\"\",a}"));
+
+            // whitespace in quoted elements — trimmed by Array constructor
+            assertEquals(Array.from(new String[]{"a", "b"}), Array.parsePgArray("{\" a \",b}"));
+
+            // whitespace around braces
+            assertEquals(Array.from(new String[]{"x", "y"}), Array.parsePgArray("  {x,y}  "));
+
+            // round-trip: values from testConvert
+            Array expected = Array.from(new String[]{"a,", "b\"", "c "});
+            assertEquals(expected, Array.parsePgArray("{\"a,\",\"b\\\"\",\"c \"}"));
+
+
+            List<String> specialCharArrays = Array.from(new String[]{
+                    "&^G'{\"И<2&)&]#~%:\uD83D\uDC7E*!안GaC;",
+                    ",~-",
+                    "<=0\\!41%d!By&]b",
+                    "A)D'z:&",
+                    "b$Dyf)D;C@",
+                    "c_x-eИ",
+                    "d[dF2cは=&G&1",
+                    "e^\"#x"
+            });
+            String expectedSpecialCharStr = "{\"&^G'{\\\"И<2&)&]#~%:\uD83D\uDC7E*!안GaC;\",\"\\,~-\",\"<=0\\\\!41%d!By&]b\",\"A)D'z:&\",\"b$Dyf)D;C@\",\"c_x-eИ\",\"d[dF2cは=&G&1\",\"e^\\\"#x\"}";
+            assertEquals(specialCharArrays, Array.parsePgArray(expectedSpecialCharStr));
+
+
+            // error: missing braces
+            try
+            {
+                Array.parsePgArray("a,b,c");
+                fail("Expected ConversionException for missing braces");
+            }
+            catch (ConversionException ignored) {}
+
+            // error: unterminated quote
+            try
+            {
+                Array.parsePgArray("{\"abc}");
+                fail("Expected ConversionException for unterminated quote");
+            }
+            catch (ConversionException ignored) {}
         }
 
         @Test

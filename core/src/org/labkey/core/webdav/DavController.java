@@ -146,7 +146,6 @@ import org.xml.sax.helpers.DefaultHandler;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -361,7 +360,7 @@ public class DavController extends SpringActionController
             }
             catch (RedirectException ex)
             {
-                ExceptionUtil.doErrorRedirect(response, ex.getURL());
+                ExceptionUtil.unsafeRedirect(response, ex.getURL());
             }
             catch (Exception ex)
             {
@@ -630,12 +629,6 @@ public class DavController extends SpringActionController
             super.setHeader("WWW-Authenticate", "Basic realm=\"" + realm  + "\"");
         }
 
-        void setLocation(String value)
-        {
-            super.setHeader("Location", value);
-        }
-
-
         StringBuilder sbLogResponse = new StringBuilder();
 
         @Override
@@ -780,8 +773,7 @@ public class DavController extends SpringActionController
                 }
                 else if ("GET".equals(method) && HttpUtil.isBrowser(getRequest()))
                 {
-                    getResponse().setStatus(WebdavStatus.SC_MOVED_TEMPORARILY);
-                    getResponse().setLocation(getLoginURL().getEncodedLocalURIString());
+                    ExceptionUtil.unsafeRedirect(getResponse(), getLoginURL().getLocalURIString());
                 }
                 else
                 {
@@ -1239,12 +1231,13 @@ public class DavController extends SpringActionController
                 
                 if (getRequest() instanceof MultipartHttpServletRequest multipartRequest)
                 {
-                    if (multipartRequest.getFileMap().size() > 1)
+                    var fileMap = PageFlowUtil.getFileMap(multipartRequest);
+                    if (fileMap.size() > 1)
                         return WebdavStatus.SC_NOT_IMPLEMENTED;
-                    if (multipartRequest.getFileMap().isEmpty())
+                    if (fileMap.isEmpty())
                         return WebdavStatus.SC_METHOD_NOT_ALLOWED;
 
-                    Map.Entry<String, MultipartFile> entry = multipartRequest.getFileMap().entrySet().iterator().next();
+                    Map.Entry<String, MultipartFile> entry = fileMap.entrySet().iterator().next();
                     MultipartFile file = entry.getValue();
                     if (null == filename)
                     {
@@ -1274,8 +1267,15 @@ public class DavController extends SpringActionController
                 String returnUrl = getRequest().getParameter(ActionURL.Param.returnUrl.name());
                 if (null != StringUtils.trimToNull(returnUrl))
                 {
-                    String url = returnUrl + (returnUrl.indexOf('?')==-1 ? '?' : '&') + "status=" + status;
-                    throw new RedirectException(url);
+                    try
+                    {
+                        URLHelper url = new URLHelper(returnUrl + (returnUrl.indexOf('?')==-1 ? '?' : '&') + "status=" + status);
+                        throw new RedirectException(url);
+                    }
+                    catch (URISyntaxException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
                 }
 
                 if (status == WebdavStatus.SC_CREATED)
@@ -4996,8 +4996,7 @@ public class DavController extends SpringActionController
                     if (req != null)
                     {
                         String uri = req.getEndpoint().toASCIIString();
-                        getResponse().setStatus(WebdavStatus.SC_MOVED_TEMPORARILY);
-                        getResponse().setLocation(uri);
+                        ExceptionUtil.unsafeRedirect(getResponse(), uri);
                         return null;
                     }
                 }

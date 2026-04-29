@@ -1,5 +1,6 @@
 import {
     ExperimentCRUDUtils,
+    generateFieldName,
     IntegrationTestServer,
     RequestOptions,
     selectRandomN,
@@ -18,6 +19,26 @@ export const ATTACHMENT_FIELD_1_NAME = 'SourceFile1';
 export const ATTACHMENT_FIELD_2_NAME = 'SourceFile2';
 const SAMPLE_TYPE_DOMAIN_KIND = 'SampleSet';
 const DATA_CLASS_DOMAIN_KIND = 'DataClass';
+
+export const MVTC_FIELD_PROP = {
+    "propertyId": -1,
+    "propertyValidators": [
+        {
+            "type": "TextChoice",
+            "name": "Text Choice Validator",
+            "new": true,
+            "expression": "Abnormal|agent|cDNA|Plasma"
+        }
+    ],
+    "rangeURI": "http://cpas.fhcrc.org/exp/xml#multiChoice",
+};
+
+export const TC_FIELD_PROP = {
+    ...MVTC_FIELD_PROP,
+    rangeURI: 'http://www.w3.org/2001/XMLSchema#string',
+    conceptURI: 'http://www.labkey.org/types#textChoice',
+};
+
 
 export function options(folderOptions?: RequestOptions, userOptions?: RequestOptions): RequestOptions {
     return folderOptions || userOptions ? { ...folderOptions, ...userOptions } : undefined;
@@ -902,4 +923,17 @@ export async function insertRowsExpectError(server: IntegrationTestServer, rows:
 
 export async function updateRowsExpectError(server: IntegrationTestServer, rows: any[], schemaName: string, queryName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
     return insertRowsExpectError(server, rows, schemaName, queryName, error, folderOptions, userOptions, true);
+}
+
+export function canNameBeUsedInImport(name: string) {
+    return name.indexOf(',') === -1 && name.indexOf('\t') === -1 && name.indexOf('"') === -1 && name.indexOf('\n') === -1;
+}
+
+export function generateFieldNameForImport(length: number = 10, charset?: string) {
+    let fieldName = generateFieldName(length, charset);
+    while (!canNameBeUsedInImport(fieldName))
+    {
+        fieldName = generateFieldName(length, charset);
+    }
+    return fieldName;
 }

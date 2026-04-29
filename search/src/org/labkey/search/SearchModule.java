@@ -29,7 +29,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mbean.SearchMXBean;
-import org.labkey.api.mcp.McpService;
 import org.labkey.api.migration.DatabaseMigrationConfiguration;
 import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.migration.DefaultMigrationSchemaHandler;
@@ -134,11 +133,12 @@ public class SearchModule extends DefaultModule
             }
         });
 
-        var mcp = McpService.get();
-        if (null != mcp)
-        {
-            mcp.register(new SearchMcp());
-        }
+        // Search endpoints are not ready for prime time. For now, don't register.
+//        var mcp = McpService.get();
+//        if (null != mcp)
+//        {
+//            mcp.register(new SearchMcp());
+//        }
     }
 
     @Override
@@ -195,8 +195,12 @@ public class SearchModule extends DefaultModule
             long count = new TableSelector(auditTable).getRowCount();
             return Collections.singletonMap("fullTextSearches", count);
         });
+    }
 
-        DatabaseMigrationService.get().registerSchemaHandler(new DefaultMigrationSchemaHandler(SearchSchema.getInstance().getSchema())
+    @Override
+    public void registerMigrationHandlers(@NotNull DatabaseMigrationService service)
+    {
+        service.registerSchemaHandler(new DefaultMigrationSchemaHandler(SearchSchema.getInstance().getSchema())
         {
             @Override
             public List<TableInfo> getTablesToCopy()
@@ -208,7 +212,7 @@ public class SearchModule extends DefaultModule
             public void afterMigration(DatabaseMigrationConfiguration configuration)
             {
                 // Clear index and all last indexed tracking
-                SearchService.get().deleteIndex("Database was just migrated");
+                SearchService.get().deleteIndex("the database was just migrated");
             }
         });
     }

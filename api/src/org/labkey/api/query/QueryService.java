@@ -16,18 +16,38 @@
 
 package org.labkey.api.query;
 
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.collections4.SetValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MethodInfo;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.ParameterDescription;
+import org.labkey.api.data.ParameterDescriptionImpl;
+import org.labkey.api.data.QueryLogging;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.column.ColumnInfoTransformer;
-import org.labkey.api.data.*;
-import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.module.Module;
 import org.labkey.api.query.column.ConceptURIColumnInfoTransformer;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
@@ -41,7 +61,6 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.springframework.web.servlet.mvc.Controller;
 
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -54,6 +73,7 @@ import java.util.Set;
 public interface QueryService
 {
     String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
+    String EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS = "queryDisableManagedTriggerColumns";
     String EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS = "queryProductAllFolderLookups";
     String EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED = "queryProductProjectDataListingScoped";
     String MAX_QUERY_SELECTION = "maxQuerySelection";
@@ -154,11 +174,14 @@ public interface QueryService
      */
     List<CustomView> getSharedCustomViews(@NotNull User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
 
+    @Deprecated // Use the three parameter version of the function to get views in product containers
+    List<CustomView> getDatabaseCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean sharedOnly);
+
     /**
      * Returns custom views stored in the database (not module custom views) that meet the criteria. This is not appropriate
      * for UI operations (see getCustomViews() for that), but it's important for query change listeners. See #21641 and #21862.
      */
-    List<CustomView> getDatabaseCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean sharedOnly);
+    List<CustomView> getDatabaseCustomViews(@NotNull User user, @NotNull Container container, @Nullable String schemaName, @Nullable String queryName);
 
     int importCustomViews(User user, Container container, VirtualFile viewDir) throws IOException;
 
@@ -491,7 +514,7 @@ public interface QueryService
     void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
     void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange<?>> changes);
     void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
-
+    void fireQueryColumnChanged(User user, Container container, @NotNull SchemaKey schemaPath, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange<?>> changes);
 
     /** OLAP **/
     // could make this a separate service
@@ -653,6 +676,13 @@ public interface QueryService
     @Nullable
     ContainerFilter getContainerFilterForLookups(Container container, User user);
 
+    /**
+     * Provides the configured ContainerFilter to utilize when requesting data that is being read
+     * within a folder context. Equivalent to the client side function in @labkey/components
+     */
+    @Nullable
+    ContainerFilter getContainerFilterForFolder(Container container, User user);
+
 
     interface SelectBuilder
     {
@@ -697,4 +727,9 @@ public interface QueryService
      * Returns true if the "Product projects display project-specific data" experimental feature is enabled.
      */
     boolean isProductFoldersDataListingScopedToProject();
+
+    /**
+     * Returns false if the "Disable managed columns in query triggers" experimental feature is enabled.
+     */
+    boolean isTriggerManagedColumnsEnabled();
 }

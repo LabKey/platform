@@ -15,7 +15,6 @@
  */
 package org.labkey.api.reports.report;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -24,17 +23,12 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 
-/**
- * User: migra
- * Date: Mar 7, 2006
- * Time: 3:00:54 PM
- */
 public abstract class RedirectReport extends AbstractReport
 {
     private static final Logger LOG = LogHelper.getLogger(RedirectReport.class, "Reports that send the user to some other URL");
@@ -49,14 +43,16 @@ public abstract class RedirectReport extends AbstractReport
     @Override
     public HttpView<?> renderReport(ViewContext context)
     {
-        String url = getUrl(context.getContainer());
-
         // When rendering in a portal webpart, render the redirect link and thumbnail
         if (context.get(renderParam.reportWebPart.name()) != null)
             return new JspView<>("/org/labkey/api/reports/report/view/redirectReportWebPart.jsp", this);
 
-        throw new RedirectException(url);
+        redirect(context);
+
+        return null;
     }
+
+    protected abstract void redirect(ViewContext context);
 
     @Override
     public String getRunReportTarget()
@@ -85,9 +81,27 @@ public abstract class RedirectReport extends AbstractReport
         getDescriptor().setProperty(REDIRECT_URL, redirectUrl);
     }
 
+    // TODO: Returning URLHelper from here would clean up a lot of messy code in these classes
     public @Nullable String getUrl(Container c)
     {
         return getDescriptor().getProperty(REDIRECT_URL);
+    }
+
+    protected @Nullable URLHelper getURLHelper(ViewContext ctx)
+    {
+        String urlString = getUrl(ctx.getContainer());
+        if (urlString != null)
+        {
+            try
+            {
+                return new URLHelper(urlString);
+            }
+            catch (URISyntaxException e)
+            {
+                LOG.warn("Bad URL in report {}: {}", getReportId(), urlString);
+            }
+        }
+        return null;
     }
 
     public @Nullable URL getURL()
@@ -109,20 +123,6 @@ public abstract class RedirectReport extends AbstractReport
             LOG.warn("Error getting report URL", mue);
             return null;
         }
-    }
-
-    /**
-     * URL is not a LabKey local URL or a host local URL.
-     *
-     */
-    public boolean isExternalLink()
-    {
-        String url = getUrl(null);
-        if (url == null)
-            return false;
-
-        return (url.startsWith("http://") || url.startsWith("https://")) &&
-               !isInternalLink(url) && !isLocalLink(url);
     }
 
     /**

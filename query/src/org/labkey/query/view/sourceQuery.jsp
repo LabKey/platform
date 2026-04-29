@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="org.labkey.api.mcp.McpService" %>
-<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -53,7 +52,7 @@
     boolean canEdit = queryDef.canEdit(getUser());
     boolean canEditMetadata = queryDef.canEditMetadata(getUser());
     boolean canDelete = queryDef.canDelete(getUser());
-    boolean isChatReady = McpService.get().isReady();
+    boolean isChatReady = canEdit && McpService.get().isReady();
 %>
 <style type="text/css">
 
@@ -61,10 +60,6 @@
     .query-button {
         float: left;
         margin-right: 3px;
-    }
-
-    .query-editor-panel-parent, .query-editor-panel {
-        /*background: transparent;*/
     }
 
     table.labkey-data-region {
@@ -93,10 +88,16 @@
       background-color: #4CAF50;
       border-radius: 15px;
       border : solid 1px darkgray;
-      display: flex;
-      align-items: center;
+      position: relative;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-   }
+    }
+
+  .chatTimestamp {
+    float: right;
+    margin-left: 10px;
+    font-size: 11px;
+    opacity: 0.5;
+  }
 
     DIV.userPrompt {
       margin: 5px;
@@ -114,23 +115,59 @@
       margin-left: 10px;
       background-color: pink;
     }
+
+    #querySourceLayout {
+      display: flex;
+      gap: 12px;
+      min-height: 400px;
+      min-width: 600px;
+    }
+
+    #querySourceLayout .query-editor-col {
+      flex: 3;
+      min-width: 400px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #query-editor-panel {
+      flex: 1;
+      min-height: 0;
+    }
+
+    #querySourceLayout .chat-col {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #chatHistory {
+      flex: 1;
+      overflow: auto;
+      min-height: 0;
+    }
+
+    #geminiPrompt {
+      height: 100px;
+      flex-shrink: 0;
+    }
 <% } %>
 </style>
 
 <% if (isChatReady) { %>
-<%-- should use Ext4 Panel for layout, but this is just a prototype anyway --%>
-<table style="width:100%; min-width:600px" id="querySourceLayout"><tr>
-    <td style="width:80%; min-width:400px; vertical-align: top; ">
-        <div id="status" class="labkey-status-info" style="visibility: hidden;" width="100%">(status)</div>
+<div id="querySourceLayout">
+    <div class="query-editor-col">
+        <div id="status" class="labkey-status-info" style="visibility: hidden;">(status)</div>
         <div id="query-editor-panel" class="extContainer"></div>
-    </td>
-    <td style="width:20%; min-width:200px; vertical-align: top;">
-        <div id="chatHistory" style="height:500px; width:100%; overflow:scroll;" ></div>
-        <textarea id="geminiPrompt" style="height:100px; width:100%;" placeholder="Shift-Enter to submit"></textarea>
-    </td>
-</tr></table>
+    </div>
+    <div class="chat-col">
+        <div id="chatHistory"></div>
+        <textarea id="geminiPrompt" placeholder="Shift-Enter to submit"></textarea>
+    </div>
+</div>
 <% } else { %>
-<div id="status" class="labkey-status-info" style="visibility: hidden;" width="100%">(status)</div>
+<div id="status" class="labkey-status-info" style="visibility: hidden;">(status)</div>
 <div id="query-editor-panel" class="extContainer"></div>
 <% } %>
 
@@ -261,170 +298,187 @@
     });
 
 <%  if (isChatReady) { %>
-    const isChatReady = <%=JavaScriptFragment.bool(isChatReady)%>;
+        function updateLayoutHeight() {
+            const el = document.getElementById('querySourceLayout');
+            const top = el.getBoundingClientRect().top;
+            el.style.height = Math.max(400, window.innerHeight - top - 60) + 'px';
+        }
+        window.addEventListener('resize', updateLayoutHeight);
+        updateLayoutHeight();
 
-     const resizeFn = function(evt)
-    {
-        // console.log(evt);
-        // console.log("window " + window.innerHeight + " " + window.innerWidth);
-        var el = document.getElementById("querySourceLayout");
-        if (el)
-        {
-            const rect = document.getElementById("querySourceLayout").getBoundingClientRect();
-            const width = Math.max(600, window.innerWidth-rect.left-40)
-            const height = Math.max(400, window.innerHeight-rect.top-40);
-            el.style.width =  width + "px";
-            el.style.height = height + "px";
-            panel.setWidth(Math.max(400,width*0.75));
-            panel.setHeight(Math.max(650,height));
-            document.getElementById("geminiPrompt").style.width = Math.max(200,width*0.25) + 'px';
-            document.getElementById("chatHistory").style.height = Math.max(200,height-100) + 'px';
+        const editorPanelEl = document.getElementById('query-editor-panel');
+        new ResizeObserver(function() {
+            panel.setWidth(editorPanelEl.clientWidth);
+            panel.setHeight(editorPanelEl.clientHeight);
             panel.updateLayout();
-        }
-    };
-    window.onresize = resizeFn;
-    resizeFn({});
+        }).observe(editorPanelEl);
 
-    var elPrompt = document.getElementById('geminiPrompt');
-
-    function scrollToBottom()
-    {
-        const div = document.getElementById("chatHistory");
-        div.scrollTo({ top: div.scrollHeight, behavior: "smooth" });
-    }
-    function appendUserPrompt(text)
-    {
-        const chatItem = document.createElement('div');
-        chatItem.className = 'chatItem userPrompt';
-        chatItem.innerText = text;
-        document.getElementById('chatHistory').appendChild(chatItem);
-        scrollToBottom();
-    }
-    function appendTextResponse(text)
-    {
-        const chatItem = document.createElement('div');
-        chatItem.className = 'chatItem genaiResponse';
-        chatItem.innerText = text;
-        document.getElementById('chatHistory').appendChild(chatItem);
-        scrollToBottom();
-    }
-    function appendHtmlResponse(html)
-    {
-        const chatItem = document.createElement('div');
-        chatItem.className = 'chatItem genaiResponse';
-        chatItem.innerHTML = html;
-        document.getElementById('chatHistory').appendChild(chatItem);
-        scrollToBottom();
-    }
-    function appendSqlResponse(text)
-    {
-        const chatItem = document.createElement('div');
-        chatItem.className = 'chatItem sqlResponse';
-        const copy = document.createElement("i");
-        copy.className = "fa fa-copy";
-        chatItem.appendChild(copy);
-        const pre = document.createElement('pre');
-        pre.innerText = text;
-        chatItem.appendChild(pre);
-        chatItem.onclick = function(evt)
-        {
-            navigator.clipboard.writeText(evt.target.parentElement.innerText);
-            return false;
-        };
-        document.getElementById('chatHistory').appendChild(chatItem);
-        scrollToBottom();
-    }
-
-    function initChat()
-    {
-        if (!isChatReady)
-            return;
-
-        // initialize conversation with the current SQL
-        // CONSIDER: update before every prompt if the SQL has changed
-        var schemaName = <%=q(queryDef.getSchemaPath().getName())%>;
-        var queryText = null;
-        try
-        {
-            queryText = Ext4.getCmp("qep").getSourceEditor().getValue();
-        }
-        catch(ex)
-        {
-            // pass;
+        function addChatItem(item) {
+            const history = document.getElementById('chatHistory');
+            history.appendChild(item);
+            history.scrollTo({ top: history.scrollHeight, behavior: 'smooth' });
         }
 
-        var initPrompt = '';
-        if (schemaName)
-            initPrompt += "The current schema is " + schemaName + ".\n";
-
-        if (queryText)
-            initPrompt += "This is my current SQL query, this may be relevant to subsequent prompts:\n```" + queryText + "```\n";
-
-        if (initPrompt)
-        {
-            var url = new URL('./query-queryagent.api', window.location.href);
-            url.searchParams.set('schemaName', schemaName || '');
-            url.searchParams.set('prompt', initPrompt);
-            var req = new XMLHttpRequest();
-            req.open('GET', url.toString(), true);
-            req.send();
-        }
-    }
-
-    let firstChat = true;
-    if (isChatReady)
-    {
-        elPrompt.addEventListener('keydown', function (ev)
-        {
-            var isEnter = (ev.key === 'Enter') || (ev.keyCode === 13);
-            if (ev.shiftKey && isEnter)
-            {
-                const prompt = elPrompt.value;
-                if (!prompt)
-                    return;
-                if (firstChat)
-                {
-                    firstChat = false;
-                    initChat();
-                }
-                appendUserPrompt(prompt);
-                elPrompt.value = '';
-                // TODO waiting/thinking UI
-                // Build URL with same base as current document, endpoint /query-queryagent.api and prompt parameter
-                var url = new URL('./query-queryagent.api', window.location.href);
-                url.searchParams.set('prompt', prompt);
-                var req = new XMLHttpRequest();
-                req.open('GET', url.toString(), true);
-                req.onreadystatechange = function () {
-                    if (req.readyState === 4) {
-                        if (req.status >= 200 && req.status < 300) {
-                            var responseJson = JSON.parse(req.responseText);
-                            var responseText = responseJson['text'];
-                            var responseHtml = responseJson['html'];
-                            var responseSql = responseJson['sql'];
-                            if (responseSql) {
-                                Ext4.getCmp("qep").getSourceEditor().setValue(responseSql);
-                                appendSqlResponse(responseSql);
-                            }
-                            if (responseHtml) {
-                                appendHtmlResponse(responseHtml);
-                            }
-                            if (responseText) {
-                                appendTextResponse(responseText);
-                            }
-                        } else {
-                            appendTextResponse('Request failed: ' + req.status + ' ' + (req.statusText || ''));
-                        }
-                    }
-                };
-                req.send();
-                ev.preventDefault();
-                ev.stopPropagation();
-                return false;
+        function endLoading() {
+            const el = document.getElementById('loadingPrompt');
+            if (el) {
+                el.remove();
             }
-            return true;
-        });
-    }
+        }
+
+        function startLoading() {
+            const chatItem = document.createElement('div');
+            chatItem.id = 'loadingPrompt';
+            chatItem.className = 'chatItem genaiResponse';
+            const text = document.createElement('span');
+            const spinner = document.createElement('i');
+            spinner.className = 'fa fa-spinner fa-pulse';
+            text.appendChild(spinner);
+            text.appendChild(document.createTextNode(' Thinking...'));
+
+            chatItem.appendChild(text);
+            addChatItem(chatItem);
+        }
+
+        function createTimestamp() {
+            const span = document.createElement('span');
+            span.className = 'chatTimestamp';
+            span.textContent = new Date().toLocaleTimeString();
+            return span;
+        }
+
+        function appendUserPrompt(text) {
+            const chatItem = document.createElement('div');
+            chatItem.className = 'chatItem userPrompt';
+            chatItem.appendChild(createTimestamp());
+            chatItem.appendChild(document.createTextNode(text));
+            addChatItem(chatItem);
+        }
+
+        function appendTextResponse(text) {
+            const chatItem = document.createElement('div');
+            chatItem.className = 'chatItem genaiResponse';
+            chatItem.appendChild(createTimestamp());
+            chatItem.appendChild(document.createTextNode(text));
+            addChatItem(chatItem);
+        }
+
+        function appendHtmlResponse(html) {
+            const chatItem = document.createElement('div');
+            chatItem.className = 'chatItem genaiResponse';
+            chatItem.appendChild(createTimestamp());
+            chatItem.insertAdjacentHTML('beforeend', html);
+            addChatItem(chatItem);
+        }
+
+        function appendSqlResponse(text) {
+            const chatItem = document.createElement('div');
+            chatItem.className = 'chatItem sqlResponse';
+            chatItem.appendChild(createTimestamp());
+            const copy = document.createElement('i');
+            copy.className = 'fa fa-copy';
+            chatItem.appendChild(copy);
+            const pre = document.createElement('pre');
+            pre.innerText = text;
+            chatItem.appendChild(pre);
+            chatItem.onclick = function() {
+                navigator.clipboard.writeText(text);
+                return false;
+            };
+            addChatItem(chatItem);
+        }
+
+        async function queryAgent(prompt) {
+            return new Promise((resolve, reject) => {
+                LABKEY.Ajax.request({
+                    url: LABKEY.ActionURL.buildURL('query', 'queryagent.api', undefined, { prompt: prompt }),
+                    success: LABKEY.Utils.getCallbackWrapper(response => {
+                        resolve(response);
+                    }),
+                    failure: LABKEY.Utils.getCallbackWrapper((_, req) => {
+                        reject(req);
+                    }, undefined, true),
+                });
+            });
+        }
+
+        let firstChat = true;
+
+        function initialPrompt() {
+            if (!firstChat)
+                return '';
+
+            firstChat = false;
+
+            // initialize conversation with the current SQL
+            // CONSIDER: update before every prompt if the SQL has changed
+            const schemaName = <%=q(queryDef.getSchemaPath().getName())%>;
+            let queryText;
+            try {
+                queryText = Ext4.getCmp('qep').getSourceEditor().getValue();
+            }
+            catch (ex) {
+                // pass;
+            }
+
+            let initPrompt = '';
+            if (schemaName) {
+                initPrompt += "The current schema is " + schemaName + ".\n";
+            }
+
+            if (queryText) {
+                initPrompt += "This is my current SQL query, this may be relevant to subsequent prompts:\n```" + queryText + "```\n";
+            }
+
+            if (initPrompt) {
+                initPrompt += '\n';
+            }
+
+            return initPrompt;
+        }
+
+        async function executePrompt(prompt) {
+            if (!prompt) return;
+            appendUserPrompt(prompt);
+
+            try {
+                startLoading();
+
+                const response = await queryAgent(initialPrompt() + prompt);
+
+                if (response.sql) {
+                    Ext4.getCmp('qep').getSourceEditor().setValue(response.sql);
+                    appendSqlResponse(response.sql);
+                } else if (response.html) {
+                    appendHtmlResponse(response.html);
+                } else if (response.text) {
+                    appendTextResponse(response.text);
+                }
+            } catch (req) {
+                appendTextResponse('Request failed: ' + req.status + ' ' + (req.statusText || ''));
+            } finally {
+                endLoading();
+            }
+        }
+
+        function onKeyDown(evt) {
+            const isShiftEnter = evt.shiftKey && ((evt.key === 'Enter') || (evt.keyCode === 13));
+            if (!isShiftEnter) return true;
+
+            const prompt = evt.target.value;
+            if (!prompt)
+                return;
+
+            // Do not await
+            executePrompt(prompt);
+            evt.target.value = '';
+
+            evt.preventDefault();
+            evt.stopPropagation();
+            return false;
+        }
+
+        document.getElementById('geminiPrompt').addEventListener('keydown', onKeyDown);
 <%  } %>
 });
 </script>

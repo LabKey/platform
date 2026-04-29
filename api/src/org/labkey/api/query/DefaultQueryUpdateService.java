@@ -16,7 +16,6 @@
 package org.labkey.api.query;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -778,9 +777,14 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return _missingValues.containsKey(mv);
     }
 
+    protected TableInfo getTableInfoForConversion()
+    {
+        return getDbTable();
+    }
+
     final protected void convertTypes(User user, Container c, Map<String,Object> row) throws ValidationException
     {
-        convertTypes(user, c, row,  getDbTable(), null);
+        convertTypes(user, c, row,  getTableInfoForConversion(), null);
     }
 
     // TODO Path->FileObject
@@ -826,7 +830,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 row.put(col.getMvColumnName().getName(), mv);
             }
 
-            value = null==value ? null : convertColumnValue(col, value, user, c, fileLinkDirPath);
+            value = convertColumnValue(col, value, user, c, fileLinkDirPath);
             row.put(col.getName(), value);
         }
     }
@@ -889,7 +893,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         }
     }
 
-    protected boolean hasAttachmentProperties()
+    public boolean hasAttachmentProperties()
     {
         Domain domain = getDomain();
         if (null != domain)

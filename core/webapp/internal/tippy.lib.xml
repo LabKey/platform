@@ -1,0 +1,7 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="false">
+        <script path="internal/tippy/popper.min.js"/>
+        <script path="internal/tippy/tippy-bundle.umd.js" mode="dev"/>
+        <script path="internal/tippy/tippy-bundle.umd.min.js" mode="production"/>
+    </library>
+</libraries>

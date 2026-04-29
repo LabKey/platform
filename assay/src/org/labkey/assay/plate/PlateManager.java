@@ -212,11 +212,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private final AtomicBoolean _pausePlateIndex = new AtomicBoolean(false);
     private static final Object PLATE_INDEX_LOCK = new Object();
 
-    // This flag is applied to the extraScriptContext of query mutating calls (e.g. insertRows, updateRows, etc.)
+    // This flag is applied to the extraScriptContext of query mutating calls (e.g., insertRows, updateRows, etc.)
     // when those calls are being made for a plate copy operation.
     public static final String PLATE_COPY_FLAG = ".plateCopy";
 
-    // This flag is applied to the extraScriptContext of query mutating calls (e.g. insertRows, updateRows, etc.)
+    // This flag is applied to the extraScriptContext of query mutating calls (e.g., insertRows, updateRows, etc.)
     // when those calls are being made for a plate save operation.
     public static final String PLATE_SAVE_FLAG = ".plateSave";
 

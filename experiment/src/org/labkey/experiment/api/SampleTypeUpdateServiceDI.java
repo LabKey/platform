@@ -108,6 +108,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.workflow.WorkflowService;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
 
@@ -343,7 +344,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                                     }
                                 }
                                 else
-                                    rows.add(((MapDataIterator) _delegate).getMap());
+                                    rows.add(((MapDataIterator) _delegate).getMapExcludeExistingRecord());
                             }
                             return ret;
                         }
@@ -416,6 +417,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             if (sampleType.getAutoLinkTargetContainer() != null && StudyPublishService.get() != null && !context.getInsertOption().updateOnly/* TODO support link to study on update? */)
                 dib = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, getSchema(), userSchema.getContainer(), userSchema.getUser(), sampleType));
+            WorkflowService workService = WorkflowService.get();
+            if (workService != null)
+            {
+                if (context.getConfigParameter(WorkflowService.WorkflowConfigs.ActionId) != null)
+                {
+                    dib = workService.getSampleCreationDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser());
+                    dib = workService.getActionAuditDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser());
+                }
+            }
         }
         return dib;
     }

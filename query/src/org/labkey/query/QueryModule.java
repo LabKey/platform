@@ -23,19 +23,24 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.DefaultAuditProvider;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
+import org.labkey.api.migration.DatabaseMigrationService;
+import org.labkey.api.migration.GuidMapperColumn;
+import org.labkey.api.migration.MigrationTableHandler;
 import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.mcp.McpService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.JavaExportScriptFactory;
@@ -72,6 +77,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
@@ -90,6 +96,7 @@ import org.labkey.query.analytics.AggregatesMinAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesSumAnalyticsProvider;
 import org.labkey.query.analytics.RemoveColumnAnalyticsProvider;
 import org.labkey.query.analytics.SummaryStatisticsAnalyticsProvider;
+import org.labkey.query.audit.GridViewAuditProvider;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.OlapController;
@@ -139,6 +146,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.labkey.api.query.QueryService.USE_ROW_BY_ROW_UPDATE;
+import static org.labkey.api.reports.ReportService.R_REPORT_CUSTOM_SHARING;
 
 public class QueryModule extends DefaultModule
 {
@@ -229,7 +237,7 @@ public class QueryModule extends DefaultModule
         DataViewService.get().registerProvider(InheritedQueryDataViewProvider.TYPE, new InheritedQueryDataViewProvider());
 
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_GENERIC_DETAILS_URL, "Generic [details] link in grids/queries",
-            "This feature will turn on generating a generic [details] URL link in most grids.", false);
+            "This feature will turn on generating a generic [details] URL link in most grids.", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_LAST_MODIFIED, "Include Last-Modified header on query metadata requests",
             "For schema, query, and view metadata requests include a Last-Modified header such that the browser can cache the response. " +
             "The metadata is invalidated when performing actions such as creating a new List or modifying the columns on a custom view", false);
@@ -239,8 +247,8 @@ public class QueryModule extends DefaultModule
             "Allow for lookup fields in product folders to query across all folders within the top-level folder.", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product folders display folder-specific data",
             "Only list folder-specific data within product folders.", false);
-
-        McpService.get().register(new QueryMcp());
+        OptionalFeatureService.get().addExperimentalFeatureFlag(QueryService.EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS, "Disable managed columns in query triggers",
+                "By default LabKey enforces managed columns for triggers and errors when the data does not align. Enabling this feature will result in them only logging warnings.", false);
     }
 
 
@@ -292,6 +300,7 @@ public class QueryModule extends DefaultModule
         {
             AuditLogService.get().registerAuditType(new QueryExportAuditProvider());
             AuditLogService.get().registerAuditType(new QueryUpdateAuditProvider());
+            AuditLogService.get().registerAuditType(new GridViewAuditProvider());
         }
         AuditLogService.get().registerAuditType(new ReportAuditProvider());
 
@@ -339,6 +348,36 @@ public class QueryModule extends DefaultModule
         Role trustedAnalystRole = RoleManager.getRole("org.labkey.api.security.roles.TrustedAnalystRole");
         if (null != trustedAnalystRole)
             trustedAnalystRole.addPermission(EditQueriesPermission.class);
+
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(R_REPORT_CUSTOM_SHARING,
+            "Restore custom R report sharing",
+            "Allows R reports to be shared on a per user basis. This option will be removed in LabKey Server 26.7.",
+            false,
+            false,
+            OptionalFeatureService.FeatureType.Deprecated)
+        );
+
+        McpService.get().register(new QueryMcp());
+    }
+
+    @Override
+    public void registerMigrationHandlers(@NotNull DatabaseMigrationService service)
+    {
+        service.registerTableHandler(new MigrationTableHandler()
+        {
+            @Override
+            public TableInfo getTableInfo()
+            {
+                return QueryManager.get().getTableInfoExternalSchema();
+            }
+
+            @Override
+            public ColumnInfo handleColumn(ColumnInfo col)
+            {
+                // In the LinkedSchema case, the container GUID is stored in the "DataSource" column
+                return "DataSource".equals(col.getName()) ? new GuidMapperColumn(col) : col;
+            }
+        });
     }
 
     @Override
@@ -354,13 +393,13 @@ public class QueryModule extends DefaultModule
         return Set.of(
             ModuleReportCache.TestCase.class,
             OlapController.TestCase.class,
-            QueryController.TestCase.class,
             QueryController.SaveRowsTestCase.class,
+            QueryController.TestCase.class,
             QueryServiceImpl.TestCase.class,
             RolapReader.RolapTest.class,
             RolapTestCase.class,
-            ServerManager.TestCase.class,
-            SelectRowsStreamHack.TestCase.class
+            SelectRowsStreamHack.TestCase.class,
+            ServerManager.TestCase.class
         );
     }
 

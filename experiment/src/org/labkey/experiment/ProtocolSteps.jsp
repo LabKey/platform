@@ -45,7 +45,6 @@
     ppURL.addParameter("ParentLSID", protocol.getLSID());
 
     ExperimentUrls urls = urlProvider(ExperimentUrls.class);
-    assert urls != null;
 
     List<ExpProtocolActionImpl> steps = protocol.getSteps();
     boolean debug = getViewContext().getRequest().getParameter("_debug") != null;

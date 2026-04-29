@@ -24,6 +24,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -65,6 +67,8 @@ import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
+import org.labkey.query.audit.GridViewAuditProvider;
+import org.labkey.query.audit.GridViewAuditProvider.GridViewAuditEvent;
 import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.net.URISyntaxException;
@@ -75,6 +79,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -298,8 +303,12 @@ public class QueryManager
 
     public CstmView update(User user, CstmView view)
     {
+        CstmView oldView = new TableSelector(getTableInfoCustomView()).getObject(view.getCustomViewId(), CstmView.class);
         CstmView cstmView = Table.update(user, getTableInfoCustomView(), view, view.getCustomViewId());
-        CustomViewCache.uncache(ContainerManager.getForId(cstmView.getContainerId()));
+        Container container = ContainerManager.getForId(cstmView.getContainerId());
+        CustomViewCache.uncache(container);
+
+        addGridViewAuditEvent(user, container, "Grid view updated: ", cstmView, oldView, cstmView);
 
         return cstmView;
     }
@@ -307,15 +316,51 @@ public class QueryManager
     public CstmView insert(User user, CstmView view)
     {
         CstmView cstmView = Table.insert(user, getTableInfoCustomView(), view);
-        CustomViewCache.uncache(ContainerManager.getForId(cstmView.getContainerId()));
+        Container container = ContainerManager.getForId(cstmView.getContainerId());
+        CustomViewCache.uncache(container);
+
+        addGridViewAuditEvent(user, container, "Grid view created: ", cstmView, null, cstmView);
 
         return cstmView;
     }
 
-    public void delete(CstmView view)
+    public void delete(User user, CstmView view)
     {
+        Container container = ContainerManager.getForId(view.getContainerId());
+        addGridViewAuditEvent(user, container, "Grid view deleted: ", view, view, null);
+
         Table.delete(getTableInfoCustomView(), view.getCustomViewId());
-        CustomViewCache.uncache(ContainerManager.getForId(view.getContainerId()));
+        CustomViewCache.uncache(container);
+    }
+
+    private void addGridViewAuditEvent(User user, Container container, String commentPrefix, CstmView view, @Nullable CstmView oldView, @Nullable CstmView newView)
+    {
+        String viewName = GridViewAuditProvider.getGridViewNameForAudit(view.getName());
+        GridViewAuditEvent event = new GridViewAuditEvent(container, commentPrefix + viewName);
+        event.setCustomViewId(view.getCustomViewId());
+        event.setViewName(GridViewAuditProvider.getGridViewNameForAudit(view.getName()));
+        event.setSchemaName(view.getSchema());
+        event.setQueryName(view.getQueryName());
+        event.setCustomViewOwner(view.getCustomViewOwner());
+        event.setInheritable(canInherit(view.getFlags()));
+        event.setHidden(isHidden(view.getFlags()));
+
+        if (oldView != null)
+            event.setOldRecordMap(encodeViewDataMap(oldView));
+        if (newView != null)
+            event.setNewRecordMap(encodeViewDataMap(newView));
+
+        AuditLogService.get().addEvent(user, event);
+    }
+
+    private static String encodeViewDataMap(CstmView view)
+    {
+        Map<String, String> map = new LinkedHashMap<>();
+        if (view.getColumns() != null)
+            map.put("columns", view.getColumns());
+        if (view.getFilter() != null)
+            map.put("filter", view.getFilter());
+        return AbstractAuditTypeProvider.encodeForDataMap(map);
     }
 
     @Nullable

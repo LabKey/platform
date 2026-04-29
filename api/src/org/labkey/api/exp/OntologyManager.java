@@ -122,7 +122,7 @@ public class OntologyManager
                     proj = c;
                 _log.debug("Loading a property descriptor for key " + key + " using project " + proj);
                 String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
-                List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql, propertyURI, proj, _sharedContainer.getId()).getArrayList(PropertyDescriptor.class);
+                List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql, propertyURI, proj, ContainerManager.getSharedContainer().getId()).getArrayList(PropertyDescriptor.class);
                 if (!pdArray.isEmpty())
                 {
                     PropertyDescriptor pd = pdArray.get(0);
@@ -132,7 +132,7 @@ public class OntologyManager
                     if (pdArray.size() > 1)
                     {
                         _log.debug("Multiple PropertyDescriptors found for " + propertyURI);
-                        if (pd.getProject().equals(_sharedContainer))
+                        if (pd.getProject().equals(ContainerManager.getSharedContainer()))
                             pd = pdArray.get(1);
                     }
                     _log.debug("Loaded property descriptor " + pd);
@@ -171,24 +171,20 @@ public class OntologyManager
             proj = c;
 
         String sql = " SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE " + (isName ? "Name" : "DomainURI") + " = ? AND Project IN (?,?) ";
-        List<DomainDescriptor> ddArray = new SqlSelector(getExpSchema(), sql, uriOrName,
+        List<DomainDescriptor> ddList = new SqlSelector(getExpSchema(), sql, uriOrName,
                 proj,
                 ContainerManager.getSharedContainer().getId()).getArrayList(DomainDescriptor.class);
-        DomainDescriptor dd = null;
-        if (!ddArray.isEmpty())
-        {
-            dd = ddArray.get(0);
 
-            // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
-            // and one of the two is in the shared project, use the project-level descriptor.
-            if (ddArray.size() > 1)
-            {
-                _log.debug("Multiple DomainDescriptors found for " + uriOrName);
-                if (dd.getProject().equals(ContainerManager.getSharedContainer()))
-                    dd = ddArray.get(0);
-            }
+        if (ddList.size() > 1)
+        {
+            // if there are multiple descriptors with the same URI, prefer the first one that's not in the shared project
+            _log.debug("Multiple DomainDescriptors found for {}", uriOrName);
+            for (DomainDescriptor dd : ddList)
+                if (!ContainerManager.getSharedContainer().equals(dd.getProject()))
+                    return dd;
         }
-        return dd;
+
+        return ddList.isEmpty() ? null : ddList.getFirst();
     }
 
     private static final BlockingCache<Integer, DomainDescriptor> DOMAIN_DESC_BY_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(),2000, CacheManager.UNLIMITED,"Domain descriptors by ID", new DomainDescriptorLoader());
@@ -210,8 +206,8 @@ public class OntologyManager
             sql.addAll(
                 typeURI,
                 // protect against null project, just double-up shared project
-                c.isRoot() ? c.getId() : (c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId()),
-                _sharedContainer.getProject().getId()
+                c.isRoot() ? c.getId() : (c.getProject() == null ? ContainerManager.getSharedContainer().getProject().getId() : c.getProject().getId()),
+                ContainerManager.getSharedContainer().getProject().getId()
             );
 
             return new SqlSelector(getExpSchema(), sql).mapStream()
@@ -230,8 +226,6 @@ public class OntologyManager
 
         return unmodifiableMap(dds);
     });
-
-    private static final Container _sharedContainer = ContainerManager.getSharedContainer();
 
     public static final String MV_INDICATOR_SUFFIX = "mvindicator";
 
@@ -755,22 +749,32 @@ public class OntologyManager
     {
         boolean ret = true;
 
-        Object value = objectProperty.getObjectValue();
+        boolean isArray = prop.getPropertyType() == PropertyType.MULTI_CHOICE;
 
-        if (prop.isRequired() && value == null && objectProperty.getMvIndicator() == null)
+        Object value = isArray ? objectProperty.arrayValue : objectProperty.getObjectValue();
+        boolean isNull = value == null;
+
+        // GitHub Issue 995: Unable to import assay run with required MVTC values
+        if (isArray && value instanceof MultiChoice.Array array)
+            isNull = array.isEmpty();
+
+        if (prop.isRequired() && isNull && objectProperty.getMvIndicator() == null)
         {
             errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is required", prop.getName()));
             ret = false;
         }
 
         // Check if the string is too long. Use either the PropertyDescriptor's scale or VARCHAR(4000) for ontology managed values
-        int stringLengthLimit = prop.getScale() > 0 ? prop.getScale() : getTinfoObjectProperty().getColumn("StringValue").getScale();
-        int stringLength = value == null ? 0 : value.toString().length();
-        if (value != null && prop.isStringType() && stringLength > stringLengthLimit)
+        if (!isArray)
         {
-            String s = stringLength <= 100 ? value.toString() : StringUtilsLabKey.leftSurrogatePairFriendly(value.toString(), 100);
-            errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is limited to " + stringLengthLimit + " characters, but the value is " + stringLength + " characters. (The value starts with '" + s + "...')", prop.getName()));
-            ret = false;
+            int stringLengthLimit = prop.getScale() > 0 ? prop.getScale() : getTinfoObjectProperty().getColumn("StringValue").getScale();
+            int stringLength = value == null ? 0 : value.toString().length();
+            if (value != null && prop.isStringType() && stringLength > stringLengthLimit)
+            {
+                String s = stringLength <= 100 ? value.toString() : StringUtilsLabKey.leftSurrogatePairFriendly(value.toString(), 100);
+                errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is limited to " + stringLengthLimit + " characters, but the value is " + stringLength + " characters. (The value starts with '" + s + "...')", prop.getName()));
+                ret = false;
+            }
         }
 
         // TODO: check date is within postgres date range
@@ -1579,7 +1583,7 @@ public class OntologyManager
 
             if (_log.isDebugEnabled())
             {
-                try (ResultSet rs = new SqlSelector(getExpSchema(), sql, c, _sharedContainer, newProject).getResultSet())
+                try (ResultSet rs = new SqlSelector(getExpSchema(), sql, c, ContainerManager.getSharedContainer(), newProject).getResultSet())
                 {
                     ResultSetUtil.logData(rs, _log);
                 }
@@ -1590,7 +1594,7 @@ public class OntologyManager
             final StringBuilder sqlIn = new StringBuilder();
             final StringBuilder sep = new StringBuilder();
 
-            new SqlSelector(getExpSchema(), sql, c, _sharedContainer, newProject).forEach(rs -> {
+            new SqlSelector(getExpSchema(), sql, c, ContainerManager.getSharedContainer(), newProject).forEach(rs -> {
                 String objURI = rs.getString(1);
                 String propURI = rs.getString(2);
                 Integer propId = rs.getInt(3);
@@ -1701,7 +1705,7 @@ public class OntologyManager
         if (null == pdIn.getContainer())
         {
             assert false : "Container should be set on PropertyDescriptor";
-            pdIn.setContainer(_sharedContainer);
+            pdIn.setContainer(ContainerManager.getSharedContainer());
         }
 
         PropertyDescriptor pd = getPropertyDescriptor(pdIn.getPropertyURI(), pdIn.getContainer());
@@ -1806,7 +1810,7 @@ public class OntologyManager
         List<String> colDiffs = new ArrayList<>();
 
         // if the returned pd is in a different project, it better be the shared project
-        if (!pd.getProject().equals(pdIn.getProject()) && !pd.getProject().equals(_sharedContainer))
+        if (!pd.getProject().equals(pdIn.getProject()) && !pd.getProject().equals(ContainerManager.getSharedContainer()))
             colDiffs.add("Project");
 
         // check the pd values that can't change
@@ -1980,7 +1984,7 @@ public class OntologyManager
         // Consider: We should check that the pd and dd have been persisted (aka have a non-zero id)
 
         if (!pd.getContainer().equals(dd.getContainer())
-                && !pd.getProject().equals(_sharedContainer))
+                && !pd.getProject().equals(ContainerManager.getSharedContainer()))
             throw new IllegalStateException("ensurePropertyDomain:  property " + pd.getPropertyURI() + " not in same container as domain " + dd.getDomainURI());
 
         SQLFragment sqlInsert = new SQLFragment("INSERT INTO " + getTinfoPropertyDomain() + " ( PropertyId, DomainId, Required, SortOrder ) " +
@@ -2282,7 +2286,7 @@ public class OntologyManager
         if (null != pd)
             return pd;
 
-        key = getCacheKey(propertyURI, _sharedContainer);
+        key = getCacheKey(propertyURI, ContainerManager.getSharedContainer());
         return PROP_DESCRIPTOR_CACHE.get(key);
     }
 
@@ -2485,7 +2489,7 @@ public class OntologyManager
             return dd;
 
         // Try in the /Shared container too
-        key = getCacheKey(domainURI, _sharedContainer);
+        key = getCacheKey(domainURI, ContainerManager.getSharedContainer());
         return DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(key);
     }
 
@@ -2497,7 +2501,7 @@ public class OntologyManager
 
         DomainDescriptor dd = fetchDomainDescriptorFromDB(domainURI, c);
         if (dd == null)
-            dd = fetchDomainDescriptorFromDB(domainURI, _sharedContainer);
+            dd = fetchDomainDescriptorFromDB(domainURI, ContainerManager.getSharedContainer());
         return dd;
     }
 
@@ -2531,9 +2535,9 @@ public class OntologyManager
                 }
             }
 
-            if (_sharedContainer.hasPermission(user, ReadPermission.class))
+            if (ContainerManager.getSharedContainer().hasPermission(user, ReadPermission.class))
             {
-                for (Map.Entry<String, DomainDescriptor> entry : getCachedDomainDescriptors(_sharedContainer, user).entrySet())
+                for (Map.Entry<String, DomainDescriptor> entry : getCachedDomainDescriptors(ContainerManager.getSharedContainer(), user).entrySet())
                 {
                     dds.putIfAbsent(entry.getKey(), entry.getValue());
                 }
@@ -2557,12 +2561,10 @@ public class OntologyManager
         return getCacheKey(dd.getDomainURI(), dd.getContainer());
     }
 
-
     public static Pair<String, GUID> getCacheKey(PropertyDescriptor pd)
     {
         return getCacheKey(pd.getPropertyURI(), pd.getContainer());
     }
-
 
     public static Pair<String, GUID> getCacheKey(String uri, Container c)
     {
@@ -2636,7 +2638,7 @@ public class OntologyManager
             DomainDescriptor dexist = ensureDomainDescriptor(dd);
 
             if (!dexist.getContainer().equals(pd.getContainer())
-                    && !pd.getProject().equals(_sharedContainer))
+                    && !pd.getProject().equals(ContainerManager.getSharedContainer()))
             {
                 // domain is defined in a different container.
                 //ToDO  define property in the domains container?  what security?
@@ -2656,7 +2658,6 @@ public class OntologyManager
             return pexist;
         }
     }
-
 
     static final String parameters = "propertyuri,name,description,rangeuri,concepturi,label," +
             "format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
@@ -2700,71 +2701,6 @@ public class OntologyManager
         return new ParameterMapStatement(t.getSchema().getScope(), conn, sql, null);
     }
 
-    static ParameterMapStatement getUpdateStmt(Connection conn, User user, TableInfo t) throws SQLException
-    {
-        user = null==user ? User.guest : user;
-        SQLFragment sql = new SQLFragment("UPDATE exp.propertydescriptor SET ");
-        ColumnInfo c;
-        String comma = "";
-        for (var p : parametersArray)
-        {
-            if (null == (c = t.getColumn(p)))
-                continue;
-            sql.append(comma).append(p).append("=?");
-            comma = ", ";
-            sql.add(new Parameter(p, c.getJdbcType()));
-        }
-        sql.append(", modifiedby=" + user.getUserId() + ", modified={fn now()}");
-        sql.append("\nWHERE propertyid=?");
-        sql.add(new Parameter("propertyid", JdbcType.INTEGER));
-        return new ParameterMapStatement(t.getSchema().getScope(), conn, sql, null);
-    }
-
-
-    public static void insertPropertyDescriptors(User user, List<PropertyDescriptor> pds) throws SQLException
-    {
-        if (null == pds || pds.isEmpty())
-            return;
-        TableInfo t = getTinfoPropertyDescriptor();
-        try (Connection conn = t.getSchema().getScope().getConnection();
-             ParameterMapStatement stmt = getInsertStmt(conn, user, t, false))
-        {
-            ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
-            Map<String, Object> m = null;
-            for (PropertyDescriptor pd : pds)
-            {
-                m = f.toMap(pd, m);
-                stmt.clearParameters();
-                stmt.putAll(m);
-                stmt.addBatch();
-            }
-            stmt.executeBatch();
-        }
-    }
-
-
-    public static void updatePropertyDescriptors(User user, List<PropertyDescriptor> pds) throws SQLException
-    {
-        if (null == pds || pds.isEmpty())
-            return;
-        TableInfo t = getTinfoPropertyDescriptor();
-        try (Connection conn = t.getSchema().getScope().getConnection();
-             ParameterMapStatement stmt = getUpdateStmt(conn, user, t))
-        {
-            ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
-            Map<String, Object> m = null;
-            for (PropertyDescriptor pd : pds)
-            {
-                m = f.toMap(pd, m);
-                stmt.clearParameters();
-                stmt.putAll(m);
-                stmt.addBatch();
-            }
-            stmt.executeBatch();
-        }
-    }
-
-
     public static PropertyDescriptor insertPropertyDescriptor(PropertyDescriptor pd) throws ChangePropertyDescriptorException
     {
         assert pd.getPropertyId() == 0;
@@ -2774,7 +2710,6 @@ public class OntologyManager
         PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
         return pd;
     }
-
 
     //todo:  we automatically update a pd to the last  one in?
     public static PropertyDescriptor updatePropertyDescriptor(PropertyDescriptor pd)

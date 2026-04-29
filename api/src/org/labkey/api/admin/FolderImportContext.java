@@ -40,10 +40,6 @@ import java.util.Set;
 
 import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 
-/**
- * User: cnathe
- * Date: Jan 18, 2012
- */
 public class FolderImportContext extends AbstractFolderContext
 {
     private FileLike _folderXml;
@@ -56,8 +52,6 @@ public class FolderImportContext extends AbstractFolderContext
     private static final String FOLDER_IMPORT_DB_SEQUENCE_PREFIX = "FolderImportJobCounter-";
 
     private boolean _isNewFolderImport; // if we know the target folder is empty, can skip certain merge logic
-
-    public static final String IS_NEW_FOLDER_IMPORT_KEY = "isNewFolderImport";
 
     /** Required for xstream serialization on Java 7 */
     @SuppressWarnings({"UnusedDeclaration"})

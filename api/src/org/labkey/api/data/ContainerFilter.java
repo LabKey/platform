@@ -169,9 +169,9 @@ public abstract class ContainerFilter
     }
 
     /** Create a FilterClause that restricts based on the containers that meet the filter and user that meets the permission*/
-    public SimpleFilter.FilterClause createFilterClause(DbSchema schema, FieldKey containerFilterColumn, Class<? extends Permission> permission, Set<Role> roles)
+    public SimpleFilter.FilterClause createFilterClause(DbSchema schema, FieldKey containerFilterColumn, Class<? extends Permission> permission, Set<Role> contextualRoles)
     {
-        return new ContainerClause(schema, containerFilterColumn, this, permission, roles);
+        return new ContainerClause(schema, containerFilterColumn, this, permission, contextualRoles);
     }
 
 

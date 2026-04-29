@@ -396,13 +396,8 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
             return null;
 
         ExperimentUrls urlProvider = PageFlowUtil.urlProvider(ExperimentUrls.class);
-        ActionURL url = null;
-
-        if (urlProvider != null)
-        {
-            url = urlProvider.getShowDataClassURL(container, getRowId());
-            url.setExtraPath(container.getId());
-        }
+        ActionURL url = urlProvider.getShowDataClassURL(container, getRowId());
+        url.setExtraPath(container.getId());
 
         Map<String, Object> props = new HashMap<>();
         Set<String> identifiersHi = new HashSet<>();

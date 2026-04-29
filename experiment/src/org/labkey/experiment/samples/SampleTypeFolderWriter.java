@@ -16,7 +16,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
@@ -40,7 +39,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
 {
@@ -62,7 +60,6 @@ public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
         XarExportSelection typesSelection = new XarExportSelection();
         XarExportSelection runsSelection = new XarExportSelection();
         Set<ExpSampleType> sampleTypes = new HashSet<>();
-        List<ExpMaterial> materialsToExport = new ArrayList<>();
         _exportPhiLevel = ctx.getPhiLevel();
         boolean exportTypes = false;
         boolean exportRuns = false;
@@ -80,7 +77,8 @@ public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
             return;
 
         Lsid sampleTypeLsid = new Lsid(ExperimentService.get().generateLSID(c, ExpSampleType.class, "export"));
-        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(c, true))
+        Set<String> sampleTypeLsids = new HashSet<>();
+        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(c, false))
         {
             // ignore the magic sample type that is used for the specimen repository, it is managed by the specimen importer
             StudyService ss = StudyService.get();
@@ -98,30 +96,27 @@ public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
             {
                 sampleTypes.add(sampleType);
                 typesSelection.addSampleType(sampleType);
-                materialsToExport.addAll(sampleType.getSamples(c));
+                sampleTypeLsids.add(sampleType.getLSID());
                 exportTypes = true;
             }
         }
 
         // get the list of runs with the materials or data we expect to export, these will be the sample derivation
         // protocol runs to track the lineage
-        Set<ExpRun> exportedRuns = new HashSet<>();
-        if (!materialsToExport.isEmpty() && exportSampleTypeData)
-            exportedRuns.addAll(ExperimentService.get().getRunsUsingMaterials(materialsToExport));
-
         // only want the sample derivation runs; other runs will get included in the experiment xar.
-        exportedRuns = exportedRuns.stream().filter(run -> {
-            String lsid = run.getProtocol().getLSID();
-            if (lsid.equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID))
-                return isValidRunType(ctx, run);
-            else
-                return lsid.equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID);
-        }).collect(Collectors.toSet());
-
-        if (!exportedRuns.isEmpty())
+        // Sample derivation protocols involving samples can be either to/from another sample
+        //     or to/from a data class. If it's the latter, don't include the run if data class data
+        //     is not included in the archive.
+        if (exportSampleTypeData && !sampleTypes.isEmpty())
         {
-            runsSelection.addRuns(exportedRuns);
-            exportRuns = true;
+            boolean includeRunsWithDataIO = ctx.getDataTypes().contains(FolderArchiveDataTypes.DATA_CLASS_DATA);
+            List<Long> exportedRunIds = ExperimentService.get().getDerivationRunIdsForSampleTypesExport(sampleTypeLsids, c, includeRunsWithDataIO);
+
+            if (!exportedRunIds.isEmpty())
+            {
+                runsSelection.addRunIds(exportedRunIds);
+                exportRuns = true;
+            }
         }
 
         // UNDONE: The other exporters use FOLDER_RELATIVE, but it wants to use ${AutoFileLSID} replacements for DataClass LSIDs when exporting the TSV data.. see comment in ExportLsidDataColumn
@@ -151,20 +146,6 @@ public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
             writeSampleTypeDataFiles(sampleTypes, ctx, xarDir);
 
         exportContext.setSampleXarCreated(true);
-    }
-
-    /**
-     * Sample derivation protocols involving samples can be either to/from another sample
-     * or to/from a data class. If it's the latter, don't include the run if data class data
-     * is not included in the archive.
-     */
-    private boolean isValidRunType(FolderExportContext ctx, ExpRun run)
-    {
-        if (!run.getDataInputs().isEmpty() || !run.getDataOutputs().isEmpty())
-        {
-            return ctx.getDataTypes().contains(FolderArchiveDataTypes.DATA_CLASS_DATA);
-        }
-        return true;
     }
 
     private void writeSampleTypeDataFiles(Set<ExpSampleType> sampleTypes, FolderExportContext ctx, VirtualFile dir) throws Exception

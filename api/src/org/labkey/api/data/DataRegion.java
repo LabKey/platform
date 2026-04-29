@@ -1450,7 +1450,7 @@ public class DataRegion extends DisplayElement
             ignoreViewFilter = getSettings().getIgnoreViewFilter();
         dataRegionJSON.put("ignoreViewFilter", ignoreViewFilter);
 
-        VisualizationUrls visUrlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
+        VisualizationUrls visUrlProvider = PageFlowUtil.urlProviderOptional(VisualizationUrls.class);
         if (visUrlProvider != null)
             dataRegionJSON.put("chartWizardURL", visUrlProvider.getGenericChartDesignerURL(ctx.getContainer(), user, getSettings(), null));
 
@@ -2593,19 +2593,6 @@ public class DataRegion extends DisplayElement
         renderOldValues(out, map);
     }
 
-
-    public static List<ColumnInfo> colInfosFromMetaData(ResultSetMetaData md) throws SQLException
-    {
-        int columnCount = md.getColumnCount();
-        List<ColumnInfo> cols = new LinkedList<>();
-
-        for (int i = 1; i <= columnCount; i++)
-            cols.add(new BaseColumnInfo(md, i));
-
-        return cols;
-    }
-
-
     /**
      * Render the data region. All rendering SHOULD go through this function
      * public renderForm, renderTable methods actually all go through here
@@ -2667,7 +2654,7 @@ public class DataRegion extends DisplayElement
                 StringBuilder msg;
                 if (ignoredColumns.size() == 1)
                 {
-                    msg = new StringBuilder("Ignoring filter/sort on column '" + ignoredColumns.iterator().next().toDisplayString() + "' because it does not exist.");
+                    msg = new StringBuilder("Ignoring filter/sort on column '" + ignoredColumns.iterator().next().toDisplayString() + "' because it does not exist or the filter type is invalid.");
                 }
                 else
                 {
@@ -2679,7 +2666,7 @@ public class DataRegion extends DisplayElement
                         sep = ", ";
                         msg.append("'").append(fieldKey.toDisplayString()).append("'");
                     }
-                    msg.append(" because they do not exist.");
+                    msg.append(" because they do not exist or the filter types are invalid.");
                 }
 
                 addMessage(new Message(msg.toString(), MessageType.WARNING, "filter"));

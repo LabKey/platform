@@ -353,6 +353,11 @@ public class NameGeneratorState implements AutoCloseable
                         {
                             rawObj = (Double) rawObj < 1.0 ? Boolean.FALSE : Boolean.TRUE;
                         }
+                        else if (PropertyType.MULTI_CHOICE.equals(pt) && rawObj == null)
+                        {
+                            // GitHub Issue 914: Using MVTC field in Ancestry Naming Pattern is always blank
+                            rawObj = prop.getArrayValue();
+                        }
 
                         properties.put(prop.getName(), pt.convert(rawObj));
                     }

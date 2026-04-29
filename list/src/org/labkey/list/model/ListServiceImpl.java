@@ -114,6 +114,12 @@ public class ListServiceImpl implements ListService
     }
 
     @Override
+    public void deleteLists(Container container, User user, @Nullable String auditUserComment)
+    {
+        ListManager.get().deleteLists(container, user, auditUserComment);
+    }
+
+    @Override
     @Nullable
     public ListDefinition getList(Container container, int listId)
     {

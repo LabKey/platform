@@ -9,6 +9,7 @@ import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
@@ -101,9 +102,13 @@ public interface AuditHandler
                 {
                     if (aliasColumn.getFk() != null && (aliasColumn.isMultiValued() || aliasColumn.getFk() instanceof MultiValuedForeignKey))
                         isMultiValued = true;
+                    col = aliasColumn; // GitHub Issue 913: Updating a sample details page shows an update to the MVTC field
                     nameFromAlias = aliasColumn.getName();
                 }
             }
+
+            boolean isMultiChoice = col != null && col.getPropertyType() == PropertyType.MULTI_CHOICE;
+
             String lcName = nameFromAlias.toLowerCase();
             // Preserve casing of inputs so we can show the names properly
             boolean isExpInput = false; // TODO: extract lineage handling out of this generic method
@@ -167,6 +172,16 @@ public interface AuditHandler
                         if ((oldValue == null && newValue != null) || (newValue == null && oldValue != null))
                         {
                             originalRow.put(nameFromAlias, oldValue);
+                            modifiedRow.put(nameFromAlias, newValue);
+                        }
+                    }
+                    else if (isMultiChoice)
+                    {
+                        Object convertedOldVal = col.convert(oldValue);
+                        Object convertedNewVal = col.convert(newValue);
+                        if (!Objects.equals(convertedOldVal, convertedNewVal))
+                        {
+                            originalRow.put(nameFromAlias, convertedOldVal); // use converted array instead of raw pgarray
                             modifiedRow.put(nameFromAlias, newValue);
                         }
                     }

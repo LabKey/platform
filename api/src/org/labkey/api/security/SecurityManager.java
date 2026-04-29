@@ -28,6 +28,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -67,16 +68,14 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.security.impersonation.DisallowPrivilegedRolesContext;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
-import org.labkey.api.security.impersonation.ReadOnlyImpersonatingContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractPermission;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
+import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -606,7 +605,7 @@ public class SecurityManager
                         // If impersonating, stop so it gets logged
                         if (sessionUser.isImpersonated())
                         {
-                            stopImpersonating(request, sessionUser.getImpersonationContext().getFactory());
+                            stopImpersonating(request, sessionUser.getPermissionsContext().getFactory());
                             sessionUser = sessionUser.getImpersonatingUser(); // Need to log out the admin
                         }
 
@@ -664,6 +663,13 @@ public class SecurityManager
         // Passing via the "apikey" HTTP header is our preferred approach and used by most
         // LabKey client API implementations
         String apiKey = request.getHeader(API_KEY);
+        
+        if (null == apiKey)
+        {
+            String authorization = request.getHeader("Authorization");
+            if (Strings.CI.startsWith(authorization, "Bearer "))
+                apiKey = StringUtils.trimToNull(authorization.substring("Bearer ".length()));
+        }
 
         if (null == apiKey)
         {
@@ -824,7 +830,7 @@ public class SecurityManager
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
 
-        if (user.hasRootAdminPermission())
+        if (user.hasRootPermission(ImpersonatePermission.class))
             project = null;
 
         impersonate(viewContext, new UserImpersonationContextFactory(project, user, impersonatedUser, returnUrl));
@@ -841,7 +847,7 @@ public class SecurityManager
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
 
-        if (user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
+        if (user.hasRootPermission(ImpersonatePermission.class))
             project = null;
 
         impersonate(viewContext, new RoleImpersonationContextFactory(project, user, newImpersonationRoles, currentImpersonationRoles, returnUrl));
@@ -1414,7 +1420,7 @@ public class SecurityManager
     }
 
     // A permission class that uniquely identifies the root admins, of which we insist there must be at least one
-    public static final Class<? extends Permission> ROOT_ADMIN_PERMISSION = CanImpersonateSiteRolesPermission.class;
+    public static final Class<? extends Permission> ROOT_ADMIN_PERMISSION = ImpersonatePermission.class;
 
     public static boolean isRootAdmin(User user)
     {
@@ -3096,7 +3102,7 @@ public class SecurityManager
         Stream<Class<? extends Permission>> permissions = roles.flatMap(role -> role.getPermissions().stream());
 
         if (principal instanceof User user)
-            permissions = user.getImpersonationContext().filterPermissions(permissions);
+            permissions = user.getPermissionsContext().filterPermissions(permissions);
 
         return permissions.collect(Collectors.toSet());
     }
@@ -3438,7 +3444,7 @@ public class SecurityManager
             final User testUser = TestContext.get().getUser();
             // this user is subsetted to only permit read permissions (see AllowedForReadOnlyUser)
             User user = addUser(new ValidEmail("impersonate@test.net"), null, false).getUser();
-            user.setImpersonationContext(new ReadOnlyImpersonatingContext());
+            user.setImpersonationContext(new ReadOnlyPermissionsContext());
 
             Container testFolder = null;
 

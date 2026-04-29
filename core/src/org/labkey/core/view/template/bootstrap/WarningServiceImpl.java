@@ -42,6 +42,8 @@ import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 public class WarningServiceImpl implements WarningService
 {
+    private static final Object STATIC_WARNING_LOCK = new Object();
+
     private static volatile Collection<HtmlString> STATIC_ADMIN_WARNINGS = null;
     private static volatile boolean SHOW_ALL_WARNINGS = false;
 
@@ -59,7 +61,7 @@ public class WarningServiceImpl implements WarningService
                 SHOW_ALL_WARNINGS = OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SHOW_ALL_WARNINGS);
                 OptionalFeatureService.get().addFeatureListener(EXPERIMENTAL_SHOW_ALL_WARNINGS, (feature, enabled) -> {
                     SHOW_ALL_WARNINGS = enabled;
-                    STATIC_ADMIN_WARNINGS = null; // Force static warnings to be re-collected since flag has changed
+                    WarningService.get().clearStaticWarnings(); // Force static warnings to be re-collected since flag has changed
                 });
             }
         }
@@ -81,6 +83,16 @@ public class WarningServiceImpl implements WarningService
     public void register(WarningProvider provider)
     {
         _providers.add(provider);
+        clearStaticWarnings();
+    }
+
+    @Override
+    public void clearStaticWarnings()
+    {
+        synchronized (STATIC_WARNING_LOCK)
+        {
+            STATIC_ADMIN_WARNINGS = null;
+        }
     }
 
     @Override
@@ -90,27 +102,29 @@ public class WarningServiceImpl implements WarningService
     }
 
     // Check warning conditions that don't change after the server has started up. We'll collect and stash these during
-    // the first request after startup is complete. They are also re-collected if the "show all warnings" experimental
-    // feature flag is used.
+    // the first request after startup is complete. They are also re-collected if a new provider is registered or if
+    // the "show all warnings" experimental feature flag is used.
     private static Collection<HtmlString> getStaticAdminWarnings()
     {
-        if (STATIC_ADMIN_WARNINGS != null)
+        Collection<HtmlString> staticWarnings = STATIC_ADMIN_WARNINGS;
+
+        if (null == staticWarnings)
         {
-            return STATIC_ADMIN_WARNINGS;
+            synchronized (STATIC_WARNING_LOCK)
+            {
+                if (null == STATIC_ADMIN_WARNINGS)
+                {
+                    LazyInitializer.init(); // Invoke no-op method to ensure static initializer is executed
+                    Warnings warnings = Warnings.of(new LinkedList<>());
+                    WarningService.get().forEachProvider(p -> p.addStaticWarnings(warnings, WarningService.get().showAllWarnings()));
+                    STATIC_ADMIN_WARNINGS = Collections.unmodifiableList(warnings.getMessages());
+                }
+
+                staticWarnings = STATIC_ADMIN_WARNINGS;
+            }
         }
 
-        LazyInitializer.init(); // Invoke no-op method to ensure static initializer is executed
-        Warnings warnings = Warnings.of(new LinkedList<>());
-        WarningService.get().forEachProvider(p -> p.addStaticWarnings(warnings, WarningService.get().showAllWarnings()));
-        List<HtmlString> messages = Collections.unmodifiableList(warnings.getMessages());
-
-        if (ModuleLoader.getInstance().isStartupComplete())
-        {
-            // We should have our full list of warnings at this point, so safe to stash them
-            STATIC_ADMIN_WARNINGS = messages;
-        }
-
-        return messages;
+        return staticWarnings;
     }
 
     private static final String DISMISSAL_SCRIPT_FORMAT =
@@ -162,13 +176,10 @@ public class WarningServiceImpl implements WarningService
         appendMessageContent(warnings, html);
         html.unsafeAppend("</div>\n");
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
-        if (coreUrls != null)
-        {
-            String dismissURL = coreUrls.getDismissWarningsActionURL(context).toString();
-            html.unsafeAppend("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
-            html.unsafeAppend(String.format(DISMISSAL_SCRIPT_FORMAT, PageFlowUtil.jsString(dismissURL)));
-            html.unsafeAppend("</script>\n");
-        }
+        String dismissURL = coreUrls.getDismissWarningsActionURL(context).toString();
+        html.unsafeAppend("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+        html.unsafeAppend(String.format(DISMISSAL_SCRIPT_FORMAT, PageFlowUtil.jsString(dismissURL)));
+        html.unsafeAppend("</script>\n");
         html.unsafeAppend("</div>");
 
         return html.getHtmlString();
@@ -181,7 +192,7 @@ public class WarningServiceImpl implements WarningService
             List<HtmlString> messages = warnings.getMessages();
 
             if (messages.size() == 1)
-                html.append(messages.get(0));
+                html.append(messages.getFirst());
             else
             {
                 html.startTag("ul");

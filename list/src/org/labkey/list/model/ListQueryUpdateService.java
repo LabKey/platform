@@ -26,6 +26,7 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -34,7 +35,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.Selector.ForEachBatchBlock;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -90,6 +90,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.util.IntegerUtils.isIntegral;
 
@@ -549,7 +551,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
                     // Before trigger per batch
                     Map<String, Object> extraContext = Map.of("targetContainer", targetContainer, "keys", rowPks);
-                    listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, true, errors, extraContext);
+                    listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, null, true, errors, extraContext);
                     if (errors.hasErrors())
                         throw errors;
 
@@ -572,7 +574,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                         listAuditEventsCreatedCount += addDetailedMoveAuditEvents(user, sourceContainer, targetContainer, batch);
 
                     // After trigger per batch
-                    listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, false, errors, extraContext);
+                    listTable.fireBatchTrigger(sourceContainer, user, TableInfo.TriggerType.MOVE, null, false, errors, extraContext);
                     if (errors.hasErrors())
                         throw errors;
                 }
@@ -759,45 +761,37 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
+    record ListRow(String container, String entityId){}
 
-    // Deletes attachments & discussions, and removes list documents from full-text search index.
-    public void deleteRelatedListData(final User user, final Container container)
+    // Delete attachments and remove documents from the full-text search index. If Container is non-null, delete only
+    // from that container (truncate case). If container is null, delete from all containers (delete list case).
+    public void deleteRelatedListData(final @Nullable Container container)
     {
         // Unindex all item docs and the entire list doc
         ListManager.get().deleteIndexedList(_list);
 
-        // Delete attachments and discussions associated with a list in batches of 1,000
-        new TableSelector(getDbTable(), Collections.singleton("entityId")).forEachBatch(String.class, 1000, new ForEachBatchBlock<>()
-        {
-            @Override
-            public boolean accept(String entityId)
-            {
-                return null != entityId;
-            }
-
-            @Override
-            public void exec(List<String> entityIds)
-            {
-                // delete the related list data for this block
-                deleteRelatedListData(user, container, entityIds);
-            }
-        });
-    }
-
-    // delete the related list data for this block of entityIds
-    private void deleteRelatedListData(User user, Container container, List<String> entityIds)
-    {
-        // Build up set of entityIds and AttachmentParents
-        List<AttachmentParent> attachmentParents = new ArrayList<>();
-
-        // Delete Attachments
         if (hasAttachmentProperties())
         {
-            for (String entityId : entityIds)
-            {
-                attachmentParents.add(new ListItemAttachmentParent(entityId, container));
-            }
-            AttachmentService.get().deleteAttachments(attachmentParents);
+            var filter = container == null ? new SimpleFilter() : SimpleFilter.createContainerFilter(container);
+            filter.addCondition(FieldKey.fromParts("EntityId"), null, CompareType.NONBLANK);
+
+            // Delete attachments associated with a list in batches
+            new TableSelector(getDbTable(), new CsvSet("Container, EntityId"), filter, null).forEachBatch(ListRow.class, 1_000, rows -> {
+                var containerMap = new HashMap<String, Container>();
+
+                // delete the related attachments for this block
+                AttachmentService.get().deleteAttachments(
+                    rows.stream()
+                        .map(row -> {
+                            var c = containerMap.computeIfAbsent(row.container(), ContainerManager::getForId);
+                            if (c == null)
+                                return null;
+                            return new ListItemAttachmentParent(row.entityId(), c);
+                        })
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList())
+                );
+            });
         }
     }
 
@@ -807,7 +801,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         int result;
         try (DbScope.Transaction transaction = getDbTable().getSchema().getScope().ensureTransaction())
         {
-            deleteRelatedListData(user, container);
+            deleteRelatedListData(container);
             result = super.truncateRows(getListUser(user, container), container);
             transaction.addCommitTask(() -> ListManager.get().addAuditEvent(_list, user, "Deleted " + result + " rows from list."), DbScope.CommitTaskOption.POSTCOMMIT);
             transaction.commit();

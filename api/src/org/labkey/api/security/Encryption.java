@@ -26,9 +26,14 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.SiteSettingsAuditProvider.SiteSettingsAuditEvent;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.EncryptedPropertyStore;
 import org.labkey.api.data.NormalPropertyStore;
 import org.labkey.api.data.PropertyManager;
@@ -38,10 +43,14 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JobRunner;
+import org.labkey.api.util.LinkBuilder;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
@@ -50,6 +59,7 @@ import org.labkey.api.view.template.Warnings;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.GCMParameterSpec;
@@ -63,7 +73,10 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -109,9 +122,28 @@ public class Encryption
                     int count = DECRYPTION_EXCEPTIONS.get();
 
                     if (count > 0 || showAllWarnings)
+                    {
+                        final String who;
+                        final HasHtmlString link;
+                        if (context != null && context.getUser().hasSiteAdminPermission())
+                        {
+                            who = "you";
+                            link = LinkBuilder.simpleLink("this link", PageFlowUtil.urlProvider(AdminUrls.class).getDeleteEncryptedContentURL());
+                        }
+                        else
+                        {
+                            who = "a site administrator";
+                            link = HtmlStringBuilder.of("the \"delete encrypted content\" action");
+                        }
+
                         warnings.add(HtmlStringBuilder.of("On " + StringUtilsLabKey.pluralize(count, "attempt") +
-                            " the server failed to decrypt encrypted content using the " +
-                            ENCRYPTION_KEY_CHANGED + " " + KEY_CHANGE_GUIDANCE).append(getEncryptionKeyHelpLink()));
+                            ", the server failed to decrypt encrypted content using the " +
+                            ENCRYPTION_KEY_CHANGED + " " + KEY_CHANGE_GUIDANCE)
+                                .append(" If the previous encryption key has been lost, " + who + " can clear all encrypted content via ")
+                                .append(link)
+                                .append(". ")
+                                .append(getEncryptionKeyHelpLink()));
+                    }
                 }
             }
 
@@ -155,7 +187,7 @@ public class Encryption
     {
         if (passPhrase != null)
         {
-            LOG.info("Attempting to test the integrity of the " + keyDescription);
+            LOG.info("Attempting to test the integrity of the {}", keyDescription);
 
             try
             {
@@ -244,7 +276,7 @@ public class Encryption
 
     private static void logFailureGuidance()
     {
-        LOG.error(KEY_CHANGE_GUIDANCE + " For more information, see " + new HelpTopic("labkeyxml", "encrypt").getHelpTopicHref() + ".");
+        LOG.error("{} For more information, see {}.", KEY_CHANGE_GUIDANCE, new HelpTopic("labkeyxml", "encrypt").getHelpTopicHref());
     }
 
     private Encryption()
@@ -473,14 +505,32 @@ public class Encryption
                 cipher.init(Cipher.DECRYPT_MODE, _keySpec, _config.createIvSpec(iv));
                 return new String(cipher.doFinal(encrypted), StringUtilsLabKey.DEFAULT_CHARSET);
             }
-            catch (BadPaddingException e)
+            catch (BadPaddingException | IllegalBlockSizeException e)
             {
-                // For now, assume that BadPaddingException means the key has been changed and all other
-                // exceptions are coding issues. That might change in the future...
+                // Decryption failure - likely a bad key or old algorithm.
 
-                // Track all decryption exceptions that aren't caused by TestCase (below)
+                // Track all decryption exceptions that aren't caused by TestCase.
+                // Only the production AES instance (ENCRYPTION_KEY_CHANGED keySource) attempts the fallback;
+                // migration-temporary instances bypass this block entirely.
                 if (ENCRYPTION_KEY_CHANGED.equals(_keySource))
+                {
+                    // During migration, not-yet-migrated values are in the old format. If a fallback algorithm
+                    // is registered (set by prepareMigrationFallback() when migration is known to be incomplete),
+                    // try it before giving up.
+                    Algorithm fallback = _migrationFallback;
+                    if (fallback != null)
+                    {
+                        try
+                        {
+                            return fallback.decrypt(cipherText);
+                        }
+                        catch (RuntimeException ignored)
+                        {
+                            // Both algorithms failed; fall through to increment and rethrow
+                        }
+                    }
                     DECRYPTION_EXCEPTIONS.incrementAndGet();
+                }
 
                 throw new DecryptionException("Could not decrypt this content using the " + _keySource, e);
             }
@@ -493,6 +543,9 @@ public class Encryption
 
     private static final String ENCRYPTION_KEY_CHANGED = "currently configured EncryptionKey; has the key changed in " + AppProps.getInstance().getWebappConfigurationFilename() + "?";
     private static final AtomicInteger DECRYPTION_EXCEPTIONS = new AtomicInteger(0);
+    // Set by prepareMigrationFallback() when migration is known to be incomplete; cleared after migration completes.
+    // Allows HTTP requests to decrypt not-yet-migrated values without failing.
+    private static volatile Algorithm _migrationFallback = null;
 
     public static class DecryptionException extends ConfigurationException
     {
@@ -536,7 +589,44 @@ public class Encryption
             HANDLERS.add(handler);
         }
 
+        String getDescription();
+
         void migrateEncryptedContent(String oldPassPhrase, String keySource, AESConfig oldConfig);
+
+        void deleteEncryptedContent();
+    }
+
+    /**
+     * Examines the database to determine whether algorithm or key migration is pending, and if so installs a
+     * fallback algorithm. This allows HTTP requests to transparently decrypt not-yet-migrated values during the
+     * migration window instead of failing and incrementing DECRYPTION_EXCEPTIONS.
+     * Must be called after the database and PropertyManager are available (e.g., from CoreModule.afterUpdate()).
+     * The fallback is cleared automatically once checkMigration() confirms completion.
+     */
+    public static void prepareMigrationFallback()
+    {
+        if (!isEncryptionPassPhraseSpecified())
+            return;
+
+        String oldPassPhrase = getOldEncryptionPassPhrase();
+
+        String cipher = PropertyManager.getNormalStore()
+            .getProperties(ENCRYPTION_CIPHER_CATEGORY)
+            .get(CIPHER_PROPERTY);
+
+        if (oldPassPhrase != null)
+        {
+            // Key-change migration not yet complete; use old key. If cipher is also null, old content used the
+            // legacy cipher (matching what checkMigration() will use: old key + AESConfig.legacy); otherwise
+            // old content used the current cipher.
+            AESConfig fallbackConfig = cipher == null ? AESConfig.legacy : AESConfig.current;
+            _migrationFallback = new AES(oldPassPhrase, 128, "legacy key migration fallback", fallbackConfig);
+        }
+        else if (cipher == null)
+        {
+            // Cipher migration not yet complete; fall back to legacy cipher with current key
+            _migrationFallback = new AES(getEncryptionPassPhrase(), 128, "legacy cipher migration fallback", AESConfig.legacy);
+        }
     }
 
     public static void checkMigration()
@@ -547,6 +637,7 @@ public class Encryption
         if (isEncryptionPassPhraseSpecified() && ModuleLoader.getInstance().shouldInsertData())
         {
             boolean migrationNeeded = false;
+            boolean migrationSucceeded = false;
             String keySource = null;
 
             if (null != oldPassPhrase)
@@ -567,7 +658,7 @@ public class Encryption
             }
             else if (!cipher.equals(AESConfig.current.getCipherName()))
             {
-                LOG.error("Unexpected cipher configuration: " + cipher);
+                LOG.error("Unexpected cipher configuration: {}", cipher);
             }
 
             if (migrationNeeded)
@@ -587,20 +678,25 @@ public class Encryption
                 if (DECRYPTION_EXCEPTIONS.get() == 0)
                 {
                     Encryption.EncryptionMigrationHandler.HANDLERS
-                            .forEach(handler -> handler.migrateEncryptedContent(passPhrase, message, migrationConfig));
+                        .forEach(handler -> handler.migrateEncryptedContent(passPhrase, message, migrationConfig));
 
                     CacheManager.clearAllKnownCaches();
                 }
-                // Test to validate conversion and create a validation value if needed
+                // Test to validate conversion and create a validation value if needed.
+                // Capture the counter before the test so the save decision is based solely on whether
+                // this specific test passes, not on concurrent HTTP request decryption failures that may
+                // have incremented the counter during the (potentially long) migration of auth configurations.
+                int exceptionsBeforeFinalTest = DECRYPTION_EXCEPTIONS.get();
                 testEncryptionKey();
+                migrationSucceeded = DECRYPTION_EXCEPTIONS.get() == exceptionsBeforeFinalTest;
             }
 
-            if (DECRYPTION_EXCEPTIONS.get() == 0)
+            if (migrationSucceeded)
             {
                 if (oldPassPhrase != null)
                 {
                     LOG.info("Migration of all existing encrypted content from OldEncryptionKey to EncryptionKey is complete");
-                    LOG.info("IMPORTANT: Since migration is complete you should now remove the " + keySource);
+                    LOG.info("IMPORTANT: Since migration is complete you should now remove the {}", keySource);
                 }
                 if (cipher == null)
                 {
@@ -608,12 +704,62 @@ public class Encryption
                     cipherProps.save();
                     LOG.info("Migration from existing encrypted content from legacy AES configuration to current AES configuration is complete.");
                 }
+                DECRYPTION_EXCEPTIONS.set(0);
             }
         }
+
+        _migrationFallback = null;
     }
 
+    public static void deleteEncryptedContent(User user)
+    {
+        LOG.info("Deleting all encrypted content at the request of {}", user.getDisplayName(user));
+        List<String> descriptions = new LinkedList<>();
+        EncryptionMigrationHandler.HANDLERS
+            .forEach(encryptionMigrationHandler -> {
+                try
+                {
+                    encryptionMigrationHandler.deleteEncryptedContent();
+                    descriptions.add(encryptionMigrationHandler.getDescription().toLowerCase());
+                }
+                catch (Exception e)
+                {
+                    LOG.warn("Error while deleting encrypted content from {}", encryptionMigrationHandler.getDescription(), e);
+                }
+            });
+        SiteSettingsAuditEvent event = new SiteSettingsAuditEvent(ContainerManager.getRoot(), "All encrypted content was deleted");
+        final String changes;
+        if (!descriptions.isEmpty())
+            changes = "Deleted content: " + StringUtilsLabKey.joinWithConjunction(descriptions, "and");
+        else
+            changes = "All deletes failed";
+        event.setChanges(changes);
+        AuditLogService.get().addEvent(user, event);
+        CacheManager.clearAllKnownCaches();
+        // Reset the counter and clear the warnings
+        DECRYPTION_EXCEPTIONS.set(0);
+        WarningService.get().clearStaticWarnings();
+        LOG.info("Finished deleting all encrypted content");
+    }
 
-    private static final EncryptionMigrationHandler TEST_HANDLER = (oldPassPhrase, keySource, oldConfig) -> {};
+    private static final EncryptionMigrationHandler TEST_HANDLER = new EncryptionMigrationHandler()
+    {
+        @Override
+        public String getDescription()
+        {
+            return "Test";
+        }
+
+        @Override
+        public void migrateEncryptedContent(String oldPassPhrase, String keySource, AESConfig oldConfig)
+        {
+        }
+
+        @Override
+        public void deleteEncryptedContent()
+        {
+        }
+    };
 
     public static class TestCase extends Assert
     {
@@ -663,6 +809,55 @@ public class Encryption
             }
         }
 
+        @Test
+        public void testMigrationFallback()
+        {
+            String text = "test plaintext";
+            AES oldAlgorithm = new AES("old pass phrase", 128, "old algorithm");
+            byte[] oldEncrypted = oldAlgorithm.encrypt(text);
+
+            // Primary (production) instance: different pass phrase, keySource == ENCRYPTION_KEY_CHANGED
+            AES primary = new AES("primary pass phrase", 128, ENCRYPTION_KEY_CHANGED);
+
+            // Case 1: no fallback — primary fails and counter increments
+            int counterBefore = DECRYPTION_EXCEPTIONS.get();
+            try
+            {
+                primary.decrypt(oldEncrypted);
+                fail("Expected DecryptionException");
+            }
+            catch (DecryptionException ignored) {}
+            assertEquals(counterBefore + 1, DECRYPTION_EXCEPTIONS.get());
+
+            // Case 2: correct fallback — transparent success, counter unchanged
+            _migrationFallback = oldAlgorithm;
+            try
+            {
+                int counterBeforeFallback = DECRYPTION_EXCEPTIONS.get();
+                assertEquals(text, primary.decrypt(oldEncrypted));
+                assertEquals("Counter must not increment when fallback succeeds", counterBeforeFallback, DECRYPTION_EXCEPTIONS.get());
+            }
+            finally
+            {
+                _migrationFallback = null;
+            }
+
+            // Case 3: wrong fallback — both algorithms fail, counter increments
+            _migrationFallback = new AES("wrong pass phrase", 128, "wrong fallback");
+            int counterBeforeWrongFallback = DECRYPTION_EXCEPTIONS.get();
+            try
+            {
+                primary.decrypt(oldEncrypted);
+                fail("Expected DecryptionException");
+            }
+            catch (DecryptionException ignored) {}
+            finally
+            {
+                _migrationFallback = null;
+            }
+            assertEquals(counterBeforeWrongFallback + 1, DECRYPTION_EXCEPTIONS.get());
+        }
+
         private void test(Algorithm algorithm)
         {
             test(algorithm, algorithm);
@@ -672,6 +867,18 @@ public class Encryption
         {
             for (String test : new String[]{"foo", "bar", "this is some text I want to encrypt"})
                 assertEquals(test, decryptAlgorithm.decrypt(encryptAlgorithm.encrypt(test)));
+        }
+
+        @Test
+        public void testDeleteEncryptedContent()
+        {
+            // Simple test that ensures no exceptions are thrown and checks only that encrypted property sets are gone.
+            // Changes are not committed, so content is not actually deleted.
+            try (Transaction _ = DbScope.getLabKeyScope().ensureTransaction())
+            {
+                deleteEncryptedContent(TestContext.get().getUser());
+                assertEquals(0, new EncryptedPropertyStore().getEncryptedPropertySetCount());
+            }
         }
     }
 }

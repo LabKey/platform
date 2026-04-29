@@ -1,6 +1,7 @@
 ### **LabKey SQL Documentation**
 
 LabKey SQL is a unique SQL dialect that extends standard SQL functionality with features tailored for the LabKey Server platform, particularly for scientific data management.
+LabKey SQL only implements data read operations.  It does not support INSERT/UPDATE/DELETE, nor does it support creating or altering tables.
 
 -----
 
@@ -94,12 +95,13 @@ You can write queries that access data from different folders within the LabKey 
 LabKey SQL supports **parameterized queries** to improve security and reusability.
 
 * **Syntax:**
-  `PARAMETERS(param1, param2) SELECT * FROM table WHERE column = param1`
+  `PARAMETERS(param1 type, param2 type DEFAULT value) SELECT * FROM table WHERE column = param1`
 * **Functionality:**
-  The `PARAMETERS` keyword declares parameters that can be passed into the query.
+  The `PARAMETERS` keyword declares parameters that can be passed into the query.  If a DEFAULT is
+  not specified, the value will default to NULL.
 * **Example:** A query with two parameters, `MinTemp` and `MinWeight`:
   ```sql
-  PARAMETERS(MinTemp double, MinWeight double)
+  PARAMETERS(MinTemp double, MinWeight double DEFAULT 0.0)
   SELECT
     ParticipantID,
     temperature_C,

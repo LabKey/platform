@@ -38,6 +38,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CollectionUtils;
+import org.labkey.api.collections.DeltaTrackingMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
@@ -135,6 +136,7 @@ import org.labkey.api.security.RoleSet;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.impersonation.ImpersonationTestCase;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.AppPropsTestCase;
 import org.labkey.api.settings.BaseServerProperties;
@@ -171,6 +173,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.SvgUtil;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenanceStartupListener;
 import org.labkey.api.util.URIUtil;
@@ -383,6 +386,7 @@ public class ApiModule extends CodeOnlyModule
             DatabaseCache.TestCase.class,
             DateUtil.TestCase.class,
             DbScope.DialectTestCase.class,
+            DeltaTrackingMap.TestCase.class,
             DetailsURL.TestCase.class,
             DiskCachingDataIterator.DiskTestCase.class,
             EmailTemplate.TestCase.class,
@@ -398,6 +402,7 @@ public class ApiModule extends CodeOnlyModule
             FileUtil.TestCase.class,
             GenerateUniqueDataIterator.TestCase.class,
             HelpTopic.TestCase.class,
+            ImpersonationTestCase.class,
             InlineInClauseGenerator.TestCase.class,
             JSONDataLoader.HeaderMatchTest.class,
             JSONDataLoader.MetadataTest.class,
@@ -437,6 +442,7 @@ public class ApiModule extends CodeOnlyModule
             StringExpressionFactory.TestCase.class,
             StringUtilsLabKey.TestCase.class,
             SubfolderWriter.TestCase.class,
+            SvgUtil.TestCase.class,
             SwapQueue.TestCase.class,
             TSVMapWriter.Tests.class,
             TSVWriter.TestCase.class,

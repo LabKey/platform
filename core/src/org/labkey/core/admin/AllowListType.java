@@ -33,15 +33,17 @@ public enum AllowListType
             return HtmlString.unsafe("""
                 <div style="width: 700px">
                     <p>
-                        For security reasons, LabKey Server restricts the host names that can be used in returnUrl parameters.
+                        For security reasons, external redirects are restricted to the host names in this list.
                         By default, only redirects to the same LabKey instance are allowed.
-                        Other server host names must be configured below to allow them to be automatically redirected.
+                        Other server host names must be configured below to allow redirects to them.
                         For more information on the security concern, please refer to the
-                        <a href="https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html">OWASP cheat sheet</a>.
+                        <a href="https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html" target="owasp">OWASP cheat sheet</a>.
                     </p>
                     <p>
-                        Add allowed hosts based on the server name or IP address, as they will be referenced in returnUrl values.
-                        For example: www.myexternalhost.com or 1.2.3.4
+                        Add allowed hosts based on the server name or IP address, as they will be referenced in parameters
+                        such as returnUrl. An asterisk (*) follow by a dot acts as a wildcard that matches any leading
+                        subdomain for that host.
+                        Examples: www.myexternalhost.com, *.myexternalhost.com, or 1.2.3.4
                     </p>
                 </div>
                 """);
@@ -69,9 +71,32 @@ public enum AllowListType
             {
                 errors.addError(new LabKeyError("Redirect host name must not be blank."));
             }
-            else if (!AUTHORITY_VALIDATOR.isValidAuthority(host))
+            else
             {
-                errors.addError(new LabKeyError(String.format("Redirect host name %1$s is not formatted correctly", host)));
+                if (AUTHORITY_VALIDATOR.isValidAuthority(host))
+                {
+                    // Validate wildcard patterns
+                    int starCount = StringUtils.countMatches(host, '*');
+                    if (starCount > 0)
+                    {
+                        if (starCount > 1)
+                        {
+                            errors.addError(new LabKeyError(String.format("Redirect host name %1$s has multiple wildcard characters", host)));
+                        }
+                        else if (!host.startsWith("*."))
+                        {
+                            errors.addError(new LabKeyError(String.format("Redirect host name %1$s has an invalid wildcard. The pattern must start with \"*.\".", host)));
+                        }
+                        else if (StringUtils.countMatches(host, '.') < 2)
+                        {
+                            errors.addError(new LabKeyError(String.format("Redirect host name %1$s with wildcard is too short. The pattern must include at least two dots.", host)));
+                        }
+                    }
+                }
+                else
+                {
+                    errors.addError(new LabKeyError(String.format("Redirect host name %1$s is not a valid host name", host)));
+                }
             }
         }
 

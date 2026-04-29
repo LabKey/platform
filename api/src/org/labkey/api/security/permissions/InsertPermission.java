@@ -18,9 +18,7 @@ package org.labkey.api.security.permissions;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Describes the ability to add new objects to the system.
- * User: Dave
- * Date: Apr 27, 2009
+ * Provides the ability to add new objects to the system
  */
 public class InsertPermission extends AbstractPermission
 {

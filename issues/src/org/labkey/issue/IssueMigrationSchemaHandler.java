@@ -32,14 +32,26 @@ public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 
     private final Set<Integer> COPIED_ISSUE_IDS = new HashSet<>();
 
+    private boolean _filtered;
+
     public IssueMigrationSchemaHandler()
     {
         super(DbSchema.get(IssuesSchema.ISSUE_DEF_SCHEMA_NAME, DbSchemaType.Provisioned));
     }
 
     @Override
+    public void beforeSchema()
+    {
+        _filtered = false;
+    }
+
+    @Override
     public void afterTable(TableInfo sourceTable, TableInfo targetTable, SimpleFilter notCopiedFilter)
     {
+        // afterTable() is called only when rows are filtered (i.e., a DomainDataFilter is configured). Remember this so
+        // afterSchema() can clean up associated tables (or not).
+        _filtered = true;
+
         // Collect the issue IDs that were copied into the target table. We're assuming this set is much smaller than
         // the set of issues IDs that *weren't* copied.
         int startSize = COPIED_ISSUE_IDS.size();
@@ -59,23 +71,26 @@ public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     @Override
     public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
     {
-        LOG.info("{} were copied. Now deleting related issues, comments, and issues rows associated with all issues that were not copied.", StringUtilsLabKey.pluralize(COPIED_ISSUE_IDS.size(), "issue"));
+        if (_filtered)
+        {
+            LOG.info("{} were copied. Now deleting related issues, comments, and issues rows associated with all issues that were not copied.", StringUtilsLabKey.pluralize(COPIED_ISSUE_IDS.size(), "issue"));
 
-        // Delete all issues, comments, and related issues that were NOT copied
-        SimpleFilter deleteRelatedFilter = new SimpleFilter(
-            new InClause(FieldKey.fromParts("RelatedIssueId"), COPIED_ISSUE_IDS, false, true) // Negated
-        );
-        int deletedRowCount = Table.delete(IssuesSchema.getInstance().getTableInfoRelatedIssues(), deleteRelatedFilter);
-        LOG.info("   Deleted {} from RelatedIssues (RelatedIssueId)", StringUtilsLabKey.pluralize(deletedRowCount, "row"));
-        SimpleFilter deleteFilter = new SimpleFilter(
-            new InClause(FieldKey.fromParts("IssueId"), COPIED_ISSUE_IDS, false, true) // Negated
-        );
-        deletedRowCount = Table.delete(IssuesSchema.getInstance().getTableInfoRelatedIssues(), deleteFilter);
-        LOG.info("   Deleted {} from RelatedIssues (IssueId)", StringUtilsLabKey.pluralize(deletedRowCount, "row"));
-        deletedRowCount = Table.delete(IssuesSchema.getInstance().getTableInfoComments(), deleteFilter);
-        LOG.info("   Deleted {} from Comments", StringUtilsLabKey.pluralize(deletedRowCount, "row"));
-        deletedRowCount = Table.delete(IssuesSchema.getInstance().getTableInfoIssues(), deleteFilter);
-        LOG.info("   Deleted {} from Issues", StringUtilsLabKey.pluralize(deletedRowCount, "row"));
+            // Delete all issues, comments, and related issues that were NOT copied
+            SimpleFilter deleteRelatedFilter = new SimpleFilter(
+                new InClause(FieldKey.fromParts("RelatedIssueId"), COPIED_ISSUE_IDS, false, true) // Negated
+            );
+            int deletedRowCount = Table.delete(IssuesSchema.getInstance().getTableInfoRelatedIssues(), deleteRelatedFilter);
+            LOG.info("   Deleted {} from RelatedIssues (RelatedIssueId)", StringUtilsLabKey.pluralize(deletedRowCount, "row"));
+            SimpleFilter deleteFilter = new SimpleFilter(
+                new InClause(FieldKey.fromParts("IssueId"), COPIED_ISSUE_IDS, false, true) // Negated
+            );
+            deletedRowCount = Table.delete(IssuesSchema.getInstance().getTableInfoRelatedIssues(), deleteFilter);
+            LOG.info("   Deleted {} from RelatedIssues (IssueId)", StringUtilsLabKey.pluralize(deletedRowCount, "row"));
+            deletedRowCount = Table.delete(IssuesSchema.getInstance().getTableInfoComments(), deleteFilter);
+            LOG.info("   Deleted {} from Comments", StringUtilsLabKey.pluralize(deletedRowCount, "row"));
+            deletedRowCount = Table.delete(IssuesSchema.getInstance().getTableInfoIssues(), deleteFilter);
+            LOG.info("   Deleted {} from Issues", StringUtilsLabKey.pluralize(deletedRowCount, "row"));
+        }
     }
 
     @Override

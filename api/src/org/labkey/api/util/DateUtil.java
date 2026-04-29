@@ -1427,7 +1427,7 @@ Parse:
             return date;
         if (null == date)
             return time;
-        Date newDate = (Date)date.clone();
+        Date newDate = new Date(date.getTime());
         newDate.setHours(time.getHours());
         newDate.setMinutes(time.getMinutes());
         newDate.setSeconds(time.getSeconds());
@@ -1444,7 +1444,7 @@ Parse:
         int month = fullDate.getMonth();
         int date = fullDate.getDate();
 
-        return new Date(year, month, date);
+        return new java.sql.Date(year, month, date);
     }
 
     public static TimeZone getTimeZone()

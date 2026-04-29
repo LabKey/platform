@@ -26,8 +26,6 @@ import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.security.impersonation.ImpersonationContext;
-import org.labkey.api.security.impersonation.NotImpersonatingContext;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -54,7 +52,7 @@ import java.util.stream.Stream;
 public class LimitedUser extends ClonedUser
 {
     // Must be a named class to allow Jackson deserialization (e.g., Evaluation Content loads folder archives via the pipeline using AdminUser)
-    private static class LimitedUserImpersonatingContext extends NotImpersonatingContext
+    private static class LimitedUserImpersonatingContext extends NormalPermissionsContext
     {
         private final Set<Role> _roles;
 
@@ -99,7 +97,7 @@ public class LimitedUser extends ClonedUser
         @JsonProperty("_lastLogin") Date lastLogin,
         @JsonProperty("_phone") String phone,
         @JsonProperty("_lastActivity") Date lastActivity,
-        @JsonProperty("_impersonationContext") ImpersonationContext ctx
+        @JsonProperty("_impersonationContext") PermissionsContext ctx
     )
     {
         super(name, userId, displayName, firstName, lastName, active, lastLogin, phone, lastActivity, ctx);
