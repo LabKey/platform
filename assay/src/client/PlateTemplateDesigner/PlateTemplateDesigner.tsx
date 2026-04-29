@@ -122,6 +122,8 @@ export function PlateTemplateDesigner(): JSX.Element {
     const activeGroupRef = useRef<WellGroup | null>(null);
     activeGroupRef.current = activeGroup;
     const nextColorIndexRef = useRef(0);  // Monotonically increasing; never decrements on delete so colors stay unique
+    // Capture returnURL once at mount; handleSave strips query params via replaceState, so reading from the URL later would return null.
+    const returnURLRef = useRef(ActionURL.getParameter('returnUrl'));
 
     useEffect(() => {
         const templateName = ActionURL.getParameter('templateName');
@@ -325,7 +327,7 @@ export function PlateTemplateDesigner(): JSX.Element {
     }, [plate]);
 
     const navigateAway = useCallback(() => {
-        const returnURL = ActionURL.getParameter('returnURL') || ActionURL.getParameter('returnUrl');
+        const returnURL = returnURLRef.current;
         window.location.href = (returnURL && isSameOrigin(returnURL)) ? returnURL : ActionURL.buildURL('plate', 'plateList');
     }, []);
 

@@ -291,15 +291,17 @@ describe('GroupTypesPanel — delete group', () => {
 
     test('delete button calls onDeleteGroup when user confirms', async () => {
         const { props } = renderWithActiveGroup();
-        jest.spyOn(window, 'confirm').mockReturnValue(true);
         await userEvent.click(screen.getByRole('button', { name: 'Delete Group A' }));
+        // First click shows inline confirmation; click Yes to confirm
+        await userEvent.click(screen.getByRole('button', { name: 'Confirm delete Group A' }));
         expect(props.onDeleteGroup).toHaveBeenCalledWith(1);
     });
 
     test('delete button does not call onDeleteGroup when user cancels', async () => {
         const { props } = renderWithActiveGroup();
-        jest.spyOn(window, 'confirm').mockReturnValue(false);
         await userEvent.click(screen.getByRole('button', { name: 'Delete Group A' }));
+        // First click shows inline confirmation; click No to cancel
+        await userEvent.click(screen.getByRole('button', { name: 'Cancel delete Group A' }));
         expect(props.onDeleteGroup).not.toHaveBeenCalled();
     });
 });

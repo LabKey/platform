@@ -81,50 +81,53 @@ export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onC
     return (
         <dialog
             ref={dialogRef}
-            className="multi-create-dialog"
+            className="multi-create-dialog__overlay"
             aria-labelledby="multi-create-title"
+            onClick={onClose}
         >
-            <div id="multi-create-title" className="multi-create-dialog__title">Create Multiple Groups</div>
-            <div className="multi-create-dialog__form">
-                <div className="multi-create-dialog__field">
-                    <span id="multi-create-base-name-label" className="multi-create-dialog__label">Base Name</span>
-                    <input
-                        className="multi-create-dialog__input"
-                        type="text"
-                        aria-labelledby="multi-create-base-name-label"
-                        value={baseName}
-                        onChange={e => setBaseName(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') onClose(); }}
-                    />
-                </div>
-                <div className="multi-create-dialog__field">
-                    <span id="multi-create-count-label" className="multi-create-dialog__label">Count</span>
-                    <div className="multi-create-dialog__count-area">
+            <div className="multi-create-dialog" onClick={e => e.stopPropagation()}>
+                <div id="multi-create-title" className="multi-create-dialog__title">Create Multiple Groups</div>
+                <div className="multi-create-dialog__form">
+                    <div className="multi-create-dialog__field">
+                        <span id="multi-create-base-name-label" className="multi-create-dialog__label">Base Name</span>
                         <input
-                            className="multi-create-dialog__input multi-create-dialog__input--count"
-                            type="number"
-                            min="1"
-                            aria-labelledby="multi-create-count-label"
-                            aria-describedby={countError ? 'multi-create-count-error' : undefined}
-                            aria-invalid={!!countError}
-                            value={count}
-                            onChange={e => { setCount(e.target.value); setCountError(''); }}
+                            className="multi-create-dialog__input"
+                            type="text"
+                            aria-labelledby="multi-create-base-name-label"
+                            value={baseName}
+                            onChange={e => setBaseName(e.target.value)}
                             onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') onClose(); }}
                         />
-                        {countError && <div id="multi-create-count-error" className="multi-create-dialog__error">{countError}</div>}
                     </div>
-                </div>
-                <div className="multi-create-dialog__buttons">
-                    <button className="group-types-panel__add-btn" onClick={onClose}>
-                        Cancel
-                    </button>
-                    <button
-                        className="group-types-panel__add-btn group-types-panel__add-btn--primary"
-                        disabled={!baseName.trim()}
-                        onClick={handleCreate}
-                    >
-                        Create
-                    </button>
+                    <div className="multi-create-dialog__field">
+                        <span id="multi-create-count-label" className="multi-create-dialog__label">Count</span>
+                        <div className="multi-create-dialog__count-area">
+                            <input
+                                className="multi-create-dialog__input multi-create-dialog__input--count"
+                                type="number"
+                                min="1"
+                                aria-labelledby="multi-create-count-label"
+                                aria-describedby={countError ? 'multi-create-count-error' : undefined}
+                                aria-invalid={!!countError}
+                                value={count}
+                                onChange={e => { setCount(e.target.value); setCountError(''); }}
+                                onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') onClose(); }}
+                            />
+                            {countError && <div id="multi-create-count-error" className="multi-create-dialog__error">{countError}</div>}
+                        </div>
+                    </div>
+                    <div className="multi-create-dialog__buttons">
+                        <button className="group-types-panel__add-btn" onClick={onClose}>
+                            Cancel
+                        </button>
+                        <button
+                            className="group-types-panel__add-btn group-types-panel__add-btn--primary"
+                            disabled={!baseName.trim()}
+                            onClick={handleCreate}
+                        >
+                            Create
+                        </button>
+                    </div>
                 </div>
             </div>
         </dialog>

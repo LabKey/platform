@@ -203,7 +203,7 @@ export function GroupTypesPanel({
                 >
                     {type === activeTab && (
                         <>
-                            <div className="group-types-panel__groups" role="list" aria-label="Well groups">
+                            <div className="group-types-panel__groups" role="listbox" aria-label="Well groups">
                                 {groupsOfType.map(group => {
                                     const color = colorMap.get(group.rowId);
                                     const isActive = activeGroup?.rowId === group.rowId;
@@ -214,8 +214,8 @@ export function GroupTypesPanel({
                                                 className={classNames('group-types-panel__group', {
                                                     'group-types-panel__group--active': isActive,
                                                 })}
-                                                role="listitem"
-                                                aria-current={isActive ? true : undefined}
+                                                role="option"
+                                                aria-selected={isActive}
                                                 tabIndex={0}
                                                 onClick={() => { if (!isRenaming) onGroupSelect(group); }}
                                                 onKeyDown={e => {

@@ -85,7 +85,7 @@ describe('StatusBar', () => {
         });
 
         test('clicking Save & Close with empty name shows error and does not call onSaveAndClose', async () => {
-            const { onSaveAndClose } = renderStatusBar({ plateName: '' });
+            const { onSaveAndClose } = renderStatusBar({ plateName: '', isDirty: true });
             await userEvent.click(screen.getByRole('button', { name: /Save & Close/i }));
             expect(onSaveAndClose).not.toHaveBeenCalled();
             expect(screen.getByRole('alert')).toBeInTheDocument();

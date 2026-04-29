@@ -309,7 +309,11 @@ public class PlateController extends SpringActionController
 
                 List<Position> positions = new ArrayList<>();
                 for (PlatePosition p : gm.positions())
+                {
+                    if (p.row() < 0 || p.row() >= plate.getRows() || p.col() < 0 || p.col() >= plate.getColumns())
+                        throw new ValidationException("Position (" + p.row() + ", " + p.col() + ") is out of bounds for a " + plate.getRows() + " x " + plate.getColumns() + " plate.");
                     positions.add(plate.getPosition(p.row(), p.col()));
+                }
 
                 WellGroupImpl group;
                 if (updateExisting && gm.rowId() > 0)

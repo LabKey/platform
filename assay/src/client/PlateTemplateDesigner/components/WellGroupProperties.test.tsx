@@ -147,11 +147,8 @@ describe('WellGroupProperties', () => {
         });
     });
 
-    describe('known bug: inputs not reset when active group changes', () => {
-        // This documents the existing behavior where newKey/newValue are NOT reset
-        // when the active group prop changes (see review finding #15).
-        // The inputs retain their values across group switches until the component unmounts.
-        test('newKey input retains value when activeGroup prop changes', async () => {
+    describe('inputs reset when active group changes', () => {
+        test('newKey input is cleared when activeGroup prop changes', async () => {
             const group1 = makeGroup({ rowId: 1, name: 'Group 1' });
             const group2 = makeGroup({ rowId: 2, name: 'Group 2' });
             const { rerender } = render(
@@ -161,8 +158,7 @@ describe('WellGroupProperties', () => {
             rerender(
                 <WellGroupProperties activeGroup={group2} onPropertyChange={jest.fn()} onDeleteProperty={jest.fn()} />
             );
-            // Bug: input still shows the value from group1's editing session
-            expect(screen.getByLabelText('Property name')).toHaveValue('stale-key');
+            expect(screen.getByLabelText('Property name')).toHaveValue('');
         });
     });
 });
