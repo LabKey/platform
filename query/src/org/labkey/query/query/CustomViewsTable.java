@@ -2,8 +2,11 @@ package org.labkey.query.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -19,6 +22,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.query.QueryUserSchema;
@@ -26,6 +30,7 @@ import org.labkey.query.controllers.QueryController;
 import org.labkey.query.persist.QueryManager;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +68,7 @@ public class CustomViewsTable extends FilteredTable<QueryUserSchema>
         getMutableColumnOrThrow("ModifiedBy").setConceptURI(BuiltInColumnTypes.USERID_CONCEPT_URI);
         getMutableColumnOrThrow("Columns");
         getMutableColumnOrThrow("Filter");
+        getMutableColumnOrThrow("Flags").setDisplayColumnFactory(FlagDisplayColumn::new);
 
         setDefaultVisibleColumns(List.of(
                 FieldKey.fromParts("Schema"),
@@ -88,6 +94,32 @@ public class CustomViewsTable extends FilteredTable<QueryUserSchema>
     public QueryUpdateService getUpdateService()
     {
         return new CustomViewsUpdateService(this, QueryDbSchema.getInstance().getTableInfoCustomView());
+    }
+
+    public static class FlagDisplayColumn extends DataColumn
+    {
+        public FlagDisplayColumn(ColumnInfo col)
+        {
+            super(col);
+        }
+
+        @NotNull
+        @Override
+        public HtmlString getFormattedHtml(RenderContext ctx)
+        {
+            var value = getValue(ctx);
+            if (value instanceof Integer flag)
+            {
+                List<String> flags = new ArrayList<>();
+                if ((flag & QueryManager.FLAG_INHERITABLE) != 0)
+                    flags.add("inherit");
+                if ((flag & QueryManager.FLAG_HIDDEN) != 0)
+                    flags.add("hidden");
+
+                return HtmlString.of(String.join(", ", flags));
+            }
+            return super.getFormattedHtml(ctx);
+        }
     }
 
     protected static class CustomViewsUpdateService extends DefaultQueryUpdateService
