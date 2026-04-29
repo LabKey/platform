@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.property;
 
+import org.labkey.api.data.MultiChoice;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.util.SimpleTime;
 
@@ -44,7 +45,8 @@ public enum Type
     TimeType("Time", PropertyType.TIME.getTypeUri(), "time", Time.class, SimpleTime.class),
     DateTimeType("DateTime", "xsd:dateTime", "timestamp", Date.class, Timestamp.class, java.sql.Date.class),
     BooleanType("Boolean", "xsd:boolean", "boolean", Boolean.class, Boolean.TYPE),
-    AttachmentType("Attachment", "xsd:attachment", "varchar", String.class, File.class);
+    AttachmentType("Attachment", "xsd:attachment", "varchar", String.class, File.class),
+    MultiChoiceArrayType("MultiChoiceArray", "xsd:multichoicearray", "varchar", MultiChoice.Array.class);
 
     private final String label;
     private final String xsd;
