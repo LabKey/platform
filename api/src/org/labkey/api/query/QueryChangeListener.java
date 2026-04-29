@@ -369,14 +369,13 @@ public interface QueryChangeListener
             return filterStr;
 
         String valuePart = parts[1];
-        if (!valuePart.contains(ENCODED_SEMICOLON))
-            return filterStr;
 
-        if (valuePart.startsWith(JSON_ARRAY_FILTER_PREFIX) && valuePart.endsWith(JSON_ARRAY_FILTER_SUFFIX))
-            return filterStr;
-
+        boolean isJsonArrayFilterValue = valuePart.startsWith(JSON_ARRAY_FILTER_PREFIX) && valuePart.endsWith(JSON_ARRAY_FILTER_SUFFIX);
         // if the single value filter value contains ";", drop the filter after converting to array type filter since the filter value is no longer valid
-        return "";
+        if (!isJsonArrayFilterValue && valuePart.contains(ENCODED_SEMICOLON))
+            return "";
+
+        return filterStr;
     }
 
     static String getUpdatedFilterStrOnColumnTypeUpdate(String filterStr, String prefix, String columnName, @NotNull PropertyDescriptor oldType, @NotNull PropertyDescriptor newType)
