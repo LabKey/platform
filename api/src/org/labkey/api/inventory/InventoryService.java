@@ -52,6 +52,7 @@ public interface InventoryService
         StorageColSort,
         StorageComment,
         StorageLocation,
+        StorageTerminalLocation,
         StorageRow,
         StorageRowSort,
         StoragePositionNumber,
