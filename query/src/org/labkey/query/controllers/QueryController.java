@@ -90,7 +90,6 @@ import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.IntHashMap;
-import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
@@ -6327,66 +6326,6 @@ public class QueryController extends SpringActionController
 
     /** Minimalist, secret UI to help users recover if they've created a broken view somehow */
     @RequiresPermission(AdminPermission.class)
-    public class ManageViewsAction extends SimpleViewAction<QueryForm>
-    {
-        @SuppressWarnings("UnusedDeclaration")
-        public ManageViewsAction()
-        {
-        }
-
-        public ManageViewsAction(ViewContext ctx)
-        {
-            setViewContext(ctx);
-        }
-
-        @Override
-        public ModelAndView getView(QueryForm form, BindException errors)
-        {
-            return new JspView<>("/org/labkey/query/view/manageViews.jsp", form, errors);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            new BeginAction(getViewContext()).addNavTrail(root);
-            root.addChild("Manage Views", QueryController.this.getViewContext().getActionURL());
-        }
-    }
-
-
-    /** Minimalist, secret UI to help users recover if they've created a broken view somehow */
-    @RequiresPermission(AdminPermission.class)
-    public class InternalDeleteView extends ConfirmAction<InternalViewForm>
-    {
-        @Override
-        public ModelAndView getConfirmView(InternalViewForm form, BindException errors)
-        {
-            return new JspView<>("/org/labkey/query/view/internalDeleteView.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(InternalViewForm form, BindException errors)
-        {
-            CstmView view = form.getViewAndCheckPermission();
-            QueryManager.get().delete(getUser(), view);
-            return true;
-        }
-
-        @Override
-        public void validateCommand(InternalViewForm internalViewForm, Errors errors)
-        {
-        }
-
-        @Override
-        @NotNull
-        public ActionURL getSuccessURL(InternalViewForm internalViewForm)
-        {
-            return new ActionURL(ManageViewsAction.class, getContainer());
-        }
-    }
-
-    /** Minimalist, secret UI to help users recover if they've created a broken view somehow */
-    @RequiresPermission(AdminPermission.class)
     public class InternalSourceViewAction extends FormViewAction<InternalSourceViewForm>
     {
         @Override
@@ -6428,7 +6367,6 @@ public class QueryController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            new ManageViewsAction(getViewContext()).addNavTrail(root);
             root.addChild("Edit source of Grid View");
         }
     }
@@ -8600,8 +8538,6 @@ public class QueryController extends SpringActionController
                 new ManageRemoteConnectionsAction(),
                 new ReloadExternalSchemaAction(),
                 new ReloadAllUserSchemas(),
-                controller.new ManageViewsAction(),
-                controller.new InternalDeleteView(),
                 controller.new InternalSourceViewAction(),
                 controller.new InternalNewViewAction(),
                 new QueryExportAuditRedirectAction()
