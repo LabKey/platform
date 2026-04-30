@@ -1,7 +1,7 @@
 package org.labkey.devtools;
 
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedLinkedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -73,7 +73,6 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -750,19 +749,28 @@ public class ToolsController extends SpringActionController
         @Override
         public ModelAndView getView(OverlappingIndicesForm form, boolean reshow, BindException errors)
         {
-            MultiValuedMap<OverlapType, Overlap> multiMap = getOverlappingIndices(form);
+            ActionURL url = getViewContext().getActionURL().clone();
+
+            if (Boolean.TRUE.equals(form.clearCaches()))
+            {
+                CacheManager.clearAllKnownCaches();
+                url.deleteParameter("clearCaches");
+            }
+
+            MultiValuedMap<String, IndexChange> multiMap = getOverlappingIndices(form);
 
             return new VBox(
                 new HtmlView(DOM.createHtmlFragment(
-                    Arrays.stream(OverlapType.values()).flatMap(type ->
+                    multiMap.keySet().stream().flatMap(schemaName ->
                         Stream.of(
-                            type != OverlapType.UniqueOverlappingNonUnique ? BR() : null,
-                            DOM.STRONG(StringUtilsLabKey.pluralize(multiMap.get(type).size(), "index has ", "indices have ") + type.getDescription() + ":", BR()),
+                            BR(),
+                            DOM.STRONG("Schema ", LinkBuilder.simpleLink(schemaName, new ActionURL(OverlappingIndicesAction.class, getContainer()).addParameter("schemaName", schemaName)), " needs " + StringUtilsLabKey.pluralize(multiMap.get(schemaName).size(), "change") + ":", BR()),
                             DOM.TABLE(
-                                multiMap.get(type).stream()
-                                    .map(overlap -> DOM.TR(
-                                        DOM.TD(at(style, "width:120px;"), LinkBuilder.simpleLink(overlap.schemaName(), new ActionURL(OverlappingIndicesAction.class, getContainer()).addParameter("schemaName", overlap.schemaName()))),
-                                        DOM.TD(type.getMessage(overlap)),
+                                multiMap.get(schemaName).stream()
+                                    .sorted(Comparator.comparing(change -> change.table().getName()))
+                                    .map(change -> DOM.TR(
+                                        DOM.TD(at(style, "width:200px;"), change.table().getName()),
+                                        DOM.TD(change.description()),
                                         "\n"
                                     ))
                             )
@@ -771,10 +779,13 @@ public class ToolsController extends SpringActionController
                 )),
                 new HtmlView(DOM.createHtmlFragment(
                     BR(),
-                    new ButtonBuilder("Create SQL Scripts That Drop Overlapping Indices").href(getViewContext().getActionURL()).usePost())
-                )
+                    new ButtonBuilder("Create SQL Scripts That Drop Redundant Indices").href(url).usePost(),
+                    "  ",
+                    new ButtonBuilder("Clear Caches and Refresh").href(url.addParameter("clearCaches", true))
+                ))
             );
         }
+
 
         @Override
         public void addNavTrail(NavTree root)
@@ -786,17 +797,19 @@ public class ToolsController extends SpringActionController
         @Override
         public boolean handlePost(OverlappingIndicesForm form, BindException errors)
         {
-            MultiValuedMap<OverlapType, Overlap> multiMap = getOverlappingIndices(form);
+            MultiValuedMap<String, IndexChange> multiMap = getOverlappingIndices(form);
 
             try
             {
-                Arrays.stream(OverlapType.values()).forEach(type -> multiMap.get(type).forEach(overlap -> {
+                multiMap.keySet()
+                    .forEach(schemaName -> multiMap.get(schemaName).forEach(change -> {
                     try
                     {
                         // All writers are closed below
-                        WriterContext context = getWriterContext(overlap.schemaName());
-                        if (type.writeScript(context.getWriter(), overlap))
-                            context.setModified();
+                        WriterContext context = getWriterContext(schemaName);
+                        // TODO: Write script!!
+//                        if (type.writeScript(context.getWriter(), overlap))
+//                            context.setModified();
                     }
                     catch (IOException e)
                     {
@@ -921,14 +934,14 @@ public class ToolsController extends SpringActionController
         }
     }
 
-    public record OverlappingIndicesForm(String schemaName) {}
-    private record IndexChange(IndexDefinition index, ChangeType type, String description) {}
+    public record OverlappingIndicesForm(String schemaName, Boolean clearCaches) {}
+    public record IndexChange(TableInfo table, IndexDefinition index, ChangeType type, String description) {}
 
     protected static abstract class AbstractOverlappingIndicesAction extends FormViewAction<OverlappingIndicesForm>
     {
-        protected MultiValuedMap<OverlapType, Overlap> getOverlappingIndices(OverlappingIndicesForm form)
+        protected MultiValuedMap<String, IndexChange> getOverlappingIndices(OverlappingIndicesForm form)
         {
-            MultiValuedMap<OverlapType, Overlap> multiMap = new ArrayListValuedHashMap<>();
+            MultiValuedMap<String, IndexChange> multiMap = new ArrayListValuedLinkedHashMap<>();
             DbScope scope = DbScope.getLabKeyScope();
 
             ModuleLoader.getInstance().getModules().stream()
@@ -942,22 +955,25 @@ public class ToolsController extends SpringActionController
 
                     var changes = new LinkedList<IndexChange>();
 
-                    // Find the PK (if present), and drop all indexes that overlap with a smaller or equal column set
+                    // Step #1: Find the PK (if present), and drop all indices that overlap with a smaller or equal
+                    // column set. The third step below would take care of overlapping non-unique indices, so this is
+                    // mainly to drop unique indices that overlap with the PK.
                     indices.stream()
                         .filter(ix -> ix.indexType() == Primary)
                         .findFirst()
                         .ifPresent(pk -> indices.stream()
                             .filter(index -> overlaps(pk, index))
                             .forEach(index -> {
-                                changes.add(new IndexChange(index, ChangeType.Drop, String.format("Dropping %s because it overlaps with %s", index.display(), pk.display())));
+                                changes.add(new IndexChange(table, index, ChangeType.Drop, String.format("Dropping %s because it overlaps with %s", index.display(), pk.display())));
                             })
                         );
 
                     changes.forEach(change -> indices.remove(change.index()));
 
-                    Set<IndexDefinition> convertedUniqueIndexes = new HashSet<>();
+                    Set<IndexDefinition> convertedUniqueIndices = new HashSet<>();
 
-                    // For each unique index, switch it to a non-unique index if there's at least one UQ or PK that overlaps a smaller or equal column set
+                    // Step #2: For each unique index, switch it to a non-unique index if there's any UQ or PK that
+                    // overlaps with a smaller or equal column set.
                     indices.stream()
                         .filter(index -> index.indexType() == Unique)
                         .forEach(uq -> indices.stream()
@@ -965,31 +981,45 @@ public class ToolsController extends SpringActionController
                             .filter(index -> overlaps(uq, index))
                             .findFirst()
                             .ifPresent(index -> {
-                                changes.add(new IndexChange(uq, ChangeType.Convert, String.format("Converting %s to an INDEX because %s overlaps it with a smaller column set", uq.display(), index.display())));
-                                convertedUniqueIndexes.add(uq);
+                                changes.add(new IndexChange(table, uq, ChangeType.Convert, String.format("Converting %s to an INDEX because %s overlaps it with a smaller column set", uq.display(), index.display())));
+                                convertedUniqueIndices.add(uq);
                             })
                         );
 
-                    // For each IX and UQ, delete all other IXes that overlap with smaller or equal column set
+                    Set<IndexDefinition> droppedIndices = new HashSet<>();
+
+                    // Step #3: For each index (unique or non-unique), delete all other non-unique indices that overlap
+                    // with a smaller or equal column set.
                     indices.stream()
                         .filter(index -> index.indexType() != Primary)
                         .forEach(index -> indices.stream()
-                            .filter(ix -> ix.indexType() == NonUnique || convertedUniqueIndexes.contains(ix))
+                            .filter(ix -> ix.indexType() == NonUnique || convertedUniqueIndices.contains(ix))
                             .filter(ix -> overlaps(index, ix))
                             .forEach(ix -> {
                                 String description = String.format("Dropping %s because it overlaps with %s", ix.display(), index.display());
-                                if (convertedUniqueIndexes.contains(ix))
+                                if (convertedUniqueIndices.contains(ix))
                                 {
                                     LOG.info("I should remove {} from the changes and update the description", ix.display());
                                 }
-                                changes.add(new IndexChange(ix, ChangeType.Drop, description));
+                                changes.add(new IndexChange(table, ix, ChangeType.Drop, description));
+                                droppedIndices.add(ix);
+                                // TODO: filter out droppedIndices
                             })
                         );
 
-                    changes.forEach(change -> LOG.info("{}: {}", table.getSelectName(), change.description()));
+                    changes.forEach(change -> multiMap.put(change.table().getSchema().getName(), change));
                 });
 
+
+            //LOG.info("{}: {}", change.table().getSelectName(), change.description())
             return multiMap;
+
+            // TODO: Combine abstract + action
+            // TODO: Filter out dropped indices
+            // TODO: Create scripts
+            // TODO: implement & test convert -> drop sequence
+            // TODO: junit test
+            // TODO: Delete old overlap code
         }
 
         // Returns true if index2 has an overlapping column set that's equal to or smaller than index1's
@@ -1099,7 +1129,7 @@ public class ToolsController extends SpringActionController
                 return true;
             }
         },
-        UniqueOverlappingUnique("a column list that overlaps another index's column list at the start where both indexes are unique/pk")
+        UniqueOverlappingUnique("a column list that overlaps another index's column list at the start where both indices are unique/pk")
         {
             @Override
             boolean writeScript(Writer writer, Overlap overlap) throws IOException
@@ -1188,8 +1218,8 @@ public class ToolsController extends SpringActionController
 
     private record IndexKey(String schemaName, String indexName) {}
 
-    // Most, but not all, unique indexes are created by adding a unique constraint; in those cases, we need to drop
-    // the associated constraint. However, for explicitly created unique indexes, we need to drop the index instead.
+    // Most, but not all, unique indices are created by adding a unique constraint; in those cases, we need to drop
+    // the associated constraint. However, for explicitly created unique indices, we need to drop the index instead.
     // If this is a unique index associated with a constraint, return that constraint name. Otherwise, return null.
     private static @Nullable String getConstraintForIndex(String schemaName, String indexName)
     {
