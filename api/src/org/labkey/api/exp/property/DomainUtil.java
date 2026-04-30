@@ -48,7 +48,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
@@ -95,7 +94,6 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
-import org.labkey.data.xml.ConditionalFormatFilterType;
 import org.labkey.data.xml.ConditionalFormatType;
 import org.labkey.data.xml.TableType;
 
@@ -657,9 +655,7 @@ public class DomainUtil
                 gwtFormat.setStrikethrough(formatType.getStrikethrough());
                 gwtFormat.setTextColor(formatType.getTextColor());
                 gwtFormat.setBackgroundColor(formatType.getBackgroundColor());
-                for (ConditionalFormatFilterType filterType : formatType.getFilters().getFilterArray())
-                    gwtFormat.setFilter("format.column%7E" + filterType.getOperator().toString() + "=" + filterType.getValue());
-
+                gwtFormat.setFilter(ConditionalFormat.buildFilterQueryString(formatType.getFilters())); // GitHub Issue #1056
                 formats.add(gwtFormat);
             }
             gwtProp.setConditionalFormats(formats);
