@@ -228,7 +228,7 @@ public class GWTProtocol
     public void setProtocolTransformScripts(List<?> protocolTransformScripts)
     {
         if (!protocolTransformScripts.isEmpty()) {
-            Object first = protocolTransformScripts.get(0);
+            Object first = protocolTransformScripts.getFirst();
             if (first instanceof Map) {
                 handleMapTransformScripts((List<Map<String, Object>>) protocolTransformScripts);
             } else if (first instanceof String) {

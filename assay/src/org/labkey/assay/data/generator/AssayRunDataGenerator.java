@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.gwt.client.ui.PropertyType.SAMPLE_CONCEPT_URI;
+import static org.labkey.api.exp.PropertyType.SAMPLE_CONCEPT_URI;
 
 public class AssayRunDataGenerator extends DataGenerator<AssayRunDataGenerator.Config>
 {

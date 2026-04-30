@@ -16,6 +16,8 @@
 
 package org.labkey.api.gwt.client.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -261,6 +263,7 @@ public class GWTPropertyDescriptor
         return lookupIsValid;
     }
 
+    @JsonIgnore
     public boolean isSetMeasure()
     {
         return measure != null;
@@ -276,6 +279,7 @@ public class GWTPropertyDescriptor
         this.measure = isMeasure;
     }
 
+    @JsonIgnore
     public boolean isSetDimension()
     {
         return dimension != null;
@@ -306,16 +310,19 @@ public class GWTPropertyDescriptor
         this.defaultValueType = null==defaultValueType ? null : defaultValueType.name();
     }
 
+    @JsonProperty("PHI")
     public String getPHI()
     {
         return phi;
     }
 
+    @JsonProperty("PHI")
     public void setPHI(String phi)
     {
         this.phi = phi;
     }
 
+    @JsonIgnore
     public boolean isSetExcludeFromShifting()
     {
         return isExcludeFromShifting != null;
@@ -354,26 +361,31 @@ public class GWTPropertyDescriptor
         this.isPrimaryKey = isPrimaryKey;
     }
 
+    @JsonProperty("URL")
     public String getURL()
     {
         return url;
     }
 
+    @JsonProperty("URL")
     public void setURL(String url)
     {
         this.url = url;
     }
 
+    @JsonProperty("URLTarget")
     public String getURLTarget()
     {
         return urlTarget;
     }
 
+    @JsonProperty("URLTarget")
     public void setURLTarget(String urlTarget)
     {
         this.urlTarget = urlTarget;
     }
 
+    @JsonIgnore
     public String getLookupDescription()
     {
         if (StringUtils.isEmpty(getLookupSchema()) || StringUtils.isEmpty(getLookupQuery()))
@@ -388,6 +400,7 @@ public class GWTPropertyDescriptor
         return name + ": " + rangeURI;
     }
 
+    @JsonIgnore
     public boolean isFileType()
     {
         return "http://cpas.fhcrc.org/exp/xml#fileLink".equals(getRangeURI()) ||

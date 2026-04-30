@@ -40,9 +40,9 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -1041,7 +1041,7 @@ public class PublishResultsQueryView extends QueryView
         {
             //NOTE: the name of the assay PTID field might not always match ParticipantId.  this allows us to also
             //support PARTICIPANT_CONCEPT_URI
-            ColumnInfo ptidCol = selectColumns.stream().filter(c -> PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI())).findFirst().orElse(null);
+            ColumnInfo ptidCol = selectColumns.stream().filter(c -> org.labkey.api.exp.PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI())).findFirst().orElse(null);
             if (ptidCol != null)
                 linkedColumnMap.put(LinkToStudyKeys.ParticipantId, ptidCol);
         }

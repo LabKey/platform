@@ -209,11 +209,6 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor>
         return mandatoryPropertyDescriptorNames.contains(field.getName().toLowerCase());
     }
 
-    public boolean isEditable(FieldType field)
-    {
-        return true;
-    }
-
     /**
      * @return  Indicates that the property is not allowed to be set as PHI
      */

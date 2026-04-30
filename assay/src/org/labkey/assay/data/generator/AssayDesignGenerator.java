@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import static org.labkey.api.gwt.client.ui.PropertyType.SAMPLE_CONCEPT_URI;
+import static org.labkey.api.exp.PropertyType.SAMPLE_CONCEPT_URI;
 
 public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Config>
 {
