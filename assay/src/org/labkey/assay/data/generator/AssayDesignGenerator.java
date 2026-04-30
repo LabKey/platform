@@ -4,7 +4,6 @@ import org.labkey.api.assay.AssayDomainService;
 import org.labkey.api.data.generator.DataGenerator;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.gwt.client.assay.AssayException;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -28,7 +27,7 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
         super(job, config);
     }
 
-    public void generateAssayDesigns(String namePrefix) throws ValidationException, AssayException
+    public void generateAssayDesigns(String namePrefix) throws ValidationException
     {
         int numAssayDesigns = _config.getNumAssayDesigns();
         if (numAssayDesigns <= 0)
@@ -154,7 +153,7 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
     public static class Driver implements DataGenerationDriver
     {
         @Override
-        public List<CPUTimer> generateData(PipelineJob job, Properties properties) throws ValidationException, AssayException
+        public List<CPUTimer> generateData(PipelineJob job, Properties properties) throws ValidationException
         {
             AssayDesignGenerator generator = new AssayDesignGenerator(job, new AssayDesignGenerator.Config(properties));
             generator.generateAssayDesigns("Assay Design ");

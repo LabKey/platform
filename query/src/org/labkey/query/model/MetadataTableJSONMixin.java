@@ -1,11 +1,10 @@
 package org.labkey.query.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.labkey.api.gwt.client.util.StringProperty;
 
 public abstract class MetadataTableJSONMixin
 {
-    MetadataTableJSONMixin(@JsonProperty("URL") StringProperty url)
+    MetadataTableJSONMixin(@JsonProperty("URL") String url)
     { }
 
     @JsonProperty("URL")

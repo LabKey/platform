@@ -13,7 +13,6 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.gwt.client.assay.AssayException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
@@ -225,7 +224,7 @@ public class AssayRunDataGenerator extends DataGenerator<AssayRunDataGenerator.C
     public static class Driver implements DataGenerationDriver
     {
         @Override
-        public List<CPUTimer> generateData(PipelineJob job, Properties properties) throws ValidationException, AssayException, ExperimentException
+        public List<CPUTimer> generateData(PipelineJob job, Properties properties) throws ValidationException, ExperimentException
         {
             AssayRunDataGenerator generator = new AssayRunDataGenerator(job, new AssayRunDataGenerator.Config(properties));
             generator.generateAssayRunData();

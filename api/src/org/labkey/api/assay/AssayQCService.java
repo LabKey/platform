@@ -15,6 +15,7 @@
  */
 package org.labkey.api.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
@@ -25,7 +26,6 @@ import org.labkey.api.qc.DataState;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
 
-import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -55,7 +55,7 @@ public interface AssayQCService
     {
         if (!_providers.isEmpty())
         {
-            return _providers.get(0);
+            return _providers.getFirst();
         }
         return _defaultProvider;
     }
@@ -114,13 +114,13 @@ public interface AssayQCService
     void setDefaultDataImportState(Container container, DataState state);
 
     /**
-     * Gets/sets whether or not a blank state should be interpreted as public data or not
+     * Gets/sets whether a blank state should be interpreted as public data or not
      */
     boolean isBlankQCStatePublic(Container container);
     void setIsBlankQCStatePublic(Container container, boolean isPublic);
 
     /**
-     * Gets/sets whether or not a comment is required on a QC State change
+     * Gets/sets whether a comment is required on a QC State change
      */
     boolean isRequireCommentOnQCStateChange(Container container);
     void setRequireCommentOnQCStateChange(Container container, boolean requireCommentOnQCStateChange);
@@ -129,7 +129,7 @@ public interface AssayQCService
      * Returns the warnings view if the specified run has a current QC state associated with it
      */
     @Nullable
-    HttpView getAssayReImportWarningView(Container container, ExpRun run) throws ExperimentException;
+    HttpView<?> getAssayReImportWarningView(Container container, ExpRun run) throws ExperimentException;
 
     class DefaultQCService implements AssayQCService
     {
@@ -199,7 +199,7 @@ public interface AssayQCService
         }
 
         @Override
-        public @Nullable HttpView getAssayReImportWarningView(Container container, ExpRun run) throws ExperimentException
+        public @Nullable HttpView<?> getAssayReImportWarningView(Container container, ExpRun run)
         {
             return null;
         }

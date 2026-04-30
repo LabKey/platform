@@ -40,7 +40,6 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryKey;
@@ -1977,28 +1976,28 @@ abstract public class PipelineJob extends Job implements Serializable, Container
     {
         PipelineJob job1 = this;
         List<String> errors = new ArrayList<>();
-        if (!PropertyUtil.nullSafeEquals(job1._activeTaskId, job2._activeTaskId))
+        if (!com.google.api.client.util.Objects.equal(job1._activeTaskId, job2._activeTaskId))
             errors.add("_activeTaskId");
         if (job1._activeTaskRetries != job2._activeTaskRetries)
             errors.add("_activeTaskRetries");
-        if (!PropertyUtil.nullSafeEquals(job1._activeTaskStatus, job2._activeTaskStatus))
+        if (!com.google.api.client.util.Objects.equal(job1._activeTaskStatus, job2._activeTaskStatus))
             errors.add("_activeTaskStatus");
         if (job1._errors != job2._errors)
             errors.add("_errors");
         if (job1._interrupted != job2._interrupted)
             errors.add("_interrupted");
-        if (!PropertyUtil.nullSafeEquals(job1._jobGUID, job2._jobGUID))
+        if (!com.google.api.client.util.Objects.equal(job1._jobGUID, job2._jobGUID))
             errors.add("_jobGUID");
-        if (!PropertyUtil.nullSafeEquals(job1._logFile, job2._logFile))
+        if (!com.google.api.client.util.Objects.equal(job1._logFile, job2._logFile))
         {
             if (null == job1._logFile || null == job2._logFile)
                 errors.add("_logFile");
             else if (!FileUtil.getAbsoluteCaseSensitiveFile(job1._logFile.toFile()).getAbsolutePath().equalsIgnoreCase(FileUtil.getAbsoluteCaseSensitiveFile(job2._logFile.toFile()).getAbsolutePath()))
                 errors.add("_logFile");
         }
-        if (!PropertyUtil.nullSafeEquals(job1._parentGUID, job2._parentGUID))
+        if (!com.google.api.client.util.Objects.equal(job1._parentGUID, job2._parentGUID))
             errors.add("_parentGUID");
-        if (!PropertyUtil.nullSafeEquals(job1._provider, job2._provider))
+        if (!com.google.api.client.util.Objects.equal(job1._provider, job2._provider))
             errors.add("_provider");
         if (job1._submitted != job2._submitted)
             errors.add("_submitted");

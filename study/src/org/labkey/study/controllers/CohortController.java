@@ -15,6 +15,7 @@
  */
 package org.labkey.study.controllers;
 
+import com.google.api.client.util.Objects;
 import org.apache.commons.lang3.Strings;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -26,7 +27,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -427,7 +427,8 @@ public class CohortController extends BaseStudyController
 
                     boolean labelChanged = (newLabel != null && !cohort.getLabel().equals(newLabel));
                     boolean enrolledChanged = cohort.isEnrolled() != newEnrolled;
-                    boolean subjectCountChanged = !PropertyUtil.nullSafeEquals(cohort.getSubjectCount(), newSubjectCount);
+                    Object o1 = cohort.getSubjectCount();
+                    boolean subjectCountChanged = !Objects.equal(o1, newSubjectCount);
                     boolean desciprtionChanged = !Strings.CS.equals(cohort.getDescription(), newDescription);
 
                     if (labelChanged || enrolledChanged || subjectCountChanged || desciprtionChanged)
