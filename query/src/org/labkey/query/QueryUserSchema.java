@@ -46,6 +46,12 @@ public class QueryUserSchema extends UserSchema
             {
                 return new QueryUserSchema(schema.getUser(), schema.getContainer());
             }
+
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
+            {
+                return true;
+            }
         });
     }
 
