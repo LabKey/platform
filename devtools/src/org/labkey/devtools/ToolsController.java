@@ -3,6 +3,7 @@ package org.labkey.devtools;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormHandlerAction;
@@ -44,6 +45,7 @@ import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.vcs.Vcs;
 import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
@@ -77,6 +79,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +91,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.data.TableInfo.IndexType.NonUnique;
+import static org.labkey.api.data.TableInfo.IndexType.Primary;
+import static org.labkey.api.data.TableInfo.IndexType.Unique;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
@@ -96,6 +102,7 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 
 public class ToolsController extends SpringActionController
 {
+    private static final Logger LOG = LogHelper.getLogger(ToolsController.class, "Output from various tools");
     private static final ActionResolver RESOLVER = new DefaultActionResolver(ToolsController.class);
 
     public static final String NAME = "tools";
@@ -915,6 +922,7 @@ public class ToolsController extends SpringActionController
     }
 
     public record OverlappingIndicesForm(String schemaName) {}
+    private record IndexChange(IndexDefinition index, ChangeType type, String description) {}
 
     protected static abstract class AbstractOverlappingIndicesAction extends FormViewAction<OverlappingIndicesForm>
     {
@@ -930,48 +938,73 @@ public class ToolsController extends SpringActionController
                 .map(name -> scope.getSchema(name, DbSchemaType.Module))
                 .flatMap(schema -> schema.getTableNames().stream().map(schema::getTable))
                 .forEach(table -> {
-                    var indices = table.getAllIndices();
-                    indices.forEach(indexDef1 -> indices.forEach(indexDef2 -> {
-                        if (indexDef1 != indexDef2)
-                        {
-                            OverlapType type = overlap(indexDef1, indexDef2);
+                    var indices = new LinkedHashSet<>(table.getAllIndices());
 
-                            if (type != null)
-                            {
-                                if (type != OverlapType.Identical || !alreadySeen(indexDef1.name(), indexDef2.name()))
-                                    multiMap.put(type, new Overlap(table.getSchema().getName(), table.getName(), indexDef1, indexDef2));
-                            }
-                        }
-                    }));
+                    var changes = new LinkedList<IndexChange>();
+
+                    // Find the PK (if present), and drop all indexes that overlap with a smaller or equal column set
+                    indices.stream()
+                        .filter(ix -> ix.indexType() == Primary)
+                        .findFirst()
+                        .ifPresent(pk -> indices.stream()
+                            .filter(index -> overlaps(pk, index))
+                            .forEach(index -> {
+                                changes.add(new IndexChange(index, ChangeType.Drop, String.format("Dropping %s because it overlaps with %s", index.display(), pk.display())));
+                            })
+                        );
+
+                    changes.forEach(change -> indices.remove(change.index()));
+
+                    Set<IndexDefinition> convertedUniqueIndexes = new HashSet<>();
+
+                    // For each unique index, switch it to a non-unique index if there's at least one UQ or PK that overlaps a smaller or equal column set
+                    indices.stream()
+                        .filter(index -> index.indexType() == Unique)
+                        .forEach(uq -> indices.stream()
+                            .filter(index -> index.indexType() == Primary || index.indexType() == Unique)
+                            .filter(index -> overlaps(uq, index))
+                            .findFirst()
+                            .ifPresent(index -> {
+                                changes.add(new IndexChange(uq, ChangeType.Convert, String.format("Converting %s to an INDEX because %s overlaps it with a smaller column set", uq.display(), index.display())));
+                                convertedUniqueIndexes.add(uq);
+                            })
+                        );
+
+                    // For each IX and UQ, delete all other IXes that overlap with smaller or equal column set
+                    indices.stream()
+                        .filter(index -> index.indexType() != Primary)
+                        .forEach(index -> indices.stream()
+                            .filter(ix -> ix.indexType() == NonUnique || convertedUniqueIndexes.contains(ix))
+                            .filter(ix -> overlaps(index, ix))
+                            .forEach(ix -> {
+                                String description = String.format("Dropping %s because it overlaps with %s", ix.display(), index.display());
+                                if (convertedUniqueIndexes.contains(ix))
+                                {
+                                    LOG.info("I should remove {} from the changes and update the description", ix.display());
+                                }
+                                changes.add(new IndexChange(ix, ChangeType.Drop, description));
+                            })
+                        );
+
+                    changes.forEach(change -> LOG.info("{}: {}", table.getSelectName(), change.description()));
                 });
 
             return multiMap;
         }
 
-        private final Set<String> _alreadySeen = new HashSet<>();
-
-        // Keep track of the identical indexes we've seen so we don't repeat them for both directions
-        private boolean alreadySeen(String name1, String name2)
+        // Returns true if index2 has an overlapping column set that's equal to or smaller than index1's
+        private boolean overlaps(IndexDefinition index1, IndexDefinition index2)
         {
-            String key = name1.compareTo(name2) < 0 ? name1 + delim + name2 : name2 + delim + name1;
-            return !_alreadySeen.add(key);
-        }
+            boolean ret = false;
 
-        private @Nullable OverlapType overlap(IndexDefinition index1, IndexDefinition index2)
-        {
-            String key1 = getKey(index1.columns());
-            String key2 = getKey(index2.columns());
-            boolean sameFilterConditions = Objects.equals(index1.filterCondition(), index2.filterCondition());
-            if (key1.equals(key2))
-                return sameFilterConditions ? OverlapType.Identical : OverlapType.OverlappingWithDifferentFilter;
-            if (key2.startsWith(key1))
+            if (!index1.equals(index2) && Objects.equals(index1.filterCondition(), index2.filterCondition()))
             {
-                if (index2.indexType() == IndexType.NonUnique && (index1.indexType() == IndexType.Primary || index1.indexType() == IndexType.Unique))
-                    return OverlapType.UniqueOverlappingNonUnique;
-                else
-                    return sameFilterConditions ? OverlapType.Overlapping : OverlapType.OverlappingWithDifferentFilter;
+                String key1 = getKey(index1.columns());
+                String key2 = getKey(index2.columns());
+                ret = key1.startsWith(key2);
             }
-            return null;
+
+            return ret;
         }
 
         private final String delim = Character.toString(31); // Non-printing character that's very unlikely to be in a column name
@@ -985,6 +1018,12 @@ public class ToolsController extends SpringActionController
     }
 
     protected record Overlap(String schemaName, String tableName, IndexDefinition indexDef1, IndexDefinition indexDef2) {}
+
+    protected enum ChangeType
+    {
+        Drop,
+        Convert
+    }
 
     protected enum OverlapType
     {
@@ -1011,29 +1050,29 @@ public class ToolsController extends SpringActionController
             {
                 IndexType type1 = overlap.indexDef1.indexType();
                 IndexType type2 = overlap.indexDef2.indexType();
-                String dropIndex = null;
-                String otherIndex = null;
+                IndexDefinition dropIndex = null;
+                IndexDefinition otherIndex = null;
 
                 // Prefer to drop the non-PK, then prefer the non-unique, otherwise "drop" them both (let the human decide)
-                if (type1 == IndexType.Primary)
+                if (type1 == Primary)
                 {
-                    dropIndex = overlap.indexDef2.name();
-                    otherIndex = overlap.indexDef1.name();
+                    dropIndex = overlap.indexDef2;
+                    otherIndex = overlap.indexDef1;
                 }
-                else if (type2 == IndexType.Primary)
+                else if (type2 == Primary)
                 {
-                    dropIndex = overlap.indexDef1.name();
-                    otherIndex = overlap.indexDef2.name();
+                    dropIndex = overlap.indexDef1;
+                    otherIndex = overlap.indexDef2;
                 }
-                else if (type1 == IndexType.Unique && type2 == IndexType.NonUnique)
+                else if (type1 == Unique && type2 == IndexType.NonUnique)
                 {
-                    dropIndex = overlap.indexDef2.name();
-                    otherIndex = overlap.indexDef1.name();
+                    dropIndex = overlap.indexDef2;
+                    otherIndex = overlap.indexDef1;
                 }
-                else if (type2 == IndexType.Unique && type1 == IndexType.NonUnique)
+                else if (type2 == Unique && type1 == IndexType.NonUnique)
                 {
-                    dropIndex = overlap.indexDef1.name();
-                    otherIndex = overlap.indexDef2.name();
+                    dropIndex = overlap.indexDef1;
+                    otherIndex = overlap.indexDef2;
                 }
 
                 if (dropIndex != null)
@@ -1043,18 +1082,12 @@ public class ToolsController extends SpringActionController
                 else
                 {
                     writer.write("TODO: Human, please help!! You should drop only one of the following, but I couldn't decide which one:\n");
-                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexDef1.name(), overlap.indexDef2.name());
-                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexDef2.name(), overlap.indexDef1.name());
+                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexDef1, overlap.indexDef2);
+                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexDef2, overlap.indexDef1);
                     writer.write('\n');
                 }
 
                 return true;
-            }
-
-            @Override
-            String getMessage(Overlap overlap)
-            {
-                return overlap.indexDef1.name() + " vs. " + overlap.indexDef2.name() + ": " + join(overlap.indexDef1.columns());
             }
         },
         Overlapping("a column list that overlaps another index's column list at the start")
@@ -1062,7 +1095,46 @@ public class ToolsController extends SpringActionController
             @Override
             boolean writeScript(Writer writer, Overlap overlap) throws IOException
             {
-                dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexDef1.name(), overlap.indexDef2.name());
+                dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexDef1, overlap.indexDef2);
+                return true;
+            }
+        },
+        UniqueOverlappingUnique("a column list that overlaps another index's column list at the start where both indexes are unique/pk")
+        {
+            @Override
+            boolean writeScript(Writer writer, Overlap overlap) throws IOException
+            {
+                IndexType type1 = overlap.indexDef1.indexType();
+                IndexType type2 = overlap.indexDef2.indexType();
+                IndexDefinition dropIndex;
+                IndexDefinition otherIndex;
+
+                // Prefer to drop the non-PK, then prefer the non-unique, otherwise "drop" them both (let the human decide)
+                if (type1 == Primary)
+                {
+                    dropIndex = overlap.indexDef2;
+                    otherIndex = overlap.indexDef1;
+                }
+                else if (type2 == Primary)
+                {
+                    dropIndex = overlap.indexDef1;
+                    otherIndex = overlap.indexDef2;
+                }
+                else
+                {
+                    // Drop the unique index with fewer columns -- the extra columns are pointless
+                    if (overlap.indexDef2.columns().size() >= overlap.indexDef1.columns().size())
+                    {
+                        dropIndex = overlap.indexDef2;
+                        otherIndex = overlap.indexDef1;
+                    }
+                    else
+                    {
+                        dropIndex = overlap.indexDef1;
+                        otherIndex = overlap.indexDef2;
+                    }
+                }
+                dropIndex(writer, overlap.schemaName, overlap.tableName, dropIndex, otherIndex);
                 return true;
             }
         };
@@ -1084,25 +1156,33 @@ public class ToolsController extends SpringActionController
 
         String getMessage(Overlap overlap)
         {
-            return overlap.indexDef1.name() + " " + join(overlap.indexDef1.columns()) + " vs. " + overlap.indexDef2.name() + " " + join(overlap.indexDef2.columns());
+            return overlap.indexDef1.display() + " vs. " + overlap.indexDef2.display();
         }
 
-        protected List<String> join(List<ColumnInfo> cols)
+        protected void dropIndex(Writer writer, String schemaName, String tableName, IndexDefinition dropIndex, IndexDefinition otherIndex) throws IOException
         {
-            return cols.stream()
-                .map(ColumnInfo::getName)
-                .toList();
-        }
+            if (dropIndex.indexType() == Primary)
+                throw new IllegalStateException("Should never drop a PK!");
 
-        protected void dropIndex(Writer writer, String schemaName, String tableName, String dropIndex, String otherIndex) throws IOException
-        {
             SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
-            writer.write("-- This index overlaps with " + otherIndex + "\n");
+            writer.write("-- " + dropIndex.display() + " overlaps with " + otherIndex.display() + "\n");
 
             if (dialect.isPostgreSQL())
-                writer.write("DROP INDEX " + schemaName + "." + dropIndex + ";\n");
+            {
+                if (dropIndex.indexType() == Unique)
+                {
+                    String constraintName = getConstraintForIndex(schemaName, dropIndex.name());
+                    if (constraintName != null)
+                    {
+                        writer.write("ALTER TABLE " + schemaName + "." + tableName + " DROP CONSTRAINT " + constraintName + ";\n");
+                        return;
+                    }
+                }
+
+                writer.write("DROP INDEX " + schemaName + "." + dropIndex.name() + ";\n");
+            }
             else
-                writer.write("DROP INDEX " + dropIndex + " ON " + schemaName + "." + tableName + ";\n");
+                writer.write("DROP INDEX " + dropIndex.name() + " ON " + schemaName + "." + tableName + ";\n");
         }
     }
 
