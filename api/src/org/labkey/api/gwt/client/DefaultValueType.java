@@ -23,11 +23,8 @@ public enum DefaultValueType implements Serializable
     FIXED_NON_EDITABLE("Fixed value", "Fixed values cannot be edited by the user. This option is used to save fixed data with each inserted data row."),
     LAST_ENTERED("Last entered", "An editable default value will be entered for the user's first use of the form. During subsequent inserts, the user will see their last entered value as the default.");
 
-    private String _label;
-    private String _helpText;
-
-    // Needed for GWT serialization to work correctly, at least in dev mode
-    DefaultValueType() {}
+    private final String _label;
+    private final String _helpText;
 
     DefaultValueType(String label, String helpText)
     {

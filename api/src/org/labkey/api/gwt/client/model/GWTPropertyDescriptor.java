@@ -23,7 +23,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.LockedPropertyType;
-import org.labkey.api.gwt.client.ui.PropertyType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,51 +33,128 @@ import java.util.List;
 @EqualsAndHashCode
 public class GWTPropertyDescriptor
 {
+    @Setter
+    @Getter
     private int propertyId = 0;
+    @Setter
+    @Getter
     private String propertyURI;
+    @Setter
+    @Getter
     private String container;
+    @Setter
+    @Getter
     private String name;
+    @Setter
+    @Getter
     private String description;
+    @Setter
+    @Getter
     private String rangeURI = "http://www.w3.org/2001/XMLSchema#string";
+    @Setter
+    @Getter
     private String conceptURI;
+    @Setter
+    @Getter
     private String label;
+    @Setter
+    @Getter
     private String format;
+    @Setter
+    @Getter
     private boolean required = false;
+    @Setter
+    @Getter
     private boolean hidden = false;
+    @Getter
+    @Setter
     private String lookupContainer;
+    @Setter
+    @Getter
     private String lookupSchema;
+    @Setter
+    @Getter
     private String lookupQuery;
+    @Setter
     private boolean lookupIsValid = true;
     private String defaultValueType = null;
+    @Setter
+    @Getter
     private String defaultValue;
+    @Setter
+    @Getter
     private String defaultDisplayValue = "[none]";
+    @Setter
     private boolean mvEnabled = false;
+    @Setter
+    @Getter
     private String importAliases;
     private String url;
     private String urlTarget;
+    @Setter
+    @Getter
     private boolean shownInInsertView = true;
+    @Setter
+    @Getter
     private boolean shownInUpdateView = true;
+    @Setter
+    @Getter
     private boolean shownInDetailsView = true;
     private Boolean measure;
     private Boolean dimension;
+    @Setter
+    @Getter
     private boolean recommendedVariable = false;
+    @Setter
+    @Getter
     private String defaultScale = DefaultScaleType.LINEAR.name();
+    @Setter
+    @Getter
     private String facetingBehaviorType;
     private String phi = "NotPHI"; // Must match PHI.NotPHI and tableInfo.xsd enum PHIType.NotPHI
     private Boolean isExcludeFromShifting;
+    @Setter
     private boolean isPreventReordering = false;
+    @Setter
     private boolean isDisableEditing = false;
+    @Setter
+    @Getter
     private Integer scale = 4000;
+    @Setter
+    @Getter
     private String principalConceptCode;
+    @Setter
+    @Getter
     private String sourceOntology;
+    @Setter
+    @Getter
     private String conceptSubtree;
+    @Setter
+    @Getter
     private String conceptImportColumn;
+    @Setter
+    @Getter
     private String conceptLabelColumn;
+    @Setter
+    @Getter
     private String redactedText;
+    @Setter
+    @Getter
     private String derivationDataScope;
     private boolean isPrimaryKey = false;
+    /**
+     * -- SETTER --
+     * This method is for informational purpose only so that the client can identify column's locked type.
+     *  Setting lock type on a column via this method will not get preserved in the domain's table.
+     */
+    @Setter
+    @Getter
     private String lockType = LockedPropertyType.NotLocked.name();
+    @Setter
+    @Getter
     private boolean scannable = false;
+    @Setter
+    @Getter
     private String valueExpression;
 
     @Getter @Setter private List<GWTConditionalFormat> conditionalFormats = new ArrayList<>();
@@ -180,194 +256,9 @@ public class GWTPropertyDescriptor
         return new GWTPropertyDescriptor(this);
     }
 
-    public String getContainer()
-    {
-        return container;
-    }
-
-    public void setContainer(String container)
-    {
-        this.container = container;
-    }
-
-    public String getLookupContainer()
-    {
-        return lookupContainer;
-    }
-
-    public void setLookupContainer(String lookupContainer)
-    {
-        this.lookupContainer = lookupContainer;
-    }
-
-    public String getLookupSchema()
-    {
-        return lookupSchema;
-    }
-
-    public void setLookupSchema(String lookupSchema)
-    {
-        this.lookupSchema = lookupSchema;
-    }
-
-    public String getLookupQuery()
-    {
-        return lookupQuery;
-    }
-
-    public void setLookupQuery(String lookupQuery)
-    {
-        this.lookupQuery = lookupQuery;
-    }
-
     public boolean getLookupIsValid()
     {
         return lookupIsValid;
-    }
-
-    public void setLookupIsValid(boolean lookupIsValid)
-    {
-        this.lookupIsValid = lookupIsValid;
-    }
-
-    public int getPropertyId()
-    {
-        return propertyId;
-    }
-
-    public void setPropertyId(int rowId)
-    {
-        this.propertyId = rowId;
-    }
-
-    public String getPropertyURI()
-    {
-        return propertyURI;
-    }
-
-    public void setPropertyURI(String propertyURI)
-    {
-        this.propertyURI = propertyURI;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    public void setName(String name)
-    {
-        this.name = name;
-    }
-
-    public String getDescription()
-    {
-        return description;
-    }
-
-    public void setDescription(String description)
-    {
-        this.description = description;
-    }
-
-    public String getRangeURI()
-    {
-        return rangeURI;
-    }
-
-    public void setRangeURI(String dataTypeURI)
-    {
-        this.rangeURI = dataTypeURI;
-    }
-
-    public void guessMeasureAndDimension()
-    {
-        boolean plottableType = PropertyType.xsdInt.getURI().equals(getRangeURI()) ||
-                PropertyType.xsdDouble.getURI().equals(getRangeURI());
-        boolean isMeasure = plottableType && getLookupQuery() == null && !isHidden();
-        setMeasure(isMeasure);
-
-        setDimension(getLookupQuery() != null && !isHidden());
-    }
-
-    public String getConceptURI()
-    {
-        return conceptURI;
-    }
-
-    public void setConceptURI(String conceptURI)
-    {
-        this.conceptURI = conceptURI;
-    }
-
-    public String getLabel()
-    {
-        return label;
-    }
-
-    public void setLabel(String label)
-    {
-        this.label = label;
-    }
-
-    public String getFormat()
-    {
-        return format;
-    }
-
-    public void setFormat(String format)
-    {
-        this.format = format;
-    }
-
-    public boolean isRequired()
-    {
-        return required;
-    }
-
-    public void setRequired(boolean required)
-    {
-        this.required = required;
-    }
-
-    public boolean isHidden()
-    {
-        return hidden;
-    }
-
-    public void setHidden(boolean hidden)
-    {
-        this.hidden = hidden;
-    }
-
-    public boolean isShownInInsertView()
-    {
-        return shownInInsertView;
-    }
-
-    public void setShownInInsertView(boolean shown)
-    {
-        this.shownInInsertView = shown;
-    }
-
-    public boolean isShownInUpdateView()
-    {
-        return shownInUpdateView;
-    }
-
-    public void setShownInUpdateView(boolean shown)
-    {
-        this.shownInUpdateView = shown;
-    }
-
-    public boolean isShownInDetailsView()
-    {
-        return shownInDetailsView;
-    }
-
-    public void setShownInDetailsView(boolean shown)
-    {
-        this.shownInDetailsView = shown;
     }
 
     public boolean isSetMeasure()
@@ -400,34 +291,9 @@ public class GWTPropertyDescriptor
         this.dimension = isDimension;
     }
 
-    public boolean isRecommendedVariable()
-    {
-        return recommendedVariable;
-    }
-
-    public void setRecommendedVariable(boolean isRecommendedVariable)
-    {
-        this.recommendedVariable = isRecommendedVariable;
-    }
-
-    public String getDefaultScale()
-    {
-        return defaultScale;
-    }
-
-    public void setDefaultScale(String defaultScale)
-    {
-        this.defaultScale = defaultScale;
-    }
-
     public boolean getMvEnabled()
     {
         return mvEnabled;
-    }
-
-    public void setMvEnabled(boolean mvEnabled)
-    {
-        this.mvEnabled = mvEnabled;
     }
 
     public DefaultValueType getDefaultValueType()
@@ -438,36 +304,6 @@ public class GWTPropertyDescriptor
     public void setDefaultValueType(DefaultValueType defaultValueType)
     {
         this.defaultValueType = null==defaultValueType ? null : defaultValueType.name();
-    }
-
-    public String getDefaultValue()
-    {
-        return defaultValue;
-    }
-
-    public void setDefaultValue(String defaultValue)
-    {
-        this.defaultValue = defaultValue;
-    }
-
-    public String getDefaultDisplayValue()
-    {
-        return defaultDisplayValue;
-    }
-
-    public void setDefaultDisplayValue(String defaultDisplayValue)
-    {
-        this.defaultDisplayValue = defaultDisplayValue;
-    }
-
-    public String getFacetingBehaviorType()
-    {
-        return facetingBehaviorType;
-    }
-
-    public void setFacetingBehaviorType(String facetingBehavior)
-    {
-        this.facetingBehaviorType = facetingBehavior;
     }
 
     public String getPHI()
@@ -500,113 +336,9 @@ public class GWTPropertyDescriptor
         return isPreventReordering;
     }
 
-    public void setPreventReordering(boolean preventReordering)
-    {
-        this.isPreventReordering = preventReordering;
-    }
-
     public boolean getDisableEditing()
     {
         return isDisableEditing;
-    }
-
-    public void setDisableEditing(boolean disableEditing)
-    {
-        this.isDisableEditing = disableEditing;
-    }
-
-    public Integer getScale()
-    {
-        return scale;
-    }
-
-    public void setScale(Integer value)
-    {
-        this.scale = value;
-    }
-
-    public boolean isScannable()
-    {
-        return scannable;
-    }
-
-    public void setScannable(boolean scannable)
-    {
-        this.scannable = scannable;
-    }
-
-    public String getPrincipalConceptCode() { return principalConceptCode; }
-
-    public void setPrincipalConceptCode(String code) { this.principalConceptCode = code; }
-
-    public String getSourceOntology()
-    {
-        return sourceOntology;
-    }
-
-    public void setSourceOntology(String sourceOntology)
-    {
-        this.sourceOntology = sourceOntology;
-    }
-
-    public String getConceptSubtree()
-    {
-        return conceptSubtree;
-    }
-
-    public void setConceptSubtree(String path)
-    {
-        this.conceptSubtree = path;
-    }
-
-    public String getConceptImportColumn()
-    {
-        return conceptImportColumn;
-    }
-
-    public void setConceptImportColumn(String conceptImportColumn)
-    {
-        this.conceptImportColumn = conceptImportColumn;
-    }
-
-    public String getConceptLabelColumn()
-    {
-        return conceptLabelColumn;
-    }
-
-    public void setConceptLabelColumn(String conceptLabelColumn)
-    {
-        this.conceptLabelColumn = conceptLabelColumn;
-    }
-
-    public String getRedactedText()
-    {
-        return redactedText;
-    }
-
-    public void setRedactedText(String redactedText)
-    {
-        this.redactedText = redactedText;
-    }
-
-    public String getDerivationDataScope()
-    {
-        return derivationDataScope;
-    }
-
-    public void setDerivationDataScope(String derivationDataScope)
-    {
-        this.derivationDataScope = derivationDataScope;
-    }
-
-    public String getValueExpression()
-    {
-        return valueExpression;
-    }
-
-    public void setValueExpression(String valueExpression)
-    {
-        this.valueExpression = valueExpression;
     }
 
     public boolean getIsPrimaryKey()
@@ -620,34 +352,6 @@ public class GWTPropertyDescriptor
     public void setIsPrimaryKey(boolean isPrimaryKey)
     {
         this.isPrimaryKey = isPrimaryKey;
-    }
-
-    public String getLockType()
-    {
-        return lockType;
-    }
-
-    /** This method is for informational purpose only so that the client can identify column's locked type.
-     * Setting lock type on a column via this method will not get preserved in the domain's table.
-     */
-    public void setLockType(String lockType)
-    {
-        this.lockType = lockType;
-    }
-
-    public String debugString()
-    {
-        return getName() + " " + getLabel() + " " + getRangeURI() + " " + isRequired() + " " + getDescription();
-    }
-
-    public String getImportAliases()
-    {
-        return importAliases;
-    }
-
-    public void setImportAliases(String importAliases)
-    {
-        this.importAliases = importAliases;
     }
 
     public String getURL()

@@ -32,8 +32,6 @@ public enum FacetingBehaviorType
     private final String _label;
     private final String _helpText;
 
-    private static String _helpPopupHtml;
-
     FacetingBehaviorType(String label, String helpText)
     {
         _label = label;
@@ -48,22 +46,5 @@ public enum FacetingBehaviorType
     public String getHelpText()
     {
         return _helpText;
-    }
-
-    public static String getHelpPopupHtml()
-    {
-        if (_helpPopupHtml == null)
-        {
-            StringBuilder helpString = new StringBuilder();
-            for (int i = 0; i < values().length; i++)
-            {
-                FacetingBehaviorType type = values()[i];
-                helpString.append("<b>").append(type.getLabel()).append("</b>: ").append(type.getHelpText());
-                if (i < values().length - 1)
-                    helpString.append("<br><br>");
-            }
-            _helpPopupHtml = helpString.toString();
-        }
-        return _helpPopupHtml;
     }
 }

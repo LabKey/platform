@@ -16,9 +16,7 @@
 
 package org.labkey.api.gwt.client.ui;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -102,18 +100,6 @@ public enum PropertyType
         return _lookup;
     }
 
-    public static PropertyType fromURI(String uri)
-    {
-        for (PropertyType propertyType : values())
-        {
-            if (propertyType.getURI().equals(uri))
-            {
-                return propertyType;
-            }
-        }
-        return null;
-    }
-
     public static PropertyType fromName(String type)
     {
         PropertyType t = synonyms.get(type);
@@ -152,10 +138,5 @@ public enum PropertyType
 
         synonyms.put("bool", xsdBoolean);
         synonyms.put("xsd:boolean", xsdBoolean);
-    }
-
-    public static List<PropertyType> getBaseTypes()
-    {
-        return Arrays.asList(xsdString, expMultiLine, xsdBoolean, xsdInt, xsdDouble, xsdDateTime);
     }
 }

@@ -45,7 +45,9 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor>
     @Getter @Setter private boolean allowUniqueConstraintProperties;
     @Getter @Setter private boolean allowCalculatedFields;
     @Getter @Setter private boolean showDefaultValueSettings;
+    @Getter
     private DefaultValueType defaultDefaultValueType = null;
+    @Getter
     private DefaultValueType[] defaultValueOptions = new DefaultValueType[0];
     private List<FieldType> fields = new ArrayList<>();
     private List<FieldType> standardFields = null;
@@ -55,9 +57,13 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor>
     @Getter
     private String defaultValuesURL = null;
     private Set<String> mandatoryPropertyDescriptorNames = new HashSet<>();
+    @Getter
     private Set<String> reservedFieldNames = new HashSet<>();
+    @Getter
     private Set<String> reservedFieldNamePrefixes = new HashSet<>();
+    @Getter
     private Set<String> phiNotAllowedFieldNames = new HashSet<>();
+    @Getter
     private Set<String> excludeFromExportFieldNames = new HashSet<>();
     @Getter @Setter private boolean provisioned = false;
     @Getter @Setter private List<String> disabledSystemFields;
@@ -238,11 +244,6 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor>
         return Collections.unmodifiableSet(this.mandatoryPropertyDescriptorNames);
     }
 
-    public Set<String> getReservedFieldNames()
-    {
-        return reservedFieldNames;
-    }
-
     /**
      *  @param reservedFieldNames can't create new fields with these names
      */
@@ -253,11 +254,6 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor>
         {
             this.reservedFieldNames.add(s.toLowerCase());
         }
-    }
-
-    public Set<String> getReservedFieldNamePrefixes()
-    {
-        return this.reservedFieldNamePrefixes;
     }
 
     public void setReservedFieldNamePrefixes(Set<String> prefixes)
@@ -277,11 +273,6 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor>
         }
     }
 
-    public Set<String> getExcludeFromExportFieldNames()
-    {
-        return excludeFromExportFieldNames;
-    }
-
     public boolean isExcludeFromExportField(FieldType field)
     {
         if (excludeFromExportFieldNames == null || field.getName() == null)
@@ -291,11 +282,6 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor>
         return excludeFromExportFieldNames.contains(field.getName().toLowerCase());
     }
 
-    public Set<String> getPhiNotAllowedFieldNames()
-    {
-        return phiNotAllowedFieldNames;
-    }
-
     public void setPhiNotAllowedFieldNames(Set<String> phiNotAllowedFieldNames)
     {
         this.phiNotAllowedFieldNames = new HashSet<>();
@@ -303,16 +289,6 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor>
         {
             this.phiNotAllowedFieldNames.add(fieldName.toLowerCase());
         }
-    }
-
-    public DefaultValueType getDefaultDefaultValueType()
-    {
-        return defaultDefaultValueType;
-    }
-
-    public DefaultValueType[] getDefaultValueOptions()
-    {
-        return defaultValueOptions;
     }
 
     public void setDefaultValueOptions(DefaultValueType[] defaultOptions, DefaultValueType defaultDefault)
