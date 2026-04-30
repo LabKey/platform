@@ -46,7 +46,6 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
@@ -656,7 +655,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     // ignore
                 }
 
-                if (!user.hasRootPermission(TroubleshooterPermission.class))
+                if (!user.isTroubleshooter())
                 {
                     if (HttpUtil.isApiLike(request, action))
                     {
