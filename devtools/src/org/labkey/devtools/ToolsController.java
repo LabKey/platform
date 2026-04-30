@@ -810,9 +810,6 @@ public class ToolsController extends SpringActionController
                     .forEach(schemaName -> multiMap.get(schemaName).forEach(change -> {
                         try
                         {
-                            if (change.index().indexType() == Primary)
-                                throw new IllegalStateException("Should not be trying to modify a PK! (" + change + ")");
-
                             // All writers are closed below in the finally
                             WriterContext context = getWriterContext(schemaName);
                             change.type().writeScript(context.getWriter(), change);
@@ -832,6 +829,17 @@ public class ToolsController extends SpringActionController
             return true;
         }
 
+        @Override
+        public void validateCommand(OverlappingIndicesForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public URLHelper getSuccessURL(OverlappingIndicesForm form)
+        {
+            return new ActionURL(OverlappingIndicesAction.class, getContainer());
+        }
+
         private MultiValuedMap<String, IndexChange> getOverlappingIndices(OverlappingIndicesForm form)
         {
             MultiValuedMap<String, IndexChange> multiMap = new ArrayListValuedLinkedHashMap<>();
@@ -839,7 +847,7 @@ public class ToolsController extends SpringActionController
 
             ModuleLoader.getInstance().getModules().stream()
                 .flatMap(module -> module.getSchemaNames().stream().filter(name -> !module.getProvisionedSchemaNames().contains(name)))
-                .filter(schemaName -> form.schemaName() == null || schemaName.equals(form.schemaName()))
+                .filter(schemaName -> form.schemaName() == null || schemaName.equalsIgnoreCase(form.schemaName()))
                 .sorted(String.CASE_INSENSITIVE_ORDER)
                 .map(name -> scope.getSchema(name, DbSchemaType.Module))
                 .flatMap(schema -> schema.getTableNames().stream().map(schema::getTable))
@@ -857,7 +865,7 @@ public class ToolsController extends SpringActionController
                         .ifPresent(pk -> indices.stream()
                             .filter(index -> overlaps(pk, index))
                             .forEach(index -> {
-                                changes.add(new IndexChange(table, index, ChangeType.Drop, String.format("Dropping %s because it overlaps with %s", index.display(), pk.display())));
+                                changes.add(new IndexChange(table, index, ChangeType.Drop, getDropDescription(index, pk)));
                                 droppedIndices.add(index);
                             })
                         );
@@ -873,7 +881,7 @@ public class ToolsController extends SpringActionController
                             .filter(index -> overlaps(uq, index))
                             .findFirst()
                             .ifPresent(index -> {
-                                changes.add(new IndexChange(table, uq, ChangeType.Convert, String.format("Converting %s to an INDEX because %s overlaps it with a smaller column set", uq.display(), index.display())));
+                                changes.add(new IndexChange(table, uq, ChangeType.Convert, String.format("Converting %s from unique to non-unique index because %s overlaps it with a smaller column set", uq.display(), index.display())));
                                 convertedUniqueIndices.add(uq);
                             })
                         );
@@ -886,10 +894,10 @@ public class ToolsController extends SpringActionController
                             .filter(ix -> ix.indexType() == NonUnique || convertedUniqueIndices.contains(ix))
                             .filter(ix -> overlaps(index, ix))
                             .forEach(ix -> {
-                                String description = String.format("Dropping %s because it overlaps with %s", ix.display(), index.display());
+                                String description = getDropDescription(ix, index);
                                 if (convertedUniqueIndices.contains(ix))
                                 {
-                                    LOG.info("I should remove {} from the changes and update the description", ix.display());
+                                    throw new IllegalStateException("Dropping an index that's been converted to non-unique is not yet supported");
                                 }
                                 changes.add(new IndexChange(table, ix, ChangeType.Drop, description));
                                 droppedIndices.add(ix);
@@ -901,16 +909,20 @@ public class ToolsController extends SpringActionController
 
             return multiMap;
 
-            // TODO: Create script to convert UQ -> IX
-            // TODO: implement & test convert -> drop sequence
             // TODO: junit test
-            // TODO: Warn in description if column lists and types are identical
         }
 
         // Helper that filters out the dropped indices
         private Stream<IndexDefinition> streamIndices(Set<IndexDefinition> indices, Set<IndexDefinition> droppedIndices)
         {
             return indices.stream().filter(index -> !droppedIndices.contains(index));
+        }
+
+        private String getDropDescription(IndexDefinition dropIndex, IndexDefinition otherIndex)
+        {
+            String warning = dropIndex.indexType() == otherIndex.indexType() && dropIndex.columns().size() == otherIndex.columns().size() ?
+                ". Note: You may want to drop " + otherIndex.display() + " instead!!" : "";
+            return String.format("Dropping %s because it overlaps with %s", dropIndex.display(), otherIndex.display()) + warning;
         }
 
         // Returns true if index2 has an overlapping column set that's equal to or smaller than index1's
@@ -1031,17 +1043,6 @@ public class ToolsController extends SpringActionController
                 }
             });
         }
-
-        @Override
-        public void validateCommand(OverlappingIndicesForm form, Errors errors)
-        {
-        }
-
-        @Override
-        public URLHelper getSuccessURL(OverlappingIndicesForm form)
-        {
-            return new ActionURL(BeginAction.class, getContainer());
-        }
     }
 
     protected enum ChangeType
@@ -1049,12 +1050,8 @@ public class ToolsController extends SpringActionController
         Drop
         {
             @Override
-            void writeScript(Writer writer, IndexChange change) throws IOException
+            void writeScript(Writer writer, IndexChange change, String schemaName, String tableName, IndexDefinition dropIndex) throws IOException
             {
-                IndexDefinition dropIndex = change.index();
-                String schemaName = change.table().getSchema().getName();
-                String tableName = change.table().getName();
-
                 writer.write("-- " + change.description() + "\n");
 
                 if (DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL())
@@ -1078,13 +1075,26 @@ public class ToolsController extends SpringActionController
         Convert
         {
             @Override
-            void writeScript(Writer writer, IndexChange change) throws IOException
+            void writeScript(Writer writer, IndexChange change, String schemaName, String tableName, IndexDefinition changeIndex) throws IOException
             {
-                writer.write("I don't know how to do this yet!!");
+                Drop.writeScript(writer, change);
+                String indexName = changeIndex.name().replace("uq", "ix").replace("unique", "index");
+                writer.write("CREATE INDEX " + indexName + " ON " + schemaName + "." + tableName + "(" + changeIndex.columns().stream().map(ColumnInfo::getName).collect(Collectors.joining(", ")) + ");\n");
             }
         };
 
-        abstract void writeScript(Writer writer, IndexChange change) throws IOException;
+        final void writeScript(Writer writer, IndexChange change) throws IOException
+        {
+            TableInfo table = change.table();
+            IndexDefinition index = change.index();
+
+            if (index.indexType() == Primary)
+                throw new IllegalStateException("Should not be trying to modify a PK! (" + change + ")");
+
+            writeScript(writer, change, table.getSchema().getName(), table.getName(), index);
+        }
+
+        abstract void writeScript(Writer writer, IndexChange change, String schemaName, String tableName, IndexDefinition index) throws IOException;
     }
 
     private record IndexKey(String schemaName, String indexName) {}
