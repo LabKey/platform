@@ -48,11 +48,13 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof GroupTypesPa
         activeGroup: null,
         activeTab: 'SPECIMEN',
         colorMap: new Map<number, string>(),
+        hoveredWellGroupId: null as number | null,
         onGroupSelect: jest.fn(),
         onTabChange: jest.fn(),
         onAddGroup: jest.fn(),
         onDeleteGroup: jest.fn(),
         onRenameGroup: jest.fn(),
+        onGroupHover: jest.fn(),
         ...overrides,
     };
     const result = render(<GroupTypesPanel {...props} />);
@@ -336,5 +338,72 @@ describe('GroupTypesPanel — multi-create dialog', () => {
         expect(screen.getByRole('dialog')).toBeInTheDocument();
         await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }));
         expect(screen.queryByRole('dialog')).toBeNull();
+    });
+});
+
+describe('GroupTypesPanel — group hover (onGroupHover)', () => {
+    test('mousing into a group row calls onGroupHover with that group rowId', () => {
+        const group = makeGroup({ rowId: 1, name: 'Group A' });
+        const { props } = renderPanel({
+            plate: makePlate({ groups: [group] }),
+        });
+        fireEvent.mouseEnter(screen.getByRole('option', { name: 'Group A' }));
+        expect(props.onGroupHover).toHaveBeenCalledWith(1);
+    });
+
+    test('mousing out of the group list calls onGroupHover with null', () => {
+        const group = makeGroup({ rowId: 1, name: 'Group A' });
+        const { props } = renderPanel({
+            plate: makePlate({ groups: [group] }),
+        });
+        fireEvent.mouseLeave(screen.getByRole('listbox', { name: 'Well groups' }));
+        expect(props.onGroupHover).toHaveBeenCalledWith(null);
+    });
+});
+
+describe('GroupTypesPanel — well-hover highlighting (hoveredWellGroupId)', () => {
+    test('group row receives --highlighted class when hoveredWellGroupId matches its rowId', () => {
+        const group = makeGroup({ rowId: 1, name: 'Group A' });
+        renderPanel({
+            plate: makePlate({ groups: [group] }),
+            hoveredWellGroupId: 1,
+        });
+        expect(screen.getByRole('option', { name: 'Group A' })).toHaveClass(
+            'group-types-panel__group--highlighted'
+        );
+    });
+
+    test('group row does not receive --highlighted class when hoveredWellGroupId is null', () => {
+        const group = makeGroup({ rowId: 1, name: 'Group A' });
+        renderPanel({
+            plate: makePlate({ groups: [group] }),
+            hoveredWellGroupId: null,
+        });
+        expect(screen.getByRole('option', { name: 'Group A' })).not.toHaveClass(
+            'group-types-panel__group--highlighted'
+        );
+    });
+
+    test('group row does not receive --highlighted class when hoveredWellGroupId is a different rowId', () => {
+        const group = makeGroup({ rowId: 1, name: 'Group A' });
+        renderPanel({
+            plate: makePlate({ groups: [group] }),
+            hoveredWellGroupId: 99,
+        });
+        expect(screen.getByRole('option', { name: 'Group A' })).not.toHaveClass(
+            'group-types-panel__group--highlighted'
+        );
+    });
+
+    test('active group does not receive --highlighted class even when its rowId matches hoveredWellGroupId', () => {
+        const group = makeGroup({ rowId: 1, name: 'Group A' });
+        renderPanel({
+            plate: makePlate({ groups: [group] }),
+            activeGroup: group,
+            hoveredWellGroupId: 1,
+        });
+        const row = screen.getByRole('option', { name: 'Group A' });
+        expect(row).toHaveClass('group-types-panel__group--active');
+        expect(row).not.toHaveClass('group-types-panel__group--highlighted');
     });
 });

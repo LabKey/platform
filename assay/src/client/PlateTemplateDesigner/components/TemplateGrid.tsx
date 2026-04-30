@@ -13,8 +13,10 @@ interface TemplateGridProps {
     activeGroup: WellGroup | null;
     activeTab: string;
     colorMap: Map<number, string>;
+    highlightedGroupId: number | null;
     onDragRect: (r1: number, c1: number, r2: number, c2: number, isUnselect: boolean, preDragPositions: Position[]) => void;
     onCellToggle: (row: number, col: number) => void;
+    onWellHover: (groupRowId: number | null) => void;
 }
 
 function getRowLabel(row: number): string {
@@ -50,7 +52,7 @@ function getRowLabel(row: number): string {
  * Drag state is also cleaned up on mouseleave of the outer div, preventing stuck
  * drag state when the pointer exits the grid.
  */
-export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRect, onCellToggle }: TemplateGridProps): JSX.Element {
+export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, highlightedGroupId, onDragRect, onCellToggle, onWellHover }: TemplateGridProps): JSX.Element {
     const isDragging = useRef(false);
     const hasMoved = useRef(false);
     const startCell = useRef<{ row: number; col: number } | null>(null);
@@ -62,32 +64,35 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
     const [focusedCell, setFocusedCell] = useState<{ row: number; col: number } | null>(null);
     const cellRefs = useRef<Map<string, HTMLTableCellElement>>(new Map());
 
-    // Pre-compute a "row,col" → {color, groupName} map for the active tab type.
+    // Pre-compute a "row,col" → {color, groupName, groupRowId} map for the active tab type.
     // This lets each cell do an O(1) lookup rather than scanning all groups and
     // positions on every render (which would be O(groups × positions) per cell).
     const positionMap = useMemo(() => {
-        const map = new Map<string, { color: string; groupName: string }>();
+        const map = new Map<string, { color: string; groupName: string; groupRowId: number }>();
         for (const group of plate.groups) {
             if (group.type !== activeTab) continue;
             const color = colorMap.get(group.rowId) ?? '#f5f5f5';
             for (const p of group.positions) {
-                map.set(`${p.row},${p.col}`, { color, groupName: group.name });
+                map.set(`${p.row},${p.col}`, { color, groupName: group.name, groupRowId: group.rowId });
             }
         }
         return map;
     }, [plate, activeTab, colorMap]);
 
-    // Pre-compute a Set of "row,col" keys for the active group's positions so each cell
-    // can do an O(1) membership check instead of scanning the positions array on every render.
-    const activeGroupPositionSet = useMemo(() => {
+    // Pre-compute a Set of "row,col" keys for the highlighted group's positions.
+    // The highlighted group is either the one being hovered in the group list, or
+    // the active group when nothing is being hovered, so each cell does an O(1) check.
+    const highlightedGroupPositionSet = useMemo(() => {
         const set = new Set<string>();
-        if (activeGroup) {
-            for (const p of activeGroup.positions) {
-                set.add(`${p.row},${p.col}`);
+        if (highlightedGroupId === null) return set;
+        for (const group of plate.groups) {
+            if (group.rowId === highlightedGroupId) {
+                for (const p of group.positions) set.add(`${p.row},${p.col}`);
+                break;
             }
         }
         return set;
-    }, [activeGroup]);
+    }, [highlightedGroupId, plate.groups]);
 
     const handleMouseDown = useCallback((row: number, col: number, e: React.MouseEvent) => {
         if (e.button !== 0) return;
@@ -103,10 +108,15 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
     }, [activeGroup]);
 
     const handleMouseEnter = useCallback((row: number, col: number) => {
-        if (!isDragging.current || !startCell.current) return;
-        hasMoved.current = true;
-        onDragRect(startCell.current.row, startCell.current.col, row, col, dragIsUnselect.current, preDragPositions.current);
-    }, [onDragRect]);
+        if (isDragging.current && startCell.current) {
+            hasMoved.current = true;
+            onDragRect(startCell.current.row, startCell.current.col, row, col, dragIsUnselect.current, preDragPositions.current);
+        } else {
+            // Not dragging: report which group this well belongs to for list highlighting.
+            const entry = positionMap.get(`${row},${col}`);
+            onWellHover(entry?.groupRowId ?? null);
+        }
+    }, [onDragRect, onWellHover, positionMap]);
 
     // Called on mouseup over a specific cell — handles click-toggle
     const handleCellMouseUp = useCallback((row: number, col: number) => {
@@ -118,17 +128,20 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
         }
     }, [onCellToggle]);
 
-    // Called on the wrapper div — cleans up drag state
+    // Called on the wrapper div — cleans up drag state and clears well hover
     const handleDragEnd = useCallback(() => {
         isDragging.current = false;
         hasMoved.current = false;
         startCell.current = null;
         dragIsUnselect.current = false;
-    }, []);
+        onWellHover(null);
+    }, [onWellHover]);
 
     const handleCellFocus = useCallback((row: number, col: number) => {
         setFocusedCell({ row, col });
-    }, []);
+        const entry = positionMap.get(`${row},${col}`);
+        onWellHover(entry?.groupRowId ?? null);
+    }, [positionMap, onWellHover]);
 
     // Keyboard interaction for grid cells:
     //   Space / Enter → toggle the cell (same as a click with no drag)
@@ -162,7 +175,15 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
     }, [onCellToggle, plate.rows, plate.cols]);
 
     return (
-        <div className="template-grid" onMouseLeave={handleDragEnd} onMouseUp={handleDragEnd}>
+        <div
+            className="template-grid"
+            onMouseLeave={handleDragEnd}
+            onMouseUp={handleDragEnd}
+            onBlur={e => {
+                // Clear well hover when keyboard focus leaves the grid entirely
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) onWellHover(null);
+            }}
+        >
             <table className="template-grid__table" role="grid" aria-label="Plate template grid">
                 <thead>
                     <tr>
@@ -178,7 +199,7 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
                             <th scope="row" className="template-grid__row-header">{getRowLabel(row)}</th>
                             {Array.from({ length: plate.cols }, (_, col) => {
                                 const entry = positionMap.get(`${row},${col}`);
-                                const isActiveGroupCell = activeGroupPositionSet.has(`${row},${col}`);
+                                const isHighlightedGroupCell = highlightedGroupPositionSet.has(`${row},${col}`);
                                 const location = `${getRowLabel(row)}${col + 1}`;
                                 const tooltip = entry ? `${location}: ${entry.groupName}` : location;
                                 const isTabStop = focusedCell
@@ -195,7 +216,7 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, onDragRe
                                         }}
                                         tabIndex={isTabStop ? 0 : -1}
                                         className={classNames('template-grid__cell', {
-                                            'template-grid__cell--active': isActiveGroupCell,
+                                            'template-grid__cell--active': isHighlightedGroupCell,
                                         })}
                                         style={{ backgroundColor: entry?.color ?? '#f5f5f5' }}
                                         aria-label={tooltip}

@@ -15,11 +15,13 @@ interface GroupTypesPanelProps {
     activeGroup: WellGroup | null;
     activeTab: string;
     colorMap: Map<number, string>;
+    hoveredWellGroupId: number | null;
     onGroupSelect: (group: WellGroup) => void;
     onTabChange: (tab: string) => void;
     onAddGroup: (type: string, name: string) => void;
     onDeleteGroup: (rowId: number) => void;
     onRenameGroup: (rowId: number, newName: string) => void;
+    onGroupHover: (groupId: number | null) => void;
     children?: React.ReactNode;
 }
 
@@ -70,11 +72,13 @@ export function GroupTypesPanel({
     activeGroup,
     activeTab,
     colorMap,
+    hoveredWellGroupId,
     onGroupSelect,
     onTabChange,
     onAddGroup,
     onDeleteGroup,
     onRenameGroup,
+    onGroupHover,
     children,
 }: GroupTypesPanelProps): JSX.Element {
     const [newGroupName, setNewGroupName] = useState('');
@@ -203,17 +207,25 @@ export function GroupTypesPanel({
                 >
                     {type === activeTab && (
                         <>
-                            <div className="group-types-panel__groups" role="listbox" aria-label="Well groups">
+                            <div
+                                className="group-types-panel__groups"
+                                role="listbox"
+                                aria-label="Well groups"
+                                onMouseLeave={() => onGroupHover(null)}
+                            >
                                 {groupsOfType.map(group => {
                                     const color = colorMap.get(group.rowId);
                                     const isActive = activeGroup?.rowId === group.rowId;
+                                    const isHighlighted = hoveredWellGroupId === group.rowId;
                                     const isRenaming = renamingId === group.rowId;
                                     return (
                                         <React.Fragment key={group.rowId}>
                                             <div
                                                 className={classNames('group-types-panel__group', {
                                                     'group-types-panel__group--active': isActive,
+                                                    'group-types-panel__group--highlighted': isHighlighted && !isActive,
                                                 })}
+                                                onMouseEnter={() => onGroupHover(group.rowId)}
                                                 role="option"
                                                 aria-selected={isActive}
                                                 tabIndex={0}

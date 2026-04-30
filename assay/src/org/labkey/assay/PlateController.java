@@ -242,15 +242,83 @@ public class PlateController extends SpringActionController
         }
     }
 
+    public static class SaveTemplateForm extends CreatePlateForm
+    {
+        // Template designer fields (groups path)
+        private Long _rowId;
+        private int _rows;
+        private int _cols;
+        private List<SubmittedGroup> _groups;       // non-null activates the template-upsert path
+        private final Map<String, Object> _plateProperties = new HashMap<>();
+
+        public Long getRowId()
+        {
+            return _rowId;
+        }
+
+        public int getRows()
+        {
+            return _rows;
+        }
+
+        public int getCols()
+        {
+            return _cols;
+        }
+
+        public List<SubmittedGroup> getGroups()
+        {
+            return _groups;
+        }
+
+        public Map<String, Object> getPlateProperties()
+        {
+            return _plateProperties;
+        }
+
+        @Override
+        public void bindJson(JSONObject json)
+        {
+            super.bindJson(json);
+
+            // Template designer fields
+            if (json.has("rowId"))
+                _rowId = json.getLong("rowId");
+            // "type" is how the React designer sends assayType
+            if (json.has("type") && !json.has("assayType"))
+                _assayType = json.getString("type");
+            if (json.has("rows"))
+                _rows = json.getInt("rows");
+            if (json.has("cols"))
+                _cols = json.getInt("cols");
+            if (json.has("plateProperties"))
+            {
+                JSONObject props = json.getJSONObject("plateProperties");
+                for (String key : props.keySet())
+                {
+                    Object val = props.get(key);
+                    _plateProperties.put(key, val == JSONObject.NULL ? null : val);
+                }
+            }
+            if (json.has("groups"))
+            {
+                _groups = new ArrayList<>();
+                JSONArray arr = json.getJSONArray("groups");
+                for (int i = 0; i < arr.length(); i++)
+                    _groups.add(SubmittedGroup.from(arr.getJSONObject(i)));
+            }
+        }
+    }
+
     @Marshal(Marshaller.JSONObject)
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     @JsonInputLimit(10 * 1024 * 1024)
-    public static class SaveDesignerTemplateAction extends MutatingApiAction<CreatePlateForm>
+    public static class SaveDesignerTemplateAction extends MutatingApiAction<SaveTemplateForm>
     {
         private PlateType _plateType;
 
         @Override
-        public Object execute(CreatePlateForm form, BindException errors) throws Exception
+        public Object execute(SaveTemplateForm form, BindException errors) throws Exception
         {
             Long rowId = form.getRowId();
             String name = form.getName();
@@ -351,7 +419,7 @@ public class PlateController extends SpringActionController
         }
 
         @Override
-        public void validateForm(CreatePlateForm form, Errors errors)
+        public void validateForm(SaveTemplateForm form, Errors errors)
         {
             if (form.getGroups() == null || form.getGroups().isEmpty())
             {
@@ -898,7 +966,7 @@ public class PlateController extends SpringActionController
 
     public static class CreatePlateForm implements ApiJsonForm
     {
-        private String _assayType = TsvPlateLayoutHandler.TYPE;
+        protected String _assayType = TsvPlateLayoutHandler.TYPE;
         private List<Map<String, Object>> _data;
         private String _description;
         private String _name;
@@ -907,13 +975,6 @@ public class PlateController extends SpringActionController
         private Long _plateType;
         private boolean _template;
         private Long _templateId;
-
-        // Template designer fields (groups path)
-        private Long _rowId;
-        private int _rows;
-        private int _cols;
-        private List<SubmittedGroup> _groups;       // non-null activates the template-upsert path
-        private final Map<String, Object> _plateProperties = new HashMap<>();
 
         public String getDescription()
         {
@@ -960,31 +1021,6 @@ public class PlateController extends SpringActionController
             return _templateId;
         }
 
-        public Long getRowId()
-        {
-            return _rowId;
-        }
-
-        public int getRows()
-        {
-            return _rows;
-        }
-
-        public int getCols()
-        {
-            return _cols;
-        }
-
-        public List<SubmittedGroup> getGroups()
-        {
-            return _groups;
-        }
-
-        public Map<String, Object> getPlateProperties()
-        {
-            return _plateProperties;
-        }
-
         @Override
         public void bindJson(JSONObject json)
         {
@@ -1011,33 +1047,6 @@ public class PlateController extends SpringActionController
 
             if (json.has("templateId"))
                 _templateId = json.getLong("templateId");
-
-            // Template designer fields
-            if (json.has("rowId"))
-                _rowId = json.getLong("rowId");
-            // "type" is how the React designer sends assayType
-            if (json.has("type") && !json.has("assayType"))
-                _assayType = json.getString("type");
-            if (json.has("rows"))
-                _rows = json.getInt("rows");
-            if (json.has("cols"))
-                _cols = json.getInt("cols");
-            if (json.has("plateProperties"))
-            {
-                JSONObject props = json.getJSONObject("plateProperties");
-                for (String key : props.keySet())
-                {
-                    Object val = props.get(key);
-                    _plateProperties.put(key, val == JSONObject.NULL ? null : val);
-                }
-            }
-            if (json.has("groups"))
-            {
-                _groups = new ArrayList<>();
-                JSONArray arr = json.getJSONArray("groups");
-                for (int i = 0; i < arr.length(); i++)
-                    _groups.add(SubmittedGroup.from(arr.getJSONObject(i)));
-            }
 
             if (json.has("data"))
             {
@@ -1070,8 +1079,6 @@ public class PlateController extends SpringActionController
         {
             if (form.getPlateType() == null)
                 errors.reject(ERROR_REQUIRED, "Plate \"plateType\" is required.");
-            if (form.getGroups() != null)
-                errors.reject(ERROR_REQUIRED, "Group values are not supported.");
 
             _plateType = PlateManager.get().getPlateType(form.getPlateType());
             if (_plateType == null)

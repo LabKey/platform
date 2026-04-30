@@ -34,8 +34,10 @@ function renderGrid(overrides: Partial<React.ComponentProps<typeof TemplateGrid>
         activeGroup: null,
         activeTab: 'SPECIMEN',
         colorMap: new Map<number, string>(),
+        highlightedGroupId: null as number | null,
         onDragRect: jest.fn(),
         onCellToggle: jest.fn(),
+        onWellHover: jest.fn(),
         ...overrides,
     };
     render(<TemplateGrid {...props} />);
@@ -282,5 +284,125 @@ describe('TemplateGrid — colorMap fallback', () => {
         // Cell is not labeled with the CONTROL group name since that type is inactive
         expect(screen.getByLabelText('A1')).toBeInTheDocument();
         expect(screen.queryByLabelText('A1: Virus')).toBeNull();
+    });
+});
+
+describe('TemplateGrid — well highlighting (highlightedGroupId)', () => {
+    function makeGroupWithPositions(rowId: number): WellGroup {
+        return {
+            rowId,
+            type: 'SPECIMEN',
+            name: `Group ${rowId}`,
+            positions: [{ row: 0, col: 0 }, { row: 0, col: 1 }],
+            properties: {},
+            allowNewGroups: false,
+        };
+    }
+
+    test('cells belonging to the highlighted group receive the --active class', () => {
+        const group = makeGroupWithPositions(1);
+        renderGrid({
+            plate: makePlate(2, 2, [group]),
+            colorMap: new Map([[1, '#ff0000']]),
+            highlightedGroupId: 1,
+        });
+        expect(getCell('A1: Group 1')).toHaveClass('template-grid__cell--active');
+        expect(getCell('A2: Group 1')).toHaveClass('template-grid__cell--active');
+    });
+
+    test('cells not in the highlighted group do not receive --active class', () => {
+        const group = makeGroupWithPositions(1);
+        renderGrid({
+            plate: makePlate(2, 2, [group]),
+            colorMap: new Map([[1, '#ff0000']]),
+            highlightedGroupId: 1,
+        });
+        // B1 and B2 are not in the group
+        expect(getCell('B1')).not.toHaveClass('template-grid__cell--active');
+        expect(getCell('B2')).not.toHaveClass('template-grid__cell--active');
+    });
+
+    test('no cells receive --active class when highlightedGroupId is null', () => {
+        const group = makeGroupWithPositions(1);
+        renderGrid({
+            plate: makePlate(2, 2, [group]),
+            colorMap: new Map([[1, '#ff0000']]),
+            highlightedGroupId: null,
+        });
+        expect(getCell('A1: Group 1')).not.toHaveClass('template-grid__cell--active');
+        expect(getCell('A2: Group 1')).not.toHaveClass('template-grid__cell--active');
+    });
+
+    test('only cells of the highlighted group are active when multiple groups exist', () => {
+        const group1 = makeGroupWithPositions(1);
+        const group2: WellGroup = {
+            rowId: 2, type: 'SPECIMEN', name: 'Group 2',
+            positions: [{ row: 1, col: 0 }, { row: 1, col: 1 }],
+            properties: {}, allowNewGroups: false,
+        };
+        renderGrid({
+            plate: makePlate(2, 2, [group1, group2]),
+            colorMap: new Map([[1, '#ff0000'], [2, '#00ff00']]),
+            highlightedGroupId: 2,
+        });
+        expect(getCell('B1: Group 2')).toHaveClass('template-grid__cell--active');
+        expect(getCell('B2: Group 2')).toHaveClass('template-grid__cell--active');
+        expect(getCell('A1: Group 1')).not.toHaveClass('template-grid__cell--active');
+        expect(getCell('A2: Group 1')).not.toHaveClass('template-grid__cell--active');
+    });
+});
+
+describe('TemplateGrid — onWellHover', () => {
+    test('mousing into a cell belonging to a group calls onWellHover with that group rowId', () => {
+        const group: WellGroup = {
+            rowId: 5, type: 'SPECIMEN', name: 'Sample 1',
+            positions: [{ row: 0, col: 0 }], properties: {}, allowNewGroups: false,
+        };
+        const { onWellHover } = renderGrid({
+            plate: makePlate(2, 2, [group]),
+            colorMap: new Map([[5, '#ff0000']]),
+        });
+        fireEvent.mouseEnter(getCell('A1: Sample 1'));
+        expect(onWellHover).toHaveBeenCalledWith(5);
+    });
+
+    test('mousing into an unassigned cell calls onWellHover with null', () => {
+        const { onWellHover } = renderGrid();
+        fireEvent.mouseEnter(getCell('A1'));
+        expect(onWellHover).toHaveBeenCalledWith(null);
+    });
+
+    test('focusing a cell belonging to a group calls onWellHover with that group rowId', () => {
+        const group: WellGroup = {
+            rowId: 5, type: 'SPECIMEN', name: 'Sample 1',
+            positions: [{ row: 0, col: 0 }], properties: {}, allowNewGroups: false,
+        };
+        const { onWellHover } = renderGrid({
+            plate: makePlate(2, 2, [group]),
+            colorMap: new Map([[5, '#ff0000']]),
+        });
+        fireEvent.focus(getCell('A1: Sample 1'));
+        expect(onWellHover).toHaveBeenCalledWith(5);
+    });
+
+    test('focusing an unassigned cell calls onWellHover with null', () => {
+        const { onWellHover } = renderGrid();
+        fireEvent.focus(getCell('A1'));
+        expect(onWellHover).toHaveBeenCalledWith(null);
+    });
+
+    test('mouse leaving the grid calls onWellHover with null', () => {
+        const { onWellHover } = renderGrid();
+        const grid = document.querySelector('.template-grid') as HTMLElement;
+        fireEvent.mouseLeave(grid);
+        expect(onWellHover).toHaveBeenCalledWith(null);
+    });
+
+    test('mousing into a cell during a drag does not call onWellHover', () => {
+        const { onWellHover } = renderGrid();
+        fireEvent.mouseDown(getCell('A1'), { button: 0 });
+        onWellHover.mockClear(); // ignore any calls from before the drag started
+        fireEvent.mouseEnter(getCell('B2'));
+        expect(onWellHover).not.toHaveBeenCalled();
     });
 });

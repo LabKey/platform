@@ -53,13 +53,13 @@ export function StatusBar({ isDirty, status, plateName, onSaveAndClose, onSave, 
 
     return (
         <div className="status-bar">
-            <button className="status-bar__btn status-bar__btn--primary" onClick={validateAndSaveAndClose}>
+            <button className="save-button btn btn-primary" onClick={validateAndSaveAndClose}>
                 Save &amp; Close
             </button>
-            <button className="status-bar__btn" onClick={validateAndSave} disabled={!isDirty}>
+            <button className="save-button btn btn-default" onClick={validateAndSave} disabled={!isDirty}>
                 Save
             </button>
-            <button className="status-bar__btn" onClick={onCancel}>
+            <button className="cancel-button btn btn-default" onClick={onCancel}>
                 Cancel
             </button>
             <span role="status" className="status-bar__dirty">{isDirty ? 'Unsaved changes' : ''}</span>

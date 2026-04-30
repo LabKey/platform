@@ -115,6 +115,10 @@ export function PlateTemplateDesigner(): JSX.Element {
     const [status, setStatus] = useState('');
     const [colorMap, setColorMap] = useState<Map<number, string>>(new Map());
     const [error, setError] = useState<string | null>(null);
+    // rowId of the group being hovered in the group list; null when no group is hovered.
+    const [hoveredGroupId, setHoveredGroupId] = useState<number | null>(null);
+    // rowId of the group that owns the currently hovered/focused well; null when no such well.
+    const [hoveredWellGroupId, setHoveredWellGroupId] = useState<number | null>(null);
     const plateNameRef = useRef<string>('');  // Mirrors plate.name; used in save-success to update URL without stale closure
     const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const nextGroupIdRef = useRef(-1);  // Temporary negative IDs for client-created groups (see ID conventions above)
@@ -356,11 +360,9 @@ export function PlateTemplateDesigner(): JSX.Element {
             const rowId = response.data.rowId;
             setIsDirty(false);
             setPlate(prev => prev ? { ...prev, rowId } : null);
-            // Update URL to canonical form so a refresh reloads this plate
+            // Update URL to canonical form so a refresh reloads this plate.
             const url = new URL(window.location.href);
-            url.search = '';
-            url.searchParams.set('templateName', plateNameRef.current);
-            url.searchParams.set('plateId', String(rowId));
+            url.search = `?templateName=${encodeURIComponent(plateNameRef.current)}&plateId=${encodeURIComponent(rowId)}`;
             window.history.replaceState(null, '', url.toString());
             setStatus('Saved.');
             if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
@@ -429,6 +431,10 @@ export function PlateTemplateDesigner(): JSX.Element {
         }
     }, [plate]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // The group whose wells should be visually highlighted on the grid.
+    // Group hover from the list takes priority; falls back to the active group.
+    const highlightedGroupId = hoveredGroupId ?? activeGroup?.rowId ?? null;
+
     if (error) {
         return <div className="plate-template-designer__error">{error}</div>;
     }
@@ -465,11 +471,13 @@ export function PlateTemplateDesigner(): JSX.Element {
                         activeGroup={activeGroup}
                         activeTab={activeTab}
                         colorMap={colorMap}
+                        hoveredWellGroupId={hoveredWellGroupId}
                         onGroupSelect={handleGroupSelect}
                         onTabChange={handleTabChange}
                         onAddGroup={handleAddGroup}
                         onDeleteGroup={handleDeleteGroup}
                         onRenameGroup={handleRenameGroup}
+                        onGroupHover={setHoveredGroupId}
                     >
                         {/* The grid and shift panel are passed as children so they render
                             inside GroupTypesPanel's flex row, visually adjacent to the group list. */}
@@ -479,8 +487,10 @@ export function PlateTemplateDesigner(): JSX.Element {
                                 activeGroup={activeGroup}
                                 activeTab={activeTab}
                                 colorMap={colorMap}
+                                highlightedGroupId={highlightedGroupId}
                                 onDragRect={handleDragRect}
                                 onCellToggle={handleCellToggle}
+                                onWellHover={setHoveredWellGroupId}
                             />
                             <ShiftPanel onShift={handleShift} />
                         </div>
