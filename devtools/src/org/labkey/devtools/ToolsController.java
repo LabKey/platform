@@ -26,7 +26,6 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfo.IndexDefinition;
-import org.labkey.api.data.TableInfo.IndexType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -809,19 +808,21 @@ public class ToolsController extends SpringActionController
             {
                 multiMap.keySet()
                     .forEach(schemaName -> multiMap.get(schemaName).forEach(change -> {
-                    try
-                    {
-                        // All writers are closed below
-                        WriterContext context = getWriterContext(schemaName);
-                        // TODO: Write script!!
-//                        if (type.writeScript(context.getWriter(), overlap))
-//                            context.setModified();
-                    }
-                    catch (IOException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }));
+                        try
+                        {
+                            if (change.index().indexType() == Primary)
+                                throw new IllegalStateException("Should not be trying to modify a PK! (" + change + ")");
+
+                            // All writers are closed below in the finally
+                            WriterContext context = getWriterContext(schemaName);
+                            change.type().writeScript(context.getWriter(), change);
+                            context.setModified();
+                        }
+                        catch (IOException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                    }));
             }
             finally
             {
@@ -900,11 +901,10 @@ public class ToolsController extends SpringActionController
 
             return multiMap;
 
-            // TODO: Create scripts
+            // TODO: Create script to convert UQ -> IX
             // TODO: implement & test convert -> drop sequence
             // TODO: junit test
-            // TODO: Delete old overlap code
-            // TODO: Warn in script comment if column lists and types are identical
+            // TODO: Warn in description if column lists and types are identical
         }
 
         // Helper that filters out the dropped indices
@@ -1044,199 +1044,47 @@ public class ToolsController extends SpringActionController
         }
     }
 
-    protected record Overlap(String schemaName, String tableName, IndexDefinition indexDef1, IndexDefinition indexDef2) {}
-
     protected enum ChangeType
     {
-        Drop,
-        Convert;
-
-//        abstract void writeScript(Writer writer, IndexDefinition index) throws IOException
-//        {
-//            if (dropIndex.indexType() == Primary)
-//                throw new IllegalStateException("Should never drop a PK!");
-//
-//            SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
-//            writer.write("-- " + dropIndex.display() + " overlaps with " + otherIndex.display() + "\n");
-//
-//            if (dialect.isPostgreSQL())
-//            {
-//                if (dropIndex.indexType() == Unique)
-//                {
-//                    String constraintName = getConstraintForIndex(schemaName, dropIndex.name());
-//                    if (constraintName != null)
-//                    {
-//                        writer.write("ALTER TABLE " + schemaName + "." + tableName + " DROP CONSTRAINT " + constraintName + ";\n");
-//                        return;
-//                    }
-//                }
-//
-//                writer.write("DROP INDEX " + schemaName + "." + dropIndex.name() + ";\n");
-//            }
-//            else
-//                writer.write("DROP INDEX " + dropIndex.name() + " ON " + schemaName + "." + tableName + ";\n");
-//        }
-    }
-
-    protected enum OverlapType
-    {
-        UniqueOverlappingNonUnique("a column list that overlaps another index's column list at the start, but the first index is a unique constraint. These are likely valid")
+        Drop
         {
             @Override
-            boolean writeScript(Writer writer, Overlap overlap)
+            void writeScript(Writer writer, IndexChange change) throws IOException
             {
-                return false; // Write nothing
-            }
-        },
-        OverlappingWithDifferentFilter("a column list that overlaps another index's column list at the start, but with different filter conditions. These are likely valid")
-        {
-            @Override
-            boolean writeScript(Writer writer, Overlap overlap)
-            {
-                return false; // Write nothing
-            }
-        },
-        Identical("a column list that's identical to another index's column list")
-        {
-            @Override
-            boolean writeScript(Writer writer, Overlap overlap) throws IOException
-            {
-                IndexType type1 = overlap.indexDef1.indexType();
-                IndexType type2 = overlap.indexDef2.indexType();
-                IndexDefinition dropIndex = null;
-                IndexDefinition otherIndex = null;
+                IndexDefinition dropIndex = change.index();
+                String schemaName = change.table().getSchema().getName();
+                String tableName = change.table().getName();
 
-                // Prefer to drop the non-PK, then prefer the non-unique, otherwise "drop" them both (let the human decide)
-                if (type1 == Primary)
-                {
-                    dropIndex = overlap.indexDef2;
-                    otherIndex = overlap.indexDef1;
-                }
-                else if (type2 == Primary)
-                {
-                    dropIndex = overlap.indexDef1;
-                    otherIndex = overlap.indexDef2;
-                }
-                else if (type1 == Unique && type2 == IndexType.NonUnique)
-                {
-                    dropIndex = overlap.indexDef2;
-                    otherIndex = overlap.indexDef1;
-                }
-                else if (type2 == Unique && type1 == IndexType.NonUnique)
-                {
-                    dropIndex = overlap.indexDef1;
-                    otherIndex = overlap.indexDef2;
-                }
+                writer.write("-- " + change.description() + "\n");
 
-                if (dropIndex != null)
+                if (DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL())
                 {
-                    dropIndex(writer, overlap.schemaName, overlap.tableName, dropIndex, otherIndex);
+                    if (dropIndex.indexType() == Unique)
+                    {
+                        String constraintName = getConstraintForIndex(schemaName, dropIndex.name());
+                        if (constraintName != null)
+                        {
+                            writer.write("ALTER TABLE " + schemaName + "." + tableName + " DROP CONSTRAINT " + constraintName + ";\n");
+                            return;
+                        }
+                    }
+
+                    writer.write("DROP INDEX " + schemaName + "." + dropIndex.name() + ";\n");
                 }
                 else
-                {
-                    writer.write("TODO: Human, please help!! You should drop only one of the following, but I couldn't decide which one:\n");
-                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexDef1, overlap.indexDef2);
-                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexDef2, overlap.indexDef1);
-                    writer.write('\n');
-                }
-
-                return true;
+                    writer.write("DROP INDEX " + dropIndex.name() + " ON " + schemaName + "." + tableName + ";\n");
             }
         },
-        Overlapping("a column list that overlaps another index's column list at the start")
+        Convert
         {
             @Override
-            boolean writeScript(Writer writer, Overlap overlap) throws IOException
+            void writeScript(Writer writer, IndexChange change) throws IOException
             {
-                dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexDef1, overlap.indexDef2);
-                return true;
-            }
-        },
-        UniqueOverlappingUnique("a column list that overlaps another index's column list at the start where both indices are unique/pk")
-        {
-            @Override
-            boolean writeScript(Writer writer, Overlap overlap) throws IOException
-            {
-                IndexType type1 = overlap.indexDef1.indexType();
-                IndexType type2 = overlap.indexDef2.indexType();
-                IndexDefinition dropIndex;
-                IndexDefinition otherIndex;
-
-                // Prefer to drop the non-PK, then prefer the non-unique, otherwise "drop" them both (let the human decide)
-                if (type1 == Primary)
-                {
-                    dropIndex = overlap.indexDef2;
-                    otherIndex = overlap.indexDef1;
-                }
-                else if (type2 == Primary)
-                {
-                    dropIndex = overlap.indexDef1;
-                    otherIndex = overlap.indexDef2;
-                }
-                else
-                {
-                    // Drop the unique index with fewer columns -- the extra columns are pointless
-                    if (overlap.indexDef2.columns().size() >= overlap.indexDef1.columns().size())
-                    {
-                        dropIndex = overlap.indexDef2;
-                        otherIndex = overlap.indexDef1;
-                    }
-                    else
-                    {
-                        dropIndex = overlap.indexDef1;
-                        otherIndex = overlap.indexDef2;
-                    }
-                }
-                dropIndex(writer, overlap.schemaName, overlap.tableName, dropIndex, otherIndex);
-                return true;
+                writer.write("I don't know how to do this yet!!");
             }
         };
 
-        private final String _description;
-
-        OverlapType(String description)
-        {
-            _description = description;
-        }
-
-        public String getDescription()
-        {
-            return _description;
-        }
-
-        // Return true if content has been written to the script file
-        abstract boolean writeScript(Writer writer, Overlap overlap) throws IOException;
-
-        String getMessage(Overlap overlap)
-        {
-            return overlap.indexDef1.display() + " vs. " + overlap.indexDef2.display();
-        }
-
-        protected void dropIndex(Writer writer, String schemaName, String tableName, IndexDefinition dropIndex, IndexDefinition otherIndex) throws IOException
-        {
-            if (dropIndex.indexType() == Primary)
-                throw new IllegalStateException("Should never drop a PK!");
-
-            SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
-            writer.write("-- " + dropIndex.display() + " overlaps with " + otherIndex.display() + "\n");
-
-            if (dialect.isPostgreSQL())
-            {
-                if (dropIndex.indexType() == Unique)
-                {
-                    String constraintName = getConstraintForIndex(schemaName, dropIndex.name());
-                    if (constraintName != null)
-                    {
-                        writer.write("ALTER TABLE " + schemaName + "." + tableName + " DROP CONSTRAINT " + constraintName + ";\n");
-                        return;
-                    }
-                }
-
-                writer.write("DROP INDEX " + schemaName + "." + dropIndex.name() + ";\n");
-            }
-            else
-                writer.write("DROP INDEX " + dropIndex.name() + " ON " + schemaName + "." + tableName + ";\n");
-        }
+        abstract void writeScript(Writer writer, IndexChange change) throws IOException;
     }
 
     private record IndexKey(String schemaName, String indexName) {}
