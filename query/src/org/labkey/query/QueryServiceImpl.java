@@ -2105,7 +2105,8 @@ public class QueryServiceImpl implements QueryService
                 columnMap.put(expObjectIdFieldKey, expObjectColumn);
                 return expObjectColumn;
             }
-            unresolvedColumns.add(new FieldKey(null, "expObject()"));
+            if (unresolvedColumns != null)
+                unresolvedColumns.add(new FieldKey(null, "expObject()"));
             return null;
         }
 
@@ -2125,7 +2126,8 @@ public class QueryServiceImpl implements QueryService
                     boolean invalidArrayFilter = (isArrayFilter && !isArrayColumn) || (!isArrayFilter && isArrayColumn);
                     if (invalidArrayFilter)
                     {
-                        unresolvedColumns.add(fieldKey);
+                        if (unresolvedColumns != null)
+                            unresolvedColumns.add(fieldKey);
                         return column; // return column, but mark as unresolvedColumns to drop filters
                     }
                 }
