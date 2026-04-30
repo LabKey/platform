@@ -1141,14 +1141,14 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     displayColumnName = xfk.getFkDisplayColumnName().getStringValue();
                     useRawFKValue = xfk.getFkDisplayColumnName().getUseRawValue();
                 }
-                _fk = new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), false, displayColumnName, useRawFKValue);
+                _fk = new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), key.fkName, false, displayColumnName, useRawFKValue);
             }
             else
             {
                 String type = xfk.getFkMultiValued();
 
                 if (AbstractTableInfo.MultiValuedFkType.junction.name().equals(type))
-                    _fk = new MultiValuedForeignKey(new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), false), xfk.getFkJunctionLookup());
+                    _fk = new MultiValuedForeignKey(new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), key.fkName, false), xfk.getFkJunctionLookup());
                 else
                     LOG.warn(String.format("Error in FK configuration for table : \"%s\". The multi value FK type : \"%s\" is not supported.", getParentTable().getName(), type));
             }
@@ -1475,21 +1475,23 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         private final String _dbSchemaName;
         private final String _tableName;
         private String _lookupKey;
+        private String _fkName;
         private final String _displayColumnName;
         private final boolean _joinWithContainer;
         private final boolean _useRawFKValue;
 
-        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, @Nullable String lookupKey, boolean joinWithContainer)
+        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, @Nullable String lookupKey, @Nullable String fkName, boolean joinWithContainer)
         {
-            this(foreignKey, dbSchemaName, tableName, lookupKey, joinWithContainer, null, false);
+            this(foreignKey, dbSchemaName, tableName, lookupKey, fkName, joinWithContainer, null, false);
         }
 
-        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, @Nullable String lookupKey, boolean joinWithContainer, @Nullable String displayColumnName, boolean useRawFKValue)
+        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, @Nullable String lookupKey, @Nullable String fkName, boolean joinWithContainer, @Nullable String displayColumnName, boolean useRawFKValue)
         {
             _scope = foreignKey.getParentTable().getSchema().getScope();
             _dbSchemaName = dbSchemaName == null ? foreignKey.getParentTable().getSchema().getName() : dbSchemaName;
             _tableName = tableName;
             _lookupKey = lookupKey;
+            _fkName = fkName;
             _joinWithContainer = joinWithContainer;
             _displayColumnName = displayColumnName;
             _useRawFKValue = useRawFKValue;
@@ -1613,6 +1615,13 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         {
             // schema foreign keys always have one part schema name
             return new SchemaKey(null, _dbSchemaName);
+        }
+
+        @Nullable
+        @Override
+        public String getFkName()
+        {
+            return _fkName;
         }
 
         @Override
@@ -1788,7 +1797,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                 continue;
             }
 
-            col._fk = new SchemaForeignKey(col, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(i), joinWithContainer);
+            col._fk = new SchemaForeignKey(col, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(i), key.fkName, joinWithContainer);
         }
 
         return colMap.values();
