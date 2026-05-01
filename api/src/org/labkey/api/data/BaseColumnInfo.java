@@ -1480,6 +1480,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         private final boolean _joinWithContainer;
         private final boolean _useRawFKValue;
 
+        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, @Nullable String lookupKey, boolean joinWithContainer)
+        {
+            this(foreignKey, dbSchemaName, tableName, lookupKey, null, joinWithContainer);
+        }
+
         public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, @Nullable String lookupKey, @Nullable String fkName, boolean joinWithContainer)
         {
             this(foreignKey, dbSchemaName, tableName, lookupKey, fkName, joinWithContainer, null, false);
