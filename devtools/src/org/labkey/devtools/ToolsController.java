@@ -7,6 +7,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -87,6 +89,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -762,7 +765,7 @@ public class ToolsController extends SpringActionController
                 url.deleteParameter("clearCaches");
             }
 
-            MultiValuedMap<String, IndexChange> multiMap = new OverlappingIndicesAnalyzer().getOverlappingIndices(form.schemaName());
+            MultiValuedMap<String, IndexChange> multiMap = new OverlappingIndicesAnalyzer().getChanges(form.schemaName());
 
             return new VBox(
                 new HtmlView(DOM.createHtmlFragment(
@@ -803,7 +806,7 @@ public class ToolsController extends SpringActionController
         @Override
         public boolean handlePost(OverlappingIndicesForm form, BindException errors)
         {
-            MultiValuedMap<String, IndexChange> multiMap = new OverlappingIndicesAnalyzer().getOverlappingIndices(form.schemaName());
+            MultiValuedMap<String, IndexChange> multiMap = new OverlappingIndicesAnalyzer().getChanges(form.schemaName());
 
             try
             {
@@ -943,18 +946,22 @@ public class ToolsController extends SpringActionController
     {
         private final String delim = Character.toString(31); // Non-printing character that's very unlikely to be in a column name
 
-        private MultiValuedMap<String, IndexChange> getOverlappingIndices(@Nullable String schemaName)
+        private void enumerateTables(@Nullable String schemaName, Consumer<TableInfo> tableConsumer)
+        {
+            ModuleLoader.getInstance().getModules().stream()
+                .flatMap(module -> module.getSchemaNames().stream().filter(name -> !module.getProvisionedSchemaNames().contains(name)))
+                .filter(name -> schemaName == null || name.equalsIgnoreCase(schemaName))
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .map(name -> DbScope.getLabKeyScope().getSchema(name, DbSchemaType.Module))
+                .flatMap(schema -> schema.getTableNames().stream().map(schema::getTable))
+                .forEach(tableConsumer);
+        }
+
+        private MultiValuedMap<String, IndexChange> getChanges(@Nullable String schemaName)
         {
             MultiValuedMap<String, IndexChange> multiMap = new ArrayListValuedLinkedHashMap<>();
-            DbScope scope = DbScope.getLabKeyScope();
 
-            ModuleLoader.getInstance().getModules().stream()
-            .flatMap(module -> module.getSchemaNames().stream().filter(name -> !module.getProvisionedSchemaNames().contains(name)))
-            .filter(name -> schemaName == null || name.equalsIgnoreCase(schemaName))
-            .sorted(String.CASE_INSENSITIVE_ORDER)
-            .map(name -> scope.getSchema(name, DbSchemaType.Module))
-            .flatMap(schema -> schema.getTableNames().stream().map(schema::getTable))
-            .forEach(table -> {
+            enumerateTables(schemaName, table -> {
                 var indices = new LinkedHashSet<>(table.getAllIndices());
                 var changes = new LinkedList<IndexChange>();
                 Set<IndexDefinition> droppedIndices = new HashSet<>();
@@ -966,7 +973,7 @@ public class ToolsController extends SpringActionController
                     .filter(ix -> ix.indexType() == Primary)
                     .findFirst()
                     .ifPresent(pk -> indices.stream()
-                        .filter(index -> overlaps(pk, index))
+                        .filter(index -> isOverlap(pk, index))
                         .forEach(index -> {
                             changes.add(new IndexChange(table, index, ChangeType.Drop, getDropDescription(index, pk)));
                             droppedIndices.add(index);
@@ -982,7 +989,7 @@ public class ToolsController extends SpringActionController
                     .forEach(uq -> streamIndices(indices, droppedIndices)
                         .filter(index -> index.indexType() == Primary || index.indexType() == Unique)
                         .filter(index -> !convertedUniqueIndices.contains(index))
-                        .filter(index -> overlaps(uq, index))
+                        .filter(index -> isOverlap(uq, index))
                         .findFirst()
                         .ifPresent(index -> {
                             changes.add(new IndexChange(table, uq, ChangeType.Convert, String.format("Converting %s from unique to non-unique index because %s overlaps it with a smaller column set", uq.display(), index.display())));
@@ -996,7 +1003,7 @@ public class ToolsController extends SpringActionController
                     .filter(index -> index.indexType() != Primary)
                     .forEach(index -> streamIndices(indices, droppedIndices)
                         .filter(ix -> ix.indexType() == NonUnique || convertedUniqueIndices.contains(ix))
-                        .filter(ix -> overlaps(index, ix))
+                        .filter(ix -> isOverlap(index, ix))
                         .forEach(ix -> {
                             String description = getDropDescription(ix, index);
                             if (convertedUniqueIndices.contains(ix))
@@ -1035,11 +1042,11 @@ public class ToolsController extends SpringActionController
         }
 
         // Returns true if index2 has an overlapping column set that's equal to or smaller than index1's
-        private boolean overlaps(IndexDefinition index1, IndexDefinition index2)
+        private boolean isSimpleOverlap(IndexDefinition index1, IndexDefinition index2)
         {
             boolean ret = false;
 
-            if (!index1.equals(index2) && Objects.equals(index1.filterCondition(), index2.filterCondition()))
+            if (!index1.equals(index2))
             {
                 String key1 = getKey(index1.columns());
                 String key2 = getKey(index2.columns());
@@ -1047,6 +1054,12 @@ public class ToolsController extends SpringActionController
             }
 
             return ret;
+        }
+
+        // Returns true if index2 overlaps index1, and they have the same filter condition
+        private boolean isOverlap(IndexDefinition index1, IndexDefinition index2)
+        {
+            return Objects.equals(index1.filterCondition(), index2.filterCondition()) && isSimpleOverlap(index1, index2);
         }
 
         private String getKey(List<ColumnInfo> cols)
@@ -1060,19 +1073,23 @@ public class ToolsController extends SpringActionController
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
+        @BeforeClass
+        public static void checkDatabase()
+        {
+            Assume.assumeTrue("Skipping because this server is not running on PostgreSQL", DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL());
+        }
+
         @Test
         public void testOverlappingIndices()
         {
-            if (DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL())
-            {
-                var map = new OverlappingIndicesAnalyzer().getOverlappingIndices(null);
-                var keys = map.keys();
-                if (!keys.isEmpty())
-                    fail(StringUtilsLabKey.pluralize(keys.size(), "redundant index", "redundant indices") + " detected: " + map);
-            }
+            var map = new OverlappingIndicesAnalyzer().getChanges(null);
+            var keys = map.keys();
+            if (!keys.isEmpty())
+                fail(StringUtilsLabKey.pluralize(keys.size(), "redundant index", "redundant indices") + " detected: " + map);
         }
 
         // TODO: Test convert -> drop sequence, etc.
+        // TODO: Display all overlapping indices that don't require changes
     }
 
     private enum ChangeType
@@ -1119,7 +1136,7 @@ public class ToolsController extends SpringActionController
             IndexDefinition index = change.index();
 
             if (index.indexType() == Primary)
-                throw new IllegalStateException("Should not be trying to modify a PK! (" + change + ")");
+                throw new IllegalStateException("Should not modify a PK! (" + change + ")");
 
             writeScript(writer, change, table.getSchema().getName(), table.getName(), index);
         }
@@ -1129,9 +1146,9 @@ public class ToolsController extends SpringActionController
 
     private record IndexKey(String schemaName, String indexName) {}
 
+    // If this is a unique index associated with a constraint, return that constraint name. Otherwise, return null.
     // Most, but not all, unique indices are created by adding a unique constraint; in those cases, we need to drop
     // the associated constraint. However, for explicitly created unique indices, we need to drop the index instead.
-    // If this is a unique index associated with a constraint, return that constraint name. Otherwise, return null.
     private static @Nullable String getConstraintForIndex(String schemaName, String indexName)
     {
         Cache<String, Map<IndexKey, String>> sharedCache = CacheManager.getSharedCache();
