@@ -681,7 +681,7 @@ public class Encryption
     }
 
 
-    private static final EncryptionMigrationHandler TEST_HANDLER = (oldPassPhrase, keySource, oldConfig) -> {};
+    private static final EncryptionMigrationHandler TEST_HANDLER = (_, _, _) -> {};
 
     private static QuietCloser createErrorCountResetter()
     {
@@ -748,7 +748,6 @@ public class Encryption
         {
             try (var _ = createErrorCountResetter())
             {
-
                 String text = "test plaintext";
                 AES oldAlgorithm = new AES("old pass phrase", 128, "old algorithm");
                 byte[] oldEncrypted = oldAlgorithm.encrypt(text);
@@ -763,9 +762,7 @@ public class Encryption
                     primary.decrypt(oldEncrypted);
                     fail("Expected DecryptionException");
                 }
-                catch (DecryptionException ignored)
-                {
-                }
+                catch (DecryptionException _) {}
                 assertEquals(counterBefore + 1, DECRYPTION_EXCEPTIONS.get());
 
                 // Case 2: correct fallback — transparent success, counter unchanged
@@ -789,9 +786,7 @@ public class Encryption
                     primary.decrypt(oldEncrypted);
                     fail("Expected DecryptionException");
                 }
-                catch (DecryptionException ignored)
-                {
-                }
+                catch (DecryptionException _) {}
                 finally
                 {
                     _migrationFallback = null;
