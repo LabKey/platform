@@ -122,34 +122,18 @@ public class QueryUserSchema extends UserSchema
             assertNotNull("Expected update service for " + CUSTOM_VIEWS_TABLE_NAME, qus);
 
             BatchValidationException errors = new BatchValidationException();
-            try
-            {
-                Map<String, Object> row = CaseInsensitiveHashMap.of(
-                        "schemaName", "test",
-                        "queryName", "query"
-                );
-                qus.insertRows(_user, _container, List.of(row), errors, null, null);
-                assertTrue("Expected insert to error", errors.hasErrors());
-            }
-            catch (UnsupportedOperationException e)
-            {
-                // expected
-            }
+            Map<String, Object> row = CaseInsensitiveHashMap.of(
+                    "schema", "test",
+                    "queryName", "query",
+                    "flags", 0
+            );
+            List<Map<String, Object>> views = qus.insertRows(_user, _container, List.of(row), errors, null, null);
+            assertFalse("Unexpected error on insert", errors.hasErrors());
 
-            try
-            {
-                Map<String, Object> row = CaseInsensitiveHashMap.of(
-                        "customViewId", 1,
-                        "schemaName", "test",
-                        "queryName", "query"
-                );
-                qus.updateRows(_user, _container, List.of(row), null, errors, null, null);
-                assertTrue("Expected update to error", errors.hasErrors());
-            }
-            catch (UnsupportedOperationException e)
-            {
-                // expected
-            }
+            Map<String, Object> newView = views.getFirst();
+            newView.put("flags", 3);
+            qus.updateRows(_user, _container, List.of(newView), null, errors, null, null);
+            assertFalse("Unexpected error on update", errors.hasErrors());
         }
     }
 }

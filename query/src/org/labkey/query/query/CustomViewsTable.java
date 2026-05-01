@@ -2,20 +2,24 @@ package org.labkey.query.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
-import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -23,15 +27,14 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.query.QueryUserSchema;
-import org.labkey.query.controllers.QueryController;
+import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryManager;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -45,8 +48,8 @@ public class CustomViewsTable extends FilteredTable<QueryUserSchema>
         setDescription("Contains a row for each saved custom view. Available to folder administrators.");
 
         setImportURL(LINK_DISABLER);
-        setUpdateURL(new DetailsURL(new ActionURL(QueryController.InternalSourceViewAction.class, getContainer()), Collections.singletonMap("CustomViewId", "CustomViewId")));
-        setInsertURL(new DetailsURL(new ActionURL(QueryController.InternalNewViewAction.class, getContainer())));
+        //setUpdateURL(new DetailsURL(new ActionURL(QueryController.InternalSourceViewAction.class, getContainer()), Collections.singletonMap("CustomViewId", "CustomViewId")));
+        //setInsertURL(new DetailsURL(new ActionURL(QueryController.InternalNewViewAction.class, getContainer())));
 
         wrapAllColumns(true);
         var customViewIdCol = getMutableColumnOrThrow("CustomViewId");
@@ -70,13 +73,29 @@ public class CustomViewsTable extends FilteredTable<QueryUserSchema>
         getMutableColumnOrThrow("Filter");
         getMutableColumnOrThrow("Flags").setDisplayColumnFactory(FlagDisplayColumn::new);
 
+        ColumnInfo flagsCol = getRealTable().getColumn("Flags");
+        var hiddenCol = new ExprColumn(this, "Hidden",
+                new SQLFragment("(CASE WHEN (" + ExprColumn.STR_TABLE_ALIAS + ".Flags & " + QueryManager.FLAG_HIDDEN + ") != 0")
+                        .append(" THEN ").append(getSqlDialect().getBooleanTRUE())
+                        .append(" ELSE ").append(getSqlDialect().getBooleanFALSE()).append(" END)"),
+                JdbcType.BOOLEAN, flagsCol);
+        addColumn(hiddenCol);
+
+        var inheritableCol = new ExprColumn(this, "Inheritable",
+                new SQLFragment("(CASE WHEN (" + ExprColumn.STR_TABLE_ALIAS + ".Flags & " + QueryManager.FLAG_INHERITABLE + ") != 0")
+                        .append(" THEN ").append(getSqlDialect().getBooleanTRUE())
+                        .append(" ELSE ").append(getSqlDialect().getBooleanFALSE()).append(" END)"),
+                JdbcType.BOOLEAN, flagsCol);
+        addColumn(inheritableCol);
+
         setDefaultVisibleColumns(List.of(
                 FieldKey.fromParts("Schema"),
                 FieldKey.fromParts("QueryName"),
                 FieldKey.fromParts("Name"),
                 FieldKey.fromParts("CustomViewOwner"),
                 FieldKey.fromParts("Container"),
-                FieldKey.fromParts("Flags"),
+                FieldKey.fromParts("Hidden"),
+                FieldKey.fromParts("Inheritable"),
                 FieldKey.fromParts("Created"),
                 FieldKey.fromParts("CreatedBy"),
                 FieldKey.fromParts("Modified"),
@@ -158,15 +177,81 @@ public class CustomViewsTable extends FilteredTable<QueryUserSchema>
         @Override
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {
-            // for now just rely on the existing internal action
-            throw new UnsupportedOperationException();
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (Map<String, Object> row : rows)
+            {
+                CaseInsensitiveHashMap<Object> rowMap = new CaseInsensitiveHashMap<>(row);
+                CstmView view = new CstmView();
+                view.setContainerId(container.getId());
+                view.setSchema((String) rowMap.get("schema"));
+                view.setQueryName((String) rowMap.get("queryName"));
+                view.setName((String) rowMap.get("name"));
+                if (rowMap.containsKey("customViewOwner"))
+                    view.setCustomViewOwner((Integer) rowMap.get("customViewOwner"));
+                if (rowMap.containsKey("columns"))
+                    view.setColumns((String) rowMap.get("columns"));
+                if (rowMap.containsKey("filter"))
+                    view.setFilter((String) rowMap.get("filter"));
+                if (rowMap.get("flags") instanceof Integer flags)
+                    view.setFlags(flags);
+
+                validate(view, container, user);
+                result.add(CstmView.toRow(QueryManager.get().insert(user, view)));
+            }
+            return result;
         }
 
         @Override
-        public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> _update(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
         {
-            // for now just rely on the existing internal action
-            throw new UnsupportedOperationException();
+            Integer id = (Integer) oldRow.get("customViewId");
+            CstmView view = QueryManager.get().getCustomView(container, id);
+            if (view == null)
+                throw new ValidationException("Custom view not found: " + id);
+            if (row.containsKey("schema"))
+                view.setSchema((String) row.get("schema"));
+            if (row.containsKey("queryName"))
+                view.setQueryName((String) row.get("queryName"));
+            if (row.containsKey("name"))
+                view.setName((String) row.get("name"));
+            if (row.containsKey("customViewOwner"))
+                view.setCustomViewOwner((Integer) row.get("customViewOwner"));
+            if (row.containsKey("columns"))
+                view.setColumns((String) row.get("columns"));
+            if (row.containsKey("filter"))
+                view.setFilter((String) row.get("filter"));
+            if (row.containsKey("flags") && row.get("flags") instanceof Integer flags)
+                view.setFlags(flags);
+
+            validate(view, container, user);
+            return CstmView.toRow(QueryManager.get().update(user, view));
+        }
+
+        private void validate(CstmView view, Container c, User user)
+        {
+            if (view == null)
+            {
+                throw new NotFoundException();
+            }
+            if (!view.getContainerId().equals(c.getId()))
+            {
+                throw new UnauthorizedException();
+            }
+            if (view.getCustomViewOwner() == null)
+            {
+                if (!c.hasPermission(user, EditSharedViewPermission.class))
+                {
+                    throw new UnauthorizedException();
+                }
+            }
+            else
+            {
+                // must be owner or site admin
+                if (!user.hasSiteAdminPermission() && view.getCustomViewOwner().intValue() != user.getUserId())
+                {
+                    throw new UnauthorizedException();
+                }
+            }
         }
     }
 }
