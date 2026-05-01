@@ -979,7 +979,6 @@ public class ToolsController extends SpringActionController
                 // overlaps with a smaller or equal column set.
                 streamIndices(indices, droppedIndices)
                     .filter(index -> index.indexType() == Unique)
-                    .filter(index -> !convertedUniqueIndices.contains(index))
                     .forEach(uq -> streamIndices(indices, droppedIndices)
                         .filter(index -> index.indexType() == Primary || index.indexType() == Unique)
                         .filter(index -> !convertedUniqueIndices.contains(index))
@@ -1007,7 +1006,7 @@ public class ToolsController extends SpringActionController
                                     .filter(change -> change.index().equals(ix))
                                     .findFirst()
                                     .orElseThrow();
-                                description = description + (description.contains("!!") ? "" : ".") + " Prior to this drop, the index was converted: " + convert.description();
+                                description = description + (!description.endsWith(".") ? "." : "") + " Prior to this drop, the index was converted: " + convert.description();
                                 changes.remove(convert);
                                 convertedUniqueIndices.remove(ix);
                             }
@@ -1031,7 +1030,7 @@ public class ToolsController extends SpringActionController
         private String getDropDescription(IndexDefinition dropIndex, IndexDefinition otherIndex)
         {
             String warning = dropIndex.indexType() == otherIndex.indexType() && dropIndex.columns().size() == otherIndex.columns().size() ?
-                ". Note: You may want to drop " + otherIndex.display() + " instead!!" : "";
+                ". Note: You may want to drop " + otherIndex.display() + " instead." : "";
             return String.format("Dropping %s because it overlaps with %s", dropIndex.display(), otherIndex.display()) + warning;
         }
 
@@ -1136,7 +1135,7 @@ public class ToolsController extends SpringActionController
     private static @Nullable String getConstraintForIndex(String schemaName, String indexName)
     {
         Cache<String, Map<IndexKey, String>> sharedCache = CacheManager.getSharedCache();
-        var constraintMap = sharedCache.get("ConstraintForIndexMap", null, (_, _) -> Collections.unmodifiableMap(
+        var constraintMap = sharedCache.get(OverlappingIndicesAction.class.getName() + "/ConstraintForIndexMap", null, (_, _) -> Collections.unmodifiableMap(
             new SqlSelector(DbScope.getLabKeyScope(), new SQLFragment("""
                 SELECT NspName AS SchemaName, RelName AS IndexName, ConName AS ConstraintName FROM pg_index i
                 INNER JOIN pg_class cl ON cl.oid = i.indexrelid
