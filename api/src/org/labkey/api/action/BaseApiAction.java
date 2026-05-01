@@ -365,8 +365,11 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             // Ideally, ObjectReader would handle the Object case as well, but currently readValue() throws with "end-of-input" exception
             if (Object.class != c)
             {
-                ObjectReader reader = getObjectReader(c);
-                form = reader.readValue(getViewContext().getRequest().getInputStream());
+                ObjectReader objectReader = getObjectReader(c);
+                try (Reader requestReader = openRequestReader())
+                {
+                    form = objectReader.readValue(requestReader);
+                }
             }
             else
             {
@@ -385,7 +388,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             errors = new NullSafeBindException(new Object(), "form");
             errors.reject(SpringActionController.ERROR_MSG, "Error binding property: " + x.getMessage());
         }
-        catch (JsonProcessingException x)
+        catch (JsonProcessingException | StrictBoundedReader.LimitExceededException x)
         {
             // Bad JSON
             throw new BadRequestException(x.getMessage(), x);
@@ -516,20 +519,24 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         if (request == null)
             return null;
 
+        try (Reader reader = openRequestReader())
+        {
+            JSONTokener tokener = new JSONTokener(reader);
+            return tokener.more() ? new JSONObject(tokener) : null;
+        }
+    }
+
+    private Reader openRequestReader() throws IOException
+    {
+        HttpServletRequest request = getViewContext().getRequest();
         String characterEncoding = request.getCharacterEncoding();
         if (characterEncoding == null)
             characterEncoding = StringUtilsLabKey.DEFAULT_CHARSET.name();
-
         long maxLength = getMaximumJsonInputLength();
-
         // Issue 53699: Use request.getInputStream() instead of request.getReader() to
         // avoid BufferUnderflowException when processing multibyte character JSON payloads.
-        try (Reader streamReader = new InputStreamReader(request.getInputStream(), characterEncoding);
-             Reader jsonReader = maxLength > 0 ? new StrictBoundedReader(streamReader, maxLength) : streamReader)
-        {
-            JSONTokener tokener = new JSONTokener(jsonReader);
-            return tokener.more() ? new JSONObject(tokener) : null;
-        }
+        Reader streamReader = new InputStreamReader(request.getInputStream(), characterEncoding);
+        return maxLength > 0 ? new StrictBoundedReader(streamReader, maxLength) : streamReader;
     }
 
     private BindException populateForm(@Nullable JSONObject jsonObj, FORM form)

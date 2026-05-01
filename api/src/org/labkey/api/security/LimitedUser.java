@@ -52,17 +52,17 @@ import java.util.stream.Stream;
 public class LimitedUser extends ClonedUser
 {
     // Must be a named class to allow Jackson deserialization (e.g., Evaluation Content loads folder archives via the pipeline using AdminUser)
-    private static class LimitedUserImpersonatingContext extends NormalPermissionsContext
+    private static class LimitedUserPermissionContext extends NormalPermissionsContext
     {
         private final Set<Role> _roles;
 
         @SuppressWarnings("unused") // Needed for deserialization
-        private LimitedUserImpersonatingContext()
+        private LimitedUserPermissionContext()
         {
             _roles = null;
         }
 
-        private LimitedUserImpersonatingContext(Set<Role> roles)
+        private LimitedUserPermissionContext(Set<Role> roles)
         {
             _roles = roles;
         }
@@ -83,7 +83,7 @@ public class LimitedUser extends ClonedUser
     @SafeVarargs
     public LimitedUser(User user, Class<? extends Role>... roleClasses)
     {
-        super(user, new LimitedUserImpersonatingContext(getRoles(roleClasses)));
+        super(user, new LimitedUserPermissionContext(getRoles(roleClasses)));
     }
 
     @JsonCreator
