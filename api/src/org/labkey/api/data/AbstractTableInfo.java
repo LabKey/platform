@@ -43,6 +43,7 @@ import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataParseWarning;
 import org.labkey.api.query.QueryException;
@@ -181,10 +182,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     private final Map<String, CounterDefinition> _counterDefinitionMap = new CaseInsensitiveHashMap<>();    // Really only 1 for now, but could be more in future
 
     /* If a subclass generates a non-trivial FROM clause in getFromSQL(), it may need to track dependencies
-     * for calculated columns.  This is where we do that.  This is setup in loadAllButCustomizerFromXML(), and
+     * for calculated columns.  This is where we do that.  This is set up in loadAllButCustomizerFromXML(), and
      * and used in getFromSQL(String alias, Set<FieldKey> cols)
      */
-    protected final HashMap<FieldKey, HashSet<FieldKey>> _referencedColumns = new HashMap<>();
+    protected final Map<FieldKey, Set<FieldKey>> _referencedColumns = new HashMap<>();
 
     private boolean _initialColumnsAreAdded = false;
 
@@ -325,7 +326,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         }
     }
 
-
     protected Map<String, ColumnInfo> constructColumnMap()
     {
         if (isCaseSensitive())
@@ -399,15 +399,17 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     {
         if (null == columns || columns.isEmpty() || _referencedColumns.isEmpty())
             return columns;
-        // We're not recursively expanding. However, if expressions can reference each other we'll have to.
+
+        // We're not recursively expanding. However, if expressions can reference each other, we'll have to.
         HashSet<FieldKey> expanded = new HashSet<>();
         for (var fk : columns)
         {
             expanded.add(fk);
-            HashSet<FieldKey> refs = _referencedColumns.get(fk);
+            Set<FieldKey> refs = _referencedColumns.get(fk);
             if (null != refs)
                 expanded.addAll(refs);
         }
+
         return expanded;
     }
 
@@ -439,8 +441,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             List<ColumnInfo> pkColumns = getPkColumns();
             if (pkColumns.size() != 1)
                 return new NamedObjectList();
-            else
-                return getSelectList(pkColumns.get(0), Collections.emptyList(), maxRows, titleColumnInfo);
+
+            return getSelectList(pkColumns.getFirst(), Collections.emptyList(), maxRows, titleColumnInfo);
         }
 
         ColumnInfo column = getColumn(columnName);
@@ -460,12 +462,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         final int titleIndex;
         if (!(firstColumn.equals(titleColumn)))
         {
-            cols = Arrays.asList(firstColumn, titleColumn);
+            cols = List.of(firstColumn, titleColumn);
             titleIndex = 2;
         }
         else
         {
-            cols = Arrays.asList(firstColumn);
+            cols = List.of(firstColumn);
             titleIndex = 1;
         }
 
@@ -563,7 +565,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 }
             }
             if (null == _titleColumn && !getColumns().isEmpty())
-                _titleColumn = getColumns().get(0).getName();
+                _titleColumn = getColumns().getFirst().getName();
         }
 
         return _titleColumn;
@@ -769,21 +771,39 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _description = description;
     }
 
+    // GitHub Issue #1118
+    // ExprColumn may have dependent columns that need to be referenced so that getFromSQL() can include them
+    private void updateReferencedColumns(ColumnInfo column)
+    {
+        if (column instanceof ExprColumn exprColumn)
+        {
+            var fieldKey = exprColumn.getFieldKey();
+            var dependentColumns = exprColumn.getDependentColumns();
+            if (!dependentColumns.isEmpty())
+                _referencedColumns.put(fieldKey, dependentColumns.stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet()));
+        }
+    }
+
     public boolean removeColumn(ColumnInfo column)
     {
         checkLocked();
         ensureInitialColumnsAreAdded();
-        // Clear the cached resolved columns so we regenerate it if the shape of the table changes
-        _resolvedColumns.clear();
-        return _columnMap.remove(column.getName()) != null;
+
+        boolean removed = _columnMap.remove(column.getName()) != null;
+        if (removed)
+        {
+            // Clear the cached resolved columns so we regenerate it if the shape of the table changes
+            _resolvedColumns.clear();
+            _referencedColumns.remove(column.getFieldKey());
+        }
+
+        return removed;
     }
 
     public MutableColumnInfo addColumn(MutableColumnInfo column)
     {
         checkLocked();
         ensureInitialColumnsAreAdded();
-        // Not true if this is a VirtualTableInfo
-        // assert column.getParentTable() == this;
         if (_columnMap.containsKey(column.getName()))
         {
             String message = "Column " + column.getName() + " already exists for table " + getName() + ". Full set of existing columns: " + _columnMap.keySet();
@@ -794,7 +814,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _columnMap.put(column.getName(), column);
         // Clear the cached resolved columns so we regenerate it if the shape of the table changes
         _resolvedColumns.clear();
+        updateReferencedColumns(column);
         assert !(column instanceof BaseColumnInfo) || ((BaseColumnInfo)column).lockName();
+
         return column;
     }
 
@@ -803,8 +825,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
      * This is usually only done in TableInfo.afterConstruct() to modify the behavior of a column.
      * Because the ColumnInfo implementation can change in afterConstruct(), TableInfo implementations
      * should hold onto columnInfo references by FieldKey, and not by reference.
-
-     * during construction.
      */
     public ColumnInfo replaceColumn(ColumnInfo updated, ColumnInfo existing)
     {
@@ -821,9 +841,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _columnMap.put(updated.getName(), updated);
         // Clear the cached resolved columns so we regenerate it if the shape of the table changes
         _resolvedColumns.clear();
+
+        _referencedColumns.remove(existing.getFieldKey());
+        updateReferencedColumns(updated);
+
         return updated;
     }
-
 
     protected ColumnInfo transformColumn(MutableColumnInfo existing, @Nullable ColumnInfoTransformer t)
     {
@@ -831,10 +854,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         existing.checkLocked();
         if (null == t)
             return existing;
+
         MutableColumnInfo updated = t.apply(existing);
         return replaceColumn(updated, existing);
     }
-
 
     public void addCounterDefinition(@NotNull CounterDefinition counterDef)
     {
@@ -1380,7 +1403,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (xmlTable.isSetTableUrl())
             _detailsURL = DetailsURL.fromXML(xmlTable.getTableUrl(), errors);
 
-
         if (xmlTable.isSetCacheSize())
             _cacheSize = xmlTable.getCacheSize();
 
@@ -1467,7 +1489,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                     var wrappedColumn = QueryService.get().createQueryExpressionColumn(this, FieldKey.fromParts(xmlColumn.getColumnName()), sql, xmlColumn);
                     HashSet<FieldKey> referencedColumns = new HashSet<>();
                     QueryService.get().bindQueryExpressionColumn(wrappedColumn, existingColumns, true, referencedColumns);
-                    _referencedColumns.put(wrappedColumn.getFieldKey(), referencedColumns);
+                    if (!referencedColumns.isEmpty())
+                        _referencedColumns.put(wrappedColumn.getFieldKey(), referencedColumns);
                     calculatedFieldKeys.add(wrappedColumn.getFieldKey());
                     addColumn(wrappedColumn);
                 }
@@ -1503,7 +1526,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             {
                 warnings.add(new QueryParseWarning("Invalid AuditLogging: " + auditBehavior,null,0,0));
             }
-
         }
 
         _warnings.addAll(warnings);
@@ -2140,7 +2162,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         {
             List<String> pks = getPkColumnNames();
             if (pks.size() == 1)
-                _auditRowPk = FieldKey.fromParts(pks.get(0));
+                _auditRowPk = FieldKey.fromParts(pks.getFirst());
             else if (getColumn(FieldKey.fromParts("EntityId")) != null)
                 _auditRowPk = FieldKey.fromParts("EntityId");
             else if (getColumn(FieldKey.fromParts("RowId")) != null)
