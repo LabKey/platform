@@ -6,6 +6,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleErrorView;
@@ -33,6 +35,7 @@ import org.labkey.api.module.SupportedDatabase;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.BaseScanner.Handler;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.DOM;
@@ -748,8 +751,6 @@ public class ToolsController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class OverlappingIndicesAction extends FormViewAction<OverlappingIndicesForm>
     {
-        private final String delim = Character.toString(31); // Non-printing character that's very unlikely to be in a column name
-
         @Override
         public ModelAndView getView(OverlappingIndicesForm form, boolean reshow, BindException errors)
         {
@@ -761,7 +762,7 @@ public class ToolsController extends SpringActionController
                 url.deleteParameter("clearCaches");
             }
 
-            MultiValuedMap<String, IndexChange> multiMap = getOverlappingIndices(form);
+            MultiValuedMap<String, IndexChange> multiMap = new OverlappingIndicesAnalyzer().getOverlappingIndices(form.schemaName());
 
             return new VBox(
                 new HtmlView(DOM.createHtmlFragment(
@@ -802,7 +803,7 @@ public class ToolsController extends SpringActionController
         @Override
         public boolean handlePost(OverlappingIndicesForm form, BindException errors)
         {
-            MultiValuedMap<String, IndexChange> multiMap = getOverlappingIndices(form);
+            MultiValuedMap<String, IndexChange> multiMap = new OverlappingIndicesAnalyzer().getOverlappingIndices(form.schemaName());
 
             try
             {
@@ -838,113 +839,6 @@ public class ToolsController extends SpringActionController
         public URLHelper getSuccessURL(OverlappingIndicesForm form)
         {
             return new ActionURL(OverlappingIndicesAction.class, getContainer());
-        }
-
-        private MultiValuedMap<String, IndexChange> getOverlappingIndices(OverlappingIndicesForm form)
-        {
-            MultiValuedMap<String, IndexChange> multiMap = new ArrayListValuedLinkedHashMap<>();
-            DbScope scope = DbScope.getLabKeyScope();
-
-            ModuleLoader.getInstance().getModules().stream()
-                .flatMap(module -> module.getSchemaNames().stream().filter(name -> !module.getProvisionedSchemaNames().contains(name)))
-                .filter(schemaName -> form.schemaName() == null || schemaName.equalsIgnoreCase(form.schemaName()))
-                .sorted(String.CASE_INSENSITIVE_ORDER)
-                .map(name -> scope.getSchema(name, DbSchemaType.Module))
-                .flatMap(schema -> schema.getTableNames().stream().map(schema::getTable))
-                .forEach(table -> {
-                    var indices = new LinkedHashSet<>(table.getAllIndices());
-                    var changes = new LinkedList<IndexChange>();
-                    Set<IndexDefinition> droppedIndices = new HashSet<>();
-
-                    // Step #1: Find the PK (if present), and drop all indices that overlap with a smaller or equal
-                    // column set. The third step below would take care of overlapping non-unique indices, so this is
-                    // mainly to drop unique indices that overlap with the PK.
-                    indices.stream()
-                        .filter(ix -> ix.indexType() == Primary)
-                        .findFirst()
-                        .ifPresent(pk -> indices.stream()
-                            .filter(index -> overlaps(pk, index))
-                            .forEach(index -> {
-                                changes.add(new IndexChange(table, index, ChangeType.Drop, getDropDescription(index, pk)));
-                                droppedIndices.add(index);
-                            })
-                        );
-
-                    Set<IndexDefinition> convertedUniqueIndices = new HashSet<>();
-
-                    // Step #2: For each unique index, switch it to a non-unique index if there's any UQ or PK that
-                    // overlaps with a smaller or equal column set.
-                    streamIndices(indices, droppedIndices)
-                        .filter(index -> index.indexType() == Unique)
-                        .forEach(uq -> streamIndices(indices, convertedUniqueIndices)
-                            .filter(index -> index.indexType() == Primary || index.indexType() == Unique)
-                            .filter(index -> overlaps(uq, index))
-                            .findFirst()
-                            .ifPresent(index -> {
-                                changes.add(new IndexChange(table, uq, ChangeType.Convert, String.format("Converting %s from unique to non-unique index because %s overlaps it with a smaller column set", uq.display(), index.display())));
-                                convertedUniqueIndices.add(uq);
-                            })
-                        );
-
-                    // Step #3: For each index (unique or non-unique), delete all other non-unique indices that overlap
-                    // with a smaller or equal column set.
-                    streamIndices(indices, droppedIndices)
-                        .filter(index -> index.indexType() != Primary)
-                        .forEach(index -> streamIndices(indices, droppedIndices)
-                            .filter(ix -> ix.indexType() == NonUnique || convertedUniqueIndices.contains(ix))
-                            .filter(ix -> overlaps(index, ix))
-                            .forEach(ix -> {
-                                String description = getDropDescription(ix, index);
-                                if (convertedUniqueIndices.contains(ix))
-                                {
-                                    throw new IllegalStateException("Dropping an index that's been converted to non-unique is not yet supported");
-                                }
-                                changes.add(new IndexChange(table, ix, ChangeType.Drop, description));
-                                droppedIndices.add(ix);
-                            })
-                        );
-
-                    changes.forEach(change -> multiMap.put(change.table().getSchema().getName(), change));
-                });
-
-            return multiMap;
-
-            // TODO: junit test
-        }
-
-        // Helper that filters out the dropped indices
-        private Stream<IndexDefinition> streamIndices(Set<IndexDefinition> indices, Set<IndexDefinition> droppedIndices)
-        {
-            return indices.stream().filter(index -> !droppedIndices.contains(index));
-        }
-
-        private String getDropDescription(IndexDefinition dropIndex, IndexDefinition otherIndex)
-        {
-            String warning = dropIndex.indexType() == otherIndex.indexType() && dropIndex.columns().size() == otherIndex.columns().size() ?
-                ". Note: You may want to drop " + otherIndex.display() + " instead!!" : "";
-            return String.format("Dropping %s because it overlaps with %s", dropIndex.display(), otherIndex.display()) + warning;
-        }
-
-        // Returns true if index2 has an overlapping column set that's equal to or smaller than index1's
-        private boolean overlaps(IndexDefinition index1, IndexDefinition index2)
-        {
-            boolean ret = false;
-
-            if (!index1.equals(index2) && Objects.equals(index1.filterCondition(), index2.filterCondition()))
-            {
-                String key1 = getKey(index1.columns());
-                String key2 = getKey(index2.columns());
-                ret = key1.startsWith(key2);
-            }
-
-            return ret;
-        }
-
-        private String getKey(List<ColumnInfo> cols)
-        {
-            return cols.stream()
-                .map(col -> col.getName().toLowerCase())
-                .collect(Collectors.joining(delim)) + delim;
         }
 
         private static class WriterContext
@@ -1045,7 +939,144 @@ public class ToolsController extends SpringActionController
         }
     }
 
-    protected enum ChangeType
+    private static class OverlappingIndicesAnalyzer
+    {
+        private final String delim = Character.toString(31); // Non-printing character that's very unlikely to be in a column name
+
+        private MultiValuedMap<String, IndexChange> getOverlappingIndices(@Nullable String schemaName)
+        {
+            MultiValuedMap<String, IndexChange> multiMap = new ArrayListValuedLinkedHashMap<>();
+            DbScope scope = DbScope.getLabKeyScope();
+
+            ModuleLoader.getInstance().getModules().stream()
+            .flatMap(module -> module.getSchemaNames().stream().filter(name -> !module.getProvisionedSchemaNames().contains(name)))
+            .filter(name -> schemaName == null || name.equalsIgnoreCase(schemaName))
+            .sorted(String.CASE_INSENSITIVE_ORDER)
+            .map(name -> scope.getSchema(name, DbSchemaType.Module))
+            .flatMap(schema -> schema.getTableNames().stream().map(schema::getTable))
+            .forEach(table -> {
+                var indices = new LinkedHashSet<>(table.getAllIndices());
+                var changes = new LinkedList<IndexChange>();
+                Set<IndexDefinition> droppedIndices = new HashSet<>();
+
+                // Step #1: Find the PK (if present), and drop all indices that overlap with a smaller or equal
+                // column set. The third step below would take care of overlapping non-unique indices, so this is
+                // mainly to drop unique indices that overlap with the PK.
+                indices.stream()
+                    .filter(ix -> ix.indexType() == Primary)
+                    .findFirst()
+                    .ifPresent(pk -> indices.stream()
+                        .filter(index -> overlaps(pk, index))
+                        .forEach(index -> {
+                            changes.add(new IndexChange(table, index, ChangeType.Drop, getDropDescription(index, pk)));
+                            droppedIndices.add(index);
+                        })
+                    );
+
+                Set<IndexDefinition> convertedUniqueIndices = new HashSet<>();
+
+                // Step #2: For each unique index, switch it to a non-unique index if there's any UQ or PK that
+                // overlaps with a smaller or equal column set.
+                streamIndices(indices, droppedIndices)
+                    .filter(index -> index.indexType() == Unique)
+                    .filter(index -> !convertedUniqueIndices.contains(index))
+                    .forEach(uq -> streamIndices(indices, droppedIndices)
+                        .filter(index -> index.indexType() == Primary || index.indexType() == Unique)
+                        .filter(index -> !convertedUniqueIndices.contains(index))
+                        .filter(index -> overlaps(uq, index))
+                        .findFirst()
+                        .ifPresent(index -> {
+                            changes.add(new IndexChange(table, uq, ChangeType.Convert, String.format("Converting %s from unique to non-unique index because %s overlaps it with a smaller column set", uq.display(), index.display())));
+                            convertedUniqueIndices.add(uq);
+                        })
+                    );
+
+                // Step #3: For each index (unique or non-unique), delete all other non-unique indices that overlap
+                // with a smaller or equal column set.
+                streamIndices(indices, droppedIndices)
+                    .filter(index -> index.indexType() != Primary)
+                    .forEach(index -> streamIndices(indices, droppedIndices)
+                        .filter(ix -> ix.indexType() == NonUnique || convertedUniqueIndices.contains(ix))
+                        .filter(ix -> overlaps(index, ix))
+                        .forEach(ix -> {
+                            String description = getDropDescription(ix, index);
+                            if (convertedUniqueIndices.contains(ix))
+                            {
+                                // Index was converted to non-unique but now needs to be dropped. Adjust changes, description, etc.
+                                IndexChange convert = changes.stream()
+                                    .filter(change -> change.index().equals(ix))
+                                    .findFirst()
+                                    .orElseThrow();
+                                description = description + (description.contains("!!") ? "" : ".") + " Prior to this drop, the index was converted: " + convert.description();
+                                changes.remove(convert);
+                                convertedUniqueIndices.remove(ix);
+                            }
+                            changes.add(new IndexChange(table, ix, ChangeType.Drop, description));
+                            droppedIndices.add(ix);
+                        })
+                    );
+
+                changes.forEach(change -> multiMap.put(change.table().getSchema().getName(), change));
+            });
+
+            return multiMap;
+        }
+
+        // Helper that filters out the dropped indices
+        private Stream<IndexDefinition> streamIndices(Set<IndexDefinition> indices, Set<IndexDefinition> droppedIndices)
+        {
+            return indices.stream().filter(index -> !droppedIndices.contains(index));
+        }
+
+        private String getDropDescription(IndexDefinition dropIndex, IndexDefinition otherIndex)
+        {
+            String warning = dropIndex.indexType() == otherIndex.indexType() && dropIndex.columns().size() == otherIndex.columns().size() ?
+                ". Note: You may want to drop " + otherIndex.display() + " instead!!" : "";
+            return String.format("Dropping %s because it overlaps with %s", dropIndex.display(), otherIndex.display()) + warning;
+        }
+
+        // Returns true if index2 has an overlapping column set that's equal to or smaller than index1's
+        private boolean overlaps(IndexDefinition index1, IndexDefinition index2)
+        {
+            boolean ret = false;
+
+            if (!index1.equals(index2) && Objects.equals(index1.filterCondition(), index2.filterCondition()))
+            {
+                String key1 = getKey(index1.columns());
+                String key2 = getKey(index2.columns());
+                ret = key1.startsWith(key2);
+            }
+
+            return ret;
+        }
+
+        private String getKey(List<ColumnInfo> cols)
+        {
+            return cols.stream()
+                .map(col -> col.getName().toLowerCase())
+                .collect(Collectors.joining(delim)) + delim;
+        }
+    }
+
+    @TestWhen(TestWhen.When.BVT)
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testOverlappingIndices()
+        {
+            if (DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL())
+            {
+                var map = new OverlappingIndicesAnalyzer().getOverlappingIndices(null);
+                var keys = map.keys();
+                if (!keys.isEmpty())
+                    fail(StringUtilsLabKey.pluralize(keys.size(), "redundant index", "redundant indices") + " detected: " + map);
+            }
+        }
+
+        // TODO: Test convert -> drop sequence, etc.
+    }
+
+    private enum ChangeType
     {
         Drop
         {
