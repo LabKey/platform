@@ -90,6 +90,7 @@ public class DevtoolsModule extends CodeOnlyModule
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
+            TestController.JsonInputLimitTest.class,
             ToolsController.TestCase.class
         );
     }

@@ -55,7 +55,6 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.FileUtil;
@@ -136,7 +135,7 @@ public class StatusController extends SpringActionController
         Container c = getContainer();
         if (c == null || c.isRoot())
         {
-            if (!getUser().hasRootPermission(TroubleshooterPermission.class))
+            if (!getUser().isTroubleshooter())
             {
                 throw new UnauthorizedException();
             }
