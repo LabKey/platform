@@ -124,6 +124,11 @@ export function PlateTemplateDesigner(): JSX.Element {
     const nextGroupIdRef = useRef(-1);  // Temporary negative IDs for client-created groups (see ID conventions above)
     // Always-current ref so callbacks can read the latest activeGroup without stale-closure bugs.
     const activeGroupRef = useRef<WellGroup | null>(null);
+    // Set to true synchronously before intentional navigation (Cancel / Save & Close) so the
+    // beforeunload handler does not fire the "unsaved changes" prompt on those code paths.
+    // Using a ref rather than state ensures the handler sees the update in the same tick as
+    // the href change, before React has had a chance to re-render and re-register the handler.
+    const isIntentionalExitRef = useRef(false);
     activeGroupRef.current = activeGroup;
     const nextColorIndexRef = useRef(0);  // Monotonically increasing; never decrements on delete so colors stay unique
     // Capture returnURL once at mount; handleSave strips query params via replaceState, so reading from the URL later would return null.
@@ -157,8 +162,8 @@ export function PlateTemplateDesigner(): JSX.Element {
                 setPlate({ ...plate, name: plateNameRef.current });
                 setColorMap(assignColors(plate.groups));
                 nextColorIndexRef.current = plate.groups.length;
-                // Initialize below the minimum server rowId to avoid collisions.
-                // Server IDs should be positive, but guard against zero or negative values.
+                // Initialize below the minimum rowId to avoid collisions. Previously saved groups will have positive
+                // rowIds. When starting a new template, the defaults will have negative values.
                 const minRowId = plate.groups.reduce((min, g) => Math.min(min, g.rowId), 0);
                 nextGroupIdRef.current = Math.min(-1, minRowId - 1);
                 setActiveTab(plate.groupTypes[0] ?? '');
@@ -331,6 +336,7 @@ export function PlateTemplateDesigner(): JSX.Element {
     }, [plate]);
 
     const navigateAway = useCallback(() => {
+        isIntentionalExitRef.current = true;
         const returnURL = returnURLRef.current;
         window.location.href = (returnURL && isSameOrigin(returnURL)) ? returnURL : ActionURL.buildURL('plate', 'plateList');
     }, []);
@@ -398,10 +404,12 @@ export function PlateTemplateDesigner(): JSX.Element {
         };
     }, []);
 
-    // Warn on unsaved navigation
+    // Warn on unsaved navigation, but not when the user has explicitly chosen to leave
+    // (Cancel / Save & Close), which sets isIntentionalExitRef synchronously before the
+    // href change so we can suppress the prompt even before React re-renders.
     useEffect(() => {
         const handler = (e: BeforeUnloadEvent) => {
-            if (isDirty) {
+            if (isDirty && !isIntentionalExitRef.current) {
                 e.preventDefault();
                 e.returnValue = '';
             }
