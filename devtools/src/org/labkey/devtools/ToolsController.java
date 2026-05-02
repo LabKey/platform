@@ -2,13 +2,13 @@ package org.labkey.devtools;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedLinkedHashMap;
+import org.labkey.api.data.JdbcType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Assume;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -49,7 +49,6 @@ import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.vcs.Vcs;
 import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
@@ -79,6 +78,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -106,7 +107,6 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 
 public class ToolsController extends SpringActionController
 {
-    private static final Logger LOG = LogHelper.getLogger(ToolsController.class, "Output from various tools");
     private static final ActionResolver RESOLVER = new DefaultActionResolver(ToolsController.class);
 
     public static final String NAME = "tools";
@@ -895,7 +895,7 @@ public class ToolsController extends SpringActionController
 
         private WriterContext getWriterContext(String schemaName) throws IOException
         {
-            return _writerContextMap.computeIfAbsent(schemaName, n -> {
+            return _writerContextMap.computeIfAbsent(schemaName, _ -> {
 
                 DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Module);
                 Module module = schema.getModule();
@@ -960,72 +960,77 @@ public class ToolsController extends SpringActionController
         private MultiValuedMap<String, IndexChange> getChanges(@Nullable String schemaName)
         {
             MultiValuedMap<String, IndexChange> multiMap = new ArrayListValuedLinkedHashMap<>();
-
-            enumerateTables(schemaName, table -> {
-                var indices = new LinkedHashSet<>(table.getAllIndices());
-                var changes = new LinkedList<IndexChange>();
-                Set<IndexDefinition> droppedIndices = new HashSet<>();
-
-                // Step #1: Find the PK (if present), and drop all indices that overlap with a smaller or equal
-                // column set. The third step below would take care of overlapping non-unique indices, so this is
-                // mainly to drop unique indices that overlap with the PK.
-                indices.stream()
-                    .filter(ix -> ix.indexType() == Primary)
-                    .findFirst()
-                    .ifPresent(pk -> indices.stream()
-                        .filter(index -> isOverlap(pk, index))
-                        .forEach(index -> {
-                            changes.add(new IndexChange(table, index, ChangeType.Drop, getDropDescription(index, pk)));
-                            droppedIndices.add(index);
-                        })
-                    );
-
-                Set<IndexDefinition> convertedUniqueIndices = new HashSet<>();
-
-                // Step #2: For each unique index, switch it to a non-unique index if there's any UQ or PK that
-                // overlaps with a smaller or equal column set.
-                streamIndices(indices, droppedIndices)
-                    .filter(index -> index.indexType() == Unique)
-                    .forEach(uq -> streamIndices(indices, droppedIndices)
-                        .filter(index -> index.indexType() == Primary || index.indexType() == Unique)
-                        .filter(index -> !convertedUniqueIndices.contains(index))
-                        .filter(index -> isOverlap(uq, index))
-                        .findFirst()
-                        .ifPresent(index -> {
-                            changes.add(new IndexChange(table, uq, ChangeType.Convert, String.format("Converting %s from unique to non-unique index because %s overlaps it with a smaller column set", uq.display(), index.display())));
-                            convertedUniqueIndices.add(uq);
-                        })
-                    );
-
-                // Step #3: For each index (unique or non-unique), delete all other non-unique indices that overlap
-                // with a smaller or equal column set.
-                streamIndices(indices, droppedIndices)
-                    .filter(index -> index.indexType() != Primary)
-                    .forEach(index -> streamIndices(indices, droppedIndices)
-                        .filter(ix -> ix.indexType() == NonUnique || convertedUniqueIndices.contains(ix))
-                        .filter(ix -> isOverlap(index, ix))
-                        .forEach(ix -> {
-                            String description = getDropDescription(ix, index);
-                            if (convertedUniqueIndices.contains(ix))
-                            {
-                                // Index was converted to non-unique but now needs to be dropped. Adjust changes, description, etc.
-                                IndexChange convert = changes.stream()
-                                    .filter(change -> change.index().equals(ix))
-                                    .findFirst()
-                                    .orElseThrow();
-                                description = description + (!description.endsWith(".") ? "." : "") + " Prior to this drop, the index was converted: " + convert.description();
-                                changes.remove(convert);
-                                convertedUniqueIndices.remove(ix);
-                            }
-                            changes.add(new IndexChange(table, ix, ChangeType.Drop, description));
-                            droppedIndices.add(ix);
-                        })
-                    );
-
-                changes.forEach(change -> multiMap.put(change.table().getSchema().getName(), change));
-            });
-
+            enumerateTables(schemaName, table ->
+                analyzeTable(table, new LinkedHashSet<>(table.getAllIndices()))
+                    .forEach(change -> multiMap.put(change.table().getSchema().getName(), change)));
             return multiMap;
+        }
+
+        // Package-visible for testing. Pass null for table only in unit tests that don't inspect change.table().
+        List<IndexChange> analyzeTable(@Nullable TableInfo table, LinkedHashSet<IndexDefinition> indices)
+        {
+            var changes = new LinkedList<IndexChange>();
+            Set<IndexDefinition> droppedIndices = new HashSet<>();
+
+            // Step #1: Find the PK (if present), and drop non-unique indices whose columns are a prefix of the
+            // PK, plus unique indices that cover the exact same column set as the PK. A unique index with FEWER
+            // columns than the PK enforces a strictly stronger uniqueness guarantee (the PK cannot replace it),
+            // so it is left for Step #2 to evaluate.
+            indices.stream()
+                .filter(ix -> ix.indexType() == Primary)
+                .findFirst()
+                .ifPresent(pk -> indices.stream()
+                    .filter(index -> isOverlap(pk, index))
+                    .filter(index -> index.indexType() != Unique || index.columns().size() == pk.columns().size())
+                    .forEach(index -> {
+                        changes.add(new IndexChange(table, index, ChangeType.Drop, getDropDescription(index, pk)));
+                        droppedIndices.add(index);
+                    })
+                );
+
+            Set<IndexDefinition> convertedUniqueIndices = new HashSet<>();
+
+            // Step #2: For each unique index, switch it to a non-unique index if there's any UQ or PK that
+            // overlaps with a smaller or equal column set.
+            streamIndices(indices, droppedIndices)
+                .filter(index -> index.indexType() == Unique)
+                .forEach(uq -> streamIndices(indices, droppedIndices)
+                    .filter(index -> index.indexType() == Primary || index.indexType() == Unique)
+                    .filter(index -> !convertedUniqueIndices.contains(index))
+                    .filter(index -> isOverlap(uq, index))
+                    .findFirst()
+                    .ifPresent(index -> {
+                        changes.add(new IndexChange(table, uq, ChangeType.Convert, String.format("Converting %s from unique to non-unique index because %s overlaps it with a smaller column set", uq.display(), index.display())));
+                        convertedUniqueIndices.add(uq);
+                    })
+                );
+
+            // Step #3: For each index (unique or non-unique), delete all other non-unique indices that overlap
+            // with a smaller or equal column set.
+            streamIndices(indices, droppedIndices)
+                .filter(index -> index.indexType() != Primary)
+                .forEach(index -> streamIndices(indices, droppedIndices)
+                    .filter(ix -> ix.indexType() == NonUnique || convertedUniqueIndices.contains(ix))
+                    .filter(ix -> isOverlap(index, ix))
+                    .forEach(ix -> {
+                        String description = getDropDescription(ix, index);
+                        if (convertedUniqueIndices.contains(ix))
+                        {
+                            // Index was converted to non-unique but now needs to be dropped. Adjust changes, description, etc.
+                            IndexChange convert = changes.stream()
+                                .filter(change -> change.index().equals(ix))
+                                .findFirst()
+                                .orElseThrow();
+                            description = description + (!description.endsWith(".") ? "." : "") + " Prior to this drop, the index was converted: " + convert.description();
+                            changes.remove(convert);
+                            convertedUniqueIndices.remove(ix);
+                        }
+                        changes.add(new IndexChange(table, ix, ChangeType.Drop, description));
+                        droppedIndices.add(ix);
+                    })
+                );
+
+            return changes;
         }
 
         // Helper that filters out the dropped indices
@@ -1073,23 +1078,155 @@ public class ToolsController extends SpringActionController
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
-        @BeforeClass
-        public static void checkDatabase()
-        {
-            Assume.assumeTrue("Skipping because this server is not running on PostgreSQL", DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL());
-        }
-
         @Test
         public void testOverlappingIndices()
         {
+            Assume.assumeTrue("Skipping because this server is not running on PostgreSQL", DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL());
             var map = new OverlappingIndicesAnalyzer().getChanges(null);
             var keys = map.keys();
             if (!keys.isEmpty())
                 fail(StringUtilsLabKey.pluralize(keys.size(), "redundant index", "redundant indices") + " detected: " + map);
         }
 
-        // TODO: Test convert -> drop sequence, etc.
-        // TODO: Display all overlapping indices that don't require changes
+        // Helper to build an IndexDefinition with named columns in order
+        private static IndexDefinition idx(String name, TableInfo.IndexType type, String... columnNames)
+        {
+            var cols = Arrays.stream(columnNames)
+                .map(n -> (ColumnInfo) new BaseColumnInfo(n, JdbcType.VARCHAR))
+                .collect(Collectors.toCollection(ArrayList::new));
+            return new IndexDefinition(name, type, cols, null);
+        }
+
+        private static List<IndexChange> analyze(IndexDefinition... indexDefs)
+        {
+            return new OverlappingIndicesAnalyzer().analyzeTable(null, new LinkedHashSet<>(Arrays.asList(indexDefs)));
+        }
+
+        @Test
+        public void testNonUniqueIndexIsRedundantWithPk()
+        {
+            // A non-unique index on (A) is redundant when the PK is on (A, B): the PK B-tree satisfies
+            // all the same prefix queries. This should be dropped.
+            var pk = idx("pk_ab", Primary, "A", "B");
+            var ix = idx("ix_a", NonUnique, "A");
+
+            var changes = analyze(pk, ix);
+
+            boolean ixDropped = changes.stream().anyMatch(c -> c.index().equals(ix) && c.type() == ChangeType.Drop);
+            assertTrue("ix_a (non-unique on A) should be dropped when PK is on (A, B)", ixDropped);
+        }
+
+        @Test
+        public void testIdenticalUniqueIndexIsRedundantWithPk()
+        {
+            // A unique index on exactly the same columns as the PK is a true duplicate: the PK already
+            // enforces the same uniqueness guarantee, so the separate index should be removed.
+            var pk = idx("pk_ab", Primary, "A", "B");
+            var uq = idx("uq_ab", Unique, "A", "B");
+
+            var changes = analyze(pk, uq);
+
+            boolean uqActedOn = changes.stream()
+                .anyMatch(c -> c.index().equals(uq) && (c.type() == ChangeType.Drop || c.type() == ChangeType.Convert));
+            assertTrue("uq_ab (unique on A, B) should be dropped or converted when PK is also on (A, B)", uqActedOn);
+        }
+
+        @Test
+        public void testUniqueNotDroppedByLongerPk()
+        {
+            // PK(A,B,C) allows rows (A=1,B=1,C=1) and (A=1,B=1,C=2); Unique(A,B) does not.
+            // Dropping it would silently relax the uniqueness guarantee.
+            var pk = idx("pk_abc", Primary, "A", "B", "C");
+            var uq = idx("uq_ab", Unique, "A", "B");
+
+            var changes = analyze(pk, uq);
+
+            boolean uqDropped = changes.stream().anyMatch(c -> c.index().equals(uq) && c.type() == ChangeType.Drop);
+            assertFalse("uq_ab (unique on A,B) must not be dropped when pk is on (A,B,C). Changes: " + changes, uqDropped);
+        }
+
+        @Test
+        public void testStep2UniqueConvertedWhenPrefixUniqueExists()
+        {
+            // If Unique(A) exists, the (A,B) pair is already guaranteed unique by the A constraint alone,
+            // so Unique(A,B) provides no additional uniqueness and should be converted to non-unique.
+            // The narrower Unique(A) must not be touched.
+            var uqA = idx("uq_a", Unique, "A");
+            var uqAB = idx("uq_ab", Unique, "A", "B");
+
+            var changes = analyze(uqA, uqAB);
+
+            boolean uqABConverted = changes.stream().anyMatch(c -> c.index().equals(uqAB) && c.type() == ChangeType.Convert);
+            boolean uqAConverted = changes.stream().anyMatch(c -> c.index().equals(uqA) && c.type() == ChangeType.Convert);
+            assertTrue("uq_ab (unique on A,B) should be converted when uq_a (unique on A) exists. Changes: " + changes, uqABConverted);
+            assertFalse("uq_a (unique on A) should not be converted. Changes: " + changes, uqAConverted);
+        }
+
+        @Test
+        public void testStep3NonUniqueDroppedByWiderNonUnique()
+        {
+            // A B-tree index on (A,B,C) can serve all prefix queries on (A,B), making a separate
+            // NonUnique(A,B) index redundant. The narrower one should be dropped; the wider one kept.
+            var ixABC = idx("ix_abc", NonUnique, "A", "B", "C");
+            var ixAB = idx("ix_ab", NonUnique, "A", "B");
+
+            var changes = analyze(ixABC, ixAB);
+
+            boolean ixABDropped = changes.stream().anyMatch(c -> c.index().equals(ixAB) && c.type() == ChangeType.Drop);
+            boolean ixABCDropped = changes.stream().anyMatch(c -> c.index().equals(ixABC) && c.type() == ChangeType.Drop);
+            assertTrue("ix_ab (non-unique on A,B) should be dropped when ix_abc (non-unique on A,B,C) exists. Changes: " + changes, ixABDropped);
+            assertFalse("ix_abc (non-unique on A,B,C) should not be dropped. Changes: " + changes, ixABCDropped);
+        }
+
+        @Test
+        public void testStep2And3ConvertThenDrop()
+        {
+            // Step 2 converts Unique(A,B) because Unique(A) makes its uniqueness redundant.
+            // Step 3 then drops the (now non-unique) Unique(A,B) because NonUnique(A,B,C) covers it.
+            // The final changes list must show a single Drop for uq_ab — no separate Convert entry.
+            var uqA = idx("uq_a", Unique, "A");
+            var uqAB = idx("uq_ab", Unique, "A", "B");
+            var ixABC = idx("ix_abc", NonUnique, "A", "B", "C");
+
+            var changes = analyze(uqA, uqAB, ixABC);
+
+            boolean uqABDropped = changes.stream().anyMatch(c -> c.index().equals(uqAB) && c.type() == ChangeType.Drop);
+            boolean uqABConverted = changes.stream().anyMatch(c -> c.index().equals(uqAB) && c.type() == ChangeType.Convert);
+            assertTrue("uq_ab should appear as Drop (convert folded in). Changes: " + changes, uqABDropped);
+            assertFalse("uq_ab should not have a separate Convert entry. Changes: " + changes, uqABConverted);
+        }
+
+        @Test
+        public void testNoChangesForDisjointIndices()
+        {
+            // Indices on completely different columns have no prefix relationship; nothing should change.
+            var ixA = idx("ix_a", NonUnique, "A");
+            var ixB = idx("ix_b", NonUnique, "B");
+            var uqC = idx("uq_c", Unique, "C");
+
+            var changes = analyze(ixA, ixB, uqC);
+
+            assertTrue("Disjoint indices should produce no changes. Changes: " + changes, changes.isEmpty());
+        }
+
+        @Test
+        public void testFilteredIndexNotDroppedByFullIndex()
+        {
+            // A partial (filtered) index covers only a subset of rows. Even when its column set is a
+            // prefix of the PK, the filter condition means the two indices are not interchangeable.
+            var pk = idx("pk_ab", Primary, "A", "B");
+            var cols = Arrays.stream(new String[]{"A"})
+                .map(n -> (ColumnInfo) new BaseColumnInfo(n, JdbcType.VARCHAR))
+                .collect(Collectors.toCollection(ArrayList::new));
+            var filteredIx = new IndexDefinition("ix_a_partial", NonUnique, cols, "active = 1");
+
+            var changes = analyze(pk, filteredIx);
+
+            boolean filteredDropped = changes.stream().anyMatch(c -> c.index().equals(filteredIx) && c.type() == ChangeType.Drop);
+            assertFalse(
+                "ix_a_partial (filtered non-unique on A) must not be dropped by pk_ab: different filter conditions. Changes: " + changes,
+                filteredDropped);
+        }
     }
 
     private enum ChangeType
