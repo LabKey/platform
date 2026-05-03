@@ -2,9 +2,7 @@ package org.labkey.devtools;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedLinkedHashMap;
-import org.labkey.api.data.JdbcType;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -25,6 +23,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlSelector;
@@ -76,10 +75,10 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -750,6 +749,7 @@ public class ToolsController extends SpringActionController
 
     public record OverlappingIndicesForm(String schemaName, Boolean clearCaches) {}
     public record IndexChange(TableInfo table, IndexDefinition index, ChangeType type, String description) {}
+    public record IndexOverlap(TableInfo table, String description) {}
 
     @RequiresPermission(AdminPermission.class)
     public class OverlappingIndicesAction extends FormViewAction<OverlappingIndicesForm>
@@ -765,18 +765,43 @@ public class ToolsController extends SpringActionController
                 url.deleteParameter("clearCaches");
             }
 
-            MultiValuedMap<String, IndexChange> multiMap = new OverlappingIndicesAnalyzer().getChanges(form.schemaName());
+            OverlappingIndicesAnalyzer analyzer = new OverlappingIndicesAnalyzer();
+            MultiValuedMap<String, IndexOverlap> allOverlaps = analyzer.getOverlaps(form.schemaName());
+            MultiValuedMap<String, IndexChange> changes = analyzer.getChanges(form.schemaName());
 
             return new VBox(
                 new HtmlView(DOM.createHtmlFragment(
-                    "Total number of changes needed: " + multiMap.keys().size(),
+                    DOM.H3("List of all overlapping indices"),
+                    "Some overlapping indices are expected and legitimate, typically because a non-unique index has " +
+                        "a longer column list than a unique index or primary key, a unique index has a shorter (more " +
+                        "restrictive) column list than the primary key, or the indices have different filter conditions.",
                     BR(),
-                    multiMap.keySet().stream().flatMap(schemaName ->
+                    allOverlaps.keySet().stream().flatMap(schemaName ->
                         Stream.of(
                             BR(),
-                            DOM.STRONG("Schema ", LinkBuilder.simpleLink(schemaName, new ActionURL(OverlappingIndicesAction.class, getContainer()).addParameter("schemaName", schemaName)), " needs " + StringUtilsLabKey.pluralize(multiMap.get(schemaName).size(), "change") + ":", BR()),
+                            DOM.STRONG("Schema ", LinkBuilder.simpleLink(schemaName, new ActionURL(OverlappingIndicesAction.class, getContainer()).addParameter("schemaName", schemaName)), ":", BR()),
                             DOM.TABLE(
-                                multiMap.get(schemaName).stream()
+                                allOverlaps.get(schemaName).stream()
+                                    .sorted(Comparator.comparing(change -> change.table().getName()))
+                                    .map(overlap -> DOM.TR(
+                                    DOM.TD(at(style, "width:200px;"), overlap.table().getName()),
+                                    DOM.TD(overlap.description()),
+                                    "\n"
+                                ))
+                            )
+                        )
+                    )
+                )),
+                new HtmlView(DOM.createHtmlFragment(
+                    BR(),
+                    DOM.H3("Total number of changes needed: " + changes.keys().size()),
+                    BR(),
+                    changes.keySet().stream().flatMap(schemaName ->
+                        Stream.of(
+                            BR(),
+                            DOM.STRONG("Schema ", LinkBuilder.simpleLink(schemaName, new ActionURL(OverlappingIndicesAction.class, getContainer()).addParameter("schemaName", schemaName)), " needs " + StringUtilsLabKey.pluralize(changes.get(schemaName).size(), "change") + ":", BR()),
+                            DOM.TABLE(
+                                changes.get(schemaName).stream()
                                     .sorted(Comparator.comparing(change -> change.table().getName()))
                                     .map(change -> DOM.TR(
                                         DOM.TD(at(style, "width:200px;"), change.table().getName()),
@@ -789,7 +814,7 @@ public class ToolsController extends SpringActionController
                 )),
                 new HtmlView(DOM.createHtmlFragment(
                     BR(),
-                    new ButtonBuilder("Create SQL Scripts That Drop Redundant Indices").href(url).usePost(),
+                    changes.isEmpty() ? null : new ButtonBuilder("Create SQL Scripts That Drop Redundant Indices").href(url).usePost(),
                     "  ",
                     new ButtonBuilder("Clear Caches and Refresh").href(url.addParameter("clearCaches", true))
                 ))
@@ -1033,6 +1058,21 @@ public class ToolsController extends SpringActionController
             return changes;
         }
 
+        private MultiValuedMap<String, IndexOverlap> getOverlaps(@Nullable String schemaName)
+        {
+            MultiValuedMap<String, IndexOverlap> multiMap = new ArrayListValuedLinkedHashMap<>();
+
+            enumerateTables(schemaName, table -> {
+                var indices = table.getAllIndices();
+                indices.forEach(index1 -> indices.stream()
+                    .filter(index2 -> isSimpleOverlap(index1, index2))
+                    .forEach(index2 -> multiMap.put(table.getSchema().getName(), new IndexOverlap(table, String.format("%s overlaps with %s", index2.display(), index1.display()))))
+                );
+            });
+
+            return multiMap;
+        }
+
         // Helper that filters out the dropped indices
         private Stream<IndexDefinition> streamIndices(Set<IndexDefinition> indices, Set<IndexDefinition> droppedIndices)
         {
@@ -1083,7 +1123,7 @@ public class ToolsController extends SpringActionController
         {
             Assume.assumeTrue("Skipping because this server is not running on PostgreSQL", DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL());
             var map = new OverlappingIndicesAnalyzer().getChanges(null);
-            var keys = map.keys();
+            var keys = map.keySet();
             if (!keys.isEmpty())
                 fail(StringUtilsLabKey.pluralize(keys.size(), "redundant index", "redundant indices") + " detected: " + map);
         }
@@ -1262,7 +1302,7 @@ public class ToolsController extends SpringActionController
             void writeScript(Writer writer, IndexChange change, String schemaName, String tableName, IndexDefinition changeIndex) throws IOException
             {
                 Drop.writeScript(writer, change);
-                String indexName = changeIndex.name().replace("uq", "ix").replace("unique", "index");
+                String indexName = changeIndex.name().replaceFirst("^uq", "ix").replaceFirst("^unique", "index");
                 writer.write("CREATE INDEX " + indexName + " ON " + schemaName + "." + tableName + "(" + changeIndex.columns().stream().map(ColumnInfo::getName).collect(Collectors.joining(", ")) + ");\n");
             }
         };

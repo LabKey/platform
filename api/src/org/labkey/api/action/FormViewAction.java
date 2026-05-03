@@ -153,9 +153,12 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
         return commandClass.isRecord() ? defaultBindParametersToRecord(commandClass, m) : defaultBindParameters(getCommand(), m);
     }
 
-    // Very simple binding for Java records: no support for binding errors, arrays, lists, disallowed fields, etc.
-    private <R> BindException defaultBindParametersToRecord(Class<R> recordClass, PropertyValues m)
+    // Simple binding for Java records: no support for binding errors, arrays, lists, etc.
+    private <R> BindException defaultBindParametersToRecord(Class<R> recordClass, PropertyValues pvs)
     {
+        // Note: We don't support record-based forms implementing HasAllowBindParameter since we must populate all
+        // properties at record construction time and therefore can't invoke allowBindParameter() prior to that.
+        PropertyValues m = getPropertyValuesForFormBinding(pvs, HasAllowBindParameter.getDefaultPredicate());
         ObjectFactory<R> factory = ObjectFactory.Registry.getFactory(recordClass);
         Map<String, Object> map = m.stream()
             .filter(pv -> pv.getValue() != null)

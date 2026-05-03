@@ -374,7 +374,6 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
 
     public static @NotNull BindException springBindParameters(Object command, String commandName, PropertyValues params)
     {
-        Predicate<String> allow = command instanceof HasAllowBindParameter allowBP ? allowBP.allowBindParameter() : HasAllowBindParameter.getDefaultPredicate();
         ServletRequestDataBinder binder = new ServletRequestDataBinder(command, commandName);
 
         String[] fields = binder.getDisallowedFields();
@@ -389,6 +388,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         try
         {
             // most paths probably called getPropertyValuesForFormBinding() already, but this is a public static method, so call it again
+            Predicate<String> allow = command instanceof HasAllowBindParameter allowBP ? allowBP.allowBindParameter() : HasAllowBindParameter.getDefaultPredicate();
             binder.bind(getPropertyValuesForFormBinding(params, allow));
             BindException errors = new NullSafeBindException(binder.getBindingResult());
             return errors;

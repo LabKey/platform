@@ -212,7 +212,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
         public String display()
         {
-            String display = name + " " + columns.stream().map(ColumnInfo::getName).toList();
+            String display = indexType.name().toUpperCase() + " " + name + " " + columns.stream().map(ColumnInfo::getName).toList();
             return filterCondition == null ? display : display + " + " + filterCondition;
         }
     }
