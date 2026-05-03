@@ -578,6 +578,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             case DropColumns -> result.add(getDropColumnsStatement(change));
             case RenameColumns -> result.addAll(getRenameColumnsStatement(change));
             case DropIndicesByName -> result.addAll(getDropIndexByNameStatements(change));
+            case DropConstraintsByName -> result.addAll(getDropConstraintsByNameStatements(change));
             case AddIndices -> result.addAll(getCreateIndexStatements(change));
             case ResizeColumns, ChangeColumnTypes -> result.addAll(getChangeColumnTypeStatement(change));
             case DropConstraints -> result.addAll(getDropConstraintsStatement(change));
@@ -603,6 +604,19 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         SQLFragment f = new SQLFragment("DROP INDEX ");
         f.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(indexName);
         return f;
+    }
+
+    private Collection<? extends SQLFragment> getDropConstraintsByNameStatements(TableChange change)
+    {
+        List<SQLFragment> statements = new ArrayList<>();
+        for (String constraintName : change.getConstraintsToBeDroppedByName())
+        {
+            SQLFragment f = new SQLFragment("ALTER TABLE ");
+            f.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(change.getTableName());
+            f.append(" DROP CONSTRAINT ").appendIdentifier(constraintName);
+            statements.add(f);
+        }
+        return statements;
     }
 
     /**

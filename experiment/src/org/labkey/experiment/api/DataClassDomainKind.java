@@ -100,7 +100,6 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
             new PropertyStorageSpec("genId", JdbcType.INTEGER),
             new PropertyStorageSpec("rowId", JdbcType.INTEGER).setNullable(false),
-            new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false), // TODO: expdataclass.lsid is deprecated, use rowId
             new PropertyStorageSpec("name", JdbcType.VARCHAR, 200)
         )));
 
@@ -116,14 +115,11 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         RESERVED_NAMES = DomainUtil.getNamesAndLabels(names);
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-                new PropertyStorageSpec.ForeignKey("rowId", "exp", "Data", "RowId", null, false),
-                // TODO: expdataclass.lsid is deprecated, use rowId FK above
-                new PropertyStorageSpec.ForeignKey("lsid", "exp", "Data", "LSID", null, false)
+                new PropertyStorageSpec.ForeignKey("rowId", "exp", "Data", "RowId", null, false)
         )));
 
         INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 new PropertyStorageSpec.Index(true, "rowId"),
-                new PropertyStorageSpec.Index(true, "lsid"),       // TODO: expdataclass.lsid is deprecated
                 new PropertyStorageSpec.Index(true, "name"))));
 
         FORCE_ENABLED_SYSTEM_FIELDS = Collections.unmodifiableSet(Sets.newHashSet(Arrays.asList("Name")));

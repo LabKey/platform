@@ -223,11 +223,6 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      */
     @NotNull List<ColumnInfo> getAlternateKeyColumns();
 
-    @NotNull default Set<String> getAltKeysForUpdate()
-    {
-       return Collections.emptySet();
-    }
-
     @Nullable default Set<String> getDisabledSystemFields()
     {
         return Collections.emptySet();
