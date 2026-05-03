@@ -1005,8 +1005,9 @@ public class ToolsController extends SpringActionController
                 .filter(ix -> ix.indexType() == Primary)
                 .findFirst()
                 .ifPresent(pk -> indices.stream()
-                    .filter(index -> isOverlap(pk, index))
-                    .filter(index -> index.indexType() != Unique || index.columns().size() == pk.columns().size())
+                    .filter(index ->
+                        (index.indexType() == NonUnique && isOverlap(pk, index)) || // Non-unique indices smaller or equal to PK
+                        (index.indexType() == Unique && isOverlap(pk, index) && index.columns().size() == pk.columns().size())) // Unique indices with column list exactly matching PK's
                     .forEach(index -> {
                         changes.add(new IndexChange(table, index, ChangeType.Drop, getDropDescription(index, pk)));
                         droppedIndices.add(index);
@@ -1123,7 +1124,7 @@ public class ToolsController extends SpringActionController
         {
             Assume.assumeTrue("Skipping because this server is not running on PostgreSQL", DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL());
             var map = new OverlappingIndicesAnalyzer().getChanges(null);
-            var keys = map.keySet();
+            var keys = map.keys();
             if (!keys.isEmpty())
                 fail(StringUtilsLabKey.pluralize(keys.size(), "redundant index", "redundant indices") + " detected: " + map);
         }
