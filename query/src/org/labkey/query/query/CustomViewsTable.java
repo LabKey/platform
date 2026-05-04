@@ -48,9 +48,6 @@ public class CustomViewsTable extends FilteredTable<QueryUserSchema>
         setDescription("Contains a row for each saved custom view. Available to folder administrators.");
 
         setImportURL(LINK_DISABLER);
-        //setUpdateURL(new DetailsURL(new ActionURL(QueryController.InternalSourceViewAction.class, getContainer()), Collections.singletonMap("CustomViewId", "CustomViewId")));
-        //setInsertURL(new DetailsURL(new ActionURL(QueryController.InternalNewViewAction.class, getContainer())));
-
         wrapAllColumns(true);
         var customViewIdCol = getMutableColumnOrThrow("CustomViewId");
         customViewIdCol.setKeyField(true);
