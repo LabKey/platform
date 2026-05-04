@@ -2316,6 +2316,31 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return getUserSchema().allowRobotsIndex();
     }
 
+    @NotNull
+    private final Map<Enum, Object> _customTableConfigs = new HashMap<>();
+
+    public void putCustomTableConfig(Enum key, Object value)
+    {
+        _customTableConfigs.put(key, value);
+    }
+
+    @NotNull
+    public Map<Enum, Object> getCustomTableConfigs()
+    {
+        return _customTableConfigs;
+    }
+
+    @Nullable
+    public Object getCustomTableConfig(Enum key)
+    {
+        return getCustomTableConfigs().get(key);
+    }
+
+    public boolean getCustomTableConfigBoolean(Enum key)
+    {
+        return Boolean.TRUE == getCustomTableConfig(key);
+    }
+
     public static class TestCase extends Assert{
         @Test
         public void testEnum()

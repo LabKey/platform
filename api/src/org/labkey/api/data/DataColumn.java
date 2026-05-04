@@ -773,6 +773,19 @@ public class DataColumn extends DisplayColumn
 
         out.write(select.addOptions(options));
 
+        /*
+         * GitHub Issue 1076: Clearing a MVTC value in the SDMS UI is confusing
+         * Multi-selects are weird. If no options are selected they don't post at all, so it's impossible to tell
+         * the difference between values that weren't on the html form at all and ones that were cleared by the user.
+         *
+         * To fix this, each multiple-select posts a hidden field with the same name and an empty value,
+         * ensuring the field is always present in the POST body.
+         */
+        if (isMultiple && !_boundColumn.isRequired())
+            out.write(InputBuilder.hidden()
+                .name(formFieldName)
+                .value(""));
+
         // disabled inputs are not posted with the form, so we output a hidden form element:
         if (disabledInput)
             renderHiddenFormInput(out, formFieldName, value);
