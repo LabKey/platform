@@ -13,7 +13,7 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "7.33.4-fb-accessibilityColors.0"
+    "@labkey/components": "7.33.4-fb-accessibilityColors.1"
   },
   "devDependencies": {
     "@labkey/build": "9.1.1",
