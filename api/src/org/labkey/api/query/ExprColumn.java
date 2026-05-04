@@ -25,8 +25,9 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -122,10 +123,16 @@ public class ExprColumn extends BaseColumnInfo
         }
     }
 
-    public List<ColumnInfo> getDependentColumns()
+    @Override
+    public Set<FieldKey> getReferencedFieldKeys()
     {
-        if (_dependentColumns == null)
-            return Collections.emptyList();
-        return List.of(_dependentColumns);
+        if (_dependentColumns == null || _dependentColumns.length == 0)
+            return Collections.emptySet();
+
+        var keys = new HashSet<FieldKey>();
+        for (var c : _dependentColumns)
+            keys.add(c.getFieldKey());
+
+        return Collections.unmodifiableSet(keys);
     }
 }
