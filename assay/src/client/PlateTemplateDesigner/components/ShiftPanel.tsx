@@ -23,20 +23,19 @@ interface ShiftPanelProps {
  * Shifts apply to every group of the active type simultaneously, preserving relative layout
  * between groups. Only the active tab's type is affected; other types are unchanged.
  */
-export function ShiftPanel({ onShift }: ShiftPanelProps): JSX.Element {
-    return (
-        <div className="shift-panel">
-            <div className="shift-panel__grid">
-                <span />
-                <button className="shift-panel__btn" title="Shift up" aria-label="Shift up" onClick={() => onShift(1, 0)}>↑</button>
-                <span />
-                <button className="shift-panel__btn" title="Shift left" aria-label="Shift left" onClick={() => onShift(0, 1)}>←</button>
-                <span className="shift-panel__label">Shift</span>
-                <button className="shift-panel__btn" title="Shift right" aria-label="Shift right" onClick={() => onShift(0, -1)}>→</button>
-                <span />
-                <button className="shift-panel__btn" title="Shift down" aria-label="Shift down" onClick={() => onShift(-1, 0)}>↓</button>
-                <span />
-            </div>
+export const ShiftPanel: FC<ShiftPanelProps> = ({ onShift }) => (
+    <div className="shift-panel">
+        <div className="shift-panel__grid">
+            <span />
+            <button className="shift-panel__btn" title="Shift up" aria-label="Shift up" onClick={() => onShift(1, 0)}>↑</button>
+            <span />
+            <button className="shift-panel__btn" title="Shift left" aria-label="Shift left" onClick={() => onShift(0, 1)}>←</button>
+            <span className="shift-panel__label">Shift</span>
+            <button className="shift-panel__btn" title="Shift right" aria-label="Shift right" onClick={() => onShift(0, -1)}>→</button>
+            <span />
+            <button className="shift-panel__btn" title="Shift down" aria-label="Shift down" onClick={() => onShift(-1, 0)}>↓</button>
+            <span />
         </div>
-    );
-}
+    </div>
+);
+ShiftPanel.displayName = 'ShiftPanel';
