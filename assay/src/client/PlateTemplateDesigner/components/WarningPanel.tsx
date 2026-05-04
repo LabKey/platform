@@ -18,18 +18,17 @@ interface WarningPanelProps {
  * server-side assay type configuration (not all assay types use the REPLICATE/SPECIMEN/CONTROL
  * group semantics that produce warnings).
  */
-export function WarningPanel({ warnings }: WarningPanelProps): JSX.Element {
-    return (
-        <div className="warning-panel">
-            {warnings.length === 0 ? (
-                <div className="warning-panel__none">No warnings.</div>
-            ) : (
-                <ul className="warning-panel__list">
-                    {warnings.map((w) => (
-                        <li key={w} className="warning-panel__item">{w}</li>
-                    ))}
-                </ul>
-            )}
-        </div>
-    );
-}
+export const WarningPanel: FC<WarningPanelProps> = ({ warnings }) => (
+    <div className="warning-panel">
+        {warnings.length === 0 ? (
+            <div className="warning-panel__none">No warnings.</div>
+        ) : (
+            <ul className="warning-panel__list">
+                {warnings.map((w) => (
+                    <li key={w} className="warning-panel__item">{w}</li>
+                ))}
+            </ul>
+        )}
+    </div>
+);
+WarningPanel.displayName = 'WarningPanel';
