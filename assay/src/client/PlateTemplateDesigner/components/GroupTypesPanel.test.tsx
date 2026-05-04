@@ -96,6 +96,7 @@ describe('GroupTypesPanel — create row: select vs input', () => {
     test('shows a text <input> when no defaults are configured for the type', () => {
         renderPanel({ plate: makePlate({ typesToDefaultGroups: {} }) });
         expect(screen.getByRole('textbox', { name: 'Group name' })).toBeInTheDocument();
+        expect(screen.queryByRole('combobox', { name: 'Group name' })).toBeNull();
     });
 });
 
