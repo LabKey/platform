@@ -209,6 +209,12 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         {
             columns.add(column);
         }
+
+        public String display()
+        {
+            String display = indexType.name().toUpperCase() + " " + name + " " + columns.stream().map(ColumnInfo::getName).toList();
+            return filterCondition == null ? display : display + " + " + filterCondition;
+        }
     }
 
     /** Get a list of columns that specifies a unique key, may return the same result as getPKColumns()

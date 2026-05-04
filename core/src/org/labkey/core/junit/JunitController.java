@@ -91,10 +91,10 @@ public class JunitController extends SpringActionController
 
     public static class JUnitViewBean
     {
-        public final Map<String, List<Class>> testCases;
+        public final Map<String, List<Class<?>>> testCases;
         public final boolean showRunButtons;
 
-        JUnitViewBean(Map<String, List<Class>> tests, boolean buttons)
+        JUnitViewBean(Map<String, List<Class<?>>> tests, boolean buttons)
         {
             this.testCases = tests;
             this.showRunButtons = buttons;
@@ -186,7 +186,7 @@ public class JunitController extends SpringActionController
                 // To allow performance tests to be selected change the scope to PERFORMANCE.
                 form._scope = TestWhen.When.PERFORMANCE;
 
-                for (List<Class> list : JunitManager.getTestCases().values())
+                for (List<Class<?>> list : JunitManager.getTestCases().values())
                 {
                     list.stream()
                         .filter((test) -> test.getName().equals(form.getTestCase()))
@@ -237,14 +237,14 @@ public class JunitController extends SpringActionController
             }
             else
             {
-                List<Class> testClasses = getTestClasses(form);
+                List<Class<?>> testClasses = getTestClasses(form);
                 TestContext.setTestContext(getViewContext().getRequest(), getUser());
                 getPageConfig().setTemplate(PageConfig.Template.Dialog);
                 results = new LinkedList<>();
                 HttpServletResponse response = getViewContext().getResponse();
                 response.setContentType("text/plain");
 
-                for (Class testClass : testClasses)
+                for (Class<?> testClass : testClasses)
                 {
                     // show status.  this also stops the tests if the client goes away.
                     response.getWriter().println(testClass.getName());
@@ -260,13 +260,13 @@ public class JunitController extends SpringActionController
             return view;
         }
 
-        private List<Class> getTestClasses(TestForm form)
+        private List<Class<?>> getTestClasses(TestForm form)
         {
             String module = form.getModule();
 
             if (null != module)
             {
-                List<Class> moduleTests = JunitManager.getTestCases().get(module);
+                List<Class<?>> moduleTests = JunitManager.getTestCases().get(module);
                 if (moduleTests == null || moduleTests.isEmpty())
                 {
                     throw new NotFoundException("No tests for module: " + module);
@@ -274,18 +274,18 @@ public class JunitController extends SpringActionController
                 return moduleTests;
             }
 
-            Set<Class> allTestClasses = new LinkedHashSet<>();
+            Set<Class<?>> allTestClasses = new LinkedHashSet<>();
             JunitManager.getTestCases()
-                    .values()
-                    .forEach(moduleTests -> allTestClasses.addAll(moduleTests));
+                .values()
+                .forEach(allTestClasses::addAll);
 
             final String testCase = form.getTestCase();
             if (!StringUtils.isBlank(testCase))
             {
-                Class specifiedTest = allTestClasses.parallelStream()
-                        .filter(clazz -> testCase.equals(clazz.getName()))
-                        .findAny()
-                        .orElseThrow(() -> new NotFoundException("No such test: " + testCase));
+                Class<?> specifiedTest = allTestClasses.parallelStream()
+                    .filter(clazz -> testCase.equals(clazz.getName()))
+                    .findAny()
+                    .orElseThrow(() -> new NotFoundException("No such test: " + testCase));
                 return Collections.singletonList(specifiedTest);
             }
 
@@ -302,23 +302,23 @@ public class JunitController extends SpringActionController
     @RequiresSiteAdmin
     public static class Run2Action extends StatusReportingRunnableAction
     {
-        private List<Class> getTestClasses(TestForm form)
+        private List<Class<?>> getTestClasses(TestForm form)
         {
-            Map<String, List<Class>> allTestClasses = JunitManager.getTestCases();
+            Map<String, List<Class<?>>> allTestClasses = JunitManager.getTestCases();
 
             String module = form.getModule();
 
             if (null != module)
                 return JunitManager.getTestCases().get(module);
 
-            List<Class> testClasses = new LinkedList<>();
+            List<Class<?>> testClasses = new LinkedList<>();
             String testCase = form.getTestCase();
 
             if (null == testCase || !testCase.isEmpty())
             {
                 for (String m : allTestClasses.keySet())
                 {
-                    for (Class clazz : allTestClasses.get(m))
+                    for (Class<?> clazz : allTestClasses.get(m))
                     {
                         // include test
                         if (null == testCase || testCase.equals(clazz.getName()))
@@ -333,7 +333,7 @@ public class JunitController extends SpringActionController
         @Override
         protected StatusReportingRunnable newStatusReportingRunnable()
         {
-            List<Class> testClasses = getTestClasses(new TestForm());
+            List<Class<?>> testClasses = getTestClasses(new TestForm());
             List<JunitRunner.RunnerResult> results = new LinkedList<>();
             return new JunitRunnable(testClasses, results, getViewContext().getRequest(), getUser());
         }
@@ -344,11 +344,11 @@ public class JunitController extends SpringActionController
     {
         private final StatusAppender _appender;
         private final Logger _log;
-        private final List<Class> _testClasses;
+        private final List<Class<?>> _testClasses;
         private final List<JunitRunner.RunnerResult> _results;
         private volatile boolean _running = true;
 
-        private JunitRunnable(List<Class> testClasses, List<JunitRunner.RunnerResult> results, HttpServletRequest request, User user) // TODO: Make this a Callable instead?
+        private JunitRunnable(List<Class<?>> testClasses, List<JunitRunner.RunnerResult> results, HttpServletRequest request, User user) // TODO: Make this a Callable instead?
         {
             _testClasses = testClasses;
             _results = results;
@@ -395,14 +395,14 @@ public class JunitController extends SpringActionController
         @Override
         public ApiResponse execute(Object o, BindException errors)
         {
-            Map<String, List<Class>> testCases = JunitManager.getTestCases();
+            Map<String, List<Class<?>>> testCases = JunitManager.getTestCases();
 
             Map<String, List<Map<String, Object>>> values = new HashMap<>();
             for (String module : testCases.keySet())
             {
                 List<Map<String, Object>> tests = new ArrayList<>();
                 values.put("Remote " + module, tests);
-                for (Class<Object> clazz : testCases.get(module))
+                for (Class<?> clazz : testCases.get(module))
                 {
                     int timeout = TestTimeout.DEFAULT;
                     // Check if the test has requested a non-standard timeout
@@ -545,13 +545,13 @@ public class JunitController extends SpringActionController
     }
 
 
-    private static Class findTestClass(String testCase)
+    private static Class<?> findTestClass(String testCase)
     {
-        Map<String, List<Class>> testCases = JunitManager.getTestCases();
+        Map<String, List<Class<?>>> testCases = JunitManager.getTestCases();
 
         for (String module : testCases.keySet())
         {
-            for (Class clazz : testCases.get(module))
+            for (Class<?> clazz : testCases.get(module))
             {
                 if (null == testCase || testCase.equals(clazz.getName()))
                     return clazz;
