@@ -950,6 +950,23 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
     }
 
+    public void dropTableConstraints(Domain domain, Set<String> constraintNames)
+    {
+        DbScope scope = validateDomain(domain);
+
+        if (null == constraintNames)
+            throw new IllegalArgumentException("Constraints cannot be null");
+
+        TableChange change = new TableChange(domain, ChangeType.DropConstraintsByName);
+        change.setConstraintsToBeDroppedByName(constraintNames);
+
+        try (Transaction transaction = scope.ensureTransaction())
+        {
+            change.execute();
+            transaction.commit();
+        }
+    }
+
     @Override
     public void ensureTableIndices(@NotNull Domain domain)
     {

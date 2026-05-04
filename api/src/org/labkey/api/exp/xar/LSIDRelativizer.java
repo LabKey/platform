@@ -105,7 +105,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if ("Sample".equals(prefix) || ExpMaterial.DEFAULT_CPAS_TYPE.equals(prefix))
             {
-                String xarJobId = "." + XAR_JOB_ID_NAME_SUB; // XarJobId is more concise than XarFileId
+                String xarJobId = "." + XAR_JOB_ID_NAME_SUB + "."; // XarJobId is more concise than XarFileId
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + xarJobId + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
             }
             else if (ExpData.DEFAULT_CPAS_TYPE.equals(prefix))
