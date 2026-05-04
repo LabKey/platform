@@ -21,14 +21,9 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentParentFactory;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -56,7 +51,9 @@ import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
+import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.CoerceDataIterator;
+import org.labkey.api.dataiterator.DataClassUpdateAddColumnsDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -115,13 +112,13 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CachingSupplier;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -134,7 +131,6 @@ import org.labkey.experiment.lineage.LineageMethod;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -145,15 +141,17 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.Name;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInputs;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.RowId;
+import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.LSID;
+import static org.labkey.api.query.DefaultQueryUpdateService.getKeyColumnAliasForUpdate;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 
 public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassDataTable.Column> implements ExpDataClassDataTable
@@ -163,12 +161,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
 
     public static final Set<String> DATA_CLASS_ALT_MERGE_KEYS;
-    public static final Set<String> DATA_CLASS_ALT_UPDATE_KEYS;
     private static final Set<String> ALLOWED_IMPORT_HEADERS;
     static {
         DATA_CLASS_ALT_MERGE_KEYS = new HashSet<>(Arrays.asList(Column.ClassId.name(), Name.name()));
-        DATA_CLASS_ALT_UPDATE_KEYS = new HashSet<>(Arrays.asList(Column.LSID.name(), Column.RowId.name()));
-        ALLOWED_IMPORT_HEADERS = new HashSet<>(Arrays.asList("name", "description", "flag", "comment", "alias", "datafileurl"));
+        ALLOWED_IMPORT_HEADERS = new HashSet<>(Arrays.asList("description", "flag", "comment", "alias", "datafileurl"));
     }
 
     private Map<String/*domain name*/, DataClassVocabularyProviderProperties> _vocabularyDomainProviders;
@@ -689,7 +685,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         // all columns from dataclass property table except key columns
         Set<String> pCols = new CaseInsensitiveHashSet(provisioned.getColumnNameSet());
         pCols.remove("name");
-        pCols.remove("lsid");
         pCols.remove("rowId");
 
         boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, pCols);
@@ -837,12 +832,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     // UpdatableTableInfo
     //
 
-    @Override
-    public @Nullable CaseInsensitiveHashSet skipProperties()
-    {
-        return super.skipProperties();
-    }
-
     @Nullable
     @Override
     public CaseInsensitiveHashMap<String> remapSchemaColumns()
@@ -859,16 +848,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public @Nullable Set<String> getAltMergeKeys(DataIteratorContext context)
     {
-        if (context.getInsertOption().updateOnly && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
-            return getAltKeysForUpdate();
         return DATA_CLASS_ALT_MERGE_KEYS;
-    }
-
-    @Override
-    @NotNull
-    public Set<String> getAltKeysForUpdate()
-    {
-        return DATA_CLASS_ALT_UPDATE_KEYS;
     }
 
     @Override
@@ -878,19 +858,23 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         if (context.getInsertOption().allowUpdate)
         {
-            boolean isUpdateUsingLsid = context.getInsertOption().updateOnly &&
-                    colNameMap.containsKey(ExpDataTable.Column.LSID.name()) &&
-                    context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
-
-            if (isUpdateUsingLsid)
+            if (context.getInsertOption().updateOnly)
             {
-                keyColumnNames.add(Column.LSID.name());
+                // For UPDATE: prefer RowId, else require Name (with ClassId)
+                if (colNameMap.containsKey(Column.RowId.name()))
+                    keyColumnNames.add(Column.RowId.name());
+                else if (colNameMap.containsKey(Name.name()))
+                {
+                    keyColumnNames.add(Column.ClassId.name());
+                    keyColumnNames.add(Name.name());
+                }
+                else
+                    throw new IllegalArgumentException("Either RowId or Name is required to update DataClass Data.");
             }
             else
             {
-                Set<String> altMergeKeys = getAltMergeKeys(context);
-                if (altMergeKeys != null)
-                    keyColumnNames.addAll(altMergeKeys);
+                // For MERGE: use merge keys (ClassId + Name)
+                keyColumnNames.addAll(DATA_CLASS_ALT_MERGE_KEYS);
             }
         }
 
@@ -995,7 +979,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (null == input)
                 return null;           // Can happen if context has errors
 
+            boolean isMerge = context.getInsertOption() == QueryUpdateService.InsertOption.MERGE;
+            boolean isUpdate = context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE;
+
             var drop = new CaseInsensitiveHashSet();
+            var keysCheck = new CaseInsensitiveHashSet();
             for (int i = 1; i <= input.getColumnCount(); i++)
             {
                 String name = input.getColumnInfo(i).getName();
@@ -1003,18 +991,44 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 boolean isContainerField = name.equalsIgnoreCase("Container") || name.equalsIgnoreCase("Folder");
                 if (isContainerField)
                 {
-                    if (context.getInsertOption().updateOnly || !context.isCrossFolderImport())
+                    if (isUpdate || !context.isCrossFolderImport())
                         drop.add(name);
                 }
+                else if (ExpDataTable.Column.Name.name().equalsIgnoreCase(name))
+                {
+                    keysCheck.add(ExpDataTable.Column.Name.name());
+                }
                 else if (isReservedHeader(name))
+                {
+                    if (ExpDataTable.Column.RowId.name().equalsIgnoreCase(name))
+                    {
+                        keysCheck.add(ExpDataTable.Column.RowId.name());
+                        if (isUpdate)
+                            continue;
+
+                        // While accepting RowId during merge is not our preferred behavior, we want to give users a way
+                        // to opt-in to the old behavior where RowId is accepted and ignored.
+                        if (isMerge && !OptionalFeatureService.get().isFeatureEnabled(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE))
+                        {
+                            context.getErrors().addRowError(new ValidationException("RowId is not accepted when merging data. Specify only the data name instead.", Column.RowId.name()));
+                            return null;
+                        }
+                    }
+
+                    if (ExpDataTable.Column.LSID.name().equalsIgnoreCase(name))
+                        keysCheck.add(ExpDataTable.Column.LSID.name());
                     drop.add(name);
+                }
+
                 else if (Column.ClassId.name().equalsIgnoreCase(name))
                     drop.add(name);
             }
-            if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
+
+            if ((isMerge || isUpdate) && keysCheck.size() == 1 && keysCheck.contains(LSID.name()))
             {
-                drop.remove("lsid");
-                drop.remove("rowid");// keep rowid for audit log
+                String message = String.format("LSID is no longer accepted as a key for data %s. Specify a RowId or Name instead.", isMerge ? "merge" : "update");
+                context.getErrors().addRowError(new ValidationException(message, LSID.name()));
+                return null;
             }
 
             if (!drop.isEmpty())
@@ -1036,19 +1050,61 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             ColumnInfo cpasTypeCol = expData.getColumn("cpasType");
             step0.addColumn(cpasTypeCol, new SimpleTranslator.ConstantColumn(_dataClass.getLSID()));
 
+            Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(input);
+
             if (context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE)
             {
+                String keyColumnAlias = getKeyColumnAliasForUpdate(expData, columnNameMap);
+                if (keyColumnAlias == null)
+                {
+                    context.getErrors().addRowError(new ValidationException(String.format(DUPLICATE_COLUMN_IN_DATA_ERROR, ExpDataTable.Column.RowId.name())));
+                    return null;
+                }
+
+                boolean shouldAddLsidColumn = getCustomTableConfigBoolean(ExperimentService.QueryOptions.AddLsidColForDataClassUpdate);
+
+                // add lsid column (for Attachment) but need to re-query it
+                boolean hasAttachmentCol = false;
+                if (!shouldAddLsidColumn)
+                {
+                    for (String columnName : columnNameMap.keySet())
+                    {
+                        ColumnInfo checkAttachmentCol = getColumn(columnName);
+                        if (checkAttachmentCol != null)
+                        {
+                            if (checkAttachmentCol.getPropertyType() == PropertyType.ATTACHMENT)
+                            {
+                                hasAttachmentCol = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (shouldAddLsidColumn || hasAttachmentCol)
+                {
+                    step0.addNullColumn(Column.LSID.name(), JdbcType.VARCHAR);
+                    step0.selectAll();
+                    var added = new DataClassUpdateAddColumnsDataIterator(new CachingDataIterator(step0), context, expData, c ,_dataClass.getRowId(), keyColumnAlias);
+                    return LoggingDataIterator.wrap(added);
+                }
+
                 step0.selectAll();
-                return LoggingDataIterator.wrap(step0.getDataIterator(context));
+                return LoggingDataIterator.wrap(step0);
             }
 
             step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId")); //TODO can this be moved up?
 
             // Ensure we have a name column -- makes the NameExpressionDataIterator easier
-            if (!DataIteratorUtil.createColumnNameMap(step0).containsKey("name"))
+            if (!columnNameMap.containsKey("name"))
             {
                 ColumnInfo nameCol = expData.getColumn("name");
                 step0.addColumn(nameCol, (Supplier<String>)() -> null);
+            }
+
+            if (Boolean.TRUE.equals(context.getSelectIds()) && !columnNameMap.containsKey(RowId.name()))
+            {
+                step0.addNullColumn(RowId.name(), JdbcType.INTEGER);
             }
 
             ColumnInfo lsidCol = expData.getColumn("lsid");
@@ -1137,6 +1193,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             _expDataClassDataTableImpl = table;
             // Note that this class actually overrides createImportDIB(), so currently we're not looking at this flag.
             _enableExistingRecordsDataIterator = false;
+        }
+
+        @Override
+        protected PartitionKeyColumns getPartitionKeyColumns()
+        {
+            return new PartitionKeyColumns(ExpDataTable.Column.RowId.name(), ExpDataTable.Column.Name.name());
         }
 
         @Override
@@ -1381,196 +1443,35 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation)
-                throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            Map<String, Object> result = super.updateRow(user, container, row, oldRow, allowOwner, retainCreation);
-
-            // add MaterialInput/DataInputs field from parent alias
-            try
-            {
-                Map<String, String> parentAliases = _dataClass.getImportAliases();
-                for (String alias : parentAliases.keySet())
-                {
-                    if (row.containsKey(alias))
-                        result.put(parentAliases.get(alias), result.get(alias));
-                }
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-
-            return result;
-
-        }
-
-        // DataClassDataUpdateService needs to skip Attachment column convert before _update
-        // TODO: move override when implementing consolidating dataclass update methods
-        @Override
-        protected Object convertColumnValue(ColumnInfo col, Object value, User user, Container c, @Nullable Path fileLinkDirPath) throws ValidationException
-        {
-            if (PropertyType.ATTACHMENT == col.getPropertyType())
-                return value;
-
-            if (ALIAS_CONCEPT_URI.equals(col.getConceptURI()))
-                return value;
-
-            return super.convertColumnValue(col, value, user, c, fileLinkDirPath);
+            throw new UnsupportedOperationException("updateRow() is no longer supported for dataclass");
         }
 
         @Override
-        protected TableInfo getTableInfoForConversion()
+        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys)
         {
-            // getDBTable() returns exp.data table, which lacks properties fields.
-            // TODO: this method can be removed when implementing consolidating dataclass update methods
-            return getQueryTable();
-        }
-
-        @Override
-        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
-        {
-            // LSID was stripped by super.updateRows() and is needed to insert into the dataclass provisioned table
-            String lsid = (String)oldRow.get("lsid");
-            if (lsid == null)
-                throw new ValidationException("lsid required to update row");
-
-            String newName = (String) row.get(Name.name());
-            String oldName = (String) oldRow.get(Name.name());
-            boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
-
-            // Replace attachment columns with filename and keep AttachmentFiles
-            Map<String, Object> rowStripped = new CaseInsensitiveHashMap<>();
-            Map<String, Object> attachments = new CaseInsensitiveHashMap<>();
-            for (Map.Entry<String, Object> entry : row.entrySet())
-            {
-                String name = entry.getKey();
-                Object value = entry.getValue();
-                if (isAttachmentProperty(name))
-                {
-                    if (value instanceof AttachmentFile file)
-                    {
-                        if (null != file.getFilename())
-                        {
-                            rowStripped.put(name, file.getFilename());
-                            attachments.put(name, value);
-                        }
-                    }
-                    else if (value != null && !StringUtils.isEmpty(String.valueOf(value)))
-                    {
-                        // Issue 53498: string value for attachment field is not allowed
-                        throw new ValidationException("Cannot upload '" + value + "' to Attachment type field '" + name + "'.");
-                    }
-                    else
-                        rowStripped.put(name, value); // if null or empty, remove attachment
-                }
-                else
-                {
-                    rowStripped.put(name, value);
-                }
-            }
-
-            for (String vocabularyDomainName : getVocabularyDomainProviders().keySet())
-            {
-                DataClassVocabularyProviderProperties fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(vocabularyDomainName);
-                if (fieldVocabularyDomainProvider != null)
-                    rowStripped.putAll(fieldVocabularyDomainProvider.conceptURIVocabularyDomainProvider().getUpdateRowProperties(user, c, rowStripped, oldRow, getAttachmentParentFactory(), fieldVocabularyDomainProvider.sourceColumnName(), fieldVocabularyDomainProvider.vocabularyDomainName(), getVocabularyDomainProviders().size() > 1));
-            }
-
-            // update exp.data
-            Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowStripped, oldRow, keys));
-
-            Integer rowId = (Integer) oldRow.get("RowId");
-            if (rowId == null)
-                throw new ValidationException("RowId required to update row");
-            keys = new Object[] {rowId};
-            TableInfo t = _dataClassDataTableSupplier.get();
-            if (t.getColumnNameSet().stream().anyMatch(rowStripped::containsKey))
-            {
-                ret.putAll(Table.update(user, t, rowStripped, t.getColumn("rowId"), keys, null, Level.DEBUG));
-            }
-
-            ExpDataImpl data = null;
-            if (hasNameChange)
-            {
-                data = ExperimentServiceImpl.get().getExpData(lsid);
-                ExperimentService.get().addObjectLegacyName(data.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpData.class), oldName, user);
-            }
-
-            // update comment
-            if (row.containsKey("flag") || row.containsKey("comment"))
-            {
-                Object o = row.containsKey("flag") ? row.get("flag") : row.get("comment");
-                String flag = Objects.toString(o, null);
-
-                if (data == null)
-                    data = ExperimentServiceImpl.get().getExpData(lsid);
-                if (data != null)
-                    data.setComment(user, flag);
-            }
-
-            // update aliases
-            if (row.containsKey("Alias"))
-                AliasInsertHelper.handleInsertUpdate(getContainer(), user, lsid, ExperimentService.get().getTinfoDataAliasMap(), row.get("Alias"));
-
-            // handle attachments
-            removePreviousAttachments(user, c, row, oldRow);
-            ret.putAll(attachments);
-            addAttachments(user, c, ret, lsid);
-
-            // search index done in postcommit
-
-            ret.put("RowId", oldRow.get("RowId")); // return rowId for SearchService
-            ret.put("lsid", lsid);
-            return ret;
+            throw new UnsupportedOperationException("_update() is no longer supported for dataclass");
         }
 
         @Override
         public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
         {
-            boolean useDib = false;
-            if (rows != null && !rows.isEmpty() && oldKeys == null)
-                useDib = rows.get(0).containsKey("lsid");
-
-            useDib = useDib && hasUniformKeys(rows);
+            if (rows == null || rows.isEmpty())
+                return Collections.emptyList();
 
             List<Map<String, Object>> results;
-            if (useDib)
-            {
-                Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
-                finalConfigParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
+            Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
+            recordDataIteratorUsed(finalConfigParameters);
 
-                recordDataIteratorUsed(configParameters);
-                results = super._updateRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters), extraScriptContext);
+            try
+            {
+                results = getSchema().getScope().executeWithRetry(tx ->
+                        updateRowsUsingPartitionedDIB(tx, user, container, rows, errors, finalConfigParameters, extraScriptContext));
             }
-            else
+            catch (DbScope.RetryPassthroughException retryException)
             {
-                results = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
-
-                DbScope scope = getUserSchema().getDbSchema().getScope();
-                scope.addCommitTask(() ->
-                {
-                    List<Long> orderedRowIds = new ArrayList<>();
-                    for (Map<String, Object> result : results)
-                    {
-                        Long rowId = MapUtils.getLong(result, RowId.name());
-                        if (rowId != null)
-                            orderedRowIds.add(rowId);
-                    }
-                    Collections.sort(orderedRowIds);
-
-                    // Issue 51263: order by RowId to reduce deadlock
-                    ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
-                            SearchService.get().defaultTask().getQueue(_dataClass.getContainer(), SearchService.PRIORITY.modified).addRunnable((q) ->
-                            {
-                                for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatas(sublist))
-                                    expData.index(q, null);
-                            })
-                    );
-                }, DbScope.CommitTaskOption.POSTCOMMIT);
-
-                /* setup mini dataiterator pipeline to process lineage */
-                DataIterator di = _toDataIteratorBuilder("updateRows.lineage", results).getDataIterator(new DataIteratorContext());
-                ExpDataIterators.derive(user, container, di, false, _dataClass, true);
+                retryException.rethrow(BatchValidationException.class);
+                throw retryException.throwRuntimeException();
             }
 
             return results;
@@ -1597,56 +1498,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             return ExperimentServiceImpl.get().truncateDataClass(_dataClass, user, container);
         }
 
-        private void removePreviousAttachments(User user, Container c, Map<String, Object> newRow, Map<String, Object> oldRow)
-        {
-            Lsid lsid = new Lsid((String)oldRow.get("LSID"));
-
-            for (Map.Entry<String, Object> entry : newRow.entrySet())
-            {
-                if (isAttachmentProperty(entry.getKey()) && oldRow.get(entry.getKey()) != null)
-                {
-                    AttachmentParent parent = new ExpDataClassAttachmentParent(c, lsid);
-
-                    AttachmentService.get().deleteAttachment(parent, (String) oldRow.get(entry.getKey()), user);
-                }
-            }
-        }
-
         @Override
         protected Domain getDomain()
         {
             return _dataClass.getDomain();
-        }
-
-        private void addAttachments(User user, Container c, Map<String, Object> row, String lsidStr)
-        {
-            if (row != null && lsidStr != null)
-            {
-                ArrayList<AttachmentFile> attachmentFiles = new ArrayList<>();
-                for (Map.Entry<String, Object> entry : row.entrySet())
-                {
-                    if (isAttachmentProperty(entry.getKey()) && entry.getValue() instanceof AttachmentFile file)
-                    {
-                        if (null != file.getFilename())
-                            attachmentFiles.add(file);
-                    }
-                }
-
-                if (!attachmentFiles.isEmpty())
-                {
-                    Lsid lsid = new Lsid(lsidStr);
-                    AttachmentParent parent = new ExpDataClassAttachmentParent(c, lsid);
-
-                    try
-                    {
-                        AttachmentService.get().addAttachments(parent, attachmentFiles, user);
-                    }
-                    catch (IOException e)
-                    {
-                        throw UnexpectedException.wrap(e);
-                    }
-                }
-            }
         }
 
         @Override
@@ -1656,6 +1511,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 context.putConfigParameter(QueryUpdateService.ConfigParameters.CheckForCrossProjectData, true);
             if (context.getInsertOption() == InsertOption.IMPORT || context.getInsertOption() == InsertOption.MERGE)
                 context.setSelectIds(true); // select rowId because provisioned expdataclass.rowId and QueryUpdateAuditEvent.rowPk needs actual rowId
+            else if (context.getSelectIds() == null && context.getInsertOption() == InsertOption.UPDATE)
+                context.setSelectIds(false); // for update, don't add RowId if it wasn't in the input (without setSelectIds(false), rowId col will be added if table.hasTriggers by TableInsertUpdateDataIterator
         }
 
         @Override

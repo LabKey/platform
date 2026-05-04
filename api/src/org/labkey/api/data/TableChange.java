@@ -58,6 +58,7 @@ public class TableChange
     private Collection<PropertyStorageSpec.ForeignKey> _foreignKeys = Collections.emptySet();
     private Collection<Constraint> _constraints;
     private Set<String> _indicesToBeDroppedByName;
+    private Set<String> _constraintsToBeDroppedByName;
     private IndexSizeMode _sizeMode = IndexSizeMode.Auto;
     private Map<String, PropertyType> _oldPropTypes;
 
@@ -115,6 +116,7 @@ public class TableChange
                 case RenameColumns -> !getColumnRenames().isEmpty();
                 case AddIndices -> !getIndexedColumns().isEmpty();
                 case DropIndicesByName -> !getIndicesToBeDroppedByName().isEmpty();
+                case DropConstraintsByName -> !getConstraintsToBeDroppedByName().isEmpty();
                 case AddConstraints, DropConstraints -> !getConstraints().isEmpty();
                 default -> true;
             };
@@ -321,6 +323,16 @@ public class TableChange
         _indicesToBeDroppedByName = indicesToBeDroppedByName;
     }
 
+    public Set<String> getConstraintsToBeDroppedByName()
+    {
+        return _constraintsToBeDroppedByName;
+    }
+
+    public void setConstraintsToBeDroppedByName(Set<String> constraintsToBeDroppedByName)
+    {
+        _constraintsToBeDroppedByName = constraintsToBeDroppedByName;
+    }
+
     public Collection<PropertyStorageSpec.ForeignKey> getForeignKeys()
     {
         return _foreignKeys;
@@ -371,6 +383,7 @@ public class TableChange
         ResizeColumns,
         ChangeColumnTypes,
         DropIndicesByName,
+        DropConstraintsByName,
         AddIndices,
         DropConstraints,
         AddConstraints

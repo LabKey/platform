@@ -63,7 +63,6 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.GUID;
@@ -1286,7 +1285,7 @@ public class ProjectController extends SpringActionController
 
         private boolean isTroubleshooterRetrievingFolderNav()
         {
-            return getContainer().isRoot() && getUser().hasRootPermission(TroubleshooterPermission.class) && "FolderNav".equals(getViewContext().get("webpart.name"));
+            return getContainer().isRoot() && getUser().isTroubleshooter() && "FolderNav".equals(getViewContext().get("webpart.name"));
         }
 
         @Override

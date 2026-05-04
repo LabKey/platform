@@ -27,6 +27,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.ExpDataFileConverter;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.Parameter;
@@ -777,14 +778,9 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return _missingValues.containsKey(mv);
     }
 
-    protected TableInfo getTableInfoForConversion()
-    {
-        return getDbTable();
-    }
-
     final protected void convertTypes(User user, Container c, Map<String,Object> row) throws ValidationException
     {
-        convertTypes(user, c, row,  getTableInfoForConversion(), null);
+        convertTypes(user, c, row,  getDbTable(), null);
     }
 
     // TODO Path->FileObject
@@ -937,4 +933,21 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 context.setCrossFolderImport(false);
         }
     }
+
+    public static @Nullable String getKeyColumnAliasForUpdate(TableInfo tableInfo, @NotNull Map<String, Integer> columnNameMap)
+    {
+        // Currently, SampleUpdateAddColumnsDataIterator and DataClassUpdateAddColumnsDataIterator is being called before a translator is invoked to
+        // remap column labels to columns (e.g., "Row Id" -> "RowId"). Due to this, we need to search the
+        // map of columns for the key column.
+        var rowIdAliases = ImportAliasable.Helper.createImportSet(tableInfo.getColumn(FieldKey.fromParts("RowId")));
+        rowIdAliases.retainAll(columnNameMap.keySet());
+
+        if (rowIdAliases.size() == 1)
+            return rowIdAliases.iterator().next();
+        if (rowIdAliases.isEmpty())
+            return "Name";
+
+        return null;
+    }
+
 }
