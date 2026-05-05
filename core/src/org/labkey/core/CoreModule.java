@@ -253,6 +253,7 @@ import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
+import org.labkey.core.login.LoginAttemptDisableLoginProvider;
 import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
@@ -446,14 +447,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("notification", NotificationController.class);
         addController("product", ProductController.class);
 
+        WarningService.setInstance(new WarningServiceImpl());
+
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
+        AuthenticationManager.registerProvider(new LoginAttemptDisableLoginProvider());
+        AuthenticationManager.addLoginAttemptSettingsListener(LoginAttemptDisableLoginProvider::reloadCache);
         AttachmentService.setInstance(new AttachmentServiceImpl());
         AnalyticsService.setInstance(new AnalyticsServiceImpl());
         RhinoService.register();
         CacheManager.addListener(RhinoService::clearCaches);
         NotificationService.setInstance(NotificationServiceImpl.getInstance());
-
-        WarningService.setInstance(new WarningServiceImpl());
 
         ViewService.setInstance(ViewServiceImpl.getInstance());
         OptionalFeatureService.setInstance(new OptionalFeatureServiceImpl());
