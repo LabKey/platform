@@ -158,10 +158,7 @@ export const GlobalSettings: FC<Props> = memo(({ canEdit, authCount, onChange, g
                             </div>
                         </LabelHelpTip>
                     </label>
-                </div>
-
-                <div className="global-settings__login-attempts">
-                    <div>
+                    <div style={{marginLeft: '17px', marginTop: '5px'}}>
                         <span>Disable user login if </span>
                         <select
                             disabled={!canEdit || !loginAttemptEnabled}
