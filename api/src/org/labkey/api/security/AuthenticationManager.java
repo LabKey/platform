@@ -263,6 +263,32 @@ public class AuthenticationManager
 
     public static boolean isSelfServiceEmailChangesEnabled() { return getAuthSetting(SELF_SERVICE_EMAIL_CHANGES_KEY, false);}
 
+    public static boolean isLoginAttemptControlEnabled()
+    {
+        return getAuthSetting(LOGIN_ATTEMPT_ENABLED_KEY, false);
+    }
+
+    public static int getLoginAttemptLimit()
+    {
+        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
+        String value = props.get(LOGIN_ATTEMPT_LIMIT_KEY);
+        return value == null ? 3 : Integer.parseInt(value);
+    }
+
+    public static int getLoginAttemptPeriod()
+    {
+        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
+        String value = props.get(LOGIN_ATTEMPT_PERIOD_KEY);
+        return value == null ? 30 : Integer.parseInt(value);
+    }
+
+    public static int getLoginAttemptResetTime()
+    {
+        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
+        String value = props.get(LOGIN_ATTEMPT_RESET_TIME_KEY);
+        return value == null ? 5 : Integer.parseInt(value);
+    }
+
     public static @NotNull String getDefaultDomain()
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
@@ -306,6 +332,22 @@ public class AuthenticationManager
         map.entrySet().stream()
             .filter(e->!Boolean.toString(e.getValue()).equals(props.get(e.getKey())))
             .forEach(e->saveAuthSetting(user, e.getKey(), e.getValue()));
+    }
+
+    public static void addLoginAttemptSettingsListener(Runnable listener)
+    {
+        _loginAttemptSettingsListeners.add(listener);
+    }
+
+    public static void saveLoginAttemptSettings(User user, boolean enabled, int limit, int period, int resetTime)
+    {
+        WritablePropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
+        props.put(LOGIN_ATTEMPT_ENABLED_KEY, String.valueOf(enabled));
+        props.put(LOGIN_ATTEMPT_LIMIT_KEY, String.valueOf(limit));
+        props.put(LOGIN_ATTEMPT_PERIOD_KEY, String.valueOf(period));
+        props.put(LOGIN_ATTEMPT_RESET_TIME_KEY, String.valueOf(resetTime));
+        props.save();
+        _loginAttemptSettingsListeners.forEach(Runnable::run);
     }
 
     public static void reorderConfigurations(User user, String name, int[] rowIds)
@@ -635,14 +677,21 @@ public class AuthenticationManager
         AuthenticationConfigurationCache.clear();
     }
 
-    // Used by start-up properties
-    private static final String AUTHENTICATION_CATEGORY = "Authentication";
+    // Used by start-up properties and upgrade code
+    public static final String AUTHENTICATION_CATEGORY = "Authentication";
 
     public static final String SELF_REGISTRATION_KEY = "SelfRegistration";
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
     public static final String DEFAULT_DOMAIN = "DefaultDomain";
     public static final String SELF_SERVICE_EMAIL_CHANGES_KEY = "SelfServiceEmailChanges";
     public static final String ACCEPT_ONLY_FICAM_PROVIDERS_KEY = "AcceptOnlyFicamProviders";
+
+    public static final String LOGIN_ATTEMPT_ENABLED_KEY = "LoginAttemptEnabled";
+    public static final String LOGIN_ATTEMPT_LIMIT_KEY = "LoginAttemptLimit";
+    public static final String LOGIN_ATTEMPT_PERIOD_KEY = "LoginAttemptPeriod";
+    public static final String LOGIN_ATTEMPT_RESET_TIME_KEY = "LoginAttemptResetTime";
+
+    private static final List<Runnable> _loginAttemptSettingsListeners = new CopyOnWriteArrayList<>();
 
     public enum AuthenticationSettings implements StartupProperty
     {

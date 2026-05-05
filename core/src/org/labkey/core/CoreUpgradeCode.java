@@ -19,8 +19,10 @@ import jakarta.servlet.ServletContext;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -28,6 +30,7 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.TestUpgradeCodeCounter;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Directive;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
@@ -36,7 +39,10 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.security.AllowedExternalResourceHosts;
 import org.labkey.core.security.AllowedExternalResourceHosts.AllowedHost;
 
+import java.util.Map;
 import java.util.List;
+
+import static org.labkey.api.settings.AbstractSettingsGroup.SITE_CONFIG_USER;
 
 public class CoreUpgradeCode implements UpgradeCode
 {
@@ -145,5 +151,43 @@ public class CoreUpgradeCode implements UpgradeCode
         {
             svc.deleteOrphanedAttachments();
         }
+    }
+
+    /**
+     * Called from core-26.004-26.005.sql. Migrates login attempt settings that were previously stored in a
+     * compliance module property group to the core authentication property category.
+     */
+    @SuppressWarnings("unused")
+    @DeferredUpgrade // Make sure property schema is up-to-date before migrating settings
+    public static void migrateLoginAttemptSettings(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        String complianceCategory = "complianceSettingPropLoginAttempt";
+        String keyPrefix = complianceCategory + "/";
+        Map<String, String> complianceProps = PropertyManager.getProperties(SITE_CONFIG_USER, ContainerManager.getRoot(), complianceCategory);
+
+        String enabledVal = complianceProps.get(keyPrefix + "attemptEnabled");
+        String limitVal   = complianceProps.get(keyPrefix + "attemptLimit");
+        String periodVal  = complianceProps.get(keyPrefix + "attemptPeriod");
+        String resetVal   = complianceProps.get(keyPrefix + "resetTime");
+
+        if (enabledVal == null && limitVal == null && periodVal == null && resetVal == null)
+            return; // Nothing to migrate
+
+        PropertyManager.WritablePropertyMap authProps =
+            PropertyManager.getWritableProperties(AuthenticationManager.AUTHENTICATION_CATEGORY, true);
+
+        if (enabledVal != null)
+            authProps.put(AuthenticationManager.LOGIN_ATTEMPT_ENABLED_KEY, enabledVal);
+        if (limitVal != null)
+            authProps.put(AuthenticationManager.LOGIN_ATTEMPT_LIMIT_KEY, limitVal);
+        if (periodVal != null)
+            authProps.put(AuthenticationManager.LOGIN_ATTEMPT_PERIOD_KEY, periodVal);
+        if (resetVal != null)
+            authProps.put(AuthenticationManager.LOGIN_ATTEMPT_RESET_TIME_KEY, resetVal);
+
+        authProps.save();
     }
 }

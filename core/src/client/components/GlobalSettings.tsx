@@ -9,6 +9,10 @@ interface GlobalSettingFieldData {
     tip: string;
 }
 
+const LOGIN_ATTEMPT_LIMIT_OPTIONS = ['3', '5', '10', '100'];
+const LOGIN_ATTEMPT_PERIOD_OPTIONS = ['5', '15', '30', '60'];
+const LOGIN_ATTEMPT_RESET_TIME_OPTIONS = ['5', '10', '30', '60'];
+
 const FIELD_DATA: GlobalSettingFieldData[] = [
     {
         id: 'SelfRegistration',
@@ -76,6 +80,25 @@ export const GlobalSettings: FC<Props> = memo(({ canEdit, authCount, onChange, g
         [onChange]
     );
 
+    const onLoginAttemptEnabledChange = useCallback(
+        (event: ChangeEvent<HTMLInputElement>) => {
+            onChange('LoginAttemptEnabled', event.target.checked);
+        },
+        [onChange]
+    );
+
+    const onLoginAttemptSelectChange = useCallback(
+        (event: ChangeEvent<HTMLSelectElement>) => {
+            onChange(event.target.name, event.target.value);
+        },
+        [onChange]
+    );
+
+    const loginAttemptEnabled = !!globalSettings?.LoginAttemptEnabled;
+    const loginAttemptLimit = globalSettings?.LoginAttemptLimit ?? '3';
+    const loginAttemptPeriod = globalSettings?.LoginAttemptPeriod ?? '30';
+    const loginAttemptResetTime = globalSettings?.LoginAttemptResetTime ?? '5';
+
     return (
         <div className="panel panel-default">
             <div className="panel-heading">
@@ -83,18 +106,6 @@ export const GlobalSettings: FC<Props> = memo(({ canEdit, authCount, onChange, g
             </div>
 
             <div className="panel-body">
-                {fieldData.map(data => (
-                    <GlobalSetting
-                        key={data.id}
-                        canEdit={canEdit}
-                        id={data.id}
-                        onChange={onChange}
-                        value={globalSettings[data.id]}
-                        text={data.text}
-                        tip={data.tip}
-                    />
-                ))}
-
                 <div className="global-settings__default-domain">
                     <span>System Default Domain</span>
 
@@ -116,6 +127,70 @@ export const GlobalSettings: FC<Props> = memo(({ canEdit, authCount, onChange, g
                             placeholder="System default domain"
                         />
                     </span>
+                </div>
+
+                <hr/>
+
+                {fieldData.map(data => (
+                    <GlobalSetting
+                        key={data.id}
+                        canEdit={canEdit}
+                        id={data.id}
+                        onChange={onChange}
+                        value={globalSettings[data.id]}
+                        text={data.text}
+                        tip={data.tip}
+                    />
+                ))}
+
+                <div className="global-settings__text-row">
+                    <label>
+                        <input
+                            checked={loginAttemptEnabled}
+                            disabled={!canEdit}
+                            onChange={onLoginAttemptEnabledChange}
+                            type="checkbox"
+                        />
+                        Limit unsuccessful login attempts
+                        <LabelHelpTip title="Tip">
+                            <div>
+                                This does not apply to site and application administrators. <HelpLink topic="complianceSettings#Login">More info</HelpLink>
+                            </div>
+                        </LabelHelpTip>
+                    </label>
+                </div>
+
+                <div className="global-settings__login-attempts">
+                    <div>
+                        <span>Disable user login if </span>
+                        <select
+                            disabled={!canEdit || !loginAttemptEnabled}
+                            name="LoginAttemptLimit"
+                            onChange={onLoginAttemptSelectChange}
+                            value={loginAttemptLimit}
+                        >
+                            {LOGIN_ATTEMPT_LIMIT_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                        <span> consecutive invalid logins are attempted in a </span>
+                        <select
+                            disabled={!canEdit || !loginAttemptEnabled}
+                            name="LoginAttemptPeriod"
+                            onChange={onLoginAttemptSelectChange}
+                            value={loginAttemptPeriod}
+                        >
+                            {LOGIN_ATTEMPT_PERIOD_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                        <span> second period. Automatically allow users to login again after </span>
+                        <select
+                            disabled={!canEdit || !loginAttemptEnabled}
+                            name="LoginAttemptResetTime"
+                            onChange={onLoginAttemptSelectChange}
+                            value={loginAttemptResetTime}
+                        >
+                            {LOGIN_ATTEMPT_RESET_TIME_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                        <span> minutes.</span>
+                    </div>
                 </div>
             </div>
         </div>
