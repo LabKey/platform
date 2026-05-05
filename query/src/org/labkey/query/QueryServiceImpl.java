@@ -3040,7 +3040,7 @@ public class QueryServiceImpl implements QueryService
         return ret;
     }
 
-     /** Compute and set the metadata for this column based on the source expressoin and the xml override */
+     /** Compute and set the metadata for this column based on the source expression and the xml override */
     @Override
     public void bindQueryExpressionColumn(ColumnInfo col, Map<FieldKey,ColumnInfo> columns, boolean validateOnly, @Nullable Set<FieldKey> referencedKeys) throws QueryParseException
     {
