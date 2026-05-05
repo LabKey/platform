@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.33.4-fb-accessibilityColors.1",
+    "@labkey/components": "7.33.4-fb-accessibilityColors.2",
     "@labkey/themes": "1.9.0"
   },
   "devDependencies": {
