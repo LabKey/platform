@@ -2264,7 +2264,9 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             QExpr expr = getResolvedField();
 
             // NOTE SqlServer does not like predicates (A=B) in select list, try to help out
-            if (expr instanceof QMethodCall && expr.getJdbcType() == JdbcType.BOOLEAN && b.getDialect().isSqlServer())
+            // Exclude CAST/CONVERT expressions — they produce BIT values, not boolean predicates
+            if (expr instanceof QMethodCall mc && mc.getJdbcType() == JdbcType.BOOLEAN && b.getDialect().isSqlServer()
+                && !(mc.getMethod(b.getDialect()) instanceof Method.ConvertInfo))
             {
                 b.append("CASE WHEN (");
                 expr.appendSql(b, _query);
