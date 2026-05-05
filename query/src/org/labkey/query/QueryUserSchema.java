@@ -21,6 +21,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.query.query.CustomViewsTable;
+import org.labkey.query.query.QueriesTable;
 import org.labkey.query.query.QueryDbSchema;
 
 import java.util.HashSet;
@@ -36,6 +37,7 @@ public class QueryUserSchema extends UserSchema
     public static final String SCHEMA_DESCR = "Contains query related data.";
 
     public static final String CUSTOM_VIEWS_TABLE_NAME = "CustomViews";
+    public static final String QUERIES_TABLE_NAME = "Queries";
 
     static public void register(final Module module)
     {
@@ -50,7 +52,7 @@ public class QueryUserSchema extends UserSchema
             @Override
             public boolean isAvailable(DefaultSchema schema, Module module)
             {
-                return true;
+                return schema.getContainer().hasPermission(schema.getUser(), AdminPermission.class);
             }
         });
     }
@@ -66,7 +68,10 @@ public class QueryUserSchema extends UserSchema
         Set<String> names = new HashSet<>();
 
         if (getContainer().hasPermission(getUser(), AdminPermission.class))
+        {
             names.add(CUSTOM_VIEWS_TABLE_NAME);
+            names.add(QUERIES_TABLE_NAME);
+        }
 
         return names;
     }
@@ -74,8 +79,13 @@ public class QueryUserSchema extends UserSchema
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
-        if (CUSTOM_VIEWS_TABLE_NAME.equalsIgnoreCase(name) && getContainer().hasPermission(getUser(), AdminPermission.class))
-            return new CustomViewsTable(this, cf);
+        if (getContainer().hasPermission(getUser(), AdminPermission.class))
+        {
+            if (CUSTOM_VIEWS_TABLE_NAME.equalsIgnoreCase(name))
+                return new CustomViewsTable(this, cf);
+            if (QUERIES_TABLE_NAME.equalsIgnoreCase(name))
+                return new QueriesTable(this, cf);
+        }
 
         return null;
     }
@@ -102,7 +112,7 @@ public class QueryUserSchema extends UserSchema
         }
 
         @Test
-        public void testCustomViewsAdminOnlyAccess() throws Exception
+        public void testCustomViewsAdminOnlyAccess()
         {
             LOG.info("Validate Query.CustomViews is admin only");
 

@@ -43,6 +43,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -661,7 +662,8 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
             }
             else
             {
-                return !isPrivate() || isOwner(user);
+                // owners or administrators can access private reports
+                return !isPrivate() || isOwner(user) || c.hasPermission(user, AdminPermission.class);
             }
         }
         return false;

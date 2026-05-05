@@ -32,4 +32,9 @@ public class QueryDbSchema
     {
         return getSchema().getTable("CustomView");
     }
+
+    public TableInfo getTableInfoQueryDef()
+    {
+        return getSchema().getTable("QueryDef");
+    }
 }

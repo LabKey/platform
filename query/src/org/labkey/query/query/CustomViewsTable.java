@@ -45,7 +45,7 @@ public class CustomViewsTable extends FilteredTable<QueryUserSchema>
         super(QueryDbSchema.getInstance().getTableInfoCustomView(), userSchema, cf);
 
         setName(QueryUserSchema.CUSTOM_VIEWS_TABLE_NAME);
-        setDescription("Contains a row for each saved custom view. Available to folder administrators.");
+        setDescription("Contains a row for each saved custom view. Available only to administrators.");
 
         setImportURL(LINK_DISABLER);
         wrapAllColumns(true);
