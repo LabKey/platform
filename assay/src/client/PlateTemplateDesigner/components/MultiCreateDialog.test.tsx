@@ -180,7 +180,7 @@ describe('MultiCreateDialog', () => {
         test('Shift+Tab from first focusable element (Base Name) wraps focus to last (Create)', async () => {
             renderDialog({ initialBaseName: 'Sample' }); // Create button enabled
             expect(document.activeElement).toBe(
-                within(screen.getByRole('dialog')).getByRole('textbox', { name: 'Base name' })
+                within(screen.getByRole('dialog')).getByRole('textbox', { name: 'Base Name' })
             );
             await userEvent.keyboard('{Shift>}{Tab}{/Shift}');
             expect(document.activeElement).toBe(

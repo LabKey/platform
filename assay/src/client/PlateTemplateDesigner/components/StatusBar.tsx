@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 interface StatusBarProps {
     isDirty: boolean;
@@ -28,19 +28,21 @@ export const StatusBar: React.FC<StatusBarProps> = ({ isDirty, status, plateName
         if (plateName.trim()) setError(null);
     }, [plateName]);
 
-    const validate = (): boolean => {
+    const validate = useCallback((): boolean => {
         if (!plateName.trim()) {
             setError('Please enter a plate name before saving.');
             return false;
         }
         setError(null);
         return true;
-    };
+    }, [plateName]);
 
-    const validateAndSave = () => { if (validate()) onSave(); };
+    const validateAndSave = useCallback(() => { if (validate()) onSave(); }, [validate, onSave]);
 
     // Skip validation when there is nothing to save — the parent will navigate away without writing.
-    const validateAndSaveAndClose = () => { if (!isDirty || validate()) onSaveAndClose(); };
+    const validateAndSaveAndClose = useCallback(
+        () => { if (!isDirty || validate()) onSaveAndClose(); },
+        [isDirty, validate, onSaveAndClose]);
 
     return (
         <div className="status-bar">

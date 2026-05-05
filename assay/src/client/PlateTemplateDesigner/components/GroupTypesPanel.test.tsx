@@ -47,7 +47,7 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof GroupTypesPa
         plate: makePlate(),
         activeGroup: null,
         activeTab: 'SPECIMEN',
-        colorMap: new Map<number, string>(),
+        colorMap: new Map<number, { color: string; colorIndex: number }>(),
         hoveredWellGroupId: null as number | null,
         onGroupSelect: jest.fn(),
         onTabChange: jest.fn(),

@@ -33,7 +33,7 @@ function renderGrid(overrides: Partial<React.ComponentProps<typeof TemplateGrid>
         plate: makePlate(),
         activeGroup: null,
         activeTab: 'SPECIMEN',
-        colorMap: new Map<number, string>(),
+        colorMap: new Map<number, { color: string; colorIndex: number }>(),
         highlightedGroupId: null as number | null,
         onDragRect: jest.fn(),
         onCellToggle: jest.fn(),
@@ -78,7 +78,7 @@ describe('TemplateGrid — rendering', () => {
         };
         renderGrid({
             plate: makePlate(2, 2, [group]),
-            colorMap: new Map([[1, '#ff0000']]),
+            colorMap: new Map([[1, { color: '#ff0000', colorIndex: 1 }]]),
         });
         expect(screen.getByLabelText('A1: Sample 1')).toBeInTheDocument();
     });
@@ -278,7 +278,7 @@ describe('TemplateGrid — colorMap fallback', () => {
         };
         renderGrid({
             plate: makePlate(2, 2, [controlGroup]),
-            colorMap: new Map([[2, '#00ff00']]),
+            colorMap: new Map([[2, { color: '#00ff00', colorIndex: 2 }]]),
             activeTab: 'SPECIMEN', // CONTROL !== SPECIMEN → group is skipped
         });
         // Cell is not labeled with the CONTROL group name since that type is inactive
@@ -303,7 +303,7 @@ describe('TemplateGrid — well highlighting (highlightedGroupId)', () => {
         const group = makeGroupWithPositions(1);
         renderGrid({
             plate: makePlate(2, 2, [group]),
-            colorMap: new Map([[1, '#ff0000']]),
+            colorMap: new Map([[1, { color: '#ff0000', colorIndex: 1 }]]),
             highlightedGroupId: 1,
         });
         expect(getCell('A1: Group 1')).toHaveClass('template-grid__cell--active');
@@ -314,7 +314,7 @@ describe('TemplateGrid — well highlighting (highlightedGroupId)', () => {
         const group = makeGroupWithPositions(1);
         renderGrid({
             plate: makePlate(2, 2, [group]),
-            colorMap: new Map([[1, '#ff0000']]),
+            colorMap: new Map([[1, { color: '#ff0000', colorIndex: 1 }]]),
             highlightedGroupId: 1,
         });
         // B1 and B2 are not in the group
@@ -326,7 +326,7 @@ describe('TemplateGrid — well highlighting (highlightedGroupId)', () => {
         const group = makeGroupWithPositions(1);
         renderGrid({
             plate: makePlate(2, 2, [group]),
-            colorMap: new Map([[1, '#ff0000']]),
+            colorMap: new Map([[1, { color: '#ff0000', colorIndex: 1 }]]),
             highlightedGroupId: null,
         });
         expect(getCell('A1: Group 1')).not.toHaveClass('template-grid__cell--active');
@@ -342,7 +342,7 @@ describe('TemplateGrid — well highlighting (highlightedGroupId)', () => {
         };
         renderGrid({
             plate: makePlate(2, 2, [group1, group2]),
-            colorMap: new Map([[1, '#ff0000'], [2, '#00ff00']]),
+            colorMap: new Map([[1, { color: '#ff0000', colorIndex: 1 }], [2, { color: '#00ff00', colorIndex: 2 }]]),
             highlightedGroupId: 2,
         });
         expect(getCell('B1: Group 2')).toHaveClass('template-grid__cell--active');
@@ -360,7 +360,7 @@ describe('TemplateGrid — onWellHover', () => {
         };
         const { onWellHover } = renderGrid({
             plate: makePlate(2, 2, [group]),
-            colorMap: new Map([[5, '#ff0000']]),
+            colorMap: new Map([[5, { color: '#ff0000', colorIndex: 5 }]]),
         });
         fireEvent.mouseEnter(getCell('A1: Sample 1'));
         expect(onWellHover).toHaveBeenCalledWith(5);
@@ -379,7 +379,7 @@ describe('TemplateGrid — onWellHover', () => {
         };
         const { onWellHover } = renderGrid({
             plate: makePlate(2, 2, [group]),
-            colorMap: new Map([[5, '#ff0000']]),
+            colorMap: new Map([[5, { color: '#ff0000', colorIndex: 5 }]]),
         });
         fireEvent.focus(getCell('A1: Sample 1'));
         expect(onWellHover).toHaveBeenCalledWith(5);
@@ -404,5 +404,38 @@ describe('TemplateGrid — onWellHover', () => {
         onWellHover.mockClear(); // ignore any calls from before the drag started
         fireEvent.mouseEnter(getCell('B2'));
         expect(onWellHover).not.toHaveBeenCalled();
+    });
+});
+
+describe('TemplateGrid — pattern classes (WCAG 1.4.1)', () => {
+    test('assigned cell receives the pattern class matching its colorIndex', () => {
+        const group: WellGroup = {
+            rowId: 1, type: 'SPECIMEN', name: 'Sample 1',
+            positions: [{ row: 0, col: 0 }], properties: {}, allowNewGroups: false,
+        };
+        renderGrid({
+            plate: makePlate(2, 2, [group]),
+            colorMap: new Map([[1, { color: '#ff0000', colorIndex: 3 }]]),
+        });
+        expect(getCell('A1: Sample 1')).toHaveClass('template-grid__cell--pattern-3');
+    });
+
+    test('unassigned cell (colorIndex = -1) does not receive any pattern class', () => {
+        renderGrid({ plate: makePlate(2, 2) });
+        const cell = getCell('A1');
+        expect(cell.className).not.toMatch(/template-grid__cell--pattern-/);
+    });
+
+    test('colorMap fallback (rowId not in map) yields colorIndex -1 — no pattern class', () => {
+        const group: WellGroup = {
+            rowId: 1, type: 'SPECIMEN', name: 'Sample 1',
+            positions: [{ row: 0, col: 0 }], properties: {}, allowNewGroups: false,
+        };
+        renderGrid({
+            plate: makePlate(2, 2, [group]),
+            colorMap: new Map(), // rowId 1 not in map
+        });
+        const cell = getCell('A1: Sample 1');
+        expect(cell.className).not.toMatch(/template-grid__cell--pattern-/);
     });
 });

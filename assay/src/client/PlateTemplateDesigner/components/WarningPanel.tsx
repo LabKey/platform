@@ -24,8 +24,8 @@ export const WarningPanel: FC<WarningPanelProps> = ({ warnings }) => (
             <div className="warning-panel__none">No warnings.</div>
         ) : (
             <ul className="warning-panel__list">
-                {warnings.map((w) => (
-                    <li key={w} className="warning-panel__item">{w}</li>
+                {warnings.map((w, i) => (
+                    <li key={i} className="warning-panel__item">{w}</li>
                 ))}
             </ul>
         )}

@@ -20,7 +20,7 @@ interface TabButtonProps {
  * A single ARIA tab button. Handles `role="tab"`, `aria-controls`, `aria-selected`,
  * and the BEM `<baseClass>--active` modifier. Use inside a `role="tablist"` container.
  */
-export function TabButton({ id, panelId, isActive, baseClass, extraClassName, onClick, children }: TabButtonProps): JSX.Element {
+export const TabButton: React.FC<TabButtonProps> = ({ id, panelId, isActive, baseClass, extraClassName, onClick, children }) => {
     return (
         <button
             id={id}
@@ -34,4 +34,5 @@ export function TabButton({ id, panelId, isActive, baseClass, extraClassName, on
             {children}
         </button>
     );
-}
+};
+TabButton.displayName = 'TabButton';

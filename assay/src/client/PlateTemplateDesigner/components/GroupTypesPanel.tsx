@@ -5,7 +5,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useEnterEscape } from '@labkey/components';
+import { useEnterEscape } from '../useEnterEscape';
 import classNames from 'classnames';
 
 import { PlateTemplate, WellGroup } from '../models';
@@ -17,7 +17,7 @@ interface GroupTypesPanelProps {
     plate: PlateTemplate;
     activeGroup: WellGroup | null;
     activeTab: string;
-    colorMap: Map<number, string>;
+    colorMap: Map<number, { color: string; colorIndex: number }>;
     hoveredWellGroupId: number | null;
     onGroupSelect: (group: WellGroup) => void;
     onTabChange: (tab: string) => void;
@@ -31,6 +31,7 @@ interface GroupTypesPanelProps {
 interface GroupRowProps {
     group: WellGroup;
     color: string | undefined;
+    colorIndex: number | undefined;
     isActive: boolean;
     isHighlighted: boolean;
     isRenaming: boolean;
@@ -46,9 +47,10 @@ interface GroupRowProps {
     onDeleteCancel: (e: React.MouseEvent) => void;
 }
 
-function GroupRow({
+const GroupRow: React.FC<GroupRowProps> = ({
     group,
     color,
+    colorIndex,
     isActive,
     isHighlighted,
     isRenaming,
@@ -62,7 +64,7 @@ function GroupRow({
     onDeleteClick,
     onDeleteConfirm,
     onDeleteCancel,
-}: GroupRowProps) {
+}) => {
     const [renameValue, setRenameValue] = useState(group.name);
     const [renameError, setRenameError] = useState<string | null>(null);
 
@@ -73,8 +75,8 @@ function GroupRow({
         }
     }, [isRenaming]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const handleRenameValueChange = useCallback((value: string) => {
-        setRenameValue(value);
+    const handleRenameValueChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setRenameValue(e.target.value);
         setRenameError(null);
     }, []);
 
@@ -96,6 +98,23 @@ function GroupRow({
 
     const handleRenameKeyDown = useEnterEscape(() => commitRename(false), onRenameCancel);
 
+    const handleMouseEnter = useCallback(() => onGroupHover(group.rowId), [onGroupHover, group.rowId]);
+    const handleGroupClick = useCallback(() => { if (!isRenaming) onGroupSelect(group); }, [isRenaming, onGroupSelect, group]);
+    const handleGroupKeyDown = useCallback((e: React.KeyboardEvent) => {
+        if (!isRenaming && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            onGroupSelect(group);
+        }
+    }, [isRenaming, onGroupSelect, group]);
+    const handleRenameBlur = useCallback(() => commitRename(true), [commitRename]);
+    const handleRenameInputClick = useCallback((e: React.MouseEvent) => e.stopPropagation(), []);
+    const handleDeleteConfirmClick = useCallback(
+        (e: React.MouseEvent) => onDeleteConfirm(e, group.rowId), [onDeleteConfirm, group.rowId]);
+    const handleRenameActionClick = useCallback(
+        (e: React.MouseEvent) => onRenameClick(e, group), [onRenameClick, group]);
+    const handleDeleteActionClick = useCallback(
+        (e: React.MouseEvent) => onDeleteClick(e, group), [onDeleteClick, group]);
+
     return (
         <React.Fragment>
             <div
@@ -103,20 +122,17 @@ function GroupRow({
                     'group-types-panel__group--active': isActive,
                     'group-types-panel__group--highlighted': isHighlighted && !isActive,
                 })}
-                onMouseEnter={() => onGroupHover(group.rowId)}
+                onMouseEnter={handleMouseEnter}
                 role="option"
                 aria-selected={isActive}
                 tabIndex={0}
-                onClick={() => { if (!isRenaming) onGroupSelect(group); }}
-                onKeyDown={e => {
-                    if (!isRenaming && (e.key === 'Enter' || e.key === ' ')) {
-                        e.preventDefault();
-                        onGroupSelect(group);
-                    }
-                }}
+                onClick={handleGroupClick}
+                onKeyDown={handleGroupKeyDown}
             >
                 <span
-                    className="group-types-panel__color-swatch"
+                    className={classNames('group-types-panel__color-swatch', {
+                        [`group-types-panel__color-swatch--pattern-${colorIndex}`]: colorIndex != null && colorIndex >= 0,
+                    })}
                     style={{ backgroundColor: color ?? '#ccc' }}
                     aria-hidden="true"
                 />
@@ -130,10 +146,10 @@ function GroupRow({
                             'group-types-panel__rename-input--error': !!renameError,
                         })}
                         value={renameValue}
-                        onChange={e => handleRenameValueChange(e.target.value)}
+                        onChange={handleRenameValueChange}
                         onKeyDown={handleRenameKeyDown}
-                        onBlur={() => commitRename(true)}
-                        onClick={e => e.stopPropagation()}
+                        onBlur={handleRenameBlur}
+                        onClick={handleRenameInputClick}
                     />
                 ) : (
                     <span className="group-types-panel__group-name">{group.name}</span>
@@ -149,7 +165,7 @@ function GroupRow({
                             <button
                                 className="group-types-panel__action-btn group-types-panel__action-btn--delete"
                                 aria-label={`Confirm delete ${group.name}`}
-                                onClick={e => onDeleteConfirm(e, group.rowId)}
+                                onClick={handleDeleteConfirmClick}
                             >
                                 Yes
                             </button>
@@ -173,7 +189,7 @@ function GroupRow({
                                 title="Rename"
                                 aria-label={`Rename ${group.name}`}
                                 tabIndex={(!isActive || isRenaming) ? -1 : 0}
-                                onClick={e => onRenameClick(e, group)}
+                                onClick={handleRenameActionClick}
                             >
                                 <span className="fa fa-pencil" aria-hidden="true" />
                             </button>
@@ -182,7 +198,7 @@ function GroupRow({
                                 title="Delete"
                                 aria-label={`Delete ${group.name}`}
                                 tabIndex={(!isActive || isRenaming) ? -1 : 0}
-                                onClick={e => onDeleteClick(e, group)}
+                                onClick={handleDeleteActionClick}
                             >
                                 <span className="fa fa-trash-o" aria-hidden="true" />
                             </button>
@@ -195,14 +211,37 @@ function GroupRow({
             )}
         </React.Fragment>
     );
+};
+GroupRow.displayName = 'GroupRow';
+
+interface GroupTypeTabButtonProps {
+    type: string;
+    isActive: boolean;
+    onTabChange: (tab: string) => void;
 }
+
+const GroupTypeTabButton: React.FC<GroupTypeTabButtonProps> = ({ type, isActive, onTabChange }) => {
+    const handleClick = useCallback(() => onTabChange(type), [onTabChange, type]);
+    return (
+        <TabButton
+            id={`group-tab-${type}`}
+            panelId={`group-panel-${type}`}
+            isActive={isActive}
+            baseClass="group-types-panel__tab"
+            onClick={handleClick}
+        >
+            {type}
+        </TabButton>
+    );
+};
+GroupTypeTabButton.displayName = 'GroupTypeTabButton';
 
 /**
  * Left-hand panel for managing group types and well groups. Supports selecting the active
  * group (which the grid paints onto), creating groups individually or in bulk, and renaming
  * or deleting existing groups. The TemplateGrid is passed as children and rendered inline.
  */
-export function GroupTypesPanel({
+export const GroupTypesPanel: React.FC<GroupTypesPanelProps> = ({
     plate,
     activeGroup,
     activeTab,
@@ -215,7 +254,7 @@ export function GroupTypesPanel({
     onRenameGroup,
     onGroupHover,
     children,
-}: GroupTypesPanelProps): JSX.Element {
+}) => {
     const [renamingId, setRenamingId] = useState<number | null>(null);
     // rowId of the group awaiting inline delete confirmation; null when no confirmation is pending.
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
@@ -271,16 +310,12 @@ export function GroupTypesPanel({
         <div className="group-types-panel">
             <TabList className="group-types-panel__tabs">
                 {plate.groupTypes.map(type => (
-                    <TabButton
+                    <GroupTypeTabButton
                         key={type}
-                        id={`group-tab-${type}`}
-                        panelId={`group-panel-${type}`}
+                        type={type}
                         isActive={type === activeTab}
-                        baseClass="group-types-panel__tab"
-                        onClick={() => onTabChange(type)}
-                    >
-                        {type}
-                    </TabButton>
+                        onTabChange={onTabChange}
+                    />
                 ))}
             </TabList>
             {plate.groupTypes.map(type => (
@@ -304,7 +339,8 @@ export function GroupTypesPanel({
                                     <GroupRow
                                         key={group.rowId}
                                         group={group}
-                                        color={colorMap.get(group.rowId)}
+                                        color={colorMap.get(group.rowId)?.color}
+                                        colorIndex={colorMap.get(group.rowId)?.colorIndex}
                                         isActive={activeGroup?.rowId === group.rowId}
                                         isHighlighted={hoveredWellGroupId === group.rowId}
                                         isRenaming={renamingId === group.rowId}
@@ -336,4 +372,5 @@ export function GroupTypesPanel({
             ))}
         </div>
     );
-}
+};
+GroupTypesPanel.displayName = 'GroupTypesPanel';

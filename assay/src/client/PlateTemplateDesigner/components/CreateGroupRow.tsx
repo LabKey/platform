@@ -5,7 +5,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useEnterEscape } from '@labkey/components';
+import { useEnterEscape } from '../useEnterEscape';
 
 import { MultiCreateDialog } from './MultiCreateDialog';
 

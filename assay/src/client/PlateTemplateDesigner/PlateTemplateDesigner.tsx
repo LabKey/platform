@@ -15,9 +15,6 @@ import { TemplateGrid } from './components/TemplateGrid';
 
 import './PlateTemplateDesigner.scss';
 
-/**
- * Root component of the Plate Template Designer.
- */
 const COLORS = [
     '#4e79a7', '#f28e2b', '#e15759', '#76b7b2', '#59a14f',
     '#ecb830', '#9b59b6', '#e84878', '#7a4222', '#888888',
@@ -25,10 +22,10 @@ const COLORS = [
     '#c030a8', '#8caa28', '#583848', '#c8d8e8', '#204888',
 ];
 
-export function assignColors(groups: WellGroup[]): Map<number, string> {
-    const map = new Map<number, string>();
+export function assignColors(groups: WellGroup[]): Map<number, { color: string; colorIndex: number }> {
+    const map = new Map<number, { color: string; colorIndex: number }>();
     groups.forEach((g, i) => {
-        map.set(g.rowId, COLORS[i % COLORS.length]);
+        map.set(g.rowId, { color: COLORS[i % COLORS.length], colorIndex: i % COLORS.length });
     });
     return map;
 }
@@ -67,14 +64,14 @@ export function isSameOrigin(url: string): boolean {
     }
 }
 
-export function PlateTemplateDesigner(): JSX.Element {
+export const PlateTemplateDesigner: React.FC = () => {
     const [plate, setPlate] = useState<PlateTemplate | null>(null);
     const [activeGroup, setActiveGroup] = useState<WellGroup | null>(null);
     const [activeTab, setActiveTab] = useState<string>('');
     const [rightTab, setRightTab] = useState<RightTab>(RIGHT_TAB_PROPERTIES);
     const [isDirty, setIsDirty] = useState(false);
     const [status, setStatus] = useState('');
-    const [colorMap, setColorMap] = useState<Map<number, string>>(new Map());
+    const [colorMap, setColorMap] = useState<Map<number, { color: string; colorIndex: number }>>(new Map());
     const [error, setError] = useState<string | null>(null);
     // rowId of the group being hovered in the group list; null when no group is hovered.
     const [hoveredGroupId, setHoveredGroupId] = useState<number | null>(null);
@@ -87,8 +84,6 @@ export function PlateTemplateDesigner(): JSX.Element {
     const activeGroupRef = useRef<WellGroup | null>(null);
     // Set to true synchronously before intentional navigation (Cancel / Save & Close) so the
     // beforeunload handler does not fire the "unsaved changes" prompt on those code paths.
-    // Using a ref rather than state ensures the handler sees the update in the same tick as
-    // the href change, before React has had a chance to re-render and re-register the handler.
     const isIntentionalExitRef = useRef(false);
     activeGroupRef.current = activeGroup;
     const nextColorIndexRef = useRef(0);  // Monotonically increasing; never decrements on delete so colors stay unique
@@ -222,7 +217,7 @@ export function PlateTemplateDesigner(): JSX.Element {
         });
         setColorMap(prev => {
             const next = new Map(prev);
-            next.set(rowId, COLORS[colorIndex % COLORS.length]);
+            next.set(rowId, { color: COLORS[colorIndex % COLORS.length], colorIndex: colorIndex % COLORS.length });
             return next;
         });
         // allowNewGroups is a stub here; the plate-sync effect re-derives it from the updated plate.
@@ -478,4 +473,5 @@ export function PlateTemplateDesigner(): JSX.Element {
             </div>
         </div>
     );
-}
+};
+PlateTemplateDesigner.displayName = 'PlateTemplateDesigner';

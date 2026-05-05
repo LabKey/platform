@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React from 'react';
+import React, { useCallback } from 'react';
 
 import { WellGroup } from '../models';
 import { TabButton } from './TabButton';
@@ -26,9 +26,12 @@ interface RightPanelProps {
 }
 
 /** Right sidebar of the plate designer showing well group properties and, when validation warnings exist, a tabbed warnings panel. */
-export function RightPanel(props: RightPanelProps): JSX.Element {
+export const RightPanel: React.FC<RightPanelProps> = (props) => {
     const { showWarningPanel, rightTab, onRightTabChange, warnings, activeGroup, onPropertyChange, onDeleteProperty } = props;
     const warningCount = warnings.length;
+
+    const handlePropertiesTabClick = useCallback(() => onRightTabChange(RIGHT_TAB_PROPERTIES), [onRightTabChange]);
+    const handleWarningsTabClick = useCallback(() => onRightTabChange(RIGHT_TAB_WARNINGS), [onRightTabChange]);
 
     return (
         <div className="plate-template-designer__right">
@@ -39,7 +42,7 @@ export function RightPanel(props: RightPanelProps): JSX.Element {
                         panelId="right-panel-properties"
                         isActive={rightTab === RIGHT_TAB_PROPERTIES}
                         baseClass="right-panel-tabs__tab"
-                        onClick={() => onRightTabChange(RIGHT_TAB_PROPERTIES)}
+                        onClick={handlePropertiesTabClick}
                     >
                         Well Group Properties
                     </TabButton>
@@ -49,7 +52,7 @@ export function RightPanel(props: RightPanelProps): JSX.Element {
                         isActive={rightTab === RIGHT_TAB_WARNINGS}
                         baseClass="right-panel-tabs__tab"
                         extraClassName={warningCount > 0 ? 'right-panel-tabs__tab--warn' : undefined}
-                        onClick={() => onRightTabChange(RIGHT_TAB_WARNINGS)}
+                        onClick={handleWarningsTabClick}
                     >
                         {warningCount > 0 ? `Warnings (${warningCount})` : 'Warnings'}
                     </TabButton>
@@ -79,4 +82,5 @@ export function RightPanel(props: RightPanelProps): JSX.Element {
             )}
         </div>
     );
-}
+};
+RightPanel.displayName = 'RightPanel';

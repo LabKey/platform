@@ -26,6 +26,9 @@ describe('assignColors', () => {
         expect(map.get(1)).toBeDefined();
         expect(map.get(2)).toBeDefined();
         expect(map.get(3)).toBeDefined();
+        expect(map.get(1)?.colorIndex).toBe(0);
+        expect(map.get(2)?.colorIndex).toBe(1);
+        expect(map.get(3)?.colorIndex).toBe(2);
     });
 
     test('uses group rowId as the map key, not the array index', () => {
@@ -39,14 +42,15 @@ describe('assignColors', () => {
     test('assigns distinct colors to the first 20 groups', () => {
         const groups = Array.from({ length: 20 }, (_, i) => makeGroup(i + 1));
         const map = assignColors(groups);
-        const colors = Array.from(map.values());
+        const colors = Array.from(map.values()).map(v => v.color);
         expect(new Set(colors).size).toBe(20);
     });
 
     test('wraps color assignment after 20 groups (21st group gets same color as 1st)', () => {
         const groups = Array.from({ length: 21 }, (_, i) => makeGroup(i + 1));
         const map = assignColors(groups);
-        expect(map.get(21)).toBe(map.get(1));
+        expect(map.get(21)?.color).toBe(map.get(1)?.color);
+        expect(map.get(21)?.colorIndex).toBe(0);
     });
 
     test('assigns colors in array order, not by rowId value', () => {
@@ -54,7 +58,8 @@ describe('assignColors', () => {
         const groups = [makeGroup(99), makeGroup(1)];
         const map = assignColors(groups);
         const firstColor = assignColors([makeGroup(1)]).get(1);
-        expect(map.get(99)).toBe(firstColor);
+        expect(map.get(99)?.color).toBe(firstColor?.color);
+        expect(map.get(99)?.colorIndex).toBe(0);
     });
 });
 

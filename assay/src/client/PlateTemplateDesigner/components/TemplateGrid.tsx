@@ -12,7 +12,7 @@ interface TemplateGridProps {
     plate: PlateTemplate;
     activeGroup: WellGroup | null;
     activeTab: string;
-    colorMap: Map<number, string>;
+    colorMap: Map<number, { color: string; colorIndex: number }>;
     highlightedGroupId: number | null;
     onDragRect: (r1: number, c1: number, r2: number, c2: number, isUnselect: boolean, preDragPositions: Position[]) => void;
     onCellToggle: (row: number, col: number) => void;
@@ -23,12 +23,64 @@ function getRowLabel(row: number): string {
     return String.fromCharCode(65 + row);
 }
 
+interface GridCellProps {
+    row: number;
+    col: number;
+    color: string;
+    colorIndex: number;
+    label: string;
+    isActive: boolean;
+    isTabStop: boolean;
+    cellRefs: React.MutableRefObject<Map<string, HTMLTableCellElement>>;
+    onMouseDown: (row: number, col: number, e: React.MouseEvent) => void;
+    onMouseEnter: (row: number, col: number) => void;
+    onMouseUp: (row: number, col: number) => void;
+    onFocus: (row: number, col: number) => void;
+    onKeyDown: (row: number, col: number, e: React.KeyboardEvent) => void;
+}
+
+const GridCell: React.FC<GridCellProps> = ({ row, col, color, colorIndex, label, isActive, isTabStop, cellRefs, onMouseDown, onMouseEnter, onMouseUp, onFocus, onKeyDown }) => {
+    // row and col are stable for a given cell instance (position never changes), so these
+    // callbacks remain stable as long as the parent handlers are stable useCallback refs.
+    const handleMouseDown  = useCallback((e: React.MouseEvent)    => onMouseDown(row, col, e),  [onMouseDown, row, col]);
+    const handleMouseEnter = useCallback(()                        => onMouseEnter(row, col),   [onMouseEnter, row, col]);
+    const handleMouseUp    = useCallback(()                        => onMouseUp(row, col),      [onMouseUp, row, col]);
+    const handleFocus      = useCallback(()                        => onFocus(row, col),        [onFocus, row, col]);
+    const handleKeyDown    = useCallback((e: React.KeyboardEvent)  => onKeyDown(row, col, e),   [onKeyDown, row, col]);
+    const handleRef        = useCallback((el: HTMLTableCellElement | null) => {
+        const key = `${row},${col}`;
+        if (el) cellRefs.current.set(key, el);
+        else cellRefs.current.delete(key);
+    }, [row, col, cellRefs]);
+
+    return (
+        <td
+            role="gridcell"
+            ref={handleRef}
+            tabIndex={isTabStop ? 0 : -1}
+            className={classNames('template-grid__cell', {
+                'template-grid__cell--active': isActive,
+                [`template-grid__cell--pattern-${colorIndex}`]: colorIndex >= 0,
+            })}
+            style={{ backgroundColor: color }}
+            aria-label={label}
+            title={label}
+            onMouseDown={handleMouseDown}
+            onMouseEnter={handleMouseEnter}
+            onMouseUp={handleMouseUp}
+            onFocus={handleFocus}
+            onKeyDown={handleKeyDown}
+        />
+    );
+};
+GridCell.displayName = 'GridCell';
+
 /**
  * A scrollable well grid that lets the user paint cells onto the active well group.
  * Users can click on an individual well to toggle its membership in the selected group
  * or click/drag to set a range of wells at once.
  */
-export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, highlightedGroupId, onDragRect, onCellToggle, onWellHover }: TemplateGridProps): JSX.Element {
+export const TemplateGrid: React.FC<TemplateGridProps> = ({ plate, activeGroup, activeTab, colorMap, highlightedGroupId, onDragRect, onCellToggle, onWellHover }) => {
     const isDragging = useRef(false);
     const hasMoved = useRef(false);
     const startCell = useRef<{ row: number; col: number } | null>(null);
@@ -44,12 +96,14 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, highligh
     // This lets each cell do an O(1) lookup rather than scanning all groups and
     // positions on every render (which would be O(groups × positions) per cell).
     const positionMap = useMemo(() => {
-        const map = new Map<string, { color: string; groupName: string; groupRowId: number }>();
+        const map = new Map<string, { color: string; colorIndex: number; groupName: string; groupRowId: number }>();
         for (const group of plate.groups) {
             if (group.type !== activeTab) continue;
-            const color = colorMap.get(group.rowId) ?? '#f5f5f5';
+            const entry = colorMap.get(group.rowId);
+            const color = entry?.color ?? '#f5f5f5';
+            const colorIndex = entry?.colorIndex ?? -1;
             for (const p of group.positions) {
-                map.set(`${p.row},${p.col}`, { color, groupName: group.name, groupRowId: group.rowId });
+                map.set(`${p.row},${p.col}`, { color, colorIndex, groupName: group.name, groupRowId: group.rowId });
             }
         }
         return map;
@@ -150,15 +204,17 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, highligh
         }
     }, [onCellToggle, plate.rows, plate.cols]);
 
+    const handleGridBlur = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
+        // Clear well hover when keyboard focus leaves the grid entirely
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) onWellHover(null);
+    }, [onWellHover]);
+
     return (
         <div
             className="template-grid"
             onMouseLeave={handleDragEnd}
             onMouseUp={handleDragEnd}
-            onBlur={e => {
-                // Clear well hover when keyboard focus leaves the grid entirely
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) onWellHover(null);
-            }}
+            onBlur={handleGridBlur}
         >
             <table className="template-grid__table" role="grid" aria-label="Plate template grid">
                 <thead>
@@ -182,25 +238,21 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, highligh
                                     ? focusedCell.row === row && focusedCell.col === col
                                     : row === 0 && col === 0;
                                 return (
-                                    <td
+                                    <GridCell
                                         key={col}
-                                        role="gridcell"
-                                        ref={el => {
-                                            const key = `${row},${col}`;
-                                            if (el) cellRefs.current.set(key, el);
-                                            else cellRefs.current.delete(key);
-                                        }}
-                                        tabIndex={isTabStop ? 0 : -1}
-                                        className={classNames('template-grid__cell', {
-                                            'template-grid__cell--active': isHighlightedGroupCell,
-                                        })}
-                                        style={{ backgroundColor: entry?.color ?? '#f5f5f5' }}
-                                        aria-label={tooltip}
-                                        onMouseDown={e => handleMouseDown(row, col, e)}
-                                        onMouseEnter={() => handleMouseEnter(row, col)}
-                                        onMouseUp={() => handleCellMouseUp(row, col)}
-                                        onFocus={() => handleCellFocus(row, col)}
-                                        onKeyDown={e => handleCellKeyDown(row, col, e)}
+                                        row={row}
+                                        col={col}
+                                        color={entry?.color ?? '#f5f5f5'}
+                                        colorIndex={entry?.colorIndex ?? -1}
+                                        label={tooltip}
+                                        isActive={isHighlightedGroupCell}
+                                        isTabStop={isTabStop}
+                                        cellRefs={cellRefs}
+                                        onMouseDown={handleMouseDown}
+                                        onMouseEnter={handleMouseEnter}
+                                        onMouseUp={handleCellMouseUp}
+                                        onFocus={handleCellFocus}
+                                        onKeyDown={handleCellKeyDown}
                                     />
                                 );
                             })}
@@ -210,4 +262,5 @@ export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, highligh
             </table>
         </div>
     );
-}
+};
+TemplateGrid.displayName = 'TemplateGrid';

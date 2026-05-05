@@ -3,9 +3,9 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { useEnterEscape } from '@labkey/components';
+import { useEnterEscape } from '../useEnterEscape';
 
 interface MultiCreateDialogProps {
     initialBaseName: string;
@@ -15,7 +15,7 @@ interface MultiCreateDialogProps {
 }
 
 /** Modal dialog for batch-creating numbered well groups (e.g. "Sample 1" through "Sample 8") from a base name and count, skipping any names that already exist. */
-export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onConfirm }: MultiCreateDialogProps): JSX.Element {
+export const MultiCreateDialog: React.FC<MultiCreateDialogProps> = ({ initialBaseName, existingNames, onClose, onConfirm }) => {
     const [baseName, setBaseName] = useState(initialBaseName);
     const [count, setCount] = useState('2');
     const [countError, setCountError] = useState('');
@@ -64,7 +64,7 @@ export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onC
         };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const handleCreate = () => {
+    const handleCreate = useCallback(() => {
         const parsedCount = parseInt(count, 10);
         if (isNaN(parsedCount) || parsedCount < 1) {
             setCountError(`"${count}" is not a valid count.`);
@@ -79,9 +79,16 @@ export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onC
             return;
         }
         onConfirm(namesToCreate);
-    };
+    }, [count, baseName, existingNames, onConfirm]);
 
     const handleInputKeyDown = useEnterEscape(handleCreate, onClose);
+
+    const handleBaseNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setBaseName(e.target.value), []);
+    const handleCountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setCount(e.target.value);
+        setCountError('');
+    }, []);
+    const handleContentClick = useCallback((e: React.MouseEvent) => e.stopPropagation(), []);
 
     return (
         <dialog
@@ -90,7 +97,7 @@ export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onC
             aria-labelledby="multi-create-title"
             onClick={onClose}
         >
-            <div className="multi-create-dialog" onClick={e => e.stopPropagation()}>
+            <div className="multi-create-dialog" onClick={handleContentClick}>
                 <div id="multi-create-title" className="multi-create-dialog__title">Create Multiple Groups</div>
                 <div className="multi-create-dialog__form">
                     <div className="multi-create-dialog__field">
@@ -100,7 +107,7 @@ export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onC
                             type="text"
                             aria-labelledby="multi-create-base-name-label"
                             value={baseName}
-                            onChange={e => setBaseName(e.target.value)}
+                            onChange={handleBaseNameChange}
                             onKeyDown={handleInputKeyDown}
                         />
                     </div>
@@ -115,7 +122,7 @@ export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onC
                                 aria-describedby={countError ? 'multi-create-count-error' : undefined}
                                 aria-invalid={!!countError}
                                 value={count}
-                                onChange={e => { setCount(e.target.value); setCountError(''); }}
+                                onChange={handleCountChange}
                                 onKeyDown={handleInputKeyDown}
                             />
                             {countError && <div id="multi-create-count-error" className="multi-create-dialog__error">{countError}</div>}
@@ -137,4 +144,5 @@ export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onC
             </div>
         </dialog>
     );
-}
+};
+MultiCreateDialog.displayName = 'MultiCreateDialog';
