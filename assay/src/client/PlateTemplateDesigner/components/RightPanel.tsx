@@ -7,6 +7,7 @@ import React from 'react';
 
 import { WellGroup } from '../models';
 import { TabButton } from './TabButton';
+import { TabList } from './TabList';
 import { WellGroupProperties } from './WellGroupProperties';
 import { WarningPanel } from './WarningPanel';
 
@@ -24,6 +25,7 @@ interface RightPanelProps {
     onDeleteProperty: (groupRowId: number, key: string) => void;
 }
 
+/** Right sidebar of the plate designer showing well group properties and, when validation warnings exist, a tabbed warnings panel. */
 export function RightPanel(props: RightPanelProps): JSX.Element {
     const { showWarningPanel, rightTab, onRightTabChange, warnings, activeGroup, onPropertyChange, onDeleteProperty } = props;
     const warningCount = warnings.length;
@@ -31,22 +33,7 @@ export function RightPanel(props: RightPanelProps): JSX.Element {
     return (
         <div className="plate-template-designer__right">
             {showWarningPanel && ( // Only show the tabs if we are showing the warnings too. Otherwise, just show the properties
-                <div
-                    className="right-panel-tabs"
-                    role="tablist"
-                    onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
-                        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-                        const tabs = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
-                        const currentIndex = tabs.findIndex(t => t === document.activeElement);
-                        if (currentIndex === -1) return;
-                        e.preventDefault();
-                        const next = e.key === 'ArrowLeft'
-                            ? (currentIndex - 1 + tabs.length) % tabs.length
-                            : (currentIndex + 1) % tabs.length;
-                        tabs[next].click();
-                        tabs[next].focus();
-                    }}
-                >
+                <TabList className="right-panel-tabs">
                     <TabButton
                         id="right-tab-properties"
                         panelId="right-panel-properties"
@@ -66,7 +53,7 @@ export function RightPanel(props: RightPanelProps): JSX.Element {
                     >
                         {warningCount > 0 ? `Warnings (${warningCount})` : 'Warnings'}
                     </TabButton>
-                </div>
+                </TabList>
             )}
             <div
                 id={showWarningPanel ? 'right-panel-properties' : undefined}

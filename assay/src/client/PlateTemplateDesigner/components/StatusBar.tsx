@@ -16,20 +16,11 @@ interface StatusBarProps {
 
 /**
  * Persistent action bar pinned to the top of the designer.
- *
- * Button behavior:
- *  - "Save & Close": saves if dirty, then navigates to the returnURL (or plate list).
- *    Always enabled so users can leave even when clean.
- *  - "Save": persists the current state and updates the page URL to the canonical
+ * "Save" persists the current state and updates the page URL to the canonical
  *    ?templateName=...&plateId=... form so a browser refresh reloads the same plate.
- *    Disabled when the plate is clean to prevent redundant requests.
- *  - "Cancel": navigates away without saving. The browser's beforeunload handler
- *    will prompt if there are unsaved changes.
- *
- * The "Unsaved changes" indicator and transient status text ("Saving…", "Saved.")
- * use `role="status"` so screen readers announce them as they appear.
+ * Dirty state and saving status are shown next to the buttons.
  */
-export function StatusBar({ isDirty, status, plateName, onSaveAndClose, onSave, onCancel }: StatusBarProps): JSX.Element {
+export const StatusBar: React.FC<StatusBarProps> = ({ isDirty, status, plateName, onSaveAndClose, onSave, onCancel }) => {
     const [error, setError] = useState<string | null>(null);
 
     // Clear stale validation error once the user has filled in the plate name
@@ -53,13 +44,13 @@ export function StatusBar({ isDirty, status, plateName, onSaveAndClose, onSave, 
 
     return (
         <div className="status-bar">
-            <button className="save-button btn btn-primary" onClick={validateAndSaveAndClose}>
+            <button className="status-bar__save-and-close-btn btn btn-primary" onClick={validateAndSaveAndClose}>
                 Save &amp; Close
             </button>
-            <button className="save-button btn btn-default" onClick={validateAndSave} disabled={!isDirty}>
+            <button className="status-bar__save-btn btn btn-default" onClick={validateAndSave} disabled={!isDirty}>
                 Save
             </button>
-            <button className="cancel-button btn btn-default" onClick={onCancel}>
+            <button className="status-bar__cancel-btn btn btn-default" onClick={onCancel}>
                 Cancel
             </button>
             <span role="status" className="status-bar__dirty">{isDirty ? 'Unsaved changes' : ''}</span>
@@ -67,4 +58,5 @@ export function StatusBar({ isDirty, status, plateName, onSaveAndClose, onSave, 
             {error && <span role="alert" className="status-bar__error">{error}</span>}
         </div>
     );
-}
+};
+StatusBar.displayName = 'StatusBar';

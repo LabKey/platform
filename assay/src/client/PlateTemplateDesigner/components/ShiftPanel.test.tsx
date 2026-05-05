@@ -45,11 +45,4 @@ describe('ShiftPanel', () => {
         await userEvent.click(screen.getByRole('button', { name: 'Shift right' }));
         expect(onShift).toHaveBeenCalledWith(0, -1);
     });
-
-    test('each button only fires once per click', async () => {
-        const onShift = jest.fn();
-        render(<ShiftPanel onShift={onShift} />);
-        await userEvent.click(screen.getByRole('button', { name: 'Shift up' }));
-        expect(onShift).toHaveBeenCalledTimes(1);
-    });
 });

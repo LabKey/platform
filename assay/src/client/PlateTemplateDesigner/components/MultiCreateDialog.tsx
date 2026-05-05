@@ -5,6 +5,8 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 
+import { useEnterEscape } from '@labkey/components';
+
 interface MultiCreateDialogProps {
     initialBaseName: string;
     existingNames: Set<string>;
@@ -12,6 +14,7 @@ interface MultiCreateDialogProps {
     onConfirm: (names: string[]) => void;
 }
 
+/** Modal dialog for batch-creating numbered well groups (e.g. "Sample 1" through "Sample 8") from a base name and count, skipping any names that already exist. */
 export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onConfirm }: MultiCreateDialogProps): JSX.Element {
     const [baseName, setBaseName] = useState(initialBaseName);
     const [count, setCount] = useState('2');
@@ -78,6 +81,8 @@ export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onC
         onConfirm(namesToCreate);
     };
 
+    const handleInputKeyDown = useEnterEscape(handleCreate, onClose);
+
     return (
         <dialog
             ref={dialogRef}
@@ -96,7 +101,7 @@ export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onC
                             aria-labelledby="multi-create-base-name-label"
                             value={baseName}
                             onChange={e => setBaseName(e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') onClose(); }}
+                            onKeyDown={handleInputKeyDown}
                         />
                     </div>
                     <div className="multi-create-dialog__field">
@@ -111,7 +116,7 @@ export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onC
                                 aria-invalid={!!countError}
                                 value={count}
                                 onChange={e => { setCount(e.target.value); setCountError(''); }}
-                                onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') onClose(); }}
+                                onKeyDown={handleInputKeyDown}
                             />
                             {countError && <div id="multi-create-count-error" className="multi-create-dialog__error">{countError}</div>}
                         </div>

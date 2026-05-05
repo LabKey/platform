@@ -4,33 +4,6 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-/*
- * ──────────────────────────────────────────────────────────────────────────────
- * Overall layout (vertical stack):
- *
- *  ┌──────────────────────────────────────────────────────────┐
- *  │  .status-bar   (Save & Close | Save | Cancel | status)   │
- *  ├──────────────────────────────────────────────────────────┤
- *  │  .plate-template-designer__header  (Plate Name input)    │
- *  ├──────────────────────────────────────────────────────────┤
- *  │  .plate-template-designer__body  (horizontal flex)       │
- *  │  ┌──────────────────────────────┐  ┌───────────────────┐ │
- *  │  │  __left  (flex: 0 0 auto)    │  │  __right (flex:1) │ │
- *  │  │  .group-types-panel          │  │  right-panel-tabs │ │
- *  │  │  ├─ tab strip                │  │  + WellGroupProps │ │
- *  │  │  └─ tab-body (flex row)      │  │    or WarningPanel│ │
- *  │  │     ├─ group list            │  │                   │ │
- *  │  │     └─ .plate-grid-area      │  │                   │ │
- *  │  │        ├─ TemplateGrid       │  │                   │ │
- *  │  │        └─ ShiftPanel         │  │                   │ │
- *  │  └──────────────────────────────┘  └───────────────────┘ │
- *  └──────────────────────────────────────────────────────────┘
- *
- * The left column is sized to its content (fixed width); the right column grows
- * to fill remaining space with a minimum width so it doesn't collapse.
- * ──────────────────────────────────────────────────────────────────────────────
- */
-
 // Visually-hidden utility — renders only to assistive technology
 .sr-only {
     position: absolute;

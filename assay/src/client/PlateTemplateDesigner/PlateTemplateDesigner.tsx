@@ -17,46 +17,7 @@ import './PlateTemplateDesigner.scss';
 
 /**
  * Root component of the Plate Template Designer.
- *
- * ─── User workflow ──────────────────────────────────────────────────────────────
- * 1. On mount, URL parameters are read (templateName, plateId, assayType, rowCount,
- *    colCount, copy) and the plate definition is fetched from the server.
- * 2. The user selects a group type tab (e.g. CONTROL, SPECIMEN, REPLICATE).
- * 3. Within that type, the user selects or creates a named group.
- * 4. The user clicks or drags wells on the grid to paint them onto the active group.
- * 5. The user optionally edits well group properties in the right panel.
- * 6. "Save" persists without leaving; "Save & Close" saves then navigates to returnURL
- *    (or the plate list). "Cancel" navigates away without saving.
- *
- * ─── State architecture ─────────────────────────────────────────────────────────
- * `plate` is the single source of truth for all template data. All mutations go
- * through `setPlate` with functional updaters to avoid stale-closure bugs.
- *
- * `activeGroup` is a denormalized mirror of the currently selected group, kept in
- * sync with `plate` via the sync effect below. It exists separately because:
- *   - Callbacks that use `setPlate(prev => ...)` don't have access to the current
- *     group data inside the updater; they use `activeGroup` from their closure.
- *   - Components that show the active group (WellGroupProperties, TemplateGrid
- *     cell highlighting) need a stable reference that doesn't require traversing
- *     `plate.groups` on every access.
- *
- * ─── ID conventions ─────────────────────────────────────────────────────────────
- * Server-assigned group IDs are positive integers. Client-side created groups
- * receive temporary negative IDs (nextGroupIdRef counts down from -1). This ensures
- * new groups never collide with existing ones before the first save. The server
- * replaces all IDs with permanent values on save; the client does not update
- * individual group IDs — only the top-level `plate.rowId` is updated after save.
- *
- * ─── Cell interaction ───────────────────────────────────────────────────────────
- * Two cell callbacks are distinguished:
- *   `handleDragRect` — paints a rectangle; also evicts those cells from sibling
- *     groups of the same type (one cell can only belong to one group per type).
- *     Used during drag operations.
- *   `handleCellToggle` — toggle: if the cell is already in the active group, remove
- *     it; otherwise add it and evict it from any sibling group of the same type.
- *     Used for single-click (no drag movement).
  */
-
 const COLORS = [
     '#4e79a7', '#f28e2b', '#e15759', '#76b7b2', '#59a14f',
     '#ecb830', '#9b59b6', '#e84878', '#7a4222', '#888888',
@@ -175,7 +136,8 @@ export function PlateTemplateDesigner(): JSX.Element {
         });
     }, []);
 
-    const handleNameChange = useCallback((name: string) => {
+    const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const name = e.target.value;
         plateNameRef.current = name;
         setPlate(prev => prev ? { ...prev, name } : null);
         setIsDirty(true);
@@ -468,7 +430,7 @@ export function PlateTemplateDesigner(): JSX.Element {
                         className="plate-template-designer__name-input"
                         type="text"
                         value={plate.name}
-                        onChange={e => handleNameChange(e.target.value)}
+                        onChange={handleNameChange}
                     />
                 </label>
             </div>
@@ -504,9 +466,6 @@ export function PlateTemplateDesigner(): JSX.Element {
                         </div>
                     </GroupTypesPanel>
                 </div>
-                {/* Right panel: WellGroupProperties and (if enabled) a Warnings tab.
-                    The tab strip only renders when showWarningPanel is true; otherwise
-                    WellGroupProperties fills the full right column without tabs. */}
                 <RightPanel
                     showWarningPanel={plate.showWarningPanel}
                     rightTab={rightTab}

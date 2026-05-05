@@ -25,32 +25,8 @@ function getRowLabel(row: number): string {
 
 /**
  * A scrollable well grid that lets the user paint cells onto the active well group.
- *
- * ─── Coloring ──────────────────────────────────────────────────────────────────
- * Only wells belonging to groups of the *active tab type* are colored. Wells from
- * other types are invisible in the current view.
- *
- * ─── Drag / click interaction ──────────────────────────────────────────────────
- * Cell assignment uses a three-phase state machine tracked entirely via refs
- * (no re-renders on drag):
- *
- *   Phase 1 – mousedown on a cell:
- *     Enter drag mode. Record the start cell. Do NOT assign anything yet — we
- *     first need to know whether the user is clicking (toggle) or dragging (rect).
- *
- *   Phase 2 – mouseenter a *different* cell while dragging:
- *     We now know it's a drag. Call onDragRect with the axis-aligned rectangle
- *     defined by the mousedown cell and the current cell, plus the drag mode
- *     (select vs unselect) determined at mousedown. The parent replaces or removes
- *     cells on every call, so the selection dynamically resizes as the mouse moves.
- *
- *   Phase 3 – mouseup:
- *     If the pointer never left the start cell (hasMoved === false), treat the
- *     interaction as a click and toggle that cell (add if absent, remove if present).
- *     Either way, reset all drag state.
- *
- * Drag state is also cleaned up on mouseleave of the outer div, preventing stuck
- * drag state when the pointer exits the grid.
+ * Users can click on an individual well to toggle its membership in the selected group
+ * or click/drag to set a range of wells at once.
  */
 export function TemplateGrid({ plate, activeGroup, activeTab, colorMap, highlightedGroupId, onDragRect, onCellToggle, onWellHover }: TemplateGridProps): JSX.Element {
     const isDragging = useRef(false);
