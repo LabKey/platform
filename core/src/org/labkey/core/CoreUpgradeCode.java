@@ -32,6 +32,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Directive;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.StartupListener;
@@ -42,6 +43,10 @@ import org.labkey.core.security.AllowedExternalResourceHosts.AllowedHost;
 import java.util.Map;
 import java.util.List;
 
+import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_ENABLED_KEY;
+import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_LIMIT_KEY;
+import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_PERIOD_KEY;
+import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_RESET_TIME_KEY;
 import static org.labkey.api.settings.AbstractSettingsGroup.SITE_CONFIG_USER;
 
 public class CoreUpgradeCode implements UpgradeCode
@@ -182,20 +187,17 @@ public class CoreUpgradeCode implements UpgradeCode
         else
         {
             LOG.info("Migrating existing unsuccessful login attempt settings: {}", complianceProps);
+            User user = context.getUpgradeUser();
 
-            PropertyManager.WritablePropertyMap authProps =
-                PropertyManager.getWritableProperties(AuthenticationManager.AUTHENTICATION_CATEGORY, true);
-
+            // TODO: change saveAuthSetting() visibility back to private after deleting this upgrade code
             if (enabledVal != null)
-                authProps.put(AuthenticationManager.LOGIN_ATTEMPT_ENABLED_KEY, enabledVal);
+                AuthenticationManager.saveAuthSetting(user, LOGIN_ATTEMPT_ENABLED_KEY, Boolean.valueOf(enabledVal));
             if (limitVal != null)
-                authProps.put(AuthenticationManager.LOGIN_ATTEMPT_LIMIT_KEY, limitVal);
+                AuthenticationManager.saveAuthSetting(user, LOGIN_ATTEMPT_LIMIT_KEY, limitVal, "set to " + limitVal);
             if (periodVal != null)
-                authProps.put(AuthenticationManager.LOGIN_ATTEMPT_PERIOD_KEY, periodVal);
+                AuthenticationManager.saveAuthSetting(user, LOGIN_ATTEMPT_PERIOD_KEY, periodVal, "set to " + periodVal);
             if (resetVal != null)
-                authProps.put(AuthenticationManager.LOGIN_ATTEMPT_RESET_TIME_KEY, resetVal);
-
-            authProps.save();
+                AuthenticationManager.saveAuthSetting(user, LOGIN_ATTEMPT_RESET_TIME_KEY, resetVal, "set to " + resetVal);
         }
     }
 }

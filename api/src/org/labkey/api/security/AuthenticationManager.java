@@ -326,7 +326,7 @@ public class AuthenticationManager
         saveAuthSetting(user, key, Boolean.toString(value), value ? "enabled" : "disabled");
     }
 
-    private static void saveAuthSetting(User user, String key, String value, String action)
+    public static void saveAuthSetting(User user, String key, String value, String action)
     {
         WritablePropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
         props.put(key, value);
@@ -354,7 +354,7 @@ public class AuthenticationManager
             throw new IllegalArgumentException("limit, period, and resetTime values must be positive!");
 
         // Use standard saveAuthSetting() methods to ensure audit logging
-        if (enabled !=  isLoginAttemptControlEnabled())
+        if (enabled != isLoginAttemptControlEnabled())
             saveAuthSetting(user, LOGIN_ATTEMPT_ENABLED_KEY, enabled);
         if (limit != getLoginAttemptLimit())
             saveAuthSetting(user, LOGIN_ATTEMPT_LIMIT_KEY, String.valueOf(limit), "set to " + limit);
