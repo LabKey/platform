@@ -217,7 +217,7 @@ public class XarExporter
         {
             return;
         }
-        _log.debug("Adding experiment data " + data.getRowId());
+        _log.debug("Adding experiment data {}", data.getRowId());
         _expDataIDs.add(data.getRowId());
 
         ArchiveURLRewriter u = (ArchiveURLRewriter)_urlRewriter;
@@ -232,7 +232,7 @@ public class XarExporter
         {
             return;
         }
-        _log.debug("Adding experiment run " + run.getLSID());
+        _log.debug("Adding experiment run {}", run.getLSID());
         _experimentRunLSIDs.add(run.getLSID());
 
         ExpExperiment batch = run.getBatch();
@@ -583,7 +583,7 @@ public class XarExporter
 
     private void populateMaterial(MaterialBaseType xMaterial, ExpMaterial material) throws ExperimentException
     {
-        _log.debug("Adding material " + material.getLSID());
+        _log.debug("Adding material {}", material.getLSID());
         addSampleType(material.getCpasType());
         xMaterial.setAbout(_relativizedLSIDs.relativize(material.getLSID()));
         xMaterial.setCpasType(isDefaultCpasType(material.getCpasType(), ExpMaterial.DEFAULT_CPAS_TYPE) ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
@@ -976,7 +976,7 @@ public class XarExporter
 
     private void populateData(DataBaseType xData, ExpData data, @Nullable String role, ExpRun run) throws ExperimentException
     {
-        _log.debug("Adding data " + data.getLSID());
+        _log.debug("Adding data {}", data.getLSID());
         xData.setName(data.getName());
         xData.setAbout(_relativizedLSIDs.relativize(data));
         xData.setCpasType(isDefaultCpasType(data.getCpasType(), ExpData.DEFAULT_CPAS_TYPE) ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
@@ -1005,7 +1005,7 @@ public class XarExporter
         {
             return;
         }
-        _log.debug("Adding protocol " + protocol.getLSID());
+        _log.debug("Adding protocol {}", protocol.getLSID());
         _protocolLSIDs.add(protocol.getLSID());
 
         ExperimentArchiveType.ProtocolDefinitions protocolDefs = _archive.getProtocolDefinitions();
@@ -1241,7 +1241,7 @@ public class XarExporter
         {
             return;
         }
-        _log.debug("Adding experiment " + experiment.getLSID());
+        _log.debug("Adding experiment {}", experiment.getLSID());
         Set<String> runLsids = new HashSet<>();
         for (ExpRun expRun : exp.getRuns())
         {
@@ -1516,7 +1516,7 @@ public class XarExporter
                 {
                     if (fileInfo.hasContentToExport())
                     {
-                        _log.debug("Adding data file to archive: " + fileInfo.getName());
+                        _log.debug("Adding data file to archive: {}", fileInfo.getName());
                         ZipEntry fileEntry = new ZipEntry(fileInfo.getName());
                         zOut.putNextEntry(fileEntry);
 
