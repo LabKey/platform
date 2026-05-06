@@ -8,46 +8,45 @@ import React, { FC, useCallback, useEffect, useState } from 'react';
 import { WellGroup } from '../models';
 
 interface WellGroupPropertiesProps {
-    activeGroup: WellGroup | null;
-    onPropertyChange: (groupRowId: number, key: string, value: string) => void;
+    activeGroup: null | WellGroup;
     onDeleteProperty: (groupRowId: number, key: string) => void;
+    onPropertyChange: (groupRowId: number, key: string, value: string) => void;
 }
 
 interface PropertyRowProps {
+    onDeleteProperty: (key: string) => void;
+    onPropertyChange: (key: string, value: string) => void;
     propKey: string;
     value: string;
-    onPropertyChange: (key: string, value: string) => void;
-    onDeleteProperty: (key: string) => void;
 }
 
 const PropertyRow: FC<PropertyRowProps> = ({ propKey, value, onPropertyChange, onDeleteProperty }) => {
     const handleChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => onPropertyChange(propKey, e.target.value),
-        [onPropertyChange, propKey]);
-    const handleDelete = useCallback(
-        () => onDeleteProperty(propKey),
-        [onDeleteProperty, propKey]);
+        [onPropertyChange, propKey]
+    );
+    const handleDelete = useCallback(() => onDeleteProperty(propKey), [onDeleteProperty, propKey]);
 
     return (
         <tr>
             <td className="well-group-properties__key">{propKey}</td>
             <td className="well-group-properties__value-cell">
                 <input
-                    className="well-group-properties__value"
-                    type="text"
                     aria-label={propKey}
-                    value={value}
+                    className="well-group-properties__value"
                     onChange={handleChange}
+                    type="text"
+                    value={value}
                 />
             </td>
             <td className="well-group-properties__action-cell">
                 <button
-                    className="well-group-properties__delete-btn"
-                    title="Delete property"
                     aria-label={`Delete property ${propKey}`}
+                    className="well-group-properties__delete-btn"
                     onClick={handleDelete}
+                    title="Delete property"
                 >
-                    <span className="fa fa-trash-o" aria-hidden="true" />
+                    <span aria-hidden="true" className="fa fa-trash-o" />
                 </button>
             </td>
         </tr>
@@ -62,7 +61,11 @@ PropertyRow.displayName = 'PropertyRow';
  * dilution factor, sample ID). They are stored as plain strings and round-tripped through
  * the server without interpretation by the designer.
  */
-export const WellGroupProperties: FC<WellGroupPropertiesProps> = ({ activeGroup, onPropertyChange, onDeleteProperty }) => {
+export const WellGroupProperties: FC<WellGroupPropertiesProps> = ({
+    activeGroup,
+    onPropertyChange,
+    onDeleteProperty,
+}) => {
     const [newKey, setNewKey] = useState('');
     const [newValue, setNewValue] = useState('');
 
@@ -82,24 +85,33 @@ export const WellGroupProperties: FC<WellGroupPropertiesProps> = ({ activeGroup,
         setNewValue('');
     }, [activeGroup, newKey, newValue, onPropertyChange]);
 
-    const handleNewKeyChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => setNewKey(e.target.value), []);
+    const handleNewKeyChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setNewKey(e.target.value), []);
     const handleNewValueChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => setNewValue(e.target.value), []);
-    const handleNewKeyKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter' && newKey.trim()) handleAdd();
-    }, [newKey, handleAdd]);
-    const handleNewValueKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter' && newKey.trim()) handleAdd();
-    }, [newKey, handleAdd]);
+        (e: React.ChangeEvent<HTMLInputElement>) => setNewValue(e.target.value),
+        []
+    );
+    const handleNewKeyKeyDown = useCallback(
+        (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === 'Enter' && newKey.trim()) handleAdd();
+        },
+        [newKey, handleAdd]
+    );
+    const handleNewValueKeyDown = useCallback(
+        (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === 'Enter' && newKey.trim()) handleAdd();
+        },
+        [newKey, handleAdd]
+    );
 
     // Adapters that prepend groupRowId, needed because PropertyRow doesn't know the group context.
     const handlePropertyChange = useCallback(
         (key: string, value: string) => onPropertyChange(activeGroup!.rowId, key, value),
-        [onPropertyChange, activeGroup]);
+        [onPropertyChange, activeGroup]
+    );
     const handleDeleteProperty = useCallback(
         (key: string) => onDeleteProperty(activeGroup!.rowId, key),
-        [onDeleteProperty, activeGroup]);
+        [onDeleteProperty, activeGroup]
+    );
 
     if (!activeGroup) {
         return (
@@ -117,24 +129,30 @@ export const WellGroupProperties: FC<WellGroupPropertiesProps> = ({ activeGroup,
             <table className="well-group-properties__table">
                 <thead>
                     <tr>
-                        <th scope="col" className="well-group-properties__key">Property</th>
+                        <th className="well-group-properties__key" scope="col">
+                            Property
+                        </th>
                         <th scope="col">Value</th>
-                        <th scope="col"><span className="sr-only">Actions</span></th>
+                        <th scope="col">
+                            <span className="sr-only">Actions</span>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     {propEntries.length === 0 && (
                         <tr>
-                            <td colSpan={3} className="well-group-properties__no-props">No properties defined.</td>
+                            <td className="well-group-properties__no-props" colSpan={3}>
+                                No properties defined.
+                            </td>
                         </tr>
                     )}
                     {propEntries.map(([key, value]) => (
                         <PropertyRow
                             key={key}
+                            onDeleteProperty={handleDeleteProperty}
+                            onPropertyChange={handlePropertyChange}
                             propKey={key}
                             value={value}
-                            onPropertyChange={handlePropertyChange}
-                            onDeleteProperty={handleDeleteProperty}
                         />
                     ))}
                 </tbody>
@@ -142,24 +160,24 @@ export const WellGroupProperties: FC<WellGroupPropertiesProps> = ({ activeGroup,
                     <tr className="well-group-properties__add-row">
                         <td className="well-group-properties__key">
                             <input
-                                className="well-group-properties__new-key"
-                                type="text"
-                                placeholder="Property name"
                                 aria-label="Property name"
-                                value={newKey}
+                                className="well-group-properties__new-key"
                                 onChange={handleNewKeyChange}
                                 onKeyDown={handleNewKeyKeyDown}
+                                placeholder="Property name"
+                                type="text"
+                                value={newKey}
                             />
                         </td>
                         <td className="well-group-properties__value-cell">
                             <input
-                                className="well-group-properties__new-value"
-                                type="text"
-                                placeholder="Value"
                                 aria-label="Property value"
-                                value={newValue}
+                                className="well-group-properties__new-value"
                                 onChange={handleNewValueChange}
                                 onKeyDown={handleNewValueKeyDown}
+                                placeholder="Value"
+                                type="text"
+                                value={newValue}
                             />
                         </td>
                         <td className="well-group-properties__action-cell">

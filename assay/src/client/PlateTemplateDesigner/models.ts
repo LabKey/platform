@@ -5,34 +5,34 @@
  */
 
 export interface Position {
-    row: number;
     col: number;
+    row: number;
 }
 
 export interface WellGroup {
-    rowId: number;       // Positive = server-assigned; negative = client-side temp ID (see nextGroupIdRef)
-    type: string;        // Group type key, e.g. "CONTROL", "SPECIMEN", "REPLICATE"
+    allowNewGroups: boolean; // Whether the user can create/rename/delete groups of this type
     name: string;
     positions: Position[];
     properties: Record<string, string>;
-    allowNewGroups: boolean;  // Whether the user can create/rename/delete groups of this type
+    rowId: number; // Positive = server-assigned; negative = client-side temp ID (see nextGroupIdRef)
+    type: string; // Group type key, e.g. "CONTROL", "SPECIMEN", "REPLICATE"
 }
 
 export interface PlateTemplate {
-    rowId: number;
-    name: string;
-    type: string;
-    rows: number;
-    cols: number;
-    groupTypes: string[];                          // Ordered list of type keys; drives the tab strip
     canCreateGroupsByType: Record<string, boolean>; // Which types expose the create-group UI
-    groups: WellGroup[];
-    plateProperties: Record<string, string>;
-    typesToDefaultGroups: Record<string, string[]>; // Predefined slot names per type (e.g. "Virus", "Cell Control")
-    showWarningPanel: boolean;                      // Set by the server based on assay type config
-    existingTemplateNames: string[];
-    copyMode: boolean;       // True when the plate was loaded as a copy; starts the editor in dirty state
+    cols: number;
+    copyMode: boolean; // True when the plate was loaded as a copy; starts the editor in dirty state
     defaultPlateName: string;
+    existingTemplateNames: string[];
+    groups: WellGroup[];
+    groupTypes: string[]; // Ordered list of type keys; drives the tab strip
+    name: string;
+    plateProperties: Record<string, string>;
+    rowId: number;
+    rows: number;
+    showWarningPanel: boolean; // Set by the server based on assay type config
+    type: string;
+    typesToDefaultGroups: Record<string, string[]>; // Predefined slot names per type (e.g. "Virus", "Cell Control")
 }
 
 /**

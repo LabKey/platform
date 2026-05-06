@@ -16,18 +16,19 @@ export const RIGHT_TAB_WARNINGS = 'warnings' as const;
 export type RightTab = typeof RIGHT_TAB_PROPERTIES | typeof RIGHT_TAB_WARNINGS;
 
 interface RightPanelProps {
-    showWarningPanel: boolean;
-    rightTab: RightTab;
-    onRightTabChange: (tab: RightTab) => void;
-    warnings: string[];
-    activeGroup: WellGroup | null;
-    onPropertyChange: (groupRowId: number, key: string, value: string) => void;
+    activeGroup: null | WellGroup;
     onDeleteProperty: (groupRowId: number, key: string) => void;
+    onPropertyChange: (groupRowId: number, key: string, value: string) => void;
+    onRightTabChange: (tab: RightTab) => void;
+    rightTab: RightTab;
+    showWarningPanel: boolean;
+    warnings: string[];
 }
 
 /** Right sidebar of the plate designer showing well group properties and, when validation warnings exist, a tabbed warnings panel. */
-export const RightPanel: FC<RightPanelProps> = (props) => {
-    const { showWarningPanel, rightTab, onRightTabChange, warnings, activeGroup, onPropertyChange, onDeleteProperty } = props;
+export const RightPanel: FC<RightPanelProps> = props => {
+    const { showWarningPanel, rightTab, onRightTabChange, warnings, activeGroup, onPropertyChange, onDeleteProperty } =
+        props;
     const warningCount = warnings.length;
 
     const handlePropertiesTabClick = useCallback(() => onRightTabChange(RIGHT_TAB_PROPERTIES), [onRightTabChange]);
@@ -38,44 +39,44 @@ export const RightPanel: FC<RightPanelProps> = (props) => {
             {showWarningPanel && ( // Only show the tabs if we are showing the warnings too. Otherwise, just show the properties
                 <TabList className="right-panel-tabs">
                     <TabButton
-                        id="right-tab-properties"
-                        panelId="right-panel-properties"
-                        isActive={rightTab === RIGHT_TAB_PROPERTIES}
                         baseClass="right-panel-tabs__tab"
+                        id="right-tab-properties"
+                        isActive={rightTab === RIGHT_TAB_PROPERTIES}
                         onClick={handlePropertiesTabClick}
+                        panelId="right-panel-properties"
                     >
                         Well Group Properties
                     </TabButton>
                     <TabButton
-                        id="right-tab-warnings"
-                        panelId="right-panel-warnings"
-                        isActive={rightTab === RIGHT_TAB_WARNINGS}
                         baseClass="right-panel-tabs__tab"
                         extraClassName={warningCount > 0 ? 'right-panel-tabs__tab--warn' : undefined}
+                        id="right-tab-warnings"
+                        isActive={rightTab === RIGHT_TAB_WARNINGS}
                         onClick={handleWarningsTabClick}
+                        panelId="right-panel-warnings"
                     >
                         {warningCount > 0 ? `Warnings (${warningCount})` : 'Warnings'}
                     </TabButton>
                 </TabList>
             )}
             <div
-                id={showWarningPanel ? 'right-panel-properties' : undefined}
-                role={showWarningPanel ? 'tabpanel' : undefined}
                 aria-labelledby={showWarningPanel ? 'right-tab-properties' : undefined}
                 hidden={showWarningPanel && rightTab !== RIGHT_TAB_PROPERTIES}
+                id={showWarningPanel ? 'right-panel-properties' : undefined}
+                role={showWarningPanel ? 'tabpanel' : undefined}
             >
                 <WellGroupProperties
                     activeGroup={activeGroup}
-                    onPropertyChange={onPropertyChange}
                     onDeleteProperty={onDeleteProperty}
+                    onPropertyChange={onPropertyChange}
                 />
             </div>
             {showWarningPanel && (
                 <div
-                    id="right-panel-warnings"
-                    role="tabpanel"
                     aria-labelledby="right-tab-warnings"
                     hidden={rightTab !== RIGHT_TAB_WARNINGS}
+                    id="right-panel-warnings"
+                    role="tabpanel"
                 >
                     <WarningPanel warnings={warnings} />
                 </div>

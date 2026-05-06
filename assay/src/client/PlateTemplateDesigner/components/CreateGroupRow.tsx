@@ -10,14 +10,19 @@ import { useEnterEscape } from '../useEnterEscape';
 import { MultiCreateDialog } from './MultiCreateDialog';
 
 interface CreateGroupRowProps {
-    unusedDefaults: string[];
-    existingGroupNames: string[];
     activeTab: string;
+    existingGroupNames: string[];
     onAddGroup: (type: string, name: string) => void;
+    unusedDefaults: string[];
 }
 
 /** Create-group controls for a single group type tab: a name input (or predefined-name select), Create and "Create multiple…" buttons, inline conflict error, and the MultiCreateDialog. */
-export const CreateGroupRow: FC<CreateGroupRowProps> = ({ unusedDefaults, existingGroupNames, activeTab, onAddGroup }) => {
+export const CreateGroupRow: FC<CreateGroupRowProps> = ({
+    unusedDefaults,
+    existingGroupNames,
+    activeTab,
+    onAddGroup,
+}) => {
     const [newGroupName, setNewGroupName] = useState(unusedDefaults[0] ?? '');
     const [multiCreateOpen, setMultiCreateOpen] = useState(false);
 
@@ -49,17 +54,18 @@ export const CreateGroupRow: FC<CreateGroupRowProps> = ({ unusedDefaults, existi
         setNewGroupName(e.target.value);
     }, []);
 
-    const handleCreateKeyDown = useEnterEscape(
-        createNameConflicts || !newGroupName.trim() ? undefined : handleCreate
-    );
+    const handleCreateKeyDown = useEnterEscape(createNameConflicts || !newGroupName.trim() ? undefined : handleCreate);
 
     const handleOpenMultiCreate = useCallback(() => setMultiCreateOpen(true), []);
     const handleCloseMultiCreate = useCallback(() => setMultiCreateOpen(false), []);
 
-    const handleMultiCreateConfirm = useCallback((names: string[]) => {
-        names.forEach(name => onAddGroup(activeTab, name));
-        setMultiCreateOpen(false);
-    }, [onAddGroup, activeTab]);
+    const handleMultiCreateConfirm = useCallback(
+        (names: string[]) => {
+            names.forEach(name => onAddGroup(activeTab, name));
+            setMultiCreateOpen(false);
+        },
+        [onAddGroup, activeTab]
+    );
 
     return (
         <>
@@ -73,24 +79,26 @@ export const CreateGroupRow: FC<CreateGroupRowProps> = ({ unusedDefaults, existi
                     <select
                         aria-label="Group name"
                         className="group-types-panel__new-name-input"
-                        value={newGroupName}
                         onChange={handleNewGroupNameChange}
+                        value={newGroupName}
                     >
                         {unusedDefaults.map(d => (
-                            <option key={d} value={d}>{d}</option>
+                            <option key={d} value={d}>
+                                {d}
+                            </option>
                         ))}
                     </select>
                 ) : (
                     <input
-                        type="text"
-                        aria-label="Group name"
                         aria-describedby={createNameConflicts ? 'create-name-error' : undefined}
                         aria-invalid={createNameConflicts}
+                        aria-label="Group name"
                         className="group-types-panel__new-name-input"
-                        placeholder="Group name"
-                        value={newGroupName}
                         onChange={handleNewGroupNameChange}
                         onKeyDown={handleCreateKeyDown}
+                        placeholder="Group name"
+                        type="text"
+                        value={newGroupName}
                     />
                 )}
                 <button
@@ -100,22 +108,19 @@ export const CreateGroupRow: FC<CreateGroupRowProps> = ({ unusedDefaults, existi
                 >
                     Create
                 </button>
-                <button
-                    className="group-types-panel__add-btn"
-                    onClick={handleOpenMultiCreate}
-                >
+                <button className="group-types-panel__add-btn" onClick={handleOpenMultiCreate}>
                     Create multiple...
                 </button>
             </div>
             {createNameConflicts && (
-                <div id="create-name-error" className="group-types-panel__name-error">
+                <div className="group-types-panel__name-error" id="create-name-error">
                     A group named "{newGroupName.trim()}" already exists in this type.
                 </div>
             )}
             {multiCreateOpen && (
                 <MultiCreateDialog
-                    initialBaseName={newGroupName.trim()}
                     existingNames={new Set(existingGroupNames)}
+                    initialBaseName={newGroupName.trim()}
                     onClose={handleCloseMultiCreate}
                     onConfirm={handleMultiCreateConfirm}
                 />

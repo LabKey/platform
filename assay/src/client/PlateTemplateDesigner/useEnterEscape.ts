@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import { useCallback, KeyboardEvent } from 'react';
+import { KeyboardEvent, useCallback } from 'react';
 
 /**
  * Returns an onKeyDown handler that calls onEnter when Enter is pressed and

@@ -9,14 +9,21 @@ import classNames from 'classnames';
 import { PlateTemplate, Position, WellGroup } from '../models';
 
 interface TemplateGridProps {
-    plate: PlateTemplate;
-    activeGroup: WellGroup | null;
+    activeGroup: null | WellGroup;
     activeTab: string;
     colorMap: Map<number, { color: string; colorIndex: number }>;
-    highlightedGroupId: number | null;
-    onDragRect: (r1: number, c1: number, r2: number, c2: number, isUnselect: boolean, preDragPositions: Position[]) => void;
+    highlightedGroupId: null | number;
     onCellToggle: (row: number, col: number) => void;
-    onWellHover: (groupRowId: number | null) => void;
+    onDragRect: (
+        r1: number,
+        c1: number,
+        r2: number,
+        c2: number,
+        isUnselect: boolean,
+        preDragPositions: Position[]
+    ) => void;
+    onWellHover: (groupRowId: null | number) => void;
+    plate: PlateTemplate;
 }
 
 function getRowLabel(row: number): string {
@@ -24,52 +31,69 @@ function getRowLabel(row: number): string {
 }
 
 interface GridCellProps {
-    row: number;
+    cellRefs: React.MutableRefObject<Map<string, HTMLTableCellElement>>;
     col: number;
     color: string;
     colorIndex: number;
-    label: string;
     isActive: boolean;
     isTabStop: boolean;
-    cellRefs: React.MutableRefObject<Map<string, HTMLTableCellElement>>;
+    label: string;
+    onFocus: (row: number, col: number) => void;
+    onKeyDown: (row: number, col: number, e: React.KeyboardEvent) => void;
     onMouseDown: (row: number, col: number, e: React.MouseEvent) => void;
     onMouseEnter: (row: number, col: number) => void;
     onMouseUp: (row: number, col: number) => void;
-    onFocus: (row: number, col: number) => void;
-    onKeyDown: (row: number, col: number, e: React.KeyboardEvent) => void;
+    row: number;
 }
 
-const GridCell: FC<GridCellProps> = ({ row, col, color, colorIndex, label, isActive, isTabStop, cellRefs, onMouseDown, onMouseEnter, onMouseUp, onFocus, onKeyDown }) => {
+const GridCell: FC<GridCellProps> = ({
+    row,
+    col,
+    color,
+    colorIndex,
+    label,
+    isActive,
+    isTabStop,
+    cellRefs,
+    onMouseDown,
+    onMouseEnter,
+    onMouseUp,
+    onFocus,
+    onKeyDown,
+}) => {
     // row and col are stable for a given cell instance (position never changes), so these
     // callbacks remain stable as long as the parent handlers are stable useCallback refs.
-    const handleMouseDown  = useCallback((e: React.MouseEvent)    => onMouseDown(row, col, e),  [onMouseDown, row, col]);
-    const handleMouseEnter = useCallback(()                        => onMouseEnter(row, col),   [onMouseEnter, row, col]);
-    const handleMouseUp    = useCallback(()                        => onMouseUp(row, col),      [onMouseUp, row, col]);
-    const handleFocus      = useCallback(()                        => onFocus(row, col),        [onFocus, row, col]);
-    const handleKeyDown    = useCallback((e: React.KeyboardEvent)  => onKeyDown(row, col, e),   [onKeyDown, row, col]);
-    const handleRef        = useCallback((el: HTMLTableCellElement | null) => {
+    const handleMouseDown = useCallback((e: React.MouseEvent) => onMouseDown(row, col, e), [onMouseDown, row, col]);
+    const handleMouseEnter = useCallback(() => onMouseEnter(row, col), [onMouseEnter, row, col]);
+    const handleMouseUp = useCallback(() => onMouseUp(row, col), [onMouseUp, row, col]);
+    const handleFocus = useCallback(() => onFocus(row, col), [onFocus, row, col]);
+    const handleKeyDown = useCallback((e: React.KeyboardEvent) => onKeyDown(row, col, e), [onKeyDown, row, col]);
+    // Callback refs don't need useCallback — React calls them on mount/unmount regardless of
+    // function identity. Wrapping in useCallback causes a React Compiler error because the
+    // compiler correctly infers the real dependency is cellRefs.current, not cellRefs.
+    const handleRef = (el: HTMLTableCellElement | null) => {
         const key = `${row},${col}`;
         if (el) cellRefs.current.set(key, el);
         else cellRefs.current.delete(key);
-    }, [row, col, cellRefs]);
+    };
 
     return (
         <td
-            role="gridcell"
-            ref={handleRef}
-            tabIndex={isTabStop ? 0 : -1}
+            aria-label={label}
             className={classNames('template-grid__cell', {
                 'template-grid__cell--active': isActive,
                 [`template-grid__cell--pattern-${colorIndex}`]: colorIndex >= 0,
             })}
-            style={{ backgroundColor: color }}
-            aria-label={label}
-            title={label}
+            onFocus={handleFocus}
+            onKeyDown={handleKeyDown}
             onMouseDown={handleMouseDown}
             onMouseEnter={handleMouseEnter}
             onMouseUp={handleMouseUp}
-            onFocus={handleFocus}
-            onKeyDown={handleKeyDown}
+            ref={handleRef}
+            role="gridcell"
+            style={{ backgroundColor: color }}
+            tabIndex={isTabStop ? 0 : -1}
+            title={label}
         />
     );
 };
@@ -80,16 +104,25 @@ GridCell.displayName = 'GridCell';
  * Users can click on an individual well to toggle its membership in the selected group
  * or click/drag to set a range of wells at once.
  */
-export const TemplateGrid: FC<TemplateGridProps> = ({ plate, activeGroup, activeTab, colorMap, highlightedGroupId, onDragRect, onCellToggle, onWellHover }) => {
+export const TemplateGrid: FC<TemplateGridProps> = ({
+    plate,
+    activeGroup,
+    activeTab,
+    colorMap,
+    highlightedGroupId,
+    onDragRect,
+    onCellToggle,
+    onWellHover,
+}) => {
     const isDragging = useRef(false);
     const hasMoved = useRef(false);
-    const startCell = useRef<{ row: number; col: number } | null>(null);
-    const dragIsUnselect = useRef(false);  // true when the drag started on a cell already in the active group
-    const preDragPositions = useRef<Position[]>([]);  // snapshot of activeGroup.positions at mousedown
+    const startCell = useRef<null | { col: number; row: number }>(null);
+    const dragIsUnselect = useRef(false); // true when the drag started on a cell already in the active group
+    const preDragPositions = useRef<Position[]>([]); // snapshot of activeGroup.positions at mousedown
 
     // Roving-tabindex state: tracks which cell holds tabIndex=0. Null means no cell has been
     // focused yet, in which case (0,0) is the tab entry point.
-    const [focusedCell, setFocusedCell] = useState<{ row: number; col: number } | null>(null);
+    const [focusedCell, setFocusedCell] = useState<null | { col: number; row: number }>(null);
     const cellRefs = useRef<Map<string, HTMLTableCellElement>>(new Map());
 
     // Pre-compute a "row,col" → {color, groupName, groupRowId} map for the active tab type.
@@ -124,39 +157,55 @@ export const TemplateGrid: FC<TemplateGridProps> = ({ plate, activeGroup, active
         return set;
     }, [highlightedGroupId, plate.groups]);
 
-    const handleMouseDown = useCallback((row: number, col: number, e: React.MouseEvent) => {
-        if (e.button !== 0) return;
-        isDragging.current = true;
-        hasMoved.current = false;
-        startCell.current = { row, col };
-        dragIsUnselect.current = activeGroup?.positions.some(p => p.row === row && p.col === col) ?? false;
-        // Snapshot the current positions NOW, from the prop, before any drag events can modify state.
-        preDragPositions.current = activeGroup?.positions ?? [];
-        // Note: text selection during drag is already prevented by `user-select: none` in CSS,
-        // so e.preventDefault() is not needed here and is intentionally omitted so the browser's
-        // default focus-on-mousedown behaviour is preserved.
-    }, [activeGroup]);
+    const handleMouseDown = useCallback(
+        (row: number, col: number, e: React.MouseEvent) => {
+            if (e.button !== 0) return;
+            isDragging.current = true;
+            hasMoved.current = false;
+            startCell.current = { row, col };
+            dragIsUnselect.current = activeGroup?.positions.some(p => p.row === row && p.col === col) ?? false;
+            // Snapshot the current positions NOW, from the prop, before any drag events can modify state.
+            preDragPositions.current = activeGroup?.positions ?? [];
+            // Note: text selection during drag is already prevented by `user-select: none` in CSS,
+            // so e.preventDefault() is not needed here and is intentionally omitted so the browser's
+            // default focus-on-mousedown behaviour is preserved.
+        },
+        [activeGroup]
+    );
 
-    const handleMouseEnter = useCallback((row: number, col: number) => {
-        if (isDragging.current && startCell.current) {
-            hasMoved.current = true;
-            onDragRect(startCell.current.row, startCell.current.col, row, col, dragIsUnselect.current, preDragPositions.current);
-        } else {
-            // Not dragging: report which group this well belongs to for list highlighting.
-            const entry = positionMap.get(`${row},${col}`);
-            onWellHover(entry?.groupRowId ?? null);
-        }
-    }, [onDragRect, onWellHover, positionMap]);
+    const handleMouseEnter = useCallback(
+        (row: number, col: number) => {
+            if (isDragging.current && startCell.current) {
+                hasMoved.current = true;
+                onDragRect(
+                    startCell.current.row,
+                    startCell.current.col,
+                    row,
+                    col,
+                    dragIsUnselect.current,
+                    preDragPositions.current
+                );
+            } else {
+                // Not dragging: report which group this well belongs to for list highlighting.
+                const entry = positionMap.get(`${row},${col}`);
+                onWellHover(entry?.groupRowId ?? null);
+            }
+        },
+        [onDragRect, onWellHover, positionMap]
+    );
 
     // Called on mouseup over a specific cell — handles click-toggle
-    const handleCellMouseUp = useCallback((row: number, col: number) => {
-        if (isDragging.current && !hasMoved.current) {
-            // Explicitly move focus to the clicked cell so arrow-key navigation
-            // picks up from the correct position after a mouse interaction.
-            cellRefs.current.get(`${row},${col}`)?.focus();
-            onCellToggle(row, col);
-        }
-    }, [onCellToggle]);
+    const handleCellMouseUp = useCallback(
+        (row: number, col: number) => {
+            if (isDragging.current && !hasMoved.current) {
+                // Explicitly move focus to the clicked cell so arrow-key navigation
+                // picks up from the correct position after a mouse interaction.
+                cellRefs.current.get(`${row},${col}`)?.focus();
+                onCellToggle(row, col);
+            }
+        },
+        [onCellToggle]
+    );
 
     // Called on the wrapper div — cleans up drag state and clears well hover
     const handleDragEnd = useCallback(() => {
@@ -167,68 +216,76 @@ export const TemplateGrid: FC<TemplateGridProps> = ({ plate, activeGroup, active
         onWellHover(null);
     }, [onWellHover]);
 
-    const handleCellFocus = useCallback((row: number, col: number) => {
-        setFocusedCell({ row, col });
-        const entry = positionMap.get(`${row},${col}`);
-        onWellHover(entry?.groupRowId ?? null);
-    }, [positionMap, onWellHover]);
+    const handleCellFocus = useCallback(
+        (row: number, col: number) => {
+            setFocusedCell({ row, col });
+            const entry = positionMap.get(`${row},${col}`);
+            onWellHover(entry?.groupRowId ?? null);
+        },
+        [positionMap, onWellHover]
+    );
 
     // Keyboard interaction for grid cells:
     //   Space / Enter → toggle the cell (same as a click with no drag)
     //   Arrow keys    → move focus to the adjacent cell (wraps are intentionally prevented
     //                   at plate edges to avoid confusing wrap-around focus jumps)
-    const handleCellKeyDown = useCallback((row: number, col: number, e: React.KeyboardEvent) => {
-        const moveFocus = (r: number, c: number) => {
-            e.preventDefault();
-            setFocusedCell({ row: r, col: c });
-            cellRefs.current.get(`${r},${c}`)?.focus();
-        };
-        switch (e.key) {
-            case ' ':
-            case 'Enter':
+    const handleCellKeyDown = useCallback(
+        (row: number, col: number, e: React.KeyboardEvent) => {
+            const moveFocus = (r: number, c: number) => {
                 e.preventDefault();
-                onCellToggle(row, col);
-                break;
-            case 'ArrowUp':
-                if (row > 0) moveFocus(row - 1, col);
-                break;
-            case 'ArrowDown':
-                if (row < plate.rows - 1) moveFocus(row + 1, col);
-                break;
-            case 'ArrowLeft':
-                if (col > 0) moveFocus(row, col - 1);
-                break;
-            case 'ArrowRight':
-                if (col < plate.cols - 1) moveFocus(row, col + 1);
-                break;
-        }
-    }, [onCellToggle, plate.rows, plate.cols]);
+                setFocusedCell({ row: r, col: c });
+                cellRefs.current.get(`${r},${c}`)?.focus();
+            };
+            switch (e.key) {
+                case ' ':
+                case 'Enter':
+                    e.preventDefault();
+                    onCellToggle(row, col);
+                    break;
+                case 'ArrowDown':
+                    if (row < plate.rows - 1) moveFocus(row + 1, col);
+                    break;
+                case 'ArrowLeft':
+                    if (col > 0) moveFocus(row, col - 1);
+                    break;
+                case 'ArrowRight':
+                    if (col < plate.cols - 1) moveFocus(row, col + 1);
+                    break;
+                case 'ArrowUp':
+                    if (row > 0) moveFocus(row - 1, col);
+                    break;
+            }
+        },
+        [onCellToggle, plate.rows, plate.cols]
+    );
 
-    const handleGridBlur = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
-        // Clear well hover when keyboard focus leaves the grid entirely
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) onWellHover(null);
-    }, [onWellHover]);
+    const handleGridBlur = useCallback(
+        (e: React.FocusEvent<HTMLDivElement>) => {
+            // Clear well hover when keyboard focus leaves the grid entirely
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) onWellHover(null);
+        },
+        [onWellHover]
+    );
 
     return (
-        <div
-            className="template-grid"
-            onMouseLeave={handleDragEnd}
-            onMouseUp={handleDragEnd}
-            onBlur={handleGridBlur}
-        >
-            <table className="template-grid__table" role="grid" aria-label="Plate template grid">
+        <div className="template-grid" onBlur={handleGridBlur} onMouseLeave={handleDragEnd} onMouseUp={handleDragEnd}>
+            <table aria-label="Plate template grid" className="template-grid__table" role="grid">
                 <thead>
                     <tr>
                         <th className="template-grid__corner" />
                         {Array.from({ length: plate.cols }, (_, col) => (
-                            <th key={col} scope="col" className="template-grid__col-header">{col + 1}</th>
+                            <th className="template-grid__col-header" key={col} scope="col">
+                                {col + 1}
+                            </th>
                         ))}
                     </tr>
                 </thead>
                 <tbody>
                     {Array.from({ length: plate.rows }, (_, row) => (
                         <tr key={row}>
-                            <th scope="row" className="template-grid__row-header">{getRowLabel(row)}</th>
+                            <th className="template-grid__row-header" scope="row">
+                                {getRowLabel(row)}
+                            </th>
                             {Array.from({ length: plate.cols }, (_, col) => {
                                 const entry = positionMap.get(`${row},${col}`);
                                 const isHighlightedGroupCell = highlightedGroupPositionSet.has(`${row},${col}`);
@@ -239,20 +296,20 @@ export const TemplateGrid: FC<TemplateGridProps> = ({ plate, activeGroup, active
                                     : row === 0 && col === 0;
                                 return (
                                     <GridCell
-                                        key={col}
-                                        row={row}
+                                        cellRefs={cellRefs}
                                         col={col}
                                         color={entry?.color ?? '#f5f5f5'}
                                         colorIndex={entry?.colorIndex ?? -1}
-                                        label={tooltip}
                                         isActive={isHighlightedGroupCell}
                                         isTabStop={isTabStop}
-                                        cellRefs={cellRefs}
+                                        key={col}
+                                        label={tooltip}
+                                        onFocus={handleCellFocus}
+                                        onKeyDown={handleCellKeyDown}
                                         onMouseDown={handleMouseDown}
                                         onMouseEnter={handleMouseEnter}
                                         onMouseUp={handleCellMouseUp}
-                                        onFocus={handleCellFocus}
-                                        onKeyDown={handleCellKeyDown}
+                                        row={row}
                                     />
                                 );
                             })}

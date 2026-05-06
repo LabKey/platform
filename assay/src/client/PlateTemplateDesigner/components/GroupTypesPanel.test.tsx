@@ -48,7 +48,7 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof GroupTypesPa
         activeGroup: null,
         activeTab: 'SPECIMEN',
         colorMap: new Map<number, { color: string; colorIndex: number }>(),
-        hoveredWellGroupId: null as number | null,
+        hoveredWellGroupId: null as null | number,
         onGroupSelect: jest.fn(),
         onTabChange: jest.fn(),
         onAddGroup: jest.fn(),
@@ -107,7 +107,7 @@ describe('GroupTypesPanel — inline rename', () => {
         const input = screen.getByRole('textbox', { name: 'Rename Group A' });
         await userEvent.clear(input);
         await userEvent.type(input, 'Group B');
-        await userEvent.tab();  // blur the input
+        await userEvent.tab(); // blur the input
         expect(props.onRenameGroup).not.toHaveBeenCalled();
         expect(screen.queryByText(/"Group B" is already used/i)).toBeNull();
         expect(screen.queryByRole('textbox', { name: 'Rename Group A' })).toBeNull();
@@ -178,25 +178,19 @@ describe('GroupTypesPanel — group selection', () => {
     test('clicking a group row calls onGroupSelect with that group', async () => {
         const { props } = renderWithGroup();
         await userEvent.click(screen.getByRole('option', { name: 'Group A' }));
-        expect(props.onGroupSelect).toHaveBeenCalledWith(
-            expect.objectContaining({ rowId: 1, name: 'Group A' })
-        );
+        expect(props.onGroupSelect).toHaveBeenCalledWith(expect.objectContaining({ rowId: 1, name: 'Group A' }));
     });
 
     test('pressing Enter on a group row calls onGroupSelect', () => {
         const { props } = renderWithGroup();
         fireEvent.keyDown(screen.getByRole('option', { name: 'Group A' }), { key: 'Enter' });
-        expect(props.onGroupSelect).toHaveBeenCalledWith(
-            expect.objectContaining({ rowId: 1, name: 'Group A' })
-        );
+        expect(props.onGroupSelect).toHaveBeenCalledWith(expect.objectContaining({ rowId: 1, name: 'Group A' }));
     });
 
     test('pressing Space on a group row calls onGroupSelect', () => {
         const { props } = renderWithGroup();
         fireEvent.keyDown(screen.getByRole('option', { name: 'Group A' }), { key: ' ' });
-        expect(props.onGroupSelect).toHaveBeenCalledWith(
-            expect.objectContaining({ rowId: 1, name: 'Group A' })
-        );
+        expect(props.onGroupSelect).toHaveBeenCalledWith(expect.objectContaining({ rowId: 1, name: 'Group A' }));
     });
 });
 
@@ -253,9 +247,7 @@ describe('GroupTypesPanel — well-hover highlighting (hoveredWellGroupId)', () 
             plate: makePlate({ groups: [group] }),
             hoveredWellGroupId: 1,
         });
-        expect(screen.getByRole('option', { name: 'Group A' })).toHaveClass(
-            'group-types-panel__group--highlighted'
-        );
+        expect(screen.getByRole('option', { name: 'Group A' })).toHaveClass('group-types-panel__group--highlighted');
     });
 
     test('group row does not receive --highlighted class when hoveredWellGroupId is null', () => {

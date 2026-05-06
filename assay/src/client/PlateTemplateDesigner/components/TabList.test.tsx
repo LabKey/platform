@@ -13,7 +13,7 @@ function renderTabList(tabLabels = ['Tab A', 'Tab B', 'Tab C']) {
     render(
         <TabList className="test-tablist">
             {tabLabels.map(label => (
-                <button key={label} role="tab" onClick={onTabClick}>
+                <button key={label} onClick={onTabClick} role="tab">
                     {label}
                 </button>
             ))}

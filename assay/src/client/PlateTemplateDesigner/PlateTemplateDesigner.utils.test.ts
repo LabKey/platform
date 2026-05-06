@@ -10,8 +10,15 @@ function makeGroup(rowId: number): WellGroup {
     return { rowId, type: 'SPECIMEN', name: `Group ${rowId}`, positions: [], properties: {}, allowNewGroups: false };
 }
 
-function makeGroupAt(rowId: number, type: string, coords: Array<[number, number]>): WellGroup {
-    return { rowId, type, name: `Group ${rowId}`, positions: coords.map(([row, col]) => ({ row, col })), properties: {}, allowNewGroups: false };
+function makeGroupAt(rowId: number, type: string, coords: [number, number][]): WellGroup {
+    return {
+        rowId,
+        type,
+        name: `Group ${rowId}`,
+        positions: coords.map(([row, col]) => ({ row, col })),
+        properties: {},
+        allowNewGroups: false,
+    };
 }
 
 describe('assignColors', () => {
@@ -78,18 +85,18 @@ describe('toggleCell', () => {
 
     test('evicts cell from a sibling group of the same type when adding', () => {
         const groups = [
-            makeGroupAt(1, 'SPECIMEN', []),          // active — does not have the cell
-            makeGroupAt(2, 'SPECIMEN', [[0, 0]]),    // sibling — owns the cell
+            makeGroupAt(1, 'SPECIMEN', []), // active — does not have the cell
+            makeGroupAt(2, 'SPECIMEN', [[0, 0]]), // sibling — owns the cell
         ];
         const result = toggleCell(groups, 1, 0, 0);
         expect(result[0].positions).toEqual([{ row: 0, col: 0 }]); // added to active
-        expect(result[1].positions).toEqual([]);                    // evicted from sibling
+        expect(result[1].positions).toEqual([]); // evicted from sibling
     });
 
     test('does not evict from a group of a different type when adding', () => {
         const groups = [
             makeGroupAt(1, 'SPECIMEN', []),
-            makeGroupAt(2, 'CONTROL', [[0, 0]]),     // different type — must be untouched
+            makeGroupAt(2, 'CONTROL', [[0, 0]]), // different type — must be untouched
         ];
         const result = toggleCell(groups, 1, 0, 0);
         expect(result[0].positions).toEqual([{ row: 0, col: 0 }]);
@@ -98,18 +105,21 @@ describe('toggleCell', () => {
 
     test('does not evict from sibling groups when removing (toggle off)', () => {
         const groups = [
-            makeGroupAt(1, 'SPECIMEN', [[0, 0]]),    // active — owns the cell
-            makeGroupAt(2, 'SPECIMEN', [[0, 0]]),    // sibling — also owns the cell (edge case)
+            makeGroupAt(1, 'SPECIMEN', [[0, 0]]), // active — owns the cell
+            makeGroupAt(2, 'SPECIMEN', [[0, 0]]), // sibling — also owns the cell (edge case)
         ];
         const result = toggleCell(groups, 1, 0, 0);
-        expect(result[0].positions).toEqual([]);                    // removed from active
+        expect(result[0].positions).toEqual([]); // removed from active
         expect(result[1].positions).toEqual([{ row: 0, col: 0 }]); // sibling unchanged
     });
 
     test('leaves unrelated cells in the sibling group intact', () => {
         const groups = [
             makeGroupAt(1, 'SPECIMEN', []),
-            makeGroupAt(2, 'SPECIMEN', [[0, 0], [1, 1]]),  // sibling owns (0,0) and (1,1)
+            makeGroupAt(2, 'SPECIMEN', [
+                [0, 0],
+                [1, 1],
+            ]), // sibling owns (0,0) and (1,1)
         ];
         const result = toggleCell(groups, 1, 0, 0);
         expect(result[0].positions).toEqual([{ row: 0, col: 0 }]);

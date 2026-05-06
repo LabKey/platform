@@ -34,7 +34,7 @@ function renderGrid(overrides: Partial<React.ComponentProps<typeof TemplateGrid>
         activeGroup: null,
         activeTab: 'SPECIMEN',
         colorMap: new Map<number, { color: string; colorIndex: number }>(),
-        highlightedGroupId: null as number | null,
+        highlightedGroupId: null as null | number,
         onDragRect: jest.fn(),
         onCellToggle: jest.fn(),
         onWellHover: jest.fn(),
@@ -73,8 +73,12 @@ describe('TemplateGrid — rendering', () => {
 
     test('cell aria-label includes group name when cell is assigned', () => {
         const group: WellGroup = {
-            rowId: 1, type: 'SPECIMEN', name: 'Sample 1',
-            positions: [{ row: 0, col: 0 }], properties: {}, allowNewGroups: false,
+            rowId: 1,
+            type: 'SPECIMEN',
+            name: 'Sample 1',
+            positions: [{ row: 0, col: 0 }],
+            properties: {},
+            allowNewGroups: false,
         };
         renderGrid({
             plate: makePlate(2, 2, [group]),
@@ -217,8 +221,12 @@ describe('TemplateGrid — mouse drag', () => {
 
     test('drag started on a cell already in the active group uses unselect mode', () => {
         const activeGroup: WellGroup = {
-            rowId: 1, type: 'SPECIMEN', name: 'Sample 1',
-            positions: [{ row: 0, col: 0 }], properties: {}, allowNewGroups: false,
+            rowId: 1,
+            type: 'SPECIMEN',
+            name: 'Sample 1',
+            positions: [{ row: 0, col: 0 }],
+            properties: {},
+            allowNewGroups: false,
         };
         const { onDragRect } = renderGrid({ activeGroup });
         fireEvent.mouseDown(getCell('A1'), { button: 0 });
@@ -229,8 +237,12 @@ describe('TemplateGrid — mouse drag', () => {
 
     test('drag started on an empty cell uses select mode', () => {
         const activeGroup: WellGroup = {
-            rowId: 1, type: 'SPECIMEN', name: 'Sample 1',
-            positions: [], properties: {}, allowNewGroups: false,
+            rowId: 1,
+            type: 'SPECIMEN',
+            name: 'Sample 1',
+            positions: [],
+            properties: {},
+            allowNewGroups: false,
         };
         const { onDragRect } = renderGrid({ activeGroup });
         fireEvent.mouseDown(getCell('A1'), { button: 0 });
@@ -242,8 +254,8 @@ describe('TemplateGrid — mouse drag', () => {
         const { onDragRect } = renderGrid();
         const grid = document.querySelector('.template-grid') as HTMLElement;
         fireEvent.mouseDown(getCell('A1'), { button: 0 });
-        fireEvent.mouseLeave(grid);  // drag cancelled
-        fireEvent.mouseEnter(getCell('B2'));  // should be ignored
+        fireEvent.mouseLeave(grid); // drag cancelled
+        fireEvent.mouseEnter(getCell('B2')); // should be ignored
         expect(onDragRect).not.toHaveBeenCalled();
     });
 
@@ -259,8 +271,12 @@ describe('TemplateGrid — mouse drag', () => {
 describe('TemplateGrid — colorMap fallback', () => {
     test('cell gets #f5f5f5 background when its group rowId is not in colorMap', () => {
         const group: WellGroup = {
-            rowId: 1, type: 'SPECIMEN', name: 'Sample 1',
-            positions: [{ row: 0, col: 0 }], properties: {}, allowNewGroups: false,
+            rowId: 1,
+            type: 'SPECIMEN',
+            name: 'Sample 1',
+            positions: [{ row: 0, col: 0 }],
+            properties: {},
+            allowNewGroups: false,
         };
         renderGrid({
             plate: makePlate(2, 2, [group]),
@@ -273,8 +289,12 @@ describe('TemplateGrid — colorMap fallback', () => {
 
     test('group of a type other than activeTab is excluded from position map', () => {
         const controlGroup: WellGroup = {
-            rowId: 2, type: 'CONTROL', name: 'Virus',
-            positions: [{ row: 0, col: 0 }], properties: {}, allowNewGroups: false,
+            rowId: 2,
+            type: 'CONTROL',
+            name: 'Virus',
+            positions: [{ row: 0, col: 0 }],
+            properties: {},
+            allowNewGroups: false,
         };
         renderGrid({
             plate: makePlate(2, 2, [controlGroup]),
@@ -293,7 +313,10 @@ describe('TemplateGrid — well highlighting (highlightedGroupId)', () => {
             rowId,
             type: 'SPECIMEN',
             name: `Group ${rowId}`,
-            positions: [{ row: 0, col: 0 }, { row: 0, col: 1 }],
+            positions: [
+                { row: 0, col: 0 },
+                { row: 0, col: 1 },
+            ],
             properties: {},
             allowNewGroups: false,
         };
@@ -336,13 +359,22 @@ describe('TemplateGrid — well highlighting (highlightedGroupId)', () => {
     test('only cells of the highlighted group are active when multiple groups exist', () => {
         const group1 = makeGroupWithPositions(1);
         const group2: WellGroup = {
-            rowId: 2, type: 'SPECIMEN', name: 'Group 2',
-            positions: [{ row: 1, col: 0 }, { row: 1, col: 1 }],
-            properties: {}, allowNewGroups: false,
+            rowId: 2,
+            type: 'SPECIMEN',
+            name: 'Group 2',
+            positions: [
+                { row: 1, col: 0 },
+                { row: 1, col: 1 },
+            ],
+            properties: {},
+            allowNewGroups: false,
         };
         renderGrid({
             plate: makePlate(2, 2, [group1, group2]),
-            colorMap: new Map([[1, { color: '#ff0000', colorIndex: 1 }], [2, { color: '#00ff00', colorIndex: 2 }]]),
+            colorMap: new Map([
+                [1, { color: '#ff0000', colorIndex: 1 }],
+                [2, { color: '#00ff00', colorIndex: 2 }],
+            ]),
             highlightedGroupId: 2,
         });
         expect(getCell('B1: Group 2')).toHaveClass('template-grid__cell--active');
@@ -355,8 +387,12 @@ describe('TemplateGrid — well highlighting (highlightedGroupId)', () => {
 describe('TemplateGrid — onWellHover', () => {
     test('mousing into a cell belonging to a group calls onWellHover with that group rowId', () => {
         const group: WellGroup = {
-            rowId: 5, type: 'SPECIMEN', name: 'Sample 1',
-            positions: [{ row: 0, col: 0 }], properties: {}, allowNewGroups: false,
+            rowId: 5,
+            type: 'SPECIMEN',
+            name: 'Sample 1',
+            positions: [{ row: 0, col: 0 }],
+            properties: {},
+            allowNewGroups: false,
         };
         const { onWellHover } = renderGrid({
             plate: makePlate(2, 2, [group]),
@@ -374,8 +410,12 @@ describe('TemplateGrid — onWellHover', () => {
 
     test('focusing a cell belonging to a group calls onWellHover with that group rowId', () => {
         const group: WellGroup = {
-            rowId: 5, type: 'SPECIMEN', name: 'Sample 1',
-            positions: [{ row: 0, col: 0 }], properties: {}, allowNewGroups: false,
+            rowId: 5,
+            type: 'SPECIMEN',
+            name: 'Sample 1',
+            positions: [{ row: 0, col: 0 }],
+            properties: {},
+            allowNewGroups: false,
         };
         const { onWellHover } = renderGrid({
             plate: makePlate(2, 2, [group]),
@@ -410,8 +450,12 @@ describe('TemplateGrid — onWellHover', () => {
 describe('TemplateGrid — pattern classes (WCAG 1.4.1)', () => {
     test('assigned cell receives the pattern class matching its colorIndex', () => {
         const group: WellGroup = {
-            rowId: 1, type: 'SPECIMEN', name: 'Sample 1',
-            positions: [{ row: 0, col: 0 }], properties: {}, allowNewGroups: false,
+            rowId: 1,
+            type: 'SPECIMEN',
+            name: 'Sample 1',
+            positions: [{ row: 0, col: 0 }],
+            properties: {},
+            allowNewGroups: false,
         };
         renderGrid({
             plate: makePlate(2, 2, [group]),
@@ -428,8 +472,12 @@ describe('TemplateGrid — pattern classes (WCAG 1.4.1)', () => {
 
     test('colorMap fallback (rowId not in map) yields colorIndex -1 — no pattern class', () => {
         const group: WellGroup = {
-            rowId: 1, type: 'SPECIMEN', name: 'Sample 1',
-            positions: [{ row: 0, col: 0 }], properties: {}, allowNewGroups: false,
+            rowId: 1,
+            type: 'SPECIMEN',
+            name: 'Sample 1',
+            positions: [{ row: 0, col: 0 }],
+            properties: {},
+            allowNewGroups: false,
         };
         renderGrid({
             plate: makePlate(2, 2, [group]),

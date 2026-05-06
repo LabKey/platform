@@ -100,7 +100,14 @@ describe('StatusBar', () => {
         test('error clears on a subsequent successful save', async () => {
             // First render with empty name to trigger error
             const { rerender } = render(
-                <StatusBar isDirty={true} status="" plateName="" onSaveAndClose={jest.fn()} onSave={jest.fn()} onCancel={jest.fn()} />
+                <StatusBar
+                    isDirty={true}
+                    onCancel={jest.fn()}
+                    onSave={jest.fn()}
+                    onSaveAndClose={jest.fn()}
+                    plateName=""
+                    status=""
+                />
             );
             await userEvent.click(screen.getByRole('button', { name: 'Save' }));
             expect(screen.getByRole('alert')).toBeInTheDocument();
@@ -108,7 +115,14 @@ describe('StatusBar', () => {
             // Re-render with a valid name — the error clears on the next successful validate
             const onSave = jest.fn();
             rerender(
-                <StatusBar isDirty={true} status="" plateName="Fixed Name" onSaveAndClose={jest.fn()} onSave={onSave} onCancel={jest.fn()} />
+                <StatusBar
+                    isDirty={true}
+                    onCancel={jest.fn()}
+                    onSave={onSave}
+                    onSaveAndClose={jest.fn()}
+                    plateName="Fixed Name"
+                    status=""
+                />
             );
             await userEvent.click(screen.getByRole('button', { name: 'Save' }));
             expect(onSave).toHaveBeenCalledTimes(1);

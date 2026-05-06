@@ -4,18 +4,23 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 module.exports = {
-    apps: [{
-        name: 'assayTypeSelect',
-        title: 'New Assay Design',
-        permissionClasses: ['org.labkey.api.assay.security.DesignAssayPermission'],
-        path: './src/client/AssayTypeSelect'
-    }, {
-        name: 'plateTemplateDesigner',
-        title: 'Plate Template Designer',
-        permissionClasses: [
-            'org.labkey.api.security.permissions.InsertPermission',
-            'org.labkey.api.assay.security.DesignAssayPermission'
-        ],
-        path: './src/client/PlateTemplateDesigner'
-    }]
+  apps: [
+    {
+      name: "assayTypeSelect",
+      path: "./src/client/AssayTypeSelect",
+      permissionClasses: [
+        "org.labkey.api.assay.security.DesignAssayPermission",
+      ],
+      title: "New Assay Design",
+    },
+    {
+      name: "plateTemplateDesigner",
+      path: "./src/client/PlateTemplateDesigner",
+      permissionClasses: [
+        "org.labkey.api.security.permissions.InsertPermission",
+        "org.labkey.api.assay.security.DesignAssayPermission",
+      ],
+      title: "Plate Template Designer",
+    },
+  ],
 };

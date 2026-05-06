@@ -82,13 +82,13 @@ describe('CreateGroupRow — tab switching resets create input', () => {
         await userEvent.type(screen.getByRole('textbox', { name: 'Group name' }), 'In Progress');
         expect(screen.getByRole('textbox', { name: 'Group name' })).toHaveValue('In Progress');
 
-        rerender(<CreateGroupRow {...props} unusedDefaults={[]} activeTab="CONTROL" />);
+        rerender(<CreateGroupRow {...props} activeTab="CONTROL" unusedDefaults={[]} />);
         expect(screen.getByRole('textbox', { name: 'Group name' })).toHaveValue('');
     });
 
     test('switching activeTab resets to the first unused default of the new tab', () => {
         const { rerender, props } = renderRow({ unusedDefaults: [], activeTab: 'SPECIMEN' });
-        rerender(<CreateGroupRow {...props} unusedDefaults={['Positive', 'Negative']} activeTab="CONTROL" />);
+        rerender(<CreateGroupRow {...props} activeTab="CONTROL" unusedDefaults={['Positive', 'Negative']} />);
         expect(screen.getByRole('combobox', { name: 'Group name' })).toHaveValue('Positive');
     });
 });

@@ -6,8 +6,8 @@
 import React, { FC, useCallback } from 'react';
 
 interface TabListProps {
-    className?: string;
     children: React.ReactNode;
+    className?: string;
 }
 
 /** A `role="tablist"` container with built-in ArrowLeft/ArrowRight keyboard navigation between tabs. */
@@ -18,15 +18,14 @@ export const TabList: FC<TabListProps> = ({ className, children }) => {
         const currentIndex = tabs.findIndex(t => t === document.activeElement);
         if (currentIndex === -1) return;
         e.preventDefault();
-        const next = e.key === 'ArrowLeft'
-            ? (currentIndex - 1 + tabs.length) % tabs.length
-            : (currentIndex + 1) % tabs.length;
+        const next =
+            e.key === 'ArrowLeft' ? (currentIndex - 1 + tabs.length) % tabs.length : (currentIndex + 1) % tabs.length;
         tabs[next].click();
         tabs[next].focus();
     }, []);
 
     return (
-        <div className={className} role="tablist" onKeyDown={handleKeyDown}>
+        <div className={className} onKeyDown={handleKeyDown} role="tablist">
             {children}
         </div>
     );

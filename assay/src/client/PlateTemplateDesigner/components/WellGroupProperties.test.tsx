@@ -22,7 +22,10 @@ function makeGroup(overrides: Partial<WellGroup> = {}): WellGroup {
     };
 }
 
-function renderProps(activeGroup: WellGroup | null, overrides: Partial<React.ComponentProps<typeof WellGroupProperties>> = {}) {
+function renderProps(
+    activeGroup: null | WellGroup,
+    overrides: Partial<React.ComponentProps<typeof WellGroupProperties>> = {}
+) {
     const props = {
         activeGroup,
         onPropertyChange: jest.fn(),
@@ -152,11 +155,11 @@ describe('WellGroupProperties', () => {
             const group1 = makeGroup({ rowId: 1, name: 'Group 1' });
             const group2 = makeGroup({ rowId: 2, name: 'Group 2' });
             const { rerender } = render(
-                <WellGroupProperties activeGroup={group1} onPropertyChange={jest.fn()} onDeleteProperty={jest.fn()} />
+                <WellGroupProperties activeGroup={group1} onDeleteProperty={jest.fn()} onPropertyChange={jest.fn()} />
             );
             await userEvent.type(screen.getByLabelText('Property name'), 'stale-key');
             rerender(
-                <WellGroupProperties activeGroup={group2} onPropertyChange={jest.fn()} onDeleteProperty={jest.fn()} />
+                <WellGroupProperties activeGroup={group2} onDeleteProperty={jest.fn()} onPropertyChange={jest.fn()} />
             );
             expect(screen.getByLabelText('Property name')).toHaveValue('');
         });
