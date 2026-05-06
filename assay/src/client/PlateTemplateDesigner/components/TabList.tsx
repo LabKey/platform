@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useCallback } from 'react';
+import React, { FC, useCallback } from 'react';
 
 interface TabListProps {
     className?: string;
@@ -11,7 +11,7 @@ interface TabListProps {
 }
 
 /** A `role="tablist"` container with built-in ArrowLeft/ArrowRight keyboard navigation between tabs. */
-export const TabList: React.FC<TabListProps> = ({ className, children }) => {
+export const TabList: FC<TabListProps> = ({ className, children }) => {
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
         const tabs = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));

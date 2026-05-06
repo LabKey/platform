@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 
 import { useEnterEscape } from '../useEnterEscape';
 
@@ -15,7 +15,7 @@ interface MultiCreateDialogProps {
 }
 
 /** Modal dialog for batch-creating numbered well groups (e.g. "Sample 1" through "Sample 8") from a base name and count, skipping any names that already exist. */
-export const MultiCreateDialog: React.FC<MultiCreateDialogProps> = ({ initialBaseName, existingNames, onClose, onConfirm }) => {
+export const MultiCreateDialog: FC<MultiCreateDialogProps> = ({ initialBaseName, existingNames, onClose, onConfirm }) => {
     const [baseName, setBaseName] = useState(initialBaseName);
     const [count, setCount] = useState('2');
     const [countError, setCountError] = useState('');

@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
 
 import { WellGroup } from '../models';
 
@@ -20,7 +20,7 @@ interface PropertyRowProps {
     onDeleteProperty: (key: string) => void;
 }
 
-const PropertyRow: React.FC<PropertyRowProps> = ({ propKey, value, onPropertyChange, onDeleteProperty }) => {
+const PropertyRow: FC<PropertyRowProps> = ({ propKey, value, onPropertyChange, onDeleteProperty }) => {
     const handleChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => onPropertyChange(propKey, e.target.value),
         [onPropertyChange, propKey]);
@@ -62,7 +62,7 @@ PropertyRow.displayName = 'PropertyRow';
  * dilution factor, sample ID). They are stored as plain strings and round-tripped through
  * the server without interpretation by the designer.
  */
-export const WellGroupProperties: React.FC<WellGroupPropertiesProps> = ({ activeGroup, onPropertyChange, onDeleteProperty }) => {
+export const WellGroupProperties: FC<WellGroupPropertiesProps> = ({ activeGroup, onPropertyChange, onDeleteProperty }) => {
     const [newKey, setNewKey] = useState('');
     const [newValue, setNewValue] = useState('');
 

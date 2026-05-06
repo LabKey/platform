@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useEnterEscape } from '../useEnterEscape';
 
@@ -17,7 +17,7 @@ interface CreateGroupRowProps {
 }
 
 /** Create-group controls for a single group type tab: a name input (or predefined-name select), Create and "Create multiple…" buttons, inline conflict error, and the MultiCreateDialog. */
-export const CreateGroupRow: React.FC<CreateGroupRowProps> = ({ unusedDefaults, existingGroupNames, activeTab, onAddGroup }) => {
+export const CreateGroupRow: FC<CreateGroupRowProps> = ({ unusedDefaults, existingGroupNames, activeTab, onAddGroup }) => {
     const [newGroupName, setNewGroupName] = useState(unusedDefaults[0] ?? '');
     const [multiCreateOpen, setMultiCreateOpen] = useState(false);
 

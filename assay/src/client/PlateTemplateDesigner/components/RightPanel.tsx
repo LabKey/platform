@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useCallback } from 'react';
+import React, { FC, useCallback } from 'react';
 
 import { WellGroup } from '../models';
 import { TabButton } from './TabButton';
@@ -26,7 +26,7 @@ interface RightPanelProps {
 }
 
 /** Right sidebar of the plate designer showing well group properties and, when validation warnings exist, a tabbed warnings panel. */
-export const RightPanel: React.FC<RightPanelProps> = (props) => {
+export const RightPanel: FC<RightPanelProps> = (props) => {
     const { showWarningPanel, rightTab, onRightTabChange, warnings, activeGroup, onPropertyChange, onDeleteProperty } = props;
     const warningCount = warnings.length;
 

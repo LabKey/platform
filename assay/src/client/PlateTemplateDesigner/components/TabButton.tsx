@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React from 'react';
+import React, { FC } from 'react';
 import classNames from 'classnames';
 
 interface TabButtonProps {
@@ -20,7 +20,7 @@ interface TabButtonProps {
  * A single ARIA tab button. Handles `role="tab"`, `aria-controls`, `aria-selected`,
  * and the BEM `<baseClass>--active` modifier. Use inside a `role="tablist"` container.
  */
-export const TabButton: React.FC<TabButtonProps> = ({ id, panelId, isActive, baseClass, extraClassName, onClick, children }) => {
+export const TabButton: FC<TabButtonProps> = ({ id, panelId, isActive, baseClass, extraClassName, onClick, children }) => {
     return (
         <button
             id={id}

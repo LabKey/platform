@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
 
 import { PlateTemplate, Position, WellGroup, computeWarnings } from './models';
@@ -64,7 +64,7 @@ export function isSameOrigin(url: string): boolean {
     }
 }
 
-export const PlateTemplateDesigner: React.FC = () => {
+export const PlateTemplateDesigner: FC = () => {
     const [plate, setPlate] = useState<PlateTemplate | null>(null);
     const [activeGroup, setActiveGroup] = useState<WellGroup | null>(null);
     const [activeTab, setActiveTab] = useState<string>('');

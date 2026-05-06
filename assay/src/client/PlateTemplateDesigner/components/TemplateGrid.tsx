@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { FC, useCallback, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
 
 import { PlateTemplate, Position, WellGroup } from '../models';
@@ -39,7 +39,7 @@ interface GridCellProps {
     onKeyDown: (row: number, col: number, e: React.KeyboardEvent) => void;
 }
 
-const GridCell: React.FC<GridCellProps> = ({ row, col, color, colorIndex, label, isActive, isTabStop, cellRefs, onMouseDown, onMouseEnter, onMouseUp, onFocus, onKeyDown }) => {
+const GridCell: FC<GridCellProps> = ({ row, col, color, colorIndex, label, isActive, isTabStop, cellRefs, onMouseDown, onMouseEnter, onMouseUp, onFocus, onKeyDown }) => {
     // row and col are stable for a given cell instance (position never changes), so these
     // callbacks remain stable as long as the parent handlers are stable useCallback refs.
     const handleMouseDown  = useCallback((e: React.MouseEvent)    => onMouseDown(row, col, e),  [onMouseDown, row, col]);
@@ -80,7 +80,7 @@ GridCell.displayName = 'GridCell';
  * Users can click on an individual well to toggle its membership in the selected group
  * or click/drag to set a range of wells at once.
  */
-export const TemplateGrid: React.FC<TemplateGridProps> = ({ plate, activeGroup, activeTab, colorMap, highlightedGroupId, onDragRect, onCellToggle, onWellHover }) => {
+export const TemplateGrid: FC<TemplateGridProps> = ({ plate, activeGroup, activeTab, colorMap, highlightedGroupId, onDragRect, onCellToggle, onWellHover }) => {
     const isDragging = useRef(false);
     const hasMoved = useRef(false);
     const startCell = useRef<{ row: number; col: number } | null>(null);

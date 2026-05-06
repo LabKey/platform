@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
 
 interface StatusBarProps {
     isDirty: boolean;
@@ -20,7 +20,7 @@ interface StatusBarProps {
  *    ?templateName=...&plateId=... form so a browser refresh reloads the same plate.
  * Dirty state and saving status are shown next to the buttons.
  */
-export const StatusBar: React.FC<StatusBarProps> = ({ isDirty, status, plateName, onSaveAndClose, onSave, onCancel }) => {
+export const StatusBar: FC<StatusBarProps> = ({ isDirty, status, plateName, onSaveAndClose, onSave, onCancel }) => {
     const [error, setError] = useState<string | null>(null);
 
     // Clear stale validation error once the user has filled in the plate name
