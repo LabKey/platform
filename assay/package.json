@@ -49,7 +49,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.31.1"
+    "@labkey/components": "7.34.0"
   },
   "devDependencies": {
     "@labkey/build": "9.1.1",
