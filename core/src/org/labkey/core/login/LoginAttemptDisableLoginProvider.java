@@ -35,15 +35,17 @@ import org.labkey.api.util.logging.LogHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.concurrent.TimeUnit;
 
+import static org.labkey.api.security.AuthenticationManager.getEmailCacheKey;
+
 public class LoginAttemptDisableLoginProvider implements AuthenticationProvider.DisableLoginProvider
 {
     private static final Logger _log = LogHelper.getLogger(LoginAttemptDisableLoginProvider.class, "Warnings about disabled logins due to too many failures");
 
     private static final String NAME        = "loginAttemptDisableLogin";
     private static final String DESCRIPTION = "Disable unsuccessful login provider";
-    private static final Cache<Integer, CountLimiter> userLimiter = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "User login attempt limiter");
+    private static final Cache<String, CountLimiter> userLimiter = CacheManager.getCache(10000, CacheManager.DAY, "User login attempt limiter");
 
-    private static CacheLoader<Integer, CountLimiter> userLoader;
+    private static CacheLoader<String, CountLimiter> userLoader;
 
     static
     {
@@ -64,11 +66,6 @@ public class LoginAttemptDisableLoginProvider implements AuthenticationProvider.
         return DESCRIPTION;
     }
 
-    private static Integer _toKey(String s)
-    {
-        return null == s ? 0 : s.toLowerCase().hashCode() % 1000;
-    }
-
     @Override
     public boolean isEnabledForUser(String id)
     {
@@ -82,7 +79,7 @@ public class LoginAttemptDisableLoginProvider implements AuthenticationProvider.
     @Override
     public long getUserDelay(String id) throws LoginDisabledException
     {
-        CountLimiter rl = userLimiter.get(_toKey(id));
+        CountLimiter rl = userLimiter.get(getEmailCacheKey(id));
         if (rl != null && isLoginDisabled(rl.getLimitReachedTimeStamp()))
         {
             int resetTime = AuthenticationManager.getLoginAttemptResetTime();
@@ -105,14 +102,14 @@ public class LoginAttemptDisableLoginProvider implements AuthenticationProvider.
     @Override
     public void addUserDelay(HttpServletRequest request, String id, int add)
     {
-        CountLimiter rl = userLimiter.get(_toKey(id), request, userLoader);
+        CountLimiter rl = userLimiter.get(getEmailCacheKey(id), request, userLoader);
         rl.add(add);
     }
 
     @Override
     public void resetUserDelay(String id)
     {
-        CountLimiter rl = userLimiter.get(_toKey(id));
+        CountLimiter rl = userLimiter.get(getEmailCacheKey(id));
         if (rl != null)
             rl.reset();
     }
@@ -129,7 +126,7 @@ public class LoginAttemptDisableLoginProvider implements AuthenticationProvider.
         long attemptCount = AuthenticationManager.getLoginAttemptLimit();
 
         userLimiter.clear();
-        userLoader = (key, request) -> new CountLimiter("User login attempt limiter: " + key, TimeUnit.SECONDS.toMillis(attemptSeconds), 0, attemptCount);
+        userLoader = (key, _) -> new CountLimiter("User login attempt limiter: " + key, TimeUnit.SECONDS.toMillis(attemptSeconds), 0, attemptCount);
     }
 
     private User getUserFromEmailStr(String emailStr)

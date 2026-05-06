@@ -1214,15 +1214,21 @@ public class AuthenticationManager
 
     // limit one bad login per second averaged out over 60sec
     private static final Cache<Integer, RateLimiter> addrLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "Login limiter");
-    private static final Cache<Integer, RateLimiter> userLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "User limiter");
     private static final Cache<Integer, RateLimiter> pwdLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "Password limiter");
     private static final CacheLoader<Integer, RateLimiter> addrLoader = (key, request) -> new RateLimiter("Addr limiter: " + key, new Rate(60, TimeUnit.MINUTES));
     private static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, request) -> new RateLimiter("Pwd limiter: " + key, new Rate(20, TimeUnit.MINUTES));
-    private static final CacheLoader<Integer, RateLimiter> userLoader = (key, request) -> new RateLimiter("User limiter: " + key, new Rate(20, TimeUnit.MINUTES));
 
-    private static Integer _toKey(String s)
+    private static final Cache<String, RateLimiter> userLimiter = CacheManager.getCache(10000, TimeUnit.MINUTES.toMillis(5), "User limiter");
+    private static final CacheLoader<String, RateLimiter> userLoader = (key, request) -> new RateLimiter("User limiter: " + key, new Rate(20, TimeUnit.MINUTES));
+
+    private static Integer getIntCacheKey(String s)
     {
         return null==s ? 0 : s.toLowerCase().hashCode() % 1000;
+    }
+
+    public static String getEmailCacheKey(String s)
+    {
+        return StringUtils.trimToEmpty(s).toLowerCase();
     }
 
     private static PrimaryAuthenticationResult _beforeAuthenticate(HttpServletRequest request, String id, String pwd)
@@ -1233,10 +1239,10 @@ public class AuthenticationManager
         long delay = 0;
 
         // slow down login attempts when we detect more than 20/minute bad attempts per user, password, or ip address
-        rl = addrLimiter.get(_toKey(request == null ? null : request.getRemoteAddr()));
+        rl = addrLimiter.get(getIntCacheKey(request == null ? null : request.getRemoteAddr()));
         if (null != rl)
             delay = Math.max(delay,rl.add(0, false));
-         rl = pwdLimiter.get(_toKey(pwd));
+         rl = pwdLimiter.get(getIntCacheKey(pwd));
         if (null != rl)
             delay = Math.max(delay, rl.add(0, false));
 
@@ -1266,7 +1272,7 @@ public class AuthenticationManager
 
     private static long getDefaultUserLoginDelay(String id)
     {
-        RateLimiter rl = userLimiter.get(_toKey(id));
+        RateLimiter rl = userLimiter.get(getEmailCacheKey(id));
         if (null != rl)
             return rl.add(0, false);
         return 0;
@@ -1279,9 +1285,9 @@ public class AuthenticationManager
         if (result.getStatus() ==  AuthenticationStatus.BadCredentials || result.getStatus() == AuthenticationStatus.InactiveUser)
         {
             RateLimiter rl;
-            rl = addrLimiter.get(_toKey(request.getRemoteAddr()),request, addrLoader);
+            rl = addrLimiter.get(getIntCacheKey(request.getRemoteAddr()),request, addrLoader);
             rl.add(1, false);
-            rl = pwdLimiter.get(_toKey(pwd),request, pwdLoader);
+            rl = pwdLimiter.get(getIntCacheKey(pwd),request, pwdLoader);
             rl.add(1, false);
 
             addUserLoginDelay(request, id);
@@ -1310,7 +1316,7 @@ public class AuthenticationManager
 
     private static void addDefaultUserLoginDelay(HttpServletRequest request, String id)
     {
-        RateLimiter rl = userLimiter.get(_toKey(id),request, userLoader);
+        RateLimiter rl = userLimiter.get(getEmailCacheKey(id),request, userLoader);
         rl.add(1, false);
     }
 
