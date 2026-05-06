@@ -35,8 +35,10 @@ import org.labkey.data.xml.ColumnType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface ColumnInfo extends ColumnRenderProperties
 {
@@ -371,6 +373,12 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     boolean isCalculated();
 
+    /** FieldKeys this column depends on at SQL generation time. */
+    default Set<FieldKey> getReferencedFieldKeys()
+    {
+        return Collections.emptySet();
+    }
+
     default boolean isValueExpressionColumn()
     {
         return getValueExpression() != null && getWrappedColumnName() == null;
@@ -405,6 +413,7 @@ public interface ColumnInfo extends ColumnRenderProperties
     {
         return BaseColumnInfo.booleanFromString(str);
     }
+
     static boolean booleanFromObj(Object o)
     {
         return BaseColumnInfo.booleanFromObj(o);
@@ -483,5 +492,3 @@ public interface ColumnInfo extends ColumnRenderProperties
         return ColumnRenderProperties.getDefaultConvertFn(col);
     }
 }
-
-
