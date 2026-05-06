@@ -450,7 +450,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         WarningService.setInstance(new WarningServiceImpl());
 
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
-        AuthenticationManager.registerProvider(new LoginAttemptDisableLoginProvider());
         AuthenticationManager.addLoginAttemptSettingsListener(LoginAttemptDisableLoginProvider::reloadCache);
         AttachmentService.setInstance(new AttachmentServiceImpl());
         AnalyticsService.setInstance(new AnalyticsServiceImpl());
@@ -978,6 +977,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
         FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
 
+        AuthenticationManager.registerProvider(new LoginAttemptDisableLoginProvider());
         AnalyticsServiceImpl.get().resetCSP();
 
         if (moduleContext.isNewInstall() && ModuleLoader.getInstance().shouldInsertData())

@@ -168,26 +168,34 @@ public class CoreUpgradeCode implements UpgradeCode
         String keyPrefix = complianceCategory + "/";
         Map<String, String> complianceProps = PropertyManager.getProperties(SITE_CONFIG_USER, ContainerManager.getRoot(), complianceCategory);
 
+        // Old compliance property set used a prefix with property names
         String enabledVal = complianceProps.get(keyPrefix + "attemptEnabled");
         String limitVal   = complianceProps.get(keyPrefix + "attemptLimit");
         String periodVal  = complianceProps.get(keyPrefix + "attemptPeriod");
         String resetVal   = complianceProps.get(keyPrefix + "resetTime");
 
         if (enabledVal == null && limitVal == null && periodVal == null && resetVal == null)
-            return; // Nothing to migrate
+        {
+            // Nothing to migrate
+            LOG.info("No existing unsuccessful login attempt settings were found");
+        }
+        else
+        {
+            LOG.info("Migrating existing unsuccessful login attempt settings: {}", complianceProps);
 
-        PropertyManager.WritablePropertyMap authProps =
-            PropertyManager.getWritableProperties(AuthenticationManager.AUTHENTICATION_CATEGORY, true);
+            PropertyManager.WritablePropertyMap authProps =
+                PropertyManager.getWritableProperties(AuthenticationManager.AUTHENTICATION_CATEGORY, true);
 
-        if (enabledVal != null)
-            authProps.put(AuthenticationManager.LOGIN_ATTEMPT_ENABLED_KEY, enabledVal);
-        if (limitVal != null)
-            authProps.put(AuthenticationManager.LOGIN_ATTEMPT_LIMIT_KEY, limitVal);
-        if (periodVal != null)
-            authProps.put(AuthenticationManager.LOGIN_ATTEMPT_PERIOD_KEY, periodVal);
-        if (resetVal != null)
-            authProps.put(AuthenticationManager.LOGIN_ATTEMPT_RESET_TIME_KEY, resetVal);
+            if (enabledVal != null)
+                authProps.put(AuthenticationManager.LOGIN_ATTEMPT_ENABLED_KEY, enabledVal);
+            if (limitVal != null)
+                authProps.put(AuthenticationManager.LOGIN_ATTEMPT_LIMIT_KEY, limitVal);
+            if (periodVal != null)
+                authProps.put(AuthenticationManager.LOGIN_ATTEMPT_PERIOD_KEY, periodVal);
+            if (resetVal != null)
+                authProps.put(AuthenticationManager.LOGIN_ATTEMPT_RESET_TIME_KEY, resetVal);
 
-        authProps.save();
+            authProps.save();
+        }
     }
 }
