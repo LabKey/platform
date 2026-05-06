@@ -70,6 +70,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.DerivationDataScopeTypes;
 import org.labkey.experiment.api.Data;
 import org.labkey.experiment.api.DataInput;
@@ -105,7 +106,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.zip.ZipEntry;
@@ -121,6 +121,7 @@ import static org.labkey.api.exp.api.ColumnExporter.FILE_ROOT_SUBSTITUTION;
  */
 public class XarExporter
 {
+    private static final Logger DEFAULT_LOG = LogHelper.getLogger(XarExporter.class, "XAR (experiment archive) exporting");
     private final URLRewriter _urlRewriter;
     private final User _user;
     private final String _fileRootPath;
@@ -154,7 +155,7 @@ public class XarExporter
     private final Map<Long, String> _rootMaterialRowIdsToLSIDs = new LRUMap<>(1_000);
 
     private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
-    private Logger _log;
+    private final Logger _log;
 
     private boolean _includeXML = true;
 
@@ -166,7 +167,7 @@ public class XarExporter
     AssayProvider.XarCallbacks assayCallbacks = null;
 
 
-    public XarExporter(LSIDRelativizer.RelativizedLSIDs relativizedLSIDs, URLRewriter urlRewriter, User user, Container container)
+    private XarExporter(LSIDRelativizer.RelativizedLSIDs relativizedLSIDs, URLRewriter urlRewriter, User user, Container container, Logger log)
     {
         // UNDONE: Is it ok to share the relativizedLSIDs across XarExporters and tsv writers?
         _relativizedLSIDs = relativizedLSIDs;
@@ -176,11 +177,12 @@ public class XarExporter
 
         _document = ExperimentArchiveDocument.Factory.newInstance();
         _archive = _document.addNewExperimentArchive();
+        _log = log;
     }
 
     public XarExporter(LSIDRelativizer lsidRelativizer, URLRewriter urlRewriter, User user, Container container)
     {
-        this(new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer), urlRewriter, user, container);
+        this(new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer), urlRewriter, user, container, DEFAULT_LOG);
     }
 
     public XarExporter(LSIDRelativizer lsidRelativizer, XarExportSelection selection, User user, String xarXmlFileName, Logger log, Container container) throws ExperimentException
@@ -190,8 +192,7 @@ public class XarExporter
 
     public XarExporter(LSIDRelativizer.RelativizedLSIDs relativizedLSIDs, XarExportSelection selection, User user, String xarXmlFileName, Logger log, Container container) throws ExperimentException
     {
-        this(relativizedLSIDs, selection.createURLRewriter(), user, container);
-        _log = log;
+        this(relativizedLSIDs, selection.createURLRewriter(), user, container, log);
 
         selection.addContent(this);
 
@@ -200,14 +201,6 @@ public class XarExporter
             setXarXmlFileName(xarXmlFileName);
         }
         setFileIncludes(selection.isIncludeXarXml());
-    }
-
-    private void logProgress(String message)
-    {
-        if (_log != null)
-        {
-            _log.info(message);
-        }
     }
 
     public void setFileIncludes(boolean xarXML)
@@ -226,7 +219,7 @@ public class XarExporter
         {
             return;
         }
-        logProgress("Adding experiment data " + data.getRowId());
+        _log.debug("Adding experiment data " + data.getRowId());
         _expDataIDs.add(data.getRowId());
 
         ArchiveURLRewriter u = (ArchiveURLRewriter)_urlRewriter;
@@ -241,7 +234,7 @@ public class XarExporter
         {
             return;
         }
-        logProgress("Adding experiment run " + run.getLSID());
+        _log.debug("Adding experiment run " + run.getLSID());
         _experimentRunLSIDs.add(run.getLSID());
 
         ExpExperiment batch = run.getBatch();
@@ -592,7 +585,7 @@ public class XarExporter
 
     private void populateMaterial(MaterialBaseType xMaterial, ExpMaterial material) throws ExperimentException
     {
-        logProgress("Adding material " + material.getLSID());
+        _log.debug("Adding material " + material.getLSID());
         addSampleType(material.getCpasType());
         xMaterial.setAbout(_relativizedLSIDs.relativize(material.getLSID()));
         xMaterial.setCpasType(isDefaultCpasType(material.getCpasType(), ExpMaterial.DEFAULT_CPAS_TYPE) ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
@@ -985,7 +978,7 @@ public class XarExporter
 
     private void populateData(DataBaseType xData, ExpData data, @Nullable String role, ExpRun run) throws ExperimentException
     {
-        logProgress("Adding data " + data.getLSID());
+        _log.debug("Adding data " + data.getLSID());
         xData.setName(data.getName());
         xData.setAbout(_relativizedLSIDs.relativize(data));
         xData.setCpasType(isDefaultCpasType(data.getCpasType(), ExpData.DEFAULT_CPAS_TYPE) ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
@@ -1014,7 +1007,7 @@ public class XarExporter
         {
             return;
         }
-        logProgress("Adding protocol " + protocol.getLSID());
+        _log.debug("Adding protocol " + protocol.getLSID());
         _protocolLSIDs.add(protocol.getLSID());
 
         ExperimentArchiveType.ProtocolDefinitions protocolDefs = _archive.getProtocolDefinitions();
@@ -1250,7 +1243,7 @@ public class XarExporter
         {
             return;
         }
-        logProgress("Adding experiment " + experiment.getLSID());
+        _log.debug("Adding experiment " + experiment.getLSID());
         Set<String> runLsids = new HashSet<>();
         for (ExpRun expRun : exp.getRuns())
         {
@@ -1422,7 +1415,7 @@ public class XarExporter
                         }
                         break;
                     default:
-                        logProgress("Warning: skipping export of " + value.getName() + " -- unknown type " + value.getPropertyType());
+                        _log.warn("Warning: skipping export of " + value.getName() + " -- unknown type " + value.getPropertyType());
                 }
             }
         }
@@ -1516,7 +1509,7 @@ public class XarExporter
                 {
                     ZipEntry xmlEntry = new ZipEntry(_xarXmlFileName);
                     zOut.putNextEntry(xmlEntry);
-                    logProgress("Adding XAR XML to archive");
+                    _log.info("Adding XAR XML to archive");
                     dumpXML(zOut);
                     zOut.closeEntry();
                 }
@@ -1525,7 +1518,7 @@ public class XarExporter
                 {
                     if (fileInfo.hasContentToExport())
                     {
-                        logProgress("Adding data file to archive: " + fileInfo.getName());
+                        _log.debug("Adding data file to archive: " + fileInfo.getName());
                         ZipEntry fileEntry = new ZipEntry(fileInfo.getName());
                         zOut.putNextEntry(fileEntry);
 
@@ -1545,47 +1538,6 @@ public class XarExporter
                 e.printStackTrace(ps);
                 zOut.closeEntry();
                 throw e;
-            }
-        }
-    }
-
-    public void writeAsDirectory(File dir) throws IOException
-    {
-        try
-        {
-            if (_includeXML)
-            {
-                File xmlEntry = FileUtil.appendName(dir, _xarXmlFileName);
-                logProgress("Writing XAR XML file");
-                try (FileOutputStream os = new FileOutputStream(xmlEntry))
-                {
-                    dumpXML(os);
-                }
-            }
-
-            for (URLRewriter.FileInfo fileInfo : _urlRewriter.getFileInfos())
-            {
-                if (fileInfo.hasContentToExport())
-                {
-                    logProgress("Adding data file to archive: " + fileInfo.getName());
-                    File fileEntry = new File(dir, fileInfo.getName());
-                    FileUtil.mkdirs(fileEntry.getParentFile());
-                    try (FileOutputStream os = new FileOutputStream(fileEntry))
-                    {
-                        fileInfo.writeFile(os);
-                    }
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            // insert the stack trace into the zip file
-            File errorEntry = FileUtil.appendName(dir,"error.log");
-
-            try (FileOutputStream os = new FileOutputStream(errorEntry); PrintStream ps = new PrintStream(os))
-            {
-                ps.println("Failed to complete export of the XAR file: ");
-                e.printStackTrace(ps);
             }
         }
     }
