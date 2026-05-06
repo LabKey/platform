@@ -270,23 +270,32 @@ public class AuthenticationManager
 
     public static int getLoginAttemptLimit()
     {
-        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
-        String value = props.get(LOGIN_ATTEMPT_LIMIT_KEY);
-        return value == null ? 3 : Integer.parseInt(value);
+        return getAuthenticationProperty(LOGIN_ATTEMPT_LIMIT_KEY, 3);
     }
 
     public static int getLoginAttemptPeriod()
     {
-        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
-        String value = props.get(LOGIN_ATTEMPT_PERIOD_KEY);
-        return value == null ? 30 : Integer.parseInt(value);
+        return getAuthenticationProperty(LOGIN_ATTEMPT_PERIOD_KEY, 30);
     }
 
     public static int getLoginAttemptResetTime()
     {
+        return getAuthenticationProperty(LOGIN_ATTEMPT_RESET_TIME_KEY, 5);
+    }
+
+    // Convenience method that returns the default value on missing or bad value
+    private static int getAuthenticationProperty(@NotNull String key, int defaultValue)
+    {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
-        String value = props.get(LOGIN_ATTEMPT_RESET_TIME_KEY);
-        return value == null ? 5 : Integer.parseInt(value);
+        String value = props.get(key);
+        try
+        {
+            return value == null ? defaultValue : Integer.parseInt(value);
+        }
+        catch (NumberFormatException e)
+        {
+            return defaultValue;
+        }
     }
 
     public static @NotNull String getDefaultDomain()
@@ -341,12 +350,18 @@ public class AuthenticationManager
 
     public static void saveLoginAttemptSettings(User user, boolean enabled, int limit, int period, int resetTime)
     {
-        WritablePropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
-        props.put(LOGIN_ATTEMPT_ENABLED_KEY, String.valueOf(enabled));
-        props.put(LOGIN_ATTEMPT_LIMIT_KEY, String.valueOf(limit));
-        props.put(LOGIN_ATTEMPT_PERIOD_KEY, String.valueOf(period));
-        props.put(LOGIN_ATTEMPT_RESET_TIME_KEY, String.valueOf(resetTime));
-        props.save();
+        if (limit < 1 ||  period < 1 || resetTime < 1)
+            throw new IllegalArgumentException("limit, period, and resetTime values must be positive!");
+
+        // Use standard saveAuthSetting() methods to ensure audit logging
+        if (enabled !=  isLoginAttemptControlEnabled())
+            saveAuthSetting(user, LOGIN_ATTEMPT_ENABLED_KEY, enabled);
+        if (limit != getLoginAttemptLimit())
+            saveAuthSetting(user, LOGIN_ATTEMPT_LIMIT_KEY, String.valueOf(limit), "set to " + limit);
+        if (period != getLoginAttemptPeriod())
+            saveAuthSetting(user, LOGIN_ATTEMPT_PERIOD_KEY, String.valueOf(period), "set to " + period);
+        if (resetTime != getLoginAttemptResetTime())
+            saveAuthSetting(user, LOGIN_ATTEMPT_RESET_TIME_KEY, String.valueOf(resetTime), "set to " + resetTime);
         _loginAttemptSettingsListeners.forEach(Runnable::run);
     }
 
@@ -581,7 +596,7 @@ public class AuthenticationManager
     public static void registerProvider(AuthenticationProvider authProvider, Priority priority)
     {
         if (Priority.High == priority)
-            _allProviders.add(0, authProvider);
+            _allProviders.addFirst(authProvider);
         else
             _allProviders.add(authProvider);
 
@@ -630,7 +645,8 @@ public class AuthenticationManager
         return AuthenticationProviderCache.getProvider(ResetPasswordProvider.class, name);
     }
 
-    public static @Nullable DisableLoginProvider getEnabledDisableLoginProviderForUser(String id)
+    // Return a DisableLoginProvider if it's enabled and applicable to this user
+    public static @Nullable DisableLoginProvider getDisableLoginProviderForUser(String id)
     {
         for (DisableLoginProvider provider : AuthenticationProviderCache.getProviders(DisableLoginProvider.class))
             if (provider.isEnabledForUser(id))
@@ -980,7 +996,7 @@ public class AuthenticationManager
         {
             BindException errors = new BindException(new Object(), "dummy");
             getStatus().addUserErrorMessage(errors, this, null, null, location);
-            return errors.hasErrors() ? errors.getAllErrors().get(0).getDefaultMessage() : null;
+            return errors.hasErrors() ? errors.getAllErrors().getFirst().getDefaultMessage() : null;
         }
     }
 
@@ -1215,11 +1231,11 @@ public class AuthenticationManager
     // limit one bad login per second averaged out over 60sec
     private static final Cache<Integer, RateLimiter> addrLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "Login limiter");
     private static final Cache<Integer, RateLimiter> pwdLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "Password limiter");
-    private static final CacheLoader<Integer, RateLimiter> addrLoader = (key, request) -> new RateLimiter("Addr limiter: " + key, new Rate(60, TimeUnit.MINUTES));
-    private static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, request) -> new RateLimiter("Pwd limiter: " + key, new Rate(20, TimeUnit.MINUTES));
+    private static final CacheLoader<Integer, RateLimiter> addrLoader = (key, _) -> new RateLimiter("Addr limiter: " + key, new Rate(60, TimeUnit.MINUTES));
+    private static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, _) -> new RateLimiter("Pwd limiter: " + key, new Rate(20, TimeUnit.MINUTES));
 
     private static final Cache<String, RateLimiter> userLimiter = CacheManager.getCache(10000, TimeUnit.MINUTES.toMillis(5), "User limiter");
-    private static final CacheLoader<String, RateLimiter> userLoader = (key, request) -> new RateLimiter("User limiter: " + key, new Rate(20, TimeUnit.MINUTES));
+    private static final CacheLoader<String, RateLimiter> userLoader = (key, _) -> new RateLimiter("User limiter: " + key, new Rate(20, TimeUnit.MINUTES));
 
     private static Integer getIntCacheKey(String s)
     {
@@ -1264,7 +1280,7 @@ public class AuthenticationManager
 
     private static long getUserLoginDelay(String id) throws LoginDisabledException
     {
-        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProviderForUser(id);
+        DisableLoginProvider provider = AuthenticationManager.getDisableLoginProviderForUser(id);
         if (provider != null)
             return provider.getUserDelay(id);
         return getDefaultUserLoginDelay(id);
@@ -1300,14 +1316,14 @@ public class AuthenticationManager
 
     private static void resetModuleUserLoginDelay(String id)
     {
-        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProviderForUser(id);
+        DisableLoginProvider provider = AuthenticationManager.getDisableLoginProviderForUser(id);
         if (provider != null)
             provider.resetUserDelay(id);
     }
 
     private static void addUserLoginDelay(HttpServletRequest request, String id)
     {
-        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProviderForUser(id);
+        DisableLoginProvider provider = AuthenticationManager.getDisableLoginProviderForUser(id);
         if (provider != null)
             provider.addUserDelay(request, id, 1);
         else

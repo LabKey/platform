@@ -168,7 +168,7 @@ public class CoreUpgradeCode implements UpgradeCode
         String keyPrefix = complianceCategory + "/";
         Map<String, String> complianceProps = PropertyManager.getProperties(SITE_CONFIG_USER, ContainerManager.getRoot(), complianceCategory);
 
-        // Old compliance property set used a prefix with property names
+        // Important: The old compliance property set used a prefix with the property names. The new property set will not.
         String enabledVal = complianceProps.get(keyPrefix + "attemptEnabled");
         String limitVal   = complianceProps.get(keyPrefix + "attemptLimit");
         String periodVal  = complianceProps.get(keyPrefix + "attemptPeriod");

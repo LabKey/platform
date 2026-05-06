@@ -45,7 +45,7 @@ public class LoginAttemptDisableLoginProvider implements AuthenticationProvider.
     private static final String DESCRIPTION = "Disable unsuccessful login provider";
     private static final Cache<String, CountLimiter> userLimiter = CacheManager.getCache(10000, CacheManager.DAY, "User login attempt limiter");
 
-    private static CacheLoader<String, CountLimiter> userLoader;
+    private static volatile CacheLoader<String, CountLimiter> userLoader;
 
     static
     {
@@ -84,10 +84,13 @@ public class LoginAttemptDisableLoginProvider implements AuthenticationProvider.
         {
             int resetTime = AuthenticationManager.getLoginAttemptResetTime();
             User user = getUserFromEmailStr(id);
-            String errorMessage = getUserLoginDisabledMsg(user.getEmail());
-            AuthenticationManager.addAuditEvent(user, null, errorMessage);
-            _log.warn(errorMessage);
-            throw new LoginDisabledException("Your login has been disabled. Please try again in " + StringUtilsLabKey.pluralize(resetTime, "minute") + ".");
+            if (user != null)
+            {
+                String errorMessage = getUserLoginDisabledMsg(user.getEmail());
+                AuthenticationManager.addAuditEvent(user, null, errorMessage);
+                _log.warn(errorMessage);
+                throw new LoginDisabledException("Your login has been disabled. Please try again in " + StringUtilsLabKey.pluralize(resetTime, "minute") + ".");
+            }
         }
         return 0;
     }
