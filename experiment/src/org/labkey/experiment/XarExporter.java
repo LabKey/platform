@@ -86,8 +86,6 @@ import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
 
 import javax.xml.namespace.QName;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -177,7 +175,7 @@ public class XarExporter
 
         _document = ExperimentArchiveDocument.Factory.newInstance();
         _archive = _document.addNewExperimentArchive();
-        _log = log;
+        _log = log == null ? DEFAULT_LOG : log;
     }
 
     public XarExporter(LSIDRelativizer lsidRelativizer, URLRewriter urlRewriter, User user, Container container)
@@ -1415,7 +1413,7 @@ public class XarExporter
                         }
                         break;
                     default:
-                        _log.warn("Warning: skipping export of " + value.getName() + " -- unknown type " + value.getPropertyType());
+                        _log.warn("Skipping export of {} -- unknown type {}", value.getName(), value.getPropertyType());
                 }
             }
         }
