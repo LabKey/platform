@@ -122,6 +122,40 @@ describe('GroupTypesPanel — inline rename', () => {
         expect(props.onRenameGroup).not.toHaveBeenCalled();
         expect(screen.queryByRole('textbox', { name: 'Rename Group A' })).toBeNull();
     });
+
+    test('pressing Enter with a valid name closes the rename input', async () => {
+        const { props } = renderWithActiveGroup();
+        await userEvent.click(screen.getByRole('button', { name: 'Rename Group A' }));
+        const input = screen.getByRole('textbox', { name: 'Rename Group A' });
+        await userEvent.clear(input);
+        await userEvent.type(input, 'Group C{Enter}');
+        expect(props.onRenameGroup).toHaveBeenCalledWith(1, 'Group C');
+        expect(screen.queryByRole('textbox', { name: 'Rename Group A' })).toBeNull();
+    });
+
+    test('blurring with a valid non-conflicting name commits and closes the rename input', async () => {
+        const { props } = renderWithActiveGroup();
+        await userEvent.click(screen.getByRole('button', { name: 'Rename Group A' }));
+        const input = screen.getByRole('textbox', { name: 'Rename Group A' });
+        await userEvent.clear(input);
+        await userEvent.type(input, 'Group C');
+        await userEvent.tab();
+        expect(props.onRenameGroup).toHaveBeenCalledWith(1, 'Group C');
+        expect(screen.queryByRole('textbox', { name: 'Rename Group A' })).toBeNull();
+    });
+
+    test('blur fired synchronously after Escape does not commit the rename', async () => {
+        // Browsers fire blur synchronously on the focused element when it is removed from the
+        // DOM. jsdom does not replicate this, so we fire it manually to cover the isCancellingRef
+        // guard that prevents Escape from inadvertently committing via the blur handler.
+        const { props } = renderWithActiveGroup();
+        await userEvent.click(screen.getByRole('button', { name: 'Rename Group A' }));
+        const input = screen.getByRole('textbox', { name: 'Rename Group A' });
+        await userEvent.type(input, 'New Name');
+        fireEvent.keyDown(input, { key: 'Escape' });
+        fireEvent.blur(input);
+        expect(props.onRenameGroup).not.toHaveBeenCalled();
+    });
 });
 
 describe('GroupTypesPanel — tab click', () => {

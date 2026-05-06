@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useEnterEscape } from '../useEnterEscape';
 import classNames from 'classnames';
@@ -68,7 +68,14 @@ const GroupRow: FC<GroupRowProps> = ({
         setRenameError(null);
     }, []);
 
-    const cancelRename = useCallback(() => setIsRenaming(false), []);
+    // Guards handleRenameBlur from running when the input is unmounted by a cancel/Escape,
+    // which causes the browser to fire blur on the focused input during DOM removal.
+    const isCancellingRef = useRef(false);
+
+    const cancelRename = useCallback(() => {
+        isCancellingRef.current = true;
+        setIsRenaming(false);
+    }, []);
     const cancelDelete = useCallback(() => setIsConfirmingDelete(false), []);
 
     // revertOnConflict=true: silently discard (blur — moving focus away shouldn't leave the input frozen).
@@ -84,8 +91,12 @@ const GroupRow: FC<GroupRowProps> = ({
                 }
                 return;
             }
-            if (trimmed) onRenameGroup(group.rowId, trimmed);
-            else setIsRenaming(false);
+            if (trimmed) {
+                onRenameGroup(group.rowId, trimmed);
+                setIsRenaming(false);
+            } else {
+                setIsRenaming(false);
+            }
         },
         [renameValue, existingGroupNames, onRenameGroup, group.rowId, group.name]
     );
@@ -105,7 +116,13 @@ const GroupRow: FC<GroupRowProps> = ({
         },
         [isRenaming, onGroupSelect, group]
     );
-    const handleRenameBlur = useCallback(() => commitRename(true), [commitRename]);
+    const handleRenameBlur = useCallback(() => {
+        if (isCancellingRef.current) {
+            isCancellingRef.current = false;
+            return;
+        }
+        commitRename(true);
+    }, [commitRename]);
     const handleRenameInputClick = useCallback((e: React.MouseEvent) => e.stopPropagation(), []);
     const onDeleteConfirm = useCallback(
         (e: React.MouseEvent) => {
