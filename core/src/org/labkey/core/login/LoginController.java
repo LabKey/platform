@@ -2248,7 +2248,8 @@ public class LoginController extends SpringActionController
             ));
 
             AuthenticationManager.setDefaultDomain(getUser(), form.getDefaultDomain());
-            AuthenticationManager.saveLoginAttemptSettings(getUser(), form.isLoginAttemptEnabled(), form.getLoginAttemptLimit(), form.getLoginAttemptPeriod(), form.getLoginAttemptResetTime());
+            if (AuthenticationManager.saveLoginAttemptSettings(getUser(), form.isLoginAttemptEnabled(), form.getLoginAttemptLimit(), form.getLoginAttemptPeriod(), form.getLoginAttemptResetTime()))
+                LoginAttemptDisableLoginProvider.reloadCache();
 
             // rowId arrays will be posted only if they are dirty
             AuthenticationManager.reorderConfigurations(getUser(), "LDAP", form.getFormConfigurations());

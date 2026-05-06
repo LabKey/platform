@@ -343,26 +343,35 @@ public class AuthenticationManager
             .forEach(e->saveAuthSetting(user, e.getKey(), e.getValue()));
     }
 
-    public static void addLoginAttemptSettingsListener(Runnable listener)
-    {
-        _loginAttemptSettingsListeners.add(listener);
-    }
-
-    public static void saveLoginAttemptSettings(User user, boolean enabled, int limit, int period, int resetTime)
+    // Returns true if any setting changed
+    public static boolean saveLoginAttemptSettings(User user, boolean enabled, int limit, int period, int resetTime)
     {
         if (limit < 1 ||  period < 1 || resetTime < 1)
             throw new IllegalArgumentException("limit, period, and resetTime values must be positive!");
 
         // Use standard saveAuthSetting() methods to ensure audit logging
+        boolean changed = false;
         if (enabled != isLoginAttemptControlEnabled())
+        {
             saveAuthSetting(user, LOGIN_ATTEMPT_ENABLED_KEY, enabled);
+            changed = true;
+        }
         if (limit != getLoginAttemptLimit())
+        {
             saveAuthSetting(user, LOGIN_ATTEMPT_LIMIT_KEY, String.valueOf(limit), "set to " + limit);
+            changed = true;
+        }
         if (period != getLoginAttemptPeriod())
+        {
             saveAuthSetting(user, LOGIN_ATTEMPT_PERIOD_KEY, String.valueOf(period), "set to " + period);
+            changed = true;
+        }
         if (resetTime != getLoginAttemptResetTime())
+        {
             saveAuthSetting(user, LOGIN_ATTEMPT_RESET_TIME_KEY, String.valueOf(resetTime), "set to " + resetTime);
-        _loginAttemptSettingsListeners.forEach(Runnable::run);
+            changed = true;
+        }
+        return changed;
     }
 
     public static void reorderConfigurations(User user, String name, int[] rowIds)
@@ -706,8 +715,6 @@ public class AuthenticationManager
     public static final String LOGIN_ATTEMPT_LIMIT_KEY = "LoginAttemptLimit";
     public static final String LOGIN_ATTEMPT_PERIOD_KEY = "LoginAttemptPeriod";
     public static final String LOGIN_ATTEMPT_RESET_TIME_KEY = "LoginAttemptResetTime";
-
-    private static final List<Runnable> _loginAttemptSettingsListeners = new CopyOnWriteArrayList<>();
 
     public enum AuthenticationSettings implements StartupProperty
     {

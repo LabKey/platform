@@ -450,7 +450,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         WarningService.setInstance(new WarningServiceImpl());
 
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
-        AuthenticationManager.addLoginAttemptSettingsListener(LoginAttemptDisableLoginProvider::reloadCache);
         AttachmentService.setInstance(new AttachmentServiceImpl());
         AnalyticsService.setInstance(new AnalyticsServiceImpl());
         RhinoService.register();
