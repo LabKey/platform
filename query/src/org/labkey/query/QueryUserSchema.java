@@ -14,12 +14,15 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.query.query.CustomViewsTable;
 import org.labkey.query.query.QueriesTable;
 import org.labkey.query.query.QueryDbSchema;
@@ -120,16 +123,13 @@ public class QueryUserSchema extends UserSchema
             assertNotNull("Expected admin access to the " + CUSTOM_VIEWS_TABLE_NAME + " table", schema.getTable(CUSTOM_VIEWS_TABLE_NAME));
 
             schema = QueryService.get().getUserSchema(User.getSearchUser(), _container, SCHEMA_NAME);
-            assertNull("Expected no reader access to the " + CUSTOM_VIEWS_TABLE_NAME + " table", schema.getTable(CUSTOM_VIEWS_TABLE_NAME));
+            assertNull("Expected no reader access to the " + SCHEMA_NAME + " schema", schema);
         }
 
         @Test
         public void testCustomViewsApiAccess() throws Exception
         {
-            var schema = QueryService.get().getUserSchema(_user, _container, SCHEMA_NAME);
-            var table = schema.getTable(CUSTOM_VIEWS_TABLE_NAME);
-            var qus = table.getUpdateService();
-            assertNotNull("Expected update service for " + CUSTOM_VIEWS_TABLE_NAME, qus);
+            var qus = ensureUpdateService(CUSTOM_VIEWS_TABLE_NAME);
 
             BatchValidationException errors = new BatchValidationException();
             Map<String, Object> row = CaseInsensitiveHashMap.of(
@@ -144,6 +144,83 @@ public class QueryUserSchema extends UserSchema
             newView.put("flags", 3);
             qus.updateRows(_user, _container, List.of(newView), null, errors, null, null);
             assertFalse("Unexpected error on update", errors.hasErrors());
+
+            // finally, delete the custom view
+            qus.deleteRows(_user, _container, List.of(newView), null, null);
+        }
+
+        @Test
+        public void testQueriesAdminOnlyAccess()
+        {
+            LOG.info("Validate Query.Queries is admin only");
+
+            var schema = QueryService.get().getUserSchema(User.getAdminServiceUser(), _container, SCHEMA_NAME);
+            assertNotNull("Expected admin access to the " + QUERIES_TABLE_NAME + " table", schema.getTable(QUERIES_TABLE_NAME));
+
+            // admin only access to the schema is tested in testCustomViewsAdminOnlyAccess
+        }
+
+        private QueryUpdateService ensureUpdateService(String tableName)
+        {
+            var schema = QueryService.get().getUserSchema(_user, _container, SCHEMA_NAME);
+            var table = schema.getTable(tableName);
+            var qus = table.getUpdateService();
+            assertNotNull("Expected update service for " + tableName, qus);
+
+            return qus;
+        }
+
+        @Test
+        public void testQueriesApiAccess() throws Exception
+        {
+            var qus = ensureUpdateService(QUERIES_TABLE_NAME);
+
+            try
+            {
+                BatchValidationException errors = new BatchValidationException();
+                Map<String, Object> row = CaseInsensitiveHashMap.of(
+                        "schema", "test",
+                        "name", "custom query",
+                        "sql", "SELECT * FROM test"
+                );
+                qus.insertRows(_user, _container, List.of(row), errors, null, null);
+                assertFalse("Insert should not be allowed", errors.hasErrors());
+            }
+            catch (UnauthorizedException e)
+            {
+                // expected
+            }
+
+            String customQueryName = "custom query";
+            var queryDef = QueryService.get().createQueryDef(_user, _container, SchemaKey.fromParts("lists"), customQueryName);
+            queryDef.setSql("SELECT * FROM lists");
+            queryDef.save(_user, _container, false);
+
+            queryDef = QueryService.get().getQueryDef(_user, _container, "lists", customQueryName);
+            assertNotNull("Unable to retrieve a saved query def", queryDef);
+
+            if (queryDef instanceof QueryDefinitionImpl queryImpl)
+            {
+                BatchValidationException errors = new BatchValidationException();
+                Map<String, Object> row = CaseInsensitiveHashMap.of(
+                        "queryDefId", queryImpl.getQueryDef().getQueryDefId(),
+                        "name", "custom query",
+                        "sql", "SELECT * FROM test"
+                );
+
+                try
+                {
+                    qus.updateRows(_user, _container, List.of(row), null, errors, null, null);
+                    assertFalse("Update should not be allowed", errors.hasErrors());
+                }
+                catch (UnauthorizedException e)
+                {
+                    // expected, delete the query
+                    qus.deleteRows(_user, _container, List.of(row), null, null);
+                }
+            }
+            else
+                Assert.fail("Unexpected query def type: " + queryDef.getClass().getName());
         }
     }
 }

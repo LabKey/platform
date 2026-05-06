@@ -275,6 +275,7 @@ import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.PostgresTableSizesTable;
 import org.labkey.core.query.PostgresUserSchema;
+import org.labkey.core.query.ReportsTable;
 import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
@@ -1464,7 +1465,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             SqlScriptController.TestCase.class,
             TableViewFormTestCase.class,
             UnknownSchemasTest.class,
-            UserController.TestCase.class
+            UserController.TestCase.class,
+            ReportsTable.TestCase.class
         );
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());
