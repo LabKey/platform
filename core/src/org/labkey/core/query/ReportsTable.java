@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -144,11 +145,18 @@ public class ReportsTable extends FilteredTable<CoreQuerySchema>
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap)
         {
             Integer id = (Integer) oldRowMap.get("rowId");
-            if (id != null)
+            String containerId = (String) oldRowMap.get("containerId");
+            if (id != null && containerId != null)
             {
-                var r = ReportService.get().getReport(container, id);
+                var c = ContainerManager.getForId(containerId);
+                var r = ReportService.get().getReport(c, id);
                 if (r != null)
-                    ReportService.get().deleteReport(ContainerUser.create(container, user), r);
+                {
+                    if (r.hasPermission(user, c, DeletePermission.class))
+                        ReportService.get().deleteReport(ContainerUser.create(c, user), r);
+                    else
+                        throw new UnauthorizedException(String.format("You do not have permission to delete this report from folder : %s", c.getPath()));
+                }
             }
             return oldRowMap;
         }
