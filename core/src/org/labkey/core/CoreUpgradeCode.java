@@ -21,6 +21,8 @@ import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
@@ -189,15 +191,19 @@ public class CoreUpgradeCode implements UpgradeCode
             LOG.info("Migrating existing unsuccessful login attempt settings: {}", complianceProps);
             User user = context.getUpgradeUser();
 
-            // TODO: change saveAuthSetting() visibility back to private after deleting this upgrade code
-            if (enabledVal != null)
-                AuthenticationManager.saveAuthSetting(user, LOGIN_ATTEMPT_ENABLED_KEY, Boolean.valueOf(enabledVal));
-            if (limitVal != null)
-                AuthenticationManager.saveAuthSetting(user, LOGIN_ATTEMPT_LIMIT_KEY, limitVal, "set to " + limitVal);
-            if (periodVal != null)
-                AuthenticationManager.saveAuthSetting(user, LOGIN_ATTEMPT_PERIOD_KEY, periodVal, "set to " + periodVal);
-            if (resetVal != null)
-                AuthenticationManager.saveAuthSetting(user, LOGIN_ATTEMPT_RESET_TIME_KEY, resetVal, "set to " + resetVal);
+            try (Transaction t = DbScope.getLabKeyScope().beginTransaction())
+            {
+                // TODO: change saveAuthSetting() visibility back to private after deleting this upgrade code
+                if (enabledVal != null)
+                    AuthenticationManager.saveAuthSetting(user, LOGIN_ATTEMPT_ENABLED_KEY, Boolean.valueOf(enabledVal));
+                if (limitVal != null)
+                    AuthenticationManager.saveAuthSetting(user, LOGIN_ATTEMPT_LIMIT_KEY, limitVal, "set to " + limitVal);
+                if (periodVal != null)
+                    AuthenticationManager.saveAuthSetting(user, LOGIN_ATTEMPT_PERIOD_KEY, periodVal, "set to " + periodVal);
+                if (resetVal != null)
+                    AuthenticationManager.saveAuthSetting(user, LOGIN_ATTEMPT_RESET_TIME_KEY, resetVal, "set to " + resetVal);
+                t.commit();
+            }
         }
     }
 }

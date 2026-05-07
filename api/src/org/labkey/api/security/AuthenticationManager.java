@@ -45,6 +45,8 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.Project;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
@@ -351,25 +353,29 @@ public class AuthenticationManager
 
         // Use standard saveAuthSetting() methods to ensure audit logging
         boolean changed = false;
-        if (enabled != isLoginAttemptControlEnabled())
+        try (Transaction t = DbScope.getLabKeyScope().beginTransaction())
         {
-            saveAuthSetting(user, LOGIN_ATTEMPT_ENABLED_KEY, enabled);
-            changed = true;
-        }
-        if (limit != getLoginAttemptLimit())
-        {
-            saveAuthSetting(user, LOGIN_ATTEMPT_LIMIT_KEY, String.valueOf(limit), "set to " + limit);
-            changed = true;
-        }
-        if (period != getLoginAttemptPeriod())
-        {
-            saveAuthSetting(user, LOGIN_ATTEMPT_PERIOD_KEY, String.valueOf(period), "set to " + period);
-            changed = true;
-        }
-        if (resetTime != getLoginAttemptResetTime())
-        {
-            saveAuthSetting(user, LOGIN_ATTEMPT_RESET_TIME_KEY, String.valueOf(resetTime), "set to " + resetTime);
-            changed = true;
+            if (enabled != isLoginAttemptControlEnabled())
+            {
+                saveAuthSetting(user, LOGIN_ATTEMPT_ENABLED_KEY, enabled);
+                changed = true;
+            }
+            if (limit != getLoginAttemptLimit())
+            {
+                saveAuthSetting(user, LOGIN_ATTEMPT_LIMIT_KEY, String.valueOf(limit), "set to " + limit);
+                changed = true;
+            }
+            if (period != getLoginAttemptPeriod())
+            {
+                saveAuthSetting(user, LOGIN_ATTEMPT_PERIOD_KEY, String.valueOf(period), "set to " + period);
+                changed = true;
+            }
+            if (resetTime != getLoginAttemptResetTime())
+            {
+                saveAuthSetting(user, LOGIN_ATTEMPT_RESET_TIME_KEY, String.valueOf(resetTime), "set to " + resetTime);
+                changed = true;
+            }
+            t.commit();
         }
         return changed;
     }
