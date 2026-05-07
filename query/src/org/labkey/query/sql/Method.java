@@ -230,6 +230,14 @@ public abstract class Method
                 return new IsMemberInfo();
             }
         });
+        labkeyMethod.put("isnumeric", new Method("isnumeric", JdbcType.BOOLEAN, 1, 1)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsNumericInfo();
+            }
+        });
         labkeyMethod.put("javaconstant", new Method("javaconstant", JdbcType.VARBINARY, 1, 1)
         {
             @Override
@@ -1067,6 +1075,33 @@ public abstract class Method
         }
     }
 
+    // Portable isnumeric() — emits ISNUMERIC(x) on SQL Server and a regex-based CASE on PostgreSQL.
+    // Returns 1 when the input is numeric (digits with optional sign / decimal point), 0 otherwise.
+    // NULL inputs return 0 to match SQL Server's ISNUMERIC behavior.
+    static class IsNumericInfo extends AbstractMethodInfo
+    {
+        IsNumericInfo()
+        {
+            super(JdbcType.BOOLEAN);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            SQLFragment arg = arguments[0];
+            if (dialect.isSqlServer())
+            {
+                return new SQLFragment("ISNUMERIC(").append(arg).append(")");
+            }
+            if (dialect.isPostgreSQL())
+            {
+                return new SQLFragment("(CASE WHEN (").append(arg)
+                        .append(") ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$' THEN 1 ELSE 0 END)");
+            }
+            throw new IllegalStateException("isnumeric() is not supported for this database dialect: " + dialect.getProductName());
+        }
+    }
+
     static class VersionMethodInfo extends AbstractMethodInfo
     {
         VersionMethodInfo()
@@ -1874,7 +1909,7 @@ public abstract class Method
         mssqlMethods.put("charindex", new PassthroughMethod("charindex", JdbcType.INTEGER, 2, 3));
         mssqlMethods.put("concat_ws", new PassthroughMethod("concat_ws", JdbcType.VARCHAR, 1, Integer.MAX_VALUE));
         mssqlMethods.put("difference", new PassthroughMethod("difference", JdbcType.INTEGER, 2, 2));
-        mssqlMethods.put("isnumeric", new PassthroughMethod("isnumeric", JdbcType.BOOLEAN, 1, 1));
+        // isnumeric is registered in labkeyMethod (portable across PostgreSQL and SQL Server)
         mssqlMethods.put("len", new PassthroughMethod("len", JdbcType.INTEGER, 1, 1));
         mssqlMethods.put("patindex", new PassthroughMethod("patindex", JdbcType.INTEGER, 2, 2));
         mssqlMethods.put("quotename", new PassthroughMethod("quotename", JdbcType.VARCHAR, 1, 2));
