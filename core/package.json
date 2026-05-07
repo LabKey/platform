@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@labkey/components": "7.34.0",
-    "@labkey/themes": "1.9.2-fb-Item-1105.0"
+    "@labkey/themes": "1.9.2"
   },
   "devDependencies": {
     "@labkey/build": "9.1.1",
