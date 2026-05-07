@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
@@ -17,6 +18,7 @@ import org.labkey.vfs.FileLike;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public interface DatabaseMigrationService
 {
@@ -50,6 +52,10 @@ public interface DatabaseMigrationService
     default void registerSchemaHandler(MigrationSchemaHandler schemaHandler) {}
     default void registerTableHandler(MigrationTableHandler tableHandler) {}
     default void registerMigrationFilter(MigrationFilter filter) {}
+
+    // Register a contributor that runs during migration before a schema's tables are processed.
+    // Useful for modules that need to register table handlers for a schema owned by another module.
+    default void registerSchemaContributor(String schemaName, Consumer<DbSchema> contributor) {}
 
     default @Nullable MigrationFilter getMigrationFilter(String propertyName)
     {
