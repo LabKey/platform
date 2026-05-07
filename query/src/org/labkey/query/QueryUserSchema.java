@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2008-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.query;
 
 import org.apache.logging.log4j.Logger;
@@ -184,7 +199,7 @@ public class QueryUserSchema extends UserSchema
                         "sql", "SELECT * FROM test"
                 );
                 qus.insertRows(_user, _container, List.of(row), errors, null, null);
-                assertFalse("Insert should not be allowed", errors.hasErrors());
+                fail("Insert should have thrown UnauthorizedException");
             }
             catch (UnauthorizedException e)
             {
@@ -211,7 +226,7 @@ public class QueryUserSchema extends UserSchema
                 try
                 {
                     qus.updateRows(_user, _container, List.of(row), null, errors, null, null);
-                    assertFalse("Update should not be allowed", errors.hasErrors());
+                    fail("Update should have thrown UnauthorizedException");
                 }
                 catch (UnauthorizedException e)
                 {
