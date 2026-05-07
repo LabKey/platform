@@ -29,7 +29,8 @@ public interface WorkflowService
         MoveInStorage("input parameters", "Moved samples in storage"),
         CheckOut("input parameters", "Checked out samples"),
         CheckIn("input parameters", "Checked in samples"),
-        RemoveFromStorage("sample status value", "Removed samples from storage");
+        RemoveFromStorage("sample status value", "Removed samples from storage"),
+        UpdateSampleStatus("sample status value", "Updated sample status");
 
         private final String _inputDescription;
         private final String _auditMessage;

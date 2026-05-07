@@ -15,6 +15,7 @@ import org.labkey.api.util.GUID;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -126,6 +127,37 @@ public abstract class Action extends CreatedModified
         _inputParameters = inputParameters;
     }
 
+    private List<String> validateStatus(Container container, String prefix, boolean updateKeyExpected)
+    {
+        boolean updateStatus = true;
+
+        if (updateKeyExpected)
+        {
+            updateStatus = _inputParameters.getBoolean(UPDATE_STATUS_KEY);
+            if (updateStatus && !_inputParameters.has(STATUS_KEY))
+                return List.of(prefix + STATUS_KEY + " is required for action of type " + _type + " when " + UPDATE_STATUS_KEY + " is true.");
+            if (!updateStatus && _inputParameters.has(STATUS_KEY))
+                return List.of(prefix + STATUS_KEY + " is not allowed for action of type " + _type + " when " + UPDATE_STATUS_KEY + " is false.");
+        }
+
+        if (updateStatus && container != null)
+        {
+            try
+            {
+                long statusId = _inputParameters.getLong(STATUS_KEY);
+                SampleStatusService sampleStatusService = SampleStatusService.get();
+                if (sampleStatusService.getStateForRowId(container, statusId) == null)
+                    return List.of(prefix + "Invalid " + STATUS_KEY + " (" + statusId + ").");
+            }
+            catch (Exception e)
+            {
+                return List.of(prefix + "Invalid " + STATUS_KEY + ".");
+            }
+        }
+
+        return Collections.emptyList();
+    }
+
     @JsonIgnore
     public List<String> validateInputParameters(int ordinal, Container container)
     {
@@ -185,15 +217,34 @@ public abstract class Action extends CreatedModified
         }
         else if (_type == WorkflowService.ActionType.DeriveSamples || _type == WorkflowService.ActionType.PoolSamples)
         {
-            if (_inputParameters == null || _inputParameters.isEmpty())
-                return List.of(prefix + "data about sample types and sample counts per parent is required for action of type " + _type + ".");
-            if (_type == WorkflowService.ActionType.PoolSamples && _inputParameters.length() > 1)
+            String emptyMessage = prefix + "data about sample types and sample counts per parent is required for action of type " + _type + ".";
+
+            if (_inputParameters == null) return List.of(emptyMessage);
+
+            // We can't just check _inputParameters size because it may include sample status keys, so we extract the
+            // sample type IDs and validate against those.
+            List<String> sampleTypeIds = new ArrayList<>();
+            _inputParameters.keys().forEachRemaining(id -> {
+                if (id.equals(UPDATE_STATUS_KEY) || id.equals(STATUS_KEY)) return;
+                sampleTypeIds.add(id);
+            });
+
+            if (sampleTypeIds.isEmpty())
+                return List.of(emptyMessage);
+
+            if (_type == WorkflowService.ActionType.PoolSamples && sampleTypeIds.size() > 1)
                 return List.of(prefix + "only one sample type can be specified for action of type " + _type + ".");
+
             SampleTypeService sampleTypeService = SampleTypeService.get();
             Set<String> invalidSampleTypeIds = new HashSet<>();
             List<Object> invalidCounts = new ArrayList<>();
+            List<String> messages = new ArrayList<>();
 
-            _inputParameters.keys().forEachRemaining(id -> {
+            for (String id : sampleTypeIds)
+            {
+                // validated above
+                if (id.equals(UPDATE_STATUS_KEY) || id.equals(STATUS_KEY)) continue;
+
                 try
                 {
                     if (sampleTypeService.getSampleType(Long.valueOf(id)) == null)
@@ -204,54 +255,51 @@ public abstract class Action extends CreatedModified
                     invalidSampleTypeIds.add(id);
                 }
                 Object countObj = _inputParameters.get(id);
-                if ((countObj instanceof String))
+                if (countObj instanceof String countStr)
                     try
                     {
-                        if (Integer.parseInt((String) countObj) < 0)
+                        if (Integer.parseInt(countStr) < 0)
                             invalidCounts.add(countObj);
                     }
                     catch (NumberFormatException e)
                     {
                         invalidCounts.add(countObj);
                     }
-                else if (countObj instanceof Integer)
+                else if (countObj instanceof Integer count)
                 {
-                    if (((Integer) countObj) < 0)
+                    if (count < 0)
                         invalidCounts.add(countObj);
                 }
                 else
                     invalidCounts.add(countObj);
-            });
-            List<String> messages = new ArrayList<>();
+            }
+
             if (!invalidSampleTypeIds.isEmpty())
                 messages.add(prefix + "invalid sample type IDs " + invalidSampleTypeIds + ".");
             if (!invalidCounts.isEmpty())
                 messages.add(prefix + "invalid sample count values " + invalidCounts + ".");
+
+            if (_inputParameters.has(UPDATE_STATUS_KEY) || _inputParameters.has(STATUS_KEY))
+            {
+                List<String> statusMessages = validateStatus(container, prefix, true);
+
+                if (!statusMessages.isEmpty())
+                    messages.addAll(statusMessages);
+            }
+
             return messages;
         }
         else if (_type == WorkflowService.ActionType.RemoveFromStorage)
         {
             if (_inputParameters == null || _inputParameters.isEmpty())
                 return Collections.emptyList();
-            boolean updateStatus = _inputParameters.getBoolean(UPDATE_STATUS_KEY);
-            if (updateStatus && !_inputParameters.has(STATUS_KEY))
-                return List.of(prefix + STATUS_KEY + " is required for action of type " + _type + " when " + UPDATE_STATUS_KEY + " is true.");
-            if (!updateStatus && _inputParameters.has(STATUS_KEY))
-                return List.of(prefix + STATUS_KEY + " is not allowed for action of type " + _type + " when " + UPDATE_STATUS_KEY + " is false.");
-            if (updateStatus && container != null)
-            {
-                try
-                {
-                    long statusId = _inputParameters.getLong(STATUS_KEY);
-                    SampleStatusService sampleStatusService = SampleStatusService.get();
-                    if (sampleStatusService.getStateForRowId(container, statusId) == null)
-                        return List.of(prefix + "Invalid " + STATUS_KEY + " (" + statusId + ").");
-                }
-                catch (Exception e)
-                {
-                    return List.of(prefix + "Invalid " + STATUS_KEY + ".");
-                }
-            }
+
+            return validateStatus(container, prefix, true);
+        } else if (_type == WorkflowService.ActionType.UpdateSampleStatus) {
+            if (_inputParameters == null || _inputParameters.isEmpty())
+                return Collections.emptyList();
+
+            return validateStatus(container, prefix, false);
         } else {
             if (_inputParameters != null && !_inputParameters.isEmpty())
                 return List.of(prefix + "input parameters are not allowed for action of type " + _type + ".");
