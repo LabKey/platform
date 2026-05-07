@@ -96,6 +96,7 @@ import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
+import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FileColumnValueMapper;
@@ -2379,7 +2380,10 @@ public class ExpDataIterators
 
             // useTransactionAuditCache already set for import and merge in AbstractQueryImportAction.createDataIteratorContext
             if (context.getInsertOption() == QueryUpdateService.InsertOption.INSERT)
-                context.setUseTransactionAuditCache(true);
+            {
+                if (context.getConfigParameters().isEmpty() || context.getConfigParameterBoolean(AbstractQueryImportAction.Params.useTransactionAuditCache))
+                    context.setUseTransactionAuditCache(true);
+            }
 
             // add FileLink DataIterator if any input columns are of type FILE_LINK
             if (null != _fileLinkDirectory)

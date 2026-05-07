@@ -53,6 +53,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -382,17 +383,18 @@ public class AuditController extends SpringActionController
         @Override
         public Object execute(AuditTransactionForm form, BindException errors)
         {
-            List<Long> rowIds;
+            Pair<List<Long>, Map<Long, Long>> results;
             User elevatedUser = ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser());
             ContainerFilter cf = ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getContainer(), elevatedUser);
             if (form.isSampleType())
-                rowIds = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), elevatedUser, getContainer(), cf);
+                results = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), elevatedUser, getContainer(), cf);
             else
-                rowIds = AuditLogImpl.get().getTransactionSourceIds(form.getTransactionAuditId(), elevatedUser, getContainer(), cf);
+                results = AuditLogImpl.get().getTransactionSourceIds(form.getTransactionAuditId(), elevatedUser, getContainer(), cf);
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", true);
-            response.put("rowIds", rowIds);
+            response.put("rowIds", results.first);
+            response.put("dataTypeIds", results.second);
 
             return response;
         }
