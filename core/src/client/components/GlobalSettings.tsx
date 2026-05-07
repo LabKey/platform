@@ -1,12 +1,13 @@
-import React, { ChangeEvent, FC, memo, useCallback } from 'react';
+import React, { ChangeEventHandler, FC, memo, PropsWithChildren, ReactNode, useCallback, useMemo } from 'react';
+import classNames from 'classnames';
 import { HelpLink, LabelHelpTip } from '@labkey/components';
 
 import { GlobalSettingsOptions } from './models';
 
 interface GlobalSettingFieldData {
-    id: string;
+    name: string;
     text: string;
-    tip: string;
+    tip: ReactNode;
 }
 
 const LOGIN_ATTEMPT_LIMIT_OPTIONS = ['3', '5', '10', '100'];
@@ -15,48 +16,60 @@ const LOGIN_ATTEMPT_RESET_TIME_OPTIONS = ['5', '10', '30', '60'];
 
 const FIELD_DATA: GlobalSettingFieldData[] = [
     {
-        id: 'SelfRegistration',
+        name: 'SelfRegistration',
         text: 'Allow self sign up',
         tip: 'Users are able to register for accounts when using database authentication. Use caution when enabling this if you have enabled sending email to non-users.',
     },
     {
-        id: 'SelfServiceEmailChanges',
+        name: 'SelfServiceEmailChanges',
         text: 'Allow users to edit their own email addresses',
         tip: 'Users can change their own email address if their password is managed by LabKey Server.',
     },
     {
-        id: 'AutoCreateAccounts',
+        name: 'AutoCreateAccounts',
         text: 'Auto-create authenticated users',
         tip: 'Accounts are created automatically when new users authenticate via LDAP or SSO.',
     },
 ];
 
-interface GlobalSettingProps extends GlobalSettingFieldData {
+interface GlobalSettingProps extends GlobalSettingFieldData, PropsWithChildren {
     canEdit: boolean;
-    onChange: (id: string, value: boolean) => void;
+    onChange: ChangeEventHandler<HTMLInputElement>;
     value: boolean;
 }
 
-const GlobalSetting: FC<GlobalSettingProps> = memo(({ canEdit, id, onChange, text, tip, value }) => {
-    const onChange_ = useCallback(
-        (event: ChangeEvent<HTMLInputElement>) => {
-            onChange(id, event.target.checked);
-        },
-        [id, onChange]
-    );
+const GlobalSetting: FC<GlobalSettingProps> = ({ canEdit, children, name, onChange, text, tip, value }) => (
+    <div className="global-settings__text-row">
+        <label>
+            <input checked={value} disabled={!canEdit} name={name} onChange={onChange} type="checkbox" />
+            {text}
+            <LabelHelpTip title="Tip">
+                <div>{tip}</div>
+            </LabelHelpTip>
+        </label>
+        {children}
+    </div>
+);
+GlobalSetting.displayName = 'GlobalSetting';
 
-    return (
-        <div className="global-settings__text-row">
-            <label>
-                <input checked={value} disabled={!canEdit} onChange={onChange_} type="checkbox" />
-                {text}
-                <LabelHelpTip title="Tip">
-                    <div> {tip} </div>
-                </LabelHelpTip>
-            </label>
-        </div>
-    );
-});
+interface SelectProps {
+    disabled: boolean;
+    name: string;
+    onChange: ChangeEventHandler<HTMLSelectElement>;
+    options: string[];
+    value: string;
+}
+
+const Select: FC<SelectProps> = ({ disabled, name, onChange, options, value }) => (
+    <select disabled={disabled} name={name} onChange={onChange} value={value}>
+        {options.map(v => (
+            <option key={v} value={v}>
+                {v}
+            </option>
+        ))}
+    </select>
+);
+Select.displayName = 'Select';
 
 interface Props {
     authCount: number;
@@ -66,29 +79,18 @@ interface Props {
 }
 
 export const GlobalSettings: FC<Props> = memo(({ canEdit, authCount, onChange, globalSettings }) => {
-    let fieldData = FIELD_DATA;
-
     // If there are no user-created auth configs, there is no need to show the auto-create users checkbox
-    if (authCount === 1) {
-        fieldData = FIELD_DATA.slice(0, -1);
-    }
+    const fieldData = useMemo(() => (authCount === 1 ? FIELD_DATA.slice(0, -1) : FIELD_DATA), [authCount]);
 
-    const onDefaultDomainChange = useCallback(
-        (event: ChangeEvent<HTMLInputElement>) => {
-            onChange('DefaultDomain', event.target.value);
+    const onChangeChecked = useCallback<ChangeEventHandler<HTMLInputElement>>(
+        event => {
+            onChange(event.target.name, event.target.checked);
         },
         [onChange]
     );
 
-    const onLoginAttemptEnabledChange = useCallback(
-        (event: ChangeEvent<HTMLInputElement>) => {
-            onChange('LoginAttemptEnabled', event.target.checked);
-        },
-        [onChange]
-    );
-
-    const onLoginAttemptSelectChange = useCallback(
-        (event: ChangeEvent<HTMLSelectElement>) => {
+    const onChangeValue = useCallback<ChangeEventHandler<HTMLInputElement | HTMLSelectElement>>(
+        event => {
             onChange(event.target.name, event.target.value);
         },
         [onChange]
@@ -98,12 +100,11 @@ export const GlobalSettings: FC<Props> = memo(({ canEdit, authCount, onChange, g
     const loginAttemptLimit = globalSettings?.LoginAttemptLimit ?? '3';
     const loginAttemptPeriod = globalSettings?.LoginAttemptPeriod ?? '30';
     const loginAttemptResetTime = globalSettings?.LoginAttemptResetTime ?? '5';
+    const loginAttemptsDisabled = !canEdit || !loginAttemptEnabled;
 
     return (
         <div className="panel panel-default">
-            <div className="panel-heading">
-                Global Settings
-            </div>
+            <div className="panel-heading">Global Settings</div>
 
             <div className="panel-body">
                 <div className="global-settings__default-domain">
@@ -118,78 +119,76 @@ export const GlobalSettings: FC<Props> = memo(({ canEdit, authCount, onChange, g
 
                     <span className="global-settings__default-domain-field">
                         <input
+                            className="form-control global-settings__default-domain-form"
                             disabled={!canEdit}
                             name="DefaultDomain"
+                            onChange={onChangeValue}
+                            placeholder="System default domain"
                             type="text"
                             value={globalSettings?.DefaultDomain ?? ''}
-                            onChange={onDefaultDomainChange}
-                            className="form-control global-settings__default-domain-form"
-                            placeholder="System default domain"
                         />
                     </span>
                 </div>
 
-                <hr/>
+                <hr />
 
                 {fieldData.map(data => (
                     <GlobalSetting
-                        key={data.id}
                         canEdit={canEdit}
-                        id={data.id}
-                        onChange={onChange}
-                        value={globalSettings[data.id]}
+                        key={data.name}
+                        name={data.name}
+                        onChange={onChangeChecked}
                         text={data.text}
                         tip={data.tip}
+                        value={globalSettings[data.name]}
                     />
                 ))}
 
-                <div className="global-settings__text-row">
-                    <label>
-                        <input
-                            checked={loginAttemptEnabled}
-                            disabled={!canEdit}
-                            onChange={onLoginAttemptEnabledChange}
-                            type="checkbox"
-                        />
-                        Limit unsuccessful login attempts
-                        <LabelHelpTip title="Tip">
-                            <div>
-                                This does not apply to site and application administrators. <HelpLink topic="complianceSettings#Login">More info</HelpLink>
-                            </div>
-                        </LabelHelpTip>
-                    </label>
-                    <div style={{marginLeft: '17px', marginTop: '5px'}}>
+                <GlobalSetting
+                    canEdit={canEdit}
+                    name="LoginAttemptEnabled"
+                    onChange={onChangeChecked}
+                    text="Limit unsuccessful login attempts"
+                    tip={
+                        <div>
+                            This does not apply to site and application administrators.{' '}
+                            <HelpLink topic="complianceSettings#Login">More info</HelpLink>
+                        </div>
+                    }
+                    value={loginAttemptEnabled}
+                >
+                    <div
+                        className={classNames('global-settings__text-row-section', { disabled: loginAttemptsDisabled })}
+                    >
                         <span>Disable user login if </span>
-                        <select
-                            disabled={!canEdit || !loginAttemptEnabled}
+                        <Select
+                            disabled={loginAttemptsDisabled}
                             name="LoginAttemptLimit"
-                            onChange={onLoginAttemptSelectChange}
+                            onChange={onChangeValue}
+                            options={LOGIN_ATTEMPT_LIMIT_OPTIONS}
                             value={loginAttemptLimit}
-                        >
-                            {LOGIN_ATTEMPT_LIMIT_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
-                        </select>
+                        />
                         <span> consecutive invalid logins are attempted in a </span>
-                        <select
-                            disabled={!canEdit || !loginAttemptEnabled}
+                        <Select
+                            disabled={loginAttemptsDisabled}
                             name="LoginAttemptPeriod"
-                            onChange={onLoginAttemptSelectChange}
+                            onChange={onChangeValue}
+                            options={LOGIN_ATTEMPT_PERIOD_OPTIONS}
                             value={loginAttemptPeriod}
-                        >
-                            {LOGIN_ATTEMPT_PERIOD_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
-                        </select>
+                        />
                         <span> second period. Automatically allow users to login again after </span>
-                        <select
-                            disabled={!canEdit || !loginAttemptEnabled}
+                        <Select
+                            disabled={loginAttemptsDisabled}
                             name="LoginAttemptResetTime"
-                            onChange={onLoginAttemptSelectChange}
+                            onChange={onChangeValue}
+                            options={LOGIN_ATTEMPT_RESET_TIME_OPTIONS}
                             value={loginAttemptResetTime}
-                        >
-                            {LOGIN_ATTEMPT_RESET_TIME_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
-                        </select>
+                        />
                         <span> minutes.</span>
                     </div>
-                </div>
+                </GlobalSetting>
             </div>
         </div>
     );
 });
+GlobalSettings.displayName = 'GlobalSettings';
