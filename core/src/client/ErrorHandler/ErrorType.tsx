@@ -237,7 +237,7 @@ const EXECUTION_INSTRUCTION = (errorDetails: ErrorDetails) => (
         </div>
     </>
 );
-const EXECUTION_DETAILS = (errorDetails: ErrorDetails) => <pre></pre>;
+const EXECUTION_DETAILS = () => null;
 
 type ErrorTypeInfo = {
     details: (errorDetails?: ErrorDetails) => ReactNode;

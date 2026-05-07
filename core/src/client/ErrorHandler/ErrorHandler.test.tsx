@@ -69,7 +69,7 @@ describe('ErrorHandlerImpl', () => {
 
     test('Execution exception', async () => {
         const errorDetails: ErrorDetails = {
-            errorType: ErrorType.permission,
+            errorType: ErrorType.execution,
             errorCode: '456AAA',
             message: 'This is a execution exception',
         };
