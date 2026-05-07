@@ -17,6 +17,7 @@ package org.labkey.core.query;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -145,10 +146,9 @@ public class ReportsTable extends FilteredTable<CoreQuerySchema>
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap)
         {
             Integer id = (Integer) oldRowMap.get("rowId");
-            String containerId = (String) oldRowMap.get("containerId");
-            if (id != null && containerId != null)
+            Container c = getContainer(oldRowMap);
+            if (id != null && c != null)
             {
-                var c = ContainerManager.getForId(containerId);
                 var r = ReportService.get().getReport(c, id);
                 if (r != null)
                 {
@@ -159,6 +159,15 @@ public class ReportsTable extends FilteredTable<CoreQuerySchema>
                 }
             }
             return oldRowMap;
+        }
+
+        private @Nullable Container getContainer(Map<String, Object> row)
+        {
+            String containerId = (String) row.get("containerId");
+            if (containerId != null)
+                return ContainerManager.getForId(containerId);
+
+            return null;
         }
     }
 

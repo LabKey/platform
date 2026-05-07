@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
@@ -161,17 +162,18 @@ public class CustomViewsTable extends FilteredTable<QueryUserSchema>
         }
 
         @Override
-        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
-            Integer id = (Integer)oldRowMap.get("customViewId");
-            if (id != null)
+            Integer id = (Integer)oldRow.get("customViewId");
+            Container c = getContainer(oldRow);
+            if (id != null && c != null)
             {
-                var view = QueryManager.get().getCustomView(container, id);
+                var view = QueryManager.get().getCustomView(c, id);
                 if (view != null)
                 {
                     if (view.getCustomViewOwner() == null)
                     {
-                        if (!container.hasPermission(user, EditSharedViewPermission.class))
+                        if (!c.hasPermission(user, EditSharedViewPermission.class))
                             throw new UnauthorizedException();
                     }
                     else
@@ -183,7 +185,7 @@ public class CustomViewsTable extends FilteredTable<QueryUserSchema>
                     QueryManager.get().delete(user, view);
                 }
             }
-            return oldRowMap;
+            return oldRow;
         }
 
         @Override
@@ -217,26 +219,40 @@ public class CustomViewsTable extends FilteredTable<QueryUserSchema>
         protected Map<String, Object> _update(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
         {
             Integer id = (Integer) oldRow.get("customViewId");
-            CstmView view = QueryManager.get().getCustomView(container, id);
-            if (view == null)
-                throw new ValidationException("Custom view not found: " + id);
-            if (row.containsKey("schema"))
-                view.setSchema((String) row.get("schema"));
-            if (row.containsKey("queryName"))
-                view.setQueryName((String) row.get("queryName"));
-            if (row.containsKey("name"))
-                view.setName((String) row.get("name"));
-            if (row.containsKey("customViewOwner"))
-                view.setCustomViewOwner((Integer) row.get("customViewOwner"));
-            if (row.containsKey("columns"))
-                view.setColumns((String) row.get("columns"));
-            if (row.containsKey("filter"))
-                view.setFilter((String) row.get("filter"));
-            if (row.containsKey("flags") && row.get("flags") instanceof Integer flags)
-                view.setFlags(flags);
+            Container c = getContainer(oldRow);
+            if (id != null && c != null)
+            {
+                CstmView view = QueryManager.get().getCustomView(c, id);
+                if (view == null)
+                    throw new ValidationException("Custom view not found: " + id);
+                if (row.containsKey("schema"))
+                    view.setSchema((String) row.get("schema"));
+                if (row.containsKey("queryName"))
+                    view.setQueryName((String) row.get("queryName"));
+                if (row.containsKey("name"))
+                    view.setName((String) row.get("name"));
+                if (row.containsKey("customViewOwner"))
+                    view.setCustomViewOwner((Integer) row.get("customViewOwner"));
+                if (row.containsKey("columns"))
+                    view.setColumns((String) row.get("columns"));
+                if (row.containsKey("filter"))
+                    view.setFilter((String) row.get("filter"));
+                if (row.containsKey("flags") && row.get("flags") instanceof Integer flags)
+                    view.setFlags(flags);
 
-            validate(view, container, user);
-            return CstmView.toRow(QueryManager.get().update(user, view));
+                validate(view, c, user);
+                return CstmView.toRow(QueryManager.get().update(user, view));
+            }
+            return oldRow;
+        }
+
+        private @Nullable Container getContainer(Map<String, Object> row)
+        {
+            String containerId = (String) row.get("container");
+            if (containerId != null)
+                return ContainerManager.getForId(containerId);
+
+            return null;
         }
 
         private void validate(CstmView view, Container c, User user)

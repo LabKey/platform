@@ -16,8 +16,10 @@
 package org.labkey.query.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -117,13 +119,26 @@ public class QueriesTable extends FilteredTable<QueryUserSchema>
         @Override
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws SQLException, QueryUpdateServiceException, InvalidKeyException
         {
-            var queryDef = QueryDefCache.getQueryDefById(container, (Integer)oldRowMap.get("queryDefId"));
-            if (queryDef != null)
+            Container c = getContainer(oldRowMap);
+            if (c != null)
             {
-                QueryDefinitionImpl queryDefImpl = new CustomQueryDefinitionImpl(user, container, queryDef);
-                queryDefImpl.delete(user);
+                var queryDef = QueryDefCache.getQueryDefById(c, (Integer)oldRowMap.get("queryDefId"));
+                if (queryDef != null)
+                {
+                    QueryDefinitionImpl queryDefImpl = new CustomQueryDefinitionImpl(user, c, queryDef);
+                    queryDefImpl.delete(user);
+                }
             }
             return oldRowMap;
+        }
+
+        private @Nullable Container getContainer(Map<String, Object> row)
+        {
+            String containerId = (String) row.get("container");
+            if (containerId != null)
+                return ContainerManager.getForId(containerId);
+
+            return null;
         }
     }
 }
