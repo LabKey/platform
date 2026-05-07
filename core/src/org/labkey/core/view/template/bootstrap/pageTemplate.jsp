@@ -112,7 +112,7 @@
 </footer>
 <% }
 if (null != me.getViewContext().getContainer()) {
-%><a href="<%=h(me.getPermaLink())%>" id="permalink" name="permalink" style="display: none;"></a><%
+%><a href="<%=h(me.getPermaLink())%>" id="permalink" name="permalink" style="display: none;"><span class="sr-only">Page link</span></a><%
 }
 %><!-- <%= h(request.getHeader("User-Agent")) %> -->
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
