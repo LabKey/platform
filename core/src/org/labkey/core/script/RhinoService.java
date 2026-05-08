@@ -1079,7 +1079,7 @@ class SandboxContextFactory extends ContextFactory
         private SandboxContext(SandboxContextFactory factory)
         {
             super(factory);
-            setLanguageVersion(Context.VERSION_1_6); // TODO: Old version for now. Need to make admin selectable.
+            setLanguageVersion(Context.VERSION_ES6); // TODO: New version for now. Make configurable.
             startTime = HeartBeat.currentTimeMillis();
         }
     }
