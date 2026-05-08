@@ -3309,7 +3309,6 @@ public class AdminController extends SpringActionController
             "org.labkey.api.module.ModuleResourceCache"
         );
 
-        @Nullable
         private Renderable descriptionCell(String description, @Nullable StackTraceElement[] creationStackTrace)
         {
             StringBuilder sb = new StringBuilder();
@@ -3765,30 +3764,10 @@ public class AdminController extends SpringActionController
         return url;
     }
 
-    public static ActionURL getClearCachesURL(boolean clearCaches, boolean gc)
-    {
-        ActionURL url = new ActionURL(ClearCachesAction.class, ContainerManager.getRoot());
-
-        if (clearCaches)
-            url.addParameter(MemForm.Params.clearCaches, "1");
-
-        if (gc)
-            url.addParameter(MemForm.Params.gc, "1");
-
-        return url;
-    }
-
     public static ActionURL getClearCacheURL(String debugName)
     {
         return new ActionURL(ClearCachesAction.class, ContainerManager.getRoot())
             .addParameter(MemForm.Params.debugName, debugName);
-    }
-
-    /** @deprecated Use {@link #getClearCacheURL(String)} — individual cache clearing now requires a POST confirmation */
-    @Deprecated
-    public static ActionURL getCacheURL(String debugName)
-    {
-        return getClearCacheURL(debugName);
     }
 
     private static volatile String lastCacheMemUsed = null;
