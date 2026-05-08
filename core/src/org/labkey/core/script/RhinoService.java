@@ -55,6 +55,7 @@ import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeJavaObject;
+import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.RhinoException;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
@@ -835,7 +836,16 @@ class RhinoEngine extends RhinoScriptEngine
                 extraModules = Map.of(ScriptTrigger.SERVER_CONTEXT_SCRIPT_NAME, scriptContextScript);
             }
 
-            Require require = new Require(cx, getTopLevel(), new WrappingModuleScriptProvider(_moduleScriptProvider, extraModules), null, null, true);
+            // Rhino 1.9.1's ModuleScope constructor passes its prototype argument to
+            // TopLevel.cacheBuiltins(), which unconditionally calls putProperty() to register
+            // __GeneratorFunction (ES6 generator support). This fails with "Cannot modify a
+            // sealed object" if the prototype is the sealed topLevel. Using a thin non-sealed
+            // wrapper with topLevel as its prototype lets cacheBuiltins write safely while
+            // still making all built-ins visible to module scripts via the prototype chain.
+            NativeObject moduleNativeScope = new NativeObject();
+            moduleNativeScope.setPrototype(getTopLevel());
+            moduleNativeScope.setParentScope(null);
+            Require require = new Require(cx, moduleNativeScope, new WrappingModuleScriptProvider(_moduleScriptProvider, extraModules), null, null, true);
             require.install(scriptable);
         }
 
