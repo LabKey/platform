@@ -18,12 +18,15 @@ package org.labkey.query.controllers;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -63,6 +66,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.query.CustomViewUtil;
 import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.persist.QueryDef;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -302,9 +306,6 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             }
             resp.put("indices", jsonIndices);
 
-            if (!tinfo.getAltKeysForUpdate().isEmpty())
-                resp.put("altUpdateKeys", tinfo.getAltKeysForUpdate());
-
             Set<String> disabledSystemFields = tinfo.getDisabledSystemFields();
             if (disabledSystemFields != null && !disabledSystemFields.isEmpty())
                 resp.put("disabledSystemFields", disabledSystemFields);
@@ -460,7 +461,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         return colProps;
     }
 
-    public static class Form
+    public static class Form implements HasBindParameters
     {
         private String _queryName;
         private String _schemaName;
@@ -494,11 +495,6 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         public String[] getViewName()
         {
             return _viewName;
-        }
-
-        public void setViewName(String[] viewName)
-        {
-            _viewName = viewName;
         }
 
         public String getFk()
@@ -549,6 +545,24 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         public void setIncludeTriggers(boolean includeTriggers)
         {
             _includeTriggers = includeTriggers;
+        }
+
+        @Override
+        public @NotNull BindException bindParameters(PropertyValues params)
+        {
+            // GitHub Issue #936 : manually bind the viewName parameter
+            var viewName = params.getPropertyValue("viewName");
+            if (viewName != null)
+            {
+                var value = viewName.getValue();
+                if (value instanceof String[] strs)
+                    _viewName = strs;
+                else if (value instanceof String str)
+                    _viewName = new String[] { str };
+                else
+                    LOG.error("Unexpected viewName parameter type: " + value);
+            }
+            return BaseViewAction.springBindParameters(this, "form", params);
         }
     }
 }

@@ -29,8 +29,11 @@ import org.labkey.devtools.authentication.TestSecondaryProvider;
 import org.labkey.devtools.authentication.TestSsoController;
 import org.labkey.devtools.authentication.TestSsoProvider;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 public class DevtoolsModule extends CodeOnlyModule
@@ -61,10 +64,13 @@ public class DevtoolsModule extends CodeOnlyModule
         addController("testsso", TestSsoController.class);
         AuthenticationManager.registerProvider(new TestSsoProvider());
 
-        OptionalFeatureService.get().addExperimentalFeatureFlag(Domain.EXPERIMENTAL_FUZZ_STORAGE_NAME,
+        OptionalFeatureService.get().addExperimentalFeatureFlag(
+            Domain.EXPERIMENTAL_FUZZ_STORAGE_NAME,
             "'fuzz' name of database columns used to back domain properties",
             "This is dev/test feature and not intended for any production usage.",
-            false, true);
+            false,
+            true
+        );
     }
 
     @Override
@@ -75,6 +81,17 @@ public class DevtoolsModule extends CodeOnlyModule
     @Override
     public @NotNull Collection<Supplier<Class<?>>> getIntegrationTestFactories()
     {
-        return Collections.singletonList(new JspTestCase("/org/labkey/devtools/test/JspTestCaseTest.jsp"));
+        List<Supplier<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        list.add(new JspTestCase("/org/labkey/devtools/test/JspTestCaseTest.jsp"));
+        return list;
+    }
+
+    @Override
+    public @NotNull Set<Class<?>> getIntegrationTests()
+    {
+        return Set.of(
+            TestController.JsonInputLimitTest.class,
+            ToolsController.TestCase.class
+        );
     }
 }

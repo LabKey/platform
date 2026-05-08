@@ -181,10 +181,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     private final Map<String, CounterDefinition> _counterDefinitionMap = new CaseInsensitiveHashMap<>();    // Really only 1 for now, but could be more in future
 
     /* If a subclass generates a non-trivial FROM clause in getFromSQL(), it may need to track dependencies
-     * for calculated columns.  This is where we do that.  This is setup in loadAllButCustomizerFromXML(), and
-     * and used in getFromSQL(String alias, Set<FieldKey> cols)
+     * for calculated columns. Lazily built from each column's getReferencedFieldKeys() and used in
+     * getFromSQL(String alias, Set<FieldKey> cols). Cleared whenever the column shape changes.
      */
-    protected final HashMap<FieldKey, HashSet<FieldKey>> _referencedColumns = new HashMap<>();
+    private volatile Map<FieldKey, Set<FieldKey>> _referencedColumns;
 
     private boolean _initialColumnsAreAdded = false;
 
@@ -325,7 +325,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         }
     }
 
-
     protected Map<String, ColumnInfo> constructColumnMap()
     {
         if (isCaseSensitive())
@@ -392,23 +391,54 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             return new SQLFragment().append("(").append(getFromSQL()).append(") ").appendIdentifier(alias);
     }
 
+    // Clear the cached resolved/referenced columns so we regenerate them when the shape of the table changes
+    private void clearColumnReferences()
+    {
+        _resolvedColumns.clear();
+        _referencedColumns = null;
+    }
+
     /** When a table a) overrides (String alias, Set<FieldKey> cols) b) has CalculatedColumns we need to make sure that
      * we include the dependent columns in the Set<>.
      */
     protected Set<FieldKey> expandColumns(Set<FieldKey> columns)
     {
-        if (null == columns || columns.isEmpty() || _referencedColumns.isEmpty())
+        if (null == columns || columns.isEmpty())
             return columns;
-        // We're not recursively expanding. However, if expressions can reference each other we'll have to.
+
+        var referenced = getReferencedColumns();
+        if (referenced.isEmpty())
+            return columns;
+
+        // We're not recursively expanding. However, if expressions can reference each other, we'll have to.
         HashSet<FieldKey> expanded = new HashSet<>();
         for (var fk : columns)
         {
             expanded.add(fk);
-            HashSet<FieldKey> refs = _referencedColumns.get(fk);
+            Set<FieldKey> refs = referenced.get(fk);
             if (null != refs)
                 expanded.addAll(refs);
         }
+
         return expanded;
+    }
+
+    private Map<FieldKey, Set<FieldKey>> getReferencedColumns()
+    {
+        if (_referencedColumns == null)
+        {
+            var built = new HashMap<FieldKey, Set<FieldKey>>();
+            for (var col : getColumns())
+            {
+                var deps = col.getReferencedFieldKeys();
+                if (!deps.isEmpty())
+                    built.put(col.getFieldKey(), deps);
+            }
+
+            _referencedColumns = built.isEmpty() ? Map.of() : Collections.unmodifiableMap(built);
+        }
+
+        return _referencedColumns;
     }
 
     @Override
@@ -439,8 +469,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             List<ColumnInfo> pkColumns = getPkColumns();
             if (pkColumns.size() != 1)
                 return new NamedObjectList();
-            else
-                return getSelectList(pkColumns.get(0), Collections.emptyList(), maxRows, titleColumnInfo);
+
+            return getSelectList(pkColumns.getFirst(), Collections.emptyList(), maxRows, titleColumnInfo);
         }
 
         ColumnInfo column = getColumn(columnName);
@@ -460,12 +490,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         final int titleIndex;
         if (!(firstColumn.equals(titleColumn)))
         {
-            cols = Arrays.asList(firstColumn, titleColumn);
+            cols = List.of(firstColumn, titleColumn);
             titleIndex = 2;
         }
         else
         {
-            cols = Arrays.asList(firstColumn);
+            cols = List.of(firstColumn);
             titleIndex = 1;
         }
 
@@ -563,7 +593,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 }
             }
             if (null == _titleColumn && !getColumns().isEmpty())
-                _titleColumn = getColumns().get(0).getName();
+                _titleColumn = getColumns().getFirst().getName();
         }
 
         return _titleColumn;
@@ -773,17 +803,18 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     {
         checkLocked();
         ensureInitialColumnsAreAdded();
-        // Clear the cached resolved columns so we regenerate it if the shape of the table changes
-        _resolvedColumns.clear();
-        return _columnMap.remove(column.getName()) != null;
+
+        boolean removed = _columnMap.remove(column.getName()) != null;
+        if (removed)
+            clearColumnReferences();
+
+        return removed;
     }
 
     public MutableColumnInfo addColumn(MutableColumnInfo column)
     {
         checkLocked();
         ensureInitialColumnsAreAdded();
-        // Not true if this is a VirtualTableInfo
-        // assert column.getParentTable() == this;
         if (_columnMap.containsKey(column.getName()))
         {
             String message = "Column " + column.getName() + " already exists for table " + getName() + ". Full set of existing columns: " + _columnMap.keySet();
@@ -792,9 +823,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             assert false : message;
         }
         _columnMap.put(column.getName(), column);
-        // Clear the cached resolved columns so we regenerate it if the shape of the table changes
-        _resolvedColumns.clear();
+        clearColumnReferences();
         assert !(column instanceof BaseColumnInfo) || ((BaseColumnInfo)column).lockName();
+
         return column;
     }
 
@@ -803,8 +834,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
      * This is usually only done in TableInfo.afterConstruct() to modify the behavior of a column.
      * Because the ColumnInfo implementation can change in afterConstruct(), TableInfo implementations
      * should hold onto columnInfo references by FieldKey, and not by reference.
-
-     * during construction.
      */
     public ColumnInfo replaceColumn(ColumnInfo updated, ColumnInfo existing)
     {
@@ -819,11 +848,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             throw new IllegalStateException("Column must have the same name");
 
         _columnMap.put(updated.getName(), updated);
-        // Clear the cached resolved columns so we regenerate it if the shape of the table changes
-        _resolvedColumns.clear();
+        clearColumnReferences();
+
         return updated;
     }
-
 
     protected ColumnInfo transformColumn(MutableColumnInfo existing, @Nullable ColumnInfoTransformer t)
     {
@@ -831,10 +859,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         existing.checkLocked();
         if (null == t)
             return existing;
+
         MutableColumnInfo updated = t.apply(existing);
         return replaceColumn(updated, existing);
     }
-
 
     public void addCounterDefinition(@NotNull CounterDefinition counterDef)
     {
@@ -1380,7 +1408,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (xmlTable.isSetTableUrl())
             _detailsURL = DetailsURL.fromXML(xmlTable.getTableUrl(), errors);
 
-
         if (xmlTable.isSetCacheSize())
             _cacheSize = xmlTable.getCacheSize();
 
@@ -1465,9 +1492,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 try
                 {
                     var wrappedColumn = QueryService.get().createQueryExpressionColumn(this, FieldKey.fromParts(xmlColumn.getColumnName()), sql, xmlColumn);
-                    HashSet<FieldKey> referencedColumns = new HashSet<>();
-                    QueryService.get().bindQueryExpressionColumn(wrappedColumn, existingColumns, true, referencedColumns);
-                    _referencedColumns.put(wrappedColumn.getFieldKey(), referencedColumns);
+                    QueryService.get().bindQueryExpressionColumn(wrappedColumn, existingColumns, true, null);
                     calculatedFieldKeys.add(wrappedColumn.getFieldKey());
                     addColumn(wrappedColumn);
                 }
@@ -1503,7 +1528,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             {
                 warnings.add(new QueryParseWarning("Invalid AuditLogging: " + auditBehavior,null,0,0));
             }
-
         }
 
         _warnings.addAll(warnings);
@@ -2140,7 +2164,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         {
             List<String> pks = getPkColumnNames();
             if (pks.size() == 1)
-                _auditRowPk = FieldKey.fromParts(pks.get(0));
+                _auditRowPk = FieldKey.fromParts(pks.getFirst());
             else if (getColumn(FieldKey.fromParts("EntityId")) != null)
                 _auditRowPk = FieldKey.fromParts("EntityId");
             else if (getColumn(FieldKey.fromParts("RowId")) != null)
@@ -2314,6 +2338,31 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public boolean allowRobotsIndex()
     {
         return getUserSchema().allowRobotsIndex();
+    }
+
+    @NotNull
+    private final Map<Enum, Object> _customTableConfigs = new HashMap<>();
+
+    public void putCustomTableConfig(Enum key, Object value)
+    {
+        _customTableConfigs.put(key, value);
+    }
+
+    @NotNull
+    public Map<Enum, Object> getCustomTableConfigs()
+    {
+        return _customTableConfigs;
+    }
+
+    @Nullable
+    public Object getCustomTableConfig(Enum key)
+    {
+        return getCustomTableConfigs().get(key);
+    }
+
+    public boolean getCustomTableConfigBoolean(Enum key)
+    {
+        return Boolean.TRUE == getCustomTableConfig(key);
     }
 
     public static class TestCase extends Assert{

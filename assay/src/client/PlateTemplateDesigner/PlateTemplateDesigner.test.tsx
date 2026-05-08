@@ -21,7 +21,7 @@ jest.mock('@labkey/api', () => ({
     },
     Utils: {
         // Pass the callback through unchanged so tests can invoke it directly.
-        getCallbackWrapper: (fn: any) => fn,
+        getCallbackWrapper: (fn: (...args: unknown[]) => unknown) => fn,
     },
 }));
 
@@ -43,8 +43,8 @@ const mockPlate: PlateTemplate = {
 };
 
 describe('PlateTemplateDesigner', () => {
-    let successCallback: ((response: any) => void) | undefined;
-    let failureCallback: ((response: any) => void) | undefined;
+    let successCallback: ((response: unknown) => void) | undefined;
+    let failureCallback: ((response: unknown) => void) | undefined;
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -85,9 +85,11 @@ describe('PlateTemplateDesigner', () => {
 
         test('uses defaultPlateName as the initial plate name when provided', () => {
             render(<PlateTemplateDesigner />);
-            act(() => successCallback?.({
-                data: { ...mockPlate, defaultPlateName: 'Copy of Test Plate', name: 'Test Plate' },
-            }));
+            act(() =>
+                successCallback?.({
+                    data: { ...mockPlate, defaultPlateName: 'Copy of Test Plate', name: 'Test Plate' },
+                })
+            );
             expect(screen.getByDisplayValue('Copy of Test Plate')).toBeInTheDocument();
         });
 

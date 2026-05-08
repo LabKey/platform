@@ -10,7 +10,9 @@
     "build-dev": "npm run clean && cross-env NODE_ENV=development webpack --config node_modules/@labkey/build/webpack/dev.config.js --color",
     "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile",
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen",
-    "test": "cross-env NODE_ENV=test jest"
+    "test": "cross-env NODE_ENV=test jest",
+    "lint": "eslint",
+    "lint-fix": "eslint --fix"
   },
   "jest": {
     "globals": {
@@ -47,10 +49,11 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.31.1"
+    "@labkey/components": "7.35.1"
   },
   "devDependencies": {
-    "@labkey/build": "9.1.1",
+    "@labkey/build": "9.1.2",
+    "@labkey/eslint-config": "1.2.0",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",

@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 import React from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 
 import { PlateTemplate, WellGroup } from '../models';
@@ -47,8 +47,8 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof GroupTypesPa
         plate: makePlate(),
         activeGroup: null,
         activeTab: 'SPECIMEN',
-        colorMap: new Map<number, string>(),
-        hoveredWellGroupId: null as number | null,
+        colorMap: new Map<number, { color: string; colorIndex: number }>(),
+        hoveredWellGroupId: null as null | number,
         onGroupSelect: jest.fn(),
         onTabChange: jest.fn(),
         onAddGroup: jest.fn(),
@@ -60,89 +60,6 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof GroupTypesPa
     const result = render(<GroupTypesPanel {...props} />);
     return { ...result, props };
 }
-
-describe('GroupTypesPanel — create row: select vs input', () => {
-    test('shows a <select> when unused default names remain', () => {
-        renderPanel({
-            plate: makePlate({ typesToDefaultGroups: { SPECIMEN: ['Virus', 'Cell Control'] } }),
-        });
-        expect(screen.getByRole('combobox', { name: 'Group name' })).toBeInTheDocument();
-        expect(screen.queryByRole('textbox', { name: 'Group name' })).toBeNull();
-    });
-
-    test('<select> contains only the unused defaults', () => {
-        renderPanel({
-            plate: makePlate({
-                typesToDefaultGroups: { SPECIMEN: ['Virus', 'Cell Control'] },
-                groups: [makeGroup({ name: 'Virus' })],  // 'Virus' already used
-            }),
-        });
-        const select = screen.getByRole('combobox', { name: 'Group name' });
-        const options = Array.from(select.querySelectorAll('option')).map(o => o.textContent);
-        expect(options).toEqual(['Cell Control']);
-    });
-
-    test('shows a text <input> when all defaults are used', () => {
-        renderPanel({
-            plate: makePlate({
-                typesToDefaultGroups: { SPECIMEN: ['Virus'] },
-                groups: [makeGroup({ name: 'Virus' })],
-            }),
-        });
-        expect(screen.getByRole('textbox', { name: 'Group name' })).toBeInTheDocument();
-        expect(screen.queryByRole('combobox', { name: 'Group name' })).toBeNull();
-    });
-
-    test('shows a text <input> when no defaults are configured for the type', () => {
-        renderPanel({ plate: makePlate({ typesToDefaultGroups: {} }) });
-        expect(screen.getByRole('textbox', { name: 'Group name' })).toBeInTheDocument();
-    });
-});
-
-describe('GroupTypesPanel — create row: name conflict detection', () => {
-    test('Create button is enabled for a unique name', async () => {
-        renderPanel({ plate: makePlate({ groups: [makeGroup({ name: 'Existing' })] }) });
-        await userEvent.type(screen.getByRole('textbox', { name: 'Group name' }), 'New Group');
-        expect(screen.getByRole('button', { name: 'Create' })).toBeEnabled();
-    });
-
-    test('Create button is disabled and error shown when name conflicts', async () => {
-        renderPanel({ plate: makePlate({ groups: [makeGroup({ name: 'Existing' })] }) });
-        await userEvent.type(screen.getByRole('textbox', { name: 'Group name' }), 'Existing');
-        expect(screen.getByRole('button', { name: 'Create' })).toBeDisabled();
-        expect(screen.getByText(/already exists in this type/i)).toBeInTheDocument();
-    });
-
-    test('conflict only checks groups of the same type', async () => {
-        // A group named 'Shared Name' in CONTROL should not conflict with SPECIMEN create input
-        renderPanel({
-            plate: makePlate({
-                groups: [makeGroup({ rowId: 2, type: 'CONTROL', name: 'Shared Name' })],
-            }),
-        });
-        await userEvent.type(screen.getByRole('textbox', { name: 'Group name' }), 'Shared Name');
-        expect(screen.getByRole('button', { name: 'Create' })).toBeEnabled();
-        expect(screen.queryByText(/already exists/i)).toBeNull();
-    });
-
-    test('clicking Create calls onAddGroup with the trimmed name', async () => {
-        const { props } = renderPanel();
-        await userEvent.type(screen.getByRole('textbox', { name: 'Group name' }), '  My Group  ');
-        await userEvent.click(screen.getByRole('button', { name: 'Create' }));
-        expect(props.onAddGroup).toHaveBeenCalledWith('SPECIMEN', 'My Group');
-    });
-
-    test('pressing Enter in the name input calls onAddGroup', async () => {
-        const { props } = renderPanel();
-        await userEvent.type(screen.getByRole('textbox', { name: 'Group name' }), 'My Group{Enter}');
-        expect(props.onAddGroup).toHaveBeenCalledWith('SPECIMEN', 'My Group');
-    });
-
-    test('Create button is disabled when name is empty', () => {
-        renderPanel();
-        expect(screen.getByRole('button', { name: 'Create' })).toBeDisabled();
-    });
-});
 
 describe('GroupTypesPanel — inline rename', () => {
     function renderWithActiveGroup() {
@@ -190,7 +107,7 @@ describe('GroupTypesPanel — inline rename', () => {
         const input = screen.getByRole('textbox', { name: 'Rename Group A' });
         await userEvent.clear(input);
         await userEvent.type(input, 'Group B');
-        await userEvent.tab();  // blur the input
+        await userEvent.tab(); // blur the input
         expect(props.onRenameGroup).not.toHaveBeenCalled();
         expect(screen.queryByText(/"Group B" is already used/i)).toBeNull();
         expect(screen.queryByRole('textbox', { name: 'Rename Group A' })).toBeNull();
@@ -205,38 +122,39 @@ describe('GroupTypesPanel — inline rename', () => {
         expect(props.onRenameGroup).not.toHaveBeenCalled();
         expect(screen.queryByRole('textbox', { name: 'Rename Group A' })).toBeNull();
     });
-});
 
-describe('GroupTypesPanel — tab switching resets create input', () => {
-    test('switching activeTab resets the create name to empty (no defaults)', async () => {
-        const { rerender, props } = renderPanel({
-            plate: makePlate({ canCreateGroupsByType: { SPECIMEN: true, CONTROL: true } }),
-            activeTab: 'SPECIMEN',
-        });
-        await userEvent.type(screen.getByRole('textbox', { name: 'Group name' }), 'In Progress');
-        expect(screen.getByRole('textbox', { name: 'Group name' })).toHaveValue('In Progress');
-
-        rerender(
-            <GroupTypesPanel
-                {...props}
-                plate={makePlate({ canCreateGroupsByType: { SPECIMEN: true, CONTROL: true } })}
-                activeTab="CONTROL"
-            />
-        );
-        expect(screen.getByRole('textbox', { name: 'Group name' })).toHaveValue('');
+    test('pressing Enter with a valid name closes the rename input', async () => {
+        const { props } = renderWithActiveGroup();
+        await userEvent.click(screen.getByRole('button', { name: 'Rename Group A' }));
+        const input = screen.getByRole('textbox', { name: 'Rename Group A' });
+        await userEvent.clear(input);
+        await userEvent.type(input, 'Group C{Enter}');
+        expect(props.onRenameGroup).toHaveBeenCalledWith(1, 'Group C');
+        expect(screen.queryByRole('textbox', { name: 'Rename Group A' })).toBeNull();
     });
 
-    test('switching activeTab resets to the first unused default of the new tab', () => {
-        const plate = makePlate({
-            canCreateGroupsByType: { SPECIMEN: true, CONTROL: true },
-            typesToDefaultGroups: { CONTROL: ['Positive', 'Negative'] },
-        });
-        const { rerender, props } = renderPanel({ plate, activeTab: 'SPECIMEN' });
+    test('blurring with a valid non-conflicting name commits and closes the rename input', async () => {
+        const { props } = renderWithActiveGroup();
+        await userEvent.click(screen.getByRole('button', { name: 'Rename Group A' }));
+        const input = screen.getByRole('textbox', { name: 'Rename Group A' });
+        await userEvent.clear(input);
+        await userEvent.type(input, 'Group C');
+        await userEvent.tab();
+        expect(props.onRenameGroup).toHaveBeenCalledWith(1, 'Group C');
+        expect(screen.queryByRole('textbox', { name: 'Rename Group A' })).toBeNull();
+    });
 
-        rerender(<GroupTypesPanel {...props} plate={plate} activeTab="CONTROL" />);
-
-        const select = screen.getByRole('combobox', { name: 'Group name' });
-        expect(select).toHaveValue('Positive');
+    test('blur fired synchronously after Escape does not commit the rename', async () => {
+        // Browsers fire blur synchronously on the focused element when it is removed from the
+        // DOM. jsdom does not replicate this, so we fire it manually to cover the isCancellingRef
+        // guard that prevents Escape from inadvertently committing via the blur handler.
+        const { props } = renderWithActiveGroup();
+        await userEvent.click(screen.getByRole('button', { name: 'Rename Group A' }));
+        const input = screen.getByRole('textbox', { name: 'Rename Group A' });
+        await userEvent.type(input, 'New Name');
+        fireEvent.keyDown(input, { key: 'Escape' });
+        fireEvent.blur(input);
+        expect(props.onRenameGroup).not.toHaveBeenCalled();
     });
 });
 
@@ -260,25 +178,19 @@ describe('GroupTypesPanel — group selection', () => {
     test('clicking a group row calls onGroupSelect with that group', async () => {
         const { props } = renderWithGroup();
         await userEvent.click(screen.getByRole('option', { name: 'Group A' }));
-        expect(props.onGroupSelect).toHaveBeenCalledWith(
-            expect.objectContaining({ rowId: 1, name: 'Group A' })
-        );
+        expect(props.onGroupSelect).toHaveBeenCalledWith(expect.objectContaining({ rowId: 1, name: 'Group A' }));
     });
 
     test('pressing Enter on a group row calls onGroupSelect', () => {
         const { props } = renderWithGroup();
         fireEvent.keyDown(screen.getByRole('option', { name: 'Group A' }), { key: 'Enter' });
-        expect(props.onGroupSelect).toHaveBeenCalledWith(
-            expect.objectContaining({ rowId: 1, name: 'Group A' })
-        );
+        expect(props.onGroupSelect).toHaveBeenCalledWith(expect.objectContaining({ rowId: 1, name: 'Group A' }));
     });
 
     test('pressing Space on a group row calls onGroupSelect', () => {
         const { props } = renderWithGroup();
         fireEvent.keyDown(screen.getByRole('option', { name: 'Group A' }), { key: ' ' });
-        expect(props.onGroupSelect).toHaveBeenCalledWith(
-            expect.objectContaining({ rowId: 1, name: 'Group A' })
-        );
+        expect(props.onGroupSelect).toHaveBeenCalledWith(expect.objectContaining({ rowId: 1, name: 'Group A' }));
     });
 });
 
@@ -305,39 +217,6 @@ describe('GroupTypesPanel — delete group', () => {
         // First click shows inline confirmation; click No to cancel
         await userEvent.click(screen.getByRole('button', { name: 'Cancel delete Group A' }));
         expect(props.onDeleteGroup).not.toHaveBeenCalled();
-    });
-});
-
-describe('GroupTypesPanel — multi-create dialog', () => {
-    // Give the SPECIMEN type a default name so newGroupName starts as 'Virus',
-    // which becomes the dialog's initialBaseName.
-    function renderWithDefault() {
-        return renderPanel({
-            plate: makePlate({ typesToDefaultGroups: { SPECIMEN: ['Virus'] } }),
-        });
-    }
-
-    test('clicking "Create multiple..." opens the dialog', async () => {
-        renderWithDefault();
-        await userEvent.click(screen.getByRole('button', { name: 'Create multiple...' }));
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
-    });
-
-    test('confirming multi-create calls onAddGroup for each generated name', async () => {
-        const { props } = renderWithDefault();
-        await userEvent.click(screen.getByRole('button', { name: 'Create multiple...' }));
-        // Dialog opens with initialBaseName='Virus', default count=2
-        await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Create' }));
-        expect(props.onAddGroup).toHaveBeenCalledWith('SPECIMEN', 'Virus 1');
-        expect(props.onAddGroup).toHaveBeenCalledWith('SPECIMEN', 'Virus 2');
-    });
-
-    test('closing the dialog with Cancel hides it', async () => {
-        renderWithDefault();
-        await userEvent.click(screen.getByRole('button', { name: 'Create multiple...' }));
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
-        await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }));
-        expect(screen.queryByRole('dialog')).toBeNull();
     });
 });
 
@@ -368,9 +247,7 @@ describe('GroupTypesPanel — well-hover highlighting (hoveredWellGroupId)', () 
             plate: makePlate({ groups: [group] }),
             hoveredWellGroupId: 1,
         });
-        expect(screen.getByRole('option', { name: 'Group A' })).toHaveClass(
-            'group-types-panel__group--highlighted'
-        );
+        expect(screen.getByRole('option', { name: 'Group A' })).toHaveClass('group-types-panel__group--highlighted');
     });
 
     test('group row does not receive --highlighted class when hoveredWellGroupId is null', () => {

@@ -97,6 +97,13 @@ public interface ForeignKey
     /* Schema path relative to the DefaultSchema (e.g., container) */
     SchemaKey getLookupSchemaKey();
 
+    /* The foreign key constraint name */
+    @Nullable
+    default String getFkName()
+    {
+        return null;
+    }
+
     /**
      * Just for introspection.
      * @return The name of the column in the foreign user schema table.

@@ -3,10 +3,10 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { FC, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
 
-import { PlateTemplate, Position, WellGroup, computeWarnings } from './models';
+import { computeWarnings, PlateTemplate, Position, WellGroup } from './models';
 import { StatusBar } from './components/StatusBar';
 import { GroupTypesPanel } from './components/GroupTypesPanel';
 import { RIGHT_TAB_PROPERTIES, RightPanel, RightTab } from './components/RightPanel';
@@ -15,59 +15,33 @@ import { TemplateGrid } from './components/TemplateGrid';
 
 import './PlateTemplateDesigner.scss';
 
-/**
- * Root component of the Plate Template Designer.
- *
- * ─── User workflow ──────────────────────────────────────────────────────────────
- * 1. On mount, URL parameters are read (templateName, plateId, assayType, rowCount,
- *    colCount, copy) and the plate definition is fetched from the server.
- * 2. The user selects a group type tab (e.g. CONTROL, SPECIMEN, REPLICATE).
- * 3. Within that type, the user selects or creates a named group.
- * 4. The user clicks or drags wells on the grid to paint them onto the active group.
- * 5. The user optionally edits well group properties in the right panel.
- * 6. "Save" persists without leaving; "Save & Close" saves then navigates to returnURL
- *    (or the plate list). "Cancel" navigates away without saving.
- *
- * ─── State architecture ─────────────────────────────────────────────────────────
- * `plate` is the single source of truth for all template data. All mutations go
- * through `setPlate` with functional updaters to avoid stale-closure bugs.
- *
- * `activeGroup` is a denormalized mirror of the currently selected group, kept in
- * sync with `plate` via the sync effect below. It exists separately because:
- *   - Callbacks that use `setPlate(prev => ...)` don't have access to the current
- *     group data inside the updater; they use `activeGroup` from their closure.
- *   - Components that show the active group (WellGroupProperties, TemplateGrid
- *     cell highlighting) need a stable reference that doesn't require traversing
- *     `plate.groups` on every access.
- *
- * ─── ID conventions ─────────────────────────────────────────────────────────────
- * Server-assigned group IDs are positive integers. Client-side created groups
- * receive temporary negative IDs (nextGroupIdRef counts down from -1). This ensures
- * new groups never collide with existing ones before the first save. The server
- * replaces all IDs with permanent values on save; the client does not update
- * individual group IDs — only the top-level `plate.rowId` is updated after save.
- *
- * ─── Cell interaction ───────────────────────────────────────────────────────────
- * Two cell callbacks are distinguished:
- *   `handleDragRect` — paints a rectangle; also evicts those cells from sibling
- *     groups of the same type (one cell can only belong to one group per type).
- *     Used during drag operations.
- *   `handleCellToggle` — toggle: if the cell is already in the active group, remove
- *     it; otherwise add it and evict it from any sibling group of the same type.
- *     Used for single-click (no drag movement).
- */
-
 const COLORS = [
-    '#4e79a7', '#f28e2b', '#e15759', '#76b7b2', '#59a14f',
-    '#ecb830', '#9b59b6', '#e84878', '#7a4222', '#888888',
-    '#30c068', '#ccd828', '#4848cc', '#d04018', '#18a8c0',
-    '#c030a8', '#8caa28', '#583848', '#c8d8e8', '#204888',
+    '#4e79a7',
+    '#f28e2b',
+    '#e15759',
+    '#76b7b2',
+    '#59a14f',
+    '#ecb830',
+    '#9b59b6',
+    '#e84878',
+    '#7a4222',
+    '#888888',
+    '#30c068',
+    '#ccd828',
+    '#4848cc',
+    '#d04018',
+    '#18a8c0',
+    '#c030a8',
+    '#8caa28',
+    '#583848',
+    '#c8d8e8',
+    '#204888',
 ];
 
-export function assignColors(groups: WellGroup[]): Map<number, string> {
-    const map = new Map<number, string>();
+export function assignColors(groups: WellGroup[]): Map<number, { color: string; colorIndex: number }> {
+    const map = new Map<number, { color: string; colorIndex: number }>();
     groups.forEach((g, i) => {
-        map.set(g.rowId, COLORS[i % COLORS.length]);
+        map.set(g.rowId, { color: COLORS[i % COLORS.length], colorIndex: i % COLORS.length });
     });
     return map;
 }
@@ -106,26 +80,31 @@ export function isSameOrigin(url: string): boolean {
     }
 }
 
-export function PlateTemplateDesigner(): JSX.Element {
-    const [plate, setPlate] = useState<PlateTemplate | null>(null);
-    const [activeGroup, setActiveGroup] = useState<WellGroup | null>(null);
+export const PlateTemplateDesigner: FC = () => {
+    const [plate, setPlate] = useState<null | PlateTemplate>(null);
+    const [activeGroup, setActiveGroup] = useState<null | WellGroup>(null);
     const [activeTab, setActiveTab] = useState<string>('');
     const [rightTab, setRightTab] = useState<RightTab>(RIGHT_TAB_PROPERTIES);
     const [isDirty, setIsDirty] = useState(false);
     const [status, setStatus] = useState('');
-    const [colorMap, setColorMap] = useState<Map<number, string>>(new Map());
-    const [error, setError] = useState<string | null>(null);
+    const [colorMap, setColorMap] = useState<Map<number, { color: string; colorIndex: number }>>(new Map());
+    const [error, setError] = useState<null | string>(null);
     // rowId of the group being hovered in the group list; null when no group is hovered.
-    const [hoveredGroupId, setHoveredGroupId] = useState<number | null>(null);
+    const [hoveredGroupId, setHoveredGroupId] = useState<null | number>(null);
     // rowId of the group that owns the currently hovered/focused well; null when no such well.
-    const [hoveredWellGroupId, setHoveredWellGroupId] = useState<number | null>(null);
-    const plateNameRef = useRef<string>('');  // Mirrors plate.name; used in save-success to update URL without stale closure
-    const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const nextGroupIdRef = useRef(-1);  // Temporary negative IDs for client-created groups (see ID conventions above)
+    const [hoveredWellGroupId, setHoveredWellGroupId] = useState<null | number>(null);
+    const plateNameRef = useRef<string>(''); // Mirrors plate.name; used in save-success to update URL without stale closure
+    const statusTimerRef = useRef<null | ReturnType<typeof setTimeout>>(null);
+    const nextGroupIdRef = useRef(-1); // Temporary negative IDs for client-created groups (see ID conventions above)
     // Always-current ref so callbacks can read the latest activeGroup without stale-closure bugs.
-    const activeGroupRef = useRef<WellGroup | null>(null);
-    activeGroupRef.current = activeGroup;
-    const nextColorIndexRef = useRef(0);  // Monotonically increasing; never decrements on delete so colors stay unique
+    const activeGroupRef = useRef<null | WellGroup>(null);
+    // Set to true synchronously before intentional navigation (Cancel / Save & Close) so the
+    // beforeunload handler does not fire the "unsaved changes" prompt on those code paths.
+    const isIntentionalExitRef = useRef(false);
+    useLayoutEffect(() => {
+        activeGroupRef.current = activeGroup;
+    });
+    const nextColorIndexRef = useRef(0); // Monotonically increasing; never decrements on delete so colors stay unique
     // Capture returnURL once at mount; handleSave strips query params via replaceState, so reading from the URL later would return null.
     const returnURLRef = useRef(ActionURL.getParameter('returnUrl'));
 
@@ -138,7 +117,7 @@ export function PlateTemplateDesigner(): JSX.Element {
         const colCountStr = ActionURL.getParameter('colCount');
         const copy = ActionURL.getParameter('copy') === 'true' || ActionURL.getParameter('copyTemplate') === 'true';
 
-        const params: Record<string, string | number | boolean> = {};
+        const params: Record<string, boolean | number | string> = {};
         if (templateName) params.templateName = templateName;
         if (plateIdStr) params.plateId = parseInt(plateIdStr, 10);
         if (assayType) params.assayType = assayType;
@@ -157,22 +136,27 @@ export function PlateTemplateDesigner(): JSX.Element {
                 setPlate({ ...plate, name: plateNameRef.current });
                 setColorMap(assignColors(plate.groups));
                 nextColorIndexRef.current = plate.groups.length;
-                // Initialize below the minimum server rowId to avoid collisions.
-                // Server IDs should be positive, but guard against zero or negative values.
+                // Initialize below the minimum rowId to avoid collisions. Previously saved groups will have positive
+                // rowIds. When starting a new template, the defaults will have negative values.
                 const minRowId = plate.groups.reduce((min, g) => Math.min(min, g.rowId), 0);
                 nextGroupIdRef.current = Math.min(-1, minRowId - 1);
                 setActiveTab(plate.groupTypes[0] ?? '');
                 if (plate.copyMode) setIsDirty(true);
             }),
-            failure: Utils.getCallbackWrapper((response: any) => {
-                setError(response?.exception ?? 'Failed to load plate template.');
-            }, null, true),
+            failure: Utils.getCallbackWrapper(
+                (response: { exception?: string }) => {
+                    setError(response?.exception ?? 'Failed to load plate template.');
+                },
+                null,
+                true
+            ),
         });
     }, []);
 
-    const handleNameChange = useCallback((name: string) => {
+    const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const name = e.target.value;
         plateNameRef.current = name;
-        setPlate(prev => prev ? { ...prev, name } : null);
+        setPlate(prev => (prev ? { ...prev, name } : null));
         setIsDirty(true);
     }, []);
 
@@ -191,50 +175,56 @@ export function PlateTemplateDesigner(): JSX.Element {
     //
     // Unselect mode (drag started on a cell already in the group): removes all
     // rectangle cells from the pre-drag positions without affecting other groups.
-    const handleDragRect = useCallback((r1: number, c1: number, r2: number, c2: number, isUnselect: boolean, preDragPositions: Position[]) => {
-        const activeGroup = activeGroupRef.current;
-        if (!activeGroup) return;
-        const minRow = Math.min(r1, r2);
-        const maxRow = Math.max(r1, r2);
-        const minCol = Math.min(c1, c2);
-        const maxCol = Math.max(c1, c2);
-        const rectPositions: Position[] = [];
-        for (let r = minRow; r <= maxRow; r++) {
-            for (let c = minCol; c <= maxCol; c++) {
-                rectPositions.push({ row: r, col: c });
+    const handleDragRect = useCallback(
+        (r1: number, c1: number, r2: number, c2: number, isUnselect: boolean, preDragPositions: Position[]) => {
+            const activeGroup = activeGroupRef.current;
+            if (!activeGroup) return;
+            const minRow = Math.min(r1, r2);
+            const maxRow = Math.max(r1, r2);
+            const minCol = Math.min(c1, c2);
+            const maxCol = Math.max(c1, c2);
+            const rectPositions: Position[] = [];
+            for (let r = minRow; r <= maxRow; r++) {
+                for (let c = minCol; c <= maxCol; c++) {
+                    rectPositions.push({ row: r, col: c });
+                }
             }
-        }
-        const rectKeys = new Set(rectPositions.map(p => `${p.row},${p.col}`));
-        setPlate(prev => {
-            if (!prev) return null;
-            // Look up the active group's current type from prev to avoid stale-closure issues.
-            const currentType = prev.groups.find(g => g.rowId === activeGroup.rowId)?.type;
-            const updatedGroups = prev.groups.map(g => {
-                if (g.rowId === activeGroup.rowId) {
-                    if (isUnselect) {
-                        // Remove rect from pre-drag snapshot
-                        return { ...g, positions: preDragPositions.filter(p => !rectKeys.has(`${p.row},${p.col}`)) };
+            const rectKeys = new Set(rectPositions.map(p => `${p.row},${p.col}`));
+            setPlate(prev => {
+                if (!prev) return null;
+                // Look up the active group's current type from prev to avoid stale-closure issues.
+                const currentType = prev.groups.find(g => g.rowId === activeGroup.rowId)?.type;
+                const updatedGroups = prev.groups.map(g => {
+                    if (g.rowId === activeGroup.rowId) {
+                        if (isUnselect) {
+                            // Remove rect from pre-drag snapshot
+                            return {
+                                ...g,
+                                positions: preDragPositions.filter(p => !rectKeys.has(`${p.row},${p.col}`)),
+                            };
+                        }
+                        // Add rect to pre-drag snapshot (union, deduped)
+                        const preDragKeys = new Set(preDragPositions.map(p => `${p.row},${p.col}`));
+                        const added = rectPositions.filter(p => !preDragKeys.has(`${p.row},${p.col}`));
+                        return { ...g, positions: [...preDragPositions, ...added] };
                     }
-                    // Add rect to pre-drag snapshot (union, deduped)
-                    const preDragKeys = new Set(preDragPositions.map(p => `${p.row},${p.col}`));
-                    const added = rectPositions.filter(p => !preDragKeys.has(`${p.row},${p.col}`));
-                    return { ...g, positions: [...preDragPositions, ...added] };
-                }
-                if (!isUnselect && currentType !== undefined && g.type === currentType) {
-                    // Evict rectangle cells from sibling groups of the same type
-                    return { ...g, positions: g.positions.filter(p => !rectKeys.has(`${p.row},${p.col}`)) };
-                }
-                return g;
+                    if (!isUnselect && currentType !== undefined && g.type === currentType) {
+                        // Evict rectangle cells from sibling groups of the same type
+                        return { ...g, positions: g.positions.filter(p => !rectKeys.has(`${p.row},${p.col}`)) };
+                    }
+                    return g;
+                });
+                return { ...prev, groups: updatedGroups };
             });
-            return { ...prev, groups: updatedGroups };
-        });
-        setIsDirty(true);
-    }, []);
+            setIsDirty(true);
+        },
+        []
+    );
 
     const handleCellToggle = useCallback((row: number, col: number) => {
         const activeGroup = activeGroupRef.current;
         if (!activeGroup) return;
-        setPlate(prev => prev ? { ...prev, groups: toggleCell(prev.groups, activeGroup.rowId, row, col) } : null);
+        setPlate(prev => (prev ? { ...prev, groups: toggleCell(prev.groups, activeGroup.rowId, row, col) } : null));
         setIsDirty(true);
     }, []);
 
@@ -255,7 +245,7 @@ export function PlateTemplateDesigner(): JSX.Element {
         });
         setColorMap(prev => {
             const next = new Map(prev);
-            next.set(rowId, COLORS[colorIndex % COLORS.length]);
+            next.set(rowId, { color: COLORS[colorIndex % COLORS.length], colorIndex: colorIndex % COLORS.length });
             return next;
         });
         // allowNewGroups is a stub here; the plate-sync effect re-derives it from the updated plate.
@@ -263,35 +253,44 @@ export function PlateTemplateDesigner(): JSX.Element {
         setIsDirty(true);
     }, []);
 
-    const handleShift = useCallback((verticalShift: number, horizontalShift: number) => {
-        setPlate(prev => {
-            if (!prev) return null;
-            const { rows, cols } = prev;
-            const updatedGroups = prev.groups.map(g => {
-                if (g.type !== activeTab) return g;
-                return {
-                    ...g,
-                    positions: g.positions.map(p => ({
-                        row: ((p.row - verticalShift) % rows + rows) % rows,
-                        col: ((p.col - horizontalShift) % cols + cols) % cols,
-                    })),
-                };
+    const handleShift = useCallback(
+        (verticalShift: number, horizontalShift: number) => {
+            setPlate(prev => {
+                if (!prev) return null;
+                const { rows, cols } = prev;
+                const updatedGroups = prev.groups.map(g => {
+                    if (g.type !== activeTab) return g;
+                    return {
+                        ...g,
+                        positions: g.positions.map(p => ({
+                            row: (((p.row - verticalShift) % rows) + rows) % rows,
+                            col: (((p.col - horizontalShift) % cols) + cols) % cols,
+                        })),
+                    };
+                });
+                return { ...prev, groups: updatedGroups };
             });
-            return { ...prev, groups: updatedGroups };
-        });
-        setIsDirty(true);
-    }, [activeTab]);
+            setIsDirty(true);
+        },
+        [activeTab]
+    );
 
     const handleDeleteGroup = useCallback((rowId: number) => {
-        setPlate(prev => prev ? { ...prev, groups: prev.groups.filter(g => g.rowId !== rowId) } : null);
-        setColorMap(prev => { const next = new Map(prev); next.delete(rowId); return next; });
-        setActiveGroup(prev => prev?.rowId === rowId ? null : prev);
+        setPlate(prev => (prev ? { ...prev, groups: prev.groups.filter(g => g.rowId !== rowId) } : null));
+        setColorMap(prev => {
+            const next = new Map(prev);
+            next.delete(rowId);
+            return next;
+        });
+        setActiveGroup(prev => (prev?.rowId === rowId ? null : prev));
         setIsDirty(true);
     }, []);
 
     const handleRenameGroup = useCallback((rowId: number, newName: string) => {
-        setPlate(prev => prev ? { ...prev, groups: prev.groups.map(g => g.rowId === rowId ? { ...g, name: newName } : g) } : null);
-        setActiveGroup(prev => prev?.rowId === rowId ? { ...prev, name: newName } : prev);
+        setPlate(prev =>
+            prev ? { ...prev, groups: prev.groups.map(g => (g.rowId === rowId ? { ...g, name: newName } : g)) } : null
+        );
+        setActiveGroup(prev => (prev?.rowId === rowId ? { ...prev, name: newName } : prev));
         setIsDirty(true);
     }, []);
 
@@ -303,7 +302,9 @@ export function PlateTemplateDesigner(): JSX.Element {
             );
             return { ...prev, groups: updatedGroups };
         });
-        setActiveGroup(prev => prev?.rowId === groupRowId ? { ...prev, properties: { ...prev.properties, [key]: value } } : prev);
+        setActiveGroup(prev =>
+            prev?.rowId === groupRowId ? { ...prev, properties: { ...prev.properties, [key]: value } } : prev
+        );
         setIsDirty(true);
     }, []);
 
@@ -312,15 +313,15 @@ export function PlateTemplateDesigner(): JSX.Element {
             if (!prev) return null;
             const updatedGroups = prev.groups.map(g => {
                 if (g.rowId !== groupRowId) return g;
-                const { [key]: _removed, ...rest } = g.properties;
-                return { ...g, properties: rest };
+                const properties = Object.fromEntries(Object.entries(g.properties).filter(([k]) => k !== key));
+                return { ...g, properties };
             });
             return { ...prev, groups: updatedGroups };
         });
         setActiveGroup(prev => {
             if (prev?.rowId !== groupRowId) return prev;
-            const { [key]: _removed, ...rest } = prev.properties;
-            return { ...prev, properties: rest };
+            const properties = Object.fromEntries(Object.entries(prev.properties).filter(([k]) => k !== key));
+            return { ...prev, properties };
         });
         setIsDirty(true);
     }, []);
@@ -331,8 +332,10 @@ export function PlateTemplateDesigner(): JSX.Element {
     }, [plate]);
 
     const navigateAway = useCallback(() => {
+        isIntentionalExitRef.current = true;
         const returnURL = returnURLRef.current;
-        window.location.href = (returnURL && isSameOrigin(returnURL)) ? returnURL : ActionURL.buildURL('plate', 'plateList');
+        window.location.href =
+            returnURL && isSameOrigin(returnURL) ? returnURL : ActionURL.buildURL('plate', 'plateList');
     }, []);
 
     /**
@@ -341,25 +344,32 @@ export function PlateTemplateDesigner(): JSX.Element {
      * The plate is passed as a parameter (rather than closed over) so callers can pass the
      * latest snapshot without worrying about stale state.
      */
-    const requestSave = useCallback((currentPlate: PlateTemplate, onSuccess: (response: { data: { rowId: number } }) => void) => {
-        setStatus('Saving...');
-        Ajax.request({
-            url: ActionURL.buildURL('plate', 'saveDesignerTemplate.api'),
-            method: 'POST',
-            jsonData: currentPlate,
-            success: Utils.getCallbackWrapper(onSuccess),
-            failure: Utils.getCallbackWrapper((response: any) => {
-                setStatus('Save failed: ' + (response?.exception ?? 'unknown error'));
-            }, null, true),
-        });
-    }, []);
+    const requestSave = useCallback(
+        (currentPlate: PlateTemplate, onSuccess: (response: { data: { rowId: number } }) => void) => {
+            setStatus('Saving...');
+            Ajax.request({
+                url: ActionURL.buildURL('plate', 'saveDesignerTemplate.api'),
+                method: 'POST',
+                jsonData: currentPlate,
+                success: Utils.getCallbackWrapper(onSuccess),
+                failure: Utils.getCallbackWrapper(
+                    (response: { exception?: string }) => {
+                        setStatus('Save failed: ' + (response?.exception ?? 'unknown error'));
+                    },
+                    null,
+                    true
+                ),
+            });
+        },
+        []
+    );
 
     const handleSave = useCallback(() => {
         if (!plate) return;
-        requestSave(plate, (response) => {
+        requestSave(plate, response => {
             const rowId = response.data.rowId;
             setIsDirty(false);
-            setPlate(prev => prev ? { ...prev, rowId } : null);
+            setPlate(prev => (prev ? { ...prev, rowId } : null));
             // Update URL to canonical form so a refresh reloads this plate.
             const url = new URL(window.location.href);
             url.search = `?templateName=${encodeURIComponent(plateNameRef.current)}&plateId=${encodeURIComponent(rowId)}`;
@@ -398,10 +408,12 @@ export function PlateTemplateDesigner(): JSX.Element {
         };
     }, []);
 
-    // Warn on unsaved navigation
+    // Warn on unsaved navigation, but not when the user has explicitly chosen to leave
+    // (Cancel / Save & Close), which sets isIntentionalExitRef synchronously before the
+    // href change so we can suppress the prompt even before React re-renders.
     useEffect(() => {
         const handler = (e: BeforeUnloadEvent) => {
-            if (isDirty) {
+            if (isDirty && !isIntentionalExitRef.current) {
                 e.preventDefault();
                 e.returnValue = '';
             }
@@ -440,75 +452,77 @@ export function PlateTemplateDesigner(): JSX.Element {
     }
 
     if (!plate) {
-        return <div className="plate-template-designer__loading" role="status">Loading...</div>;
+        return (
+            <div className="plate-template-designer__loading" role="status">
+                Loading...
+            </div>
+        );
     }
 
     return (
         <div className="plate-template-designer">
             <StatusBar
                 isDirty={isDirty}
-                status={status}
-                plateName={plate.name}
-                onSaveAndClose={handleSaveAndClose}
-                onSave={handleSave}
                 onCancel={handleCancel}
+                onSave={handleSave}
+                onSaveAndClose={handleSaveAndClose}
+                plateName={plate.name}
+                status={status}
             />
             <div className="plate-template-designer__header">
                 <label className="plate-template-designer__name-label">
                     Plate Name:
                     <input
                         className="plate-template-designer__name-input"
+                        onChange={handleNameChange}
                         type="text"
                         value={plate.name}
-                        onChange={e => handleNameChange(e.target.value)}
                     />
                 </label>
             </div>
             <div className="plate-template-designer__body">
                 <div className="plate-template-designer__left">
                     <GroupTypesPanel
-                        plate={plate}
                         activeGroup={activeGroup}
                         activeTab={activeTab}
                         colorMap={colorMap}
                         hoveredWellGroupId={hoveredWellGroupId}
-                        onGroupSelect={handleGroupSelect}
-                        onTabChange={handleTabChange}
                         onAddGroup={handleAddGroup}
                         onDeleteGroup={handleDeleteGroup}
-                        onRenameGroup={handleRenameGroup}
                         onGroupHover={setHoveredGroupId}
+                        onGroupSelect={handleGroupSelect}
+                        onRenameGroup={handleRenameGroup}
+                        onTabChange={handleTabChange}
+                        plate={plate}
                     >
                         {/* The grid and shift panel are passed as children so they render
                             inside GroupTypesPanel's flex row, visually adjacent to the group list. */}
                         <div className="plate-grid-area">
                             <TemplateGrid
-                                plate={plate}
                                 activeGroup={activeGroup}
                                 activeTab={activeTab}
                                 colorMap={colorMap}
                                 highlightedGroupId={highlightedGroupId}
-                                onDragRect={handleDragRect}
                                 onCellToggle={handleCellToggle}
+                                onDragRect={handleDragRect}
                                 onWellHover={setHoveredWellGroupId}
+                                plate={plate}
                             />
                             <ShiftPanel onShift={handleShift} />
                         </div>
                     </GroupTypesPanel>
                 </div>
-                {/* Right panel: WellGroupProperties and (if enabled) a Warnings tab.
-                    The tab strip only renders when showWarningPanel is true; otherwise
-                    WellGroupProperties fills the full right column without tabs. */}
                 <RightPanel
-                    showWarningPanel={plate.showWarningPanel}
-                    rightTab={rightTab}
-                    onRightTabChange={setRightTab}
-                    warnings={warnings}
                     activeGroup={activeGroup}
-                    onPropertyChange={handlePropertyChange}
                     onDeleteProperty={handleDeleteProperty}
+                    onPropertyChange={handlePropertyChange}
+                    onRightTabChange={setRightTab}
+                    rightTab={rightTab}
+                    showWarningPanel={plate.showWarningPanel}
+                    warnings={warnings}
                 />
             </div>
         </div>
     );
-}
+};
+PlateTemplateDesigner.displayName = 'PlateTemplateDesigner';

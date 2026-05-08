@@ -1681,12 +1681,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public @NotNull Set<String> getAltKeysForUpdate()
-    {
-        return MATERIAL_ALT_KEYS;
-    }
-
-    @Override
     public @Nullable Set<String> getExistingRecordKeyColumnNames(DataIteratorContext context, Map<String, Integer> colNameMap)
     {
         Set<String> keyColumnNames = new CaseInsensitiveHashSet();
@@ -1697,14 +1691,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 if (colNameMap.containsKey(RowId.name()))
                     keyColumnNames.add(RowId.name());
-                else
+                else if (colNameMap.containsKey(Name.name()))
                 {
-                    for (String altKey : getAltKeysForUpdate())
-                    {
-                        if (colNameMap.containsKey(altKey))
-                            keyColumnNames.add(altKey);
-                    }
+                    keyColumnNames.add(MaterialSourceId.name());
+                    keyColumnNames.add(Name.name());
                 }
+                else
+                    throw new IllegalArgumentException("Either RowId or Name is required for update.");
             }
             else
             {

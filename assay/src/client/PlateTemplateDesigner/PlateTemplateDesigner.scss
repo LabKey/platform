@@ -4,33 +4,6 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-/*
- * ──────────────────────────────────────────────────────────────────────────────
- * Overall layout (vertical stack):
- *
- *  ┌──────────────────────────────────────────────────────────┐
- *  │  .status-bar   (Save & Close | Save | Cancel | status)   │
- *  ├──────────────────────────────────────────────────────────┤
- *  │  .plate-template-designer__header  (Plate Name input)    │
- *  ├──────────────────────────────────────────────────────────┤
- *  │  .plate-template-designer__body  (horizontal flex)       │
- *  │  ┌──────────────────────────────┐  ┌───────────────────┐ │
- *  │  │  __left  (flex: 0 0 auto)    │  │  __right (flex:1) │ │
- *  │  │  .group-types-panel          │  │  right-panel-tabs │ │
- *  │  │  ├─ tab strip                │  │  + WellGroupProps │ │
- *  │  │  └─ tab-body (flex row)      │  │    or WarningPanel│ │
- *  │  │     ├─ group list            │  │                   │ │
- *  │  │     └─ .plate-grid-area      │  │                   │ │
- *  │  │        ├─ TemplateGrid       │  │                   │ │
- *  │  │        └─ ShiftPanel         │  │                   │ │
- *  │  └──────────────────────────────┘  └───────────────────┘ │
- *  └──────────────────────────────────────────────────────────┘
- *
- * The left column is sized to its content (fixed width); the right column grows
- * to fill remaining space with a minimum width so it doesn't collapse.
- * ──────────────────────────────────────────────────────────────────────────────
- */
-
 // Visually-hidden utility — renders only to assistive technology
 .sr-only {
     position: absolute;
@@ -213,14 +186,37 @@
         }
     }
 
-    // Colour indicator matching the group's colour on the grid
+    // Colour indicator matching the group's colour on the grid.
+    // --pattern-N mirrors the grid cell patterns so the swatch can be cross-referenced
+    // by pattern as well as color (WCAG 1.4.1)
     &__color-swatch {
         display: inline-block;
-        width: 12px;
-        height: 12px;
+        width: 20px;
+        height: 20px;
         border-radius: 2px;
         border: 1px solid rgba(0, 0, 0, 0.2);
         flex-shrink: 0;
+
+        &--pattern-0  { background-image: none; }
+        &--pattern-1  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  2px, transparent  2px, transparent  6px); }
+        &--pattern-2  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  3px, transparent  3px, transparent  9px); }
+        &--pattern-3  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  4px, transparent  4px, transparent 12px); }
+        &--pattern-4  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  5px, transparent  5px, transparent 16px); }
+        &--pattern-5  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  2px, transparent  2px, transparent  6px); }
+        &--pattern-6  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  3px, transparent  3px, transparent  9px); }
+        &--pattern-7  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  4px, transparent  4px, transparent 12px); }
+        &--pattern-8  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  5px, transparent  5px, transparent 16px); }
+        &--pattern-9  { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  2px, transparent  2px, transparent  6px); }
+        &--pattern-10 { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  3px, transparent  3px, transparent  9px); }
+        &--pattern-11 { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  4px, transparent  4px, transparent 12px); }
+        &--pattern-12 { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  5px, transparent  5px, transparent 16px); }
+        &--pattern-13 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  2px, transparent  2px, transparent  6px); }
+        &--pattern-14 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  3px, transparent  3px, transparent  9px); }
+        &--pattern-15 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  4px, transparent  4px, transparent 12px); }
+        &--pattern-16 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  5px, transparent  5px, transparent 16px); }
+        &--pattern-17 { background-image: repeating-linear-gradient( 30deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  2px, transparent  2px, transparent  7px); }
+        &--pattern-18 { background-image: repeating-linear-gradient( 30deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  4px, transparent  4px, transparent 12px); }
+        &--pattern-19 { background-image: repeating-linear-gradient( 60deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  3px, transparent  3px, transparent  9px); }
     }
 
     &__group-name {
@@ -350,9 +346,20 @@
 
 // ── Multi-create dialog ───────────────────────────────────────────────────────
 // Modal dialog for batch-creating N numbered groups.
-// Uses the native <dialog> element with showModal() for top-layer placement, focus
-// restoration on close, and a browser-managed backdrop. Focus is trapped inside the
-// dialog while open (see MultiCreateDialog focus-trap effect).
+// Uses the native <dialog> element with showModal() for top-layer placement.
+// Resets the <dialog> UA defaults (border, padding, background) so only the inner
+// .multi-create-dialog div provides the visual styling. Also hosts ::backdrop since
+// that pseudo-element attaches to the top-layer element, not its children.
+.multi-create-dialog__overlay {
+    border: none;
+    padding: 0;
+    background: transparent;
+
+    &::backdrop {
+        background: rgba(0, 0, 0, 0.3);
+    }
+}
+
 .multi-create-dialog {
     background: #fff;
     border: 1px solid #ccc;
@@ -360,10 +367,6 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     padding: 20px;
     min-width: 300px;
-
-    &::backdrop {
-        background: rgba(0, 0, 0, 0.3);
-    }
 
     &__title {
         font-weight: bold;
@@ -523,6 +526,36 @@
         &--active {
             box-shadow: inset 0 0 0 2px #000;
         }
+
+        // Semi-transparent stripe patterns overlaid on top of background-color via background-image.
+        // Each color-slot index (0–19) gets a distinct angle + density combination so that groups
+        // are distinguishable by pattern as well as color (WCAG 1.4.1).
+        // background-image and background-color are independent CSS properties and do not conflict.
+        &--pattern-0  { background-image: none; }
+        // 45° diagonal — 4 densities
+        &--pattern-1  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  2px, transparent  2px, transparent  6px); }
+        &--pattern-2  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  3px, transparent  3px, transparent  9px); }
+        &--pattern-3  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  4px, transparent  4px, transparent 12px); }
+        &--pattern-4  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  5px, transparent  5px, transparent 16px); }
+        // 135° anti-diagonal — 4 densities
+        &--pattern-5  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  2px, transparent  2px, transparent  6px); }
+        &--pattern-6  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  3px, transparent  3px, transparent  9px); }
+        &--pattern-7  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  4px, transparent  4px, transparent 12px); }
+        &--pattern-8  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  5px, transparent  5px, transparent 16px); }
+        // 90° horizontal stripes — 4 densities
+        &--pattern-9  { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  2px, transparent  2px, transparent  6px); }
+        &--pattern-10 { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  3px, transparent  3px, transparent  9px); }
+        &--pattern-11 { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  4px, transparent  4px, transparent 12px); }
+        &--pattern-12 { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  5px, transparent  5px, transparent 16px); }
+        // 0° vertical stripes — 4 densities
+        &--pattern-13 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  2px, transparent  2px, transparent  6px); }
+        &--pattern-14 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  3px, transparent  3px, transparent  9px); }
+        &--pattern-15 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  4px, transparent  4px, transparent 12px); }
+        &--pattern-16 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  5px, transparent  5px, transparent 16px); }
+        // shallow / steep diagonals
+        &--pattern-17 { background-image: repeating-linear-gradient( 30deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  2px, transparent  2px, transparent  7px); }
+        &--pattern-18 { background-image: repeating-linear-gradient( 30deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  4px, transparent  4px, transparent 12px); }
+        &--pattern-19 { background-image: repeating-linear-gradient( 60deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  3px, transparent  3px, transparent  9px); }
     }
 }
 
@@ -573,7 +606,7 @@
     min-height: 60px;
 
     &--empty {
-        color: #767676;
+        color: #626262;
         font-style: italic;
     }
 
@@ -583,7 +616,7 @@
     }
 
     &__no-props {
-        color: #767676;
+        color: #626262;
         font-style: italic;
         font-size: 0.75rem;
     }
@@ -687,7 +720,7 @@
     background: #fffbe6;
 
     &__none {
-        color: #767676;
+        color: #626262;
         font-style: italic;
         font-size: 0.75rem;
     }

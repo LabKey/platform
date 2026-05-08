@@ -4,12 +4,12 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 import {
-    PlateTemplate,
-    WellGroup,
     computeWarnings,
     GROUP_TYPE_CONTROL,
     GROUP_TYPE_REPLICATE,
     GROUP_TYPE_SPECIMEN,
+    PlateTemplate,
+    WellGroup,
 } from './models';
 
 function makePlate(groups: Partial<WellGroup>[]): PlateTemplate {
@@ -53,9 +53,7 @@ describe('computeWarnings', () => {
     });
 
     test('warns when a REPLICATE cell has no SPECIMEN or CONTROL', () => {
-        const plate = makePlate([
-            { type: GROUP_TYPE_REPLICATE, positions: [{ row: 0, col: 0 }] },
-        ]);
+        const plate = makePlate([{ type: GROUP_TYPE_REPLICATE, positions: [{ row: 0, col: 0 }] }]);
         const warnings = computeWarnings(plate);
         expect(warnings).toHaveLength(1);
         expect(warnings[0]).toContain('A1');
@@ -104,16 +102,20 @@ describe('computeWarnings', () => {
     });
 
     test('cell in an unrelated group type produces no warning', () => {
-        const plate = makePlate([
-            { type: 'UNKNOWN', positions: [{ row: 0, col: 0 }] },
-        ]);
+        const plate = makePlate([{ type: 'UNKNOWN', positions: [{ row: 0, col: 0 }] }]);
         expect(computeWarnings(plate)).toEqual([]);
     });
 
     test('produces separate warnings for multiple problem cells', () => {
         const plate = makePlate([
             // Two orphan replicates
-            { type: GROUP_TYPE_REPLICATE, positions: [{ row: 0, col: 0 }, { row: 0, col: 1 }] },
+            {
+                type: GROUP_TYPE_REPLICATE,
+                positions: [
+                    { row: 0, col: 0 },
+                    { row: 0, col: 1 },
+                ],
+            },
         ]);
         const warnings = computeWarnings(plate);
         expect(warnings).toHaveLength(2);

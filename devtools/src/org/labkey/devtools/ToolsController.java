@@ -1,15 +1,20 @@
 package org.labkey.devtools;
 
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedLinkedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ArrayListValuedTreeMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.BaseColumnInfo;
@@ -18,10 +23,12 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfo.IndexDefinition;
-import org.labkey.api.data.TableInfo.IndexType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -29,6 +36,7 @@ import org.labkey.api.module.SupportedDatabase;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.BaseScanner.Handler;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.DOM;
@@ -36,6 +44,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
@@ -66,22 +75,29 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.data.TableInfo.IndexType.NonUnique;
+import static org.labkey.api.data.TableInfo.IndexType.Primary;
+import static org.labkey.api.data.TableInfo.IndexType.Unique;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
@@ -105,7 +121,7 @@ public class ToolsController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new ActionListView(ToolsController.this, actionDescriptor->BeginAction.class != actionDescriptor.getActionClass());
+            return new ActionListView(ToolsController.this, actionDescriptor -> BeginAction.class != actionDescriptor.getActionClass());
         }
 
         @Override
@@ -163,7 +179,7 @@ public class ToolsController extends SpringActionController
                     {
                         out.println("Files listed in " + gaPath + " that don't exist:\n");
                         List<String> missing = getMissingFiles(gaPath, stream);
-                        missing.forEach(filename->out.println(filter(filename)));
+                        missing.forEach(filename -> out.println(filter(filename)));
                         if (!missing.isEmpty())
                         {
                             out.println();
@@ -380,14 +396,14 @@ public class ToolsController extends SpringActionController
                 Set<String> copyOfJspFiles = new HashSet<>(jspFiles);
 
                 jspFiles.removeAll(jspReferences);
-                jspFiles.forEach(path->out.println(filter(path)));
+                jspFiles.forEach(path -> out.println(filter(path)));
 
                 out.println();
                 out.println("JSP references that couldn't be resolved to JSP files [plus any candidates for resolution]:");
                 out.println();
 
                 jspReferences.removeAll(copyOfJspFiles);
-                jspReferences.forEach(path-> {
+                jspReferences.forEach(path -> {
                     List<String> candidates = jspFiles.stream()
                         .filter(s -> s.endsWith(path))
                         .toList();
@@ -410,7 +426,7 @@ public class ToolsController extends SpringActionController
                     out.println();
                     out.println("The following " + (jspFiles.size() == 1 ? "JSP file is a strong candidate" : jspFiles.size() + " JSP files are strong candidates") + " for removal:");
                     out.println();
-                    jspFiles.forEach(path->out.println(filter(path)));
+                    jspFiles.forEach(path -> out.println(filter(path)));
                 }
 
                 out.println("</pre>");
@@ -461,7 +477,8 @@ public class ToolsController extends SpringActionController
                                     String code = PageFlowUtil.getFileContentsAsString(file.toFile());
                                     JavaScanner scanner = new JavaScanner(code);
 
-                                    scanner.scan(0, new Handler(){
+                                    scanner.scan(0, new Handler()
+                                    {
                                         @Override
                                         public boolean string(int beginIndex, int endIndex)
                                         {
@@ -556,7 +573,7 @@ public class ToolsController extends SpringActionController
 
             List<ControllerActionId> actionIds = new LinkedList<>();
 
-            // As of now, Crawler.java and the study tests are the only classes that specify crawler actions
+            // As of now, these are the only classes that specify crawler actions
             for (String path : List.of(
                 sourcePath + "/../../clientModules/adjudication/test/src/org/labkey/test/tests/adjudication/AdjudicationAbstractBaseTest.java",
                 sourcePath + "/../../ehrModules/ehr/test/src/org/labkey/test/tests/ehr/ComplianceTrainingTest.java",
@@ -603,7 +620,7 @@ public class ToolsController extends SpringActionController
                 builder
                     .append("The following " + (missingModuleActions.size() > 1 ? "actions' controllers" : "action's controller") + " could not be resolved to a module running in this deployment:")
                     .unsafeAppend("<br><br>\n");
-                missingModuleActions.forEach(id->builder.append(id.toString()).unsafeAppend("<br>\n"));
+                missingModuleActions.forEach(id -> builder.append(id.toString()).unsafeAppend("<br>\n"));
                 builder.unsafeAppend("<br>\n");
                 builder.append("The associated module(s) might not support " + DbScope.getLabKeyScope().getDatabaseProductName() + ".");
                 builder.unsafeAppend("<br><br>\n");
@@ -614,7 +631,7 @@ public class ToolsController extends SpringActionController
                 builder
                     .append("The following " + (missingActions.size() > 1 ? "actions were" : "action was") + " not found in the action's controller:")
                     .unsafeAppend("<br><br>\n");
-                missingActions.forEach(id->builder.append(id.toString()).unsafeAppend("<br>\n"));
+                missingActions.forEach(id -> builder.append(id.toString()).unsafeAppend("<br>\n"));
             }
 
             return new HtmlView(builder);
@@ -730,25 +747,65 @@ public class ToolsController extends SpringActionController
         }
     }
 
+    public record OverlappingIndicesForm(String schemaName, Boolean clearCaches) {}
+    public record IndexChange(TableInfo table, IndexDefinition index, ChangeType type, String description) {}
+    public record IndexOverlap(TableInfo table, String description) {}
+
     @RequiresPermission(AdminPermission.class)
-    public class OverlappingIndicesAction extends AbstractOverlappingIndicesAction
+    public class OverlappingIndicesAction extends FormViewAction<OverlappingIndicesForm>
     {
         @Override
-        public ModelAndView getView(Object o, boolean reshow, BindException errors)
+        public ModelAndView getView(OverlappingIndicesForm form, boolean reshow, BindException errors)
         {
-            MultiValuedMap<OverlapType, Overlap> multiMap = getOverlappingIndices();
+            ActionURL url = getViewContext().getActionURL().clone();
+
+            if (Boolean.TRUE.equals(form.clearCaches()))
+            {
+                CacheManager.clearAllKnownCaches();
+                url.deleteParameter("clearCaches");
+            }
+
+            OverlappingIndicesAnalyzer analyzer = new OverlappingIndicesAnalyzer();
+            MultiValuedMap<String, IndexOverlap> allOverlaps = analyzer.getOverlaps(form.schemaName());
+            MultiValuedMap<String, IndexChange> changes = analyzer.getChanges(form.schemaName());
 
             return new VBox(
                 new HtmlView(DOM.createHtmlFragment(
-                    Arrays.stream(OverlapType.values()).flatMap(type ->
+                    DOM.H3("List of all overlapping indices"),
+                    "Some overlapping indices are expected and legitimate, typically because a non-unique index has " +
+                        "a longer column list than a unique index or primary key, a unique index has a shorter (more " +
+                        "restrictive) column list than the primary key, or the indices have different filter conditions.",
+                    BR(),
+                    allOverlaps.keySet().stream().flatMap(schemaName ->
                         Stream.of(
-                            type != OverlapType.UniqueOverlappingNonUnique ? BR() : null,
-                            DOM.STRONG(StringUtilsLabKey.pluralize(multiMap.get(type).size(), "index has ", "indices have ") + type.getDescription() + ":", BR()),
+                            BR(),
+                            DOM.STRONG("Schema ", LinkBuilder.simpleLink(schemaName, new ActionURL(OverlappingIndicesAction.class, getContainer()).addParameter("schemaName", schemaName)), ":", BR()),
                             DOM.TABLE(
-                                multiMap.get(type).stream()
+                                allOverlaps.get(schemaName).stream()
+                                    .sorted(Comparator.comparing(change -> change.table().getName()))
                                     .map(overlap -> DOM.TR(
-                                        DOM.TD(at(style, "width:120px;"), overlap.schemaName()),
-                                        DOM.TD(type.getMessage(overlap)),
+                                    DOM.TD(at(style, "width:200px;"), overlap.table().getName()),
+                                    DOM.TD(overlap.description()),
+                                    "\n"
+                                ))
+                            )
+                        )
+                    )
+                )),
+                new HtmlView(DOM.createHtmlFragment(
+                    BR(),
+                    DOM.H3("Total number of changes needed: " + changes.keys().size()),
+                    BR(),
+                    changes.keySet().stream().flatMap(schemaName ->
+                        Stream.of(
+                            BR(),
+                            DOM.STRONG("Schema ", LinkBuilder.simpleLink(schemaName, new ActionURL(OverlappingIndicesAction.class, getContainer()).addParameter("schemaName", schemaName)), " needs " + StringUtilsLabKey.pluralize(changes.get(schemaName).size(), "change") + ":", BR()),
+                            DOM.TABLE(
+                                changes.get(schemaName).stream()
+                                    .sorted(Comparator.comparing(change -> change.table().getName()))
+                                    .map(change -> DOM.TR(
+                                        DOM.TD(at(style, "width:200px;"), change.table().getName()),
+                                        DOM.TD(change.description()),
                                         "\n"
                                     ))
                             )
@@ -757,8 +814,10 @@ public class ToolsController extends SpringActionController
                 )),
                 new HtmlView(DOM.createHtmlFragment(
                     BR(),
-                    new ButtonBuilder("Create SQL Scripts That Drop Overlapping Indices").href(OverlappingIndicesAction.class, getContainer()).usePost())
-                )
+                    changes.isEmpty() ? null : new ButtonBuilder("Create SQL Scripts That Drop Redundant Indices").href(url).usePost(),
+                    "  ",
+                    new ButtonBuilder("Clear Caches and Refresh").href(url.addParameter("clearCaches", true))
+                ))
             );
         }
 
@@ -770,25 +829,26 @@ public class ToolsController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(Object o, BindException errors)
+        public boolean handlePost(OverlappingIndicesForm form, BindException errors)
         {
-            MultiValuedMap<OverlapType, Overlap> multiMap = getOverlappingIndices();
+            MultiValuedMap<String, IndexChange> multiMap = new OverlappingIndicesAnalyzer().getChanges(form.schemaName());
 
             try
             {
-                Arrays.stream(OverlapType.values()).forEach(type -> multiMap.get(type).forEach(overlap -> {
-                    try
-                    {
-                        // All writers are closed below
-                        WriterContext context = getWriterContext(overlap.schemaName());
-                        if (type.writeScript(context.getWriter(), overlap))
+                multiMap.keySet()
+                    .forEach(schemaName -> multiMap.get(schemaName).forEach(change -> {
+                        try
+                        {
+                            // All writers are closed below in the finally
+                            WriterContext context = getWriterContext(schemaName);
+                            change.type().writeScript(context.getWriter(), change);
                             context.setModified();
-                    }
-                    catch (IOException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }));
+                        }
+                        catch (IOException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                    }));
             }
             finally
             {
@@ -796,6 +856,17 @@ public class ToolsController extends SpringActionController
             }
 
             return true;
+        }
+
+        @Override
+        public void validateCommand(OverlappingIndicesForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public URLHelper getSuccessURL(OverlappingIndicesForm form)
+        {
+            return new ActionURL(OverlappingIndicesAction.class, getContainer());
         }
 
         private static class WriterContext
@@ -849,7 +920,7 @@ public class ToolsController extends SpringActionController
 
         private WriterContext getWriterContext(String schemaName) throws IOException
         {
-            return _writerContextMap.computeIfAbsent(schemaName, n -> {
+            return _writerContextMap.computeIfAbsent(schemaName, _ -> {
 
                 DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Module);
                 Module module = schema.getModule();
@@ -894,77 +965,148 @@ public class ToolsController extends SpringActionController
                 }
             });
         }
-
-        @Override
-        public void validateCommand(Object target, Errors errors)
-        {
-        }
-
-        @Override
-        public URLHelper getSuccessURL(Object o)
-        {
-            return new ActionURL(BeginAction.class, getContainer());
-        }
     }
 
-    protected static abstract class AbstractOverlappingIndicesAction extends FormViewAction<Object>
+    private static class OverlappingIndicesAnalyzer
     {
-        protected MultiValuedMap<OverlapType, Overlap> getOverlappingIndices()
-        {
-            MultiValuedMap<OverlapType, Overlap> multiMap = new ArrayListValuedHashMap<>();
-            DbScope scope = DbScope.getLabKeyScope();
+        private final String delim = Character.toString(31); // Non-printing character that's very unlikely to be in a column name
 
+        private void enumerateTables(@Nullable String schemaName, Consumer<TableInfo> tableConsumer)
+        {
             ModuleLoader.getInstance().getModules().stream()
                 .flatMap(module -> module.getSchemaNames().stream().filter(name -> !module.getProvisionedSchemaNames().contains(name)))
+                .filter(name -> schemaName == null || name.equalsIgnoreCase(schemaName))
                 .sorted(String.CASE_INSENSITIVE_ORDER)
-                .map(name -> scope.getSchema(name, DbSchemaType.Module))
+                .map(name -> DbScope.getLabKeyScope().getSchema(name, DbSchemaType.Module))
                 .flatMap(schema -> schema.getTableNames().stream().map(schema::getTable))
-                .forEach(table -> {
-                    var indices = table.getAllIndices();
-                    indices.forEach(indexDef1 -> indices.forEach(indexDef2 -> {
-                        if (indexDef1 != indexDef2)
-                        {
-                            OverlapType type = overlap(indexDef1, indexDef2);
+                .forEach(tableConsumer);
+        }
 
-                            if (type != null)
-                            {
-                                if (type != OverlapType.Identical || !alreadySeen(indexDef1.name(), indexDef2.name()))
-                                    multiMap.put(type, new Overlap(table.getSchema().getName(), table.getName(), indexDef1, indexDef2));
-                            }
+        private MultiValuedMap<String, IndexChange> getChanges(@Nullable String schemaName)
+        {
+            MultiValuedMap<String, IndexChange> multiMap = new ArrayListValuedLinkedHashMap<>();
+            enumerateTables(schemaName, table ->
+                analyzeTable(table, new LinkedHashSet<>(table.getAllIndices()))
+                    .forEach(change -> multiMap.put(change.table().getSchema().getName(), change)));
+            return multiMap;
+        }
+
+        // Package-visible for testing. Pass null for table only in unit tests that don't inspect change.table().
+        List<IndexChange> analyzeTable(@Nullable TableInfo table, LinkedHashSet<IndexDefinition> indices)
+        {
+            var changes = new LinkedList<IndexChange>();
+            Set<IndexDefinition> droppedIndices = new HashSet<>();
+
+            // Step #1: Find the PK (if present), and drop non-unique indices whose columns are a prefix of the
+            // PK, plus unique indices that cover the exact same column set as the PK. A unique index with FEWER
+            // columns than the PK enforces a strictly stronger uniqueness guarantee (the PK cannot replace it),
+            // so it is left for Step #2 to evaluate.
+            indices.stream()
+                .filter(ix -> ix.indexType() == Primary)
+                .findFirst()
+                .ifPresent(pk -> indices.stream()
+                    .filter(index ->
+                        (index.indexType() == NonUnique && isOverlap(pk, index)) || // Non-unique indices smaller or equal to PK
+                        (index.indexType() == Unique && isOverlap(pk, index) && index.columns().size() == pk.columns().size())) // Unique indices with column list exactly matching PK's
+                    .forEach(index -> {
+                        changes.add(new IndexChange(table, index, ChangeType.Drop, getDropDescription(index, pk)));
+                        droppedIndices.add(index);
+                    })
+                );
+
+            Set<IndexDefinition> convertedUniqueIndices = new HashSet<>();
+
+            // Step #2: For each unique index, switch it to a non-unique index if there's any UQ or PK that
+            // overlaps with a smaller or equal column set.
+            streamIndices(indices, droppedIndices)
+                .filter(index -> index.indexType() == Unique)
+                .forEach(uq -> streamIndices(indices, droppedIndices)
+                    .filter(index -> index.indexType() == Primary || index.indexType() == Unique)
+                    .filter(index -> !convertedUniqueIndices.contains(index))
+                    .filter(index -> isOverlap(uq, index))
+                    .findFirst()
+                    .ifPresent(index -> {
+                        changes.add(new IndexChange(table, uq, ChangeType.Convert, String.format("Converting %s from unique to non-unique index because %s overlaps it with a smaller column set", uq.display(), index.display())));
+                        convertedUniqueIndices.add(uq);
+                    })
+                );
+
+            // Step #3: For each index (unique or non-unique), delete all other non-unique indices that overlap
+            // with a smaller or equal column set.
+            streamIndices(indices, droppedIndices)
+                .filter(index -> index.indexType() != Primary)
+                .forEach(index -> streamIndices(indices, droppedIndices)
+                    .filter(ix -> ix.indexType() == NonUnique || convertedUniqueIndices.contains(ix))
+                    .filter(ix -> isOverlap(index, ix))
+                    .forEach(ix -> {
+                        String description = getDropDescription(ix, index);
+                        if (convertedUniqueIndices.contains(ix))
+                        {
+                            // Index was converted to non-unique but now needs to be dropped. Adjust changes, description, etc.
+                            IndexChange convert = changes.stream()
+                                .filter(change -> change.index().equals(ix))
+                                .findFirst()
+                                .orElseThrow();
+                            description = description + (!description.endsWith(".") ? "." : "") + " Prior to this drop, the index was converted: " + convert.description();
+                            changes.remove(convert);
+                            convertedUniqueIndices.remove(ix);
                         }
-                    }));
-                });
+                        changes.add(new IndexChange(table, ix, ChangeType.Drop, description));
+                        droppedIndices.add(ix);
+                    })
+                );
+
+            return changes;
+        }
+
+        private MultiValuedMap<String, IndexOverlap> getOverlaps(@Nullable String schemaName)
+        {
+            MultiValuedMap<String, IndexOverlap> multiMap = new ArrayListValuedLinkedHashMap<>();
+
+            enumerateTables(schemaName, table -> {
+                var indices = table.getAllIndices();
+                indices.forEach(index1 -> indices.stream()
+                    .filter(index2 -> isSimpleOverlap(index1, index2))
+                    .forEach(index2 -> multiMap.put(table.getSchema().getName(), new IndexOverlap(table, String.format("%s overlaps with %s", index2.display(), index1.display()))))
+                );
+            });
 
             return multiMap;
         }
 
-        private final Set<String> _alreadySeen = new HashSet<>();
-
-        // Keep track of the identical indexes we've seen so we don't repeat them for both directions
-        private boolean alreadySeen(String name1, String name2)
+        // Helper that filters out the dropped indices
+        private Stream<IndexDefinition> streamIndices(Set<IndexDefinition> indices, Set<IndexDefinition> droppedIndices)
         {
-            String key = name1.compareTo(name2) < 0 ? name1 + delim + name2 : name2 + delim + name1;
-            return !_alreadySeen.add(key);
+            return indices.stream().filter(index -> !droppedIndices.contains(index));
         }
 
-        private @Nullable OverlapType overlap(IndexDefinition index1, IndexDefinition index2)
+        private String getDropDescription(IndexDefinition dropIndex, IndexDefinition otherIndex)
         {
-            String key1 = getKey(index1.columns());
-            String key2 = getKey(index2.columns());
-            boolean sameFilterConditions = Objects.equals(index1.filterCondition(), index2.filterCondition());
-            if (key1.equals(key2))
-                return sameFilterConditions ? OverlapType.Identical : OverlapType.OverlappingWithDifferentFilter;
-            if (key2.startsWith(key1))
+            String warning = dropIndex.indexType() == otherIndex.indexType() && dropIndex.columns().size() == otherIndex.columns().size() ?
+                ". Note: You may want to drop " + otherIndex.display() + " instead." : "";
+            return String.format("Dropping %s because it overlaps with %s", dropIndex.display(), otherIndex.display()) + warning;
+        }
+
+        // Returns true if index2 has an overlapping column set that's equal to or smaller than index1's
+        private boolean isSimpleOverlap(IndexDefinition index1, IndexDefinition index2)
+        {
+            boolean ret = false;
+
+            if (!index1.equals(index2))
             {
-                if (index2.indexType() == IndexType.NonUnique && (index1.indexType() == IndexType.Primary || index1.indexType() == IndexType.Unique))
-                    return OverlapType.UniqueOverlappingNonUnique;
-                else
-                    return sameFilterConditions ? OverlapType.Overlapping : OverlapType.OverlappingWithDifferentFilter;
+                String key1 = getKey(index1.columns());
+                String key2 = getKey(index2.columns());
+                ret = key1.startsWith(key2);
             }
-            return null;
+
+            return ret;
         }
 
-        private final String delim = Character.toString(31); // Non-printing character that's very unlikely to be in a column name
+        // Returns true if index2 overlaps index1, and they have the same filter condition
+        private boolean isOverlap(IndexDefinition index1, IndexDefinition index2)
+        {
+            return Objects.equals(index1.filterCondition(), index2.filterCondition()) && isSimpleOverlap(index1, index2);
+        }
 
         private String getKey(List<ColumnInfo> cols)
         {
@@ -972,135 +1114,232 @@ public class ToolsController extends SpringActionController
                 .map(col -> col.getName().toLowerCase())
                 .collect(Collectors.joining(delim)) + delim;
         }
+    }
 
-        private List<String> join(List<ColumnInfo> cols)
+    @TestWhen(TestWhen.When.BVT)
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testOverlappingIndices()
         {
-            return cols.stream()
-                .map(ColumnInfo::getName)
-                .toList();
+            Assume.assumeTrue("Skipping because this server is not running on PostgreSQL", DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL());
+            var map = new OverlappingIndicesAnalyzer().getChanges(null);
+            var keys = map.keys();
+            if (!keys.isEmpty())
+                fail(StringUtilsLabKey.pluralize(keys.size(), "redundant index", "redundant indices") + " detected: " + map);
+        }
+
+        // Helper to build an IndexDefinition with named columns in order
+        private static IndexDefinition idx(String name, TableInfo.IndexType type, String... columnNames)
+        {
+            var cols = Arrays.stream(columnNames)
+                .map(n -> (ColumnInfo) new BaseColumnInfo(n, JdbcType.VARCHAR))
+                .collect(Collectors.toCollection(ArrayList::new));
+            return new IndexDefinition(name, type, cols, null);
+        }
+
+        private static List<IndexChange> analyze(IndexDefinition... indexDefs)
+        {
+            return new OverlappingIndicesAnalyzer().analyzeTable(null, new LinkedHashSet<>(Arrays.asList(indexDefs)));
+        }
+
+        @Test
+        public void testNonUniqueIndexIsRedundantWithPk()
+        {
+            // A non-unique index on (A) is redundant when the PK is on (A, B): the PK B-tree satisfies
+            // all the same prefix queries. This should be dropped.
+            var pk = idx("pk_ab", Primary, "A", "B");
+            var ix = idx("ix_a", NonUnique, "A");
+
+            var changes = analyze(pk, ix);
+
+            boolean ixDropped = changes.stream().anyMatch(c -> c.index().equals(ix) && c.type() == ChangeType.Drop);
+            assertTrue("ix_a (non-unique on A) should be dropped when PK is on (A, B)", ixDropped);
+        }
+
+        @Test
+        public void testIdenticalUniqueIndexIsRedundantWithPk()
+        {
+            // A unique index on exactly the same columns as the PK is a true duplicate: the PK already
+            // enforces the same uniqueness guarantee, so the separate index should be removed.
+            var pk = idx("pk_ab", Primary, "A", "B");
+            var uq = idx("uq_ab", Unique, "A", "B");
+
+            var changes = analyze(pk, uq);
+
+            boolean uqActedOn = changes.stream()
+                .anyMatch(c -> c.index().equals(uq) && (c.type() == ChangeType.Drop || c.type() == ChangeType.Convert));
+            assertTrue("uq_ab (unique on A, B) should be dropped or converted when PK is also on (A, B)", uqActedOn);
+        }
+
+        @Test
+        public void testUniqueNotDroppedByLongerPk()
+        {
+            // PK(A,B,C) allows rows (A=1,B=1,C=1) and (A=1,B=1,C=2); Unique(A,B) does not.
+            // Dropping it would silently relax the uniqueness guarantee.
+            var pk = idx("pk_abc", Primary, "A", "B", "C");
+            var uq = idx("uq_ab", Unique, "A", "B");
+
+            var changes = analyze(pk, uq);
+
+            boolean uqDropped = changes.stream().anyMatch(c -> c.index().equals(uq) && c.type() == ChangeType.Drop);
+            assertFalse("uq_ab (unique on A,B) must not be dropped when pk is on (A,B,C). Changes: " + changes, uqDropped);
+        }
+
+        @Test
+        public void testStep2UniqueConvertedWhenPrefixUniqueExists()
+        {
+            // If Unique(A) exists, the (A,B) pair is already guaranteed unique by the A constraint alone,
+            // so Unique(A,B) provides no additional uniqueness and should be converted to non-unique.
+            // The narrower Unique(A) must not be touched.
+            var uqA = idx("uq_a", Unique, "A");
+            var uqAB = idx("uq_ab", Unique, "A", "B");
+
+            var changes = analyze(uqA, uqAB);
+
+            boolean uqABConverted = changes.stream().anyMatch(c -> c.index().equals(uqAB) && c.type() == ChangeType.Convert);
+            boolean uqAConverted = changes.stream().anyMatch(c -> c.index().equals(uqA) && c.type() == ChangeType.Convert);
+            assertTrue("uq_ab (unique on A,B) should be converted when uq_a (unique on A) exists. Changes: " + changes, uqABConverted);
+            assertFalse("uq_a (unique on A) should not be converted. Changes: " + changes, uqAConverted);
+        }
+
+        @Test
+        public void testStep3NonUniqueDroppedByWiderNonUnique()
+        {
+            // A B-tree index on (A,B,C) can serve all prefix queries on (A,B), making a separate
+            // NonUnique(A,B) index redundant. The narrower one should be dropped; the wider one kept.
+            var ixABC = idx("ix_abc", NonUnique, "A", "B", "C");
+            var ixAB = idx("ix_ab", NonUnique, "A", "B");
+
+            var changes = analyze(ixABC, ixAB);
+
+            boolean ixABDropped = changes.stream().anyMatch(c -> c.index().equals(ixAB) && c.type() == ChangeType.Drop);
+            boolean ixABCDropped = changes.stream().anyMatch(c -> c.index().equals(ixABC) && c.type() == ChangeType.Drop);
+            assertTrue("ix_ab (non-unique on A,B) should be dropped when ix_abc (non-unique on A,B,C) exists. Changes: " + changes, ixABDropped);
+            assertFalse("ix_abc (non-unique on A,B,C) should not be dropped. Changes: " + changes, ixABCDropped);
+        }
+
+        @Test
+        public void testStep2And3ConvertThenDrop()
+        {
+            // Step 2 converts Unique(A,B) because Unique(A) makes its uniqueness redundant.
+            // Step 3 then drops the (now non-unique) Unique(A,B) because NonUnique(A,B,C) covers it.
+            // The final changes list must show a single Drop for uq_ab — no separate Convert entry.
+            var uqA = idx("uq_a", Unique, "A");
+            var uqAB = idx("uq_ab", Unique, "A", "B");
+            var ixABC = idx("ix_abc", NonUnique, "A", "B", "C");
+
+            var changes = analyze(uqA, uqAB, ixABC);
+
+            boolean uqABDropped = changes.stream().anyMatch(c -> c.index().equals(uqAB) && c.type() == ChangeType.Drop);
+            boolean uqABConverted = changes.stream().anyMatch(c -> c.index().equals(uqAB) && c.type() == ChangeType.Convert);
+            assertTrue("uq_ab should appear as Drop (convert folded in). Changes: " + changes, uqABDropped);
+            assertFalse("uq_ab should not have a separate Convert entry. Changes: " + changes, uqABConverted);
+        }
+
+        @Test
+        public void testNoChangesForDisjointIndices()
+        {
+            // Indices on completely different columns have no prefix relationship; nothing should change.
+            var ixA = idx("ix_a", NonUnique, "A");
+            var ixB = idx("ix_b", NonUnique, "B");
+            var uqC = idx("uq_c", Unique, "C");
+
+            var changes = analyze(ixA, ixB, uqC);
+
+            assertTrue("Disjoint indices should produce no changes. Changes: " + changes, changes.isEmpty());
+        }
+
+        @Test
+        public void testFilteredIndexNotDroppedByFullIndex()
+        {
+            // A partial (filtered) index covers only a subset of rows. Even when its column set is a
+            // prefix of the PK, the filter condition means the two indices are not interchangeable.
+            var pk = idx("pk_ab", Primary, "A", "B");
+            var cols = Arrays.stream(new String[]{"A"})
+                .map(n -> (ColumnInfo) new BaseColumnInfo(n, JdbcType.VARCHAR))
+                .collect(Collectors.toCollection(ArrayList::new));
+            var filteredIx = new IndexDefinition("ix_a_partial", NonUnique, cols, "active = 1");
+
+            var changes = analyze(pk, filteredIx);
+
+            boolean filteredDropped = changes.stream().anyMatch(c -> c.index().equals(filteredIx) && c.type() == ChangeType.Drop);
+            assertFalse(
+                "ix_a_partial (filtered non-unique on A) must not be dropped by pk_ab: different filter conditions. Changes: " + changes,
+                filteredDropped);
         }
     }
 
-    protected record Overlap(String schemaName, String tableName, IndexDefinition indexDef1, IndexDefinition indexDef2) {}
-
-    protected enum OverlapType
+    private enum ChangeType
     {
-        UniqueOverlappingNonUnique("a column list that overlaps another index's column list at the start, but the first index is a unique constraint. These are likely valid")
+        Drop
         {
             @Override
-            boolean writeScript(Writer writer, Overlap overlap)
+            void writeScript(Writer writer, IndexChange change, String schemaName, String tableName, IndexDefinition dropIndex) throws IOException
             {
-                return false; // Write nothing
-            }
-        },
-        OverlappingWithDifferentFilter("a column list that overlaps another index's column list at the start, but with different filter conditions. These are likely valid")
-        {
-            @Override
-            boolean writeScript(Writer writer, Overlap overlap)
-            {
-                return false; // Write nothing
-            }
-        },
-        Identical("a column list that's identical to another index's column list")
-        {
-            @Override
-            boolean writeScript(Writer writer, Overlap overlap) throws IOException
-            {
-                IndexType type1 = overlap.indexDef1.indexType();
-                IndexType type2 = overlap.indexDef2.indexType();
-                String dropIndex = null;
-                String otherIndex = null;
+                writer.write("-- " + change.description() + "\n");
 
-                // Prefer to drop the non-PK, then prefer the non-unique, otherwise "drop" them both (let the human decide)
-                if (type1 == IndexType.Primary)
+                if (DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL())
                 {
-                    dropIndex = overlap.indexDef2.name();
-                    otherIndex = overlap.indexDef1.name();
-                }
-                else if (type2 == IndexType.Primary)
-                {
-                    dropIndex = overlap.indexDef1.name();
-                    otherIndex = overlap.indexDef2.name();
-                }
-                else if (type1 == IndexType.Unique && type2 == IndexType.NonUnique)
-                {
-                    dropIndex = overlap.indexDef2.name();
-                    otherIndex = overlap.indexDef1.name();
-                }
-                else if (type2 == IndexType.Unique && type1 == IndexType.NonUnique)
-                {
-                    dropIndex = overlap.indexDef1.name();
-                    otherIndex = overlap.indexDef2.name();
-                }
+                    if (dropIndex.indexType() == Unique)
+                    {
+                        String constraintName = getConstraintForIndex(schemaName, dropIndex.name());
+                        if (constraintName != null)
+                        {
+                            writer.write("ALTER TABLE " + schemaName + "." + tableName + " DROP CONSTRAINT " + constraintName + ";\n");
+                            return;
+                        }
+                    }
 
-                if (dropIndex != null)
-                {
-                    dropIndex(writer, overlap.schemaName, overlap.tableName, dropIndex, otherIndex);
+                    writer.write("DROP INDEX " + schemaName + "." + dropIndex.name() + ";\n");
                 }
                 else
-                {
-                    writer.write("TODO: Human, please help!! You should drop only one of the following, but I couldn't decide which one:\n");
-                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexDef1.name(), overlap.indexDef2.name());
-                    dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexDef2.name(), overlap.indexDef1.name());
-                    writer.write('\n');
-                }
-
-                return true;
-            }
-
-            @Override
-            String getMessage(Overlap overlap)
-            {
-                return overlap.indexDef1.name() + " vs. " + overlap.indexDef2.name() + ": " + join(overlap.indexDef1.columns());
+                    writer.write("DROP INDEX " + dropIndex.name() + " ON " + schemaName + "." + tableName + ";\n");
             }
         },
-        Overlapping("a column list that overlaps another index's column list at the start")
+        Convert
         {
             @Override
-            boolean writeScript(Writer writer, Overlap overlap) throws IOException
+            void writeScript(Writer writer, IndexChange change, String schemaName, String tableName, IndexDefinition changeIndex) throws IOException
             {
-                dropIndex(writer, overlap.schemaName, overlap.tableName, overlap.indexDef1.name(), overlap.indexDef2.name());
-                return true;
+                Drop.writeScript(writer, change);
+                String indexName = changeIndex.name().replaceFirst("^uq", "ix").replaceFirst("^unique", "index");
+                writer.write("CREATE INDEX " + indexName + " ON " + schemaName + "." + tableName + "(" + changeIndex.columns().stream().map(ColumnInfo::getName).collect(Collectors.joining(", ")) + ");\n");
             }
         };
 
-        private final String _description;
-
-        OverlapType(String description)
+        final void writeScript(Writer writer, IndexChange change) throws IOException
         {
-            _description = description;
+            TableInfo table = change.table();
+            IndexDefinition index = change.index();
+
+            if (index.indexType() == Primary)
+                throw new IllegalStateException("Should not modify a PK! (" + change + ")");
+
+            writeScript(writer, change, table.getSchema().getName(), table.getName(), index);
         }
 
-        public String getDescription()
-        {
-            return _description;
-        }
+        abstract void writeScript(Writer writer, IndexChange change, String schemaName, String tableName, IndexDefinition index) throws IOException;
+    }
 
-        // Return true if content has been written to the script file
-        abstract boolean writeScript(Writer writer, Overlap overlap) throws IOException;
+    private record IndexKey(String schemaName, String indexName) {}
 
-        String getMessage(Overlap overlap)
-        {
-            return overlap.indexDef1.name() + " " + join(overlap.indexDef1.columns()) + " vs. " + overlap.indexDef2.name() + " " + join(overlap.indexDef2.columns());
-        }
-
-        protected List<String> join(List<ColumnInfo> cols)
-        {
-            return cols.stream()
-                .map(ColumnInfo::getName)
-                .toList();
-        }
-
-        protected void dropIndex(Writer writer, String schemaName, String tableName, String dropIndex, String otherIndex) throws IOException
-        {
-            SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
-            writer.write("-- This index overlaps with " + otherIndex + "\n");
-
-            if (dialect.isPostgreSQL())
-                writer.write("DROP INDEX " + schemaName + "." + dropIndex + ";\n");
-            else
-                writer.write("DROP INDEX " + dropIndex + " ON " + schemaName + "." + tableName + ";\n");
-        }
+    // If this is a unique index associated with a constraint, return that constraint name. Otherwise, return null.
+    // Most, but not all, unique indices are created by adding a unique constraint; in those cases, we need to drop
+    // the associated constraint. However, for explicitly created unique indices, we need to drop the index instead.
+    private static @Nullable String getConstraintForIndex(String schemaName, String indexName)
+    {
+        Cache<String, Map<IndexKey, String>> sharedCache = CacheManager.getSharedCache();
+        var constraintMap = sharedCache.get(OverlappingIndicesAction.class.getName() + "/ConstraintForIndexMap", null, (_, _) -> Collections.unmodifiableMap(
+            new SqlSelector(DbScope.getLabKeyScope(), new SQLFragment("""
+                SELECT NspName AS SchemaName, RelName AS IndexName, ConName AS ConstraintName FROM pg_index i
+                INNER JOIN pg_class cl ON cl.oid = i.indexrelid
+                INNER JOIN pg_namespace schema ON schema.oid = cl.relnamespace
+                INNER JOIN pg_constraint c ON ConNamespace = schema.oid AND ConIndId = cl.oid AND ConType = 'u'
+                WHERE IndIsUnique AND NOT NspName IN ('pg_toast', 'pg_catalog')"""
+            )).mapStream()
+                .collect(Collectors.toMap(map -> new IndexKey((String)map.get("SchemaName"), (String)map.get("IndexName")), map -> (String)map.get("ConstraintName")))));
+        return constraintMap.get(new IndexKey(schemaName, indexName));
     }
 
     @RequiresPermission(AdminPermission.class)

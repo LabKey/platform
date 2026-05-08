@@ -3,16 +3,24 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
+
+import { useEnterEscape } from '../useEnterEscape';
 
 interface MultiCreateDialogProps {
-    initialBaseName: string;
     existingNames: Set<string>;
+    initialBaseName: string;
     onClose: () => void;
     onConfirm: (names: string[]) => void;
 }
 
-export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onConfirm }: MultiCreateDialogProps): JSX.Element {
+/** Modal dialog for batch-creating numbered well groups (e.g. "Sample 1" through "Sample 8") from a base name and count, skipping any names that already exist. */
+export const MultiCreateDialog: FC<MultiCreateDialogProps> = ({
+    initialBaseName,
+    existingNames,
+    onClose,
+    onConfirm,
+}) => {
     const [baseName, setBaseName] = useState(initialBaseName);
     const [count, setCount] = useState('2');
     const [countError, setCountError] = useState('');
@@ -35,9 +43,15 @@ export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onC
             const first = focusable[0];
             const last = focusable[focusable.length - 1];
             if (e.shiftKey) {
-                if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+                if (document.activeElement === first) {
+                    e.preventDefault();
+                    last?.focus();
+                }
             } else {
-                if (document.activeElement === last) { e.preventDefault(); first?.focus(); }
+                if (document.activeElement === last) {
+                    e.preventDefault();
+                    first?.focus();
+                }
             }
         };
 
@@ -61,7 +75,7 @@ export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onC
         };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const handleCreate = () => {
+    const handleCreate = useCallback(() => {
         const parsedCount = parseInt(count, 10);
         if (isNaN(parsedCount) || parsedCount < 1) {
             setCountError(`"${count}" is not a valid count.`);
@@ -69,51 +83,76 @@ export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onC
         }
         const trimmedBase = baseName.trim();
         if (!trimmedBase) return;
-        const namesToCreate = Array.from({ length: parsedCount }, (_, i) => `${trimmedBase} ${i + 1}`)
-            .filter(name => !existingNames.has(name));
+        const namesToCreate = Array.from({ length: parsedCount }, (_, i) => `${trimmedBase} ${i + 1}`).filter(
+            name => !existingNames.has(name)
+        );
         if (namesToCreate.length === 0) {
-            setCountError(`All ${parsedCount} generated name${parsedCount === 1 ? '' : 's'} already exist in this type.`);
+            setCountError(
+                `All ${parsedCount} generated name${parsedCount === 1 ? '' : 's'} already exist in this type.`
+            );
             return;
         }
         onConfirm(namesToCreate);
-    };
+    }, [count, baseName, existingNames, onConfirm]);
+
+    const handleInputKeyDown = useEnterEscape(handleCreate, onClose);
+
+    const handleBaseNameChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => setBaseName(e.target.value),
+        []
+    );
+    const handleCountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setCount(e.target.value);
+        setCountError('');
+    }, []);
+    const handleContentClick = useCallback((e: React.MouseEvent) => e.stopPropagation(), []);
 
     return (
         <dialog
-            ref={dialogRef}
-            className="multi-create-dialog__overlay"
             aria-labelledby="multi-create-title"
+            className="multi-create-dialog__overlay"
             onClick={onClose}
+            ref={dialogRef}
         >
-            <div className="multi-create-dialog" onClick={e => e.stopPropagation()}>
-                <div id="multi-create-title" className="multi-create-dialog__title">Create Multiple Groups</div>
+            <div className="multi-create-dialog" onClick={handleContentClick}>
+                <div className="multi-create-dialog__title" id="multi-create-title">
+                    Create Multiple Groups
+                </div>
                 <div className="multi-create-dialog__form">
                     <div className="multi-create-dialog__field">
-                        <span id="multi-create-base-name-label" className="multi-create-dialog__label">Base Name</span>
+                        <span className="multi-create-dialog__label" id="multi-create-base-name-label">
+                            Base Name
+                        </span>
                         <input
-                            className="multi-create-dialog__input"
-                            type="text"
                             aria-labelledby="multi-create-base-name-label"
+                            className="multi-create-dialog__input"
+                            onChange={handleBaseNameChange}
+                            onKeyDown={handleInputKeyDown}
+                            type="text"
                             value={baseName}
-                            onChange={e => setBaseName(e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') onClose(); }}
                         />
                     </div>
                     <div className="multi-create-dialog__field">
-                        <span id="multi-create-count-label" className="multi-create-dialog__label">Count</span>
+                        <span className="multi-create-dialog__label" id="multi-create-count-label">
+                            Count
+                        </span>
                         <div className="multi-create-dialog__count-area">
                             <input
-                                className="multi-create-dialog__input multi-create-dialog__input--count"
-                                type="number"
-                                min="1"
-                                aria-labelledby="multi-create-count-label"
                                 aria-describedby={countError ? 'multi-create-count-error' : undefined}
                                 aria-invalid={!!countError}
+                                aria-labelledby="multi-create-count-label"
+                                className="multi-create-dialog__input multi-create-dialog__input--count"
+                                min="1"
+                                onChange={handleCountChange}
+                                onKeyDown={handleInputKeyDown}
+                                type="number"
                                 value={count}
-                                onChange={e => { setCount(e.target.value); setCountError(''); }}
-                                onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') onClose(); }}
                             />
-                            {countError && <div id="multi-create-count-error" className="multi-create-dialog__error">{countError}</div>}
+                            {countError && (
+                                <div className="multi-create-dialog__error" id="multi-create-count-error">
+                                    {countError}
+                                </div>
+                            )}
                         </div>
                     </div>
                     <div className="multi-create-dialog__buttons">
@@ -132,4 +171,5 @@ export function MultiCreateDialog({ initialBaseName, existingNames, onClose, onC
             </div>
         </dialog>
     );
-}
+};
+MultiCreateDialog.displayName = 'MultiCreateDialog';

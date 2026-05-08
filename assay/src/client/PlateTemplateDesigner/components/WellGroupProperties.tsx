@@ -3,15 +3,56 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import React, { useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
 
 import { WellGroup } from '../models';
 
 interface WellGroupPropertiesProps {
-    activeGroup: WellGroup | null;
-    onPropertyChange: (groupRowId: number, key: string, value: string) => void;
+    activeGroup: null | WellGroup;
     onDeleteProperty: (groupRowId: number, key: string) => void;
+    onPropertyChange: (groupRowId: number, key: string, value: string) => void;
 }
+
+interface PropertyRowProps {
+    onDeleteProperty: (key: string) => void;
+    onPropertyChange: (key: string, value: string) => void;
+    propKey: string;
+    value: string;
+}
+
+const PropertyRow: FC<PropertyRowProps> = ({ propKey, value, onPropertyChange, onDeleteProperty }) => {
+    const handleChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => onPropertyChange(propKey, e.target.value),
+        [onPropertyChange, propKey]
+    );
+    const handleDelete = useCallback(() => onDeleteProperty(propKey), [onDeleteProperty, propKey]);
+
+    return (
+        <tr>
+            <td className="well-group-properties__key">{propKey}</td>
+            <td className="well-group-properties__value-cell">
+                <input
+                    aria-label={propKey}
+                    className="well-group-properties__value"
+                    onChange={handleChange}
+                    type="text"
+                    value={value}
+                />
+            </td>
+            <td className="well-group-properties__action-cell">
+                <button
+                    aria-label={`Delete property ${propKey}`}
+                    className="well-group-properties__delete-btn"
+                    onClick={handleDelete}
+                    title="Delete property"
+                >
+                    <span aria-hidden="true" className="fa fa-trash-o" />
+                </button>
+            </td>
+        </tr>
+    );
+};
+PropertyRow.displayName = 'PropertyRow';
 
 /**
  * Shows and edits the key/value property bag for the currently selected well group.
@@ -19,15 +60,12 @@ interface WellGroupPropertiesProps {
  * Properties are assay-type-specific metadata attached to a group (e.g. concentration,
  * dilution factor, sample ID). They are stored as plain strings and round-tripped through
  * the server without interpretation by the designer.
- *
- * Interaction pattern:
- *  - Existing properties: each row has an inline text input for the value; changes propagate
- *    immediately to the parent (no separate submit step) via onPropertyChange.
- *  - Deleting: the trash button removes a property key entirely.
- *  - Adding: the footer row accepts a new key + value; "Add" (or Enter) commits the pair.
- *    The new-key input is the gate — the Add button stays disabled until a key is typed.
  */
-export function WellGroupProperties({ activeGroup, onPropertyChange, onDeleteProperty }: WellGroupPropertiesProps): JSX.Element {
+export const WellGroupProperties: FC<WellGroupPropertiesProps> = ({
+    activeGroup,
+    onPropertyChange,
+    onDeleteProperty,
+}) => {
     const [newKey, setNewKey] = useState('');
     const [newValue, setNewValue] = useState('');
 
@@ -37,6 +75,43 @@ export function WellGroupProperties({ activeGroup, onPropertyChange, onDeletePro
         setNewKey('');
         setNewValue('');
     }, [activeGroup?.rowId]);
+
+    const handleAdd = useCallback(() => {
+        if (!activeGroup) return;
+        const key = newKey.trim();
+        if (!key) return;
+        onPropertyChange(activeGroup.rowId, key, newValue);
+        setNewKey('');
+        setNewValue('');
+    }, [activeGroup, newKey, newValue, onPropertyChange]);
+
+    const handleNewKeyChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setNewKey(e.target.value), []);
+    const handleNewValueChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => setNewValue(e.target.value),
+        []
+    );
+    const handleNewKeyKeyDown = useCallback(
+        (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === 'Enter' && newKey.trim()) handleAdd();
+        },
+        [newKey, handleAdd]
+    );
+    const handleNewValueKeyDown = useCallback(
+        (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === 'Enter' && newKey.trim()) handleAdd();
+        },
+        [newKey, handleAdd]
+    );
+
+    // Adapters that prepend groupRowId, needed because PropertyRow doesn't know the group context.
+    const handlePropertyChange = useCallback(
+        (key: string, value: string) => onPropertyChange(activeGroup!.rowId, key, value),
+        [onPropertyChange, activeGroup]
+    );
+    const handleDeleteProperty = useCallback(
+        (key: string) => onDeleteProperty(activeGroup!.rowId, key),
+        [onDeleteProperty, activeGroup]
+    );
 
     if (!activeGroup) {
         return (
@@ -48,78 +123,61 @@ export function WellGroupProperties({ activeGroup, onPropertyChange, onDeletePro
 
     const propEntries = Object.entries(activeGroup.properties);
 
-    const handleAdd = () => {
-        const key = newKey.trim();
-        if (!key) return;
-        onPropertyChange(activeGroup.rowId, key, newValue);
-        setNewKey('');
-        setNewValue('');
-    };
-
     return (
         <div className="well-group-properties">
             <div className="well-group-properties__title">{activeGroup.name}</div>
             <table className="well-group-properties__table">
                 <thead>
                     <tr>
-                        <th scope="col" className="well-group-properties__key">Property</th>
+                        <th className="well-group-properties__key" scope="col">
+                            Property
+                        </th>
                         <th scope="col">Value</th>
-                        <th scope="col"><span className="sr-only">Actions</span></th>
+                        <th scope="col">
+                            <span className="sr-only">Actions</span>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     {propEntries.length === 0 && (
                         <tr>
-                            <td colSpan={3} className="well-group-properties__no-props">No properties defined.</td>
+                            <td className="well-group-properties__no-props" colSpan={3}>
+                                No properties defined.
+                            </td>
                         </tr>
                     )}
                     {propEntries.map(([key, value]) => (
-                        <tr key={key}>
-                            <td className="well-group-properties__key">{key}</td>
-                            <td className="well-group-properties__value-cell">
-                                <input
-                                    className="well-group-properties__value"
-                                    type="text"
-                                    aria-label={key}
-                                    value={value}
-                                    onChange={e => onPropertyChange(activeGroup.rowId, key, e.target.value)}
-                                />
-                            </td>
-                            <td className="well-group-properties__action-cell">
-                                <button
-                                    className="well-group-properties__delete-btn"
-                                    title="Delete property"
-                                    aria-label={`Delete property ${key}`}
-                                    onClick={() => onDeleteProperty(activeGroup.rowId, key)}
-                                >
-                                    <span className="fa fa-trash-o" aria-hidden="true" />
-                                </button>
-                            </td>
-                        </tr>
+                        <PropertyRow
+                            key={key}
+                            onDeleteProperty={handleDeleteProperty}
+                            onPropertyChange={handlePropertyChange}
+                            propKey={key}
+                            value={value}
+                        />
                     ))}
                 </tbody>
                 <tfoot>
                     <tr className="well-group-properties__add-row">
                         <td className="well-group-properties__key">
                             <input
-                                className="well-group-properties__new-key"
-                                type="text"
-                                placeholder="Property name"
                                 aria-label="Property name"
+                                className="well-group-properties__new-key"
+                                onChange={handleNewKeyChange}
+                                onKeyDown={handleNewKeyKeyDown}
+                                placeholder="Property name"
+                                type="text"
                                 value={newKey}
-                                onChange={e => setNewKey(e.target.value)}
-                                onKeyDown={e => { if (e.key === 'Enter' && newKey.trim()) handleAdd(); }}
                             />
                         </td>
                         <td className="well-group-properties__value-cell">
                             <input
-                                className="well-group-properties__new-value"
-                                type="text"
-                                placeholder="Value"
                                 aria-label="Property value"
+                                className="well-group-properties__new-value"
+                                onChange={handleNewValueChange}
+                                onKeyDown={handleNewValueKeyDown}
+                                placeholder="Value"
+                                type="text"
                                 value={newValue}
-                                onChange={e => setNewValue(e.target.value)}
-                                onKeyDown={e => { if (e.key === 'Enter' && newKey.trim()) handleAdd(); }}
                             />
                         </td>
                         <td className="well-group-properties__action-cell">
@@ -136,4 +194,5 @@ export function WellGroupProperties({ activeGroup, onPropertyChange, onDeletePro
             </table>
         </div>
     );
-}
+};
+WellGroupProperties.displayName = 'WellGroupProperties';

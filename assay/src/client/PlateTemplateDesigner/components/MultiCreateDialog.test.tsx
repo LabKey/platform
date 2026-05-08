@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 import React from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 
 import { MultiCreateDialog } from './MultiCreateDialog';
@@ -168,7 +168,9 @@ describe('MultiCreateDialog', () => {
         test('Tab from last focusable element (Create) wraps focus to first (Base Name)', async () => {
             renderDialog({ initialBaseName: 'Sample' }); // Create button enabled
             // After mount the useEffect focuses the first element (Base Name); tab forward to Create.
+            expect(document.activeElement).toBe(screen.getByLabelText(/Base Name/i));
             await userEvent.tab(); // → Count
+            expect(document.activeElement).toBe(screen.getByLabelText(/Count/i));
             await userEvent.tab(); // → Cancel
             await userEvent.tab(); // → Create (last)
             await userEvent.tab(); // → focus trap wraps back to Base Name
@@ -177,7 +179,9 @@ describe('MultiCreateDialog', () => {
 
         test('Shift+Tab from first focusable element (Base Name) wraps focus to last (Create)', async () => {
             renderDialog({ initialBaseName: 'Sample' }); // Create button enabled
-            // After mount, Base Name is focused (first focusable). Shift+Tab wraps to Create (last).
+            expect(document.activeElement).toBe(
+                within(screen.getByRole('dialog')).getByRole('textbox', { name: 'Base Name' })
+            );
             await userEvent.keyboard('{Shift>}{Tab}{/Shift}');
             expect(document.activeElement).toBe(
                 within(screen.getByRole('dialog')).getByRole('button', { name: 'Create' })
