@@ -13,7 +13,7 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "7.35.2-fb-keyboardInteraction.4"
+    "@labkey/components": "7.35.2-fb-keyboardInteraction.5"
   },
   "devDependencies": {
     "@labkey/build": "9.1.2",

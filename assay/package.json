@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "7.35.2-fb-keyboardInteraction.4"
+    "@labkey/components": "7.35.2-fb-keyboardInteraction.5"
   },
   "devDependencies": {
     "@labkey/build": "9.1.2",
