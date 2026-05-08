@@ -26,8 +26,16 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.MemBean" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.text.DecimalFormat" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("admin/caches.js");
+    }
+%>
 <%
     JspView<MemBean> me = HttpView.currentView();
     MemBean bean = me.getModelBean();
@@ -45,8 +53,8 @@
 %>
 <% if (hasAdminPerm) { %>
 <p>
-    <%=link("Clear Caches, GC and Refresh", AdminController.getMemTrackerURL(true, true))%>
-    <%=link("GC and Refresh", AdminController.getMemTrackerURL(false, true))%>
+    <a href="#" id="clearCachesGc" class="labkey-text-link">Clear Caches, GC and Refresh</a>
+    <a href="#" id="gcOnly" class="labkey-text-link">GC and Refresh</a>
     <%=link("Refresh", AdminController.getMemTrackerURL(false, false))%>
     <% if (getUser().hasSiteAdminPermission()) { %> <%=link("Memory Stress Test", new ActionURL(AdminController.MemoryStressTestAction.class, ContainerManager.getRoot()))%> <% } %>
 </p>
