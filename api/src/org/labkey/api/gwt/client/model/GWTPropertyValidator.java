@@ -15,13 +15,14 @@
  */
 package org.labkey.api.gwt.client.model;
 
-import com.google.api.client.util.Objects;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /*
 * User: Karl Lum
@@ -174,12 +175,12 @@ public class GWTPropertyValidator implements Serializable
             return false;
 
         if (getRowId() != that.getRowId()) return false;
-        if (!StringUtils.equals(getName(), that.getName())) return false;
+        if (!Strings.CS.equals(getName(), that.getName())) return false;
         Object o1 = getType();
-        if (!Objects.equal(o1, that.getType())) return false;
-        if (!StringUtils.equals(getDescription(), that.getDescription())) return false;
-        if (!StringUtils.equals(getExpression(), that.getExpression())) return false;
-        if (!StringUtils.equals(getErrorMessage(), that.getErrorMessage())) return false;
+        if (!Objects.equals(o1, that.getType())) return false;
+        if (!Strings.CS.equals(getDescription(), that.getDescription())) return false;
+        if (!Strings.CS.equals(getExpression(), that.getExpression())) return false;
+        if (!Strings.CS.equals(getErrorMessage(), that.getErrorMessage())) return false;
         if (!getProperties().equals(that.getProperties())) return false;
 
         return true;

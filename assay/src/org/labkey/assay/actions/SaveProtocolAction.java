@@ -15,7 +15,6 @@
  */
 package org.labkey.assay.actions;
 
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;

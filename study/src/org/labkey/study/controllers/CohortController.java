@@ -15,7 +15,6 @@
  */
 package org.labkey.study.controllers;
 
-import com.google.api.client.util.Objects;
 import org.apache.commons.lang3.Strings;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -60,6 +59,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
@@ -428,10 +428,10 @@ public class CohortController extends BaseStudyController
                     boolean labelChanged = (newLabel != null && !cohort.getLabel().equals(newLabel));
                     boolean enrolledChanged = cohort.isEnrolled() != newEnrolled;
                     Object o1 = cohort.getSubjectCount();
-                    boolean subjectCountChanged = !Objects.equal(o1, newSubjectCount);
-                    boolean desciprtionChanged = !Strings.CS.equals(cohort.getDescription(), newDescription);
+                    boolean subjectCountChanged = !Objects.equals(o1, newSubjectCount);
+                    boolean descriptionChanged = !Strings.CS.equals(cohort.getDescription(), newDescription);
 
-                    if (labelChanged || enrolledChanged || subjectCountChanged || desciprtionChanged)
+                    if (labelChanged || enrolledChanged || subjectCountChanged || descriptionChanged)
                     {
                         cohort = cohort.createMutable();
 

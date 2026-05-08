@@ -26,7 +26,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -1077,7 +1076,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
         SqlSelector selector = new SqlSelector(getSchema(), sql);
         selector.setJdbcCaching(false);
-        MutableInt maxRowIdProcessed = new MutableInt(minRowId);
+        MutableLong maxRowIdProcessed = new MutableLong(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
         List<Material> materials = selector.getArrayList(Material.class);
