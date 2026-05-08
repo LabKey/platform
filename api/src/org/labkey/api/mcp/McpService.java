@@ -1,6 +1,5 @@
 package org.labkey.api.mcp;
 
-
 import io.modelcontextprotocol.server.McpServerFeatures;
 import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.Logger;
@@ -88,7 +87,7 @@ public interface McpService extends ToolCallbackProvider
     {
         default ContainerUser getContext(ToolContext toolContext)
         {
-            User user = (User)toolContext.getContext().get("user");
+            User user = getUser(toolContext);
             Container container = (Container)toolContext.getContext().get("container");
             if (container == null)
                 throw new McpException("No container path is set. Ask the user which container/folder they want to use (you can call listContainers to show available options), then call setContainer before retrying.");
@@ -103,7 +102,7 @@ public interface McpService extends ToolCallbackProvider
         // Every MCP resource should call this on every invocation
         default void incrementResourceRequestCount(String resource)
         {
-            if (!OptionalFeatureService.get().isFeatureEnabled(ENABLE_MCP_SERVER_FLAG))
+            if (!get().isEnabled())
                 throw new RuntimeException("The MCP server is not enabled for external requests. Consider toggling the experimental feature flag.");
 
             get().incrementResourceRequestCount(resource);
@@ -121,6 +120,11 @@ public interface McpService extends ToolCallbackProvider
     static void setInstance(McpService service)
     {
         ServiceRegistry.get().registerService(McpService.class, service);
+    }
+
+    default boolean isEnabled()
+    {
+        return OptionalFeatureService.get().isFeatureEnabled(ENABLE_MCP_SERVER_FLAG);
     }
 
     boolean isReady();
