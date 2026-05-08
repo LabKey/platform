@@ -387,11 +387,9 @@ final class ExternalScriptable implements Scriptable
             Object v = ScriptableObject.getProperty(this, methodName);
             if (!(v instanceof Function fun))
                 continue;
-            Context cx = RhinoScriptEngine.enterContext();
-            try {
+            try (Context cx = Context.enter())
+            {
                 v = fun.call(cx, fun.getParentScope(), this, args);
-            } finally {
-                cx.exit();
             }
             if (v != null) {
                 if (!(v instanceof Scriptable)) {
