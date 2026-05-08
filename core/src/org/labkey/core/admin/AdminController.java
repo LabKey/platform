@@ -2700,7 +2700,7 @@ public class AdminController extends SpringActionController
         public ModelAndView getConfirmView(Object o, BindException errors)
         {
             setTitle("Dump Heap");
-            return HtmlView.of("Are you sure you want to dump the JVM heap to disk? This may temporarily slow the server and will consume significant disk space.");
+            return HtmlView.of("Are you sure you want to dump the JVM heap to disk? Heap dumps are useful for troubleshooting memory leaks or OutOfMemoryErrors. This may temporarily slow the server and will consume significant disk space.");
         }
 
         @Override
