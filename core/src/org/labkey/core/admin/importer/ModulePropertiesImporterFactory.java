@@ -64,14 +64,14 @@ public class ModulePropertiesImporterFactory extends AbstractFolderImportFactory
 
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
-                ctx.getLogger().info("Loading " + getDescription());
+                ctx.getLogger().info("Loading {}", getDescription());
 
                 for(ModulePropertyType modulePropType: modulePropsType.getModulePropertyArray())
                 {
                     Module module = ModuleLoader.getInstance().getModule(modulePropType.getModuleName());
                     if (module == null)
                     {
-                        ctx.getLogger().info("Module '" + modulePropType.getModuleName() + "' not deployed, skipping import of property '" + modulePropType.getPropertyName() + "'");
+                        ctx.getLogger().info("Module '{}' not deployed, skipping import of property '{}'", modulePropType.getModuleName(), modulePropType.getPropertyName());
                     }
                     else
                     {
@@ -83,7 +83,7 @@ public class ModulePropertiesImporterFactory extends AbstractFolderImportFactory
                     }
                 }
 
-                ctx.getLogger().info("Done importing " + getDescription());
+                ctx.getLogger().info("Done importing {}", getDescription());
             }
         }
 

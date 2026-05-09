@@ -57,7 +57,7 @@ public class Builder extends SQLFragment
      */
     public void popPrefix(String suffix)
     {
-        String cur = _prefix.remove(_prefix.size() - 1);
+        String cur = _prefix.removeLast();
         if (cur == null)
         {
             super.append(suffix);
@@ -75,7 +75,7 @@ public class Builder extends SQLFragment
      */
     public boolean nextPrefix(String newPrefix)
     {
-        String prefix = _prefix.get(_prefix.size() - 1);
+        String prefix = _prefix.getLast();
         if (prefix != null)
             return false;
         _prefix.set(_prefix.size() - 1, newPrefix);

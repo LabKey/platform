@@ -82,7 +82,7 @@ public class HeartBeat
                 }
                 catch (InterruptedException e)
                 {
-                    _log.debug(getName() + " interrupted");
+                    _log.debug("{} interrupted", getName());
                 }
 
                 long ms = System.currentTimeMillis();
@@ -101,11 +101,6 @@ public class HeartBeat
         {
             _shutdown = true;
             interrupt();
-        }
-
-        @Override
-        public void shutdownStarted()
-        {
         }
     }
 }

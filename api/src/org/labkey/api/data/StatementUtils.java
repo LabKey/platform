@@ -500,7 +500,7 @@ public class StatementUtils
         return statement;
     }
 
-    public ParameterMapStatement createStatement(Connection conn, @Nullable Container c, User user, boolean checkUpdatableColumns) throws SQLException, TableInsertUpdateDataIterator.NoUpdatableColumnInDataException
+    public ParameterMapStatement createStatement(Connection conn, @Nullable Container c, User user, boolean checkUpdatableColumns) throws TableInsertUpdateDataIterator.NoUpdatableColumnInDataException
     {
         if (!(_targetTable instanceof UpdateableTableInfo updatable))
             throw new IllegalArgumentException("Table must be an UpdateableTableInfo");

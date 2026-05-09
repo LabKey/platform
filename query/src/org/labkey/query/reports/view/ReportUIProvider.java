@@ -161,11 +161,11 @@ public class ReportUIProvider extends DefaultReportUIProvider
             // don't add an entry for R, since we have a specific report type above.
             if (!factory.getLanguageName().equalsIgnoreCase("R"))
             {
-                if (!factory.getExtensions().isEmpty() && ReportUtil.canCreateScript(context, factory.getExtensions().get(0)) && manager.isFactoryEnabled(factory))
+                if (!factory.getExtensions().isEmpty() && ReportUtil.canCreateScript(context, factory.getExtensions().getFirst()) && manager.isFactoryEnabled(factory))
                 {
                     ScriptReportBean bean = new ScriptReportBean(settings);
                     bean.setRedirectUrl(returnUrl.getLocalURIString());
-                    bean.setScriptExtension(factory.getExtensions().get(0));
+                    bean.setScriptExtension(factory.getExtensions().getFirst());
 
                     if (factory instanceof ExternalScriptEngineFactory)
                     {

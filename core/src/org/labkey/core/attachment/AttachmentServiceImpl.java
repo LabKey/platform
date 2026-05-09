@@ -70,7 +70,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
@@ -217,15 +216,8 @@ public class AttachmentServiceImpl implements AttachmentService
             if (parent instanceof AttachmentDirectory adParent)
             {
                 FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(c, comment);
-                try
-                {
-                    event.setDirectory(adParent.getFileSystemDirectory().getPath());
-                }
-                catch (MissingRootDirectoryException ex)
-                {
-                    // UNDONE: AttachmentDirectory.getFileSystemPath()...
-                    event.setDirectory("path not found");
-                }
+                event.setDirectory(adParent.getFileSystemDirectory().getPath());
+
                 event.setFile(filename);
                 AuditLogService.get().addEvent(user, event);
             }
@@ -650,14 +642,7 @@ public class AttachmentServiceImpl implements AttachmentService
 
         File parentDir = null;
 
-        try
-        {
-            parentDir = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
-        }
-        catch (MissingRootDirectoryException ex)
-        {
-            /* no problem */
-        }
+        parentDir = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
 
         if (null == parentDir || !parentDir.exists())
             return attachmentsFromDatabase;
@@ -1297,14 +1282,7 @@ public class AttachmentServiceImpl implements AttachmentService
             {
                 if (null == ((AttachmentDirectory)_parent).getName())
                 {
-                    try
-                    {
-                        return null != svc.getMappedAttachmentDirectory(ContainerManager.getForId(_parent.getContainerId()), false);
-                    }
-                    catch (MissingRootDirectoryException x)
-                    {
-                        return false;
-                    }
+                    return null != svc.getMappedAttachmentDirectory(ContainerManager.getForId(_parent.getContainerId()), false);
                 }
                 else
                 {
@@ -1482,12 +1460,6 @@ public class AttachmentServiceImpl implements AttachmentService
         }
 
         @Override
-        public boolean isCollection()
-        {
-            return false;
-        }
-
-        @Override
         public boolean canRename(User user, boolean forRename)
         {
             return false;
@@ -1511,7 +1483,7 @@ public class AttachmentServiceImpl implements AttachmentService
             List<AttachmentFile> files = getAttachmentFiles(_parent, Collections.singletonList(r));
             if (files.isEmpty())
                 throw new FileNotFoundException(r.getName());
-            return files.get(0);
+            return files.getFirst();
         }
 
         @Override
@@ -1633,16 +1605,9 @@ public class AttachmentServiceImpl implements AttachmentService
 
             if (_parent instanceof AttachmentDirectory)
             {
-                try
-                {
-                    File dir = ((AttachmentDirectory)_parent).getFileSystemDirectory();
-                    File file = new File(dir,a.getName());
-                    return file.exists() ? file.length() : 0;
-                }
-                catch (MissingRootDirectoryException x)
-                {
-                    return 0;
-                }
+                File dir = ((AttachmentDirectory)_parent).getFileSystemDirectory();
+                File file = new File(dir,a.getName());
+                return file.exists() ? file.length() : 0;
             }
             else
             {
@@ -1679,15 +1644,8 @@ public class AttachmentServiceImpl implements AttachmentService
         {
             if (_parent instanceof AttachmentDirectory)
             {
-                try
-                {
-                    File dir = ((AttachmentDirectory)_parent).getFileSystemDirectory();
-                    return new File(dir,getName());
-                }
-                catch (MissingRootDirectoryException x)
-                {
-                    return null;
-                }
+                File dir = ((AttachmentDirectory)_parent).getFileSystemDirectory();
+                return new File(dir,getName());
             }
             return null;
         }
@@ -1772,7 +1730,7 @@ public class AttachmentServiceImpl implements AttachmentService
             svc.addAttachments(attachParent, files, user);
             List<Attachment> att = svc.getAttachments(attachParent);
             assertEquals(1, att.size());
-            assertTrue(att.get(0).getFile().exists());
+            assertTrue(att.getFirst().getFile().exists());
 
             // test rename
             String oldName = f.getName();
@@ -1797,8 +1755,8 @@ public class AttachmentServiceImpl implements AttachmentService
             svc.addAttachments(namedParent, files, user);
             att = svc.getAttachments(namedParent);
             assertEquals(1, att.size());
-            assertTrue(att.get(0).getFile().exists());
-            assertSameFile(FileUtil.appendName(otherDir, "file.txt"), att.get(0).getFile());
+            assertTrue(att.getFirst().getFile().exists());
+            assertSameFile(FileUtil.appendName(otherDir, "file.txt"), att.getFirst().getFile());
             assertTrue(FileUtil.appendName(otherDir, UPLOAD_LOG).exists());
 
             fileService.unregisterDirectory(folder, "test");
@@ -1817,7 +1775,7 @@ public class AttachmentServiceImpl implements AttachmentService
             att = svc.getAttachments(relativeParent);
             assertEquals(1, att.size());
 
-            File expectedFile1 = att.get(0).getFile();
+            File expectedFile1 = att.getFirst().getFile();
             File expectedFile2 = FileUtil.appendName(relativeDir, UPLOAD_LOG);
 
             assertTrue(expectedFile1.exists());

@@ -204,14 +204,14 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                 if (!root.isUnderRoot(file))
                 {
                     FileLike savedFile = dir.resolveChild(file.getName());
-                    LOG.debug("savePipelineFiles: file '" + file + "' is not under pipeline root. copying to savedFile=" + savedFile);
+                    LOG.debug("savePipelineFiles: file '{}' is not under pipeline root. copying to savedFile={}", file, savedFile);
                     FileUtils.copyFile(toFileForRead(file), toFileForWrite(savedFile));
                     savedFiles.put(key, savedFile);
                 }
                 else
                 {
                     savedFiles.put(key, file);
-                    LOG.debug("savePipelineFiles: file '" + file.getPath() + "' is already under pipeline root. not copying");
+                    LOG.debug("savePipelineFiles: file '{}' is already under pipeline root. not copying", file.getPath());
                 }
             }
         }

@@ -999,7 +999,7 @@ public class ExceptionUtil
         //don't log unauthorized (basic-auth challenge), forbiddens, or simple not found (404s)
         if (null != unhandledException && responseStatus != HttpServletResponse.SC_BAD_REQUEST)
         {
-            log.error("Unhandled exception: " + message, unhandledException);
+            log.error("Unhandled exception: {}", message, unhandledException);
         }
 
         ApiResponseWriter.Format responseFormat = ApiResponseWriter.getResponseFormat(request, null);
@@ -1263,7 +1263,7 @@ public class ExceptionUtil
             HashMap<Enum<?>, String> m = _exceptionDecorations.computeIfAbsent(t, _ -> new HashMap<>());
             if (overwrite || !m.containsKey(key))
             {
-                LOG.debug("add decoration to " + t.getClass() + "@" + System.identityHashCode(t) + " " + key + "=" + value);
+                LOG.debug("add decoration to {}@{} {}={}", t.getClass(), System.identityHashCode(t), key, value);
                 m.put(key,value);
                 return true;
             }

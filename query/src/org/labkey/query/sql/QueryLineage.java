@@ -1,6 +1,5 @@
 package org.labkey.query.sql;
 
-import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;

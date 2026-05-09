@@ -87,7 +87,7 @@ public class TableXmlUtils
         }
         catch (Exception e)
         {
-            _log.error("Exception loading schema " + schema.getDisplayName(), e);
+            _log.error("Exception loading schema {}", schema.getDisplayName(), e);
             resultList.addError("+++ ERROR: Exception " + e.getMessage());
         }
 

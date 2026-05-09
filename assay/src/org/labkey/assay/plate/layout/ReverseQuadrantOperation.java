@@ -17,7 +17,7 @@ public class ReverseQuadrantOperation implements LayoutOperation
     @Override
     public List<WellLayout> execute(ExecutionContext context)
     {
-        Plate sourcePlate = context.sourcePlates().get(0);
+        Plate sourcePlate = context.sourcePlates().getFirst();
         Long plateRowId = sourcePlate.getRowId();
 
         List<WellLayout> layouts = new ArrayList<>();
@@ -69,7 +69,7 @@ public class ReverseQuadrantOperation implements LayoutOperation
         if (context.sourcePlates().size() != 1)
             throw new ValidationException("The reverse quadrant operation requires a single source plate.");
 
-        _targetPlateType = getTargetPlateType(context.sourcePlates().get(0).getPlateType(), context.allPlateTypes());
+        _targetPlateType = getTargetPlateType(context.sourcePlates().getFirst().getPlateType(), context.allPlateTypes());
     }
 
     private @NotNull PlateType getTargetPlateType(@NotNull PlateType sourcePlateType, List<? extends PlateType> allPlateTypes) throws ValidationException

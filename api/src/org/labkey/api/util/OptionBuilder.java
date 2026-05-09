@@ -1,7 +1,7 @@
 package org.labkey.api.util;
 
-import jakarta.validation.constraints.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 public class OptionBuilder implements HasHtmlString, SafeToRender
 {
@@ -89,7 +89,7 @@ public class OptionBuilder implements HasHtmlString, SafeToRender
             return _disabled;
         }
 
-        public HtmlString getLabel()
+        public @NotNull HtmlString getLabel()
         {
             return _label;
         }

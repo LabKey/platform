@@ -144,7 +144,7 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
             {
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
-                ctx.getLogger().info("Loading " + getDescription());
+                ctx.getLogger().info("Loading {}", getDescription());
 
                 org.labkey.folder.xml.FolderType folderTypeXml = folderXml.getFolderType();
                 FolderType folderType = FolderTypeManager.get().getFolderType(folderTypeXml.getName());

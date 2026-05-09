@@ -90,7 +90,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
         }
         if (selected == null)
         {
-            selected = _resolvers.get(0);
+            selected = _resolvers.getFirst();
         }
 
         ParticipantVisitResolverType finalSelected = selected;

@@ -604,7 +604,7 @@ public class ExperimentController extends SpringActionController
                             List<MiniExpObject> rowsWithNull = new ArrayList<>();
 
                             ColumnInfo entityIdCol = table.getColumn("EntityId");
-                            ColumnInfo pkCol = table.getPkColumns().get(0);
+                            ColumnInfo pkCol = table.getPkColumns().getFirst();
 
                             new TableSelector(table,
                                     List.of(entityIdCol, pkCol),
@@ -626,7 +626,7 @@ public class ExperimentController extends SpringActionController
 
                             if (!fixupsNeeded.isEmpty())
                             {
-                                listSummaries.put(new ProblemType(table.getName(), fieldName, table.getPkColumnNames().get(0)), fixupsNeeded);
+                                listSummaries.put(new ProblemType(table.getName(), fieldName, table.getPkColumnNames().getFirst()), fixupsNeeded);
                             }
                         }
 
@@ -3362,7 +3362,7 @@ public class ExperimentController extends SpringActionController
             if (!idToRunMap.isEmpty() && assayService != null )
             {
                 // using the first run as a representative, since all interactions here are (I believe) using the same protocol.
-                ExpProtocol protocol = runs.get(0).getProtocol();
+                ExpProtocol protocol = runs.getFirst().getProtocol();
                 AssayProvider provider = assayService.getProvider(protocol);
                 if (provider != null)
                 {
@@ -4488,7 +4488,7 @@ public class ExperimentController extends SpringActionController
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
 
             if (!qpe.isEmpty())
-                throw qpe.get(0);
+                throw qpe.getFirst();
             if (!getOptionParamValue(Params.crossTypeImport) && null != t)
             {
                 setTarget(t);
@@ -5434,7 +5434,7 @@ public class ExperimentController extends SpringActionController
             setHelpTopic("sampleSets");
             addRootNavTrail(root);
             root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()));
-            ExpSampleType sampleType = _materials != null && !_materials.isEmpty() ? _materials.get(0).getSampleType() : null;
+            ExpSampleType sampleType = _materials != null && !_materials.isEmpty() ? _materials.getFirst().getSampleType() : null;
             if (sampleType != null)
             {
                 root.addChild(sampleType.getName(), ExperimentUrlsImpl.get().getShowSampleTypeURL(sampleType));
@@ -5633,7 +5633,7 @@ public class ExperimentController extends SpringActionController
             setHelpTopic("sampleSets");
             addRootNavTrail(root);
             root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()));
-            ExpSampleType sampleType = _materials != null && !_materials.isEmpty() ? _materials.get(0).getSampleType() : null;
+            ExpSampleType sampleType = _materials != null && !_materials.isEmpty() ? _materials.getFirst().getSampleType() : null;
             if (sampleType != null)
             {
                 root.addChild(sampleType.getName(), ExperimentUrlsImpl.get().getShowSampleTypeURL(sampleType));

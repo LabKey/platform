@@ -112,8 +112,7 @@ public class WebPartCache
                 p.setEntityId(g);
             }
             if (pages.containsKey(p.getPageId()) && null != container)
-                LOG.warn("Page '" + p.getPageId() + "' in container '" + container.getPath() +
-                        "' is duplicated, meaning some expected web parts may be missing. Recommended to remove the page (tab), which should remove one of them, and set web parts as desired.");
+                LOG.warn("Page '{}' in container '{}' is duplicated, meaning some expected web parts may be missing. Recommended to remove the page (tab), which should remove one of them, and set web parts as desired.", p.getPageId(), container.getPath());
             pages.put(p.getPageId(), p);
             pagesByRowId.put(p.getRowId(), p);
         }

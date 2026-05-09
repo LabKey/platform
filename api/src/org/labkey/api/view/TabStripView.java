@@ -108,7 +108,7 @@ public abstract class TabStripView extends JspView<TabStripView>
         {
             List<NavTree> tabs = getTabList();
             if (!tabs.isEmpty())
-                tabId = tabs.get(0).getId();
+                tabId = tabs.getFirst().getId();
         }
         return tabId;
     }

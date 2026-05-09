@@ -15,6 +15,8 @@
  */
 package org.labkey.api.collections;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -58,19 +60,19 @@ public class ListWrapper<E> implements List<E>
     }
 
     @Override
-    public Iterator<E> iterator()
+    public @NotNull Iterator<E> iterator()
     {
         return _list.iterator();
     }
 
     @Override
-    public Object[] toArray()
+    public Object @NotNull [] toArray()
     {
         return _list.toArray();
     }
 
     @Override
-    public <T> T[] toArray(T[] a)
+    public <T> T @NotNull [] toArray(T @NotNull [] a)
     {
         return _list.toArray(a);
     }
@@ -88,31 +90,31 @@ public class ListWrapper<E> implements List<E>
     }
 
     @Override
-    public boolean containsAll(Collection<?> c)
+    public boolean containsAll(@NotNull Collection<?> c)
     {
         return _list.containsAll(c);
     }
 
     @Override
-    public boolean addAll(Collection<? extends E> c)
+    public boolean addAll(@NotNull Collection<? extends E> c)
     {
         return _list.addAll(c);
     }
 
     @Override
-    public boolean addAll(int index, Collection<? extends E> c)
+    public boolean addAll(int index, @NotNull Collection<? extends E> c)
     {
         return _list.addAll(index, c);
     }
 
     @Override
-    public boolean removeAll(Collection<?> c)
+    public boolean removeAll(@NotNull Collection<?> c)
     {
         return _list.removeAll(c);
     }
 
     @Override
-    public boolean retainAll(Collection<?> c)
+    public boolean retainAll(@NotNull Collection<?> c)
     {
         return _list.retainAll(c);
     }
@@ -172,19 +174,19 @@ public class ListWrapper<E> implements List<E>
     }
 
     @Override
-    public ListIterator<E> listIterator()
+    public @NotNull ListIterator<E> listIterator()
     {
         return _list.listIterator();
     }
 
     @Override
-    public ListIterator<E> listIterator(int index)
+    public @NotNull ListIterator<E> listIterator(int index)
     {
         return _list.listIterator(index);
     }
 
     @Override
-    public List<E> subList(int fromIndex, int toIndex)
+    public @NotNull List<E> subList(int fromIndex, int toIndex)
     {
         return _list.subList(fromIndex, toIndex);
     }

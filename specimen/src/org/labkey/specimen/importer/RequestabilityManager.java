@@ -824,10 +824,10 @@ public class RequestabilityManager
         {
             String action = rule.getMarkType().getLabel().toLowerCase();
             if (logger != null)
-                logger.info("\tMarking vials " + action + " based on " + rule.getName());
+                logger.info("\tMarking vials {} based on {}", action, rule.getName());
             int updatedCount = rule.updateRequestability(user, vials);
             if (logger != null)
-                logger.info("\t" + updatedCount + " vials marked " + action + ".");
+                logger.info("\t{} vials marked {}.", updatedCount, action);
         }
 
         if (logger != null)

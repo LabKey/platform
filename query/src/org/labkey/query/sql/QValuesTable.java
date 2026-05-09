@@ -34,7 +34,7 @@ public class QValuesTable extends QTable
         this.values = values;
         setAlias(alias);
         var rows = values.childList();
-        countOfColumns = rows.isEmpty() ? 0 : rows.get(0).childList().size();
+        countOfColumns = rows.isEmpty() ? 0 : rows.getFirst().childList().size();
         relation = new _QueryRelation();
     }
 
@@ -126,7 +126,7 @@ public class QValuesTable extends QTable
             QExpr methodName = null;
             if (expr instanceof QMethodCall)
             {
-                methodName = (QExpr)expr.childList().get(0);
+                methodName = (QExpr)expr.childList().getFirst();
                 if (null == methodName.getFieldKey())
                     methodName = null;
             }
@@ -264,7 +264,7 @@ public class QValuesTable extends QTable
                     @Override
                     public @NotNull JdbcType getJdbcType()
                     {
-                        var firstRow = values.childList().get(0).childList();
+                        var firstRow = values.childList().getFirst().childList();
                         final QExpr expr = (QExpr)firstRow.get(index);
                         return expr.getJdbcType();
                     }

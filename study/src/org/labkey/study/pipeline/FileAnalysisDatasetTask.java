@@ -33,7 +33,6 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

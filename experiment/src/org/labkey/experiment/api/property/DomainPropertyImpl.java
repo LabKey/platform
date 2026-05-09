@@ -1267,7 +1267,7 @@ public class DomainPropertyImpl implements DomainProperty
             OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
             assertTrue(_dp.isDirty());
             assertFalse(_dp._schemaChanged);
-            assertTrue(_dp.getPHI() == _pd.getPHI());
+            assertSame(_dp.getPHI(), _pd.getPHI());
 
             // Issue #18738 change the schema outside of a schema reload and verify that the column
             // change the schema but don't mark the property as "Schema Import"
@@ -1329,7 +1329,7 @@ public class DomainPropertyImpl implements DomainProperty
             _pd.setLookupQuery(query);
             _pd.setLookupSchema(schema);
             OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
-            assertTrue(_dp.isDirty() == expectedDirty);
+            assertEquals(_dp.isDirty(), (boolean) expectedDirty);
             assertFalse(_dp._schemaChanged);
 
             // verify the lookup object returned
@@ -1344,7 +1344,7 @@ public class DomainPropertyImpl implements DomainProperty
                 else if (query == null || schema == null)
                     assertTrue(true);
                 else
-                    assertTrue(false);
+                    fail();
             }
             else
             {

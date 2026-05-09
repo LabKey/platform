@@ -1911,7 +1911,7 @@ public class PlateController extends SpringActionController
             }
             else if (fileBytes.size() == 1)
             {
-                PlateManager.PlateFileBytes plateFileBytes = fileBytes.get(0);
+                PlateManager.PlateFileBytes plateFileBytes = fileBytes.getFirst();
                 String fileName = FileUtil.makeLegalName(plateFileBytes.plateName() + mapSuffix + "." + fileExtension);
                 PageFlowUtil.streamFileBytes(getViewContext().getResponse(), fileName, plateFileBytes.bytes().toByteArray(), true);
                 return null;

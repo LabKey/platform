@@ -212,7 +212,7 @@ public class FileSystemResource extends AbstractWebdavResource
             if (file.exists())
                 return file;
         }
-        return _files.get(0);
+        return _files.getFirst();
     }
 
     @Override
@@ -291,7 +291,7 @@ public class FileSystemResource extends AbstractWebdavResource
             }
             catch (IOException x)
             {
-                _log.error("Couldn't create file on server: " + file.getPath(), x);
+                _log.error("Couldn't create file on server: {}", file.getPath(), x);
                 throw new ConfigurationException("Couldn't create file on server", x);
             }
         }
@@ -433,7 +433,7 @@ public class FileSystemResource extends AbstractWebdavResource
             if (!f.canRead())
             {
                 SecurityLogger.log("File.canRead()==false",user,null,false);
-                _log.warn(user.getEmail() + " attempted to read file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+                _log.warn("{} attempted to read file that is not readable by LabKey Server.  This may be a configuration problem. file: {}", user.getEmail(), f.getPath());
                 return false;
             }
             return canReadPerm;
@@ -464,7 +464,7 @@ public class FileSystemResource extends AbstractWebdavResource
             if (!f.canWrite())
             {
                 SecurityLogger.log("File.canWrite()==false",user,null,false);
-                _log.warn(user.getEmail() + " attempted to write file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+                _log.warn("{} attempted to write file that is not readable by LabKey Server.  This may be a configuration problem. file: {}", user.getEmail(), f.getPath());
                 return false;
             }
             return canWritePerm;
@@ -495,7 +495,7 @@ public class FileSystemResource extends AbstractWebdavResource
             if (!f.canWrite())
             {
                 SecurityLogger.log("File.canWrite()==false",user,null,false);
-                _log.warn(user.getEmail() + " attempted to write file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+                _log.warn("{} attempted to write file that is not readable by LabKey Server.  This may be a configuration problem. file: {}", user.getEmail(), f.getPath());
                 return false;
             }
             return canCreatePerm;
@@ -524,7 +524,7 @@ public class FileSystemResource extends AbstractWebdavResource
                 {
                     if (null != message)
                         message.add("File is not writable on server");
-                    _log.warn(user.getEmail() + " attempted to delete file that is not writable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+                    _log.warn("{} attempted to delete file that is not writable by LabKey Server.  This may be a configuration problem. file: {}", user.getEmail(), f.getPath());
                 }
                 return false;
             }
@@ -596,7 +596,7 @@ public class FileSystemResource extends AbstractWebdavResource
         }
         boolean deleted = file.delete();
         if (!deleted)
-            _log.warn("Unexpected file system error, could not delete file: " + file.getPath());
+            _log.warn("Unexpected file system error, could not delete file: {}", file.getPath());
         return deleted;
     }
 
@@ -690,7 +690,7 @@ public class FileSystemResource extends AbstractWebdavResource
 
                     if (rows.size() == 1)
                     {
-                        for (Map.Entry<String, Object> entry : rows.get(0).entrySet())
+                        for (Map.Entry<String, Object> entry : rows.getFirst().entrySet())
                         {
                             Object value = entry.getValue();
 
@@ -708,7 +708,6 @@ public class FileSystemResource extends AbstractWebdavResource
                 {
                     throw UnexpectedException.wrap(re);
                 }
-                boolean b = false;
             }
         }
 

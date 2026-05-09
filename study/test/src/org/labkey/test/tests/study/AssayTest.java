@@ -121,9 +121,9 @@ public class AssayTest extends AbstractAssayTest
         ReactAssayDesignerPage assayDesignerPage = _assayHelper.createAssayDesign("General", "a" + "0123456789".repeat(15));
         List<String> errors = assayDesignerPage.clickSaveExpectingErrors();
         checker().verifyEquals("Wrong number of errors", 1, errors.size());
-        checker().verifyEquals("Wrong error message: " + errors.get(0),
+        checker().verifyEquals("Wrong error message: " + errors.getFirst(),
                 "Value is too long for assay design name, a maximum length of 150 is allowed. The supplied value, 'a01234567890123456789012...78901234567890123456789', was 151 characters long.",
-                errors.get(0));
+                errors.getFirst());
         assayDesignerPage.clickCancel();
     }
 
@@ -196,7 +196,7 @@ public class AssayTest extends AbstractAssayTest
         log("Save initial assay design with sample field set to 'All Samples'");
         List<String> errors = assayDesignerPage.clickSaveExpectingErrors();
         assertEquals("Wrong number of errors", 1, errors.size());
-        assertTrue("Wrong error message: " + errors.get(0), errors.get(0).startsWith("Name cannot exceed 200 characters, but was"));
+        assertTrue("Wrong error message: " + errors.getFirst(), errors.getFirst().startsWith("Name cannot exceed 200 characters, but was"));
 
         resultsPanel.removeAllFields(false);
         resultsPanel.addField("ShortAndSweet");

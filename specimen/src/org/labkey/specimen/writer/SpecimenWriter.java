@@ -94,8 +94,7 @@ public class SpecimenWriter extends AbstractSpecimenWriter
             ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());
             if (null == ci)
             {
-                ctx.getLogger().warn("Specimen Column '" + column.getDbColumnName() + "' not found in table '" +
-                                     tinfo.getPublicName() + "'");
+                ctx.getLogger().warn("Specimen Column '{}' not found in table '{}'", column.getDbColumnName(), tinfo.getPublicName());
                 continue;
             }
             DataColumn dc = new DataColumn(ci);

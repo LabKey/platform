@@ -141,7 +141,7 @@ public class ArrayOperation implements LayoutOperation
     {
         WellLayout layout;
         if (!targetLayouts.isEmpty())
-            return targetLayouts.remove(0);
+            return targetLayouts.removeFirst();
 
         if (targetPlateData != null && !targetPlateData.isEmpty())
             layout = getPlateDataWellLayout(context, targetPlateData);
@@ -158,7 +158,7 @@ public class ArrayOperation implements LayoutOperation
         if (plateData.isEmpty())
             return null;
 
-        PlateManager.PlateData targetPlateData = plateData.remove(0);
+        PlateManager.PlateData targetPlateData = plateData.removeFirst();
         if (targetPlateData != null && targetPlateData.plateType() != null && targetPlateData.plateType() > 0)
         {
             PlateType targetPlateDataType = context.resolvePlateType(targetPlateData.plateType());

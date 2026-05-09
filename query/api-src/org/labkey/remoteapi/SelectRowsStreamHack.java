@@ -101,7 +101,7 @@ public class SelectRowsStreamHack
 
                     try (OutputStream os = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(tempFile))); InputStream ris = (alternateInputStream == null ? response.getInputStream() : alternateInputStream))
                     {
-                        _log.debug("Downloading SelectRows JSON to file: " + tempFile);
+                        _log.debug("Downloading SelectRows JSON to file: {}", tempFile);
                         IOUtils.copy(ris, os);
                         _log.debug("Finished saving SelectRows results");
                     }

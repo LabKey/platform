@@ -128,7 +128,7 @@ public abstract class AbstractClrInstallationManager
 
         try (Connection conn = getSchema().getScope().getUnpooledConnection())
         {
-            LOG.info("Executing " + script.getDescription() + " against " + (rds ? "an RDS" : "a non-RDS") + " database");
+            LOG.info("Executing {} against {} database", script.getDescription(), rds ? "an RDS" : "a non-RDS");
             SqlScriptManager.get(script.getProvider(), script.getSchema()).runScript(context.getUpgradeUser(), script, context, conn);
         }
         catch (Throwable t)

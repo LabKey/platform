@@ -16,8 +16,8 @@
 
 package org.labkey.api.collections;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -127,14 +127,14 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
 
         @NotNull
         @Override
-        public Object[] toArray()
+        public Object @NotNull [] toArray()
         {
             return _nativeKeySet.toArray();
         }
 
         @NotNull
         @Override
-        public <T> T[] toArray(@NotNull T[] a)
+        public <T> T @NotNull [] toArray(@NotNull T @NotNull [] a)
         {
             return _nativeKeySet.toArray(a);
         }

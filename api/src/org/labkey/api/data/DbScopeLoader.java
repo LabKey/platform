@@ -76,7 +76,7 @@ class DbScopeLoader
                     catch (Throwable t)
                     {
                         // Always log, but callers determine if null DbScope is fatal or not
-                        LOG.error("Cannot connect to DataSource \"" + getDsName() + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". This DataSource will not be available during this server session unless a successful retry is initiated from the schema administration page.", t);
+                        LOG.error("Cannot connect to DataSource \"{}\" defined in {}. This DataSource will not be available during this server session unless a successful retry is initiated from the schema administration page.", getDsName(), AppProps.getInstance().getWebappConfigurationFilename(), t);
                         DbScope.addDataSourceFailure(getDsName(), t);
                         scope = BAD_SCOPE;
                     }

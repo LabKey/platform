@@ -337,7 +337,7 @@ public abstract class Job extends CreatedModified implements Identifiable
         List<Task> subsequent = getSubsequentTasks(taskId);
         if (subsequent.isEmpty())
             return null;
-        return subsequent.get(0);
+        return subsequent.getFirst();
     }
 
     public boolean isComplete()

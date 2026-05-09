@@ -37,15 +37,15 @@ public interface RemoteExecutionEngine<ConfigType extends PipelineJobService.Rem
     String getType();
 
     /** Submit a job for execution */
-    void submitJob(@NotNull PipelineJob job) throws PipelineJobException;
+    void submitJob(@NotNull PipelineJob job);
 
     /**
      * The engine should update the status for the provided jobIds, currently marked as being run/queued
      * at a location managed by this engine, by calling PipelineJob.setStatus().   */
-    void updateStatusForJobs(@NotNull Collection<String> jobIds) throws PipelineJobException;
+    void updateStatusForJobs(@NotNull Collection<String> jobIds);
 
     /** Cancel a job, if possible, that is currently marked as being run/queued at a location managed by this engine */
-    void cancelJob(@NotNull String jobId) throws PipelineJobException;
+    void cancelJob(@NotNull String jobId);
 
     @NotNull
     ConfigType getConfig();

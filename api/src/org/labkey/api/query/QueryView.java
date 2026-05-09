@@ -1724,7 +1724,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         {
             // don't pass getUser() as owner, we want the default view to appear as "public"
             CustomView defaultView = getQueryDef().createCustomView();
-            views.add(0, defaultView);
+            views.addFirst(defaultView);
         }
 
         // sort the grid view alphabetically, with default first (null name), then private views over public ones
@@ -2891,7 +2891,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             //table was null--try to get parse errors
             List<QueryException> errors = getParseErrors();
             if (null != errors && !errors.isEmpty())
-                throw errors.get(0);
+                throw errors.getFirst();
         }
     }
 
@@ -3096,7 +3096,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             {
                 DisplayColumn dc = createUpdateColumn(urlUpdate, table);
                 if (null != dc)
-                    ret.add(0, dc);
+                    ret.addFirst(dc);
             }
         }
     }

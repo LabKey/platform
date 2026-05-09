@@ -133,7 +133,7 @@
         );
         List<Map<String, Object>> insertedAntigens = antigensTable.getUpdateService().insertRows(getUser(), c, antigenRows, errors, null, null);
         throwErrors(errors);
-        Integer antigenId = asInteger(insertedAntigens.get(0).get("rowId"));
+        Integer antigenId = asInteger(insertedAntigens.getFirst().get("rowId"));
 
         // insert a Label
         errors = new BatchValidationException();
@@ -143,7 +143,7 @@
         );
         List<Map<String, Object>> insertedLabels = labelsTable.getUpdateService().insertRows(getUser(), c, labelRows, errors, null, null);
         throwErrors(errors);
-        Long labelId = asLong(insertedLabels.get(0).get("rowId"));
+        Long labelId = asLong(insertedLabels.getFirst().get("rowId"));
 
         // insert Species
         errors = new BatchValidationException();
@@ -169,7 +169,7 @@
         );
         List<Map<String, Object>> insertedReagents = reagentsTable.getUpdateService().insertRows(getUser(), c, reagentRows, errors, null, null);
         throwErrors(errors);
-        Long reagentId = asLong(insertedReagents.get(0).get("rowId"));
+        Long reagentId = asLong(insertedReagents.getFirst().get("rowId"));
 
         // insert ReagentSpecies
         errors = new BatchValidationException();

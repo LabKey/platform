@@ -188,7 +188,7 @@ public class Table
 
                 if (null != error)
                 {
-                    _log.warn(error + "!\n" + strippedSql);
+                    _log.warn("{}!\n{}", error, strippedSql);
                     return false;
                 }
 
@@ -592,7 +592,7 @@ public class Table
                 // Log this ConstraintException if log Level is WARN (the default) or lower. Skip logging for callers that request just ERRORs.
                 if (Level.WARN.isMoreSpecificThan(logLevel))
                 {
-                    _log.warn("SQL Exception" + (e.getSQLState() == null ? "" : (" with SQLState: " + e.getSQLState())), e);
+                    _log.warn("SQL Exception{}", e.getSQLState() == null ? "" : (" with SQLState: " + e.getSQLState()), e);
                     _logQuery(Level.WARN, sql, conn);
                 }
             }
@@ -601,7 +601,7 @@ public class Table
                 // Log this SQLException if log level is ERROR or lower.
                 if (Level.ERROR.isMoreSpecificThan(logLevel))
                 {
-                    _log.error("SQL Exception" + (e.getSQLState() == null ? "" : (" with SQLState: " + e.getSQLState())), e);
+                    _log.error("SQL Exception{}", e.getSQLState() == null ? "" : (" with SQLState: " + e.getSQLState()), e);
                     _logQuery(Level.ERROR, sql, conn);
                 }
             }
@@ -986,7 +986,7 @@ public class Table
         Map<String, Object> keys = new CaseInsensitiveHashMap<>();
 
         if (columnPK.size() == 1 && !pkVals.getClass().isArray())
-            keys.put(columnPK.get(0).getName(), pkVals);
+            keys.put(columnPK.getFirst().getName(), pkVals);
         else if (pkVals instanceof Map)
             keys.putAll((Map<? extends String, ?>)pkVals);
         else
@@ -1120,7 +1120,7 @@ public class Table
             }
         }
         else
-            _log.warn("Attempt to update table '" + table.getName() + "' with no valid fields.");
+            _log.warn("Attempt to update table '{}' with no valid fields.", table.getName());
 
         return (fieldsIn instanceof Map && !(fieldsIn instanceof BoundMap)) ? (K)fields : fieldsIn;
     }
@@ -1566,7 +1566,7 @@ public class Table
 
         private void verifyAggregates(Map<String, Object> expected, Map<String, List<Aggregate.Result>> aggregateMap)
         {
-            verifyAggregate(expected.get("CountStar"), aggregateMap.get("*").get(0).getValue());
+            verifyAggregate(expected.get("CountStar"), aggregateMap.get("*").getFirst().getValue());
 
             verifyAggregate(expected.get("CountRowId"), aggregateMap.get("RowId").get(0).getValue());
             verifyAggregate(expected.get("SumRowId"), aggregateMap.get("RowId").get(1).getValue());
@@ -1577,14 +1577,14 @@ public class Table
             verifyAggregate(expected.get("CountParent"), aggregateMap.get("Parent").get(0).getValue());
             verifyAggregate(expected.get("CountDistinctParent"), aggregateMap.get("Parent").get(1).getValue());
 
-            verifyAggregate(expected.get("CountParent_fs_Parent"), aggregateMap.get("Parent/Parent").get(0).getValue());
+            verifyAggregate(expected.get("CountParent_fs_Parent"), aggregateMap.get("Parent/Parent").getFirst().getValue());
 
             verifyAggregate(expected.get("SumSortOrder"), aggregateMap.get("SortOrder").get(0).getValue());
             verifyAggregate(expected.get("SumDistinctSortOrder"), aggregateMap.get("SortOrder").get(1).getValue());
 
-            verifyAggregate(expected.get("CountCreatedBy"), aggregateMap.get(CREATED_BY_COLUMN_NAME).get(0).getValue());
-            verifyAggregate(expected.get("MinCreated"), aggregateMap.get(CREATED_COLUMN_NAME).get(0).getValue());
-            verifyAggregate(expected.get("MinName"), aggregateMap.get("Name").get(0).getValue());
+            verifyAggregate(expected.get("CountCreatedBy"), aggregateMap.get(CREATED_BY_COLUMN_NAME).getFirst().getValue());
+            verifyAggregate(expected.get("MinCreated"), aggregateMap.get(CREATED_COLUMN_NAME).getFirst().getValue());
+            verifyAggregate(expected.get("MinName"), aggregateMap.get("Name").getFirst().getValue());
         }
 
 
@@ -1660,7 +1660,7 @@ public class Table
                 bad++;
             if (enforceUnique && !(column instanceof AliasedColumn) && null != (prev = mapAlias.put(column.getAlias().getId(), column)) && prev != column)
             {
-                _log.warn(prefix + ": Column " + column + " from table: " + column.getParentTable() + " is mapped to the same alias (" + column.getAlias().getId() + ") as column " + prev + " from table: " + prev.getParentTable());
+                _log.warn("{}: Column {} from table: {} is mapped to the same alias ({}) as column {} from table: {}", prefix, column, column.getParentTable(), column.getAlias().getId(), prev, prev.getParentTable());
                 bad++;
             }
         }
@@ -1682,7 +1682,7 @@ public class Table
     {
         if (column.getParentTable() != table)
         {
-            _log.warn(prefix + ": Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table);
+            _log.warn("{}: Column {} is from the wrong table: {} instead of {}", prefix, column, column.getParentTable(), table);
             return false;
         }
         else

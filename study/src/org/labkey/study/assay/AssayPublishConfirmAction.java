@@ -239,7 +239,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
             .toList();
 
         if (sampleCols.size() == 1)
-            additionalCols.put(LinkToStudyKeys.SampleId, sampleCols.get(0).getFieldKey());
+            additionalCols.put(LinkToStudyKeys.SampleId, sampleCols.getFirst().getFieldKey());
 
         if (!selectColumns.containsKey(additionalCols.get(LinkToStudyKeys.Date)))
         {
@@ -250,7 +250,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
                 .toList();
 
             if (dateCols.size() == 1)
-                additionalCols.put(LinkToStudyKeys.Date, dateCols.get(0).getFieldKey());
+                additionalCols.put(LinkToStudyKeys.Date, dateCols.getFirst().getFieldKey());
         }
 
         // Add the TargetStudy FieldKey only if it exists on the Result domain.

@@ -381,7 +381,7 @@ public class ParamParserImpl implements ParamParser
         try (BufferedWriter inputWriter = new BufferedWriter(PrintWriters.getPrintWriter(fileDest.openOutputStream())))
         {
             String xml = getXMLFromMap(params);
-            _log.debug("Writing " + params.size() + " parameters (" + fileDest + "):");
+            _log.debug("Writing {} parameters ({}):", params.size(), fileDest);
             _log.debug(xml);
             inputWriter.write(xml);
         }

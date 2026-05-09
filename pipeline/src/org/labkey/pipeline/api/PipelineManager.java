@@ -287,7 +287,7 @@ public class PipelineManager
             String interval = PipelineEmailPreferences.get().getFailureNotificationInterval(c);
             if (!"0".equals(interval) && interval != null)
             {
-                _log.info("Deciding not to send error notification email based on interval " + interval);
+                _log.info("Deciding not to send error notification email based on interval {}", interval);
                 return;
             }
 
@@ -369,7 +369,7 @@ public class PipelineManager
                 }
                 catch (ValidEmail.InvalidEmailException e)
                 {
-                    _log.warn("Pipeline job status file uses an invalid email: " + statusFile.getEmail() + ". RowId: " + statusFile.getRowId());
+                    _log.warn("Pipeline job status file uses an invalid email: {}. RowId: {}", statusFile.getEmail(), statusFile.getRowId());
                 }
             }
 

@@ -323,7 +323,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             {
                 _schema = null;
                 if (!fileName.endsWith("-create.sql") && !fileName.endsWith("-drop.sql"))
-                    _log.info(provider.getProviderName() + ", ignoring file " + fileName + ": wrong format");
+                    _log.info("{}, ignoring file {}: wrong format", provider.getProviderName(), fileName);
                 return;
             }
 
@@ -345,7 +345,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             }
             catch (NumberFormatException x)
             {
-                _log.info(_provider.getProviderName() + ", ignoring file " + fileName + ": couldn't parse version numbers");
+                _log.info("{}, ignoring file {}: couldn't parse version numbers", _provider.getProviderName(), fileName);
                 return;
             }
 
@@ -363,7 +363,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
                 throw new IllegalStateException("SQL scripts and null schema version do not compute");
 
             if (_toVersion > schemaVersion)
-                _log.warn(fileName + " will never execute because " + _provider._module.getName() + " schema version is less than this script's \"to\" version");
+                _log.warn("{} will never execute because {} schema version is less than this script's \"to\" version", fileName, _provider._module.getName());
         }
 
         // Used for DROP and CREATE scripts... so we don't bother verifying filename or parsing info from it

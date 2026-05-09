@@ -37,14 +37,14 @@ public class CustomProperties
 
         while (!stack.isEmpty())
         {
-            List<ObjectProperty> values = stack.get(stack.size() - 1);
-            int currentIndex = indices.get(indices.size() - 1);
+            List<ObjectProperty> values = stack.getLast();
+            int currentIndex = indices.getLast();
             indices.set(indices.size() - 1, currentIndex + 1);
 
             if (currentIndex == values.size())
             {
-                stack.remove(stack.size() - 1);
-                indices.remove(indices.size() - 1);
+                stack.removeLast();
+                indices.removeLast();
             }
             else
             {

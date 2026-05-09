@@ -51,7 +51,7 @@ public class CheckedInputStream extends InputStreamWrapper
         {
             if (!_closed)
             {
-                LOG.error("InputStream was not closed. Creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
+                LOG.error("InputStream was not closed. Creation stacktrace:{}", ExceptionUtil.renderStackTrace(_creationStackTrace));
                 close();
             }
         }

@@ -75,7 +75,7 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
         {
             ExportDirType dirType = ctx.getXml().getTreatmentData();
 
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             VirtualFile vf = root.getDir(dirType.getDir());
             if (vf != null)
@@ -96,7 +96,7 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
             else
                 throw new ImportException("Unable to open the folder at : " + dirType.getDir());
 
-            ctx.getLogger().info("Done importing " + getDescription());
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
     }
 
@@ -152,7 +152,7 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
                         if (cohort != null)
                             newRow.put("cohortId", cohort.getRowId());
                         else
-                            ctx.getLogger().warn("No cohort found matching the label : " + newRow.get("cohortId.label"));
+                            ctx.getLogger().warn("No cohort found matching the label : {}", newRow.get("cohortId.label"));
                     }
                     else
                         ctx.getLogger().warn("Null cohortId found.");
@@ -170,7 +170,7 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
                         if (visit != null)
                             newRow.put("visitId", visit.getId());
                         else
-                            ctx.getLogger().warn("No visit found matching the sequence num : " + newRow.get("visitId.sequenceNumMin"));
+                            ctx.getLogger().warn("No visit found matching the sequence num : {}", newRow.get("visitId.sequenceNumMin"));
                     }
                     else
                         ctx.getLogger().warn("Null sequence num found.");

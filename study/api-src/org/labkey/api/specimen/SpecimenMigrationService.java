@@ -10,7 +10,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Study;
@@ -42,7 +41,7 @@ public interface SpecimenMigrationService
     ActionURL getSpecimensURL(Container c);
 
     void importSpecimenArchive(@Nullable FileLike inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
-                               boolean syncParticipantVisit) throws PipelineJobException, ValidationException;
+                               boolean syncParticipantVisit) throws PipelineJobException;
 
     void clearRequestCaches(Container c);
 

@@ -123,7 +123,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
             {
                 throw new IllegalStateException("Job exceeds serialization limit of " + SERIALIZATION_SIZE_LIMIT + " characters. It was " + serialized.length() + " characters long.");
             }
-            LOG.debug("Serialized JSON for " + job + " was " + serialized.length() + " characters");
+            LOG.debug("Serialized JSON for {} was {} characters", job, serialized.length());
 
             if (ensureDeserialize)          // Some callers round trip, so we don't need to here
             {
@@ -132,11 +132,11 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
                     PipelineJob unserialized = deserializeFromJSON(serialized, job.getClass());
                     List<String> errors = job.compareJobs(unserialized);
                     if (!errors.isEmpty())
-                        LOG.error("Deserialized object differs from original: " + StringUtils.join(errors, ","));
+                        LOG.error("Deserialized object differs from original: {}", StringUtils.join(errors, ","));
                 }
                 catch (Exception e)
                 {
-                    LOG.error("Serializing round-trip test failed: " + job.getClass(), e);
+                    LOG.error("Serializing round-trip test failed: {}", job.getClass(), e);
                 }
             }
             return serialized;

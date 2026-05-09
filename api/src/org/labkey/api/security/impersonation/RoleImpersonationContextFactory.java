@@ -28,8 +28,6 @@ import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.RoleSet;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ImpersonatePermission;

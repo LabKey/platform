@@ -152,7 +152,6 @@ import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
-import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -369,7 +368,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public void clearDataClassCache(@Nullable Container c)
     {
-        LOG.debug("clearDataClassCache: " + (c == null ? "all" : c.getPath()));
+        LOG.debug("clearDataClassCache: {}", c == null ? "all" : c.getPath());
         if (c == null)
             dataClassCache.clear();
         else
@@ -2901,7 +2900,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         TableInfo edge = getTinfoEdge();
         int count = new SqlExecutor(edge.getSchema().getScope()).execute("DELETE FROM " + edge /* + (edge.getSqlDialect().isSqlServer() ? " WITH (TABLOCK, HOLDLOCK)" : "")  */ + " WHERE runId=?", runId);
-        LOG.debug("Removed edges for run " + runId + "; count = " + count);
+        LOG.debug("Removed edges for run {}; count = {}", runId, count);
     }
 
     // prepare for bulk insert of edges
@@ -2941,7 +2940,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         try
                         {
                             if (LOG.isDebugEnabled())
-                                LOG.debug("  creating exp.object for " + missingObjectLsids.size() + " nodes:\n" + StringUtils.join(missingObjectLsids));
+                                LOG.debug("  creating exp.object for {} nodes:\n{}", missingObjectLsids.size(), StringUtils.join(missingObjectLsids));
                             for (var missingObjectLsid : missingObjectLsids)
                             {
                                 Map<String, Object> missingObjectRow = allNodesByLsid.get(missingObjectLsid);
@@ -2995,7 +2994,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 ExpSampleType st = SampleTypeService.get().getSampleType(cpasType);
                 if (st != null)
                 {
-                    LOG.debug("  creating exp.object.objectId for owner cpasType '" + cpasType + "' needed by child objects");
+                    LOG.debug("  creating exp.object.objectId for owner cpasType '{}' needed by child objects", cpasType);
                     return OntologyManager.ensureObject(st.getContainer(), cpasType, (Long) null);
                 }
             }
@@ -3033,17 +3032,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         if (paramEdgesNotInDb.isEmpty() && dbEdgesNotInParams.isEmpty())
         {
-            LOG.debug("  all " + params.size() + " run edges and exp.edges match");
+            LOG.debug("  all {} run edges and exp.edges match", params.size());
             return true;
         }
         else
         {
             Map<Long, Identifiable> identifiableMap = new LongHashMap<>();
 
-            LOG.warn("*** Run " + runId + " failed verification: " + (params.size() - paramEdgesNotInDb.size()) + " run edges and exp.edges match");
+            LOG.warn("*** Run {} failed verification: {} run edges and exp.edges match", runId, params.size() - paramEdgesNotInDb.size());
             if (!paramEdgesNotInDb.isEmpty())
             {
-                LOG.warn("  " + paramEdgesNotInDb.size() + " run edges not in exp.edges table:");
+                LOG.warn("  {} run edges not in exp.edges table:", paramEdgesNotInDb.size());
                 if (LOG.isDebugEnabled())
                 {
                     for (List<Object> e : paramEdgesNotInDb)
@@ -3062,7 +3061,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (!dbEdgesNotInParams.isEmpty())
             {
-                LOG.warn("  " + dbEdgesNotInParams.size() + " exp.edge table edges not in run:");
+                LOG.warn("  {} exp.edge table edges not in run:", dbEdgesNotInParams.size());
                 if (LOG.isDebugEnabled())
                 {
                     for (List<Object> e : dbEdgesNotInParams)
@@ -3160,7 +3159,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             this(runId, null, null, null);
         }
 
-        public SyncRunEdgesTask(long runId, Long runObjectId, String runLsid, Container runContainer)
+        public SyncRunEdgesTask(long runId, Long runObjectId, @Nullable String runLsid, @Nullable Container runContainer)
         {
             _runId = runId;
             _runObjectId = runObjectId;
@@ -3199,7 +3198,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         DbScope scope = getExpSchema().getScope();
         if (scope.isTransactionActive())
         {
-            LOG.debug("queueing syncRunEdges for run: " + runId);
+            LOG.debug("queueing syncRunEdges for run: {}", runId);
             DbScope.Transaction tx = scope.getCurrentTransaction();
             tx.addCommitTask(new SyncRunEdgesTask(runId), POSTCOMMIT);
         }
@@ -3215,7 +3214,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         DbScope scope = getExpSchema().getScope();
         if (scope.isTransactionActive())
         {
-            LOG.debug("queueing syncRunEdges for run: " + run.getRowId() + " - " + run.getName());
+            LOG.debug("queueing syncRunEdges for run: {} - {}", run.getRowId(), run.getName());
             DbScope.Transaction tx = scope.getCurrentTransaction();
             tx.addCommitTask(new SyncRunEdgesTask(run.getRowId(), run.getObjectId(), run.getLSID(), run.getContainer()), POSTCOMMIT);
         }
@@ -3319,7 +3318,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             CPUTimer timer = new CPUTimer("sync edges");
             timer.start();
 
-            LOG.debug((verifyEdgesNoInsert ? "Verifying" : "Rebuilding") + " edges for runId " + runId);
+            LOG.debug("{} edges for runId {}", verifyEdgesNoInsert ? "Verifying" : "Rebuilding", runId);
             Set<String> dataToCpasTypes = new HashSet<>();
             // NOTE: Originally, we just filtered exp.data by runId.  This works for most runs but includes intermediate exp.data nodes and caused the ExpTest to fail
             SQLFragment dataObjects = new SQLFragment()
@@ -3342,9 +3341,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (LOG.isDebugEnabled())
             {
                 if (!fromDataLsids.isEmpty())
-                    LOG.debug("  fromDataLsids:\n  " + StringUtils.join(fromDataLsids, "\n  "));
+                    LOG.debug("  fromDataLsids:\n  {}", StringUtils.join(fromDataLsids, "\n  "));
                 if (!toDataLsids.isEmpty())
-                    LOG.debug("  toDataLsids:\n  " + StringUtils.join(toDataLsids, "\n  "));
+                    LOG.debug("  toDataLsids:\n  {}", StringUtils.join(toDataLsids, "\n  "));
             }
 
             SQLFragment materials = new SQLFragment()
@@ -3389,8 +3388,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 removeEdgesForRun(runId);
 
             int edgeCount = fromDataLsids.size() + fromMaterialLsids.size() + toDataLsids.size() + toMaterialLsids.size() + provenanceStartingInputs.size() + provenanceFinalOutputs.size();
-            LOG.debug(String.format("  edge counts: input data=%d, input materials=%d, output data=%d, output materials=%d, input prov=%d, output prov=%d, total=%d",
-                    fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), provenanceStartingInputs.size(), provenanceFinalOutputs.size(), edgeCount));
+            LOG.debug("  edge counts: input data={}, input materials={}, output data={}, output materials={}, input prov={}, output prov={}, total={}", fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), provenanceStartingInputs.size(), provenanceFinalOutputs.size(), edgeCount);
 
             if (edgeCount > 0)
             {
@@ -3401,7 +3399,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     {
                         OntologyObject runObj = OntologyManager.getOntologyObject(runContainer, runLsid);
                         if (runObj == null)
-                            LOG.debug("  run exp.object is null, creating: " + runLsid);
+                            LOG.debug("  run exp.object is null, creating: {}", runLsid);
                     }
                     if (!verifyEdgesNoInsert)
                         runObjectId = OntologyManager.ensureObject(runContainer, runLsid, (Long) null);
@@ -3502,7 +3500,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
 
             timer.stop();
-            LOG.debug("  " + (verifyEdgesNoInsert ? "verified" : "synced") + " edges in " + timer.getDuration());
+            LOG.debug("  {} edges in {}", verifyEdgesNoInsert ? "verified" : "synced", timer.getDuration());
 
             if (!verifyEdgesNoInsert && doIncrementalClosureInvalidation)
             {
@@ -3529,7 +3527,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     getTinfoExperimentRun().getColumns("rowId", "objectid", "lsid", "container"), null, new Sort("rowId")).getMapCollection();
             try (Timing ignored = MiniProfiler.step("create edges"))
             {
-                LOG.debug("Rebuilding edges for " + runs.size() + " runs");
+                LOG.debug("Rebuilding edges for {} runs", runs.size());
                 for (Map<String, Object> run : runs)
                 {
                     var runId = asLong(run.get("rowId"));
@@ -3548,7 +3546,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (timing != null)
             {
                 timing.stop();
-                LOG.debug("Rebuilt all run-based edges: " + timing.getDuration() + " ms");
+                LOG.debug("Rebuilt all run-based edges: {} ms", timing.getDuration());
             }
         }
         ClosureQueryHelper.truncateAndRecreate(LOG);
@@ -3594,7 +3592,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             int runCount = 0;
             try (Timing ignored = MiniProfiler.step("create edges"))
             {
-                LOG.info("Verifying edges for " + runs.size() + " runs in " + c.getPath());
+                LOG.info("Verifying edges for {} runs in {}", runs.size(), c.getPath());
                 for (Map<String, Object> run : runs)
                 {
                     var runId = asLong(run.get("rowId"));
@@ -3610,7 +3608,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                     if (runCount % 1000 == 0)
                     {
-                        LOG.info("  verified " + runCount + " runs...");
+                        LOG.info("  verified {} runs...", runCount);
                     }
                 }
             }
@@ -3618,7 +3616,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (timing != null)
             {
                 timing.stop();
-                LOG.info("Verified edges for " + (limit == null ? "all " : "only ") + runCount + " runs: " + timing.getDuration() + " ms");
+                LOG.info("Verified edges for {}{} runs: {} ms", limit == null ? "all " : "only ", runCount, timing.getDuration());
             }
         }
     }
@@ -4335,7 +4333,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                 otherUsages.remove(run);
                                 if (!otherUsages.isEmpty())
                                 {
-                                    LOG.debug("Skipping delete of cross-run output data '" + output.getName() + "' (" + output.getRowId() + ") used by other runs: " + otherUsages.stream().map(ExpRun::getName).collect(Collectors.joining(", ")));
+                                    LOG.debug("Skipping delete of cross-run output data '{}' ({}) used by other runs: {}", output.getName(), output.getRowId(), otherUsages.stream().map(ExpRun::getName).collect(Collectors.joining(", ")));
                                     break;
                                 }
 
@@ -4348,7 +4346,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         // CONSIDER: move these properties to the matching output exp.data with the same dataFileUrl?
                         if (hasFileProperties(container, input))
                         {
-                            LOG.debug("Skipping delete of cross-run input data '" + input.getName() + "' (" + input.getRowId() + ") with custom file properties");
+                            LOG.debug("Skipping delete of cross-run input data '{}' ({}) with custom file properties", input.getName(), input.getRowId());
                             continue;
                         }
 
@@ -4387,12 +4385,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // Delete the cross run data completely
                 for (ExpDataImpl data : crossRunInputs)
                 {
-                    LOG.debug("Deleting cross-run input data: name=" + data.getName() + ", rowId=" + data.getRowId() + ", dataFileUrl=" + data.getDataFileUrl());
+                    LOG.debug("Deleting cross-run input data: name={}, rowId={}, dataFileUrl={}", data.getName(), data.getRowId(), data.getDataFileUrl());
                     data.delete(user, false);
                 }
                 for (ExpDataImpl data : crossRunOutputs)
                 {
-                    LOG.debug("Deleting cross-run output data: name=" + data.getName() + ", rowId=" + data.getRowId() + ", dataFileUrl=" + data.getDataFileUrl());
+                    LOG.debug("Deleting cross-run output data: name={}, rowId={}, dataFileUrl={}", data.getName(), data.getRowId(), data.getDataFileUrl());
                     data.delete(user, false);
                 }
 
@@ -4853,7 +4851,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                             {
                                 ExpSampleTypeImpl st = material.getSampleType();
                                 if (st == null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
-                                    LOG.warn("SampleType '" + material.getCpasType() + "' not found while deleting sample '" + material.getName() + "'");
+                                    LOG.warn("SampleType '{}' not found while deleting sample '{}'", material.getCpasType(), material.getName());
                                 sampleTypes.put(cpasType, st);
                             }
                         }
@@ -4892,7 +4890,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         deleteRunsUsingInputs(user, null, rawMaterials);
                     }
                 }
-                LOG.debug("Completed batch of sample deletion. " + count + " rows processed so far");
+                LOG.debug("Completed batch of sample deletion. {} rows processed so far", count);
             }
 
             // generate in clause for the Material LSIDs
@@ -5043,7 +5041,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             transaction.commit();
             if (timing != null)
-                LOG.info("SampleType delete timings\n" + timing.dump());
+                LOG.info("SampleType delete timings\n{}", timing.dump());
             return count;
         }
     }
@@ -6128,7 +6126,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (null == dataClass)
         {
             // this can happen if the DataClass wasn't created completely
-            LOG.warn("Can't find DataClass with rowId " + rowId + " for deletion");
+            LOG.warn("Can't find DataClass with rowId {} for deletion", rowId);
             return;
         }
         if (!dataClass.getContainer().equals(c))
@@ -6455,7 +6453,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         ExpProtocolApplicationImpl protApp = protStepMap.get(srcAppId);
         if (protApp == null)
         {
-            LOG.warn("Could not find cached protocol application " + srcAppId + " when populating run " + expRun.getRowId() + " in " + expRun.getContainer().getPath() + ", attempting to fetch");
+            LOG.warn("Could not find cached protocol application {} when populating run {} in {}, attempting to fetch", srcAppId, expRun.getRowId(), expRun.getContainer().getPath());
             if (srcAppId != null)
             {
                 protApp = getExpProtocolApplication(srcAppId);
@@ -8131,7 +8129,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            LOG.debug("Saving data class " +  dataClass.getName());
+            LOG.debug("Saving data class {}", dataClass.getName());
             dataClass.save(u);
 
             SchemaKey schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME);
@@ -8741,7 +8739,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void onBeforeRunSaved(ExpProtocol protocol, ExpRun run, Container container, User user) throws BatchValidationException
+    public void onBeforeRunSaved(ExpProtocol protocol, ExpRun run, Container container, User user)
     {
         for (ExperimentListener listener : _listeners)
         {
@@ -9970,13 +9968,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             if (!targetFile.getParentFile().mkdirs())
             {
-                LOG.warn(String.format("Creation of target directory '%s' to move file '%s' to, for '%s' assay run '%s' (field: '%s') failed.",
-                    targetFile.getParent(),
-                    sourceFile.getAbsolutePath(),
-                    assayName,
-                    runName,
-                    fieldName
-                ));
+                LOG.warn("Creation of target directory '{}' to move file '{}' to, for '{}' assay run '{}' (field: '{}') failed.", targetFile.getParent(), sourceFile.getAbsolutePath(), assayName, runName, fieldName);
                 return false;
             }
         }
@@ -10175,7 +10167,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             boolean success = sourceFile.renameTo(targetFile);
             if (!success)
             {
-                LOG.warn(String.format("Rename of '%s' to '%s' failed for %s" , sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), actionComment));
+                LOG.warn("Rename of '{}' to '{}' failed for {}", sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), actionComment);
                 return false;
             }
 

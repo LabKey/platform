@@ -558,7 +558,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         {
             List<String> pks = getPkColumnNames();
             if (pks.size() == 1)
-                _auditRowPk = FieldKey.fromParts(pks.get(0));
+                _auditRowPk = FieldKey.fromParts(pks.getFirst());
             else if (getColumn(FieldKey.fromParts("EntityId")) != null)
                 _auditRowPk = FieldKey.fromParts("EntityId");
             else if (getColumn(FieldKey.fromParts("RowId")) != null)
@@ -642,7 +642,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
             }
             catch (IllegalArgumentException ignore)
             {
-                LOG.warn("Invalid AuditLogging: " + auditBehavior);
+                LOG.warn("Invalid AuditLogging: {}", auditBehavior);
             }
         }
 

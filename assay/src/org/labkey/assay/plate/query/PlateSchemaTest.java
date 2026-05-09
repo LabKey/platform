@@ -151,7 +151,7 @@ public final class PlateSchemaTest
             assertFalse("Expected no errors", errors.hasErrors());
             assertEquals("Expected a single row", 1, plateRows.size());
 
-            var plateRow = plateRows.get(0);
+            var plateRow = plateRows.getFirst();
             var plateRowId = (int) plateRow.get(PlateTable.Column.RowId.name());
 
             return getPlate(plateRowId);

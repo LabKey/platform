@@ -43,7 +43,6 @@ import org.labkey.issue.query.IssuesQuerySchema;
 import org.springframework.validation.BindException;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;

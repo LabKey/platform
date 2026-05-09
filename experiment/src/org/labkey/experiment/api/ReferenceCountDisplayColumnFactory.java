@@ -3,7 +3,6 @@ package org.labkey.experiment.api;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.SQLFragment;

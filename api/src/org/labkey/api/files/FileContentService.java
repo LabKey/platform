@@ -161,10 +161,10 @@ public interface FileContentService
      * @return AttachmentParent that can be passed to other methods of this interface
      */
     @Nullable
-    AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException;
+    AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException;
 
     @Nullable
-    AttachmentDirectory getMappedAttachmentDirectory(Container c, ContentType contentType, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException;
+    AttachmentDirectory getMappedAttachmentDirectory(Container c, ContentType contentType, boolean createDir) throws UnsetRootDirectoryException;
 
     /**
      * Return a named AttachmentParent for files in the directory mapped to this container

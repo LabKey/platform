@@ -506,7 +506,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         }
         catch (Exception e)
         {
-            LOG.warn("Filtered lookup failed for column: " + firstColumn.getName(), e);
+            LOG.warn("Filtered lookup failed for column: {}", firstColumn.getName(), e);
         }
         Sort sort = new Sort();
         sort.insertSortColumn(titleColumn.getFieldKey(), titleColumn.getSortDirection());
@@ -874,7 +874,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (column == null)
             {
                 valid = false;
-                LOG.warn("Error in counter definition '" + counterDef.getCounterName() + "': paired column does not exist: " + columnName);
+                LOG.warn("Error in counter definition '{}': paired column does not exist: {}", counterDef.getCounterName(), columnName);
             }
         }
 
@@ -884,12 +884,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (column == null)
             {
                 valid = false;
-                LOG.warn("Error in counter definition '" + counterDef.getCounterName() + "': attached column does not exist: " + columnName);
+                LOG.warn("Error in counter definition '{}': attached column does not exist: {}", counterDef.getCounterName(), columnName);
             }
             else if (!column.getJdbcType().isInteger())
             {
                 valid = false;
-                LOG.warn("Error in counter definition '" + counterDef.getCounterName() + "': non-integer attached column: " + columnName);
+                LOG.warn("Error in counter definition '{}': non-integer attached column: {}", counterDef.getCounterName(), columnName);
             }
         }
 
@@ -1248,7 +1248,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (MultiValuedFkType.junction.name().equals(type))
                 ret = new MultiValuedForeignKey(ret, fk.getFkJunctionLookup());
             else
-                LOG.warn(String.format("Error in FK configuration for schema : \"%s\". The multi value FK type : \"%s\" is not supported.", fromSchema.getSchemaName(), type));
+                LOG.warn("Error in FK configuration for schema : \"{}\". The multi value FK type : \"{}\" is not supported.", fromSchema.getSchemaName(), type);
         }
 
         return ret;
@@ -1371,7 +1371,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             }
             else
             {
-                LOG.debug("Query name in XML metadata in schema '" + schema.getSchemaName() + "' did not match expected. Was: [" + xmlTable.getTableName() + "], expected: [" + getName() + "] in container " + schema.getContainer().getPath());
+                LOG.debug("Query name in XML metadata in schema '{}' did not match expected. Was: [{}], expected: [{}] in container {}", schema.getSchemaName(), xmlTable.getTableName(), getName(), schema.getContainer().getPath());
             }
         }
         if (xmlTable.getTitleColumn() != null)
@@ -1972,8 +1972,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         if (LOG.isDebugEnabled() && !scripts.isEmpty())
         {
-            LOG.debug("Trigger scripts for '" + getPublicSchemaName() + "', '" + getName() + "': " +
-                    scripts.stream().map(Trigger::getName).collect(Collectors.joining(", ")));
+            LOG.debug("Trigger scripts for '{}', '{}': {}", getPublicSchemaName(), getName(), scripts.stream().map(Trigger::getName).collect(Collectors.joining(", ")));
         }
 
         return scripts;

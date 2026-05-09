@@ -33,7 +33,7 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
         int numAssayDesigns = _config.getNumAssayDesigns();
         if (numAssayDesigns <= 0)
         {
-            _log.info(String.format("No assay designs generated because %s=%d", Config.NUM_ASSAY_DESIGNS, numAssayDesigns));
+            _log.info("No assay designs generated because {}={}", Config.NUM_ASSAY_DESIGNS, numAssayDesigns);
             return;
         }
         checkAlive(_job);
@@ -53,7 +53,7 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
             checkAlive(_job);
         }
         timer.stop();
-        _log.info(String.format("Generating %d assay designs took %s", numAssayDesigns, timer.getDuration() + "."));
+        _log.info("Generating {} assay designs took {}", numAssayDesigns, timer.getDuration() + ".");
     }
 
     private void createStandardAssayDesign(String name) throws ValidationException

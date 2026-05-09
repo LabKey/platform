@@ -15,6 +15,7 @@
 <%@ page import="org.labkey.api.view.ViewServlet" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="java.net.URISyntaxException" %>
+<%@ page import="org.jspecify.annotations.NonNull" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 <%--
 This tests uses MockRequest to test some expected Headers and Meta tags for various types of requests.
@@ -35,7 +36,7 @@ This tests uses MockRequest to test some expected Headers and Meta tags for vari
         PrintWriter printWriter = new PrintWriter(new ByteArrayOutputStream(), true, StringUtilsLabKey.DEFAULT_CHARSET)
         {
             @Override
-            public void write(@NotNull char[] buf, int off, int len)
+            public void write(@NotNull char @NotNull [] buf, int off, int len)
             {
             }
 

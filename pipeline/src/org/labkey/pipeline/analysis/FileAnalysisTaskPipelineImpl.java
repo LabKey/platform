@@ -396,7 +396,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         }
         catch (XmlException |IOException e)
         {
-            PipelineJobServiceImpl.LOG.error("Error loading task pipeline '" + pipelineConfig + "':\n", e);
+            PipelineJobServiceImpl.LOG.error("Error loading task pipeline '{}':\n", pipelineConfig, e);
             return null;
         }
 
@@ -490,7 +490,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         if (progression.isEmpty())
             throw new IllegalArgumentException("Expected at least one task factory in the task pipeline");
 
-        TaskFactory<?> initialTaskFactory = PipelineJobService.get().getTaskFactory(progression.get(0));
+        TaskFactory<?> initialTaskFactory = PipelineJobService.get().getTaskFactory(progression.getFirst());
         if (initialTaskFactory == null)
             throw new IllegalArgumentException("Expected at least one task factory in the task pipeline");
 

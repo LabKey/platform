@@ -9,14 +9,11 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.InvalidKeyException;
-import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.view.UnauthorizedException;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +31,7 @@ public class ApiKeysUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
         throw new UnsupportedOperationException("Updates are not allowed for this table.");
     }

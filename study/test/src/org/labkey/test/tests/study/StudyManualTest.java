@@ -35,12 +35,6 @@ public abstract class StudyManualTest extends StudyTest
     protected final StudyHelper _studyHelper = new StudyHelper(this);
 
     @Override
-    protected BrowserType bestBrowser()
-    {
-        return BrowserType.CHROME;
-    }
-
-    @Override
     protected void doCreateSteps()
     {
         createStudyManually();

@@ -28,7 +28,7 @@ public class XarReaderRegistry
     public void registerDelegate(String protocolPattern, XarReaderDelegate delegate)
     {
         if (_delegateMap.containsKey(protocolPattern))
-            _logger.warn(String.format("Existing delegate '%s' for protocol pattern '%s' being replaced.", _delegateMap.get(protocolPattern).getXarDelegateName(), protocolPattern));
+            _logger.warn("Existing delegate '{}' for protocol pattern '{}' being replaced.", _delegateMap.get(protocolPattern).getXarDelegateName(), protocolPattern);
 
         _delegateMap.put(protocolPattern, delegate);
     }
@@ -46,7 +46,7 @@ public class XarReaderRegistry
             }
             catch (Exception e)
             {
-                logger.error(String.format("There was a problem during postprocessing with delegate '%s'", delegate.getXarDelegateName()), e);
+                logger.error("There was a problem during postprocessing with delegate '{}'", delegate.getXarDelegateName(), e);
             }
         });
     }
@@ -64,7 +64,7 @@ public class XarReaderRegistry
             }
             catch (Exception e)
             {
-                logger.error(String.format("There was a problem during postprocessing with delegate '%s'", delegate.getXarDelegateName()), e);
+                logger.error("There was a problem during postprocessing with delegate '{}'", delegate.getXarDelegateName(), e);
             }
         });
     }

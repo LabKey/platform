@@ -118,7 +118,7 @@ public class FileLinkFileListener implements FileListener
         singleEntrySQL.add(srcPath);
 
         int rows = new SqlExecutor(OntologyManager.getExpSchema()).execute(singleEntrySQL);
-        LOG.info("Updated " + rows + " row in exp.ObjectProperty for move from " + srcFile + " to " + destFile);
+        LOG.info("Updated {} row in exp.ObjectProperty for move from {} to {}", rows, srcFile, destFile);
         if (rows > 0)
         {
             // Clear potential object values
@@ -152,7 +152,7 @@ public class FileLinkFileListener implements FileListener
                 // Clear potential object values
                 OntologyManager.clearPropertyCache();
             }
-            LOG.info("Updated " + childRows + " child paths in exp.ObjectProperty rows for move from " + srcFile + " to " + destFile);
+            LOG.info("Updated {} child paths in exp.ObjectProperty rows for move from {} to {}", childRows, srcFile, destFile);
             return rows + childRows;
         }
         return rows;

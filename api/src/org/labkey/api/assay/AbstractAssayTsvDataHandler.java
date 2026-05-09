@@ -430,7 +430,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 ProvenanceService.get().deleteProvenanceByLsids(run.getContainer(), user, new SQLFragment(" IN (").append(assayResultLsidSql).append(")"), true, Set.of(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID));
 
                 int count = OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), assayResultLsidSql, run.getContainer());
-                LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted " + count + " ontology objects for assay result lsids");
+                LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted {} ontology objects for assay result lsids", count);
             }
 
             if (domain != null && domain.getStorageTableName() != null)
@@ -442,7 +442,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 try
                 {
                     int count = new SqlExecutor(DbSchema.get(domain.getDomainKind().getStorageSchemaName(), DbSchemaType.Provisioned)).execute(deleteSQL);
-                    LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted " + count + " assay result rows");
+                    LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted {} assay result rows", count);
                 }
                 catch (BadSqlGrammarException x)
                 {
@@ -522,7 +522,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 if (provider.getResultRowLSIDPrefix() == null)
                 {
-                    LOG.info("Import failed for run '" + run.getName() + "; Assay provider '" + provider.getName() + "' for assay '" + protocol.getName() + "' has no result row lsid prefix");
+                    LOG.info("Import failed for run '{}; Assay provider '{}' for assay '{}' has no result row lsid prefix", run.getName(), provider.getName(), protocol.getName());
                     transaction.commit();
                     return;
                 }

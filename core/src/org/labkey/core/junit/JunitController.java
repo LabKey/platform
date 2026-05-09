@@ -376,9 +376,9 @@ public class JunitController extends SpringActionController
         @Override
         public void run()
         {
-            for (Class testClass : _testClasses)
+            for (Class<?> testClass : _testClasses)
             {
-                _log.info("Running " + testClass.getName());
+                _log.info("Running {}", testClass.getName());
                 _results.add(JunitRunner.run(testClass));
             }
 
@@ -390,7 +390,7 @@ public class JunitController extends SpringActionController
     // Used by DRT JUnitTest to retrieve the current list of tests
     @SuppressWarnings({"UnusedDeclaration"})
     @RequiresSiteAdmin
-    public static class Testlist extends ReadOnlyApiAction
+    public static class Testlist extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -443,7 +443,7 @@ public class JunitController extends SpringActionController
             if (testCase == null)
                 throw new RuntimeException("testCase parameter required");
 
-            Class clazz = findTestClass(form.getTestCase());
+            Class<?> clazz = findTestClass(form.getTestCase());
             JunitRunner.RunnerResult result = JunitRunner.run(clazz);
 
             if (!result.junitResult.wasSuccessful())
@@ -578,7 +578,7 @@ public class JunitController extends SpringActionController
                 HttpServletResponse response = getViewContext().getResponse();
                 TestContext.setTestContext(request, (User) request.getUserPrincipal());
 
-                Class clazz = findTestClass("org.labkey.api.data.DbSchema$TestCase");
+                Class<?> clazz = findTestClass("org.labkey.api.data.DbSchema$TestCase");
                 JunitRunner.RunnerResult result = new JunitRunner.RunnerResult();
 
                 if (null != clazz)
@@ -589,7 +589,7 @@ public class JunitController extends SpringActionController
                     status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
                 String time = format.format(new Date());
-                String statusString = "" + status + ": " + time + "    " + request.getHeader("User-Agent");
+                String statusString = status + ": " + time + "    " + request.getHeader("User-Agent");
                 if (list.size() > 20)
                     list.removeFirst();
                 list.add(statusString);
@@ -603,7 +603,7 @@ public class JunitController extends SpringActionController
                 out.println(status == HttpServletResponse.SC_OK ? "OK" : "ERROR");
                 out.println();
                 out.println("history");
-                for (ListIterator it = list.listIterator(list.size()); it.hasPrevious();)
+                for (ListIterator<String> it = list.listIterator(list.size()); it.hasPrevious();)
                     out.println(it.previous());
 
                 response.flushBuffer();

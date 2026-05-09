@@ -2,8 +2,9 @@ package org.labkey.api.data;
 
 import org.apache.logging.log4j.Level;
 import java.lang.ref.Cleaner;
-import org.jetbrains.annotations.NotNull;
+
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.arrays.IntegerArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -577,7 +578,7 @@ public class ParameterMapStatement implements AutoCloseable
         _debugSql = sql;
     }
 
-    public DbScope getScope()
+    public @NotNull DbScope getScope()
     {
         return _scope;
     }

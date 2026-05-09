@@ -176,8 +176,7 @@ public class XarExpander extends AbstractXarImporter
                 // check to see it divides evenly
                 if ((instanceCnt * maxInputMaterialsPerInstance) != predecessorMaterialsOutput.size())
                 {
-                    getLog().warn("Step number " + step.getActionSequenceRef() + " protocol " + pbStep.stepProtocolLSID
-                            + ". Material inputs don't divide evenly into instances.  Number of instances rounded up.");
+                    getLog().warn("Step number {} protocol {}. Material inputs don't divide evenly into instances.  Number of instances rounded up.", step.getActionSequenceRef(), pbStep.stepProtocolLSID);
                     instanceCnt ++;
                 }
             }
@@ -205,8 +204,7 @@ public class XarExpander extends AbstractXarImporter
                 // check to see it divides evenly
                 if ((instanceCnt * maxInputDataPerInstance) != predecessorDataOutput.size())
                 {
-                    getLog().warn("Step number " + step.getActionSequenceRef() + " protocol " + pbStep.stepProtocolLSID
-                            + ". Data inputs don't divide evenly into instances. ");
+                    getLog().warn("Step number {} protocol {}. Data inputs don't divide evenly into instances. ", step.getActionSequenceRef(), pbStep.stepProtocolLSID);
                     instanceCnt ++;
                 }
             }

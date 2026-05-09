@@ -15,6 +15,8 @@
  */
 package org.labkey.api.collections;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -64,13 +66,13 @@ public class NamedObjectList implements Collection<NamedObject>
     }
 
     @Override
-    public <NamedObject> NamedObject[] toArray(NamedObject[] array)
+    public <NamedObject> NamedObject @NotNull [] toArray(NamedObject @NotNull [] array)
     {
         return _map.values().toArray(array);
     }
 
     @Override
-    public NamedObject[] toArray()
+    public NamedObject @NotNull [] toArray()
     {
         return _map.values().toArray(new NamedObject[size()]);
     }
@@ -82,7 +84,7 @@ public class NamedObjectList implements Collection<NamedObject>
     }
 
     @Override
-    public boolean addAll(Collection arg0)
+    public boolean addAll(@NotNull Collection arg0)
     {
         throw new UnsupportedOperationException();
     }
@@ -100,7 +102,7 @@ public class NamedObjectList implements Collection<NamedObject>
     }
 
     @Override
-    public boolean containsAll(Collection arg0)
+    public boolean containsAll(@NotNull Collection arg0)
     {
         throw new UnsupportedOperationException();
     }
@@ -112,7 +114,7 @@ public class NamedObjectList implements Collection<NamedObject>
     }
 
     @Override
-    public Iterator<NamedObject> iterator()
+    public @NotNull Iterator<NamedObject> iterator()
     {
         return _map.values().iterator();
     }
@@ -124,13 +126,13 @@ public class NamedObjectList implements Collection<NamedObject>
     }
 
     @Override
-    public boolean removeAll(Collection arg0)
+    public boolean removeAll(@NotNull Collection arg0)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean retainAll(Collection arg0)
+    public boolean retainAll(@NotNull Collection arg0)
     {
         throw new UnsupportedOperationException();
     }

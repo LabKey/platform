@@ -125,8 +125,8 @@ public class IpynbReport extends DockerScriptReport
             List<ExternalScriptEngineDefinition> defs = mgr.getEngineDefinitions(ExternalScriptEngineDefinition.Type.Jupyter);
 
             // we currently only support a single site scoped engine
-            if (defs.size() == 1 && Arrays.asList(defs.get(0).getExtensions()).contains(EXTENSION))
-                return defs.get(0).isEnabled();
+            if (defs.size() == 1 && Arrays.asList(defs.getFirst().getExtensions()).contains(EXTENSION))
+                return defs.getFirst().isEnabled();
         }
         return false;
     }
@@ -199,9 +199,9 @@ public class IpynbReport extends DockerScriptReport
         ExecuteStrategy ex = new WebServiceExecuteStrategy();
 
         int exitCode = ex.execute(context, apikey, workingDirectory, scriptFile);
-        LOG.trace("EXIT: " + exitCode);
+        LOG.trace("EXIT: {}", exitCode);
         FileLike outputFile = ex.getOutputDocument();
-        LOG.trace("OUTPUT: " + outputFile);
+        LOG.trace("OUTPUT: {}", outputFile);
         logFiles(workingDirectory, "AFTER");
 
         try
@@ -238,7 +238,7 @@ public class IpynbReport extends DockerScriptReport
             if (error.isFile() && error.getSize() > 0)
                 vbox.addView(new ConsoleOutput(error).getView(context));
 
-            LOG.trace("VIEWS: " + vbox.getViews().size());
+            LOG.trace("VIEWS: {}", vbox.getViews().size());
             return vbox;
         }
         catch (Exception x)
@@ -252,9 +252,8 @@ public class IpynbReport extends DockerScriptReport
     {
         File dir = parentDir.toNioPathForRead().toFile();
         Collection<File> files = FileUtils.listFiles(dir, null, true);
-        LOG.trace(label + ": " + dir.getPath() + "\n\t" +
-                StringUtils.join(files.stream().map(f ->
-                        f.getPath().replace(dir.getPath(), "") + " : " + f.length()).toArray(), "\n\t"));
+        LOG.trace("{}: {}\n\t{}", label, dir.getPath(), StringUtils.join(files.stream().map(f ->
+                f.getPath().replace(dir.getPath(), "") + " : " + f.length()).toArray(), "\n\t"));
     }
 
 

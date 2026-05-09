@@ -90,9 +90,9 @@ public abstract class RegexTokenFilter extends RegexFilter {
 
         // result = Util.substitute(matcher, p, new ActionSubstitution(s, this, context), result, limit);
       } catch (Exception e) {
-        log.warn("Exception: " + this + " in " + context.getRenderContext(), e);
+          log.warn("Exception: {} in {}", this, context.getRenderContext(), e);
       } catch (Error err) {
-        log.warn("Error: " + this + " in " + context.getRenderContext(), err);
+          log.warn("Error: {} in {}", this, context.getRenderContext(), err);
       }
       input = result;
     }

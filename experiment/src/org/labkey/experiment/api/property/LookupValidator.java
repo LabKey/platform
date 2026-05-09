@@ -21,7 +21,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
@@ -199,7 +198,7 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
                 }
                 else
                 {
-                    ColumnInfo lookupTargetCol = keyCols.get(0);
+                    ColumnInfo lookupTargetCol = keyCols.getFirst();
                     // Hack for sample types - see also revision 37612
                     if (lookupTargetCol.getJdbcType() != jdbcType && jdbcType.isText() && tableInfo instanceof ExpMaterialTableImpl)
                     {

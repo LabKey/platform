@@ -225,7 +225,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
             else
             {
                 Map<String, Object> row;
-                String pkName = table.getPkColumnNames().get(0);
+                String pkName = table.getPkColumnNames().getFirst();
                 for (String pkValue : pkValues)
                 {
                     row = new CaseInsensitiveHashMap<>();

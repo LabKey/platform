@@ -29,7 +29,7 @@ public class SpecimenEventManager
     {
         if (!dateOrderedEvents.isEmpty())
         {
-            SpecimenEvent firstEvent = dateOrderedEvents.get(0);
+            SpecimenEvent firstEvent = dateOrderedEvents.getFirst();
             // walk backwards through the events until we find an event with at least one date field filled in that isn't
             // the first event.  Leaving all specimen event dates blank shouldn't make an event the processing location.
             for (int i = 1; i < dateOrderedEvents.size() - 1 && skipAsProcessingLocation(firstEvent); i++)
@@ -59,7 +59,7 @@ public class SpecimenEventManager
     {
         if (dateOrderedEvents.isEmpty())
             return null;
-        return dateOrderedEvents.get(dateOrderedEvents.size() - 1);
+        return dateOrderedEvents.getLast();
     }
 
     public List<SpecimenEvent> getSpecimenEvents(final Container container, Filter filter)

@@ -32,7 +32,7 @@ public class QPivot extends QNode
 
         if (children.isEmpty())
             return;
-        QNode exprList = children.get(0);
+        QNode exprList = children.getFirst();
         // NO PARENS
         for (QNode child : exprList.children())
         {

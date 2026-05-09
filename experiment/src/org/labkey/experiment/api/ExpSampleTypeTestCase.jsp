@@ -406,7 +406,7 @@ public void testNameExpression() throws Exception
 
     assertEquals(3, ret.size());
 
-    assertEquals(1, ret.get(0).get("genId"));
+    assertEquals(1, ret.getFirst().get("genId"));
     assertEquals(expectedName1, ret.get(0).get("name"));
     assertExpectedName(st, expectedName1);
 
@@ -426,38 +426,38 @@ public void testNameExpression() throws Exception
     aliquotRows.add(CaseInsensitiveHashMap.of("aliquotedFrom", expectedName1, "AliquotCount", 10));
     List<Map<String, Object>> aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName1 + "-ALI-0004");
-    assertEquals(expectedName1, aliquots.get(0).get("AliquotedFrom"));
+    assertEquals(expectedName1, aliquots.getFirst().get("AliquotedFrom"));
 
     aliquotRows = new ArrayList<>();
     aliquotRows.add(CaseInsensitiveHashMap.of("Aliquotedfrom", expectedName2, "aliquotCount", 5));
     aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName2 + "-ALI-0005");
-    assertEquals(expectedName2, aliquots.get(0).get("aliquotedFrom"));
+    assertEquals(expectedName2, aliquots.getFirst().get("aliquotedFrom"));
 
     aliquotRows = new ArrayList<>();
     aliquotRows.add(CaseInsensitiveHashMap.of("ALIQUOTEDFROM", expectedName1, "Aliquotcount", 15));
     aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName1 + "-ALI-0006");
-    assertEquals(expectedName1, aliquots.get(0).get("aliquotedfrom"));
+    assertEquals(expectedName1, aliquots.getFirst().get("aliquotedfrom"));
 
     aliquotRows = new ArrayList<>();
     aliquotRows.add(CaseInsensitiveHashMap.of("AliquotedFrom", expectedName3, "ALIQUOTCOUNT", 2));
     aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName3 + "-ALI-0007");
-    assertEquals(expectedName3, aliquots.get(0).get("ALIQUOTEDFROM"));
+    assertEquals(expectedName3, aliquots.getFirst().get("ALIQUOTEDFROM"));
 
     // Issue 53063: Support "Aliquoted From"
     aliquotRows = new ArrayList<>();
     aliquotRows.add(CaseInsensitiveHashMap.of("Aliquoted From", expectedName2, "ALIQUOTCOUNT", 2));
     aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName2 + "-ALI-0008");
-    assertEquals(expectedName2, aliquots.get(0).get("ALIQUOTEDFROM"));
+    assertEquals(expectedName2, aliquots.getFirst().get("ALIQUOTEDFROM"));
 
     aliquotRows = new ArrayList<>();
     aliquotRows.add(CaseInsensitiveHashMap.of("aliquoted from", expectedName3, "ALIQUOTCOUNT", 3));
     aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName3 + "-ALI-0009");
-    assertEquals(expectedName3, aliquots.get(0).get("aliquotedFrom"));
+    assertEquals(expectedName3, aliquots.getFirst().get("aliquotedFrom"));
 
     // test the default aliquot naming pattern (${${AliquotedFrom}-:withCounter}
     st.setAliquotNameExpression("");
@@ -467,37 +467,37 @@ public void testNameExpression() throws Exception
     aliquotRows.add(CaseInsensitiveHashMap.of("aliquotedFrom", expectedName1));
     aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName1 + "-1");
-    assertEquals(expectedName1, aliquots.get(0).get("AliquotedFrom"));
+    assertEquals(expectedName1, aliquots.getFirst().get("AliquotedFrom"));
 
     aliquotRows = new ArrayList<>();
     aliquotRows.add(CaseInsensitiveHashMap.of("Aliquotedfrom", expectedName1));
     aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName1 + "-2");
-    assertEquals(expectedName1, aliquots.get(0).get("aliquotedFrom"));
+    assertEquals(expectedName1, aliquots.getFirst().get("aliquotedFrom"));
 
     aliquotRows = new ArrayList<>();
     aliquotRows.add(CaseInsensitiveHashMap.of("ALIQUOTEDFROM", expectedName1));
     aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName1 + "-3");
-    assertEquals(expectedName1, aliquots.get(0).get("aliquotedfrom"));
+    assertEquals(expectedName1, aliquots.getFirst().get("aliquotedfrom"));
 
     aliquotRows = new ArrayList<>();
     aliquotRows.add(CaseInsensitiveHashMap.of("AliquotedFrom", expectedName1));
     aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName1 + "-4");
-    assertEquals(expectedName1, aliquots.get(0).get("ALIQUOTEDFROM"));
+    assertEquals(expectedName1, aliquots.getFirst().get("ALIQUOTEDFROM"));
 
     aliquotRows = new ArrayList<>();
     aliquotRows.add(CaseInsensitiveHashMap.of("Aliquoted From", expectedName1));
     aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName1 + "-5");
-    assertEquals(expectedName1, aliquots.get(0).get("ALIQUOTEDFROM"));
+    assertEquals(expectedName1, aliquots.getFirst().get("ALIQUOTEDFROM"));
 
     aliquotRows = new ArrayList<>();
     aliquotRows.add(CaseInsensitiveHashMap.of("aliquoted from", expectedName1));
     aliquots = insertSampleRows(sampleTypeName, aliquotRows);
     assertExpectedName(st, expectedName1 + "-6");
-    assertEquals(expectedName1, aliquots.get(0).get("aliquotedFrom"));
+    assertEquals(expectedName1, aliquots.getFirst().get("aliquotedFrom"));
 }
 
 @Test
@@ -639,12 +639,12 @@ public void testBlankRows() throws Exception
 
     assertEquals("Expected to generate 3 sample rows, got: " + inserted, 3, inserted.size());
 
-    String name1 = (String)inserted.get(0).get("name");
+    String name1 = (String)inserted.getFirst().get("name");
     assertTrue("Expected generated sample name to start with 'S-', got: " + name1, name1 != null && name1.startsWith("S-"));
 
     allSamples = st.getSamples(c);
     assertEquals("Expected 3 total samples", 3, allSamples.size());
-    assertEquals(0, allSamples.get(0).getAliquotCount());
+    assertEquals(0, allSamples.getFirst().getAliquotCount());
 
     // insert as if we pasted a tsv in the "upload samples" page -- blank rows should be skipped
     // data has three lines, one blank.  expect to insert only two samples
@@ -662,9 +662,9 @@ public void testBlankRows() throws Exception
         throw errors;
 
     assertEquals("Expected to insert 2 samples, got: " + insertedRows.size(), 2, insertedRows.size());
-    assertEquals(0, insertedRows.get(0).get("AliquotCount"));
+    assertEquals(0, insertedRows.getFirst().get("AliquotCount"));
 
-    ExpMaterial material1 = ExperimentService.get().getExpMaterial(asLong(insertedRows.get(0).get("rowid")));
+    ExpMaterial material1 = ExperimentService.get().getExpMaterial(asLong(insertedRows.getFirst().get("rowid")));
     assertNotNull(material1);
     Map<PropertyDescriptor, Object> map = material1.getPropertyValues();
     assertEquals("Expected to only have 'age' property, got: " + map, 1, map.size());
@@ -1081,7 +1081,7 @@ public void testSampleTypeWithVocabularyProperties() throws Exception
     List<Map<String, Object>> rows = helper.buildRows(row);
 
     UserSchema schema = getSampleSchema();
-    var insertedSample = helper.insertRows(c, rows, sampleTypeName, schema).get(0);
+    var insertedSample = helper.insertRows(c, rows, sampleTypeName, schema).getFirst();
     var sampleLsid = insertedSample.get("LSID").toString();
     var sampleRowId = insertedSample.get("RowId");
 
@@ -1139,16 +1139,16 @@ public void testDetailedAuditLog() throws Exception
     // insert a sample
     List<Map<String,Object>> ret = insertSampleRows(st.getName(), List.of(CaseInsensitiveHashMap.of("Name", "A1", "Measure", "Initial", "Value", 1.0)));
     assertEquals(1, ret.size());
-    assertNotNull(ret.get(0).get("rowid"));
-    int rowid = (int) JdbcType.INTEGER.convert(ret.get(0).get("rowid"));
+    assertNotNull(ret.getFirst().get("rowid"));
+    int rowid = (int) JdbcType.INTEGER.convert(ret.getFirst().get("rowid"));
 
     // check audit log
     SimpleFilter f = new SimpleFilter(new FieldKey(null, "RowId"), auditMaxRowid, CompareType.GT);
     List<SampleTimelineAuditEvent> events = AuditLogService.get().getAuditEvents(c, user, SampleTimelineAuditEvent.EVENT_TYPE, f, new Sort("-RowId"));
     assertFalse(events.isEmpty());
-    assertNull(events.get(0).getOldRecordMap());
-    assertNotNull(events.get(0).getNewRecordMap());
-    Map<String,String> newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
+    assertNull(events.getFirst().getOldRecordMap());
+    assertNotNull(events.getFirst().getNewRecordMap());
+    Map<String,String> newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.getFirst().getNewRecordMap()));
     assertEquals("Initial", newRecordMap.get("Measure"));
     assertEquals("1.0", newRecordMap.get("Value"));
     assertNull(newRecordMap.get("AliquotCount"));
@@ -1163,10 +1163,10 @@ public void testDetailedAuditLog() throws Exception
     // check audit log
     events = AuditLogService.get().getAuditEvents(c, user, SampleTimelineAuditEvent.EVENT_TYPE, f, new Sort("-RowId"));
     assertFalse(events.isEmpty());
-    assertNotNull(events.get(0).getOldRecordMap());
-    Map<String,String> oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getOldRecordMap()));
-    assertNotNull(events.get(0).getNewRecordMap());
-    newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
+    assertNotNull(events.getFirst().getOldRecordMap());
+    Map<String,String> oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.getFirst().getOldRecordMap()));
+    assertNotNull(events.getFirst().getNewRecordMap());
+    newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.getFirst().getNewRecordMap()));
     assertFalse(oldRecordMap.containsKey("lsid"));
     assertEquals("Initial", oldRecordMap.get("Measure"));
     assertEquals("1.0", oldRecordMap.get("Value"));
@@ -1184,10 +1184,10 @@ public void testDetailedAuditLog() throws Exception
     // check audit log
     events = AuditLogService.get().getAuditEvents(c, user, SampleTimelineAuditEvent.EVENT_TYPE, f, new Sort("-RowId"));
     assertFalse(events.isEmpty());
-    assertNotNull(events.get(0).getOldRecordMap());
-    oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getOldRecordMap()));
-    assertNotNull(events.get(0).getNewRecordMap());
-    newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
+    assertNotNull(events.getFirst().getOldRecordMap());
+    oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.getFirst().getOldRecordMap()));
+    assertNotNull(events.getFirst().getNewRecordMap());
+    newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.getFirst().getNewRecordMap()));
     assertFalse(oldRecordMap.containsKey("lsid"));
     assertEquals("Updated", oldRecordMap.get("Measure"));
     assertEquals("2.0", oldRecordMap.get("Value"));
@@ -1212,8 +1212,8 @@ public void testExpMaterialPermissions() throws Exception
     // insert a sample
     List<Map<String,Object>> ret = insertSampleRows(st.getName(), List.of(CaseInsensitiveHashMap.of("name", "SampleInSampleType")));
     assertEquals(1, ret.size());
-    assertNotNull(ret.get(0).get("rowid"));
-    long stSampleId = (long) JdbcType.BIGINT.convert(ret.get(0).get("rowid"));
+    assertNotNull(ret.getFirst().get("rowid"));
+    long stSampleId = (long) JdbcType.BIGINT.convert(ret.getFirst().get("rowid"));
 
     // verify insert, update aren't allowed, but read and delete are allowed
     User user = TestContext.get().getUser();
@@ -1258,7 +1258,7 @@ public void testExpMaterialPermissions() throws Exception
     // verify read via QUS
     var rows = qus.getRows(user, c, List.of(CaseInsensitiveHashMap.of("rowId", m.getRowId())));
     assertEquals("Failed to fetch material via QUS", 1, rows.size());
-    assertEquals(m.getLSID(), rows.get(0).get("lsid"));
+    assertEquals(m.getLSID(), rows.getFirst().get("lsid"));
 
     // verify delete via QUS
     rows = qus.deleteRows(user, c, List.of(CaseInsensitiveHashMap.of("rowId", m.getRowId())), null, null);
@@ -1319,11 +1319,11 @@ public void testInsertOptionUpdate() throws Exception
     }
 
     rows = getSampleRows(sampleTypeName);
-    assertEquals("S-1", rows.get(0).get("name"));
-    assertEquals(1, rows.get(0).get("aliquotcount"));
-    assertEquals(0.0, rows.get(0).get("aliquotvolume"));
-    assertEquals(0, rows.get(0).get("availablealiquotcount"));
-    assertEquals(0.0, rows.get(0).get("availablealiquotvolume"));
+    assertEquals("S-1", rows.getFirst().get("name"));
+    assertEquals(1, rows.getFirst().get("aliquotcount"));
+    assertEquals(0.0, rows.getFirst().get("aliquotvolume"));
+    assertEquals(0, rows.getFirst().get("availablealiquotcount"));
+    assertEquals(0.0, rows.getFirst().get("availablealiquotvolume"));
     assertEquals("a", rows.get(0).get(requiredColName));
     assertEquals(String.format("Failed insert for field \"%s\"", longFieldName), "Very", rows.get(0).get(longFieldAlias));
 
@@ -1361,10 +1361,10 @@ public void testInsertOptionUpdate() throws Exception
 
     rows = getSampleRows(sampleTypeName);
     // test existing row value is updated
-    assertEquals(100, rows.get(0).get("intVal"));
-    assertEquals(1, rows.get(0).get("aliquotcount"));
-    assertEquals(0.0, rows.get(0).get("aliquotvolume"));
-    assertEquals(0, rows.get(0).get("availablealiquotcount"));
+    assertEquals(100, rows.getFirst().get("intVal"));
+    assertEquals(1, rows.getFirst().get("aliquotcount"));
+    assertEquals(0.0, rows.getFirst().get("aliquotvolume"));
+    assertEquals(0, rows.getFirst().get("availablealiquotcount"));
     assertEquals(0.0, rows.get(0).get("availablealiquotvolume"));
     assertEquals(String.format("Data for field \"%s\" unexpectedly changed", longFieldName), "Very", rows.get(0).get(longFieldAlias));
 
@@ -1390,7 +1390,7 @@ public void testInsertOptionUpdate() throws Exception
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
     qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
     assertTrue(context.getErrors().hasErrors());
-    String msg = !context.getErrors().getRowErrors().isEmpty() ? context.getErrors().getRowErrors().get(0).toString() : "no message";
+    String msg = !context.getErrors().getRowErrors().isEmpty() ? context.getErrors().getRowErrors().getFirst().toString() : "no message";
     assertTrue(msg.contains("Sample does not exist: S-1-absent."));
 
     context = new DataIteratorContext();
@@ -1401,7 +1401,7 @@ public void testInsertOptionUpdate() throws Exception
     context.setConfigParameters(auditOptions);
     qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
     assertTrue(context.getErrors().hasErrors());
-    msg = !context.getErrors().getRowErrors().isEmpty() ? context.getErrors().getRowErrors().get(0).toString() : "no message";
+    msg = !context.getErrors().getRowErrors().isEmpty() ? context.getErrors().getRowErrors().getFirst().toString() : "no message";
     assertTrue(msg.contains("Sample does not exist: S-1-absent."));
 
     // AliquotedFrom is supplied but doesn't match the current aliquot status / parents should get ignored

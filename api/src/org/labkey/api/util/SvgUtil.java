@@ -2,7 +2,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.jspecify.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -14,7 +14,7 @@ public class SvgUtil
     public record Size(Float value, @Nullable String units)
     {
         @Override
-        public @NonNull String toString()
+        public @NotNull String toString()
         {
             return value + (null != units ? units : "");
         }

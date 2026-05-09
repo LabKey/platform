@@ -48,7 +48,7 @@ class TabFileType extends FileType
 
     // CONSIDER: sniff for the actual separator and quote character in TabLoader instead?
     @Override
-    public boolean isHeaderMatch(@NotNull byte[] header)
+    public boolean isHeaderMatch(byte @NotNull [] header)
     {
         String s = new String(header, StringUtilsLabKey.DEFAULT_CHARSET); // TODO: Detect encoding
 

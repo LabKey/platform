@@ -178,7 +178,7 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
                 assertEquals(JdbcType.VARCHAR, it.getColumnInfo(2).getJdbcType());
                 assertTrue(it.next());
                 assertEquals(1, it.get(0));
-                assertEquals(null, it.get(1));
+                assertNull(it.get(1));
                 assertEquals("null", it.get(2));
                 assertTrue(it.next());
                 assertEquals(2, it.get(0));

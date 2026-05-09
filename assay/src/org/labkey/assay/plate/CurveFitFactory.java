@@ -39,19 +39,15 @@ public class CurveFitFactory
 
     public static DilutionCurve getCurveImpl(List<WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws FitFailedException
     {
-        switch (type)
+        return switch (type)
         {
-            case FOUR_PARAMETER:
-                return new ParameterCurveImpl.FourParameterCurve(wellGroups, assumeDecreasing, percentCalculator);
-            case FIVE_PARAMETER:
-                return new ParameterCurveImpl.FiveParameterCurve(wellGroups, assumeDecreasing, percentCalculator);
-            case POLYNOMIAL:
-                return new PolynomialCurveImpl(wellGroups, assumeDecreasing, percentCalculator);
-            case LINEAR:
-                return new LinearCurveImpl(wellGroups, assumeDecreasing, percentCalculator);
-            case NONE:
-                return new EmptyCurveImpl(wellGroups, assumeDecreasing, percentCalculator);
-        }
-        throw new IllegalArgumentException("Unable to find a DilutionCurve implementation for type: " + type.getLabel());
+            case FOUR_PARAMETER -> new ParameterCurveImpl.FourParameterCurve(wellGroups, assumeDecreasing, percentCalculator);
+            case FIVE_PARAMETER -> new ParameterCurveImpl.FiveParameterCurve(wellGroups, assumeDecreasing, percentCalculator);
+            case POLYNOMIAL -> new PolynomialCurveImpl(wellGroups, assumeDecreasing, percentCalculator);
+            case LINEAR -> new LinearCurveImpl(wellGroups, assumeDecreasing, percentCalculator);
+            case NONE -> new EmptyCurveImpl(wellGroups, assumeDecreasing, percentCalculator);
+            default ->
+                    throw new IllegalArgumentException("Unable to find a DilutionCurve implementation for type: " + type.getLabel());
+        };
     }
 }

@@ -20,7 +20,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.pipeline.TaskFactory;
@@ -82,7 +81,7 @@ public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDesc
                             String location = entry.getKey();
                             List<PipelineStatusFileImpl> filesToCheck = entry.getValue();
 
-                            _log.info("Starting to check status for " + filesToCheck.size() + " jobs on remote location '" + location + "'");
+                            _log.info("Starting to check status for {} jobs on remote location '{}'", filesToCheck.size(), location);
                             RemoteExecutionEngine engine = configuredLocations.get(location);
                             Set<String> jobIds = new HashSet<>();
                             for (PipelineStatusFileImpl sf : filesToCheck)
@@ -90,16 +89,9 @@ public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDesc
                                 jobIds.add(sf.getJobId());
                             }
 
-                            _log.info("Starting to check for status of " + jobIds.size() + " jobs for engine: " + engine.getType());
-                            try
-                            {
-                                engine.updateStatusForJobs(jobIds);
-                                _log.info("Finished checking status jobs on remote location '" + location + "'");
-                            }
-                            catch (PipelineJobException e)
-                            {
-                                _log.error("Unable to update status for engine: " + engine.getType(), e);
-                            }
+                            _log.info("Starting to check for status of {} jobs for engine: {}", jobIds.size(), engine.getType());
+                            engine.updateStatusForJobs(jobIds);
+                            _log.info("Finished checking status jobs on remote location '{}'", location);
                         }
                         _log.info("Finished checking status jobs for all remote locations");
                     }
@@ -161,7 +153,7 @@ public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDesc
             RemoteExecutionEngine engine = getEngine(job);
             engine.submitJob(job);
 
-            _log.info("Job " + job.getJobGUID() + " submitted to remote engine " + engine.getType());
+            _log.info("Job {} submitted to remote engine {}", job.getJobGUID(), engine.getType());
             submitted = true;
         }
         finally

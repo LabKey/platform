@@ -127,7 +127,7 @@
                             <i class="fa fa-caret-down"></i>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-right">
-                            <% PopupMenuView.renderTree(tab.getChildren().get(0), out); %>
+                            <% PopupMenuView.renderTree(tab.getChildren().getFirst(), out); %>
                         </ul>
                     </div>
                     <% } %>

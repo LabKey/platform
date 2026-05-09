@@ -60,19 +60,19 @@
     Set<String> skipTablePrefixes = new HashSet<>();
     populateSets(skipTables, skipTablePrefixes, form.getExcludeTables());
 
-    LOG.info("Started test of data source " + scope.getDataSourceName());
+    LOG.info("Started test of data source {}", scope.getDataSourceName());
     Collection<String> schemaNames = scope.getSchemaNames();
 
     for (String schemaName : schemaNames)
     {
         if (skipSchemas.contains(schemaName) || skipSchemaPrefixes.stream().anyMatch(schemaName::startsWith))
         {
-            LOG.info("Schema " + schemaName + " SKIPPED");
+            LOG.info("Schema {} SKIPPED", schemaName);
             %>Schema <%=h(schemaName)%> SKIPPED<br><%
         }
         else
         {
-            LOG.info("Schema " + schemaName + ":");
+            LOG.info("Schema {}:", schemaName);
             DbSchema schema = scope.getSchema(schemaName, DbSchemaType.Bare);
             %>Schema <%=h(schemaName)%> has <%=h(StringUtilsLabKey.pluralize(schema.getTableNames().size(), "table"))%><br><%
             List<String> tableNames = new ArrayList<>(schema.getTableNames());
@@ -83,14 +83,14 @@
                 String fullName = schemaName + "." + tableName;
                 if (skipTables.contains(fullName) || skipTablePrefixes.stream().anyMatch(tableName::startsWith))
                 {
-                    LOG.info("Table " + fullName + " SKIPPED");
+                    LOG.info("Table {} SKIPPED", fullName);
                     %>&nbsp;&nbsp;<%=h(tableName)%> SKIPPED<br><%
                     continue;
                 }
                 TableInfo table = schema.getTable(tableName);
                 %>&nbsp;&nbsp;<%=h(tableName)%><%
 
-                LOG.info("Table " + fullName + ":");
+                LOG.info("Table {}:", fullName);
                 TableSelector selector = new TableSelector(table);
                 long count;
                 try
@@ -114,7 +114,7 @@
                         while (results.next())
                             rowCount++;
                     }
-                    LOG.info(StringUtilsLabKey.pluralize(rowCount, "row") + " read");
+                    LOG.info("{} read", StringUtilsLabKey.pluralize(rowCount, "row"));
                     %><br><%
                 }
                 catch (Throwable t)
@@ -125,5 +125,5 @@
         }
     }
 
-    LOG.info("Completed test of data source " + scope.getDataSourceName());
+    LOG.info("Completed test of data source {}", scope.getDataSourceName());
 %>

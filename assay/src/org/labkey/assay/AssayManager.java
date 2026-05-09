@@ -141,7 +141,7 @@ public class AssayManager implements AssayService
     };
 
     /** Cache the protocols defined in a given container, which we can quickly compose to get the protocols in scope */
-    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = DatabaseCache.get(ExperimentService.get().getSchema().getScope(), CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols", (c, argument) ->
+    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = DatabaseCache.get(ExperimentService.get().getSchema().getScope(), CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols", (c, _) ->
     {
         List<ExpProtocol> result = new ArrayList<>();
 
@@ -607,7 +607,7 @@ public class AssayManager implements AssayService
                 batches = ExperimentService.get().getMatchingBatches(batch.getName(), batch.getContainer(), protocol);
             }
 
-            return batches.get(0);
+            return batches.getFirst();
         }
     }
 
@@ -661,14 +661,14 @@ public class AssayManager implements AssayService
         ActionURL assayBeginURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, AssayController.AssayBeginAction.class);
         assayBeginURL.setExtraPath(c.getId());
         String keywords = StringUtilsLabKey.joinNonBlank(" ", name, instrument, provider.getName());
-        StringBuilder body = new StringBuilder(StringUtilsLabKey.joinNonBlank(" ", provider.getName(), description, comment));
+        String body = StringUtilsLabKey.joinNonBlank(" ", provider.getName(), description, comment);
         Map<String, Object> m = new HashMap<>();
         m.put(SearchService.PROPERTY.title.toString(), name);
         m.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
         m.put(SearchService.PROPERTY.categories.toString(), ASSAY_CATEGORY.getName());
 
         String docId = protocol.getDocumentId();
-        WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getEntityId(), "text/plain", body.toString(), assayBeginURL, createdBy, created, modifiedBy, modified, m);
+        WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getEntityId(), "text/plain", body, assayBeginURL, createdBy, created, modifiedBy, modified, m);
         queue.addResource(r);
     }
 
@@ -955,7 +955,7 @@ public class AssayManager implements AssayService
             if (protocols.size() > 1)
                 throw new NotFoundException("More than one assay protocol named '" + protocol.getName() + "' was found.");
 
-            expProtocol = protocols.get(0);
+            expProtocol = protocols.getFirst();
         }
         return expProtocol;
     }
@@ -1065,10 +1065,10 @@ public class AssayManager implements AssayService
                 return checker.getValidationSql(container, user, protocol, assayDataTable);
             }
             else
-                log.error(String.format("Assay data table not found for protocol : %s in folder : %s", protocol.getName(), container.getPath()));
+                log.error("Assay data table not found for protocol : {} in folder : {}", protocol.getName(), container.getPath());
         }
         else
-            log.error(String.format("Assay provider not found for protocol : %s in folder : %s", protocol.getName(), container.getPath()));
+            log.error("Assay provider not found for protocol : {} in folder : {}", protocol.getName(), container.getPath());
 
         return null;
     }

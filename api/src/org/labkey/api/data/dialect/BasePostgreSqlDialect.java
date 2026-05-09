@@ -1073,7 +1073,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         }
         catch (SQLException e)
         {
-            LOG.error("SQLException hit for " + connection);
+            LOG.error("SQLException hit for {}", connection);
             scope.logCurrentConnectionState();
             throw e;
         }

@@ -20,6 +20,8 @@ import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.WriteListener;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -58,13 +60,13 @@ public class SafeFlushResponseWrapper extends HttpServletResponseWrapper
         }
 
         @Override
-        public void write(byte b[]) throws IOException
+        public void write(byte @NotNull[] b) throws IOException
         {
             _out.write(b);
         }
 
         @Override
-        public void write(byte b[], int off, int len) throws IOException
+        public void write(byte @NotNull[] b, int off, int len) throws IOException
         {
             _out.write(b, off, len);
         }

@@ -120,7 +120,7 @@ public class OntologyManager
                 Container proj = c.getProject();
                 if (null == proj)
                     proj = c;
-                _log.debug("Loading a property descriptor for key " + key + " using project " + proj);
+                _log.debug("Loading a property descriptor for key {} using project {}", key, proj);
                 String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
                 List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql, propertyURI, proj, ContainerManager.getSharedContainer().getId()).getArrayList(PropertyDescriptor.class);
                 if (!pdArray.isEmpty())
@@ -131,11 +131,11 @@ public class OntologyManager
                     // and one of the two is in the shared project, use the project-level descriptor.
                     if (pdArray.size() > 1)
                     {
-                        _log.debug("Multiple PropertyDescriptors found for " + propertyURI);
+                        _log.debug("Multiple PropertyDescriptors found for {}", propertyURI);
                         if (pd.getProject().equals(ContainerManager.getSharedContainer()))
                             pd = pdArray.get(1);
                     }
-                    _log.debug("Loaded property descriptor " + pd);
+                    _log.debug("Loaded property descriptor {}", pd);
                     ret = pd;
                 }
             }
@@ -472,10 +472,10 @@ public class OntologyManager
         }
 
         assert total.stop();
-        _log.debug("\t" + total);
-        _log.debug("\t" + before);
-        _log.debug("\t" + ensure);
-        _log.debug("\t" + insert);
+        _log.debug("\t{}", total);
+        _log.debug("\t{}", before);
+        _log.debug("\t{}", ensure);
+        _log.debug("\t{}", insert);
     }
 
     /**
@@ -718,7 +718,7 @@ public class OntologyManager
 
             helper.afterBatchInsert(rowCount);
             if (logger != null)
-                logger.debug("inserted row " + rowCount + ".");
+                logger.debug("inserted row {}.", rowCount);
         }
         catch (ValidationException e)
         {
@@ -797,9 +797,9 @@ public class OntologyManager
          */
         String beforeImportObject(Map<String, Object> map) throws SQLException;
 
-        void afterBatchInsert(int currentRow) throws SQLException;
+        void afterBatchInsert(int currentRow);
 
-        void updateStatistics(int currentRow) throws SQLException;
+        void updateStatistics(int currentRow);
     }
 
 
@@ -809,7 +809,7 @@ public class OntologyManager
          * may be used to process attachments, for auditing, etc
          * @return the LSID of the inserted row
          */
-        String afterImportObject(Map<String, Object> map) throws SQLException;
+        String afterImportObject(Map<String, Object> map);
 
         /**
          * may set parameters directly for columns that are not exposed by tableinfo
@@ -898,7 +898,7 @@ public class OntologyManager
                     }
                     catch (ConversionException e)
                     {
-                        _log.warn("Failed to parse PropertyOrder integer list: " + order);
+                        _log.warn("Failed to parse PropertyOrder integer list: {}", order);
                     }
                 }
             }
@@ -1166,7 +1166,7 @@ public class OntologyManager
             dd = getDomainDescriptor(domainURI, container);
         if (null == dd)
         {
-            _log.debug("deleteObjectsOfType called on type not found in database:  " + domainURI);
+            _log.debug("deleteObjectsOfType called on type not found in database:  {}", domainURI);
             return;
         }
 
@@ -1374,7 +1374,7 @@ public class OntologyManager
 
     private static void copyDescriptors(final Container c, final Container project) throws ValidationException
     {
-        _log.debug("OntologyManager.copyDescriptors  " + c.getName() + " " + project.getName());
+        _log.debug("OntologyManager.copyDescriptors  {} {}", c.getName(), project.getName());
 
         // if c is (was) a project, then nothing to do
         if (c.getId().equals(project.getId()))
@@ -1464,7 +1464,7 @@ public class OntologyManager
 
                 if (pd.getContainer().getId().equals(c.getId()))
                 {
-                    _log.debug("Removing property descriptor from cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
+                    _log.debug("Removing property descriptor from cache. Key: {} descriptor: {}", getCacheKey(pd), pd);
                     PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
                     DOMAIN_PROPERTIES_CACHE.clear();
                     pd.setContainer(project);
@@ -1510,7 +1510,7 @@ public class OntologyManager
 
     public static void moveContainer(@NotNull final Container c, @NotNull Container oldParent, @NotNull Container newParent) throws SQLException
     {
-        _log.debug("OntologyManager.moveContainer  " + c.getName() + " " + oldParent.getName() + "->" + newParent.getName());
+        _log.debug("OntologyManager.moveContainer  {} {}->{}", c.getName(), oldParent.getName(), newParent.getName());
 
         final Container oldProject = oldParent.getProject();
         Container newProject = newParent.getProject();
@@ -1718,7 +1718,7 @@ public class OntologyManager
             pd = out[0];
             if (1 == rowcount && null != pd)
             {
-                _log.debug("Removing property descriptor from cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
+                _log.debug("Removing property descriptor from cache. Key: {} descriptor: {}", getCacheKey(pd), pd);
                 PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
                 return pd;
             }
@@ -2175,7 +2175,7 @@ public class OntologyManager
             executor.execute(deletePropDomSql);
             executor.execute(deletePropSql);
             Pair<String, GUID> key = getCacheKey(pd);
-            _log.debug("Removing property descriptor from cache. Key: " + key + " descriptor: " + pd);
+            _log.debug("Removing property descriptor from cache. Key: {} descriptor: {}", key, pd);
             PROP_DESCRIPTOR_CACHE.remove(key);
             DOMAIN_PROPERTIES_CACHE.clear();
             transaction.commit();
@@ -2667,7 +2667,7 @@ public class OntologyManager
             "excludefromshifting,mvindicatorstoragecolumnname,defaultscale,scannable";
     static final String[] parametersArray = parameters.split(",");
 
-    static ParameterMapStatement getInsertStmt(Connection conn, User user, TableInfo t, boolean ifNotExists) throws SQLException
+    static ParameterMapStatement getInsertStmt(Connection conn, User user, TableInfo t, boolean ifNotExists)
     {
         user = null==user ? User.guest : user;
         SQLFragment sql = new SQLFragment("INSERT INTO exp.propertydescriptor\n\t\t(");
@@ -2706,7 +2706,7 @@ public class OntologyManager
         assert pd.getPropertyId() == 0;
         validatePropertyDescriptor(pd);
         pd = Table.insert(null, getTinfoPropertyDescriptor(), pd);
-        _log.debug("Adding property descriptor to cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
+        _log.debug("Adding property descriptor to cache. Key: {} descriptor: {}", getCacheKey(pd), pd);
         PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
         return pd;
     }
@@ -2716,7 +2716,7 @@ public class OntologyManager
     {
         assert pd.getPropertyId() != 0;
         pd = Table.update(null, getTinfoPropertyDescriptor(), pd, pd.getPropertyId());
-        _log.debug("Updating property descriptor in cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
+        _log.debug("Updating property descriptor in cache. Key: {} descriptor: {}", getCacheKey(pd), pd);
         PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
         // It's possible that the propertyURI has changed, thus breaking our reference
         DOMAIN_PROPERTIES_CACHE.clear();

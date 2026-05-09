@@ -527,17 +527,13 @@ public class PropertyStorageSpec
         @Override
         public String toString()
         {
-            switch (this)
+            return switch (this)
             {
-                case CLUSTERED:
-                    return "CLUSTERED";
-                case NONCLUSTERED:
-                    return "NONCLUSTERED";
-                case CLUSTER:
-                    return "CLUSTER";
-            }
+                case CLUSTERED -> "CLUSTERED";
+                case NONCLUSTERED -> "NONCLUSTERED";
+                case CLUSTER -> "CLUSTER";
+            };
 
-            return "";
         }
     }
 

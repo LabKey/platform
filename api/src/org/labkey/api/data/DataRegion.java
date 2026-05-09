@@ -81,7 +81,6 @@ import org.springframework.validation.Errors;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -857,7 +856,7 @@ public class DataRegion extends DisplayElement
                     //Issue 14863: add null check
                     if (result != null && !result.isEmpty())
                     {
-                        Aggregate.Result countStarResult = result.get(0);
+                        Aggregate.Result countStarResult = result.getFirst();
                         _totalRows = 0L;
                         if (countStarResult.getValue() instanceof Number)
                             _totalRows = ((Number) countStarResult.getValue()).longValue();
@@ -2281,11 +2280,11 @@ public class DataRegion extends DisplayElement
                 //Make sure all pks are included
                 if (action == MODE_UPDATE)
                 {
-                    int span = (_groupTables.isEmpty() || _groupTables.get(0).getGroups().isEmpty()) ?
+                    int span = (_groupTables.isEmpty() || _groupTables.getFirst().getGroups().isEmpty()) ?
                         1 :
                         (_horizontalGroups ?
-                            _groupTables.get(0).getGroups().get(0).getColumns().size() + 1 :
-                            _groupTables.get(0).getGroups().size()); // One extra one for the column to reuse the same value
+                            _groupTables.getFirst().getGroups().getFirst().getColumns().size() + 1 :
+                            _groupTables.getFirst().getGroups().size()); // One extra one for the column to reuse the same value
 
                     TR(
                         TD(
@@ -2380,7 +2379,7 @@ public class DataRegion extends DisplayElement
                                 TD(),
                                 (Renderable) ret -> {
                                     for (DisplayColumnGroup group : groups)
-                                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().get(0));
+                                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().getFirst());
                                     return ret;
                                 }
                             ).appendTo(out);
@@ -2413,7 +2412,7 @@ public class DataRegion extends DisplayElement
                             {
                                 TR(
                                     (Renderable) ret -> {
-                                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().get(0));
+                                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().getFirst());
                                         if (group.isCopyable() && hasCopyableFinal)
                                         {
                                             group.writeSameCheckboxCell(ctx, out);
@@ -2694,7 +2693,7 @@ public class DataRegion extends DisplayElement
                     // 4. If there are multiple (and maybe even if not) then show the FieldKey.toString()
                     //    in the tooltip hover so the user has a chance to disambiguate.
 
-                    FieldKey filterKey = fieldKeys.get(0);
+                    FieldKey filterKey = fieldKeys.getFirst();
 
                     if (filterKey != null)
                     {
@@ -2946,7 +2945,7 @@ public class DataRegion extends DisplayElement
     {
         if (_groupTables.isEmpty())
             addGroupTable();
-        _groupTables.get(_groupTables.size() - 1).setGroupHeadings(headings);
+        _groupTables.getLast().setGroupHeadings(headings);
     }
 
     public boolean getShowPagination()
@@ -3040,8 +3039,8 @@ public class DataRegion extends DisplayElement
     {
         if (_groupTables.isEmpty())
             addGroupTable();
-        List<DisplayColumnGroup> groups = _groupTables.get(_groupTables.size() - 1).getGroups();        // always add to last (current)
-        assert groups.isEmpty() || groups.get(0).getColumns().size() == group.getColumns().size() : "Must have matching column counts";
+        List<DisplayColumnGroup> groups = _groupTables.getLast().getGroups();        // always add to last (current)
+        assert groups.isEmpty() || groups.getFirst().getColumns().size() == group.getColumns().size() : "Must have matching column counts";
         groups.add(group);
     }
 

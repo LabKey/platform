@@ -27,7 +27,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileListener;
-import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -449,16 +448,10 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
             FileContentService svc = FileContentService.get();
             if (svc != null)
             {
-                try
-                {
-                    AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, false);
-                    if (dir != null)
-                        return dir.getFileSystemDirectoryPath();
-                }
-                catch (MissingRootDirectoryException e)
-                {
-                    // Don't complain here, just hide the @files subfolders
-                }
+                AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, false);
+                if (dir != null)
+                    return dir.getFileSystemDirectoryPath();
+
             }
             return null;
         }

@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
@@ -113,7 +114,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters)
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters)
             throws InvalidKeyException, ValidationException
     {
         int rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);

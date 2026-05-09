@@ -103,7 +103,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
                 {
                     assert null != rows;
 
-                    AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, rows.size(), rows.get(0));
+                    AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, rows.size(), rows.getFirst());
 
                     AuditLogService.get().addEvent(user, event);
 

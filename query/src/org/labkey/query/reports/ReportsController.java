@@ -837,7 +837,7 @@ public class ReportsController extends SpringActionController
             Report report = bean.getReport(getViewContext());
             if (report != null)
             {
-                _log.trace("Executing report: " + report.getClass().getSimpleName());
+                _log.trace("Executing report: {}", report.getClass().getSimpleName());
                 if (bean.getIsDirty())
                     report.clearCache();
 
@@ -852,9 +852,9 @@ public class ReportsController extends SpringActionController
                 else
                 {
                     HttpView<?> renderedReport = report.renderReport(getViewContext());
-                    _log.trace("Report views: " + (renderedReport == null ? null : (
+                    _log.trace("Report views: {}", renderedReport == null ? null : (
                             renderedReport.getViews() == null ? renderedReport.getClass().getSimpleName() :
-                                    renderedReport.getViews().stream().map(mv -> mv.getClass().getSimpleName()).collect(Collectors.joining(", ")))));
+                                    renderedReport.getViews().stream().map(mv -> mv.getClass().getSimpleName()).collect(Collectors.joining(", "))));
                     resultsView.addView(renderedReport);
                 }
             }
@@ -894,13 +894,13 @@ public class ReportsController extends SpringActionController
 
             if (mr.getStatus() != HttpServletResponse.SC_OK)
             {
-                _log.trace("Report error. Status: " + mr.getStatus());
+                _log.trace("Report error. Status: {}", mr.getStatus());
                 resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
                 return null;
             }
 
             final String html = mr.getContentAsString();
-            _log.trace("Report rendered. Size: " + html.length());
+            _log.trace("Report rendered. Size: {}", html.length());
             resultProperties.put("html", html);
             resultProperties.put("requiredJsScripts", includes);
             resultProperties.put("requiredCssScripts", cssScripts);
@@ -1245,7 +1245,7 @@ public class ReportsController extends SpringActionController
 
                     if (engine != null)
                     {
-                        if (!ReportUtil.canCreateScript(context, engine.getFactory().getExtensions().get(0)))
+                        if (!ReportUtil.canCreateScript(context, engine.getFactory().getExtensions().getFirst()))
                             //TODO update the message text
                             errors.add(new SimpleValidationError("Only users with the site Analyst permission are allowed to create script views."));
                     }
@@ -1521,13 +1521,13 @@ public class ReportsController extends SpringActionController
 
                         responseHeaders.put("Pragma", "private");
                         responseHeaders.put("Cache-Control", "private, max-age=3600");
-                        _log.debug("Caching file: " + file);
+                        _log.debug("Caching file: {}", file);
                     }
                     PageFlowUtil.streamFile(getViewContext().getResponse(), responseHeaders, file, BooleanUtils.toBoolean(attachment));
                     if (BooleanUtils.toBoolean(deleteFile))
                     {
                         file.delete();
-                        _log.debug("Deleting file: " + file);
+                        _log.debug("Deleting file: {}", file);
                     }
                     return null;
                 }

@@ -44,7 +44,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -228,7 +227,7 @@ public class DilutionManager
         TableInfo tableInfo = getSchema().getTable(NAB_SPECIMEN_TABLE_NAME);
         List<NabSpecimen> nabSpecimens = new TableSelector(tableInfo, filter, null).getArrayList(NabSpecimen.class);
         if (!nabSpecimens.isEmpty())
-            return nabSpecimens.get(0);
+            return nabSpecimens.getFirst();
         return null;
     }
 

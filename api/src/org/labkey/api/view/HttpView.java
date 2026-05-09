@@ -176,7 +176,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
                 response.flushBuffer();
             }
             if (!ExceptionUtil.isIgnorable(e))
-                LogManager.getLogger(HttpView.class).error("Exception while rendering view; creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
+                LogManager.getLogger(HttpView.class).error("Exception while rendering view; creation stacktrace:{}", ExceptionUtil.renderStackTrace(_creationStackTrace));
             throw e;
         }
     }
@@ -761,7 +761,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
      */
     @Override
     @Deprecated
-    public ModelAndView addObject(String key, Object value)
+    public @NotNull ModelAndView addObject(@NotNull String key, Object value)
     {
         getViewContext().put(key, value);
         return this;

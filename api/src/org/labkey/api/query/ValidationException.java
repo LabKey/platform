@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.logging.log4j.Level;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.RuntimeSQLException;
 import org.springframework.dao.DataAccessException;
@@ -304,9 +305,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
         if (field == null)
             throw new IllegalArgumentException();
 
-        List<PropertyValidationError> list = _fieldErrors.get(field);
-        if (list == null)
-            _fieldErrors.put(field, list = new ArrayList<>());
+        List<PropertyValidationError> list = _fieldErrors.computeIfAbsent(field, _ -> new ArrayList<>());
         list.add(error);
 
         return this;
@@ -387,9 +386,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
             throw new IllegalArgumentException();
 
         // For convenience in the script environment, create an empty list.
-        List<PropertyValidationError> list = _fieldErrors.get(name);
-        if (list == null)
-            _fieldErrors.put(name, list = new ArrayList<>());
+        List<PropertyValidationError> list = _fieldErrors.computeIfAbsent(name, k -> new ArrayList<>());
 
         final List<PropertyValidationError> wrapped = list;
         return new AbstractList<>()
@@ -550,7 +547,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
     }
 
     @Override
-    public Iterator<ValidationError> iterator()
+    public @NotNull Iterator<ValidationError> iterator()
     {
         return getErrors().iterator();
     }

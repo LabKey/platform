@@ -16,9 +16,9 @@
 package org.labkey.api.exp.api;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -419,7 +419,7 @@ public class ExpLineage
         }
 
         @Override
-        public String toString()
+        public @NotNull String toString()
         {
             return "[" + parent + "] -> [" + child + "]";
         }
@@ -512,7 +512,7 @@ public class ExpLineage
                 return targetNodes;
             }
 
-            Pair<ExpLineageOptions.LineageExpType, String> ancestorPath = ancestorPaths.get(0);
+            Pair<ExpLineageOptions.LineageExpType, String> ancestorPath = ancestorPaths.getFirst();
             ExpLineageOptions.LineageExpType expType = ancestorPath.first;
             String cpas = ancestorPath.second;
 
