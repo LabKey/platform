@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.pipeline.TaskFactory;
@@ -90,7 +91,16 @@ public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDesc
                             }
 
                             _log.info("Starting to check for status of {} jobs for engine: {}", jobIds.size(), engine.getType());
-                            engine.updateStatusForJobs(jobIds);
+                            try
+                            {
+                                engine.updateStatusForJobs(jobIds);
+                                _log.info("Finished checking status jobs on remote location '{}'", location);
+                            }
+                            catch (PipelineJobException e)
+                            {
+                                _log.error("Unable to update status for engine: {}", engine.getType(), e);
+                            }
+
                             _log.info("Finished checking status jobs on remote location '{}'", location);
                         }
                         _log.info("Finished checking status jobs for all remote locations");
