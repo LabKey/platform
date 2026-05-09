@@ -3,13 +3,46 @@ LABKEY.Admin = LABKEY.Admin || {};
 LABKEY.Admin.Caches = new function() {
     var API_URL = LABKEY.ActionURL.buildURL('admin', 'clearCaches');
 
+    function showSpinner() {
+        var el = document.getElementById('cacheSpinner');
+        if (el) el.style.display = 'inline';
+    }
+
+    function hideSpinner() {
+        var el = document.getElementById('cacheSpinner');
+        if (el) el.style.display = 'none';
+    }
+
+    function showError(msg) {
+        hideSpinner();
+        var el = document.getElementById('cacheError');
+        if (el) {
+            el.textContent = msg || 'An error occurred. Please try again.';
+            el.style.display = 'block';
+        }
+    }
+
+    function hideError() {
+        var el = document.getElementById('cacheError');
+        if (el) el.style.display = 'none';
+    }
+
     function doPost(params) {
+        hideError();
+        showSpinner();
         LABKEY.Ajax.request({
             url: API_URL,
             method: 'POST',
             params: params,
             success: reloadPage,
-            failure: LABKEY.Utils.getCallbackWrapper(null, null, true)
+            failure: function(response) {
+                var msg = 'Request failed.';
+                try {
+                    var json = JSON.parse(response.responseText);
+                    if (json && json.exception) msg = json.exception;
+                } catch (e) { /* ignore */ }
+                showError(msg);
+            }
         });
     }
 
@@ -34,7 +67,15 @@ LABKEY.Admin.Caches = new function() {
         }
 
         bindIfPresent('clearAllCaches', { clearCaches: true });
-        bindIfPresent('clearCachesGc', { clearCaches: true, gc: true });
+        bindIfPresent('clearCachesGc', { clearCaches: true, gc: 1 });
         bindIfPresent('gcOnly', { gc: true });
+
+        const refreshEl = document.getElementById('refreshPage');
+        if (refreshEl) {
+            refreshEl.addEventListener('click', function(e) {
+                e.preventDefault();
+                reloadPage();
+            });
+        }
     });
 };

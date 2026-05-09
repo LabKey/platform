@@ -55,9 +55,14 @@
 <p>
     <a href="#" id="clearCachesGc" class="labkey-text-link">Clear Caches, GC and Refresh</a>
     <a href="#" id="gcOnly" class="labkey-text-link">GC and Refresh</a>
-    <%=link("Refresh", AdminController.getMemTrackerURL(false, false))%>
+    <a href="#" id="refreshPage" class="labkey-text-link">Refresh</a>
     <% if (getUser().hasSiteAdminPermission()) { %> <%=link("Memory Stress Test", new ActionURL(AdminController.MemoryStressTestAction.class, ContainerManager.getRoot()))%> <% } %>
+    <span id="cacheSpinner" style="display:none; margin-left:8px;">
+        <span style="display:inline-block; width:14px; height:14px; border:2px solid #ccc; border-top-color:#333; border-radius:50%; animation:lk-spin 0.7s linear infinite; vertical-align:middle;"></span>
+    </span>
+    <style>@keyframes lk-spin { to { transform: rotate(360deg); } }</style>
 </p>
+<div id="cacheError" class="labkey-error" style="display:none;"></div>
 <% } %>
 <table class="labkey-wp">
     <tr class="labkey-wp-header">

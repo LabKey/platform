@@ -3225,7 +3225,13 @@ public class AdminController extends SpringActionController
             HtmlStringBuilder html = HtmlStringBuilder.of();
 
             html.append(createHtmlFragment(A(cl("labkey-text-link").at(href, "#").id("clearAllCaches"), "Clear Caches and Refresh")));
-            html.append(LinkBuilder.labkeyLink("Refresh", getCachesURL(false, false)));
+            html.append(createHtmlFragment(A(cl("labkey-text-link").at(href, "#").id("refreshPage"), "Refresh")));
+            html.append(createHtmlFragment(
+                SPAN(at(style, "display:none; margin-left:8px;").id("cacheSpinner"),
+                    SPAN(at(style, "display:inline-block; width:14px; height:14px; border:2px solid #ccc; border-top-color:#333; border-radius:50%; animation:lk-spin 0.7s linear infinite; vertical-align:middle;"))),
+                STYLE("@keyframes lk-spin { to { transform: rotate(360deg); } }"),
+                DIV(cl("labkey-error").at(style, "display:none;").id("cacheError"))
+            ));
 
             html.append(createHtmlFragment(BR(), BR()));
             appendStats(html, "Caches", cacheStats, false);
@@ -3738,38 +3744,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static ActionURL getMemTrackerURL(boolean clearCaches, boolean gc)
-    {
-        ActionURL url = new ActionURL(MemTrackerAction.class, ContainerManager.getRoot());
-
-        if (clearCaches)
-            url.addParameter(MemForm.Params.clearCaches, "1");
-
-        if (gc)
-            url.addParameter(MemForm.Params.gc, "1");
-
-        return url;
-    }
-
-    public static ActionURL getCachesURL(boolean clearCaches, boolean gc)
-    {
-        ActionURL url = new ActionURL(CachesAction.class, ContainerManager.getRoot());
-
-        if (clearCaches)
-            url.addParameter(MemForm.Params.clearCaches, "1");
-
-        if (gc)
-            url.addParameter(MemForm.Params.gc, "1");
-
-        return url;
-    }
-
-    public static ActionURL getClearCacheURL(String debugName)
-    {
-        return new ActionURL(ClearCachesAction.class, ContainerManager.getRoot())
-            .addParameter(MemForm.Params.debugName, debugName);
-    }
-
     private static volatile String lastCacheMemUsed = null;
 
     @AdminConsoleAction
@@ -3792,8 +3766,6 @@ public class AdminController extends SpringActionController
 
     public static class MemForm
     {
-        private enum Params {clearCaches, debugName, gc}
-
         private boolean _clearCaches = false;
         private boolean _gc = false;
         private String _debugName;
@@ -3886,12 +3858,12 @@ public class AdminController extends SpringActionController
             }
 
             // ignore recently allocated
-            long start = ViewServlet.getRequestStartTime(request) - 2000;
+            long start = ViewServlet.getRequestStartTime(request) - 5000;
             references = new ArrayList<>(all.size());
 
             for (HeldReference r : all)
             {
-                if (r.getThreadId() == threadId && r.getAllocationTime() >= start)
+                if (r.getAllocationTime() >= start)
                     continue;
 
                 if (objectsToIgnore.contains(r.getReference()))
