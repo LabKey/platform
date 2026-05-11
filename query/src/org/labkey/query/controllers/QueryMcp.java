@@ -51,7 +51,7 @@ public class QueryMcp implements McpService.McpImpl
     public ReadResourceResult getLabKeySQLDocumentation() throws IOException
     {
         incrementResourceRequestCount("LabKey SQL");
-        String markdown = IOUtils.resourceToString("org/labkey/query/controllers/LabKeySql.md", null, QueryController.class.getClassLoader());
+        String markdown = IOUtils.resourceToString("org/labkey/query/controllers/prompts/LabKeySql.md", null, QueryController.class.getClassLoader());
         return new ReadResourceResult(List.of(
             new TextResourceContents(
                 "resource://org/labkey/query/controllers/LabKeySql.md",

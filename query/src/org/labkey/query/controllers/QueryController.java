@@ -8500,6 +8500,107 @@ public class QueryController extends SpringActionController
         }
     }
 
+    private enum PromptResource
+    {
+        ExpressionAssistant,
+        LabKeySql
+    }
+
+    private static String getPromptResource(PromptResource resource)
+    {
+        try
+        {
+            return IOUtils.resourceToString("org/labkey/query/controllers/prompts/" + resource.name() + ".md", null, QueryController.class.getClassLoader());
+        }
+        catch (IOException x)
+        {
+            throw new ConfigurationException("error loading resource", x);
+        }
+    }
+
+    public static class ExpressionAssistantAgentForm extends PromptForm
+    {
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    @RequiresLogin
+    public static class ExpressionAssistantAgentAction extends AbstractAgentAction<ExpressionAssistantAgentForm>
+    {
+        ExpressionAssistantAgentForm _form;
+
+        @Override
+        public void validateForm(ExpressionAssistantAgentForm form, Errors errors)
+        {
+            _form = form;
+        }
+
+        @Override
+        protected String getAgentName()
+        {
+            return ExpressionAssistantAgentAction.class.getName();
+        }
+
+        @Override
+        protected String getServicePrompt()
+        {
+            return "The following documentation describes you, the Calculated Column Expression Assistant:\n\n" +
+                    getPromptResource(PromptResource.ExpressionAssistant) +
+                    "\n\nThe following documentation describes LabKey SQL:\n\n" +
+                    getPromptResource(PromptResource.LabKeySql);
+        }
+
+        @Override
+        public Object execute(ExpressionAssistantAgentForm form, BindException errors) throws Exception
+        {
+            // save form here for context in getServicePrompt()
+            _form = form;
+
+            try (var _ = McpContext.withContext(getViewContext()))
+            {
+                String prompt = form.getPrompt();
+
+                var escapedResponse = escapeResponse(prompt);
+                if (null != escapedResponse)
+                    return escapedResponse;
+
+                if (isBlank(prompt))
+                {
+                    return new JSONObject(Map.of(
+                            "contentType", "text/plain",
+                            "text", "🤷",
+                            "success", Boolean.TRUE));
+                }
+
+                ChatClient chatSession = getChat(true);
+                List<McpService.MessageResponse> responses;
+                SqlResponse sqlResponse;
+
+                try
+                {
+                    responses = McpService.get().sendMessageEx(chatSession, prompt);
+                    sqlResponse = extractSql(responses);
+                }
+                catch (ServerException x)
+                {
+                    return new JSONObject(Map.of(
+                            "error", x.getMessage(),
+                            "text", "ERROR: " + x.getMessage(),
+                            "success", Boolean.FALSE));
+                }
+
+                var ret = new JSONObject(Map.of("success", Boolean.TRUE));
+                if (null != sqlResponse.sql())
+                    ret.put("sql", sqlResponse.sql());
+                if (null != sqlResponse.html())
+                    ret.put("html", sqlResponse.html());
+                return ret;
+            }
+            catch (ClientException x)
+            {
+                return errorResponse(x);
+            }
+        }
+    }
     
     public static class TestCase extends AbstractActionPermissionTest
     {
@@ -8777,7 +8878,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-
     public static class SqlPromptForm extends PromptForm
     {
         public String schemaName;
@@ -8792,7 +8892,6 @@ public class QueryController extends SpringActionController
             this.schemaName = schemaName;
         }
     }
-
 
     @RequiresPermission(ReadPermission.class)
     @RequiresLogin
@@ -8816,7 +8915,7 @@ public class QueryController extends SpringActionController
         protected String getServicePrompt()
         {
             StringBuilder serviceMessage = new StringBuilder();
-            serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(getSQLHelp()).append("\n\n");
+            serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(getPromptResource(PromptResource.LabKeySql)).append("\n\n");
             serviceMessage.append("NOTE: Prefer using lookup syntax rather than JOIN where possible.\n");
             serviceMessage.append("NOTE: When helping generate SQL please don't use names of tables and columns from documentation examples. Always refer to the available tools for retrieving database metadata.\n");
 
@@ -8833,36 +8932,19 @@ public class QueryController extends SpringActionController
             return serviceMessage.toString();
         }
 
-        String getSQLHelp()
-        {
-            try
-            {
-                return IOUtils.resourceToString("org/labkey/query/controllers/LabKeySql.md", null, QueryController.class.getClassLoader());
-            }
-            catch (IOException x)
-            {
-                throw new ConfigurationException("error loading resource", x);
-            }
-        }
-
         @Override
         public Object execute(SqlPromptForm form, BindException errors) throws Exception
         {
             // save form here for context in getServicePrompt()
             _form = form;
 
-            try (var mcpPush = McpContext.withContext(getViewContext()))
+            try (var _ = McpContext.withContext(getViewContext()))
             {
                 String prompt = form.getPrompt();
 
-                String escapeResponse = handleEscape(prompt);
+                JSONObject escapeResponse = escapeResponse(prompt);
                 if (null != escapeResponse)
-                {
-                    return new JSONObject(Map.of(
-                            "contentType", "text/plain",
-                            "text", escapeResponse,
-                            "success", Boolean.TRUE));
-                }
+                    return escapeResponse;
 
                 // TODO when/how to do we reset or isolate different chat sessions, e.g. if two SQL windows are open concurrently?
                 ChatClient chatSession = getChat(true);
@@ -8933,11 +9015,7 @@ public class QueryController extends SpringActionController
             }
             catch (ClientException ex)
             {
-                var ret = new JSONObject(Map.of(
-                        "text", ex.getMessage(),
-                        "user", getViewContext().getUser().getName(),
-                        "success", Boolean.FALSE));
-                return ret;
+                return errorResponse(ex);
             }
         }
     }

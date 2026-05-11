@@ -4,6 +4,8 @@ import com.google.genai.errors.ClientException;
 import com.google.genai.errors.ServerException;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.util.HtmlString;
@@ -52,18 +54,13 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
     @Override
     public Object execute(PromptForm form, BindException errors) throws Exception
     {
-        try (var mcpPush = McpContext.withContext(getViewContext()))
+        try (var _ = McpContext.withContext(getViewContext()))
         {
             String prompt = form.getPrompt();
 
-            String escapeResponse = handleEscape(prompt);
+            JSONObject escapeResponse = escapeResponse(prompt);
             if (null != escapeResponse)
-            {
-                return new JSONObject(Map.of(
-                        "contentType", "text/plain",
-                        "response", escapeResponse,
-                        "success", Boolean.TRUE));
-            }
+                return escapeResponse;
 
             // call getChat() after handleEscape()
             ChatClient chatSession = getChat(true);
@@ -101,11 +98,27 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
         }
         catch (ClientException ex)
         {
-            var ret = new JSONObject(Map.of(
-                    "text", ex.getMessage(),
-                    "user", getViewContext().getUser().getName(),
-                    "success", Boolean.FALSE));
-            return ret;
+            return errorResponse(ex);
         }
+    }
+
+    protected @NotNull JSONObject errorResponse(Exception ex)
+    {
+        return new JSONObject(Map.of(
+                "text", ex.getMessage(),
+                "user", getViewContext().getUser().getName(),
+                "success", Boolean.FALSE));
+    }
+
+    protected @Nullable JSONObject escapeResponse(String prompt)
+    {
+        String escapeResponse = handleEscape(prompt);
+        if (null == escapeResponse)
+            return null;
+
+        return new JSONObject(Map.of(
+                "contentType", "text/plain",
+                "text", escapeResponse,
+                "success", Boolean.TRUE));
     }
 }
