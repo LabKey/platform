@@ -238,7 +238,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         });
     }
 
-    private List<Plate> getPlatesForPlateSet(
+    private List<? extends Plate> getPlatesForPlateSet(
         Container container,
         User user,
         Long plateSetId,
@@ -270,7 +270,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     ) throws ExperimentException
     {
         // get the ordered list of plates for the plate set
-        List<Plate> plates = getPlatesForPlateSet(container, user, plateSetId, protocol);
+        List<? extends Plate> plates = getPlatesForPlateSet(container, user, plateSetId, protocol);
         if (plates.isEmpty())
             throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
         PlateSet plateSet = plates.get(0).getPlateSet();
@@ -297,7 +297,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         AssayProvider provider,
         ExpProtocol protocol,
         PlateSet plateSet,
-        List<Plate> plates,
+        List<? extends Plate> plates,
         FileLike dataFile,
         DataLoaderSettings settings
     ) throws ExperimentException
@@ -356,7 +356,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     ) throws ExperimentException
     {
         Long plateSetId = getPlateSetId(context, provider, protocol);
-        List<Plate> plates = getPlatesForPlateSet(container, user, plateSetId, protocol);
+        List<? extends Plate> plates = getPlatesForPlateSet(container, user, plateSetId, protocol);
         if (plates.isEmpty())
             throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
 
@@ -540,7 +540,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     private List<Map<String, Object>> parsePlateRows(
         AssayProvider provider,
         ExpProtocol protocol,
-        List<Plate> plates,
+        List<? extends Plate> plates,
         List<Map<String, Object>> data
     ) throws ExperimentException
     {
@@ -604,7 +604,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     // Resolves a pre-calculated "plateIdField" to a plate rowId and furnishes new "data" rows with the plate rowId.
-    private List<Map<String, Object>> resolvePlateIdentifier(List<Plate> plates, List<Map<String, Object>> data, String plateIdField)
+    private List<Map<String, Object>> resolvePlateIdentifier(List<? extends Plate> plates, List<Map<String, Object>> data, String plateIdField)
     {
         var newData = new ArrayList<Map<String, Object>>();
         var plateIdentifiers = new HashMap<Object, Long>();
@@ -664,7 +664,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
             // locate the plate in the plate set this grid is associated with plus an optional
             // measure name
-            List<Plate> plates = PlateManager.get().getPlatesForPlateSet(plateSet);
+            List<? extends Plate> plates = PlateManager.get().getPlatesForPlateSet(plateSet);
             List<String> annotations = getAnnotations();
 
             // if the plate set only has one plate, then treat a single annotation as the measure
@@ -694,7 +694,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             }
         }
 
-        private @NotNull Plate getPlateForId(String annotation, List<Plate> platesetPlates) throws ExperimentException
+        private @NotNull Plate getPlateForId(String annotation, List<? extends Plate> platesetPlates) throws ExperimentException
         {
             Plate plate = platesetPlates.stream().filter(p -> p.isIdentifierMatch(annotation)).findFirst().orElse(null);
             if (plate == null)
@@ -734,7 +734,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         AssayProvider provider,
         ExpProtocol protocol,
         PlateSet plateSet,
-        List<Plate> plates,
+        List<? extends Plate> plates,
         FileLike dataFile
     ) throws ExperimentException
     {
@@ -1754,7 +1754,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             );
 
             PlateSet plateSet = PlateManager.get().createPlateSet(container, user, new PlateSetImpl(), plates, null, null);
-            List<Plate> plateSetPlates = PlateManager.get().getPlatesForPlateSet(plateSet);
+            List<? extends Plate> plateSetPlates = PlateManager.get().getPlatesForPlateSet(plateSet);
             assertEquals("Expected two plates to be created.", 2, plateSetPlates.size());
             Plate plate = plateSetPlates.get(0);
 

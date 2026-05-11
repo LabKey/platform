@@ -156,7 +156,7 @@ public interface PlateService
      */
     @Nullable Plate getPlate(ContainerFilter cf, Long plateSetId, Object plateIdentifier);
 
-    @NotNull List<Plate> getPlates(Container container);
+    @NotNull List<? extends Plate> getPlates(Container container);
 
     /**
      * Gets the plate set by ID
