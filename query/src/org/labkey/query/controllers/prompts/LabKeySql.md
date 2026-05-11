@@ -204,7 +204,7 @@ Here is a summary of the available functions and methods in LabKey SQL.
 * `age_in_years(date1, date2)`: Returns age in years.
 * `curdate()`, `curtime()`: Returns the current date/time.
 * `dayofmonth(date)`: Returns the day of the month.
-* `dayofweek(date)`: Returns the day of the week.
+* `dayofweek(date)`: Returns the day of the week. Day of the week starts
 * `dayofyear(date)`: Returns the day of the year.
 * `hour(time)`, `minute(time)`, `second(time)`: Return time components.
 * `month(date)`, `monthname(date)`: Return month values.
