@@ -8606,7 +8606,7 @@ public class QueryController extends SpringActionController
 
         private SqlResponse validateExpressionWithRetry(ChatClient chatSession, ParseForm form, SqlResponse sqlResponse)
         {
-            if (null == sqlResponse.sql() || form.getColumnMap().isEmpty())
+            if (null == sqlResponse.sql())
                 return sqlResponse;
 
             try
