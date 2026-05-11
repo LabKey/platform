@@ -427,8 +427,7 @@ public class CohortController extends BaseStudyController
 
                     boolean labelChanged = (newLabel != null && !cohort.getLabel().equals(newLabel));
                     boolean enrolledChanged = cohort.isEnrolled() != newEnrolled;
-                    Object o1 = cohort.getSubjectCount();
-                    boolean subjectCountChanged = !Objects.equals(o1, newSubjectCount);
+                    boolean subjectCountChanged = !Objects.equals(cohort.getSubjectCount(), newSubjectCount);
                     boolean descriptionChanged = !Strings.CS.equals(cohort.getDescription(), newDescription);
 
                     if (labelChanged || enrolledChanged || subjectCountChanged || descriptionChanged)

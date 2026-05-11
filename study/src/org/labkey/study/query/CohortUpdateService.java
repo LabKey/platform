@@ -15,7 +15,6 @@
  */
 package org.labkey.study.query;
 
-import com.google.api.client.util.Objects;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
@@ -35,6 +34,7 @@ import org.labkey.study.model.StudyManager;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
@@ -137,9 +137,8 @@ public class CohortUpdateService extends AbstractQueryUpdateService
             Integer newSubjectCount = asInteger(row.get("subjectCount"));
             String newDescription = (String)row.get("description");
 
-            Object o3 = cohort.getSubjectCount();
             if (!cohort.getLabel().equals(newLabel) || (cohort.isEnrolled() != newEnrolled)
-                || !Objects.equal(o3, newSubjectCount)
+                || !Objects.equals(cohort.getSubjectCount(), newSubjectCount)
                 || !Strings.CS.equals(cohort.getDescription(), newDescription))
             {
                 cohort = cohort.createMutable();
@@ -153,7 +152,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
                     cohort.setLabel(newLabel);
                 }
                 Object o1 = cohort.getSubjectCount();
-                if (!Objects.equal(o1, newSubjectCount))
+                if (!Objects.equals(o1, newSubjectCount))
                 {
                     cohort.setSubjectCount(newSubjectCount);
                 }

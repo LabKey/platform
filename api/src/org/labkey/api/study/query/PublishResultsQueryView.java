@@ -1041,7 +1041,7 @@ public class PublishResultsQueryView extends QueryView
         {
             //NOTE: the name of the assay PTID field might not always match ParticipantId.  this allows us to also
             //support PARTICIPANT_CONCEPT_URI
-            ColumnInfo ptidCol = selectColumns.stream().filter(c -> org.labkey.api.exp.PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI())).findFirst().orElse(null);
+            ColumnInfo ptidCol = selectColumns.stream().filter(c -> PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI())).findFirst().orElse(null);
             if (ptidCol != null)
                 linkedColumnMap.put(LinkToStudyKeys.ParticipantId, ptidCol);
         }
@@ -1049,7 +1049,7 @@ public class PublishResultsQueryView extends QueryView
         // if visit or date columns don't exist, see if they can be resolved through the standard concept URIs
         List<ColumnInfo> timepointCols = selectColumns.stream()
                 .filter(c -> PropertyType.VISIT_CONCEPT_URI.equalsIgnoreCase(c.getConceptURI()))
-                .collect(Collectors.toList());
+                .toList();
 
         for (ColumnInfo col : timepointCols)
         {
