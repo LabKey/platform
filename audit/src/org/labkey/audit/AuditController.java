@@ -394,7 +394,7 @@ public class AuditController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", true);
             response.put("rowIds", results.first);
-            response.put("dataTypeIds", results.second);
+            response.put("dataTypeRowCounts", results.second);
 
             return response;
         }
