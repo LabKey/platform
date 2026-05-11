@@ -17,6 +17,7 @@
 package org.labkey.devtools;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
@@ -34,7 +35,9 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.mcp.AbstractAgentAction;
@@ -1401,15 +1404,22 @@ public class TestController extends SpringActionController
                                 "title", (Object)wiki.title(),
                                 "source", wikiBase.clone().addParameter("name",wiki.name()).getURIString()
                         );
-                        return new Document("documentation/"+wiki.name(), wiki.html().toString(), metadata);
+                        return new Document(wiki.entityId(), wiki.html().toString(), metadata);
                     })
-                    .gather(Gatherers.windowFixed(50))
-                    .forEach(vs);
+                    .forEach(d -> {
+                        try
+                        {
+                            vs.accept(List.of(d));
+                        }
+                        catch (IllegalArgumentException x)
+                        {
+                            LogManager.getLogger(TestController.class).info(d.getMetadata().get("filename"),x);
+                        }
+                    });
 
-            var db = FileUtil.getTempDirectoryFileLike().resolveChild("VectorStore.database");
             try
             {
-                ((SimpleVectorStore)vs).save(db.toNioPathForRead().toFile());
+                McpService.get().saveVectorStore();
                 return true;
             }
             catch (Exception x)
@@ -1424,11 +1434,11 @@ public class TestController extends SpringActionController
     {
         @Tool(description = "List of available documents from the LabKey user and administration manuals.")
         @RequiresNoPermission
-        JSONObject listDocuments(ToolContext toolContext)
+        String listDocuments(ToolContext toolContext)
         {
             Container documentsContainer = ContainerManager.getForPath("/Documentation");
             if (null == documentsContainer)
-                return new JSONObject(Map.of("error","There is no /Documentation project on this server"));
+                return new JSONObject(Map.of("error","There is no /Documentation project on this server")).toString();
 
             // CONSIDER include hierarchy or paths
             // TODO WikiService doesn't expose this, just do a query for now (even though this info is cached)
@@ -1444,23 +1454,23 @@ public class TestController extends SpringActionController
             var ret = new JSONObject();
             ret.put("Version", "26.3");
             ret.put("Documents", array);
-            return ret;
+            return ret.toString();
         }
 
         @Tool(description = "Return the entire document from the LabKey documentation using the `id` as returned by `searchDocumentation`.")
         @RequiresNoPermission
-        JSONObject retrieveDocument(
+        String retrieveDocument(
                 ToolContext context,
                 @ToolParam(description = "Id of the document to return") String id)
         {
             WikiService service = Objects.requireNonNull(WikiService.get());
             Container documentsContainer = ContainerManager.getForPath("/Documentation");
             if (null == documentsContainer)
-                return new JSONObject(Map.of("error","There is not /Documentation project on this server"));
+                return new JSONObject(Map.of("error","There is not /Documentation project on this server")).toString();
 
             ActionURL wikiBase = new ActionURL("wiki","page",documentsContainer);
-            var path = Path.parse(id);
-            var name = path.getName();
+            var sql = new SQLFragment("SELECT Name FROM ").append(CommSchema.getInstance().getTableInfoPages(), "p").append(" WHERE EntityId = ").appendValue(id);
+            var name = new SqlSelector(CommSchema.getInstance().getSchema(), sql).getObject(String.class);
             var wiki = service.getRenderedWiki(documentsContainer, name);
             if (null == wiki)
                 throw new NotFoundException();
@@ -1472,13 +1482,13 @@ public class TestController extends SpringActionController
             ret.put("title", wiki.title());
             ret.put("source", wikiBase.clone().addParameter("name",wiki.name()).getURIString());
             ret.put("contents", wiki.html().toString());
-            return ret;
+            return ret.toString();
         }
 
         @Tool(description = "Search the LabKey documentation for documents semantically similar to a natural language query. " +
                 "Returns matching documents with their content, metadata (title, source URL, content type), and similarity scores.")
         @RequiresNoPermission
-        JSONObject searchDocumentation(
+        String searchDocumentation(
                 ToolContext context,
                 @ToolParam(description = "Natural language search query describing what you're looking for") String query,
                 @ToolParam(required = false, description = "Maximum number of results to return, defaults to 5") String topK)
@@ -1516,11 +1526,13 @@ public class TestController extends SpringActionController
                     })
                     .collect(LabKeyCollectors.toJSONArray());
 
-            return new JSONObject(Map.of(
+            var ret = new JSONObject(Map.of(
                     "query", query,
                     "resultCount", results.size(),
                     "results", docs
             ));
+//            LogManager.getLogger(TestController.class).info("Search: " + query + "\nResult: " +ret);
+            return ret.toString();
         }
     }
 }

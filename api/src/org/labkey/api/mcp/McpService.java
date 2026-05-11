@@ -183,4 +183,6 @@ public interface McpService extends ToolCallbackProvider
      * CONSIDER: Is it possible to implement VectorStoreRetriever wrapper for SearchService???
      */
     VectorStore getVectorStore();
+
+    void saveVectorStore();
 }
