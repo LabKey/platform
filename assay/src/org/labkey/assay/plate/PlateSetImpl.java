@@ -147,7 +147,7 @@ public class PlateSetImpl extends Entity implements PlateSet
     }
 
     @Override
-    public List<Plate> getPlates()
+    public List<? extends Plate> getPlates()
     {
         if (isNew())
             return Collections.emptyList();

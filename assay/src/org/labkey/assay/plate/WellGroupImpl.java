@@ -209,7 +209,7 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
             _overlappingGroups = new LinkedHashSet<>();
             for (Position position : getPositions())
             {
-                List<WellGroup> groups = _plate.getWellGroups(position);
+                List<? extends WellGroup> groups = _plate.getWellGroups(position);
                 for (WellGroup group : groups)
                 {
                     if (group != this)
@@ -313,7 +313,7 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
     {
         if (_plate == null && _plateId != null)
         {
-            _plate = (PlateImpl) PlateCache.getPlate(getContainer(), _plateId);
+            _plate = PlateCache.getPlate(getContainer(), _plateId);
         }
         return _plate;
     }
