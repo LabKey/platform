@@ -107,8 +107,8 @@
 <%@ page import="java.util.concurrent.TimeUnit" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="static org.labkey.api.util.PageFlowUtil.encodeURIComponent" %>
-<%@ page import="static org.labkey.api.exp.api.ExperimentService.asInteger" %>
-<%@ page import="static org.labkey.api.exp.api.ExperimentService.asLong" %>
+<%@ page import="static org.labkey.api.util.IntegerUtils.asInteger" %>
+<%@ page import="static org.labkey.api.util.IntegerUtils.asLong" %>
 <%@ page import="static org.hamcrest.Matchers.containsString" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 

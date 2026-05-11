@@ -48,7 +48,6 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.exp.property.ValidatorContext;
-import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
@@ -377,7 +376,7 @@ public class OntologyManager
                 Map<String, Object> map = rows.getMap();
                 // TODO: hack -- should exit and return cancellation status instead of throwing
                 if (Thread.currentThread().isInterrupted())
-                    throw new CancellationException();
+                    throw new RuntimeException();
 
                 assert before.start();
 
@@ -597,7 +596,7 @@ public class OntologyManager
 
                 // TODO: hack -- should exit and return cancellation status instead of throwing
                 if (Thread.currentThread().isInterrupted())
-                    throw new CancellationException();
+                    throw new RuntimeException();
 
                 parameterMap.clearParameters();
 
