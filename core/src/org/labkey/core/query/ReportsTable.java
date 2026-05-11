@@ -30,6 +30,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -121,6 +122,12 @@ public class ReportsTable extends FilteredTable<CoreQuerySchema>
     protected String getContainerFilterColumn()
     {
         return "ContainerId";
+    }
+
+    @Override
+    protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
+    {
+        return filter.createFilterClause(getSchema(), fieldKey, AdminPermission.class, null);
     }
 
     @Override

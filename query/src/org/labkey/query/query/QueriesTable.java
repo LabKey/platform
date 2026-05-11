@@ -22,6 +22,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.ExprColumn;
@@ -101,6 +102,12 @@ public class QueriesTable extends FilteredTable<QueryUserSchema>
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return (perm.equals(ReadPermission.class) || perm.equals(DeletePermission.class)) && getContainer().hasPermission(user, AdminPermission.class);
+    }
+
+    @Override
+    protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
+    {
+        return filter.createFilterClause(getSchema(), fieldKey, AdminPermission.class, null);
     }
 
     @Override

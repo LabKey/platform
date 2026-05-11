@@ -26,6 +26,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -120,6 +121,12 @@ public class CustomViewsTable extends FilteredTable<QueryUserSchema>
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return getContainer().hasPermission(user, AdminPermission.class);
+    }
+
+    @Override
+    protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
+    {
+        return filter.createFilterClause(getSchema(), fieldKey, AdminPermission.class, null);
     }
 
     @Override
