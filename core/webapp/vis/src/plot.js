@@ -2272,31 +2272,37 @@ boxPlot.render();
             };
         }
 
-        // Issue 23626: map line/point color based on legend data
-        if (config.legendData && config.properties.color && !config.properties.colorRange) {
-            var legendColorMap = {};
-            for (var i = 0; i < config.legendData.length; i++) {
-                if (config.legendData[i].name) {
-                    legendColorMap[config.legendData[i].name] = config.legendData[i].color;
+        // Issue 23626: map line/point color based on explicit colorMap property or legendData name entries
+        if (config.properties.color && !config.properties.colorRange) {
+            var legendColorMap;
+            if (config.properties.colorMap) {
+                legendColorMap = config.properties.colorMap;
+            } else if (config.legendData) {
+                legendColorMap = {};
+                for (var i = 0; i < config.legendData.length; i++) {
+                    if (config.legendData[i].name) {
+                        legendColorMap[config.legendData[i].name] = config.legendData[i].color;
+                    }
                 }
             }
 
-            if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.CUSUM) {
-                config.scales.color = {
-                    scale: function(group) {
-                        var normalizedGroup = group.replace('CUSUMmN', 'CUSUMm').replace('CUSUMmP', 'CUSUMm');
-                        normalizedGroup = normalizedGroup.replace('CUSUMvN', 'CUSUMv').replace('CUSUMvP', 'CUSUMv');
-                        return legendColorMap[normalizedGroup];
-                    }
-                };
-            }
-            else
-            {
-                config.scales.color = {
-                    scale: function(group) {
-                        return legendColorMap[group];
-                    }
-                };
+            if (legendColorMap) {
+                if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.CUSUM) {
+                    config.scales.color = {
+                        scale: function(group) {
+                            var normalizedGroup = group.replace('CUSUMmN', 'CUSUMm').replace('CUSUMmP', 'CUSUMm');
+                            normalizedGroup = normalizedGroup.replace('CUSUMvN', 'CUSUMv').replace('CUSUMvP', 'CUSUMv');
+                            return legendColorMap[normalizedGroup];
+                        }
+                    };
+                }
+                else {
+                    config.scales.color = {
+                        scale: function(group) {
+                            return legendColorMap[group];
+                        }
+                    };
+                }
             }
         }
 
