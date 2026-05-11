@@ -704,8 +704,11 @@ public class AuthenticationManager
 
     public static void setAcceptOnlyFicamProviders(User user, boolean enable)
     {
-        saveAuthSetting(user, ACCEPT_ONLY_FICAM_PROVIDERS_KEY, enable);
-        AuthenticationConfigurationCache.clear();
+        if (isAcceptOnlyFicamProviders() != enable)
+        {
+            saveAuthSetting(user, ACCEPT_ONLY_FICAM_PROVIDERS_KEY, enable);
+            AuthenticationConfigurationCache.clear();
+        }
     }
 
     // Used by start-up properties and upgrade code
