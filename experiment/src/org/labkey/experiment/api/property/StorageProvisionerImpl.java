@@ -97,6 +97,7 @@ import org.springframework.validation.BindException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -110,7 +111,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
@@ -138,7 +138,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     // #42641: Track recently created tables in a cache to limit size and duration
     private static final Cache<@NotNull String, StackTraceElement @NotNull []> RECENTLY_CREATED_TABLES = CacheBuilder.newBuilder()
         .maximumSize(10000)
-        .expireAfterWrite(1, TimeUnit.DAYS)
+        .expireAfterWrite(Duration.ofDays(1))
         .build();
 
     private String _create(DbScope scope, DomainKind<?> kind, Domain domain, boolean useProvidedStorageName)
