@@ -2381,7 +2381,7 @@ public class ExpDataIterators
             // useTransactionAuditCache already set for import and merge in AbstractQueryImportAction.createDataIteratorContext
             if (context.getInsertOption() == QueryUpdateService.InsertOption.INSERT)
             {
-                if (context.getConfigParameters().isEmpty() || context.getConfigParameterBoolean(AbstractQueryImportAction.Params.useTransactionAuditCache))
+                if (Boolean.FALSE != context.getConfigParameter(AbstractQueryImportAction.Params.useTransactionAuditCache))
                     context.setUseTransactionAuditCache(true);
             }
 
