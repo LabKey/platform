@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import com.google.gwt.user.client.rpc.IsSerializable;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.dialect.SqlDialect;
 
@@ -31,7 +30,7 @@ import java.sql.SQLException;
  * User: mbellew
  * Date: Mar 23, 2005
  */
-public class RuntimeSQLException extends RuntimeException implements Serializable, IsSerializable
+public class RuntimeSQLException extends RuntimeException implements Serializable
 {
     // don't want to use cause, I want to impersonate the cause
     SQLException sqlx;

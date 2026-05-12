@@ -26,7 +26,7 @@ public interface PlateSet extends Identifiable
 
     boolean isTemplate();
 
-    List<Plate> getPlates();
+    List<? extends Plate> getPlates();
 
     PlateSetType getType();
 
