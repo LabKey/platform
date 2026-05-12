@@ -21,7 +21,6 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -252,7 +251,7 @@ public class DataIteratorUtil
             }
             if (null != to && null == to.first)
             {
-                LOG.info("Column Info is null here: - " +  from.getColumnName() + " in " + target.getName());
+                LOG.info("Column Info is null here: - {} in {}", from.getColumnName(), target.getName());
             }
             matches.add(to);
         }

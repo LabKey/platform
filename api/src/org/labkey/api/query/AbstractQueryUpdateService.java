@@ -578,9 +578,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         // TODO optimize ArrayListMap?
         Set<String> colNames;
 
-        if (!rows.isEmpty() && rows.get(0) instanceof ArrayListMap)
+        if (!rows.isEmpty() && rows.getFirst() instanceof ArrayListMap)
         {
-            colNames = ((ArrayListMap)rows.get(0)).getFindMap().keySet();
+            colNames = ((ArrayListMap)rows.getFirst()).getFindMap().keySet();
         }
         else
         {
@@ -812,7 +812,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (rowsToUpdate.size() == 1)
             return true;
 
-        Set<String> keys = rowsToUpdate.get(0).keySet();
+        Set<String> keys = rowsToUpdate.getFirst().keySet();
         int keySize = keys.size();
 
         for (int i = 1 ; i < rowsToUpdate.size(); i ++)
@@ -1542,7 +1542,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             int count=0;
             try (var tx = rTableInfo.getSchema().getScope().ensureTransaction())
             {
-                var ret = qus.mergeRows(user, c, MapDataIterator.of(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
+                var ret = qus.mergeRows(user, c, MapDataIterator.of(mergeRows.getFirst().keySet(), mergeRows), errors, null, null);
                 if (!errors.hasErrors())
                 {
                     tx.commit();
@@ -1565,7 +1565,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             mergeRows = new ArrayList<>();
             mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
             mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-UP-2"));
-            qus.mergeRows(user, c, MapDataIterator.of(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
+            qus.mergeRows(user, c, MapDataIterator.of(mergeRows.getFirst().keySet(), mergeRows), errors, null, null);
             assertTrue(errors.hasErrors());
             assertTrue("Duplicate key error: " + errors.getMessage(), errors.getMessage().contains("Duplicate key provided: 2"));
         }
@@ -1590,7 +1590,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP"));
             DataIteratorContext context = new DataIteratorContext();
             context.setInsertOption(InsertOption.UPDATE);
-            var count = qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
+            var count = qus.loadRows(user, c, MapDataIterator.of(updateRows.getFirst().keySet(), updateRows), context, null);
             assertFalse(context.getErrors().hasErrors());
             assertEquals(1, count);
             var rows = getRows();
@@ -1603,7 +1603,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             updateRows = new ArrayList<>();
             updateRows.add(CaseInsensitiveHashMap.of(pkName,123,colName,"NEW"));
             updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
-            qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
+            qus.loadRows(user, c, MapDataIterator.of(updateRows.getFirst().keySet(), updateRows), context, null);
             assertTrue(context.getErrors().hasErrors());
 
             // Issue 52728: update should fail if duplicate key is provide
@@ -1614,7 +1614,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             // use DIB
             context = new DataIteratorContext();
             context.setInsertOption(InsertOption.UPDATE);
-            qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
+            qus.loadRows(user, c, MapDataIterator.of(updateRows.getFirst().keySet(), updateRows), context, null);
             assertTrue(context.getErrors().hasErrors());
             assertTrue("Duplicate key error: " + context.getErrors().getMessage(), context.getErrors().getMessage().contains("Duplicate key provided: 2"));
 
@@ -1655,7 +1655,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             mergeRows.add(CaseInsensitiveHashMap.of(pkName,3,colName,"THREE"));
             DataIteratorContext context = new DataIteratorContext();
             context.setInsertOption(InsertOption.REPLACE);
-            var count = qus.loadRows(user, c, MapDataIterator.of(mergeRows.get(0).keySet(), mergeRows), context, null);
+            var count = qus.loadRows(user, c, MapDataIterator.of(mergeRows.getFirst().keySet(), mergeRows), context, null);
             assertFalse(context.getErrors().hasErrors());
             assertEquals(2, count);
             var rows = getRows();

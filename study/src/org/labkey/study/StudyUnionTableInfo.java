@@ -117,7 +117,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
             String visitPropertyName = def.getVisitDateColumnName();
             ColumnInfo visitColumn = null == visitPropertyName ? null : ti.getColumn(visitPropertyName);
             if (null != visitPropertyName && (null == visitColumn || visitColumn.getJdbcType() != JdbcType.TIMESTAMP))
-                LogManager.getLogger(StudySchema.class).info("Could not find visit column of correct type '" + visitPropertyName + "' in dataset '" + def.getName() + "'");
+                LogManager.getLogger(StudySchema.class).info("Could not find visit column of correct type '{}' in dataset '{}'", visitPropertyName, def.getName());
             if (null != visitColumn && visitColumn.getJdbcType() == JdbcType.TIMESTAMP)
                 sqlf.append(", ").append(visitColumn.getValueSql("D")).append(" AS _visitdate");
             else

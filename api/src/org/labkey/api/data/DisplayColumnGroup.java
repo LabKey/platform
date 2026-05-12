@@ -93,7 +93,7 @@ public class DisplayColumnGroup
     /** Use propName because DOM ids and function names can't have spaces */
     private String getGroupFormFieldName(RenderContext ctx)
     {
-        return PageConfig.makeIdFromName(getColumns().get(0).getFormFieldName(ctx));
+        return PageConfig.makeIdFromName(getColumns().getFirst().getFormFieldName(ctx));
     }
     
     public void writeCopyableJavaScript(RenderContext ctx, Writer out) throws IOException
@@ -107,10 +107,10 @@ public class DisplayColumnGroup
         out.write("function " + groupName + "Updated() {\n");
         out.write("  if (document.getElementById('" + groupName + "CheckBox') != null && document.getElementById('" + groupName + "CheckBox').checked) {\n");
 
-        if (getColumns().get(0).getColumnInfo() != null)
+        if (getColumns().getFirst().getColumnInfo() != null)
         {
             String valueProperty = "value";
-            String inputType = getColumns().get(0).getColumnInfo().getInputType();
+            String inputType = getColumns().getFirst().getColumnInfo().getInputType();
             if ("select".equalsIgnoreCase(inputType))
             {
                 valueProperty = "selectedIndex";
@@ -119,7 +119,7 @@ public class DisplayColumnGroup
             {
                 valueProperty = "checked";
             }
-            out.write("    var v = document.getElementsByName('" + getColumns().get(0).getFormFieldName(ctx) + "')[0]." + valueProperty + ";\n");
+            out.write("    var v = document.getElementsByName('" + getColumns().getFirst().getFormFieldName(ctx) + "')[0]." + valueProperty + ";\n");
             for (int i = 1; i < getColumns().size(); i++)
             {
                 out.write("    document.getElementsByName('" + getColumns().get(i).getFormFieldName(ctx) + "')[0]." + valueProperty + " = v;\n");
@@ -128,7 +128,7 @@ public class DisplayColumnGroup
         out.write("  }\n");
         out.write("}\n");
 
-        out.write("var e = document.getElementsByName('" + getColumns().get(0).getFormFieldName(ctx) + "');\n");
+        out.write("var e = document.getElementsByName('" + getColumns().getFirst().getFormFieldName(ctx) + "');\n");
         out.write("if (e.length > 0) {");
         out.write("  e[0].onchange=" + groupName + "Updated;\n");
         out.write("  e[0].onkeyup=" + groupName + "Updated;\n");

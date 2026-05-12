@@ -135,7 +135,7 @@ public class RolapCachedCubeFactory
      */
     void generateHierarchyMembers(CachedCube cube, HierarchyDef hdef, CachedCube._Hierarchy h) throws SQLException
     {
-        CachedCube._Level allLevel = (CachedCube._Level)h.getLevels().get(0);
+        CachedCube._Level allLevel = (CachedCube._Level)h.getLevels().getFirst();
         CachedCube._Member allMember = new CachedCube._Member(cube, allLevel, Member.Type.ALL);
         allLevel.members.add(allMember);
 
@@ -239,7 +239,7 @@ public class RolapCachedCubeFactory
         }
 
         // add #NOTNULL members
-        CachedCube._Member parent = (CachedCube._Member)levelList.get(0).getMembers().get(0);
+        CachedCube._Member parent = (CachedCube._Member)levelList.getFirst().getMembers().getFirst();
         for (int l = 1; l < levelCount; l++)
         {
             CachedCube._Level level = levelList.get(l);
@@ -301,7 +301,7 @@ public class RolapCachedCubeFactory
                 continue;
             m.childMembers.sort(MEMBER_COMPARATOR);
             // We also create a map using the KEY value
-            JdbcType childType = ((CachedCube._Member) m.childMembers.get(0)).level.jdbcType;
+            JdbcType childType = ((CachedCube._Member) m.childMembers.getFirst()).level.jdbcType;
             m._keyMap = CachedCube.KeyMap.create(childType, m.childMembers);
         }
     }

@@ -466,7 +466,7 @@ public class QAggregate extends QExpr
     {
         var ret = (MutableColumnInfo)super.createColumnInfo(table, alias, query);
         List<QNode> children = childList();
-        if (children.size() == 1 && children.get(0) instanceof QField field)
+        if (children.size() == 1 && children.getFirst() instanceof QField field)
         {
             if (getType()._propagateAttributes)
             {

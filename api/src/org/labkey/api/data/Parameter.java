@@ -170,7 +170,7 @@ public class Parameter implements AutoCloseable
         this(name, uri, new int[] { index }, type);
     }
 
-    public Parameter(String name, @Nullable String uri, @Nullable int[] indexes, JdbcType type)
+    public Parameter(String name, @Nullable String uri, @Nullable int[] indexes, @Nullable JdbcType type)
     {
         _name = name;
         _uri = uri;
@@ -293,7 +293,7 @@ public class Parameter implements AutoCloseable
         }
         catch (SQLException e)
         {
-            LOG.error("Exception converting \"" + value + "\" to type " + _type);
+            LOG.error("Exception converting \"{}\" to type {}", value, _type);
             throw new RuntimeSQLException(e);
         }
     }

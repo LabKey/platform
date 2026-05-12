@@ -1118,7 +1118,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                     }
                     catch (BadSqlGrammarException x)
                     {
-                        LOG.warn("could not clean up postgres function : temp." + name, x);
+                        LOG.warn("could not clean up postgres function : temp.{}", name, x);
                     }
                 }
             });

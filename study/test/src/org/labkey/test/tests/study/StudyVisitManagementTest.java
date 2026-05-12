@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @Category({Daily.class, Study.class})
@@ -267,7 +268,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         if (undefinedVisits != null && !undefinedVisits.isEmpty())
         {
             for (String visitSeqRangeStr : undefinedVisits)
-                assertTrue("Unexpected visit range found: " + visitSeqRangeStr, !manageVisitPage.hasVisitForSequenceRange(visitSeqRangeStr));
+                assertFalse("Unexpected visit range found: " + visitSeqRangeStr, manageVisitPage.hasVisitForSequenceRange(visitSeqRangeStr));
         }
     }
 

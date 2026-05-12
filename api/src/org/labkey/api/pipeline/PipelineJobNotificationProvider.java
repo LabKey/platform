@@ -136,7 +136,7 @@ public interface PipelineJobNotificationProvider
             // don't attempt to add a notification if the Container has been deleted or is deleting
             if (!ContainerManager.exists(job.getContainer()))
             {
-                job.getLogger().info("Job container has been deleted or is being deleted; skipping notification for '" + Objects.toString(job.getDescription(), job.toString()) + "'");
+                job.getLogger().info("Job container has been deleted or is being deleted; skipping notification for '{}'", Objects.toString(job.getDescription(), job.toString()));
                 return false;
             }
 

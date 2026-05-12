@@ -105,7 +105,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
                 if (requiresRecompile || requiresTestRecompile)
                 {
-                    _log.info("Recompiling " + relativePath);
+                    _log.info("Recompiling {}", relativePath);
 
                     // Copy .jsp file from source to build staging directory
                     File stagingJsp = new File(jspJavaFileBuildDirectory.getParentFile().getParent()  + "/jspWebappDir/webapp", relativePath);
@@ -228,7 +228,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
                 if (end != -1)
                 {
                     path = jspSource.getAbsolutePath() + ":" + errors.substring(begin, end) + "\n";
-                    _log.error("Error compiling JSP:\n" + path);
+                    _log.error("Error compiling JSP:\n{}", path);
                 }
             }
         }

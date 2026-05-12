@@ -131,7 +131,7 @@ public class ContextListener implements ServletContextListener
         {
             try
             {
-                log.info("Calling " + listener.getName() + " shutdownPre()");
+                log.info("Calling {} shutdownPre()", listener.getName());
                 listener.shutdownPre();
             }
             catch (Throwable t)
@@ -144,7 +144,7 @@ public class ContextListener implements ServletContextListener
         {
             try
             {
-                log.info("Calling " + listener.getName() + " shutdownStarted()");
+                log.info("Calling {} shutdownStarted()", listener.getName());
                 listener.shutdownStarted();
             }
             catch (Throwable t)

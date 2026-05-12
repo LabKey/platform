@@ -124,7 +124,7 @@ public class ValidEmail
             ColumnInfo uidColumn = usersTable.getColumn("uid");
             if (uidColumn != null)
             {
-                LOG.debug("Found field in users table to use to match against login form: " + uidColumn.getName());
+                LOG.debug("Found field in users table to use to match against login form: {}", uidColumn.getName());
                 // Do a case-insensitive search for the username
                 Collection<Map<String, Object>> matchingUsers = new TableSelector(usersTable, new SimpleFilter(new SimpleFilter.SQLClause(new SQLFragment("LOWER(uid) = LOWER(?)", rawEmail), uidColumn.getFieldKey())), null).getMapCollection();
                 if (matchingUsers.size() == 1)
@@ -132,17 +132,17 @@ public class ValidEmail
                     String fullEmail = (String) matchingUsers.iterator().next().get("Email");
                     if (fullEmail != null)
                     {
-                        LOG.debug("Found match for '" + rawEmail + "', resolved to '" + fullEmail + "'");
+                        LOG.debug("Found match for '{}', resolved to '{}'", rawEmail, fullEmail);
                         return fullEmail;
                     }
                 }
                 else
                 {
-                    LOG.debug("Found " + matchingUsers.size() + " matches for '" + rawEmail + "', unable to resolve unique email address");
+                    LOG.debug("Found {} matches for '{}', unable to resolve unique email address", matchingUsers.size(), rawEmail);
                 }
             }
 
-            LOG.debug("Resolving user name '" + rawEmail + "' using default domain '" + getDefaultDomain() + "'");
+            LOG.debug("Resolving user name '{}' using default domain '{}'", rawEmail, getDefaultDomain());
             String domain = getDefaultDomain();
 
             if (!domain.isEmpty())

@@ -914,7 +914,7 @@ public class SimpleFilter implements Filter
             for (Object params : getParamVals())
             {
                 // Loop through all the values and check if any of them are equals
-                FilterClause compareClause = CompareType.EQUAL.createFilterClause(getFieldKeys().get(0), params);
+                FilterClause compareClause = CompareType.EQUAL.createFilterClause(getFieldKeys().getFirst(), params);
                 if (compareClause.meetsCriteria(col, value))
                 {
                     return !_negated;
@@ -1032,7 +1032,7 @@ public class SimpleFilter implements Filter
             for (Object params : getParamVals())
             {
                 // Loop through all the values and check if any of them are equals
-                FilterClause compareClause = CompareType.CONTAINS.createFilterClause(getFieldKeys().get(0), params);
+                FilterClause compareClause = CompareType.CONTAINS.createFilterClause(getFieldKeys().getFirst(), params);
                 if (compareClause.meetsCriteria(col, value))
                 {
                     return !_negated;
@@ -1514,13 +1514,13 @@ public class SimpleFilter implements Filter
             {
                 if (compClause.getCompareType() == CompareType.EQUAL &&
                         compClause.getFieldKeys().size() == 1 &&
-                        CONTAINER_FIELD_KEY.equals(compClause.getFieldKeys().get(0)))
+                        CONTAINER_FIELD_KEY.equals(compClause.getFieldKeys().getFirst()))
                     return true;
             }
             if (clause instanceof InClause inClause)
             {
                 if (inClause.getFieldKeys().size() == 1 &&
-                        CONTAINER_FIELD_KEY.equals(inClause.getFieldKeys().get(0)))
+                        CONTAINER_FIELD_KEY.equals(inClause.getFieldKeys().getFirst()))
                 {
                     return true;
                 }
@@ -1544,7 +1544,7 @@ public class SimpleFilter implements Filter
             if (fieldKeys.size() > 1)
                 throw new IllegalArgumentException("Can't check filter criteria of multi-column clauses");
 
-            FieldKey fieldKey = fieldKeys.get(0);
+            FieldKey fieldKey = fieldKeys.getFirst();
             ColumnInfo col = cols.get(fieldKey);
             Object value = map.get(fieldKey);
             if (!clause.meetsCriteria(col, value))
@@ -1818,7 +1818,7 @@ public class SimpleFilter implements Filter
         {
             SimpleFilter f = new SimpleFilter();
             f.addUrlFilters(new URLHelper(url), "query");
-            InClause clause = (InClause)f.getClauses().get(0);
+            InClause clause = (InClause)f.getClauses().getFirst();
             assertEquals("negated didn't match for IN clause", negated, clause._negated);
             assertEquals("includeNull didn't match for IN clause", includeNull, clause._includeNull);
             // Convert to sets because we don't care about order for IN clauses

@@ -107,7 +107,7 @@ public class OneBasedList<E> extends IndexMappingList<OneBasedList<E>, E>
         {
             List<String> list = getTestList();
             exception.expect(IndexOutOfBoundsException.class);
-            list.get(0);
+            list.getFirst();
         }
 
         @Test
@@ -115,7 +115,7 @@ public class OneBasedList<E> extends IndexMappingList<OneBasedList<E>, E>
         {
             List<String> list = getTestList();
             exception.expect(IndexOutOfBoundsException.class);
-            list.add(0, "Foo");
+            list.addFirst("Foo");
         }
 
         private List<String> getTestList()

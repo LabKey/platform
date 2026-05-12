@@ -138,10 +138,4 @@ public class StudyQueryReport extends QueryReport
 
         return PageFlowUtil.urlProvider(ReportUrls.class).urlQueryReport(context.getContainer(), this);
     }
-
-    @Override
-    public boolean isSandboxed()
-    {
-        return true;
-    }
 }

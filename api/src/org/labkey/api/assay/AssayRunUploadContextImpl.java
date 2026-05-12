@@ -253,7 +253,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
                     throw new NotFoundException("No Vocabularies found for this property - " + property.getKey());
                 }
 
-                DomainProperty dp = vocabularyDomains.get(0).getPropertyByURI(property.getKey());
+                DomainProperty dp = vocabularyDomains.getFirst().getPropertyByURI(property.getKey());
                 if (!properties.containsKey(dp))
                 {
                     properties.put(dp, property.getValue().toString());

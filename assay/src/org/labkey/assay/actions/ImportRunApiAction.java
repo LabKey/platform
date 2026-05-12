@@ -250,7 +250,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 }
                 catch (InvalidPathException e)
                 {
-                    LOG.info("Invalid path: " + runFilePath, e);
+                    LOG.info("Invalid path: {}", runFilePath, e);
                     throw new NotFoundException("File not found: " + runFilePath);
                 }
             }

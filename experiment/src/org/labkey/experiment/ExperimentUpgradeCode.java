@@ -483,13 +483,13 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         if (kind == null)
         {
-            LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no domain kind.");
+            LOG.info("Sample type '{}' ({}) has no domain kind.", st.getName(), st.getRowId());
             return null;
         }
         else if (kind.getStorageSchemaName() == null)
         {
             // e.g., SpecimenSampleTypeDomainKind is not provisioned
-            LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no provisioned storage schema.");
+            LOG.info("Sample type '{}' ({}) has no provisioned storage schema.", st.getName(), st.getRowId());
             return null;
         }
 
@@ -501,7 +501,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
         if (provisionedTable == null)
         {
-            LOG.error("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no provisioned table.");
+            LOG.error("Sample type '{}' ({}) has no provisioned table.", st.getName(), st.getRowId());
             return null;
         }
 
@@ -567,7 +567,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
         if (null == kind || null == kind.getStorageSchemaName())
         {
-            LOG.error("DataClass '" + dc.getName() + "' (" + dc.getRowId() + ") has no provisioned storage schema.");
+            LOG.error("DataClass '{}' ({}) has no provisioned storage schema.", dc.getName(), dc.getRowId());
             return;
         }
 
@@ -583,7 +583,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
         if (provisionedTable == null)
         {
-            LOG.error("DataClass '" + dc.getName() + "' (" + dc.getRowId() + ") has no provisioned table.");
+            LOG.error("DataClass '{}' ({}) has no provisioned table.", dc.getName(), dc.getRowId());
             return;
         }
 
@@ -878,7 +878,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
         if (provisionedTable == null)
         {
-            LOG.error("DataClass '" + dc.getName() + "' (" + dc.getRowId() + ") has no provisioned table.");
+            LOG.error("DataClass '{}' ({}) has no provisioned table.", dc.getName(), dc.getRowId());
             return false;
         }
 

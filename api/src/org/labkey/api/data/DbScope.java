@@ -607,19 +607,7 @@ public class DbScope
                 _databaseName = (null != _dialect ? _dialect.getDatabaseName(getDataSourceProperties()) : null);
 
                 // Always log the attempt, even if DatabaseNotSupportedException, etc. occurs, to help with diagnosis
-                LOG.info(
-                        "Initializing DbScope with the following configuration:" +
-                                "\n    DataSource Name:          " + getDbScopeLoader().getDsName() +
-                                "\n    Server URL:               " + dbmd.getURL() +
-                                "\n    Database Name:            " + _databaseName +
-                                "\n    Database Product Name:    " + _databaseProductName +
-                                "\n    Database Product Version: " + (null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion) +
-                                "\n    JDBC Driver Name:         " + _driverName +
-                                "\n    JDBC Driver Version:      " + _driverVersion +
-                                (null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : "") +
-                                (null != maxTotal ? "\n    Connection Pool Size:     " + maxTotal : "") +
-                                (null != additionalLogging ? additionalLogging : "")
-                );
+                LOG.info("Initializing DbScope with the following configuration:\n    DataSource Name:          {}\n    Server URL:               {}\n    Database Name:            {}\n    Database Product Name:    {}\n    Database Product Version: {}\n    JDBC Driver Name:         {}\n    JDBC Driver Version:      {}{}{}{}", getDbScopeLoader().getDsName(), dbmd.getURL(), _databaseName, _databaseProductName, null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion, _driverName, _driverVersion, null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : "", null != maxTotal ? "\n    Connection Pool Size:     " + maxTotal : "", null != additionalLogging ? additionalLogging : "");
             }
 
             _driverLocation = determineDriverLocation(dataSource.getDriverClass());
@@ -910,7 +898,7 @@ public class DbScope
                             }
                         }
                         if (stackDepth > 2)
-                            LOG.info("Transaction stack for thread '" + getEffectiveThread().getName() + "' is " + stackDepth);
+                            LOG.info("Transaction stack for thread '{}' is {}", getEffectiveThread().getName(), stackDepth);
                     }
                     finally
                     {
@@ -1881,7 +1869,7 @@ public class DbScope
         }
     }
 
-    private static void detectUnexpectedConnections(Connection conn, LabKeyDataSource ds, String applicationName) throws ServletException, SQLException
+    private static void detectUnexpectedConnections(Connection conn, LabKeyDataSource ds, String applicationName) throws ServletException
     {
         SqlDialect dialect = ds.getDialect();
         String databaseName = dialect.getDatabaseName(ds.getUrl());
@@ -1952,11 +1940,11 @@ public class DbScope
                     {
                         // Set LabKey's default application name ("LabKey Server") into the connection properties
                         applicationName = ds.setDefaultApplicationName();
-                        LOG.info(message + " (the default name); all subsequent connections will use \"" + applicationName + "\" instead.");
+                        LOG.info("{} (the default name); all subsequent connections will use \"{}\" instead.", message, applicationName);
                     }
                     else
                     {
-                        LOG.info(message + "; this will continue to be used on all subsequent connections.");
+                        LOG.info("{}; this will continue to be used on all subsequent connections.", message);
                     }
                 }
                 else
@@ -1966,7 +1954,7 @@ public class DbScope
             }
             catch (SQLException e)
             {
-                LOG.warn("Attempt to determine application name failed: " + e.getMessage());
+                LOG.warn("Attempt to determine application name failed: {}", e.getMessage());
                 applicationName = ds.setDefaultApplicationName();
             }
         }
@@ -2180,7 +2168,7 @@ public class DbScope
                 if (count++ > 100)
                 {
                     // Avoid getting into an infinite loop if someone's messed up the transaction stack
-                    LOG.error("Aborting trying to close connections after processing " + count + " transaction objects");
+                    LOG.error("Aborting trying to close connections after processing {} transaction objects", count);
                     break;
                 }
                 try
@@ -2194,7 +2182,7 @@ public class DbScope
                 }
                 catch (Exception x)
                 {
-                    LOG.error("Failed to force the still-pending transaction object closed on DB scope " + scope, x);
+                    LOG.error("Failed to force the still-pending transaction object closed on DB scope {}", scope, x);
                 }
 
                 // We may have nested concurrent transactions for a given scope, so be sure we close them all
@@ -2426,7 +2414,7 @@ public class DbScope
             T existing = (T)runnables.putIfAbsent(task, task);
             if (existing != null)
             {
-                LOG.debug("Skipping duplicate runnable: " + task.toString());
+                LOG.debug("Skipping duplicate runnable: {}", task.toString());
             }
             return existing == null ? task : existing;
         }
@@ -2535,7 +2523,7 @@ public class DbScope
         synchronized (_transaction)
         {
             List<TransactionImpl> transactions = _transaction.get(thread);
-            transactions.remove(transactions.size() - 1);
+            transactions.removeLast();
             if (transactions.isEmpty())
             {
                 _transaction.remove(thread);
@@ -3095,7 +3083,7 @@ public class DbScope
                 TableInfo table = schema.getTable(name);
 
                 if (null == table)
-                    LOG.error("Table is null: " + schema.getName() + "." + name);
+                    LOG.error("Table is null: {}.{}", schema.getName(), name);
                 else if (table.getTableType() != DatabaseTableType.NOT_IN_DB)
                     return table;
             }

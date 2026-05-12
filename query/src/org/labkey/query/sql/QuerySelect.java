@@ -672,7 +672,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
 
         private QTable parseLineage(final QNode range)
         {
-            QMethodCall methodCall = (QMethodCall)range.childList().get(0);
+            QMethodCall methodCall = (QMethodCall)range.childList().getFirst();
             var methodIdentifier = methodCall.childList().get(0);
             int methodType = methodIdentifier.getTokenType();
             QQuery subQuery = (QQuery)methodCall.childList().get(1);
@@ -699,7 +699,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         private QTable parseValues(QNode node)
         {
             int countChildren = node.childList().size();
-            if (2 < countChildren || !(node.childList().get(0) instanceof QValues))
+            if (2 < countChildren || !(node.childList().getFirst() instanceof QValues))
             {
                 parseError("Syntax error in JOIN clause", node);
                 return null;
@@ -730,7 +730,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         private QTable parseRange(QNode node)
         {
             int countChildren = node.childList().size();
-            if (countChildren < 1 || 2 < countChildren || !(node.childList().get(0) instanceof QExpr))
+            if (countChildren < 1 || 2 < countChildren || !(node.childList().getFirst() instanceof QExpr))
             {
                 parseError("Syntax error in JOIN clause", node);
                 return null;
@@ -831,19 +831,19 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             if (children.size() > childIndex)
             {
                 on = children.get(childIndex);
-                if (on.childList().size() != 1 || !(on.childList().get(0) instanceof QExpr))
+                if (on.childList().size() != 1 || !(on.childList().getFirst() instanceof QExpr))
                 {
                     parseError("Error in ON expression", on);
                     return null;
                 }
-                _ons.add((QExpr) on.childList().get(0));
+                _ons.add((QExpr) on.childList().getFirst());
             }
 
             if (joinType == JoinType.cross && null != on)
                 parseError("ON unexpected in a CROSS JOIN", on);
             else if (joinType != JoinType.cross && null == on)
                 parseError("ON expected", rightNode);
-            QJoin qjoin = new QJoin(left, right, joinType, null == on ? null : (QExpr) on.childList().get(0));
+            QJoin qjoin = new QJoin(left, right, joinType, null == on ? null : (QExpr) on.childList().getFirst());
             return qjoin;
         }
     }
@@ -890,7 +890,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             if (isDebugEnabled)
             {
                 debugMsg = "getField( " + this.toStringDebug() + ", " + key.toDisplayString() + " )\n        referant: " + referant;
-                _log.debug(">>" + debugMsg);
+                _log.debug(">>{}", debugMsg);
             }
 
             if (!methodName)
@@ -929,7 +929,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         }
         finally
         {
-            _log.debug("<<" + debugMsg);
+            _log.debug("<<{}", debugMsg);
         }
     }
 
@@ -953,7 +953,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         if (parts.size() >= 2)
         {
             // Attempt to resolve a simple table prefix
-            tableKey = new FieldKey(null, parts.get(0));
+            tableKey = new FieldKey(null, parts.getFirst());
             table = getTable(tableKey);
 
             if (table == null)
@@ -976,7 +976,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
 
         if (null == table)
         {
-            String name = parts.get(0);
+            String name = parts.getFirst();
             for (Map.Entry<FieldKey,QueryRelation> e : _tables.entrySet())
             {
                 if (null != e.getValue().getColumn(name))
@@ -1018,7 +1018,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             qualified = false;
         }
 
-        FieldKey key = new FieldKey(tableKey, parts.get(0));
+        FieldKey key = new FieldKey(tableKey, parts.getFirst());
         RelationColumn colParent = _declaredFields.get(key);
         if (colParent == null)
         {
@@ -1132,7 +1132,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         if (_declareCalled)
             return;
         _declareCalled = true;
-        _log.debug("declareFields " + this.toStringDebug());
+        _log.debug("declareFields {}", this.toStringDebug());
 
         for (Map.Entry<FieldKey,QueryRelation> entry : _tables.entrySet())
             entry.getValue().declareFields();
@@ -1257,7 +1257,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         QExpr methodName = null;
         if (expr instanceof QMethodCall)
         {
-            methodName = (QExpr)expr.childList().get(0);
+            methodName = (QExpr)expr.childList().getFirst();
             if (null == methodName.getFieldKey())
                 methodName = null;
         }
@@ -1403,7 +1403,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
 
                 SQLFragment s = getSql();
                 if (!getParseErrors().isEmpty())
-                    throw getParseErrors().get(0);
+                    throw getParseErrors().getFirst();
                 SQLFragment f = new SQLFragment();
                 f.append("(").append(s).append(") ").appendIdentifier(alias);
 
@@ -1639,11 +1639,11 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         int count = 0;
         boolean isDebugEnabled = _log.isDebugEnabled();
         if (isDebugEnabled)
-            _log.debug("SELECT COLUMN LIST: " + this.toStringDebug());
+            _log.debug("SELECT COLUMN LIST: {}", this.toStringDebug());
         for (SelectColumn col : _columns.values())
         {
             if (isDebugEnabled)
-                _log.debug("    " + col.getDebugString() + " ref=" + col.ref.count());
+                _log.debug("    {} ref={}", col.getDebugString(), col.ref.count());
             // NOTE: container columns are sometimes used by lookups without being explicitly REF'd
             if (col.getJdbcType() == JdbcType.GUID)
                 col.addRef(col);

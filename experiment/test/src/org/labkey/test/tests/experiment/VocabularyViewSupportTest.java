@@ -259,8 +259,8 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
                         .findElement(runsTable.findCell(0, "Properties")));
 
         assertEquals("Embedded properties table", expectedProperties, propertiesTable.getTableData());
-        assertEquals("Run does not contain " + propNameLab + " vocabulary property.", propValueLab, runsTable.getColumnDataAsText(domainProperty + "/" + propNameLab).get(0));
-        assertEquals("Run does not contain " + propNameLab + " vocabulary property.", labLocation, runsTable.getColumnDataAsText(domainProperty + "/" + propNameLocation).get(0));
+        assertEquals("Run does not contain " + propNameLab + " vocabulary property.", propValueLab, runsTable.getColumnDataAsText(domainProperty + "/" + propNameLab).getFirst());
+        assertEquals("Run does not contain " + propNameLab + " vocabulary property.", labLocation, runsTable.getColumnDataAsText(domainProperty + "/" + propNameLocation).getFirst());
     }
 
     private DataRegionTable createListForVocabPropertyLookup(String listName) throws IOException, CommandException

@@ -266,7 +266,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     public void clearMaterialSourceCache(@Nullable Container c)
     {
-        LOG.debug("clearMaterialSourceCache: " + (c == null ? "all" : c.getPath()));
+        LOG.debug("clearMaterialSourceCache: {}", c == null ? "all" : c.getPath());
         if (c == null)
             materialSourceCache.clear();
         else
@@ -696,7 +696,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         timer.stop();
-        LOG.info("Deleted SampleType '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
+        LOG.info("Deleted SampleType '{}' from '{}' in {}", source.getName(), c.getPath(), timer.getDuration());
     }
 
     private void addSampleTypeDeletedAuditEvent(User user, Container c, ExpSampleType sampleType, @Nullable String auditUserComment)
@@ -1710,12 +1710,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         String totalUnitsStr;
         if (!StringUtils.isEmpty(sampleTypeUnitsStr))
             totalUnitsStr = sampleTypeUnitsStr;
-        else if (hasSameAliquotUnit && !StringUtils.isEmpty(volumeUnits.get(0).unit)) // if all aliquots have the same unit, prefer it over parent's unit
-            totalUnitsStr = volumeUnits.get(0).unit;
+        else if (hasSameAliquotUnit && !StringUtils.isEmpty(volumeUnits.getFirst().unit)) // if all aliquots have the same unit, prefer it over parent's unit
+            totalUnitsStr = volumeUnits.getFirst().unit;
         else if (!StringUtils.isEmpty(sampleItemUnitsStr))
             totalUnitsStr = sampleItemUnitsStr;
         else // use the unit of the first aliquot if there are no other indications
-            totalUnitsStr = volumeUnits.get(0).unit;
+            totalUnitsStr = volumeUnits.getFirst().unit;
         if (!StringUtils.isEmpty(totalUnitsStr))
         {
             try
@@ -2189,7 +2189,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         if (fileService.getFileRoot(targetContainer) == null)
         {
-            LOG.warn("No file root found for target container " + targetContainer + "'. Files cannot be moved.");
+            LOG.warn("No file root found for target container {}'. Files cannot be moved.", targetContainer);
             return sampleFileRenames;
         }
 
@@ -2206,7 +2206,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             boolean hasSourceRoot = hasFileRoot.computeIfAbsent(sample.getContainer(), (container) -> fileService.getFileRoot(container) != null);
             if (!hasSourceRoot)
-                LOG.warn("No file root found for source container " + sample.getContainer() + ". Files cannot be moved.");
+                LOG.warn("No file root found for source container {}. Files cannot be moved.", sample.getContainer());
             else
                 for (DomainProperty fileProp : fileDomainProps )
                 {
@@ -2272,7 +2272,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
             catch (IOException e)
             {
-                LOG.warn(errorMsg + e.getMessage());
+                LOG.warn("{}{}", errorMsg, e.getMessage());
             }
         }
 

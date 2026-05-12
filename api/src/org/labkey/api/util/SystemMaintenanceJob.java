@@ -115,7 +115,7 @@ public class SystemMaintenanceJob implements org.quartz.Job, Callable<String>
         try
         {
             PipelineJob job = new MaintenancePipelineJob(vbi, root, tasksToRun);
-            LOG.info("Queuing MaintenancePipelineJob [thread " + Thread.currentThread().getName() + " to " + PipelineService.get().toString() + "]");
+            LOG.info("Queuing MaintenancePipelineJob [thread {} to {}]", Thread.currentThread().getName(), PipelineService.get().toString());
             PipelineService.get().queueJob(job);
             jobGuid = job.getJobGUID();
         }

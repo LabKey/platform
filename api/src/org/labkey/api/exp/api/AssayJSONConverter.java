@@ -121,7 +121,7 @@ public class AssayJSONConverter
 
             if (datas.size() == 1)
             {
-                dataRows = serializeDataRows(datas.get(0), provider, protocol, user);
+                dataRows = serializeDataRows(datas.getFirst(), provider, protocol, user);
             }
             else if (datas.size() > 1)
             {
@@ -129,7 +129,7 @@ public class AssayJSONConverter
                 List<? extends ExpData> transformedDatas = run.getInputDatas(ExpDataRunInput.IMPORTED_DATA_ROLE,  ExpProtocol.ApplicationType.ExperimentRunOutput);
                 if (transformedDatas.size() == 1)
                 {
-                    dataRows = serializeDataRows(transformedDatas.get(0), provider, protocol, user);
+                    dataRows = serializeDataRows(transformedDatas.getFirst(), provider, protocol, user);
                 }
             }
         }

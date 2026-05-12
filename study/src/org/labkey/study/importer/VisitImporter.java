@@ -69,7 +69,7 @@ public class VisitImporter implements InternalStudyImporter
             }
 
             String visitMapFile = visitsXml.getFile();
-            ctx.getLogger().info("Loading visit map from " + visitMapFile);
+            ctx.getLogger().info("Loading visit map from {}", visitMapFile);
 
             VisitMapImporter importer = new VisitMapImporter();
             importer.setEnsureDatasets(_ensureDatasets);

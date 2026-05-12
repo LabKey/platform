@@ -1,7 +1,6 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -675,7 +674,7 @@ public class NameGeneratorState implements AutoCloseable
             ctx.putAll(inputValues);
 
             Map<FieldKey, Object> lookupValues = new HashMap<>();
-            inputLookupValues.forEach((key, value) -> lookupValues.put(key, value.size() > 1 ? value : (value.size() == 1 ? value.iterator().next() : null)));
+            inputLookupValues.forEach((key, value) -> lookupValues.put(key, value.size() > 1 ? value : (value.size() == 1 ? value.getFirst() : null)));
             ctx.putAll(lookupValues);
         }
 
@@ -696,7 +695,7 @@ public class NameGeneratorState implements AutoCloseable
                     if (pkCols.size() != 1)
                         continue;
 
-                    ColumnInfo pkCol = pkCols.get(0);
+                    ColumnInfo pkCol = pkCols.getFirst();
                     // convert the rootValue to the target pkColumn type
                     if (rootValue instanceof String && !pkCol.isStringType())
                     {

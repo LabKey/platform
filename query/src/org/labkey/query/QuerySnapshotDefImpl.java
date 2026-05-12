@@ -142,7 +142,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
             }
             if (_queryDef == null)
             {
-                LOG.warn("Could not find query with queryDefId " + _snapshotDef.getQueryDefId() + " for query snapshot " + _snapshotDef.getName() + " in " + _snapshotDef.lookupContainer());
+                LOG.warn("Could not find query with queryDefId {} for query snapshot {} in {}", _snapshotDef.getQueryDefId(), _snapshotDef.getName(), _snapshotDef.lookupContainer());
             }
             return _queryDef == null ? null : new CustomQueryDefinitionImpl(user, getContainer(), _queryDef);
         }
@@ -154,21 +154,21 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
                 UserSchema schema = QueryService.get().getUserSchema(user, queryTableContainer, _snapshotDef.getSchema());
                 if (schema == null)
                 {
-                    LOG.warn("Could not find query with schema " + _snapshotDef.getSchema() + " for query snapshot " + _snapshotDef.getName() + " in " + _snapshotDef.lookupContainer());
+                    LOG.warn("Could not find query with schema {} for query snapshot {} in {}", _snapshotDef.getSchema(), _snapshotDef.getName(), _snapshotDef.lookupContainer());
                 }
                 else
                 {
                     QueryDefinition result = schema.getQueryDefForTable(_snapshotDef.getQueryTableName());
                     if (result == null)
                     {
-                        LOG.warn("Could not find query with queryTableName " + _snapshotDef.getQueryTableName() + " for query snapshot " + _snapshotDef.getName() + " in " + _snapshotDef.lookupContainer());
+                        LOG.warn("Could not find query with queryTableName {} for query snapshot {} in {}", _snapshotDef.getQueryTableName(), _snapshotDef.getName(), _snapshotDef.lookupContainer());
                     }
                     return result;
                 }
             }
             else
             {
-                LOG.warn("Could not find query with queryTableContainer " + _snapshotDef.getQueryTableContainer() + " for query snapshot " + _snapshotDef.getName() + " in " + _snapshotDef.lookupContainer());
+                LOG.warn("Could not find query with queryTableContainer {} for query snapshot {} in {}", _snapshotDef.getQueryTableContainer(), _snapshotDef.getName(), _snapshotDef.lookupContainer());
             }
         }
         return null;

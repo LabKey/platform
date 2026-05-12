@@ -54,12 +54,12 @@ public class CustomViewImporter implements FolderImporter
 
             if (null != job)
                 job.setStatus("IMPORT " + getDescription());
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             int count = QueryService.get().importCustomViews(ctx.getUser(), ctx.getContainer(), viewDir);
-            
-            ctx.getLogger().info(count + " custom view" + (1 == count ? "" : "s") + " imported");
-            ctx.getLogger().info("Done importing " + getDescription());
+
+            ctx.getLogger().info("{} custom view{} imported", count, 1 == count ? "" : "s");
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
     }
 

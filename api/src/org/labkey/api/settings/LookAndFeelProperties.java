@@ -323,8 +323,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         //initial login will be used as the default value. During setup user will be prompted to change.
         String emailAddress = lookupStringValue(systemEmailAddress, "");
         if (emailAddress.isEmpty())
-            LOG.error(String.format("System Email Address became unset somehow. Visit '%s/admin-projectSettings.view' to fix it",
-                    _settingsContainer.getTitle().isEmpty() ? "" : _settingsContainer.getPath()));
+            LOG.error("System Email Address became unset somehow. Visit '{}/admin-projectSettings.view' to fix it", _settingsContainer.getTitle().isEmpty() ? "" : _settingsContainer.getPath());
         return emailAddress;
     }
 

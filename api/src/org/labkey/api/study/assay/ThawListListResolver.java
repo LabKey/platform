@@ -17,7 +17,6 @@
 package org.labkey.api.study.assay;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
@@ -89,7 +88,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
         FieldKey pkFieldKey;
 
         if (pkNames.size() == 1)
-            pkFieldKey = FieldKey.fromParts(pkNames.get(0));
+            pkFieldKey = FieldKey.fromParts(pkNames.getFirst());
         else
             pkFieldKey = FieldKey.fromParts(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME);
 

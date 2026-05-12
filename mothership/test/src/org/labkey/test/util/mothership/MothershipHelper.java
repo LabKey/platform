@@ -145,7 +145,7 @@ public class MothershipHelper extends LabKeySiteWrapper
                 throw new NotFoundException(String.format("Unable to find server installation [%s]. Found: %s", hostName, hostNames));
             }
         }
-        return response.getRows().get(0);
+        return response.getRows().getFirst();
     }
 
     public int getLatestStackTraceId()
@@ -168,7 +168,7 @@ public class MothershipHelper extends LabKeySiteWrapper
             SelectRowsResponse response = command.execute(connection, MOTHERSHIP_PROJECT);
              if (response.getRows().isEmpty())
                  return null;
-             return response.getRows().get(0);
+             return response.getRows().getFirst();
         }
         catch (IOException|CommandException e)
         {
@@ -215,7 +215,7 @@ public class MothershipHelper extends LabKeySiteWrapper
         try
         {
             SelectRowsResponse response = command.execute(connection, MOTHERSHIP_PROJECT);
-            return (int) response.getRows().get(0).get("instances");
+            return (int) response.getRows().getFirst().get("instances");
         }
         catch (IOException|CommandException e)
         {
@@ -319,7 +319,7 @@ public class MothershipHelper extends LabKeySiteWrapper
 
     public int triggerException(TestActions.ExceptionActions action)
     {
-        return triggerExceptions(action).get(0);
+        return triggerExceptions(action).getFirst();
     }
 
     public List<Integer> triggerExceptions(TestActions.ExceptionActions... actions)

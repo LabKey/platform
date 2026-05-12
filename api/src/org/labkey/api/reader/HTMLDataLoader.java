@@ -78,7 +78,7 @@ public class HTMLDataLoader extends DataLoader
     public static final FileType FILE_TYPE = new FileType(Arrays.asList(".html", ".xhtml"), ".html")
     {
         @Override
-        public boolean isHeaderMatch(@NotNull byte[] header)
+        public boolean isHeaderMatch(byte @NotNull [] header)
         {
             String s = new String(header, StringUtilsLabKey.DEFAULT_CHARSET);
 

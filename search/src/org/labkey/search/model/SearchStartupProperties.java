@@ -25,7 +25,7 @@ public enum SearchStartupProperties implements StartupProperty
         {
             LuceneDirectoryType type = EnumUtils.getEnum(LuceneDirectoryType.class, value);
             if (null == type)
-                LOG.error("Unrecognized value for \"directoryType\": \"" + value + "\"");
+                LOG.error("Unrecognized value for \"directoryType\": \"{}\"", value);
             else
                 SearchPropertyManager.setDirectoryType(null, type);
         }
@@ -43,7 +43,7 @@ public enum SearchStartupProperties implements StartupProperty
         {
             CrawlerRunningState state = EnumUtils.getEnum(CrawlerRunningState.class, value);
             if (null == state)
-                LOG.error("Unrecognized value for \"crawlerState\": \"" + value + "\"");
+                LOG.error("Unrecognized value for \"crawlerState\": \"{}\"", value);
             else
                 SearchPropertyManager.setCrawlerRunningState(null, state);
         }

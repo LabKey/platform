@@ -49,12 +49,6 @@ public class FolderWriterImpl extends BaseFolderWriter
         _writers = registry.getRegisteredFolderWriters();
     }
 
-    @Override
-    public String getDataType()
-    {
-        return null;
-    }
-
     protected BaseFolderWriter createSubfolderWriter()
     {
         return new SubfolderWriter();
@@ -63,7 +57,7 @@ public class FolderWriterImpl extends BaseFolderWriter
     @Override
     public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
-        LOG.info("Exporting folder to " + vf.getLocation());
+        LOG.info("Exporting folder to {}", vf.getLocation());
 
         Set<String> dataTypes = ctx.getDataTypes();
 
@@ -92,7 +86,7 @@ public class FolderWriterImpl extends BaseFolderWriter
         if (ctx.isIncludeFolderXml())
             writeFolderXml(c, ctx, vf);
 
-        LOG.info("Done exporting folder to " + vf.getLocation());
+        LOG.info("Done exporting folder to {}", vf.getLocation());
     }
 
     // This writer is responsible for folder.xml. It writes the top-level folder attributes and saves out the bean when it's complete.

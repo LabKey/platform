@@ -89,7 +89,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
 
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
-                ctx.getLogger().info("Loading " + getDescription());
+                ctx.getLogger().info("Loading {}", getDescription());
 
                 Set<String> importedFolderNames = new CaseInsensitiveHashSet();
                 Map<Wiki, String> parentsToBeSet = new HashMap<>();
@@ -110,7 +110,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                         VirtualFile wikiSubDir = wikisDir.getDir(wikiXml.getName());
                         if (null == wikiSubDir)
                         {
-                            ctx.getLogger().error("Could not find content subdirectory for wiki with name \"" + wikiXml.getName() + "\"");
+                            ctx.getLogger().error("Could not find content subdirectory for wiki with name \"{}\"", wikiXml.getName());
                             continue;
                         }
                         // ensure that older versions of exported wikis that do not have the shouldIndex bit set
@@ -141,8 +141,8 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
 
                     setParents(ctx, parentsToBeSet);
 
-                    ctx.getLogger().info(importedFolderNames.size() + " wiki" + (1 == importedFolderNames.size() ? "" : "s") + " imported");
-                    ctx.getLogger().info("Done importing " + getDescription());
+                    ctx.getLogger().info("{} wiki{} imported", importedFolderNames.size(), 1 == importedFolderNames.size() ? "" : "s");
+                    ctx.getLogger().info("Done importing {}", getDescription());
                 }
             }
         }
@@ -156,7 +156,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                 Wiki parentWiki = WikiSelectManager.getWiki(ctx.getContainer(), entry.getValue());
                 if (parentWiki == null)
                 {
-                    ctx.getLogger().warn("Could not find parent wiki: " + entry.getValue());
+                    ctx.getLogger().warn("Could not find parent wiki: {}", entry.getValue());
                 }
                 else
                 {

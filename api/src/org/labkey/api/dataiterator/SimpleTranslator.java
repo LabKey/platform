@@ -57,7 +57,6 @@ import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.exp.MvFieldWrapper;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.ontology.Unit;
@@ -226,7 +225,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         public ColumnInfo getPkColumn()
         {
-            return _targetTable.getPkColumns().get(0);
+            return _targetTable.getPkColumns().getFirst();
         }
 
         private List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>>> getMaps()
@@ -251,7 +250,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     if (def.columns().size() != 1)
                         continue;
 
-                    ColumnInfo col = def.columns().get(0);
+                    ColumnInfo col = def.columns().getFirst();
                     if (!seen.add(col))
                         continue;
 
@@ -743,7 +742,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     if (!this.us.getContainer().allowRowMutationForContainer(rowContainer))
                     {
                         getRowError().addError(new SimpleValidationError("Row supplied container value: " + rowContainerVal + " cannot be used for actions against the container: " + us.getContainer().getPath()));
-                        LOG.warn("Resolved container to " + rowContainer.getPath() + " but rejected as valid location for import into " + us.getContainer().getPath() + " in " + us.getSchemaName() + "." + tableInfo.getPublicSchemaName());
+                        LOG.warn("Resolved container to {} but rejected as valid location for import into {} in {}.{}", rowContainer.getPath(), us.getContainer().getPath(), us.getSchemaName(), tableInfo.getPublicSchemaName());
                     }
                     else
                     {
@@ -757,7 +756,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     // only log if the incoming value is GUID-like
                     if (rowContainerVal instanceof String && GUID.isGUID((String)rowContainerVal))
                     {
-                        LOG.warn("Failed to resolve container value '" + rowContainerVal + "' to container for import into " + us.getSchemaName() + "." + tableInfo.getPublicSchemaName() + ", defaulting to original target container of " + us.getContainer().getPath());
+                        LOG.warn("Failed to resolve container value '{}' to container for import into {}.{}, defaulting to original target container of {}", rowContainerVal, us.getSchemaName(), tableInfo.getPublicSchemaName(), us.getContainer().getPath());
                     }
                 }
             }
@@ -1402,7 +1401,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             {
                 Set<String> columnNames = new HashSet<>();
                 final String lookupColumnName = extraColumnFieldKey.getName();
-                final String lookupTablePkColumnName = tableInfo.getPkColumns().get(0).getName();     // Expect only 1
+                final String lookupTablePkColumnName = tableInfo.getPkColumns().getFirst().getName();     // Expect only 1
                 columnNames.add(lookupColumnName);
                 columnNames.add(lookupTablePkColumnName);
                 new TableSelector(tableInfo, columnNames).forEachMap(row -> {
@@ -2052,9 +2051,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             SimpleTranslator t = new SimpleTranslator(simpleData, context);
             t.selectAll();
             assert(t.getColumnCount() == simpleData.getColumnCount());
-            assertTrue(t.getColumnInfo(0).getJdbcType() == JdbcType.INTEGER);
+            assertSame(t.getColumnInfo(0).getJdbcType(), JdbcType.INTEGER);
             for (int i=1 ; i<=t.getColumnCount() ; i++)
-                assertTrue(t.getColumnInfo(i).getJdbcType() == JdbcType.VARCHAR);
+                assertSame(t.getColumnInfo(i).getJdbcType(), JdbcType.VARCHAR);
             for (int i=1 ; i<=4 ; i++)
             {
                 assertTrue(t.next());

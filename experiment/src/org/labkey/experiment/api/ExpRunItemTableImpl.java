@@ -186,7 +186,7 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
             {
                 List<String> previews = domain.getDomainKind().getDomainNamePreviews(schemaName, queryName, getContainer(), user);
                 if (previews != null && !previews.isEmpty())
-                    return previews.get(0);
+                    return previews.getFirst();
             }
         }
         catch (Exception ignore)

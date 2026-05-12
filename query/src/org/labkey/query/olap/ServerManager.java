@@ -369,7 +369,7 @@ public class ServerManager
                 LOG.debug(sb.toString());
                 RepositoryContentFinder rcf = new StringRepositoryContentFinder(sb.toString());
                 s = MondrianServer.createWithRepository(rcf, new _CatalogLocator(c));
-                LOG.debug("Create new Mondrian server: " + c.getPath() + " " + s.toString());
+                LOG.debug("Create new Mondrian server: {} {}", c.getPath(), s.toString());
                 ref = new ServerReferenceCount(s, c);
                 SERVERS.put(getServerCacheKey(c), ref);
             }
@@ -428,7 +428,7 @@ public class ServerManager
             if (null == cube)
                 return "Error: No cached cube for " + cubeName + " in container " + fullContainerPath;
             long e = System.currentTimeMillis();
-            LOG.debug(DateUtil.formatDuration(e-s) + " CUBE DEFINITION");
+            LOG.debug("{} CUBE DEFINITION", DateUtil.formatDuration(e - s));
 
             JSONArray jsonOnRows = new JSONArray();
             JSONObject jsonQuery = new JSONObject();
@@ -444,7 +444,7 @@ public class ServerManager
                 {
                     try
                     {
-                        Level l = h.getLevels().get(h.getLevels().size()-1);
+                        Level l = h.getLevels().getLast();
 
                         Map<String, Object> map = new HashMap<>();
                         map.put("hierarchy", h.getUniqueName());
@@ -461,7 +461,7 @@ public class ServerManager
                             s = System.currentTimeMillis();
                             execCountDistinct(c, null, sd, conn, cube, jsonQuery, getDummyBindException());
                             e = System.currentTimeMillis();
-                            LOG.info(DateUtil.formatDuration(e - s) + " " + jsonQuery);
+                            LOG.info("{} {}", DateUtil.formatDuration(e - s), jsonQuery);
                         }
 
 
@@ -476,7 +476,7 @@ public class ServerManager
                             s = System.currentTimeMillis();
                             execCountDistinct(c, null, sd, conn, cube, jsonQuery, getDummyBindException());
                             e = System.currentTimeMillis();
-                            LOG.info(DateUtil.formatDuration(e - s) + " " + jsonQuery);
+                            LOG.info("{} {}", DateUtil.formatDuration(e - s), jsonQuery);
 
                             jsonQuery.remove("countDistinctLevel");
                         }
@@ -484,7 +484,7 @@ public class ServerManager
                     catch (Exception ignore)
                     {
 
-                        LOG.warn("Error trying to warm the " + cubeName + " in container " + fullContainerPath, ignore);
+                        LOG.warn("Error trying to warm the {} in container {}", cubeName, fullContainerPath, ignore);
                     }
                 }
             }
@@ -634,7 +634,7 @@ public class ServerManager
 
     static void closeServer(MondrianServer s, @NotNull Container container)
     {
-        LOG.debug("Shutdown Mondrian server: " + s.toString());
+        LOG.debug("Shutdown Mondrian server: {}", s.toString());
 
         try
         {
@@ -649,7 +649,7 @@ public class ServerManager
         }
         catch (Exception x)
         {
-            LOG.debug("Shutdown Mondrian server flush cache failed: " + s);
+            LOG.debug("Shutdown Mondrian server flush cache failed: {}", s);
             LOG.debug(x.getMessage());
         }
 
@@ -768,13 +768,13 @@ public class ServerManager
         void increment()
         {
             super.increment();
-            LOG.debug("increment reference: " + counter.get() + " " + _server.toString());
+            LOG.debug("increment reference: {} {}", counter.get(), _server.toString());
         }
 
         @Override
         void decrement()
         {
-            LOG.debug("decrement reference: " + (counter.get() - 1) + " " + _server.toString());
+            LOG.debug("decrement reference: {} {}", counter.get() - 1, _server.toString());
             super.decrement();
         }
 
@@ -901,7 +901,7 @@ public class ServerManager
                 .mapToInt(Map::size)
                 .sum();
 
-            LOG.info(descriptorCount + " OLAP descriptors defined in all modules");
+            LOG.info("{} OLAP descriptors defined in all modules", descriptorCount);
 
             // Make sure the cache retrieves the test OLAP descriptor from this module
 

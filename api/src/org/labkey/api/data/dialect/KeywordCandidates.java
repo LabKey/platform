@@ -81,7 +81,7 @@ public class KeywordCandidates
         if (notFound.isEmpty())
             return true;
 
-        LOG.error("Keywords from " + productName + " dialect need to be added to sqlKeywords.txt file: " + notFound);
+        LOG.error("Keywords from {} dialect need to be added to sqlKeywords.txt file: {}", productName, notFound);
 
         return false;
     }

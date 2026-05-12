@@ -16,8 +16,8 @@
 package org.labkey.query.olap;
 
 import org.apache.commons.collections4.iterators.IteratorChain;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.CacheManager;
@@ -588,13 +588,13 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
         }
 
         @Override
-        public @NotNull Object[] toArray()
+        public @NotNull Object @NotNull [] toArray()
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public <T> @NotNull T[] toArray(T @NotNull [] a)
+        public <T> @NotNull T @NotNull [] toArray(T @NotNull [] a)
         {
             throw new UnsupportedOperationException();
         }
@@ -738,17 +738,13 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
         {
-            switch (method.getName())
+            return switch (method.getName())
             {
-                case "getUniqueName":
-                    return getUniqueName();
-                case "getOrdinal":
-                    return getOrdinal();
-                case "equals":
-                    throw new IllegalStateException("equals doesn't work use getUniqueName().equals(...)");
-                default:
-                    return null;
-            }
+                case "getUniqueName" -> getUniqueName();
+                case "getOrdinal" -> getOrdinal();
+                case "equals" -> throw new IllegalStateException("equals doesn't work use getUniqueName().equals(...)");
+                default -> null;
+            };
         }
 
         String getUniqueName()

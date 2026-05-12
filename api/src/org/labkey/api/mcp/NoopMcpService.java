@@ -3,7 +3,6 @@ package org.labkey.api.mcp;
 import io.modelcontextprotocol.server.McpServerFeatures;
 import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
 import org.labkey.api.data.Container;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ToolContext;
@@ -47,7 +46,7 @@ class NoopMcpService implements McpService
     }
 
     @Override
-    public ToolCallback @NonNull [] getToolCallbacks()
+    public ToolCallback @NotNull [] getToolCallbacks()
     {
         return new ToolCallback[0];
     }

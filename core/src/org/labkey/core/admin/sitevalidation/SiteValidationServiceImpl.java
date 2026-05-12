@@ -123,7 +123,7 @@ public class SiteValidationServiceImpl implements SiteValidationService
             {
                 parentList = ContainerManager.getProjects();
                 if (includeSubFolders)
-                    parentList.add(0, topLevel); // Validate the root as well
+                    parentList.addFirst(topLevel); // Validate the root as well
             }
             else
             {

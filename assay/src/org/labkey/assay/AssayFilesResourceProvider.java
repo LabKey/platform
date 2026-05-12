@@ -1,9 +1,9 @@
 package org.labkey.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -25,7 +25,7 @@ import java.util.Set;
 public class AssayFilesResourceProvider implements WebdavService.Provider
 {
     @Override
-    public Set<String> addChildren(WebdavResource target, boolean isListing)
+    public Set<String> addChildren(@NotNull WebdavResource target, boolean isListing)
     {
         if (!(target instanceof WebdavResolverImpl.WebFolderResource folder))
             return null;
@@ -50,7 +50,7 @@ public class AssayFilesResourceProvider implements WebdavService.Provider
     }
 
     @Override
-    public WebdavResource resolve(WebdavResource parent, String name)
+    public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
         if (!FileContentService.ASSAY_FILES.equalsIgnoreCase(name))
             return null;
@@ -77,10 +77,7 @@ public class AssayFilesResourceProvider implements WebdavService.Provider
                 return new AssayFilesResource(parent, Path.toPathPart(name), dir.getFileSystemDirectory(), c);
             }
         }
-        catch (MissingRootDirectoryException e)
-        {
-            // Don't complain here, just hide the @assayfiles subfolder
-        }
+        // Don't complain here, just hide the @assayfiles subfolder
         catch (RuntimeException e)
         {
             // Don't complain here if AccessDeniedException, just hide the @scripts subfolder (Issue 50212)

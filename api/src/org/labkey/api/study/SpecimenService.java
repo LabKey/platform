@@ -33,7 +33,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
@@ -54,11 +53,11 @@ public interface SpecimenService
     }
 
     /** Does a search for matching GlobalUniqueIds  */
-    ParticipantVisit getSampleInfo(Container studyContainer, User user, String globalUniqueId) throws SQLException;
+    ParticipantVisit getSampleInfo(Container studyContainer, User user, String globalUniqueId);
 
-    Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime) throws SQLException;
+    Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime);
 
-    Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user) throws SQLException;
+    Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user);
 
     Lsid getSpecimenMaterialLsid(@NotNull Container studyContainer, @NotNull String id);
 
@@ -71,7 +70,7 @@ public interface SpecimenService
     @Nullable
     SpecimenTransform getSpecimenTransform(String name);
 
-    PipelineJob createSpecimenReloadJob(Container container, User user, SpecimenTransform transform, @Nullable ActionURL url) throws SQLException, IOException, ValidationException;
+    PipelineJob createSpecimenReloadJob(Container container, User user, SpecimenTransform transform, @Nullable ActionURL url) throws IOException, ValidationException;
 
     void registerSpecimenChangeListener(SpecimenChangeListener listener);
 

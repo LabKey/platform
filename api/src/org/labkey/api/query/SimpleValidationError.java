@@ -94,7 +94,7 @@ public class SimpleValidationError implements ValidationError
     }
 
     @Override
-    public HelpTopic getHelp()
+    public @Nullable HelpTopic getHelp()
     {
         return _help;
     }

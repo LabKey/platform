@@ -296,12 +296,11 @@ public class ExperimentRunListView extends QueryView
     @Override
     protected ActionURL urlFor(QueryAction action)
     {
-        switch (action)
+        return switch (action)
         {
-            case deleteQueryRows:
-                return null;
-        }
-        return super.urlFor(action);
+            case deleteQueryRows -> null;
+            default -> super.urlFor(action);
+        };
     }
 
     /* override createTable, because some callers expect an unlocked TableInfo */

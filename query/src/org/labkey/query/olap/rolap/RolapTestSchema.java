@@ -49,15 +49,15 @@ public class RolapTestSchema extends UserSchema
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
-        switch (name.toLowerCase())
+        return switch (name.toLowerCase())
         {
-            case "fact": return createFact();
-            case "study": return createStudy();
-            case "participant": return createParticipant();
-            case "visit": return createVisit();
-            case "assay": return createAssay();
-        }
-        return null;
+            case "fact" -> createFact();
+            case "study" -> createStudy();
+            case "participant" -> createParticipant();
+            case "visit" -> createVisit();
+            case "assay" -> createAssay();
+            default -> null;
+        };
     }
 
 

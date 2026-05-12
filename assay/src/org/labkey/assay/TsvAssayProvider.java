@@ -167,7 +167,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         List<AssayDataCollector> result = super.getDataCollectors(uploadedFiles, context);
         if (PipelineDataCollector.getFileQueue(context).isEmpty())
         {
-            result.add(0, new TextAreaDataCollector<>());
+            result.addFirst(new TextAreaDataCollector<>());
         }
         return result;
     }
@@ -887,7 +887,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             TsvAssayProvider provider = new TsvAssayProvider();
             List<AssayDataCollector> dataCollectors = provider.getDataCollectors(null, _uploadContext);
             assertEquals(1, dataCollectors.size());
-            assertEquals(PipelineDataCollector.class, dataCollectors.get(0).getClass());
+            assertEquals(PipelineDataCollector.class, dataCollectors.getFirst().getClass());
         }
 
         @Test

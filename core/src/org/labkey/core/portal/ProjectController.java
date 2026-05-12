@@ -520,7 +520,7 @@ public class ProjectController extends SpringActionController
             {
                 iconPath = FolderType.NONE.getFolderIconPath();
                 iconFile = new File(ModuleLoader.getServletContext().getRealPath(iconPath));  //fall back to default
-                _log.warn("Could not find specified icon: "+iconPath);
+                _log.warn("Could not find specified icon: {}", iconPath);
             }
             Map<String,String> headers = new HashMap<>();
             headers.put("Cache-Control", "max-age=" + TimeUnit.DAYS.toSeconds(1));

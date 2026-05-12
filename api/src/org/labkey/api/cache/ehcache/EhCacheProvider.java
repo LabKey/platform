@@ -131,8 +131,8 @@ public class EhCacheProvider implements CacheProvider
 
         // We've upgraded EhCache to 2.6.8, so we no longer need to modify ehCacheReferenceList. Just log its size to keep us (and EhCache) honest. See #19480.
         if (null != ehCacheReferenceList)
-            LOG.debug("Caches in EhCache reference list: " + ehCacheReferenceList.size());
+            LOG.debug("Caches in EhCache reference list: {}", ehCacheReferenceList.size());
 
-        LOG.debug("Closing \"" + cache.getName() + "\".  Ehcaches: " + MANAGER.getCacheNames().length);
+        LOG.debug("Closing \"{}\".  Ehcaches: {}", cache.getName(), MANAGER.getCacheNames().length);
     }
 }

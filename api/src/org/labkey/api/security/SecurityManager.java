@@ -237,12 +237,12 @@ public class SecurityManager
         if (StringUtils.trimToNull(serviceURL) == null)
         {
             ContentSecurityPolicyFilter.unregisterAllowedSources(key, Directive.Connection);
-            LOG.trace(String.format("Unregistered [%1$s] as an allowed connection source", key));
+            LOG.trace("Unregistered [{}] as an allowed connection source", key);
             return;
         }
 
         ContentSecurityPolicyFilter.registerAllowedSources(key, Directive.Connection, serviceURL);
-        LOG.trace(String.format("Registered [%1$s] as an allowed connection source", serviceURL));
+        LOG.trace("Registered [{}] as an allowed connection source", serviceURL);
     }
 
     public enum PermissionTypes
@@ -527,17 +527,17 @@ public class SecurityManager
 
     public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException
     {
-        AUTH_LOG.debug("Starting authentication attempt via session, Basic auth, or API key header for request \"" + request.getRequestURI() + "\"");
+        AUTH_LOG.debug("Starting authentication attempt via session, Basic auth, or API key header for request \"{}\"", request.getRequestURI());
 
         // Current best practice is to pass API keys via an "apikey" header, but they can be passed via basic auth
         // (username "apikey"), supported for backwards compatibility and clients that don't support custom headers.
         @Nullable Pair<String, String> basicCredentials = getBasicCredentials(request);
-        AUTH_LOG.debug("   " + (null == basicCredentials ? "Basic auth credentials not provided" : "Basic auth credentials provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character password"));
+        AUTH_LOG.debug("   {}", null == basicCredentials ? "Basic auth credentials not provided" : "Basic auth credentials provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character password");
 
         if (null == basicCredentials)
         {
             basicCredentials = getApiKey(request);
-            AUTH_LOG.debug("   " + (null == basicCredentials ? "API key not provided" : "API key provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character key"));
+            AUTH_LOG.debug("   {}", null == basicCredentials ? "API key not provided" : "API key provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character key");
         }
 
         // Handle session API key early, if present and valid
@@ -579,7 +579,7 @@ public class SecurityManager
 
             if (null != sessionUser)
             {
-                AUTH_LOG.debug("   Session user present: " + sessionUser);
+                AUTH_LOG.debug("   Session user present: {}", sessionUser);
 
                 if (!sessionUser.isImpersonated() && "true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
                 {
@@ -627,7 +627,7 @@ public class SecurityManager
                 u = authenticateBasic(request, basicCredentials);
                 if (null != u)
                 {
-                    AUTH_LOG.debug("   Basic authentication succeeded: " + u);
+                    AUTH_LOG.debug("   Basic authentication succeeded: {}", u);
                     request.setAttribute(AUTHENTICATION_METHOD, "Basic");
                     // accept Guest as valid credentials from authenticateBasic()
                     return new Pair<>(u, request);
@@ -648,7 +648,7 @@ public class SecurityManager
         }
         finally
         {
-            AUTH_LOG.debug("Finishing authentication attempt via session, Basic auth, or API key header for request \"" + request.getRequestURI() + "\". User: " + u);
+            AUTH_LOG.debug("Finishing authentication attempt via session, Basic auth, or API key header for request \"{}\". User: {}", request.getRequestURI(), u);
         }
     }
 
@@ -1074,7 +1074,7 @@ public class SecurityManager
                 {
                     if (!"23000".equals(x.getSQLState()))
                     {
-                        LOG.debug("createUser: Something failed user: " + email, x);
+                        LOG.debug("createUser: Something failed user: {}", email, x);
                         throw x;
                     }
                 }
@@ -1487,7 +1487,7 @@ public class SecurityManager
         catch (DataIntegrityViolationException e)
         {
             // Assume this is a race condition and ignore, see #14795
-            LOG.warn("Member could not be added: " + e.getMessage());
+            LOG.warn("Member could not be added: {}", e.getMessage());
         }
 
         fireAddPrincipalToGroup(group, principal);
@@ -2899,7 +2899,7 @@ public class SecurityManager
                         if (null == role)
                         {
                             // Issue 36611: The provisioner startup properties break deployment of older products
-                            LOG.error("Invalid role for group specified in startup properties GroupRoles: " + roleName);
+                            LOG.error("Invalid role for group specified in startup properties GroupRoles: {}", roleName);
                             continue;
                         }
                         policy.addRoleAssignment(group, role);
@@ -2952,7 +2952,7 @@ public class SecurityManager
                         if (null == role)
                         {
                             // Issue 36611: The provisioner startup properties break deployment of older products
-                            LOG.warn("Invalid role for user specified in startup properties UserRoles: " + roleName);
+                            LOG.warn("Invalid role for user specified in startup properties UserRoles: {}", roleName);
                             continue;
                         }
                         policy.addRoleAssignment(user, role);

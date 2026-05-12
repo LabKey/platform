@@ -36,6 +36,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellAddress;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.PaneInformation;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -627,7 +628,7 @@ public class JxlSheet implements Sheet
     }
 
     @Override
-    public Iterator<Row> iterator()
+    public @NotNull Iterator<Row> iterator()
     {
         return new JxlRowIterator();
     }

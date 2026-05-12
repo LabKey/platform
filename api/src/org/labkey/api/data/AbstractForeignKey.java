@@ -244,7 +244,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
                     if (pkColumns != null && !pkColumns.isEmpty())
                     {
                         int first = 0;
-                        if (pkColumns.size() > 1 && isContainerColumn(pkColumns.get(0)))
+                        if (pkColumns.size() > 1 && isContainerColumn(pkColumns.getFirst()))
                             first = 1;
                         _columnName = pkColumns.get(first).getName();
                     }
@@ -380,7 +380,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         if (!lookupColumn.isKeyField())
             return false;
 
-        ColumnInfo pkCol = pkCols.get(0);
+        ColumnInfo pkCol = pkCols.getFirst();
 
         Set<ColumnInfo> seen = new HashSet<>();
         List<List<ColumnInfo>> candidates = new ArrayList<>();
@@ -392,7 +392,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
             if (def.columns().size() != 1)
                 continue;
 
-            ColumnInfo col = def.columns().get(0);
+            ColumnInfo col = def.columns().getFirst();
             if (seen.contains(col))
                 continue;
             seen.add(col);

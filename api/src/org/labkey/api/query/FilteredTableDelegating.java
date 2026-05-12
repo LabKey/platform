@@ -61,13 +61,6 @@ public class FilteredTableDelegating<SchemaType extends UserSchema> extends Filt
      */
 
     @Override
-    public MutableColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
-    {
-        assert underlyingColumn.getParentTable() == _rootTable;
-        return wrapColumnFromJoinedTable(alias, underlyingColumn);
-    }
-
-    @Override
     public MutableColumnInfo wrapColumn(ColumnInfo underlyingColumn)
     {
         return wrapColumn(underlyingColumn.getName(), underlyingColumn);

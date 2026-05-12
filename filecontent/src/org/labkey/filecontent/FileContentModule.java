@@ -133,7 +133,7 @@ public class FileContentModule extends DefaultModule
                 }
                 if (fileCount == 1)
                 {
-                    result.add("One file: " + fileNames.get(0));
+                    result.add("One file: " + fileNames.getFirst());
                 }
                 if (fileCount > 1)
                 {
@@ -141,7 +141,7 @@ public class FileContentModule extends DefaultModule
                 }
                 if (directoryCount == 1)
                 {
-                    result.add("One directory in the file system, which may contain additional files: " + directoryNames.get(0));
+                    result.add("One directory in the file system, which may contain additional files: " + directoryNames.getFirst());
                 }
                 if (directoryCount > 1)
                 {

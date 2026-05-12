@@ -190,17 +190,17 @@ public class NetworkDrive
             NetworkDrive drive = getNetworkDrive(path);
             if (drive != null)
             {
-                _log.info("Attempting to mount " + path.toUpperCase().charAt(0) + " drive at " + drive.getPath() + " with user " + drive.getUser());
+                _log.info("Attempting to mount {} drive at {} with user {}", path.toUpperCase().charAt(0), drive.getPath(), drive.getUser());
                 String error = drive.mount(driveChar);
                 if (error != null)
                 {
-                    _log.error("Failed to map network drive for " + path + ": " + error);
+                    _log.error("Failed to map network drive for {}: {}", path, error);
                 }
             }
         }
         catch (Exception e)
         {
-            _log.error("Exception trying to map network drive for " + path, e);
+            _log.error("Exception trying to map network drive for {}", path, e);
         }
     }
 

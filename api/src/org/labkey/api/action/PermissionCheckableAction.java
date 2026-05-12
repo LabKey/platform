@@ -152,7 +152,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         User user = context.getUser();
         Class<? extends Controller> actionClass = getClass();
         if (LOG.isDebugEnabled())
-            LOG.debug(actionClass.getName() + ": checking permissions for user " + (user == null ? "<null>" : user.getName() + " (impersonated=" + user.isImpersonated() + ")"));
+            LOG.debug("{}: checking permissions for user {}", actionClass.getName(), user == null ? "<null>" : user.getName() + " (impersonated=" + user.isImpersonated() + ")");
 
         if (!actionClass.isAnnotationPresent(IgnoresForbiddenProjectCheck.class))
             c.throwIfForbiddenProject(user);
@@ -172,14 +172,14 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);
         if (requiresSiteAdmin && !user.hasSiteAdminPermission())
         {
-            LOG.debug(actionClass.getName() + ": action requires site admin permissions");
+            LOG.debug("{}: action requires site admin permissions", actionClass.getName());
             throw new UnauthorizedException();
         }
 
         boolean requiresLogin = actionClass.isAnnotationPresent(RequiresLogin.class);
         if (requiresLogin && user.isGuest())
         {
-            LOG.debug(actionClass.getName() + ": action requires login (non-guest)");
+            LOG.debug("{}: action requires login (non-guest)", actionClass.getName());
             throw new UnauthorizedException();
         }
 
@@ -224,7 +224,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         if (!SecurityManager.hasAllPermissions(this.getClass().getName()+"_checkActionPermissions",
                 c, user, permissionsRequired, contextualRoles))
         {
-            LOG.debug(actionClass.getName() + ": action requires all permissions: " + permissionsRequired);
+            LOG.debug("{}: action requires all permissions: {}", actionClass.getName(), permissionsRequired);
             throw new UnauthorizedException();
         }
 
@@ -241,7 +241,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             if (!SecurityManager.hasAnyPermissions(this.getClass().getName() + "_checkActionPermissions",
                     c, user, permissionsAnyOf, contextualRoles))
             {
-                LOG.debug(actionClass.getName() + ": action requires any permissions: " + permissionsAnyOf);
+                LOG.debug("{}: action requires any permissions: {}", actionClass.getName(), permissionsAnyOf);
                 throw new UnauthorizedException();
             }
         }

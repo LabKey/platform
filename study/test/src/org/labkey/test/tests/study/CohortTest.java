@@ -654,7 +654,7 @@ public class CohortTest extends BaseWebDriverTest
         // we should not see the "enrolled" text in the participant list status message if no participants are unenrolled
         if (!expectEnrolledText)
         {
-            assertTrue("Should not see text: enrolled", !statusText.contains("enrolled"));
+            assertFalse("Should not see text: enrolled", statusText.contains("enrolled"));
         }
         else
         {

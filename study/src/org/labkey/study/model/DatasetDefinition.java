@@ -853,7 +853,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             transaction.commit();
 
             time.stop();
-            _log.debug("purgeDataset " + getDisplayString() + " " + DateUtil.formatDuration(time.getTotal()/1000));
+            _log.debug("purgeDataset {} {}", getDisplayString(), DateUtil.formatDuration(time.getTotal() / 1000));
         }
 
         return count;
@@ -1553,7 +1553,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
                 if (col == null)
                 {
-                    _log.error("didn't find column for property: " + p.getPropertyURI());
+                    _log.error("didn't find column for property: {}", p.getPropertyURI());
                     continue;
                 }
 
@@ -1984,16 +1984,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
     public DomainKind<DatasetDomainKindProperties> getDomainKind()
     {
-        switch (getStudy().getTimepointType())
+        return switch (getStudy().getTimepointType())
         {
-            case VISIT:
-                return new VisitDatasetDomainKind();
-            case DATE:
-            case CONTINUOUS:
-                return new DateDatasetDomainKind();
-            default:
-                return null;
-        }
+            case VISIT -> new VisitDatasetDomainKind();
+            case DATE, CONTINUOUS -> new DateDatasetDomainKind();
+            default -> null;
+        };
     }
 
 
@@ -2312,7 +2308,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             if (errors.hasErrors())
                 throw errors;
 
-            _log.debug("imported " + getName() + " : " + DateUtil.formatDuration(Math.max(0,end-start)));
+            _log.debug("imported {} : {}", getName(), DateUtil.formatDuration(Math.max(0, end - start)));
             transaction.commit();
             if (logger != null) logger.debug("commit complete");
 
@@ -2735,7 +2731,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             return null;
         List<Map<String, Object>> rows = getDatasetRows(u, Collections.singleton(lsid));
         assert rows.size() <= 1 : "Expected zero or one matching row, but found " + rows.size();
-        return rows.isEmpty() ? null : rows.get(0);
+        return rows.isEmpty() ? null : rows.getFirst();
     }
 
 
@@ -2856,9 +2852,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 DomainDescriptor domainDescriptor = OntologyManager.getDomainDescriptor(domain.getTypeId());
                 if (domainDescriptor != null)
                 {
-                    _log.error("Likely domain project/container mismatch for " + domain + ". Container: " + domainDescriptor.getContainer().getPath() + ", marked as project: " + domainDescriptor.getProject().getPath());
+                    _log.error("Likely domain project/container mismatch for {}. Container: {}, marked as project: {}", domain, domainDescriptor.getContainer().getPath(), domainDescriptor.getProject().getPath());
                 }
-                _log.error("Failed to delete orphaned dataset domain " + domain + " in container " + domain.getContainer().getPath(), x);
+                _log.error("Failed to delete orphaned dataset domain {} in container {}", domain, domain.getContainer().getPath(), x);
             }
         }
     }

@@ -22,7 +22,6 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiQueryResponse;
@@ -525,14 +524,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                     DbSchema dbschema = table.getSchema();
                     try (DbScope.Transaction transaction = dbschema.getScope().ensureTransaction())
                     {
-                        TableViewForm tvf = new TableViewForm(table)
-                        {
-                            @Override
-                            public String getFormFieldName(@NotNull ColumnInfo column)
-                            {
-                                return column.getName();
-                            }
-                        };
+                        TableViewForm tvf = new TableViewForm(table);
                         Survey survey = getSurvey(form);
 
                         tvf.setViewContext(getViewContext());
@@ -566,7 +558,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                             List<Throwable> updateErrors = SurveyManager.get().fireBeforeUpdateSurveyResponses(getContainer(), getUser(), survey);
                             if (!updateErrors.isEmpty())
                             {
-                                Throwable first = updateErrors.get(0);
+                                Throwable first = updateErrors.getFirst();
                                 response.put("errorInfo", first.getMessage());
                                 response.put("success", false);
                             }
@@ -680,7 +672,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                     throw batchErrors;
 
                 assert(updated.size() == 1);
-                row = updated.get(0);
+                row = updated.getFirst();
             }
             else
             {
@@ -695,7 +687,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                 if (batchErrors.hasErrors())
                     throw batchErrors;
                 assert(updated.size() == 1);
-                row = updated.get(0);
+                row = updated.getFirst();
             }
             return row;
         }
@@ -871,16 +863,11 @@ public class SurveyController extends SpringActionController implements SurveyUr
                                 {
                                     TableViewForm tvf = new TableViewForm(table)
                                     {
-                                        @Override
-                                        public String getFormFieldName(@NotNull ColumnInfo column)
-                                        {
-                                            return column.getName();
-                                        }
                                     };
 
                                     tvf.setViewContext(getViewContext());
 
-                                    AttachmentFile af = files.get(0);
+                                    AttachmentFile af = files.getFirst();
                                     tvf.setTypedValues(Collections.singletonMap(form.getQuestionName(), af), false);
 
                                     // add the survey answer row pk

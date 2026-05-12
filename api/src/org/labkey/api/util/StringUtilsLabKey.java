@@ -188,11 +188,11 @@ public class StringUtilsLabKey
         List<String> list = new ArrayList<>(strings);
 
         if (strings.size() == 1)
-            return list.get(0);
+            return list.getFirst();
 
         Collections.sort(list);
-        String first = list.get(0);
-        String last = list.get(list.size() - 1);
+        String first = list.getFirst();
+        String last = list.getLast();
         int i = 0;
 
         while (i < Math.min(first.length(), last.length()) && first.charAt(i) == last.charAt(i))

@@ -422,7 +422,7 @@ public class StringExpressionFactory
                     break;
 
                 // Add in reverse order since we are parsing from back to front
-                formats.add(0, format);
+                formats.addFirst(format);
 
                 value = value.substring(0, colon);
             }
@@ -893,7 +893,7 @@ public class StringExpressionFactory
             ArrayList<StringPart> parts = getParsedExpression();
             if (parts.size() == 1)
             {
-                StringExpressionFactory.StringPart part = parts.get(0);
+                StringExpressionFactory.StringPart part = parts.getFirst();
                 try
                 {
                     return nullFilter(part.getValue(context), part);
@@ -1312,7 +1312,7 @@ public class StringExpressionFactory
             // special case if entire pattern consists of one substitution, don't encode
             if (1 == _parsedExpression.size())
             {
-                StringPart p = _parsedExpression.get(0);
+                StringPart p = _parsedExpression.getFirst();
                 if (p instanceof FieldPart fp)
                 {
                     _parsedExpression.set(0, new FieldPart(fp._key, SubstitutionFormat.passThrough));

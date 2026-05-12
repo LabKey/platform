@@ -113,7 +113,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
         }
 
         @Override
-        public void putAll(Map<? extends K, ? extends Integer> map)
+        public void putAll(@NotNull Map<? extends K, ? extends Integer> map)
         {
             _map.putAll(map);
         }
@@ -125,19 +125,19 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
         }
 
         @Override
-        public Set<K> keySet()
+        public @NotNull Set<K> keySet()
         {
             return _map.keySet();
         }
 
         @Override
-        public Collection<Integer> values()
+        public @NotNull Collection<Integer> values()
         {
             return _map.values();
         }
 
         @Override
-        public Set<Entry<K, Integer>> entrySet()
+        public @NotNull Set<Entry<K, Integer>> entrySet()
         {
             return _map.entrySet();
         }
@@ -245,7 +245,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
 
     /* ArrayList order please */
     @Override
-    public Set<Entry<K, V>> entrySet()
+    public @NotNull Set<Entry<K, V>> entrySet()
     {
         // This is not particularly fast, but that's probably OK
         // CONSIDER: use a LinkedHashMap to implement FindMap and skip this alignment step
@@ -292,7 +292,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
 
 
     @Override
-    public Collection<V> values()
+    public @NotNull Collection<V> values()
     {
         ArrayList<V> a = new ArrayList<>(size());
         for (Object o : _row)

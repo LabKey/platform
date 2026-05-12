@@ -56,7 +56,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     private FileLike _originalFileLocation = null;
 
     @Override
-    public HttpView<?> getView(ContextType context) throws ExperimentException
+    public HttpView<?> getView(ContextType context)
     {
         return new HtmlView(getHTML(context));
     }
@@ -107,7 +107,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
         {
             return Collections.emptyMap();
         }
-        return files.get(0);
+        return files.getFirst();
     }
 
     @Override
@@ -124,7 +124,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
         {
             return "";
         }
-        Map<String, FileLike> files = allFiles.get(0);
+        Map<String, FileLike> files = allFiles.getFirst();
         return (files.size() > 1 ? files.size() + " files" : "One file ") + " from the Data Pipeline in " + files.values().iterator().next().getParent();
     }
 
@@ -174,7 +174,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
             throw new FileNotFoundException("No files from the pipeline directory have been selected");
         }
 
-        Map<String, FileLike> currentFiles = files.get(0);
+        Map<String, FileLike> currentFiles = files.getFirst();
         if (!currentFiles.isEmpty())
         {
             _originalFileLocation = currentFiles.values().iterator().next().getParent();
@@ -194,7 +194,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     @Override
     protected FileLike getFilePath(ContextType context, @Nullable ExpRun run, FileLike tempDirFile)
     {
-        Map<String, FileLike> files = getFileQueue(context).get(0);
+        Map<String, FileLike> files = getFileQueue(context).getFirst();
         for (FileLike file : files.values())
         {
             if (file.getName().equals(tempDirFile.getName()))
@@ -219,7 +219,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
         List<Map<String, FileLike>> files = getFileQueue(context);
         if (!files.isEmpty())
         {
-            files.remove(0);
+            files.removeFirst();
         }
         return result;
     }

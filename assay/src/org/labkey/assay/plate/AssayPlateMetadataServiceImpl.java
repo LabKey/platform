@@ -273,7 +273,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         List<? extends Plate> plates = getPlatesForPlateSet(container, user, plateSetId, protocol);
         if (plates.isEmpty())
             throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
-        PlateSet plateSet = plates.get(0).getPlateSet();
+        PlateSet plateSet = plates.getFirst().getPlateSet();
 
         List<Map<String, Object>> rows = _parsePlateData(container, user, data, provider, protocol, plateSet, plates, dataFile, settings);
 
@@ -397,7 +397,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         // be able to proceed in that case by just passing through all run results to the transform script for the run being replaced.
         if (!rows.isEmpty())
         {
-            Object plateObj = rows.get(0).get(AssayResultDomainKind.Column.Plate.name());
+            Object plateObj = rows.getFirst().get(AssayResultDomainKind.Column.Plate.name());
             if (plateObj instanceof String)
                 plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.Column.Plate.name(), PlateTable.Column.PlateId.name());
         }
@@ -534,7 +534,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             return true;
 
         // only the tabular formats will have the well location field
-        return !data.get(0).containsKey(AssayResultDomainKind.Column.WellLocation.name()) && !data.get(0).containsKey("Well Location");
+        return !data.getFirst().containsKey(AssayResultDomainKind.Column.WellLocation.name()) && !data.getFirst().containsKey("Well Location");
     }
 
     private List<Map<String, Object>> parsePlateRows(
@@ -549,7 +549,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         importAliases.add(AssayResultDomainKind.Column.Plate.name());
 
         // check whether the data rows have plate identifiers
-        String plateIdField = data.get(0).keySet().stream().filter(importAliases::contains).findFirst().orElse(null);
+        String plateIdField = data.getFirst().keySet().stream().filter(importAliases::contains).findFirst().orElse(null);
         boolean hasPlateIdentifiers = plateIdField != null && (data.stream().filter(row -> row.get(plateIdField) != null).findFirst().orElse(null) != null);
 
         if (hasPlateIdentifiers)
@@ -562,7 +562,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (types.size() > 1)
             throw new ExperimentException(String.format(ERROR_MESSAGE, "the plate set contains different plate types"));
 
-        PlateType type = types.stream().toList().get(0);
+        PlateType type = types.stream().toList().getFirst();
         int plateSize = type.getRows() * type.getColumns();
         if ((data.size() % plateSize) != 0)
             throw new ExperimentException(String.format(ERROR_MESSAGE, "the number of rows in the data (" + data.size() + ") does not fit evenly and would result in a plate with partial wells filled"));
@@ -671,10 +671,10 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             // otherwise a single annotation can only be a plate identifier
             if (annotations.size() == 1)
             {
-                String annotation = annotations.get(0);
+                String annotation = annotations.getFirst();
                 if (plates.size() == 1 && measureAliases != null && measureAliases.contains(annotation))
                 {
-                    _plate = plates.get(0);
+                    _plate = plates.getFirst();
                     _measureName = annotation;
                 }
                 else
@@ -781,7 +781,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 throw new ExperimentException("There are multiple measures specified in the data file but the assay protocol does not define any measures");
         }
 
-        String defaultMeasureName = measureProperties.get(0).getName();
+        String defaultMeasureName = measureProperties.getFirst().getName();
 
         // if any of the plateGrids keys have plate identifiers, import using those identifiers
         List<Map<String, Object>> dataRows = new ArrayList<>();
@@ -1756,7 +1756,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             PlateSet plateSet = PlateManager.get().createPlateSet(container, user, new PlateSetImpl(), plates, null, null);
             List<? extends Plate> plateSetPlates = PlateManager.get().getPlatesForPlateSet(plateSet);
             assertEquals("Expected two plates to be created.", 2, plateSetPlates.size());
-            Plate plate = plateSetPlates.get(0);
+            Plate plate = plateSetPlates.getFirst();
 
             PlateGridInfo gridInfo = new PlateGridInfo(
                     new PlateUtils.GridInfo(new double[8][12], List.of(plate.getPlateId())),

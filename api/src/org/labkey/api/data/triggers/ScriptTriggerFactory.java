@@ -109,7 +109,7 @@ public class ScriptTriggerFactory implements TriggerFactory
             scripts.addAll(titleTriggers);
 
             if (!titleTriggers.isEmpty())
-                LOG.warn("Rename the file from using title - " + title + ".js to use table name - " + name);
+                LOG.warn("Rename the file from using title - {}.js to use table name - {}", title, name);
 
         }
 

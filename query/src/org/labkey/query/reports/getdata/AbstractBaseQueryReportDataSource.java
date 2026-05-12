@@ -40,7 +40,7 @@ public abstract class AbstractBaseQueryReportDataSource implements QueryReportDa
         TableInfo table = sourceQueryDef.getTable(getSchema(), errors, true);
         if (!errors.isEmpty())
         {
-            throw errors.get(0);
+            throw errors.getFirst();
         }
         return QueryService.get().getColumns(table, requiredInputs);
     }

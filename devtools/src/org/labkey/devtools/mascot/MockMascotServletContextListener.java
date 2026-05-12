@@ -14,9 +14,4 @@ public class MockMascotServletContextListener implements ServletContextListener
         ServletRegistration.Dynamic servlet = servletContextEvent.getServletContext().addServlet("MockMascotServlet", MockMascotServlet.class);
         servlet.addMapping("/mockmascot/*");
     }
-
-    @Override
-    public void contextDestroyed(ServletContextEvent servletContextEvent)
-    {
-    }
 }

@@ -558,7 +558,7 @@ public class MultiChoice
         //
 
         @Override
-        public void free() throws SQLException
+        public void free()
         {
 
         }
@@ -576,49 +576,49 @@ public class MultiChoice
         }
 
         @Override
-        public Object getArray() throws SQLException
+        public Object getArray()
         {
             return toArray(new String[size()]);
         }
 
         @Override
-        public Object getArray(Map<String, Class<?>> map) throws SQLException
+        public Object getArray(Map<String, Class<?>> map)
         {
             return toArray(new String[size()]);
         }
 
         @Override
-        public Object getArray(long index, int count) throws SQLException
+        public Object getArray(long index, int count)
         {
             return subList((int) index, (int) index + count).toArray(new String[0]);
         }
 
         @Override
-        public Object getArray(long index, int count, Map<String, Class<?>> map) throws SQLException
+        public Object getArray(long index, int count, Map<String, Class<?>> map)
         {
             return subList((int) index, (int) index + count).toArray(new String[0]);
         }
 
         @Override
-        public ResultSet getResultSet() throws SQLException
+        public ResultSet getResultSet()
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public ResultSet getResultSet(Map<String, Class<?>> map) throws SQLException
+        public ResultSet getResultSet(Map<String, Class<?>> map)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public ResultSet getResultSet(long index, int count) throws SQLException
+        public ResultSet getResultSet(long index, int count)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public ResultSet getResultSet(long index, int count, Map<String, Class<?>> map) throws SQLException
+        public ResultSet getResultSet(long index, int count, Map<String, Class<?>> map)
         {
             throw new UnsupportedOperationException();
         }
@@ -773,7 +773,7 @@ public class MultiChoice
             {
                 var maps = csvLoader.load();
                 assertEquals(1, maps.size());
-                Map<String,Object> map = maps.get(0);
+                Map<String,Object> map = maps.getFirst();
                 assertTrue(map.get("column") instanceof String);
                 String value = (String) map.get("column");
                 assertEquals(expected, Array.from(value));
@@ -782,7 +782,7 @@ public class MultiChoice
             {
                 var maps = tsvLoader.load();
                 assertEquals(1, maps.size());
-                Map<String,Object> map = maps.get(0);
+                Map<String,Object> map = maps.getFirst();
                 assertTrue(map.get("column") instanceof String);
                 String value = (String) map.get("column");
                 assertEquals(expected, Array.from(value));

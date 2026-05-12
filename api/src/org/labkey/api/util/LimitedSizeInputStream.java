@@ -1,5 +1,7 @@
 package org.labkey.api.util;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -28,13 +30,13 @@ public class LimitedSizeInputStream extends InputStream
     }
 
     @Override
-    public int read(byte[] b) throws IOException
+    public int read(byte @NotNull [] b) throws IOException
     {
         return read(b, 0, b.length);
     }
 
     @Override
-    public int read(byte[] b, int off, int len) throws IOException
+    public int read(byte @NotNull [] b, int off, int len) throws IOException
     {
         int i = original.read(b, off, len);
         if (i >= 0) incrementCounter(i);

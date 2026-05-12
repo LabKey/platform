@@ -32,6 +32,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.SheetVisibility;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -416,7 +417,7 @@ public class JxlWorkbook implements Workbook
     }
 
     @Override
-    public Iterator<Sheet> iterator()
+    public @NotNull Iterator<Sheet> iterator()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

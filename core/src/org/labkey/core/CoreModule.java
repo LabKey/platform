@@ -1684,7 +1684,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 // using guest user since the server startup doesn't have a true user (this will be used for audit events)
                 ContainerManager.getHomeContainer().setFolderType(folderType, User.guest);
             else
-                LOG.error("Unable to find folder type for home project during server startup: " + folderTypeEntry.getValue());
+                LOG.error("Unable to find folder type for home project during server startup: {}", folderTypeEntry.getValue());
         }
 
         StartupPropertyEntry resetPermissionsEntry = props.get(homeProjectResetPermissions);

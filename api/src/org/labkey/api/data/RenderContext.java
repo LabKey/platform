@@ -21,8 +21,8 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.query.CustomView;
@@ -353,7 +353,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (!ignoredAggregateFilters.equals(_ignoredColumnFilters))
         {
             // This should never happen, but if it did, the totals wouldn't match, so we won't calculate them.
-            _log.error("Aggregate filter columns do not match main.  Aggregate:" + ignoredAggregateFilters + " Main:" + _ignoredColumnFilters);
+            _log.error("Aggregate filter columns do not match main.  Aggregate:{} Main:{}", ignoredAggregateFilters, _ignoredColumnFilters);
             return Collections.emptyMap();
         }
 
@@ -505,7 +505,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         }
         else if (selectorColumns.size() == 1)
         {
-            clause = new SimpleFilter.InClause(FieldKey.fromString(selectorColumns.get(0)), selected, true);
+            clause = new SimpleFilter.InClause(FieldKey.fromString(selectorColumns.getFirst()), selected, true);
         }
         else
         {
@@ -640,7 +640,7 @@ public class RenderContext implements Map<String, Object>, Serializable
      * Overrides values() to combine keys from map and current row
      */
     @Override
-    public Collection<Object> values()
+    public @NotNull Collection<Object> values()
     {
         Collection<Object> values = _extra.values();
         if (null != _row)
@@ -656,7 +656,7 @@ public class RenderContext implements Map<String, Object>, Serializable
      * Overrides entrySet to combine entries from map and current row
      */
     @Override
-    public Set<Map.Entry<String, Object>> entrySet()
+    public @NotNull Set<Map.Entry<String, Object>> entrySet()
     {
         Set<Map.Entry<String, Object>> entrySet = _extra.entrySet();
 
@@ -673,7 +673,7 @@ public class RenderContext implements Map<String, Object>, Serializable
      * Overrides keySet to combine keys from map and current row
      */
     @Override
-    public Set<String> keySet()
+    public @NotNull Set<String> keySet()
     {
         Set<String> keySet = _extra.keySet();
 
@@ -764,7 +764,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     {
         if (_row != null && _row.containsKey(key))
         {
-            _log.warn("Attempted to update '" + key + "' in row");
+            _log.warn("Attempted to update '{}' in row", key);
             return null;
         }
 
@@ -776,7 +776,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     {
         if (_row != null && _row.containsKey(key))
         {
-            _log.warn("Attempted to remove '" + key + "' from row");
+            _log.warn("Attempted to remove '{}' from row", key);
             return null;
         }
 
@@ -784,7 +784,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     }
 
     @Override
-    public void putAll(Map<? extends String, ? extends Object> m)
+    public void putAll(@NotNull Map<? extends String, ? extends Object> m)
     {
         throw new UnsupportedOperationException();
     }

@@ -63,9 +63,9 @@ public class MapLoader extends DataLoader
         List<Object[]> lineFields = new ArrayList<>(rows.size());
 
         Set<String> colNames;
-        if (!rows.isEmpty() && rows.get(0) instanceof ArrayListMap)
+        if (!rows.isEmpty() && rows.getFirst() instanceof ArrayListMap)
         {
-            colNames = ((ArrayListMap)rows.get(0)).getFindMap().keySet();
+            colNames = ((ArrayListMap)rows.getFirst()).getFindMap().keySet();
         }
         else
         {
@@ -216,7 +216,7 @@ public class MapLoader extends DataLoader
             assertEquals("other",  cd[4].name); assertEquals(String.class, cd[4].clazz);
 
             List<Map<String, Object>> data = loader.load();
-            assertEquals("bob", data.get(0).get("name"));
+            assertEquals("bob", data.getFirst().get("name"));
 
             // "1/2/2006" will be parsed based on the current date parsing mode (US vs. non-US), so change the expected value based on the setting
             DateParsingMode mode = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode();
@@ -224,13 +224,13 @@ public class MapLoader extends DataLoader
 
             assertEquals(cal.getTime(), data.get(0).get("date"));
             assertEquals(1.1, data.get(0).get("number"));
-            assertEquals(null, data.get(1).get("number"));
+            assertNull(data.get(1).get("number"));
             assertEquals(1.2, data.get(2).get("number"));
 
             // ensure keys are present for all rows even if no value provided
-            assertEquals(null, data.get(0).get("other"));
+            assertNull(data.get(0).get("other"));
             assertEquals("foo", data.get(1).get("other"));
-            assertEquals(null, data.get(2).get("other"));
+            assertNull(data.get(2).get("other"));
 
             // 11374: make sure we don't load inactive columns
             assertEquals(4, data.get(0).size());

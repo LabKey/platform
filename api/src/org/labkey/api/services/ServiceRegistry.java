@@ -15,8 +15,8 @@
  */
 package org.labkey.api.services;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.ModuleLoader;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -181,7 +181,7 @@ public class ServiceRegistry
         AbstractRefreshableWebApplicationContext ac = new AbstractRefreshableWebApplicationContext()
         {
             @Override
-            protected void loadBeanDefinitions(DefaultListableBeanFactory config) throws BeansException
+            protected void loadBeanDefinitions(@NotNull DefaultListableBeanFactory config) throws BeansException
             {
                 for (_ServiceDef sd : _servicesByClass.values())
                 {

@@ -59,7 +59,7 @@ public class EngineManager  {
       try {
         RenderEngine engine = iterator.next();
         registerEngine(engine);
-        log.debug("Loaded RenderEngine: " + engine.getClass().getName());
+          log.debug("Loaded RenderEngine: {}", engine.getClass().getName());
       } catch (Exception e) {
         log.warn("EngineManager: unable to load RenderEngine", e);
       }

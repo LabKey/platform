@@ -241,7 +241,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     @NotNull
     List<AnalysisScript> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope);
 
-    void setSaveScriptFiles(ExpProtocol protocol, boolean save) throws ExperimentException;
+    void setSaveScriptFiles(ExpProtocol protocol, boolean save);
     boolean isSaveScriptFiles(ExpProtocol protocol);
 
     /** Whether the provider is capable of letting users edit existing result rows */
