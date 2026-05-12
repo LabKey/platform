@@ -25,6 +25,7 @@ import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 import org.mozilla.javascript.Wrapper;
+import org.mozilla.javascript.lc.type.TypeInfoFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,7 +68,6 @@ public class ScriptableList extends NativeJavaObject {
      * @param obj the list, possibly wrapped
      */
     private ScriptableList(Scriptable scope, Object obj) {
-        this.parent = scope;
         if (obj instanceof Wrapper) {
             obj = ((Wrapper) obj).unwrap();
         }
@@ -82,7 +82,8 @@ public class ScriptableList extends NativeJavaObject {
         } else {
             throw new EvaluatorException("Invalid argument to ScriptableList(): " + obj);
         }
-        this.staticType = this.list.getClass();
+        this.parent = scope;
+        this.staticType = TypeInfoFactory.GLOBAL.create(this.list.getClass());
         initMembers();
         initPrototype(scope);
     }
@@ -94,7 +95,7 @@ public class ScriptableList extends NativeJavaObject {
      * @param list the list instance
      */
     public ScriptableList(Scriptable scope, List<Object> list) {
-        super(scope, list, list.getClass());
+        super(scope, list, TypeInfoFactory.GLOBAL.create(list.getClass()));
         this.list = list;
         initPrototype(scope);
     }

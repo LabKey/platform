@@ -30,6 +30,8 @@ import org.mozilla.javascript.NativeJavaClass;
 import org.mozilla.javascript.ScriptRuntime;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.Symbol;
+import org.mozilla.javascript.SymbolScriptable;
 import org.mozilla.javascript.Wrapper;
 
 import javax.script.Bindings;
@@ -47,7 +49,7 @@ import java.util.Map;
  * @since 1.6
  */
 // kevink: changes marked
-final class ExternalScriptable implements Scriptable
+final class ExternalScriptable implements Scriptable, SymbolScriptable
 {
     /* Underlying ScriptContext that we use to store
      * named variables of this scope.
@@ -387,11 +389,9 @@ final class ExternalScriptable implements Scriptable
             Object v = ScriptableObject.getProperty(this, methodName);
             if (!(v instanceof Function fun))
                 continue;
-            Context cx = RhinoScriptEngine.enterContext();
-            try {
+            try (Context cx = Context.enter())
+            {
                 v = fun.call(cx, fun.getParentScope(), this, args);
-            } finally {
-                cx.exit();
             }
             if (v != null) {
                 if (!(v instanceof Scriptable)) {
@@ -415,6 +415,28 @@ final class ExternalScriptable implements Scriptable
         String arg = (typeHint == null) ? "undefined" : typeHint.getName();
         throw Context.reportRuntimeError(
                   "Cannot find default value for object " + arg);
+    }
+
+    @Override
+    public Object get(Symbol key, Scriptable start)
+    {
+        return NOT_FOUND;
+    }
+
+    @Override
+    public boolean has(Symbol key, Scriptable start)
+    {
+        return false;
+    }
+
+    @Override
+    public void put(Symbol key, Scriptable start, Object value)
+    {
+    }
+
+    @Override
+    public void delete(Symbol key)
+    {
     }
 
     /**

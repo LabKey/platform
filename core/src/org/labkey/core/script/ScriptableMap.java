@@ -25,6 +25,7 @@ import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 import org.mozilla.javascript.Wrapper;
+import org.mozilla.javascript.lc.type.TypeInfoFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -64,7 +65,6 @@ public class ScriptableMap extends NativeJavaObject {
     }
 
     private ScriptableMap(Scriptable scope, Object obj, boolean reflect) {
-        this.parent = scope;
         this.reflect = reflect;
         if (obj instanceof Wrapper) {
             obj = ((Wrapper) obj).unwrap();
@@ -87,14 +87,15 @@ public class ScriptableMap extends NativeJavaObject {
             throw new EvaluatorException("Invalid argument to ScriptableMap(): " + obj);
         }
         this.javaObject = this.map;
-        this.staticType = this.map.getClass();
+        this.parent = scope;
+        this.staticType = TypeInfoFactory.GLOBAL.create(this.map.getClass());
         initMembers();
         initPrototype(scope);
 
     }
 
     public ScriptableMap(Scriptable scope, Map<Object, Object> map) {
-        super(scope, map, map.getClass());
+        super(scope, map, TypeInfoFactory.GLOBAL.create(map.getClass()));
         this.map = map;
         initPrototype(scope);
     }

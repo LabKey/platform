@@ -15,12 +15,11 @@
  */
 package org.labkey.core.script;
 
-import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -54,9 +53,9 @@ import org.mozilla.javascript.EcmaError;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.JavaScriptException;
-import org.mozilla.javascript.LazilyLoadedCtor;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeJavaObject;
+import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.RhinoException;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
@@ -68,6 +67,7 @@ import org.mozilla.javascript.commonjs.module.provider.ModuleSource;
 import org.mozilla.javascript.commonjs.module.provider.ModuleSourceProvider;
 import org.mozilla.javascript.commonjs.module.provider.ModuleSourceProviderBase;
 import org.mozilla.javascript.commonjs.module.provider.SoftCachingModuleScriptProvider;
+import org.mozilla.javascript.lc.type.TypeInfo;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -220,14 +220,14 @@ public final class RhinoService
                 .mapToInt(Map::size)
                 .sum();
 
-            LOG.info(scriptCount + " scripts in all modules");
+            LOG.info("{} scripts in all modules", scriptCount);
 
             // Load all the top-level script timestamps to ensure no exceptions and get a count
             int timestampCount = LabKeyModuleSourceProvider.TOP_LEVEL_SCRIPT_CACHE.streamAllResourceMaps()
                 .mapToInt(Map::size)
                 .sum();
 
-            LOG.info(timestampCount + " top-level script timestamps in all modules");
+            LOG.info("{} top-level script timestamps in all modules", timestampCount);
 
             assertEquals("Mismatch in counts for JavaScript scripts vs. script timestamps", scriptCount, timestampCount);
 
@@ -244,8 +244,13 @@ public final class RhinoService
     }
 }
 
-class RhinoFactory extends RhinoScriptEngineFactory implements ScriptService
+class RhinoFactory implements ScriptService
 {
+    private static final List<String> NAMES = List.of("rhino", "Rhino", "javascript", "JavaScript");
+    private static final List<String> EXTENSIONS = List.of("js");
+    private static final List<String> MIME_TYPES = List.of(
+        "application/javascript", "application/ecmascript", "text/javascript", "text/ecmascript");
+
     @Override
     public RhinoEngine getScriptEngine()
     {
@@ -256,6 +261,73 @@ class RhinoFactory extends RhinoScriptEngineFactory implements ScriptService
     public ScriptReference compile(Module module, Path path)
     {
         return ScriptReferenceImpl.get(module, path);
+    }
+
+    @Override
+    public String getEngineName() { return "rhino"; }
+
+    @Override
+    public String getEngineVersion()
+    {
+        try (Context cx = Context.enter())
+        {
+            return cx.getImplementationVersion();
+        }
+    }
+
+    @Override
+    public List<String> getExtensions() { return EXTENSIONS; }
+
+    @Override
+    public List<String> getMimeTypes() { return MIME_TYPES; }
+
+    @Override
+    public List<String> getNames() { return NAMES; }
+
+    @Override
+    public String getLanguageName() { return "javascript"; }
+
+    @Override
+    public String getLanguageVersion() { return String.valueOf(Context.VERSION_ES6); }
+
+    @Override
+    public Object getParameter(String key)
+    {
+        return switch (key)
+        {
+            case ScriptEngine.ENGINE, ScriptEngine.NAME -> getEngineName();
+            case ScriptEngine.ENGINE_VERSION -> getEngineVersion();
+            case ScriptEngine.LANGUAGE -> getLanguageName();
+            case ScriptEngine.LANGUAGE_VERSION -> getLanguageVersion();
+            default -> null;
+        };
+    }
+
+    @Override
+    public String getMethodCallSyntax(String obj, String m, String... args)
+    {
+        StringBuilder sb = new StringBuilder(obj).append('.').append(m).append('(');
+        for (int i = 0; i < args.length; i++)
+        {
+            if (i > 0) sb.append(',');
+            sb.append(args[i]);
+        }
+        return sb.append(");").toString();
+    }
+
+    @Override
+    public String getOutputStatement(String toDisplay)
+    {
+        return "print('" + toDisplay + "');";
+    }
+
+    @Override
+    public String getProgram(String... statements)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (String stmt : statements)
+            sb.append(stmt).append(";\n");
+        return sb.toString();
     }
 }
 
@@ -283,23 +355,18 @@ class ScriptReferenceImpl implements ScriptReference
         private @Nullable CompiledScript compile(Resource r, Module module)
         {
             RhinoEngine engine = RhinoService.RHINO_FACTORY.getScriptEngine();
-            Context ctx = Context.enter();
 
-            LOG.debug("Compiling script '" + r.toString() + "'");
+            LOG.debug("Compiling script '{}'", r.toString());
 
-            try (Reader reader = Readers.getReader(r.getInputStream()))
+            try (Context _ = Context.enter(); Reader reader = Readers.getReader(r.getInputStream()))
             {
                 engine.put(ScriptEngine.FILENAME, r.getPath().toString());
                 return engine.compile(reader);
             }
             catch (Throwable t)
             {
-                LOG.error("Failed to compile script '" + r + "': " + t.getMessage());
+                LOG.error("Failed to compile script '{}': {}", r, t.getMessage());
                 return null;
-            }
-            finally
-            {
-                Context.exit();
             }
         }
     };
@@ -372,17 +439,12 @@ class ScriptReferenceImpl implements ScriptReference
     @Override
     public <T> T eval(Class<T> resultType, Map<String, ?> map) throws ScriptException
     {
-        Context ctx = Context.enter();
-        try
+        try (Context _ = Context.enter())
         {
             Object result = eval(map);
             if (result == null)
                 return null;
             return (T)ScriptUtils.jsToJava(result, resultType);
-        }
-        finally
-        {
-            Context.exit();
         }
     }
 
@@ -395,8 +457,7 @@ class ScriptReferenceImpl implements ScriptReference
     @Override
     public Object eval(Map<String, ?> map) throws ScriptException
     {
-        Context ctx = Context.enter();
-        try
+        try (Context _ = Context.enter())
         {
             ScriptContext ctxt = getContext();
             if (map != null)
@@ -412,14 +473,10 @@ class ScriptReferenceImpl implements ScriptReference
             }
             ctxt.getBindings(ScriptContext.ENGINE_SCOPE).put(ScriptEngine.FILENAME, _path.toString());
 
-            LOG.debug("Evaluating script '" + _path + "'");
+            LOG.debug("Evaluating script '{}'", _path);
             Object result = _script.eval(ctxt);
             _evaluated = true;
             return result;
-        }
-        finally
-        {
-            Context.exit();
         }
     }
 
@@ -453,18 +510,13 @@ class ScriptReferenceImpl implements ScriptReference
         if (!_evaluated)
             eval();
 
-        Context ctx = Context.enter();
-        try
+        try (Context _ = Context.enter())
         {
-            LOG.debug("Invoking method '" + name + "' in script '" + _path.toString() + "'");
+            LOG.debug("Invoking method '{}' in script '{}'", name, _path.toString());
             Object result = _engine.invokeMethod(thiz, name, args);
             if (result == null)
                 return null;
             return (T)ScriptUtils.jsToJava(result, resultType);
-        }
-        finally
-        {
-            Context.exit();
         }
     }
 
@@ -481,20 +533,15 @@ class ScriptReferenceImpl implements ScriptReference
         if (!_evaluated)
             eval();
 
-        Context ctx = Context.enter();
-        try
+        try (Context _ = Context.enter())
         {
-            LOG.debug("Invoking method '" + name + "' in script '" + _path.toString() + "'");
+            LOG.debug("Invoking method '{}' in script '{}'", name, _path.toString());
             ScriptContext ctxt = getContext();
             Scriptable scope = _engine.getRuntimeScope(ctxt);
             Object result = _engine.invokeMethod(scope, name, args);
             if (result == null)
                 return null;
             return (T)ScriptUtils.jsToJava(result, resultType);
-        }
-        finally
-        {
-            Context.exit();
         }
     }
 
@@ -667,10 +714,10 @@ class RhinoEngine extends RhinoScriptEngine
 
     // Similar to the topLevel scope created in RhinoScriptEngine
     // except it is sealed to prevent modifications to built-in objects
-    // or adding any additional objects to the scope.  In addition, the
+    // or adding any additional objects to the scope. In addition, the
     // topLevel is cached in a WeakReference so can be shared with other
-    // instances of RhinoService and across threads.  The topLevel won't
-    // be gc'd until all of the ScriptResourceRef in the SCRIPT_CACHE are gone.
+    // instances of RhinoService and across threads. The topLevel won't
+    // be GCed until all the ScriptResourceRef in the SCRIPT_CACHE are gone.
     @Override
     protected ScriptableObject createTopLevel()
     {
@@ -688,38 +735,18 @@ class RhinoEngine extends RhinoScriptEngine
                 ModuleSourceProvider moduleSourceProvider = new LabKeyModuleSourceProvider();
                 _moduleScriptProvider = new SoftCachingModuleScriptProvider(moduleSourceProvider);
                 
-                Context cx = Context.enter();
-                cx.setLanguageVersion(Context.VERSION_1_8);
-
-                try
+                try (Context cx = Context.enter())
                 {
-                    /*
-                     * RRC - modified this code to register JSAdapter and some functions
-                     * directly, without using a separate RhinoTopLevel class
-                     */
-                    topLevel = new ImporterTopLevel(cx, false /*true*/);
-                    //topLevel = new TopLevel(cx, this, true);
+                    cx.setLanguageVersion(Context.VERSION_ES6);
+                    topLevel = new ImporterTopLevel(cx, false);
                     MemTracker.getInstance().put(topLevel);
-                    new LazilyLoadedCtor(topLevel, "JSAdapter",
-                        "com.sun.phobos.script.javascript.JSAdapter",
-                        false);
-                    /*
-                    // add top level functions
-                    String names[] = { "bindings", "scope", "sync"  };
-                    topLevel.defineFunctionProperties(names, RhinoScriptEngine.class, ScriptableObject.DONTENUM);
-                    */
 
                     initHostObjects(topLevel);
                     processAllTopLevelScripts(cx, topLevel);
 
-                    //sealStandardObjects(cx, topLevel);
                     topLevel.sealObject();
                 }
-                finally
-                {
-                    Context.exit();
-                }
-                
+
                 sharedTopLevel = new WeakReference<>(topLevel);
             }
 
@@ -746,8 +773,8 @@ class RhinoEngine extends RhinoScriptEngine
     {
         try
         {
-            ModuleScript global = _moduleScriptProvider.getModuleScript(cx, "global", null, null);
-            global.getScript().exec(cx, scope);
+            ModuleScript global = _moduleScriptProvider.getModuleScript(cx, "global", null, null, scope);
+            global.getScript().exec(cx, scope, scope);
         }
         catch (Exception e)
         {
@@ -792,8 +819,7 @@ class RhinoEngine extends RhinoScriptEngine
         // from the shared SoftCachingModuleScriptProvider.
         // NOTE: we can't install this in the topLevel since the Require instance
         // holds on to all modules that have been require()'ed.
-        Context cx = enterContext();
-        try
+        try (Context cx = Context.enter())
         {
             // See: https://github.com/LabKey/platform/pull/3902
             final Object scriptContext = ctxt.getAttribute(SERVER_CONTEXT_KEY, ScriptContext.ENGINE_SCOPE);
@@ -810,12 +836,17 @@ class RhinoEngine extends RhinoScriptEngine
                 extraModules = Map.of(ScriptTrigger.SERVER_CONTEXT_SCRIPT_NAME, scriptContextScript);
             }
 
-            Require require = new Require(cx, getTopLevel(), new WrappingModuleScriptProvider(_moduleScriptProvider, extraModules), null, null, true);
+            // Rhino 1.9.1's ModuleScope constructor passes its prototype argument to
+            // TopLevel.cacheBuiltins(), which unconditionally calls putProperty() to register
+            // __GeneratorFunction (ES6 generator support). This fails with "Cannot modify a
+            // sealed object" if the prototype is the sealed topLevel. Using a thin non-sealed
+            // wrapper with topLevel as its prototype lets cacheBuiltins write safely while
+            // still making all built-ins visible to module scripts via the prototype chain.
+            NativeObject moduleNativeScope = new NativeObject();
+            moduleNativeScope.setPrototype(getTopLevel());
+            moduleNativeScope.setParentScope(null);
+            Require require = new Require(cx, moduleNativeScope, new WrappingModuleScriptProvider(_moduleScriptProvider, extraModules), null, null, true);
             require.install(scriptable);
-        }
-        finally
-        {
-            Context.exit();
         }
 
         return scriptable;
@@ -900,9 +931,9 @@ class RhinoEngine extends RhinoScriptEngine
         }
 
         @Override
-        public ModuleScript getModuleScript(Context cx, String moduleId, URI moduleUri, Scriptable paths) throws Exception
+        public ModuleScript getModuleScript(Context cx, String moduleId, URI moduleUri, URI baseUri, Scriptable paths) throws Exception
         {
-            return(_extraModules.containsKey(moduleId) ? _extraModules.get(moduleId) : _provider.getModuleScript(cx, moduleId, moduleUri, paths));
+            return(_extraModules.containsKey(moduleId) ? _extraModules.get(moduleId) : _provider.getModuleScript(cx, moduleId, moduleUri, baseUri, paths));
         }
     }
 }
@@ -1048,7 +1079,7 @@ class SandboxContextFactory extends ContextFactory
         private SandboxContext(SandboxContextFactory factory)
         {
             super(factory);
-            setLanguageVersion(Context.VERSION_1_8);
+            setLanguageVersion(Context.VERSION_ES6); // TODO: New version for now. Make configurable.
             startTime = HeartBeat.currentTimeMillis();
         }
     }
@@ -1063,7 +1094,7 @@ class SandboxContextFactory extends ContextFactory
         }
 
         @Override
-        public Object wrap(Context cx, Scriptable scope, Object obj, Class<?> staticType)
+        public Object wrap(Context cx, Scriptable scope, Object obj, TypeInfo staticType)
         {
             // Unwrap JSONArrays to standard lists first
             if (obj instanceof JSONArray ja)
@@ -1096,7 +1127,7 @@ class SandboxContextFactory extends ContextFactory
         }
 
         @Override
-        public Scriptable wrapAsJavaObject(Context cx, Scriptable scope, Object javaObject, Class staticType)
+        public Scriptable wrapAsJavaObject(Context cx, Scriptable scope, Object javaObject, TypeInfo staticType)
         {
             return new SandboxNativeJavaObject(scope, javaObject, staticType);
         }
@@ -1104,7 +1135,7 @@ class SandboxContextFactory extends ContextFactory
 
     private static class SandboxNativeJavaObject extends NativeJavaObject
     {
-        public SandboxNativeJavaObject(Scriptable scope, Object javaObject, Class<?> staticType)
+        public SandboxNativeJavaObject(Scriptable scope, Object javaObject, TypeInfo staticType)
         {
             super(scope, javaObject, staticType);
         }
