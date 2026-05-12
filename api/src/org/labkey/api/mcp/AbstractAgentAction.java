@@ -8,30 +8,37 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
- * "agent" it is too strong a word, but if you want to create a tools specific chat endpoint then
+ * "Agent" it is too strong a word, but if you want to create a tools-specific chat endpoint, then
  * start here.
  * First implement getServicePrompt() to tell your "agent its mission.  You can also listen in on the
- * conversation to help you user get the right results.
+ * conversation to help your user get the right results.
  */
 public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnlyApiAction<F>
 {
+    protected GUID conversationId;
+
     protected abstract String getAgentName();
 
     protected abstract String getServicePrompt();
 
     protected ChatClient getChat(boolean create)
     {
+        String conversationName = getAgentName() + ":" + getConversationId();
+
         HttpSession session = getViewContext().getRequest().getSession(true);
-        ChatClient chatSession = McpService.get().getChat(session, getAgentName(), this::getServicePrompt, create);
+        ChatClient chatSession = McpService.get().getChat(session, conversationName, this::getServicePrompt, create);
+
         return chatSession;
     }
 
@@ -49,6 +56,16 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
             }
         }
         return null;
+    }
+
+    @Override
+    public void validateForm(F form, Errors errors)
+    {
+        // If the client provided a valid conversationId, use it. Otherwise, generate a conversationId.
+        if (form.getConversationId() != null)
+            conversationId = new GUID(form.getConversationId());
+        else
+            conversationId = new GUID();
     }
 
     @Override
@@ -120,5 +137,10 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
                 "contentType", "text/plain",
                 "text", escapeResponse,
                 "success", Boolean.TRUE));
+    }
+
+    protected GUID getConversationId()
+    {
+        return conversationId;
     }
 }

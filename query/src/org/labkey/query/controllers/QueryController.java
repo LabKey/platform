@@ -8093,6 +8093,8 @@ public class QueryController extends SpringActionController
             }
             if (json.has("prompt"))
                 setPrompt(json.getString("prompt"));
+            if (json.has("conversationId"))
+                setConversationId(json.getString("conversationId"));
         }
     }
 
@@ -8531,13 +8533,9 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public static class ExpressionAssistantAgentForm extends ParseForm
-    {
-    }
-
     @RequiresPermission(ReadPermission.class)
     @RequiresLogin
-    public static class ExpressionAssistantAgentAction extends AbstractAgentAction<ExpressionAssistantAgentForm>
+    public static class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseForm>
     {
         @Override
         protected String getAgentName()
@@ -8555,7 +8553,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public Object execute(ExpressionAssistantAgentForm form, BindException errors) throws Exception
+        public Object execute(ParseForm form, BindException errors) throws Exception
         {
             try (var _ = McpContext.withContext(getViewContext()))
             {
@@ -8591,7 +8589,7 @@ public class QueryController extends SpringActionController
                             "success", Boolean.FALSE));
                 }
 
-                var ret = new JSONObject(Map.of("success", Boolean.TRUE));
+                var ret = new JSONObject(Map.of("success", Boolean.TRUE, "conversationId", getConversationId()));
                 if (null != sqlResponse.sql())
                     ret.put("sql", sqlResponse.sql());
                 if (null != sqlResponse.html())
