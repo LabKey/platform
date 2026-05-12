@@ -533,7 +533,7 @@ public class DataRegionSelection
         List<ColumnInfo> pkCols = rgn.getTable().getPkColumns();
         if (pkCols.size() == 1)
         {
-            ColumnInfo pkCol = pkCols.get(0);
+            ColumnInfo pkCol = pkCols.getFirst();
             ctx.setBaseFilter(new SimpleFilter(pkCol.getFieldKey(), pkCol.isNumericType() ? selectedValues.stream().map(Integer::parseInt).toList() : selectedValues, CompareType.IN));
         }
 

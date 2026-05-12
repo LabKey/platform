@@ -65,7 +65,7 @@ public class MissingValueImporterFactory extends AbstractFolderImportFactory
             {
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
-                ctx.getLogger().info("Loading " + getDescription());
+                ctx.getLogger().info("Loading {}", getDescription());
 
                 // Create a map that looks just like the map returned by MvUtil.getIndicatorsAndLabels()
                 Map<String, String> newMvMap = new HashMap<>();
@@ -97,7 +97,7 @@ public class MissingValueImporterFactory extends AbstractFolderImportFactory
                     String[] mvLabels = newMvMap.values().toArray(new String[0]);
                     MvUtil.assignMvIndicators(ctx.getContainer(), mvIndicators, mvLabels);
                 }
-                ctx.getLogger().info("Done importing " + getDescription());
+                ctx.getLogger().info("Done importing {}", getDescription());
             }
         }
 

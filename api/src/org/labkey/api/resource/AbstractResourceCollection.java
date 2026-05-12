@@ -53,12 +53,6 @@ public abstract class AbstractResourceCollection extends AbstractResource
     }
 
     @Override
-    public boolean isFile()
-    {
-        return false;
-    }
-
-    @Override
     public InputStream getInputStream()
     {
         throw new IllegalStateException("Can't read from a collection");

@@ -163,7 +163,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     }
                     else
                     {
-                        LOG.warn(_list.getName() + "." + _list.getKeyName() + " (primary key) " + "has not yet been provisioned.");
+                        LOG.warn("{}.{} (primary key) has not yet been provisioned.", _list.getName(), _list.getKeyName());
                     }
 
                     colKey.setKeyField(true);

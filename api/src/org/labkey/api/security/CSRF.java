@@ -16,7 +16,6 @@
 
 package org.labkey.api.security;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.view.ViewContext;

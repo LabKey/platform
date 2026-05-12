@@ -47,9 +47,4 @@ public class WikiLinkFilter extends LinkTestFilter {
     return "filter.wikilink";
   }
 
-  @Override
-  protected String getWikiView(String name) {
-    return name;
-  }
-
 }

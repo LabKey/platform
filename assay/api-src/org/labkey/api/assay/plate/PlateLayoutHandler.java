@@ -22,7 +22,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +38,7 @@ public interface PlateLayoutHandler
      * createPlate will be given a null value for plateName when it is creating a new plate which is a
      * default for that assay type.
      */
-    Plate createPlate(@Nullable String plateName, Container container, @NotNull PlateType plateType) throws SQLException;
+    Plate createPlate(@Nullable String plateName, Container container, @NotNull PlateType plateType);
 
     List<PlateType> getSupportedPlateTypes();
 

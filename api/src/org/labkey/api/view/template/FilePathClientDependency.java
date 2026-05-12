@@ -61,7 +61,7 @@ public class FilePathClientDependency extends ClientDependency
 
         if (type == null)
         {
-            _log.warn("Invalid file type for resource: " + filePath);
+            _log.warn("Invalid file type for resource: {}", filePath);
             return;
         }
 

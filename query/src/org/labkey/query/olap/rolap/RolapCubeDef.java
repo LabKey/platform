@@ -122,7 +122,7 @@ public class RolapCubeDef
 
     public String getMembersSQL(HierarchyDef hdef)
     {
-        LevelDef lowest = hdef.levels.get(hdef.levels.size()-1);
+        LevelDef lowest = hdef.levels.getLast();
         String selectColumns = lowest.getAllColumnsSQL(null);
         String joins;
 
@@ -679,7 +679,7 @@ public class RolapCubeDef
         @Override
         public String getTableName()
         {
-            return getLevels().get(0).getTableName();
+            return getLevels().getFirst().getTableName();
         }
     }
 
@@ -911,7 +911,7 @@ public class RolapCubeDef
             JdbcType j = JdbcType.valueOf(columnType);
             if (j.isText() != jdbcType.isText() || j.isDateOrTime() != jdbcType.isDateOrTime())
             {
-                LogManager.getLogger(RolapCubeDef.class).info("jdbc types do not match, expected: " + jdbcType + " found: " + j + ". Alias: \"" + keyAlias + "\"");
+                LogManager.getLogger(RolapCubeDef.class).info("jdbc types do not match, expected: {} found: {}. Alias: \"{}\"", jdbcType, j, keyAlias);
             }
             return jdbcType;
         }

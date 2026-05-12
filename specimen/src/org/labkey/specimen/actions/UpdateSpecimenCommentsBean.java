@@ -35,7 +35,7 @@ public class UpdateSpecimenCommentsBean extends SpecimensViewBean
         Map<Vial, SpecimenComment> currentComments = SpecimenManager.get().getSpecimenComments(vials);
         boolean mixedComments = false;
         boolean mixedFlagState = false;
-        SpecimenComment prevComment = currentComments.get(vials.get(0));
+        SpecimenComment prevComment = currentComments.get(vials.getFirst());
 
         for (int i = 1; i < vials.size() && (!mixedFlagState || !mixedComments); i++)
         {

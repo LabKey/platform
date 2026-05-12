@@ -103,7 +103,7 @@ public class ConnectionWrapper implements java.sql.Connection
         {
             if (_connection != null && !_closed)
             {
-                _log.error("Connection was not closed! " + _wrapper.toString());
+                _log.error("Connection was not closed! {}", _wrapper.toString());
                 realClose();
             }
         }
@@ -418,7 +418,7 @@ public class ConnectionWrapper implements java.sql.Connection
     public void setAutoCommit(boolean autoCommit) throws SQLException
     {
         checkForSuspiciousClose();
-        _log.debug("SPID=" + getSPID() + " setAutoCommit(" + (autoCommit?"TRUE)":"FALSE)"));
+        _log.debug("SPID={} setAutoCommit({}", getSPID(), autoCommit ? "TRUE)" : "FALSE)");
         try
         {
             _connection.setAutoCommit(autoCommit);
@@ -447,7 +447,7 @@ public class ConnectionWrapper implements java.sql.Connection
     public void commit() throws SQLException
     {
         checkForSuspiciousClose();
-        _log.debug("SPID=" + getSPID() + " commit()");
+        _log.debug("SPID={} commit()", getSPID());
         try
         {
             _connection.commit();
@@ -642,7 +642,7 @@ public class ConnectionWrapper implements java.sql.Connection
         checkForSuspiciousClose();
         try
         {
-            _log.debug("SPID=" + getSPID() + " setTransactionIsolation(" + level + ")");
+            _log.debug("SPID={} setTransactionIsolation({})", getSPID(), level);
             _connection.setTransactionIsolation(level);
         }
         catch (SQLException e)
@@ -1163,7 +1163,7 @@ public class ConnectionWrapper implements java.sql.Connection
             long duration = System.currentTimeMillis() - start;
 
             if (getLogger().isDebugEnabled())
-                getLogger().debug(message + " " + DateUtil.formatDuration(duration));
+                getLogger().debug("{} {}", message, DateUtil.formatDuration(duration));
 
             QueryProfiler.getInstance().track(null, "DatabaseMetaData." + methodName, null, duration, MiniProfiler.getTroubleshootingStackTrace(),
                                               ViewServlet.isRequestThread(), QueryLogging.emptyQueryLogging());

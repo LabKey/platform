@@ -336,7 +336,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                     {
                         ((BaseColumnInfo)col).setFk(new IssuesPdLookupForeignKey(schema, pd));
                         TableInfo target = col.getFk().getLookupTableInfo();
-                        if (null != target && target.getPkColumnNames().size() == 1 && Strings.CI.equals(target.getTitleColumn(),target.getPkColumnNames().get(0)))
+                        if (null != target && target.getPkColumnNames().size() == 1 && Strings.CI.equals(target.getTitleColumn(),target.getPkColumnNames().getFirst()))
                         {
                             ((BaseColumnInfo)col).setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
                         }

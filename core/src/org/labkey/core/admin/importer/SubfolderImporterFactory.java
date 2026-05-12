@@ -75,7 +75,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
             {
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
-                ctx.getLogger().info("Loading " + getDescription());
+                ctx.getLogger().info("Loading {}", getDescription());
 
                 // fail if the user does not have admin permissions to the parent container
                 if (!ctx.getContainer().hasPermission(ctx.getUser(), AdminPermission.class))
@@ -87,7 +87,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
                 InputStream subfoldersIS = subfoldersDir.getInputStream(SubfolderWriter.SUBFOLDERS_FILENAME);
                 if (subfoldersIS == null)
                 {
-                    ctx.getLogger().error("Could not find expected file: " + getFilePath(subfoldersDir, SubfolderWriter.SUBFOLDERS_FILENAME));
+                    ctx.getLogger().error("Could not find expected file: {}", getFilePath(subfoldersDir, SubfolderWriter.SUBFOLDERS_FILENAME));
                     return;
                 }
 
@@ -98,7 +98,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
                     String subfolderName = subfoldersDir.makeLegalName(subfolderNode.getName());
                     if (!subfoldersDir.listDirs().contains(subfolderName))
                     {
-                        ctx.getLogger().error("Could not find content directory for subfolder: " + getFilePath(subfoldersDir, subfolderName));
+                        ctx.getLogger().error("Could not find content directory for subfolder: {}", getFilePath(subfoldersDir, subfolderName));
                     }
                     else
                     {
@@ -108,7 +108,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
                         InputStream folderXmlIS = subfolderDir.getInputStream("folder.xml");
                         if (folderXmlIS == null)
                         {
-                            ctx.getLogger().error("Could not find expected folder.xml file: " + getFilePath(subfoldersDir, subfolderName));
+                            ctx.getLogger().error("Could not find expected folder.xml file: {}", getFilePath(subfoldersDir, subfolderName));
                             continue;
                         }
                         FolderDocument folderXml = FolderDocument.Factory.parse(folderXmlIS);
@@ -124,27 +124,27 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
 
                             // set the child container to inherit permissions from the parent by default
                             SecurityManager.setInheritPermissions(childContainer);
-                            ctx.getLogger().info("New folder created with inherited permissions: " + childContainer.getPath());
+                            ctx.getLogger().info("New folder created with inherited permissions: {}", childContainer.getPath());
                         }
                         else
                         {
                             if (!childContainer.hasPermission(ctx.getUser(), AdminPermission.class))
                             {
-                                ctx.getLogger().error("You must have admin permissions to replace this subfolder: " + childContainer.getPath());
+                                ctx.getLogger().error("You must have admin permissions to replace this subfolder: {}", childContainer.getPath());
                                 continue;
                             }
                         }
 
                         // import the subfolder with the folderDir as the root with a new import context
-                        ctx.getLogger().info("Loading folder archive for " + subfolderName);
+                        ctx.getLogger().info("Loading folder archive for {}", subfolderName);
                         FolderImportContext folderCtx = new FolderImportContext(ctx.getUser(), childContainer, folderXml, ctx.getDataTypes(), ctx.getLoggerGetter(), subfolderDir);
                         FolderImporterImpl importer = new FolderImporterImpl(job);
                         importer.process(job, folderCtx, subfolderDir);
-                        ctx.getLogger().info("Done importing folder archive for " + subfolderName);
+                        ctx.getLogger().info("Done importing folder archive for {}", subfolderName);
                     }
                 }
 
-                ctx.getLogger().info("Done importing " + getDescription());
+                ctx.getLogger().info("Done importing {}", getDescription());
             }
         }
 

@@ -182,7 +182,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
                     .setFailOnUnrecognizedMethodName(true);
             QExpr expr = parser.parseExpr(_labKeySql, errors);
             if (!errors.isEmpty())
-                throw errors.get(0);
+                throw errors.getFirst();
             _parsedExpr = expr;
         }
 
@@ -271,7 +271,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         QExpr methodName = null;
         if (expr instanceof QMethodCall)
         {
-            methodName = (QExpr) expr.childList().get(0);
+            methodName = (QExpr) expr.childList().getFirst();
             if (null == methodName.getFieldKey())
                 methodName = null;
         }

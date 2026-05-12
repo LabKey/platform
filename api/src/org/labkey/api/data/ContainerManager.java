@@ -55,7 +55,6 @@ import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.event.PropertyChange;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
@@ -1712,14 +1711,7 @@ public class ContainerManager
 
                 clearCache();
 
-                try
-                {
-                    ExperimentService.get().moveContainer(c, oldParent, newParent);
-                }
-                catch (ExperimentException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                ExperimentService.get().moveContainer(c, oldParent, newParent);
 
                 // Clear after the commit has propagated the state to other threads and transactions
                 // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
@@ -2598,7 +2590,7 @@ public class ContainerManager
         if (aliased == null)
             return null;
 
-        String leafPath = aliased.getPath() + "/" + splits.get(splits.size()-1);
+        String leafPath = aliased.getPath() + "/" + splits.getLast();
         return resolveContainerPathAlias(leafPath, true);
     }
 

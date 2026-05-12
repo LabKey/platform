@@ -27,12 +27,6 @@ abstract class AbstractSpecimenWriter implements SimpleStudyWriter
 {
     protected static final String DEFAULT_DIRECTORY = "specimens";
 
-    @Override
-    public boolean includeWithTemplate()
-    {
-        return true;
-    }
-
     protected StudyDocument.Study.Specimens ensureSpecimensElement(AbstractStudyContext ctx) throws Exception
     {
         StudyDocument.Study studyXml = ctx.getXml();

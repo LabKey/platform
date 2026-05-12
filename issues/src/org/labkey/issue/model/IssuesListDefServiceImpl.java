@@ -241,11 +241,11 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         {
             Domain domain = issueListDef.getDomain(user, forUpdate);
             if (domain == null)
-                LOG.warn("Unable to find the domain for issue list definition id: " + issueDefId + " and container: " + container);
+                LOG.warn("Unable to find the domain for issue list definition id: {} and container: {}", issueDefId, container);
             return domain;
         }
         else
-            LOG.warn("Unable to find the issue list definition for id: " + issueDefId + " and container: " + container);
+            LOG.warn("Unable to find the issue list definition for id: {} and container: {}", issueDefId, container);
 
         return null;
     }

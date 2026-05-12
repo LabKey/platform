@@ -22,7 +22,6 @@ import org.labkey.vfs.FileLike;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
@@ -47,9 +46,9 @@ public interface PipelineStatusFile
 
         PipelineStatusFile getStatusFile(String jobGuid);
 
-        List<? extends PipelineStatusFile> getQueuedStatusFiles() throws SQLException;
+        List<? extends PipelineStatusFile> getQueuedStatusFiles();
 
-        List<? extends PipelineStatusFile> getQueuedStatusFiles(Container c) throws SQLException;
+        List<? extends PipelineStatusFile> getQueuedStatusFiles(Container c);
     }
 
     interface StatusWriter

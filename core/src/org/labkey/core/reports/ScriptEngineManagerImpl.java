@@ -94,7 +94,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     // cache engine definitions by:
     // - "ALL" -> all engines
     // - container+context -> engines scoped to a single container and context enum
-    private static final BlockingCache<String, List<ExternalScriptEngineDefinition>> ENGINE_DEFINITION_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.DAY, "Script engine definitions", (key, argument) -> {
+    private static final BlockingCache<String, List<ExternalScriptEngineDefinition>> ENGINE_DEFINITION_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.DAY, "Script engine definitions", (key, _) -> {
         if (ALL_ENGINES.equals(key))
         {
             // fetch all script engine definitions
@@ -345,7 +345,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             }
             else if (def.getType().equals(ExternalScriptEngineDefinition.Type.Jupyter) && !PremiumService.get().isEnabled())
             {
-                LOG.error(String.format("Jupyter Report engine [%1$s] requested, but premium module not available/enabled.", def.getName()));
+                LOG.error("Jupyter Report engine [{}] requested, but premium module not available/enabled.", def.getName());
                 throw new PremiumFeatureNotEnabledException("Jupyter Reports are not available. Please talk to your account representative for additional information.");
             }
             else
@@ -557,7 +557,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             }
         }
         else
-            LOG.error("Script engine definition cannot be deleted: " + def.getName());
+            LOG.error("Script engine definition cannot be deleted: {}", def.getName());
     }
 
     @Override

@@ -169,7 +169,7 @@ public class WikiManager implements WikiService
         {
             wikiInsert.beforeInsert(user, c.getId());
             wikiInsert.setPageVersionId(null);
-            LOG.debug("Table.insert() for wiki " + wikiInsert.getName());
+            LOG.debug("Table.insert() for wiki {}", wikiInsert.getName());
             Table.insert(user, comm.getTableInfoPages(), wikiInsert);
             String entityId = wikiInsert.getEntityId();
 
@@ -181,7 +181,7 @@ public class WikiManager implements WikiService
                 wikiversion.setCreatedBy(wikiInsert.getCreatedBy());
             }
             wikiversion.setVersion(1);
-            LOG.debug("Table.insert() for wiki version " + wikiInsert.getName());
+            LOG.debug("Table.insert() for wiki version {}", wikiInsert.getName());
 
             //if copying wiki with history, avoid overwriting 'created by' user
             User userToInsert = (copyHistory) ? null : user;
@@ -207,7 +207,7 @@ public class WikiManager implements WikiService
         {
             WikiCache.uncache(c, wikiInsert, true);
 
-            LOG.debug("indexWiki() for " + wikiInsert.getName());
+            LOG.debug("indexWiki() for {}", wikiInsert.getName());
             indexWiki(wikiInsert);
         }
 
@@ -344,7 +344,7 @@ public class WikiManager implements WikiService
                 if (null != errors)
                     errors.rejectValue("name", ERROR_MSG, "Warning: Alias '" + alias + "' already exists in this folder.");
                 else
-                    LOG.warn("Attempt to add alias to wiki \"" + wiki.getName() + "\" failed; \"" + alias + "\" already exists in this folder.");
+                    LOG.warn("Attempt to add alias to wiki \"{}\" failed; \"{}\" already exists in this folder.", wiki.getName(), alias);
             }
         });
     }
@@ -714,7 +714,7 @@ public class WikiManager implements WikiService
 
     private void indexWikiContainerFast(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince, @Nullable String wikiName)
     {
-        LOG.debug("indexWikiContainerFast(" + wikiName + ")");
+        LOG.debug("indexWikiContainerFast({})", wikiName);
         Container c = queue.getContainer();
         SQLFragment f = new SQLFragment();
         f.append("SELECT P.entityid, P.container, P.name, P.owner, P.createdby, P.created, P.modifiedby, P.modified, P.shouldindex,")
@@ -750,14 +750,14 @@ public class WikiManager implements WikiService
 
                 if (!rs.getBoolean("shouldindex"))
                 {
-                    LOG.debug(String.format("Wiki [%1$s] set to not index, skipping.", wikiName));
+                    LOG.debug("Wiki [{}] set to not index, skipping.", wikiName);
                     continue;
                 }
 
                 String entityId = rs.getString("entityid");
                 assert null != entityId;
 
-                LOG.debug("Indexing wiki " + wikiName + ":" + entityId);
+                LOG.debug("Indexing wiki {}:{}", wikiName, entityId);
 
                 String wikiTitle = rs.getString("title");
                 String keywords;
@@ -782,7 +782,7 @@ public class WikiManager implements WikiService
                 catch (Throwable t)
                 {
                     // Log rendering exception and details about the culprit, but continue indexing wikis in this container
-                    LOG.error("Could not render wiki \"" + wikiName + "\" in folder \"" + c.getPath() + "\"");
+                    LOG.error("Could not render wiki \"{}\" in folder \"{}\"", wikiName, c.getPath());
                     ExceptionUtil.logExceptionToMothership(null, t);
                     continue;
                 }

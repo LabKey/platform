@@ -874,7 +874,7 @@ public class ReportsController extends BaseStudyController
         {
             if (participantId == null || !participantGroup.contains(participantId))
             {
-                participantId = participantGroup.get(0);
+                participantId = participantGroup.getFirst();
                 context.put("participantId", participantId);
             }
             int idx = participantGroup.indexOf(participantId);

@@ -61,7 +61,7 @@ public class PropertyValidator implements ColumnValidator
             return null;
         if (errors.isEmpty())
             return null;
-        String msg = errors.get(0).getMessage();
+        String msg = errors.getFirst().getMessage();
         errors.clear();
         return msg;
     }

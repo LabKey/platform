@@ -106,7 +106,7 @@ public interface FileStream
             {
                 if (!tempFile.delete() && tempFile.exists())
                 {
-                    LOG.warn("Failed to delete temporary file [" + tempFile.getAbsolutePath() + "]");
+                    LOG.warn("Failed to delete temporary file [{}]", tempFile.getAbsolutePath());
                 }
             }
         }

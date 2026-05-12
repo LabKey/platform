@@ -48,7 +48,6 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jspecify.annotations.NonNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
@@ -129,7 +128,6 @@ import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
@@ -1668,7 +1666,7 @@ public class AdminController extends SpringActionController
     {
         private List<String> _providers;
         private boolean _includeSubfolders = false;
-        private transient Consumer<String> _logger = s -> {
+        private transient Consumer<String> _logger = _ -> {
         }; // No-op by default
 
         public List<String> getProviders()
@@ -3218,7 +3216,7 @@ public class AdminController extends SpringActionController
                 {
                     if (form.getDebugName().equals(cache.getDebugName()))
                     {
-                        LOG.info("Purging cache: " + cache.getDebugName());
+                        LOG.info("Purging cache: {}", cache.getDebugName());
                         cache.clear();
                     }
                 }
@@ -3785,7 +3783,7 @@ public class AdminController extends SpringActionController
 
                     // Difference could be < 0 if JVM or other threads have performed gc, in which case we can't guesstimate cache memory usage
                     String cacheMemUsed = cacheMemoryUsed > 0 ? FileUtils.byteCountToDisplaySize(cacheMemoryUsed) : "Unknown";
-                    LOG.info("Estimate of cache memory used: " + cacheMemUsed);
+                    LOG.info("Estimate of cache memory used: {}", cacheMemUsed);
                     lastCacheMemUsed = cacheMemUsed;
                 }
                 else if (cc)
@@ -3886,12 +3884,12 @@ public class AdminController extends SpringActionController
         {
             MemTracker memTracker = MemTracker.getInstance();
             List<HeldReference> all = memTracker.getReferences();
-            long threadId = Thread.currentThread().getId();
+            long threadId = Thread.currentThread().threadId();
 
             // Attempt to detect other threads running labkey code -- mem tracker page will warn if any are found
             for (Thread thread : new ThreadsBean().threads)
             {
-                if (thread.getId() == threadId)
+                if (thread.threadId() == threadId)
                     continue;
 
                 Thread.State state = thread.getState();
@@ -4403,7 +4401,7 @@ public class AdminController extends SpringActionController
                         }
                     }
                 });
-                t.setUncaughtExceptionHandler((t2, e) -> {
+                t.setUncaughtExceptionHandler((_, e) -> {
                     LOG.error("Stress test exception", e);
                     errors.reject(null, "Stress test exception: " + e);
                 });
@@ -4988,7 +4986,7 @@ public class AdminController extends SpringActionController
     public static class RConfigurationAction extends FolderManagementViewPostAction<RConfigForm>
     {
         @Override
-        protected HttpView getTabView(RConfigForm form, boolean reshow, BindException errors)
+        protected HttpView<?> getTabView(RConfigForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/rConfiguration.jsp", form, errors);
         }
@@ -5421,7 +5419,7 @@ public class AdminController extends SpringActionController
         private ActionURL _successURL;
 
         @Override
-        protected HttpView getTabView(ImportFolderForm form, boolean reshow, BindException errors)
+        protected HttpView<?> getTabView(ImportFolderForm form, boolean reshow, BindException errors)
         {
             // default the createSharedDatasets and validateQueries to true if this is not a form error reshow
             if (!errors.hasErrors())
@@ -5570,13 +5568,13 @@ public class AdminController extends SpringActionController
             }
             catch (FileNotFoundException e)
             {
-                LOG.debug("Failed to import '" + originalFilename + "'.", e);
+                LOG.debug("Failed to import '{}'.", originalFilename, e);
                 errors.reject("folderImport", "File not found.");
                 return null;
             }
             catch (IOException e)
             {
-                LOG.debug("Failed to import '" + originalFilename + "'.", e);
+                LOG.debug("Failed to import '{}'.", originalFilename, e);
                 errors.reject("folderImport", "Unable to unzip folder archive.");
                 return null;
             }
@@ -6152,7 +6150,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(FileRootsForm form, boolean reShow, BindException errors)
         {
-            JspView view = getFileRootsView(form, errors, getReshow());
+            JspView<?> view = getFileRootsView(form, errors, getReshow());
             view.setFrame(WebPartView.FrameType.NONE);
 
             getPageConfig().setNavTrail(ContainerManager.getCreateContainerWizardSteps(getContainer(), getContainer().getParent()));
@@ -6204,7 +6202,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(FileRootsForm form, boolean reShow, BindException errors)
         {
-            JspView view = getFileRootsView(form, errors, getReshow());
+            JspView<?> view = getFileRootsView(form, errors, getReshow());
             getPageConfig().setTitle("Manage File Root");
             return view;
         }
@@ -6244,7 +6242,7 @@ public class AdminController extends SpringActionController
     public class FileRootsAction extends FolderManagementViewPostAction<FileRootsForm>
     {
         @Override
-        protected HttpView getTabView(FileRootsForm form, boolean reshow, BindException errors)
+        protected HttpView<?> getTabView(FileRootsForm form, boolean reshow, BindException errors)
         {
             return getFileRootsView(form, errors, getReshow());
         }
@@ -6274,9 +6272,9 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private JspView getFileRootsView(FileRootsForm form, BindException errors, boolean reshow)
+    private JspView<?> getFileRootsView(FileRootsForm form, BindException errors, boolean reshow)
     {
-        JspView view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", form, errors);
+        JspView<?> view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", form, errors);
         String title = "Configure File Root";
         if (CloudStoreService.get() != null)
             title += " And Enable Cloud Stores";
@@ -6383,29 +6381,22 @@ public class AdminController extends SpringActionController
                 {
                     service.setIsUseDefaultRoot(ctx.getContainer(), false);
                     service.setCloudRoot(ctx.getContainer(), cloudRootName);
-                    try
+                    PipelineService.get().setPipelineRoot(ctx.getUser(), ctx.getContainer(), PipelineService.PRIMARY_ROOT, false);
+                    if (form.isFolderSetup() && !sourceInfos.isEmpty())
                     {
-                        PipelineService.get().setPipelineRoot(ctx.getUser(), ctx.getContainer(), PipelineService.PRIMARY_ROOT, false);
-                        if (form.isFolderSetup() && !sourceInfos.isEmpty())
+                        // File root was set to cloud storage, remove folder created
+                        Path fromPath = FileUtil.stringToPath(sourceInfos.getFirst().first, sourceInfos.getFirst().second);    // sourceInfos paths should be encoded
+                        if (FileContentService.FILES_LINK.equals(FileUtil.getFileName(fromPath)))
                         {
-                            // File root was set to cloud storage, remove folder created
-                            Path fromPath = FileUtil.stringToPath(sourceInfos.get(0).first, sourceInfos.get(0).second);    // sourceInfos paths should be encoded
-                            if (FileContentService.FILES_LINK.equals(FileUtil.getFileName(fromPath)))
+                            try
                             {
-                                try
-                                {
-                                    Files.deleteIfExists(fromPath.getParent());
-                                }
-                                catch (IOException e)
-                                {
-                                    LOG.warn("Could not delete directory '" + FileUtil.pathToString(fromPath.getParent()) + "'");
-                                }
+                                Files.deleteIfExists(fromPath.getParent());
+                            }
+                            catch (IOException e)
+                            {
+                                LOG.warn("Could not delete directory '{}'", FileUtil.pathToString(fromPath.getParent()));
                             }
                         }
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new RuntimeSQLException(e);
                     }
                     changed = true;
                     shouldCopyMove = true;
@@ -6658,7 +6649,7 @@ public class AdminController extends SpringActionController
     public static class ManageFoldersAction extends FolderManagementViewAction
     {
         @Override
-        protected HttpView getTabView()
+        protected HttpView<?> getTabView()
         {
             return new JspView<>("/org/labkey/core/admin/manageFolders.jsp");
         }
@@ -6685,7 +6676,7 @@ public class AdminController extends SpringActionController
     public static class NotificationsAction extends FolderManagementViewPostAction<NotificationsForm>
     {
         @Override
-        protected HttpView getTabView(NotificationsForm form, boolean reshow, BindException errors)
+        protected HttpView<?> getTabView(NotificationsForm form, boolean reshow, BindException errors)
         {
             final String key = DataRegionSelection.getSelectionKey("core", CoreQuerySchema.USERS_MSG_SETTINGS_TABLE_NAME, null, DATA_REGION_NAME);
             DataRegionSelection.clearAll(getViewContext(), key);
@@ -6832,7 +6823,7 @@ public class AdminController extends SpringActionController
             ConfigTypeProvider provider = form.getProvider();
             if (provider != null)
             {
-                List<Map> options = new ArrayList<>();
+                List<Map<?, ?>> options = new ArrayList<>();
 
                 // if the list of options is not for the folder default, add an option to use the folder default
                 if (getViewContext().get("isDefault") == null)
@@ -6996,7 +6987,7 @@ public class AdminController extends SpringActionController
     public static class ConceptsAction extends FolderManagementViewPostAction<ConceptsForm>
     {
         @Override
-        protected HttpView getTabView(ConceptsForm form, boolean reshow, BindException errors)
+        protected HttpView<?> getTabView(ConceptsForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/manageConcepts.jsp", form, errors);
         }
@@ -8058,7 +8049,7 @@ public class AdminController extends SpringActionController
                 }
                 else
                 {
-                    _successURL = new ActionURL(extraSteps.get(0).getHref());
+                    _successURL = new ActionURL(extraSteps.getFirst().getHref());
                 }
             }
 
@@ -8247,7 +8238,7 @@ public class AdminController extends SpringActionController
             }
             else
             {
-                _successURL = new ActionURL(extraSteps.get(0).getHref());
+                _successURL = new ActionURL(extraSteps.getFirst().getHref());
             }
 
             return true;
@@ -8365,7 +8356,7 @@ public class AdminController extends SpringActionController
         {
             // Note: because in some scenarios we might be deleting children of the current contaner, in those cases we remain in this folder:
             // If we just deleted a project then redirect to the home page, otherwise back to managing the project folders
-            if (_deleted.size() == 1 && _deleted.get(0).equals(getContainer()))
+            if (_deleted.size() == 1 && _deleted.getFirst().equals(getContainer()))
             {
                 Container c = getContainer();
                 if (c.isProject())
@@ -9562,7 +9553,7 @@ public class AdminController extends SpringActionController
                 if (!deleteList.isEmpty())
                 {
                     description.append(" and delete all data in ");
-                    description.append(deleteList.size() > 1 ? "these schemas: " + StringUtils.join(deleteList, ", ") : "the \"" + deleteList.get(0) + "\" schema");
+                    description.append(deleteList.size() > 1 ? "these schemas: " + StringUtils.join(deleteList, ", ") : "the \"" + deleteList.getFirst() + "\" schema");
                 }
 
                 // For unknown modules, also list the schemas that won't be deleted
@@ -12105,10 +12096,10 @@ public class AdminController extends SpringActionController
 
             if (!sql.isEmpty())
             {
-                logger.info(String.format("Updating %s in table %s.%s", updating, schema.getName(), tInfo.getName()));
+                logger.info("Updating {} in table {}.{}", updating, schema.getName(), tInfo.getName());
                 logger.debug(sql.toDebugString());
                 int numRows = new SqlExecutor(schema).execute(sql);
-                logger.info(String.format("Updated %d rows for table %s.%s", numRows, schema.getName(), tInfo.getName()));
+                logger.info("Updated {} rows for table {}.{}", numRows, schema.getName(), tInfo.getName());
             }
         }
 
@@ -12116,12 +12107,12 @@ public class AdminController extends SpringActionController
         public boolean handlePost(AdjustTimestampsForm form, BindException errors) throws Exception
         {
             List<String> toUpdate = Arrays.asList("Created", "Modified", "lastIndexed", "diCreated", "diModified");
-            logger.info("Adjusting all " + toUpdate + " timestamp fields in all tables by " + form.getHourDelta() + " hours.");
+            logger.info("Adjusting all {} timestamp fields in all tables by {} hours.", toUpdate, form.getHourDelta());
             DbScope scope = DbScope.getLabKeyScope();
             try (DbScope.Transaction t = scope.ensureTransaction())
             {
                 ModuleLoader.getInstance().getModules().forEach(module -> {
-                    logger.info("==> Beginning update of timestamps for module: " + module.getName());
+                    logger.info("==> Beginning update of timestamps for module: {}", module.getName());
                     module.getSchemaNames().stream().sorted().forEach(schemaName -> {
                         DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Module);
                         scope.invalidateSchema(schema); // Issue 44452: assure we have a fresh set of tables to work from
@@ -12133,11 +12124,11 @@ public class AdminController extends SpringActionController
                             }
                         });
                     });
-                    logger.info("<== DONE updating timestamps for module: " + module.getName());
+                    logger.info("<== DONE updating timestamps for module: {}", module.getName());
                 });
                 t.commit();
             }
-            logger.info("DONE Adjusting all " + toUpdate + " timestamp fields in all tables by " + form.getHourDelta() + " hours.");
+            logger.info("DONE Adjusting all {} timestamp fields in all tables by {} hours.", toUpdate, form.getHourDelta());
             return true;
         }
 
@@ -12407,7 +12398,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public @NonNull URLHelper getSuccessURL(Object o)
+        public @NotNull URLHelper getSuccessURL(Object o)
         {
             return getShowAdminURL();
         }

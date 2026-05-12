@@ -383,7 +383,7 @@ public class AnnouncementManager
 
         if (toList.isEmpty())
         {
-            LOG.warn("New " + name.toLowerCase() + " requires moderator review, but no moderators are subscribed to receive 'Individual' notifications in this folder: " + c.getPath());
+            LOG.warn("New {} requires moderator review, but no moderators are subscribed to receive 'Individual' notifications in this folder: {}", name.toLowerCase(), c.getPath());
         }
         else
         {

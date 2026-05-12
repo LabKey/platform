@@ -32,7 +32,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -47,7 +46,6 @@ import org.labkey.api.util.logging.LogHelper;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -173,7 +171,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                                 FileUtils.copyFile(tempFile, out);
 
                             if (!tempFile.delete())
-                                LOG.warn("Unable to delete temp file: " + tempFile.getPath());
+                                LOG.warn("Unable to delete temp file: {}", tempFile.getPath());
                         }
                         catch (IOException e)
                         {

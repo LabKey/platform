@@ -711,7 +711,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
             if (null == c)
             {
-                _log.debug("skipping item " + r.getDocumentId() + " because container is not found: " + r.getContainerId());
+                _log.debug("skipping item {} because container is not found: {}", r.getDocumentId(), r.getContainerId());
                 return false;
             }
 
@@ -806,7 +806,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             if (null == title)
                 logBadDocument("Null title", r);
 
-            _log.debug("parsed " + url);
+            _log.debug("parsed {}", url);
 
             if (null == props.get(PROPERTY.keywordsMed.toString()) && StringUtils.isBlank(keywordsMed.toString()))
                 keywordsMed = new StringBuilder(title);
@@ -911,9 +911,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             if (_log.isDebugEnabled())
             {
                 if (_log.isTraceEnabled())
-                    _log.trace("indexing " + dump(r, doc));
+                    _log.trace("indexing {}", dump(r, doc));
                 else
-                    _log.debug("indexing docid: " + r.getDocumentId());
+                    _log.debug("indexing docid: {}", r.getDocumentId());
             }
 
             boolean result = index(r.getDocumentId(), doc);
@@ -921,9 +921,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             if (_log.isDebugEnabled())
             {
                 if (_log.isTraceEnabled())
-                    _log.trace("finished indexing " + dump(r, doc));
+                    _log.trace("finished indexing {}", dump(r, doc));
                 else
-                    _log.debug("finished indexing docid: " + r.getDocumentId());
+                    _log.debug("finished indexing docid: {}", r.getDocumentId());
             }
 
             return result;
@@ -1178,7 +1178,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
     private void logBadDocument(String problem, WebdavResource r)
     {
-        _log.error(problem + " for " + r.getDocumentId());
+        _log.error("{} for {}", problem, r.getDocumentId());
         throw new IllegalStateException(problem);
     }
 
@@ -1334,7 +1334,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
     private void logAsWarning(WebdavResource r, String message, @Nullable String rootMessage)
     {
-        _log.warn("Can't index file \"" + getNameToLog(r) + "\" due to: " + message + (null != rootMessage ? " [" + rootMessage + "]" : ""));
+        _log.warn("Can't index file \"{}\" due to: {}{}", getNameToLog(r), message, null != rootMessage ? " [" + rootMessage + "]" : "");
     }
 
     private static class PreProcessingException extends Exception
@@ -1445,7 +1445,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             // Run the query before delete, but only if Log4J debug level is set
             if (_log.isDebugEnabled() && _indexManager.isReal())
             {
-                _log.debug("Deleting " + getDocCount(query) + " docs with prefix \"" + prefix + "\"");
+                _log.debug("Deleting {} docs with prefix \"{}\"", getDocCount(query), prefix);
             }
 
             _indexManager.deleteQuery(query);
@@ -1516,7 +1516,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         }
         catch(Throwable e)
         {
-            _log.error("Indexing error with " + id, e);
+            _log.error("Indexing error with {}", id, e);
         }
 
         return false;
@@ -1532,7 +1532,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             // Count the docs and log before deleting them, but only if Log4J debug level is set
             if (_log.isDebugEnabled() && _indexManager.isReal())
             {
-                _log.debug("Deleting " + getDocCount(query) + " docs from container " + id);
+                _log.debug("Deleting {} docs from container {}", getDocCount(query), id);
             }
 
             _indexManager.deleteQuery(query);
@@ -1561,7 +1561,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             // Run the query before delete, but only if Log4J debug level is set
             if (_log.isDebugEnabled() && _indexManager.isReal())
             {
-                _log.debug("Deleting " + getDocCount(query) + " docs from container " + container);
+                _log.debug("Deleting {} docs from container {}", getDocCount(query), container);
             }
 
             _indexManager.deleteQuery(query);
@@ -1997,7 +1997,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
             for (File file : sampledata.listFiles(File::isFile))
             {
-                _log.info("Attempting to parse: " + file.getName());
+                _log.info("Attempting to parse: {}", file.getName());
                 String docId = "testtika";
                 SimpleDocumentResource resource = new SimpleDocumentResource(new Path(file.getName()), docId, null, null, null, null, null);
                 ContentHandler handler = new BodyContentHandler(-1);
@@ -2060,7 +2060,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                         if (strict)
                             fail(file.getName() + ": " + message);
                         else
-                            _log.info(file.getName() + ": " + message);
+                            _log.info("{}: {}", file.getName(), message);
                     }
                 }
             }

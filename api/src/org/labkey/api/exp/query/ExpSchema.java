@@ -295,7 +295,7 @@ public class ExpSchema extends AbstractExpSchema
 
         ret.addExperimentMembershipColumn(run);
         List<FieldKey> defaultCols = new ArrayList<>(ret.getDefaultVisibleColumns());
-        defaultCols.add(0, FieldKey.fromParts("RunMembership"));
+        defaultCols.addFirst(FieldKey.fromParts("RunMembership"));
         defaultCols.remove(FieldKey.fromParts(ExpExperimentTable.Column.RunCount.name()));
         ret.setDefaultVisibleColumns(defaultCols);
 

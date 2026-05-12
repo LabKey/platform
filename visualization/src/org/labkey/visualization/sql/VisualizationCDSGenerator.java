@@ -310,7 +310,7 @@ public class VisualizationCDSGenerator
             // Default to 'date' (same as Measure), but align ourselves with the measures if any are requested
             String timeType = "date";
             if (!datasetMeasures.isEmpty())
-                timeType = datasetMeasures.get(0).getTime();
+                timeType = datasetMeasures.getFirst().getTime();
 
             if (null == container)
             {
@@ -351,7 +351,7 @@ public class VisualizationCDSGenerator
             if (_log.isDebugEnabled())
             {
                 String sql = generator.getSQL();
-                _log.debug("---------------------------------------\n" + datasetPath + "\n\n" + sql);
+                _log.debug("---------------------------------------\n{}\n\n{}", datasetPath, sql);
             }
         }
 
@@ -469,7 +469,7 @@ public class VisualizationCDSGenerator
 
         if (_log.isDebugEnabled())
         {
-            _log.debug("----------------------\nunion sql\n\n" + fullSQL + "\n\n");
+            _log.debug("----------------------\nunion sql\n\n{}\n\n", fullSQL);
             var select = QueryService.get().getSelectBuilder(schema.getSchema("study"), fullSQL.toString());
             try (ResultSet rs = select.select())
             {

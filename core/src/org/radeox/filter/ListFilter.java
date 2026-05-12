@@ -60,12 +60,7 @@ public class ListFilter extends LocaleRegexTokenFilter implements CacheFilter {
     return "filter.list";
   }
 
-  @Override
-  protected boolean isSingleLine() {
-    return false;
-  }
-
-  public ListFilter() {
+    public ListFilter() {
     super();
     openList.put(Character.valueOf('-'), "<ul class=\"minus\">");
     openList.put(Character.valueOf('*'), "<ul class=\"star\">");
@@ -104,7 +99,7 @@ public class ListFilter extends LocaleRegexTokenFilter implements CacheFilter {
       BufferedReader reader = new BufferedReader(new StringReader(result.group(0)));
       addList(buffer, reader);
     } catch (Exception e) {
-      log.warn("ListFilter: unable get list content in " + context.getRenderContext(), e);
+        log.warn("ListFilter: unable get list content in {}", context.getRenderContext(), e);
     }
   }
 

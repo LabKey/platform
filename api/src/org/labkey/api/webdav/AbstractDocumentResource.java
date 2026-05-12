@@ -17,9 +17,6 @@ package org.labkey.api.webdav;
 
 import org.labkey.api.util.Path;
 
-import java.util.Collection;
-import java.util.Collections;
-
 /**
  * Base class for WebDav entities, typically backed by rows in the database, that are exposed
  * as if they are files. An example is a custom SQL query created through the schema browser, stored
@@ -44,22 +41,4 @@ public abstract class AbstractDocumentResource extends AbstractWebdavResource
 	{
 		return exists();
 	}
-
-	@Override
-    public WebdavResource find(Path.Part name)
-	{
-		return null;
-	}
-
-    @Override
-    public Collection<String> listNames()
-    {
-        return Collections.emptyList();
-    }
-    
-    @Override
-    public boolean isCollection()
-    {
-        return false;
-    }
 }

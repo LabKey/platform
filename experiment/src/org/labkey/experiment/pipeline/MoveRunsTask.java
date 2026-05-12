@@ -135,7 +135,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
                 if (newData != null)
                 {
                     ExperimentDataHandler handler = newData.findDataHandler();
-                    handler.runMoved(newData, experimentRun.getContainer(), job.getContainer(), experimentRun.getLSID(), runLSIDs.get(0), job.getUser(), dataFiles.get(dataURL));
+                    handler.runMoved(newData, experimentRun.getContainer(), job.getContainer(), experimentRun.getLSID(), runLSIDs.getFirst(), job.getUser(), dataFiles.get(dataURL));
                 }
             }
             transaction.commit();

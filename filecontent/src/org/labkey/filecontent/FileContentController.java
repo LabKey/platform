@@ -61,7 +61,6 @@ import org.labkey.api.files.FileContentEmailPref;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileUrls;
 import org.labkey.api.files.FilesAdminOptions;
-import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
@@ -538,7 +537,7 @@ public class FileContentController extends SpringActionController
                            }
                            catch (Exception e)
                            {
-                               logger.error("Could not get canonical path for " + strPath + ", using path as entered.", e);
+                               logger.error("Could not get canonical path for {}, using path as entered.", strPath, e);
                            }
                        }
                        form.setRootPath(strPath);
@@ -783,7 +782,7 @@ public class FileContentController extends SpringActionController
                     children.add(node);
                 }
             }
-            catch (MissingRootDirectoryException | UnsetRootDirectoryException ignored) {}
+            catch (UnsetRootDirectoryException ignored) {}
 
             // include all child containers
             for (Container child : c.getChildren())

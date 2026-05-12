@@ -130,7 +130,7 @@ public class ModuleAssayCache
                     .mapToInt(Collection::size)
                     .sum();
 
-            LOG.info(count + " assay providers defined in all modules");
+            LOG.info("{} assay providers defined in all modules", count);
 
             // Make sure the cache retrieves the expected number of assay providers from the miniassay module, if present
 

@@ -97,7 +97,7 @@ public class ModuleResourceCaches
 
         if (!matcher.matches() || matcher.groupCount() != 2)
         {
-            LOGGER.warn("Unrecognized cache key format: " + cacheKey);
+            LOGGER.warn("Unrecognized cache key format: {}", cacheKey);
             return null;
         }
 

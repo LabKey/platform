@@ -257,11 +257,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         Set<Long> rootRowIds = new LongHashSet();
         Set<String> parentNames = new HashSet<>();
-        if (outputRows.size() == 1 && outputRows.get(0).containsKey(ROOT_RECOMPUTE_ROWID_SET))
+        if (outputRows.size() == 1 && outputRows.getFirst().containsKey(ROOT_RECOMPUTE_ROWID_SET))
         {
-            rootRowIds.addAll((Collection<? extends Long>) outputRows.get(0).get(ROOT_RECOMPUTE_ROWID_SET));
-            if (outputRows.get(0).containsKey(PARENT_RECOMPUTE_NAME_SET))
-                parentNames.addAll((Collection<? extends String>) outputRows.get(0).get(PARENT_RECOMPUTE_NAME_SET));
+            rootRowIds.addAll((Collection<? extends Long>) outputRows.getFirst().get(ROOT_RECOMPUTE_ROWID_SET));
+            if (outputRows.getFirst().containsKey(PARENT_RECOMPUTE_NAME_SET))
+                parentNames.addAll((Collection<? extends String>) outputRows.getFirst().get(PARENT_RECOMPUTE_NAME_SET));
         }
         else
         {
@@ -482,7 +482,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         // insertRows with lineage is pretty good at deadlocking against itself, so use retry loop
@@ -527,7 +527,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         BatchValidationException errors,
         @Nullable Map<Enum, Object> configParameters,
         Map<String, Object> extraScriptContext
-    ) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    ) throws BatchValidationException
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         if (rows == null || rows.isEmpty())

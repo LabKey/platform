@@ -173,7 +173,7 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
                 sampleNames.add(name);
             }
         }
-        LOG.debug("All samples in matrix: " + StringUtils.join(sampleNames, ", "));
+        LOG.debug("All samples in matrix: {}", StringUtils.join(sampleNames, ", "));
 
         Set<String> unresolved = new HashSet<>();
         Map<String, ExpMaterial> sampleMap = new HashMap<>(sampleNames.size());
@@ -266,7 +266,7 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
         }
         else if (sampleTypes.size() == 1)
         {
-            return sampleTypes.get(0);
+            return sampleTypes.getFirst();
         }
         else
         {
@@ -279,16 +279,9 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
         // Create a new SampleSet in the current container
         List<GWTPropertyDescriptor> properties = new ArrayList<>();
         properties.add(new GWTPropertyDescriptor("Name", "http://www.w3.org/2001/XMLSchema#string"));
-        try
-        {
-            ExpSampleType sampleType = SampleTypeService.get().createSampleType(c, user, "Samples", null, properties, emptyList(), -1, -1, -1, -1, "${Name}");
-            LOG.info("Created new SampleType in " + c.getName() + ": " + sampleType.getLSID());
-            return sampleType;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        ExpSampleType sampleType = SampleTypeService.get().createSampleType(c, user, "Samples", null, properties, emptyList(), -1, -1, -1, -1, "${Name}");
+        LOG.info("Created new SampleType in {}: {}", c.getName(), sampleType.getLSID());
+        return sampleType;
     }
 
     public  Map<String, String> getRunPropertyValues(ExpRun run, Domain domain)

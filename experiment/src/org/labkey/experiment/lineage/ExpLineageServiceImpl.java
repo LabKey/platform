@@ -104,7 +104,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
 
             if (seed instanceof ExpRunItem && ExperimentServiceImpl.get().isUnknownMaterial((ExpRunItem) seed))
             {
-                LOG.warn("Lineage not available for unknown material: " + seed.getLSID());
+                LOG.warn("Lineage not available for unknown material: {}", seed.getLSID());
                 continue;
             }
 
@@ -173,8 +173,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
 
             if (parentRowId == null || childRowId == null)
             {
-                LOG.error(String.format("Node not found for lineage: %s.\n  depth=%d, parentLsid=%s, parentType=%s, parentRowId=%d, childLsid=%s, childType=%s, childRowId=%d",
-                        StringUtils.join(seedIdentifiers.lsids(), ", "), depth, parentLSID, parentExpType, parentRowId, childLSID, childExpType, childRowId));
+                LOG.error("Node not found for lineage: {}.\n  depth={}, parentLsid={}, parentType={}, parentRowId={}, childLsid={}, childType={}, childRowId={}", StringUtils.join(seedIdentifiers.lsids(), ", "), depth, parentLSID, parentExpType, parentRowId, childLSID, childExpType, childRowId);
             }
             else
             {

@@ -507,13 +507,11 @@ public class QuerySettings
 
     public String param(QueryParam param)
     {
-        switch (param)
+        return switch (param)
         {
-            case schemaName:
-                return param.toString();
-            default:
-                return param(param.toString());
-        }
+            case schemaName -> param.toString();
+            default -> param(param.toString());
+        };
     }
 
     protected String param(String param)

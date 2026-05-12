@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -150,7 +151,7 @@ public abstract class CacheClearingQueryUpdateService implements QueryUpdateServ
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> acl)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> acl)
     {
         return _service.hasPermission(user, acl);
     }

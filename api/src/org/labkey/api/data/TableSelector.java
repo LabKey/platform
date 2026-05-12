@@ -155,7 +155,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                 if (null != column)
                     selectColumns.add(column);
                 else
-                    LOG.warn("Requested column does not exist in table '" + table.getSelectName() + "': " + name);
+                    LOG.warn("Requested column does not exist in table '{}': {}", table.getSelectName(), name);
             }
         }
 
@@ -518,7 +518,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         // If we are only asking for the COUNT(*) aggregate, then we don't need to include all of the table columns in the subselect.
         // This can make a big performance difference for Sample Type and Data Class tables as they can then skip
         // the join between the exp schema base table and the materialized table for the given table.
-        Collection<ColumnInfo> aggColumns = aggregates.size() == 1 && aggregates.get(0).isCountStar() ? getRowCountingSelectColumns(_table) : _columns;
+        Collection<ColumnInfo> aggColumns = aggregates.size() == 1 && aggregates.getFirst().isCountStar() ? getRowCountingSelectColumns(_table) : _columns;
 
         final AggregateSqlFactory sqlFactory = new AggregateSqlFactory(_filter, aggregates, aggColumns);
         ResultSetFactory resultSetFactory = new ExecutingResultSetFactory(sqlFactory);

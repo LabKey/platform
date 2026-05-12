@@ -200,7 +200,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             if (null != pkVal && null != pkVal[0])
                 Table.delete(_tinfo, pkVal);
             else //Hmm, throw an exception here????
-                _log.warn("Nothing to delete for table " + _tinfo.getName() + " on request " + _request.getRequestURI());
+                _log.warn("Nothing to delete for table {} on request {}", _tinfo.getName(), _request.getRequestURI());
         }
     }
 
@@ -267,7 +267,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
     {
         assertSinglePK();
 
-        return _tinfo.getPkColumnNames().get(0);
+        return _tinfo.getPkColumnNames().getFirst();
     }
 
     public List<String> getPkNamesList()
@@ -299,7 +299,7 @@ public class TableViewForm extends ViewForm implements HasBindParameters
         //Issue 42042: Lists with text primary key don't handle commas in key value when viewing row details
         if (getPkNamesList().size() == 1)
         {
-            setValueToBind(getPkNamesList().get(0), s);
+            setValueToBind(getPkNamesList().getFirst(), s);
         }
         else
         {

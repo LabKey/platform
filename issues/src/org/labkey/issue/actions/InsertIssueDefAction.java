@@ -113,7 +113,7 @@ public class InsertIssueDefAction extends UserSchemaAction
         {
             if (_results.size() == 1)
             {
-                String name = String.valueOf(_results.get(0).get("name"));
+                String name = String.valueOf(_results.getFirst().get("name"));
 
                 IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), name);
                 if (issueListDef != null)

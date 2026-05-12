@@ -50,7 +50,7 @@ public class ModuleCustomViewInfo implements CustomViewInfo
     }
 
     @Override
-    public String getLabel()
+    public @NotNull String getLabel()
     {
         return _customViewDef.getLabel();
     }
@@ -81,7 +81,7 @@ public class ModuleCustomViewInfo implements CustomViewInfo
     }
 
     @Override
-    public Date getCreated()
+    public @NotNull Date getCreated()
     {
         return _customViewDef.getLastModified();
     }
@@ -93,25 +93,25 @@ public class ModuleCustomViewInfo implements CustomViewInfo
     }
 
     @Override
-    public Date getModified()
+    public @NotNull Date getModified()
     {
         return _customViewDef.getLastModified();
     }
 
     @Override
-    public String getSchemaName()
+    public @NotNull String getSchemaName()
     {
         return _customViewDef.getSchema();
     }
 
     @Override
-    public SchemaKey getSchemaPath()
+    public @NotNull SchemaKey getSchemaPath()
     {
         return SchemaKey.fromString(_customViewDef.getSchema());
     }
 
     @Override
-    public String getQueryName()
+    public @NotNull String getQueryName()
     {
         return _customViewDef.getQuery();
     }

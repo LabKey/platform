@@ -76,7 +76,7 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
             if (null == sql)
             {
                 if (!_relation._query.getParseErrors().isEmpty())
-                    throw _relation._query.getParseErrors().get(0);
+                    throw _relation._query.getParseErrors().getFirst();
                 else
                     throw new QueryException("Error generating SQL");
             }

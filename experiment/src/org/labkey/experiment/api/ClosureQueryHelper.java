@@ -379,17 +379,17 @@ public class ClosureQueryHelper
         ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(
             container -> {
                 int totalRows = 0;
-                logger.info("Adding rows to exp.materialAncestors from sample types in container " + container.getPath());
+                logger.info("Adding rows to exp.materialAncestors from sample types in container {}", container.getPath());
                 for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, false))
                 {
-                    logger.debug("   Adding rows from samples in sampleType " + sampleType.getName());
+                    logger.debug("   Adding rows from samples in sampleType {}", sampleType.getName());
                     SQLFragment from = new SQLFragment(" FROM exp.material WHERE materialSourceId = ?").add(sampleType.getRowId());
                     SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null, "INSERT INTO exp.materialAncestors (RowId, AncestorRowId, AncestorTypeId) ");
                     int numRows = new SqlExecutor(schema.getScope()).execute(sql);
                     totalRows += numRows;
-                    logger.debug("    Added " + numRows + " rows for data class " + sampleType.getName());
+                    logger.debug("    Added {} rows for data class {}", numRows, sampleType.getName());
                 }
-                logger.info("Added " + totalRows + " rows for sample types in container " + container.getPath());
+                logger.info("Added {} rows for sample types in container {}", totalRows, container.getPath());
             }
         );
         logger.info("Finished populating exp.materialAncestors");
@@ -402,18 +402,18 @@ public class ClosureQueryHelper
         ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(
             container -> {
                 int totalRows = 0;
-                logger.info("Adding rows to exp.dataAncestors from data classes in container " + container.getPath());
+                logger.info("Adding rows to exp.dataAncestors from data classes in container {}", container.getPath());
                 for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(container, false))
                 {
-                    logger.debug("   Adding rows to exp.dataAncestors from data class " + dataClass.getName());
+                    logger.debug("   Adding rows to exp.dataAncestors from data class {}", dataClass.getName());
                     SQLFragment from = new SQLFragment(" FROM exp.data WHERE classId = ?").add(dataClass.getRowId());
                     SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null,
                             "INSERT INTO exp.dataAncestors (RowId, AncestorRowId, AncestorTypeId) ");
                     int numRows = new SqlExecutor(schema.getScope()).execute(sql);
                     totalRows += numRows;
-                    logger.debug("    Added " + numRows + " rows for data class " + dataClass.getName());
+                    logger.debug("    Added {} rows for data class {}", numRows, dataClass.getName());
                 }
-                logger.info("Added " + totalRows + " rows for data classes in container " + container.getPath());
+                logger.info("Added {} rows for data classes in container {}", totalRows, container.getPath());
             }
         );
         logger.info("Finished populating exp.dataAncestors");

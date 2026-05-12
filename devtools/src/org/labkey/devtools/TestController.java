@@ -407,11 +407,6 @@ public class TestController extends SpringActionController
             _enctype = "multipart/form-data";
         }
 
-        @Override
-        public boolean handlePost(SimpleForm simpleForm, BindException errors)
-        {
-            return false;
-        }
     }
 
 
@@ -810,21 +805,13 @@ public class TestController extends SpringActionController
         @Override
         public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
         {
-            Exception exception;
-            switch (form.getMessage())
+            Exception exception = switch (form.getMessage())
             {
-                case "ISE":
-                    exception = new IllegalStateException();
-                    break;
-                case "NPE":
-                    exception = new NullPointerException();
-                    break;
-                case "NPE2":
-                    exception = new NullPointerException();
-                    break;
-                default:
-                    throw new IllegalArgumentException(form.getMessage());
-            }
+                case "ISE" -> new IllegalStateException();
+                case "NPE" -> new NullPointerException();
+                case "NPE2" -> new NullPointerException();
+                default -> throw new IllegalArgumentException(form.getMessage());
+            };
             ExceptionUtil.decorateException(exception, ExceptionUtil.ExceptionInfo.ExtraMessage, "testing", true);
             throw exception;
         }

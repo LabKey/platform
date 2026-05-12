@@ -106,7 +106,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
                 LOG.warn("PollingFileWatcher exception", throwable);
             }
         },
-                l -> LOG.debug("PollingWatchService pollTime: " + l));
+                l -> LOG.debug("PollingWatchService pollTime: {}", l));
 
         _pollingWatcher.start();
         FileSystemWatcherThread pollingThread = new FileSystemWatcherThread("PollingFileWatcher", _pollingWatcher);
@@ -161,13 +161,13 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         else
         {
             plm = previous;
-            LOG.debug("Detected previously registered file watcher service for file system of type '" + plm.getFileStoreType() + "'. for directory: " + directory.toAbsolutePath());
+            LOG.debug("Detected previously registered file watcher service for file system of type '{}'. for directory: {}", plm.getFileStoreType(), directory.toAbsolutePath());
         }
 
         // Add the listener and its requested events
         plm.addListener(listener, events);
 
-        LOG.debug("Registered a file listener on " + directory);
+        LOG.debug("Registered a file listener on {}", directory);
     }
 
     private void registerWithWatchService(Path directory, PathListenerManager plm) throws IOException
@@ -190,12 +190,12 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         {
             if (pollingWatcher)
             {
-                LOG.debug("Detected network file system type '" + fileStoreType + "'. Create polling file watcher service and register this directory there for directory: " + directory.toAbsolutePath());
+                LOG.debug("Detected network file system type '{}'. Create polling file watcher service and register this directory there for directory: {}", fileStoreType, directory.toAbsolutePath());
                 watchKey = _pollingWatcher.register(directory, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
             }
             else
             {
-                LOG.debug("Detected local file system type '" + fileStoreType + "'. Register path with standard watcher service for directory: " + directory.toAbsolutePath());
+                LOG.debug("Detected local file system type '{}'. Register path with standard watcher service for directory: {}", fileStoreType, directory.toAbsolutePath());
                 watchKey = directory.register(_watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);  // Register all events (future listener might request events that current listener doesn't)
             }
         }
@@ -219,7 +219,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         if (plm != null)
         {
             plm.removeListener(listener);
-            LOG.debug("Removed a file listener on " + directory);
+            LOG.debug("Removed a file listener on {}", directory);
 
             if (FileUtil.hasCloudScheme(dir) && CloudWatchService.get() != null)
             {
@@ -251,7 +251,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             }
             finally
             {
-                LOG.info(getClass().getSimpleName() + " is terminating");
+                LOG.info("{} is terminating", getClass().getSimpleName());
                 close();
             }
         }
@@ -318,14 +318,14 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
                 // on this directory. If watch key is no longer valid, then it's probably been deleted.
                 if (!watchKey.reset() && null != watchedPath )
                 {
-                    LOG.debug("WatchKey is invalid: " + watchedPath);
+                    LOG.debug("WatchKey is invalid: {}", watchedPath);
                     if (!isInterrupted())
                         handleDeletedDirectory(watchedPath);
                 }
 
                 if (isInterrupted())
                 {
-                    LOG.debug("File watcher interrupted: " + watchedPath);
+                    LOG.debug("File watcher interrupted: {}", watchedPath);
                 }
             }
         }
@@ -430,7 +430,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             else
             {
                 Path entry = event.context();
-                LOG.debug(kind.name() + " event on " + watchedPath.resolve(entry));
+                LOG.debug("{} event on {}", kind.name(), watchedPath.resolve(entry));
 
                 for (ListenerContext listenerContext : _list)
                     listenerContext.fireEvent(kind, watchedPath, entry, callback);

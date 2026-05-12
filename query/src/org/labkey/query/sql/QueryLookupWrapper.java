@@ -17,8 +17,8 @@ package org.labkey.query.sql;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -152,7 +152,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
     @Override
     public void declareFields()
     {
-        _log.debug("declareFields " + this.toStringDebug());
+        _log.debug("declareFields {}", this.toStringDebug());
 
         _source.declareFields();
     }
@@ -375,7 +375,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
 
 
     @Override
-    public RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, ColumnType.Fk fk, @NotNull String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, ColumnType.@NotNull Fk fk, @NotNull String name)
     {
         QLWColumn parent = (QLWColumn)parentRelCol;
         FieldKey k = new FieldKey(parent._key, name);

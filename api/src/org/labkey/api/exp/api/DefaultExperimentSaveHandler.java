@@ -172,7 +172,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         {
             if (!batch.equals(run.getBatch()))
             {
-                LOG.warn("Run '" + run + "' is not in batch '" + batch + "'");
+                LOG.warn("Run '{}' is not in batch '{}'", run, batch);
                 return false;
             }
         }
@@ -548,7 +548,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                     if (materials.size() > 1)
                         throw new NotFoundException("More than one material matches name '" + materialName + "'. Provide name and sampleType to disambiguate the desired material.");
                     if (materials.size() == 1)
-                        material = materials.get(0);
+                        material = materials.getFirst();
                 }
 
                 if (material == null)

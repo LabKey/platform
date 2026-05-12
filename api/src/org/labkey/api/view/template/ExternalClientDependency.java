@@ -40,7 +40,7 @@ public class ExternalClientDependency extends ClientDependency
 
         if (type == null)
         {
-            _log.warn("External client dependency type not recognized: " + uri);
+            _log.warn("External client dependency type not recognized: {}", uri);
         }
 
         return type;

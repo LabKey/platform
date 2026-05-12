@@ -1189,7 +1189,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 List<Map<String, Object>> insertedRows = qus.insertRows(user, container, Collections.singletonList(plateRow), errors, null, extraScriptContext);
                 if (errors.hasErrors())
                     throw errors;
-                Map<String, Object> row = insertedRows.get(0);
+                Map<String, Object> row = insertedRows.getFirst();
                 plateId = MapUtils.getLong(row,PlateTable.Column.RowId.name());
                 plate.setRowId(plateId);
                 plate.setLsid((String) row.get(PlateTable.Column.Lsid.name()));
@@ -2100,14 +2100,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             String containerId = (String) data.get("container");
             if (StringUtils.trimToNull(containerId) == null)
             {
-                LOG.warn(String.format("clearCache: failed to resolve containerId for plate with rowId %d", rowId));
+                LOG.warn("clearCache: failed to resolve containerId for plate with rowId {}", rowId);
                 continue;
             }
 
             Container c = ContainerManager.getForId(containerId);
             if (c == null)
             {
-                LOG.warn(String.format("clearCache: failed to resolve container for plate with rowId %d with containerId %s.", rowId, containerId));
+                LOG.warn("clearCache: failed to resolve container for plate with rowId {} with containerId {}.", rowId, containerId);
                 continue;
             }
             PlateCache.uncache(c, rowId);
@@ -2900,7 +2900,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (errors.hasErrors())
                 throw errors;
 
-            Integer plateSetId = asInteger(rows.get(0).get(PlateSetTable.Column.RowId.name()));
+            Integer plateSetId = asInteger(rows.getFirst().get(PlateSetTable.Column.RowId.name()));
 
             savePlateSetHeritage(plateSetId, plateSet.getType(), parentPlateSet);
 
@@ -3794,7 +3794,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         else
         {
             // For non-map export view we always want "position" first
-            fieldKeys.add(0, WellTable.Column.Position.fieldKey());
+            fieldKeys.addFirst(WellTable.Column.Position.fieldKey());
         }
 
         List<PlateCustomField> customFields = plate.getCustomFields();
@@ -5141,7 +5141,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             {
                 for (Long plateId : entry.getValue())
                 {
-                    LOG.debug("Indexing plate ID " + plateId);
+                    LOG.debug("Indexing plate ID {}", plateId);
                     indexPlate(entry.getKey(), plateId, true);
                 }
             }

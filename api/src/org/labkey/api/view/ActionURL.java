@@ -672,7 +672,7 @@ public class ActionURL extends URLHelper implements Cloneable
 
             // a is changed
             s = a.getLocalURIString();
-            assertTrue(!stringA.equals(s));
+            assertFalse(stringA.equals(s));
 
             // b is not changed
             s = b.getLocalURIString();

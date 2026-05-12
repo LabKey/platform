@@ -288,7 +288,7 @@ public class GroupManager
                     }
                     else
                     {
-                        log.warn("Invalid group name for group member: " + xmlGroupMember.getName());
+                        log.warn("Invalid group name for group member: {}", xmlGroupMember.getName());
                     }
                 }
             }
@@ -314,12 +314,12 @@ public class GroupManager
                         }
                         else
                         {
-                            log.warn("User does not exist for group member: " + xmlMember.getName());
+                            log.warn("User does not exist for group member: {}", xmlMember.getName());
                         }
                     }
                     catch(ValidEmail.InvalidEmailException e)
                     {
-                        log.warn("Invalid email address for group member: " + xmlMember.getName());
+                        log.warn("Invalid email address for group member: {}", xmlMember.getName());
                     }
                 }
             }

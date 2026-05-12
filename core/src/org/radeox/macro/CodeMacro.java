@@ -97,11 +97,11 @@ public class CodeMacro extends LocalePreserved {
           SourceCodeFormatter existing = formatters.get(name);
           if (existing.getPriority() < formatter.getPriority()) {
             formatters.put(name, formatter);
-            log.debug("Replacing formatter: " + formatter.getClass() + " (" + name + ")");
+            log.debug("Replacing formatter: {} ({})", formatter.getClass(), name);
           }
         } else {
           formatters.put(name, formatter);
-          log.debug("Loaded formatter: " + formatter.getClass() + " (" + name +")");
+          log.debug("Loaded formatter: {} ({})", formatter.getClass(), name);
         }
       } catch (Exception e) {
         log.warn("CodeMacro: unable to load code formatter", e);

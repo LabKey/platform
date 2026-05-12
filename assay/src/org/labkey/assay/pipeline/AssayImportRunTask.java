@@ -218,7 +218,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         {
             List<RecordedAction.DataFile> outputs = new ArrayList<>();
             FileLike dataFile = getDataFile(job);
-            job.getLogger().info("Importing output data file : " + dataFile.getName());
+            job.getLogger().info("Importing output data file : {}", dataFile.getName());
             outputs.add(new RecordedAction.DataFile(dataFile.toURI(), "RESULTS-DATA", false, false));
 
             return outputs;
@@ -230,7 +230,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             // guaranteed to have a single file upload
             assert support.getInputFiles().size() == 1;
-            return support.getInputFiles().get(0);
+            return support.getInputFiles().getFirst();
         }
 
         @Override
@@ -242,7 +242,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             {
                 if (ExcelLoader.isExcel(dataFile))
                 {
-                    job.getLogger().info("Processing excel file: " + dataFile.getName());
+                    job.getLogger().info("Processing excel file: {}", dataFile.getName());
                     // check to see if this is a multi-sheet format
                     try (ExcelLoader loader = new ExcelLoader(new BufferedInputStream(dataFile.openInputStream()), true, null))
                     {
@@ -272,8 +272,8 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
                     if (results.size() == 1)
                     {
-                        FileLike resultFile = results.get(0);
-                        job.getLogger().info("Found results file named : " + resultFile + ", loading into results data.");
+                        FileLike resultFile = results.getFirst();
+                        job.getLogger().info("Found results file named : {}, loading into results data.", resultFile);
                         try (DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null))
                         {
                             return loader.load();
@@ -305,8 +305,8 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                     List<FileLike> results = dir.getChildren((f) -> BATCH_PROPS_NAME.equalsIgnoreCase(FileUtil.getBaseName(f)));
                     if (results.size() == 1)
                     {
-                        FileLike resultFile = results.get(0);
-                        job.getLogger().info("Found batch properties file named : " + resultFile + ", loading into results data.");
+                        FileLike resultFile = results.getFirst();
+                        job.getLogger().info("Found batch properties file named : {}, loading into results data.", resultFile);
                         try (DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null))
                         {
                             return loadProperties(loader);
@@ -338,8 +338,8 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                     List<FileLike> results = dir.getChildren((f) -> RUN_PROPS_NAME.equalsIgnoreCase(FileUtil.getBaseName(f)));
                     if (results.size() == 1)
                     {
-                        FileLike resultFile = results.get(0);
-                        job.getLogger().info("Found run properties file named : " + resultFile + ", loading into results data.");
+                        FileLike resultFile = results.getFirst();
+                        job.getLogger().info("Found run properties file named : {}, loading into results data.", resultFile);
                         try (DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null))
                         {
                             return loadProperties(loader);
@@ -371,7 +371,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             {
                 if (loader.getSheetNames().contains(sheetName))
                 {
-                    log.info("Found sheet named : " + sheetName + ", loading properties from this sheet.");
+                    log.info("Found sheet named : {}, loading properties from this sheet.", sheetName);
 
                     loader.setSheetName(sheetName);
                     return loadProperties(loader);
@@ -530,7 +530,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             // If only one protocol exists in the container, use it
             if (protocols.size() == 1)
-                return protocols.get(0);
+                return protocols.getFirst();
 
             // Otherwise, we require a name
             String protocolName = _protocolName;
@@ -617,7 +617,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             outputs = new ArrayList<>();
 
-            RecordedAction lastAction = actions.get(actions.size()-1);
+            RecordedAction lastAction = actions.getLast();
             for (RecordedAction.DataFile dataFile : lastAction.getOutputs())
             {
                 if (dataFile.isTransient())
@@ -658,7 +658,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
         Map<File, String> inputs = new LinkedHashMap<>();
 
-        RecordedAction firstAction = actions.get(0);
+        RecordedAction firstAction = actions.getFirst();
         for (RecordedAction.DataFile dataFile : firstAction.getInputs())
         {
             if (dataFile.isTransient())

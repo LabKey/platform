@@ -17,7 +17,6 @@ package org.labkey.api.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainUtil;

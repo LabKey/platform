@@ -472,7 +472,7 @@ public class LoginController extends SpringActionController
             {
                 if (!expectedKatpcha.equalsIgnoreCase(StringUtils.trimToNull(form.getKaptchaText())))
                 {
-                    logger.warn("Captcha text did not match for self-registration attempt for " + form.getEmail());
+                    logger.warn("Captcha text did not match for self-registration attempt for {}", form.getEmail());
                     errors.reject(ERROR_MSG,"Verification text does not match, please retry.");
                 }
             }
@@ -485,7 +485,7 @@ public class LoginController extends SpringActionController
 
             if (!AuthenticationManager.isRegistrationEnabled())
             {
-                _log.warn("Attempt to register user using email " + form.getEmail() + " with registration not enabled");
+                _log.warn("Attempt to register user using email {} with registration not enabled", form.getEmail());
                 throw new NotFoundException("Registration is not enabled.");
             }
 
@@ -1601,9 +1601,9 @@ public class LoginController extends SpringActionController
             if (errors.hasErrors())
             {
                 if (_unrecoverableError)
-                    _log.warn("Verification failed: " + form.getEmail() + " " + form.getVerification());
+                    _log.warn("Verification failed: {} {}", form.getEmail(), form.getVerification());
                 else
-                    _log.warn("Password entry error: " + form.getEmail());
+                    _log.warn("Password entry error: {}", form.getEmail());
             }
         }
 

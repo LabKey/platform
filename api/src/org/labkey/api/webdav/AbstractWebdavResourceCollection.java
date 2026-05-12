@@ -62,12 +62,6 @@ public abstract class AbstractWebdavResourceCollection extends AbstractWebdavRes
     }
 
     @Override
-    public boolean isFile()
-    {
-        return false;
-    }
-
-    @Override
     public InputStream getInputStream(User user)
     {
         throw new IllegalStateException("Can't read from a collection");

@@ -215,7 +215,7 @@ public abstract class SpringModule extends DefaultModule
         {
             ApplicationContext parentApplicationContext = getParentApplicationContext();
 
-            _log.info("Loading Spring configuration for the " + getName() + " module from " + contextConfigFiles);
+            _log.info("Loading Spring configuration for the {} module from {}", getName(), contextConfigFiles);
 
             try
             {
@@ -237,7 +237,7 @@ public abstract class SpringModule extends DefaultModule
             }
             catch (Exception x)
             {
-                _log.error("Failed to load spring application context for module: " + getName(), x);
+                _log.error("Failed to load spring application context for module: {}", getName(), x);
                 ModuleLoader.getInstance().addModuleFailure(getName(), x);
             }
         }
@@ -342,7 +342,7 @@ public abstract class SpringModule extends DefaultModule
                 }
                 catch (FileNotFoundException e)
                 {
-                    _log.debug("Could not find config override " + string);
+                    _log.debug("Could not find config override {}", string);
                 }
             }
 

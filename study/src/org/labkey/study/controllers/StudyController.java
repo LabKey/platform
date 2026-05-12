@@ -888,7 +888,7 @@ public class StudyController extends BaseStudyController
                 if (datasetKeyObject instanceof List<?> list)
                 {
                     // bug 7365: It's been specified twice -- once in the POST, once in the GET. Just need one of them.
-                    datasetKeyObject = list.get(0);
+                    datasetKeyObject = list.getFirst();
                 }
                 if (null != datasetKeyObject)
                 {
@@ -1510,7 +1510,7 @@ public class StudyController extends BaseStudyController
 
             try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
             {
-                _log.info("Starting participant deletion for ID: " + participantId);
+                _log.info("Starting participant deletion for ID: {}", participantId);
                 List<? extends Dataset> datasets = study.getDatasets();
 
                 //delete participant rows from datasets
@@ -2313,7 +2313,7 @@ public class StudyController extends BaseStudyController
 
             StudyManager.getInstance().deleteVisits(study, getUnusedVisits(), getUser(), true);
 
-            _log.info("Delete unused visits took: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
+            _log.info("Delete unused visits took: {}", DateUtil.formatDuration(System.currentTimeMillis() - start));
 
             return true;
         }
@@ -2399,7 +2399,7 @@ public class StudyController extends BaseStudyController
             long start = System.currentTimeMillis();
             StudyImpl study = getStudyThrowIfNull();
             StudyManager.getInstance().deleteVisits(study, _visitsToDelete, getUser(), false);
-            _log.info("Bulk delete visits took: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
+            _log.info("Bulk delete visits took: {}", DateUtil.formatDuration(System.currentTimeMillis() - start));
             return true;
         }
 
@@ -2925,22 +2925,22 @@ public class StudyController extends BaseStudyController
         private String _sourceLsid;
         private int _recordCount;
 
-        public Integer getProtocolId()
+        public @Nullable Integer getProtocolId()
         {
             return _protocolId;
         }
 
-        public void setProtocolId(Integer protocolId)
+        public void setProtocolId(@Nullable Integer protocolId)
         {
             _protocolId = protocolId;
         }
 
-        public Integer getSampleTypeId()
+        public @Nullable Integer getSampleTypeId()
         {
             return _sampleTypeId;
         }
 
-        public void setSampleTypeId(Integer sampleTypeId)
+        public void setSampleTypeId(@Nullable Integer sampleTypeId)
         {
             _sampleTypeId = sampleTypeId;
         }
@@ -3970,7 +3970,7 @@ public class StudyController extends BaseStudyController
                 }
                 catch (URISyntaxException e)
                 {
-                    _log.warn("ResetPipelineAction redirect string invalid: " + redirect);
+                    _log.warn("ResetPipelineAction redirect string invalid: {}", redirect);
                 }
             }
             return urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
@@ -6528,7 +6528,7 @@ public class StudyController extends BaseStudyController
             }
 
             // TODO: Change to audit log
-            _log.info("The visit import custom mapping was " + (hadCustomMapping ? "replaced" : "imported"));
+            _log.info("The visit import custom mapping was {}", hadCustomMapping ? "replaced" : "imported");
 
             return true;
         }
@@ -7473,7 +7473,7 @@ public class StudyController extends BaseStudyController
             {
                 List<ValidationException> rowErrors = errors.getRowErrors();
                 int count = rowErrors.size();
-                rowErrors.add(0, new ValidationException("Warning: NONE of participant mappings have been imported because this mapping file contains " + (1 == count ? "an error" : "errors") + "! Please correct the following:"));
+                rowErrors.addFirst(new ValidationException("Warning: NONE of participant mappings have been imported because this mapping file contains " + (1 == count ? "an error" : "errors") + "! Please correct the following:"));
             }
 
             return rows;

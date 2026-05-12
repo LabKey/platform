@@ -60,7 +60,7 @@ public class QCase extends QExpr
 
         // skip the first expression
         ArrayList<QNode> list = new ArrayList<>(childList());
-        list.remove(0);
+        list.removeFirst();
         return getChildrenSqlType(list);
     }
 

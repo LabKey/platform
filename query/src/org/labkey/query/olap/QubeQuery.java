@@ -169,7 +169,7 @@ public class QubeQuery
         {
             if (d.getHierarchies().size() == 1)
             {
-                Hierarchy h = d.getHierarchies().get(0);
+                Hierarchy h = d.getHierarchies().getFirst();
                 _cubeHierarchyMap.put(d.getName(),h);
                 _cubeHierarchyMap.put(d.getUniqueName(), h);
             }

@@ -26,9 +26,7 @@ import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.net.URI;
 

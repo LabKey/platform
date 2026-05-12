@@ -310,7 +310,7 @@ public class HtmlRenderer implements WikiRenderer
 
             // Stick new definition at beginning of list -- we want to replace them in reverse order
             Definition definition = new Definition(substitutionType, substitutionMatcher.start(), substitutionMatcher.end(), paramMap);
-            definitions.add(0, definition);
+            definitions.addFirst(definition);
             wikiErrors.put(definition, paramErrors);
         }
         while (substitutionMatcher.find());

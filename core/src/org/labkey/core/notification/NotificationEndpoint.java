@@ -74,7 +74,7 @@ public class NotificationEndpoint extends Endpoint
         Integer id = asInteger(endpointConfig.getUserProperties().get("userId"));
         this.userId = null==id ? 0 : id;
 
-        LOG.debug(this + " onOpen");
+        LOG.debug("{} onOpen", this);
         synchronized (endpointsMap)
         {
             if (this.userId > 0)
@@ -96,7 +96,7 @@ public class NotificationEndpoint extends Endpoint
     @Override
     public void onClose(Session session, CloseReason closeReason)
     {
-        LOG.debug(this + " onClose: " + closeReason.toString());
+        LOG.debug("{} onClose: {}", this, closeReason.toString());
         synchronized (endpointsMap)
         {
             endpointsMap.removeMapping(this.userId, this);
@@ -109,7 +109,7 @@ public class NotificationEndpoint extends Endpoint
     public void onError(Session session, Throwable throwable)
     {
         this.errored = true;
-        LOG.debug(this + " onError: " + throwable.getMessage());
+        LOG.debug("{} onError: {}", this, throwable.getMessage());
         super.onError(session, throwable);
     }
 
@@ -183,7 +183,7 @@ public class NotificationEndpoint extends Endpoint
         }
         catch (Exception x)
         {
-            LOG.debug(this + ": " + x.getMessage());
+            LOG.debug("{}: {}", this, x.getMessage());
             // NOTE: This NotificationEndpoint will be removed from the endpointsMap in onClose, called from WsSocket.close()
             // but remember it is a bad endpoint if someone tries to use it before the onClose method runs.
             this.errored = true;
@@ -207,7 +207,7 @@ public class NotificationEndpoint extends Endpoint
         {
             endpoint.safely(() -> {
                 endpoint.session.getBasicRemote().sendText(data);
-                LOG.debug(endpoint + " sendText: " + eventName);
+                LOG.debug("{} sendText: {}", endpoint, eventName);
             });
             count++;
         }
@@ -215,9 +215,9 @@ public class NotificationEndpoint extends Endpoint
         if (count == 0)
         {
             if (userIds.size() == 1)
-                LOG.debug("WebSocket: no sessions to send for " + userIds.get(0) + ": " + eventName);
+                LOG.debug("WebSocket: no sessions to send for {}: {}", userIds.getFirst(), eventName);
             else
-                LOG.debug("WebSocket: no sessions to send:" + eventName);
+                LOG.debug("WebSocket: no sessions to send:{}", eventName);
         }
 
     }

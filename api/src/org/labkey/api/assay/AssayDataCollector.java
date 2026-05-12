@@ -56,7 +56,7 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
     }
 
     /** @return the UI to plug into the import wizard for the user to somehow select/upload the file */
-    HttpView<?> getView(ContextType context) throws ExperimentException;
+    HttpView<?> getView(ContextType context);
 
     /** @return the name for this AssayDataCollector. Needs to be unique within the set of data collectors for any given import attempt */
     String getShortName();

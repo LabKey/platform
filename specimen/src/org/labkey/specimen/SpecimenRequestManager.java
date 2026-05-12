@@ -106,7 +106,7 @@ public class SpecimenRequestManager
         List<SpecimenRequestStatus> statuses = new ArrayList<>(_requestStatusHelper.getCollection(c));
         // if the 'not-yet-submitted' status doesn't exist, create it here, with sort order -1,
         // so it's always first.
-        if (statuses.isEmpty() || statuses.get(0).getSortOrder() != -1)
+        if (statuses.isEmpty() || statuses.getFirst().getSortOrder() != -1)
         {
             SpecimenRequestStatus notYetSubmittedStatus = new SpecimenRequestStatus();
             notYetSubmittedStatus.setContainer(c);
@@ -127,9 +127,9 @@ public class SpecimenRequestManager
     public SpecimenRequestStatus getRequestShoppingCartStatus(Container c, User user)
     {
         List<SpecimenRequestStatus> statuses = getRequestStatuses(c, user);
-        if (statuses.get(0).getSortOrder() != -1)
+        if (statuses.getFirst().getSortOrder() != -1)
             throw new IllegalStateException("Shopping cart status should be created automatically.");
-        return statuses.get(0);
+        return statuses.getFirst();
     }
 
     public SpecimenRequestStatus getInitialRequestStatus(Container c, User user, boolean nonCart)
@@ -651,7 +651,7 @@ public class SpecimenRequestManager
 
     private Container getContainer(List<Vial> vials)
     {
-        Container container = vials.get(0).getContainer();
+        Container container = vials.getFirst().getContainer();
         if (AppProps.getInstance().isDevMode())
         {
             for (int i = 1; i < vials.size(); i++)
@@ -1253,7 +1253,7 @@ public class SpecimenRequestManager
         {
             Vial selectedVial = null;
             if (preferredLocation == null)
-                selectedVial = vials.get(0);
+                selectedVial = vials.getFirst();
             else
             {
                 for (Iterator<Vial> it = vials.iterator(); it.hasNext() && selectedVial == null;)

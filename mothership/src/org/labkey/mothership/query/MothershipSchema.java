@@ -398,7 +398,7 @@ public class MothershipSchema extends UserSchema
     {
         FilteredTable<MothershipSchema> result = createExceptionReportTable(cf);
         List<FieldKey> defaultCols = new ArrayList<>(result.getDefaultVisibleColumns());
-        defaultCols.removeIf(fieldKey -> fieldKey.getParts().get(0).equals("ServerSessionId"));
+        defaultCols.removeIf(fieldKey -> fieldKey.getParts().getFirst().equals("ServerSessionId"));
         defaultCols.add(0, FieldKey.fromParts("ExceptionStackTraceId"));
         defaultCols.add(1, FieldKey.fromParts("ExceptionStackTraceId", "StackTrace"));
         result.setDefaultVisibleColumns(defaultCols);

@@ -62,7 +62,7 @@
     }
     else
     {
-        Plate plate = assay.getPlates().get(0);
+        Plate plate = assay.getPlates().getFirst();
         if (virusNames.isEmpty())
         {
 %>

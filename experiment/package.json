@@ -13,19 +13,19 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "7.35.2-fb-keyboardInteraction.9"
+    "@labkey/components": "7.35.2"
   },
   "devDependencies": {
-    "@labkey/build": "9.1.2",
-    "@labkey/test": "1.13.0",
+    "@labkey/build": "9.1.3",
+    "@labkey/test": "1.13.1",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
-    "jest": "30.3.0",
-    "jest-cli": "30.3.0",
-    "jest-environment-jsdom": "30.3.0",
+    "jest": "30.4.2",
+    "jest-cli": "30.4.2",
+    "jest-environment-jsdom": "30.4.1",
     "jest-teamcity-reporter": "0.9.0",
     "mock-fs": "5.5.0",
-    "ts-jest": "29.4.6"
+    "ts-jest": "29.4.9"
   }
 }

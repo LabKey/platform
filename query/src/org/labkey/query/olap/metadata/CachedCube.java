@@ -15,6 +15,7 @@
  */
 package org.labkey.query.olap.metadata;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.JdbcType;
@@ -146,7 +147,7 @@ public class CachedCube extends MetadataElementBase implements Cube
     public List<Measure> getMeasures()
     {
         Dimension measures = getDimensions().get("Measures");
-        Level l = measures.getHierarchies().get(0).getLevels().get(0);
+        Level l = measures.getHierarchies().getFirst().getLevels().getFirst();
         try
         {
             return (List<Measure>)(List)l.getMembers();
@@ -283,7 +284,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         @Override
         public NamedList<Member> getRootMembers() throws OlapException
         {
-            return (NamedList<Member>)getLevels().get(0).getMembers();
+            return (NamedList<Member>)getLevels().getFirst().getMembers();
         }
     }
 
@@ -1033,7 +1034,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         }
 
         @Override
-        public Set<Entry<Object, _Member>> entrySet()
+        public @NotNull Set<Entry<Object, _Member>> entrySet()
         {
             return impl.entrySet();
         }

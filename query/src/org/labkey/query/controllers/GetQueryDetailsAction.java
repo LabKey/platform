@@ -149,7 +149,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             tinfo = queryDef.getTable(schema, qerrors, true, !form.isIncludeSuggestedQueryColumns());
             if (!qerrors.isEmpty())
             {
-                resp.put("exception", qerrors.get(0).getMessage());
+                resp.put("exception", qerrors.getFirst().getMessage());
                 return resp;
             }
         }
@@ -326,7 +326,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             fullMessage += message;
             resp.put("exception", fullMessage);
 
-            LOG.error("QueryParseException. Container: " + getContainer().getPath() + " Query: " + queryName, e);
+            LOG.error("QueryParseException. Container: {} Query: {}", getContainer().getPath(), queryName, e);
 
             return resp;
         }
@@ -560,7 +560,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                 else if (value instanceof String str)
                     _viewName = new String[] { str };
                 else
-                    LOG.error("Unexpected viewName parameter type: " + value);
+                    LOG.error("Unexpected viewName parameter type: {}", value);
             }
             return BaseViewAction.springBindParameters(this, "form", params);
         }

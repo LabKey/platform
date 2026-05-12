@@ -278,7 +278,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         {
             if (file.isDirectory())
             {
-                log.info("Deleting temporary report folder: " + file.getPath());
+                log.info("Deleting temporary report folder: {}", file.getPath());
                 deleteReportDir(file, cutoff);
             }
             else
@@ -290,7 +290,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                 }
                 catch (IOException e)
                 {
-                    log.info("Unable to delete temporary report file: " + file.getPath(), e);
+                    log.info("Unable to delete temporary report file: {}", file.getPath(), e);
                 }
             }
         }
@@ -428,11 +428,11 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                         if (null != output)
                         {
                             scriptOutputs.add(output);
-                            LOG.debug("ExecuteScript:  Added output parameter for: " + param.getName());
+                            LOG.debug("ExecuteScript:  Added output parameter for: {}", param.getName());
                         }
                         else
                         {
-                            LOG.debug("ExecuteScript:  Could not add output parameter for: " + param.getName());
+                            LOG.debug("ExecuteScript:  Could not add output parameter for: {}", param.getName());
                         }
                     }
                 }
@@ -629,7 +629,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     {
         ScriptEngine engine = getScriptEngine(context.getContainer());
         if (engine != null)
-            return engine.getFactory().getExtensions().get(0);
+            return engine.getFactory().getExtensions().getFirst();
         return super.getDefaultExtension(context);
     }
 

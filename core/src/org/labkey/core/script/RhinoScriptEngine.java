@@ -181,7 +181,7 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
                 "com.sun.phobos.script.javascript.JSAdapter",
                 false);
             // add top level functions
-            String names[] = { "bindings", "scope", "sync"  };
+            String[] names = { "bindings", "scope", "sync"  };
             top.defineFunctionProperties(names, RhinoScriptEngine.class, ScriptableObject.DONTENUM);
 
             processAllTopLevelScripts(cx);

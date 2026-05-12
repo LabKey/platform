@@ -34,7 +34,7 @@ public interface DataStateImportExportHelper
 
         helpers.sort(Comparator.comparingInt(DataStateImportExportHelper::getPriority));
         if (!helpers.isEmpty())
-            return helpers.get(0);
+            return helpers.getFirst();
 
         return null;
     }

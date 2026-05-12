@@ -29,8 +29,8 @@
     AuditTypeProvider selectedProvider = null;
     if (currentView == null)
     {
-        currentView = providers.get(0).getEventName();
-        selectedProvider = providers.get(0);
+        currentView = providers.getFirst().getEventName();
+        selectedProvider = providers.getFirst();
     }
 
     var selectId = makeId("formsSubmit");

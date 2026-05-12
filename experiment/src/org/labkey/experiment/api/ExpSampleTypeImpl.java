@@ -276,7 +276,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             List<? extends DomainProperty> props = getDomain().getProperties();
             if (!props.isEmpty())
             {
-                result = props.get(0);
+                result = props.getFirst();
             }
         }
         return result;

@@ -2,7 +2,6 @@ package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.admin.ImportException;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -27,7 +26,7 @@ public class StudySecurityPolicyImporter implements InternalStudyImporter
     public String getDataType() { return StudyArchiveDataTypes.STUDY_SECURITY_POLICY; }
 
     @Override
-    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws IOException, ValidationException, ImportException
+    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws IOException, ImportException
     {
         if (!ctx.isDataTypeSelected(getDataType()))
             return;

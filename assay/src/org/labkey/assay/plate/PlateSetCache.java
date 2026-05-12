@@ -48,8 +48,8 @@ public class PlateSetCache
             List<PlateSetImpl> plateSets = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSet(), filter, null).getArrayList(PlateSetImpl.class);
             if (plateSets.size() == 1)
             {
-                PlateSet plateSet = plateSets.get(0);
-                LOG.debug(String.format("Caching plate set \"%s\" for folder %s", plateSet.getName(), cacheKey._container.getPath()));
+                PlateSet plateSet = plateSets.getFirst();
+                LOG.debug("Caching plate set \"{}\" for folder {}", plateSet.getName(), cacheKey._container.getPath());
 
                 // add all cache keys for this plate set
                 addCacheKeys(cacheKey, plateSet);
@@ -110,7 +110,7 @@ public class PlateSetCache
 
     public static void uncache(Container c)
     {
-        LOG.debug(String.format("Clearing plate set cache for folder %s", c.getPath()));
+        LOG.debug("Clearing plate set cache for folder {}", c.getPath());
 
         // uncache all plate sets for this container
         if (_loader._containerPlateSet.containsKey(c))
@@ -139,7 +139,7 @@ public class PlateSetCache
 
     public static void uncache(Container c, PlateSet plateSet)
     {
-        LOG.debug(String.format("Un-caching plate set \"%s\"", plateSet.getPlateSetId()));
+        LOG.debug("Un-caching plate set \"{}\"", plateSet.getPlateSetId());
         if (plateSet.getPlateSetId() == null)
             throw new IllegalArgumentException("Plate set cannot be uncached, plateSetId is null");
         if (plateSet.getRowId() == null)

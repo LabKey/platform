@@ -208,7 +208,7 @@ public class VisitMapImporter
         records.sort(Comparator.comparing(VisitMapRecord::getSequenceNumMin));
 
         // Initialize to less than the smallest min
-        BigDecimal max = records.get(0).getSequenceNumMin().subtract(BigDecimal.ONE);
+        BigDecimal max = records.getFirst().getSequenceNumMin().subtract(BigDecimal.ONE);
 
         for (VisitMapRecord r : records)
         {

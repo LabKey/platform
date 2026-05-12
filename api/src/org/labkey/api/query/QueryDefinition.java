@@ -32,7 +32,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -155,16 +154,16 @@ public interface QueryDefinition
      * TableQueryDefinition and file-based queries cannot be deleted.
      * Fires the {@link QueryChangeListener#queryChanged(User, Container, ContainerFilter, SchemaKey, QueryProperty, Collection)} event.
      */
-    Collection<QueryPropertyChange<?>> save(User user, Container container) throws SQLException;
-    Collection<QueryPropertyChange<?>> save(User user, Container container, boolean fireChangeEvent) throws SQLException;
+    Collection<QueryPropertyChange<?>> save(User user, Container container);
+    Collection<QueryPropertyChange<?>> save(User user, Container container, boolean fireChangeEvent);
 
     /**
      * Delete the QueryDefinition.
      * TableQueryDefinition and file-based queries cannot be deleted.
      * Fires the {@link QueryChangeListener#queryDeleted(User, Container, ContainerFilter, SchemaKey, Collection)} event.
      */
-    void delete(User user) throws SQLException;
-    void delete(User user, boolean fireChangeEvent) throws SQLException;
+    void delete(User user);
+    void delete(User user, boolean fireChangeEvent);
 
     List<QueryParseException> getParseErrors(QuerySchema schema);
     boolean validateQuery(QuerySchema schema, List<QueryParseException> errors, List<QueryParseException> warnings);

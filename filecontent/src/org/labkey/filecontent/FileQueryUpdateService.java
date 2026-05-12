@@ -20,8 +20,8 @@ import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -169,7 +169,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                 }
 
                 if (results.next())
-                    _log.warn("More than one row returned for data file: " + filter.toSQLString(getQueryTable().getSqlDialect()));
+                    _log.warn("More than one row returned for data file: {}", filter.toSQLString(getQueryTable().getSqlDialect()));
             }
         }
 
@@ -320,7 +320,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                     Map<String, Object> rowMap = rows[0];
 
                     if (rows.length > 1)
-                        _log.error("More than one row returned for data file: " + filter);
+                        _log.error("More than one row returned for data file: {}", filter);
 
                     if (rowMap != null)
                     {
@@ -393,7 +393,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
 
             if (data == null)
             {
-                _log.debug("Auto-creating ExpData object, as one was not already available. DataFileURL : " + dataFileUrl);
+                _log.debug("Auto-creating ExpData object, as one was not already available. DataFileURL : {}", dataFileUrl);
 
                 data = ExperimentService.get().createData(container, UPLOADED_FILE);
                 data.setName(resource.getName());
@@ -460,7 +460,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws ValidationException
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws ValidationException
     {
         return _setRow(user, container, row, true);
     }
@@ -569,7 +569,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                     targetResource = resource;
                 else
                 {
-                    _log.error("More than one webdav resource found for file: " + absoluteFilePath);
+                    _log.error("More than one webdav resource found for file: {}", absoluteFilePath);
                     return null;
                 }
             }

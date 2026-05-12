@@ -210,7 +210,7 @@ public class CustomFolderType implements FolderType
         }
         sortedModuleList.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
         if (portal != null)
-            sortedModuleList.add(0, portal);
+            sortedModuleList.addFirst(portal);
 
         return sortedModuleList;
     }

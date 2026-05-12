@@ -177,7 +177,7 @@ public class ListWriter
                             .collect(Collectors.toCollection(LinkedList::new));
 
                     // Sort the data rows by PK, #11261
-                    Sort sort = ti.getPkColumns().size() != 1 ? null : new Sort(ti.getPkColumns().get(0).getFieldKey());
+                    Sort sort = ti.getPkColumns().size() != 1 ? null : new Sort(ti.getPkColumns().getFirst().getFieldKey());
 
                     // NOTE: TSVGridWriter generates and closes Results
 
@@ -290,7 +290,7 @@ public class ListWriter
                 uniquifiers.put(attachmentColumn.getName(), new FileNameUniquifier());
 
             List<ColumnInfo> selectColumns = new ArrayList<>(attachmentColumns);
-            selectColumns.add(0, ti.getColumn("EntityId"));
+            selectColumns.addFirst(ti.getColumn("EntityId"));
 
             try (ResultSet rs = QueryService.get().getSelectBuilder(ti).columns(selectColumns).select(null, false))
             {
