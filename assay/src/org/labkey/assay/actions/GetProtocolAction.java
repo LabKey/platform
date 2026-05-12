@@ -15,7 +15,6 @@
  */
 package org.labkey.assay.actions;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
@@ -23,13 +22,10 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.assay.AssayDomainService;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.assay.AssayDomainServiceImpl;
@@ -52,22 +48,6 @@ public class GetProtocolAction extends ReadOnlyApiAction<GetProtocolAction.Desig
         {
             _copy = copy;
         }
-    }
-
-    //Keeping both request and response object mappers to avoid serialization/deserialization issues
-    //as not sure if request object mapper is needed
-    @Override
-    protected ObjectMapper createRequestObjectMapper()
-    {
-        ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-        configureObjectMapper(mapper);
-        return mapper;
-    }
-
-    @Override
-    protected ObjectMapper createResponseObjectMapper()
-    {
-        return this.createRequestObjectMapper();
     }
 
     @Override
@@ -109,7 +89,4 @@ public class GetProtocolAction extends ReadOnlyApiAction<GetProtocolAction.Desig
         }
     }
 
-    static void configureObjectMapper(ObjectMapper om) {
-        om.addMixIn(GWTPropertyDescriptor.class, GWTPropertyDescriptorMixin.class);
-    }
 }

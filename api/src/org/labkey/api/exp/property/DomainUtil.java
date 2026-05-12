@@ -117,7 +117,7 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
-import static org.labkey.api.gwt.client.ui.PropertyType.CALCULATED_CONCEPT_URI;
+import static org.labkey.api.exp.PropertyType.CALCULATED_CONCEPT_URI;
 import static org.labkey.api.util.StringExpressionFactory.SUBSTITUTION_EXP_PATTERN;
 
 public class DomainUtil
