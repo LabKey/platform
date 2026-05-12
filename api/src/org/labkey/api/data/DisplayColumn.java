@@ -1232,6 +1232,11 @@ public abstract class DisplayColumn extends RenderColumn
         _requiresHtmlFiltering = requiresHtmlFiltering;
     }
 
+    public void setWithLookup(boolean withLookup)
+    {
+        // subclasses override as needed
+    }
+
     public void setLinkTarget(String linkTarget)
     {
         _linkTarget = linkTarget;

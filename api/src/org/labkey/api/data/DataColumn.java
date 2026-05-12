@@ -192,6 +192,12 @@ public class DataColumn extends DisplayColumn
     }
 
     @Override
+    public void setWithLookup(boolean withLookup)
+    {
+        _displayColumn = withLookup ? getDisplayField(_boundColumn, true) : _boundColumn;
+    }
+
+    @Override
     public String toString()
     {
         return getClass().getName() + ": " + getName();
