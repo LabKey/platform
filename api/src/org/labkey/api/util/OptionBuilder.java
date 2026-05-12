@@ -1,6 +1,6 @@
 package org.labkey.api.util;
 
-import jakarta.validation.constraints.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class OptionBuilder implements HasHtmlString, SafeToRender

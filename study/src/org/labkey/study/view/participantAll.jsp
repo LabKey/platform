@@ -76,8 +76,8 @@
 <%@ page import="java.util.TreeSet" %>
 <%@ page import="static org.labkey.api.util.PageFlowUtil.jsString" %>
 <%@ page import="java.util.Objects" %>
-<%@ page import="static org.labkey.api.exp.api.ExperimentService.asInteger" %>
-<%@ page import="static org.labkey.api.exp.api.ExperimentService.asLong" %>
+<%@ page import="static org.labkey.api.util.IntegerUtils.asInteger" %>
+<%@ page import="static org.labkey.api.util.IntegerUtils.asLong" %>
 <%@ page import="org.labkey.api.collections.LongHashMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
