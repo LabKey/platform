@@ -193,7 +193,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                     // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
                     // name as a built-in column. e.g. to allow setting overrides?
                     if (!kind.hasPropertiesIncludeBaseProperties())
-                        log.info("StorageProvisioner ignored property with name of built-in column: " + property.getPropertyURI());
+                        log.info("StorageProvisioner ignored property with name of built-in column: {}", property.getPropertyURI());
                     continue;
                 }
 
@@ -217,7 +217,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
             try
             {
-                log.info("Attempting to create " + tableName);
+                log.info("Attempting to create {}", tableName);
                 change.execute();
                 RECENTLY_CREATED_TABLES.put(tableName, Thread.currentThread().getStackTrace());
             }
@@ -226,7 +226,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 StackTraceElement[] previousCreationStack = RECENTLY_CREATED_TABLES.getIfPresent(tableName);
 
                 if (null != previousCreationStack)
-                    log.error(re.getMessage() + " while attempting to create storage table. Previous creation stack trace:" + ExceptionUtil.renderStackTrace(previousCreationStack));
+                    log.error("{} while attempting to create storage table. Previous creation stack trace:{}", re.getMessage(), ExceptionUtil.renderStackTrace(previousCreationStack));
 
                 throw re;
             }
@@ -280,7 +280,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         if (kind == null)
         {
             if (null != domain.getStorageTableName())
-                log.warn("Domain " + domain.getName() + " has no DomainKind, it cannot be dropped. URI: " + domain.getTypeURI(), new IllegalStateException());
+                log.warn("Domain {} has no DomainKind, it cannot be dropped. URI: {}", domain.getName(), domain.getTypeURI(), new IllegalStateException());
             return;
         }
 
@@ -304,13 +304,13 @@ public class StorageProvisionerImpl implements StorageProvisioner
             }
             catch (RuntimeSQLException e)
             {
-                log.warn(String.format("Failed to drop table in schema %s for domain %s - %s", schemaName, domain.getName(), e.getMessage()), e);
+                log.warn("Failed to drop table in schema {} for domain {} - {}", schemaName, domain.getName(), e.getMessage(), e);
                 throw e;
             }
         }
         else
         {
-            log.warn(String.format("Table %s in schema %s for domain %s does not exist. Ignoring drop.", tableName, schemaName, domain.getName()));
+            log.warn("Table {} in schema {} for domain {} does not exist. Ignoring drop.", tableName, schemaName, domain.getName());
         }
         // Issue 44467: Update DbSchema caches
         kind.invalidate(domain);
@@ -340,7 +340,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             {
                 // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
                 // name as a built-in column. e.g. to allow setting overrides?
-                log.warn("StorageProvisioner ignored property with name of built-in column: " + prop.getName());
+                log.warn("StorageProvisioner ignored property with name of built-in column: {}", prop.getName());
                 continue;
             }
 
@@ -384,12 +384,12 @@ public class StorageProvisionerImpl implements StorageProvisioner
             {
                 // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
                 // name as a built-in column. e.g. to allow setting overrides?
-                log.warn("StorageProvisioner ignored property with name of built-in column: " + prop.getPropertyURI());
+                log.warn("StorageProvisioner ignored property with name of built-in column: {}", prop.getPropertyURI());
                 continue;
             }
 
             if (CoreSchema.getInstance().getSqlDialect().isReserved(prop.getName()))
-                log.warn("Property name '" + prop.getName() + "' is a reserved word in the current SQL dialect.");
+                log.warn("Property name '{}' is a reserved word in the current SQL dialect.", prop.getName());
 
             PropertyStorageSpec spec = kind.getPropertySpec(prop.getPropertyDescriptor(), domain);
             if (null != spec)
@@ -401,7 +401,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 change.addColumn(makeMvColumn(prop));
             }
         }
-        log.debug("addingProperties to " + domain.getName());
+        log.debug("addingProperties to {}", domain.getName());
         change.execute();
     }
 
@@ -1099,7 +1099,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
             if (null == c)
             {
-                log.info("Column not found in storage table: " + tableName + "." + s.getName());
+                log.info("Column not found in storage table: {}.{}", tableName, s.getName());
                 continue;
             }
 
@@ -1133,11 +1133,11 @@ public class StorageProvisionerImpl implements StorageProvisioner
             {
                 if (p.getPropertyDescriptor().getStorageColumnName() == null)
                 {
-                    log.warn("No storage column name set for property " + p.getName() + " on table " + tableName);
+                    log.warn("No storage column name set for property {} on table {}", p.getName(), tableName);
                 }
                 else
                 {
-                    log.info("Column not found in storage table: " + tableName + "." + p.getPropertyDescriptor().getStorageColumnName());
+                    log.info("Column not found in storage table: {}.{}", tableName, p.getPropertyDescriptor().getStorageColumnName());
                 }
                 continue;
             }

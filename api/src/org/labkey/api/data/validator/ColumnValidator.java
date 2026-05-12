@@ -16,7 +16,6 @@
 package org.labkey.api.data.validator;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.exp.property.ValidatorContext;
 
 /**

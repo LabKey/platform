@@ -65,7 +65,7 @@ public class LabKeyKaptchaServlet extends HttpServlet implements Servlet
     /** */
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException
+            throws IOException
     {
         // Set to expire far in the past.
         resp.setDateHeader("Expires", 0);

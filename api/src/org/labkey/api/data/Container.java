@@ -1458,7 +1458,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         ContainerType type = ContainerTypeRegistry.get().getType(typeString);
         if (type == null)
-            LOG.warn("Unknown container type: " + typeString);
+            LOG.warn("Unknown container type: {}", typeString);
         else
             _containerType = type;
     }
@@ -1800,7 +1800,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 iconFile = dir.getFile();
             if (!NetworkDrive.exists(iconFile))
             {
-                LOG.warn("Could not find specified icon: " + iconPath);
+                LOG.warn("Could not find specified icon: {}", iconPath);
                 iconPath = FolderType.NONE.getFolderIconPath();
             }
             if (!iconPath.startsWith("/"))

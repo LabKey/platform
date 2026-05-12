@@ -168,7 +168,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
                     }
                     catch (Exception e)
                     {
-                        LOG.error("Failed to save authentication logo " + value, e);
+                        LOG.error("Failed to save authentication logo {}", value, e);
                     }
                 }
             }

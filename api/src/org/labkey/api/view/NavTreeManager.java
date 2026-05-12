@@ -50,8 +50,8 @@ public class NavTreeManager
     {
         if (null == navTreeId)
             return;
-        
-        _log.debug("Expand/Collapse path navTreeId = " + navTreeId + " path=" +  path + " collapse= " + collapse);
+
+        _log.debug("Expand/Collapse path navTreeId = {} path={} collapse= {}", navTreeId, path, collapse);
         saveExpandState(viewContext, navTreeId, path, collapse);
     }
 

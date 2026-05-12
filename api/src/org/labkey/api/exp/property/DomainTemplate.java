@@ -109,14 +109,14 @@ public class DomainTemplate
         Module module = ModuleLoader.getInstance().getModule(moduleName);
         if (module == null)
         {
-            LogManager.getLogger(DomainTemplate.class).warn("Module '" + moduleName + "' for domain template not found");
+            LogManager.getLogger(DomainTemplate.class).warn("Module '{}' for domain template not found", moduleName);
             return null;
         }
 
         DomainTemplateGroup group = DomainTemplateGroup.get(module, groupName);
         if (group == null)
         {
-            LogManager.getLogger(DomainTemplate.class).warn("Domain template group '" + groupName + "' not found in module '" + moduleName + "'");
+            LogManager.getLogger(DomainTemplate.class).warn("Domain template group '{}' not found in module '{}'", groupName, moduleName);
             return null;
         }
 
@@ -377,7 +377,7 @@ public class DomainTemplate
     public void throwErrors() throws BatchValidationException
     {
         if (_errors != null && !_errors.isEmpty())
-            throw new BatchValidationException(new ValidationException(_errors.get(0)));
+            throw new BatchValidationException(new ValidationException(_errors.getFirst()));
     }
 
     public Domain createAndImport(Container c, User u, @Nullable String domainName, boolean createDomain, boolean importData) throws BatchValidationException
@@ -389,7 +389,7 @@ public class DomainTemplate
         {
             try (DbScope.Transaction tx = ExperimentService.get().getSchema().getScope().ensureTransaction())
             {
-                DomainTemplateGroup.LOG.debug("creating domain '" + domainName + "'");
+                DomainTemplateGroup.LOG.debug("creating domain '{}'", domainName);
                 d = DomainUtil.createDomain(this, c, u, domainName, true);
                 tx.commit();
             }
@@ -482,7 +482,7 @@ public class DomainTemplate
 
         try (DbScope.Transaction transaction = table.getSchema().getScope().ensureTransaction())
         {
-            DomainTemplateGroup.LOG.debug("importing data for domain '" + domainName + "' from '" + initialData.file + "'");
+            DomainTemplateGroup.LOG.debug("importing data for domain '{}' from '{}'", domainName, initialData.file);
             int count = updateService.loadRows(u, c, dl, context, new HashMap<>());
             if (errors.hasErrors())
                 return 0;

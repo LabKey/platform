@@ -22,7 +22,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.vfs.FileLike;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Map;
 
 /**

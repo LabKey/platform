@@ -36,11 +36,6 @@ import java.util.List;
  */
 public abstract class AbstractExperimentDataHandler implements ExperimentDataHandler
 {
-    @Override
-    public String getFileName(ExpData data, String defaultName)
-    {
-        return defaultName;
-    }
 
     @Override
     public void exportFile(ExpData data, FileLike dataFile, User user, OutputStream out) throws ExperimentException

@@ -53,10 +53,10 @@ public class PlateCache
 
             if (plates.size() == 1)
             {
-                PlateBean bean = plates.get(0);
+                PlateBean bean = plates.getFirst();
 
                 PlateImpl plate = PlateManager.get().populatePlate(bean);
-                LOG.debug(String.format("Caching plate \"%s\" for folder %s", plate.getName(), cacheKey._container.getPath()));
+                LOG.debug("Caching plate \"{}\" for folder {}", plate.getName(), cacheKey._container.getPath());
 
                 // add all cache keys for this plate
                 addCacheKeys(cacheKey, plate);
@@ -173,7 +173,7 @@ public class PlateCache
 
     public static void uncache(Container c)
     {
-        LOG.debug(String.format("Clearing cache for folder %s", c.getPath()));
+        LOG.debug("Clearing cache for folder {}", c.getPath());
 
         // uncache all plates for this container
         if (_loader._containerPlateMap.containsKey(c))
@@ -202,7 +202,7 @@ public class PlateCache
 
     public static void uncache(Container c, Plate plate)
     {
-        LOG.debug(String.format("Un-caching plate \"%s\" for folder %s", plate.getPlateId(), c.getPath()));
+        LOG.debug("Un-caching plate \"{}\" for folder {}", plate.getPlateId(), c.getPath());
 
         if (plate.getPlateId() == null)
             throw new IllegalArgumentException("Plate cannot be uncached, plateId is null");

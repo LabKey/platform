@@ -60,7 +60,7 @@ public abstract class AbstractImportExportContext<XmlRoot extends XmlObject, Xml
 
     @JsonCreator
     protected AbstractImportExportContext(@JsonProperty("_dataTypes") Set<String> dataTypes, @JsonProperty("_user") User user,
-                                          @JsonProperty("_c") Container c, @JsonProperty("_root") VirtualFile root,
+                                          @JsonProperty("_c") Container c, @JsonProperty("_root") @Nullable VirtualFile root,
                                           @JsonProperty("_contextMap") Map<Class<? extends ImportExportContext<?>>, ImportExportContext<?>> contextMap)
     {
         _dataTypes = dataTypes;

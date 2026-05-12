@@ -65,7 +65,7 @@ public class DbReportIdentifier extends AbstractReportIdentifier
         }
         catch (NumberFormatException e)
         {
-            LOG.debug("Failed to parse reportId as a number: '" + id + "'. Attempting to resolve by name");
+            LOG.debug("Failed to parse reportId as a number: '{}'. Attempting to resolve by name", id);
             // See if we can resolve the report by name instead of id
 
             // If no user or container was supplied, see if there's a ViewContext we can use. This is important
@@ -86,11 +86,11 @@ public class DbReportIdentifier extends AbstractReportIdentifier
                 // Filter all available reports by name to see if we get a single match
                 List<Report> matchingReports = ReportService.get().getReports(user, container).stream().filter((r) -> suffix.equalsIgnoreCase(r.getDescriptor().getReportName())).toList();
 
-                LOG.debug("Found " + matchingReports.size() + " matching DB-based reports for id '" + id + "' for user " + user.getEmail() + " in " + container.getPath());
+                LOG.debug("Found {} matching DB-based reports for id '{}' for user {} in {}", matchingReports.size(), id, user.getEmail(), container.getPath());
 
                 if (matchingReports.size() == 1)
                 {
-                    resolvedId = matchingReports.get(0).getDescriptor().getReportId().getRowId();
+                    resolvedId = matchingReports.getFirst().getDescriptor().getReportId().getRowId();
                 }
                 else
                 {
@@ -99,7 +99,7 @@ public class DbReportIdentifier extends AbstractReportIdentifier
             }
             else
             {
-                LOG.debug("No user or container available, unable to try resolving by report name for '" + id + "'");
+                LOG.debug("No user or container available, unable to try resolving by report name for '{}'", id);
                 throw e;
             }
         }

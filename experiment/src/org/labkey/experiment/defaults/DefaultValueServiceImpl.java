@@ -173,7 +173,7 @@ public class DefaultValueServiceImpl implements DefaultValueService
                     }
                     catch (ConversionException e)
                     {
-                        LogManager.getLogger(DefaultValueServiceImpl.class).warn("Unable to convert default value '" + value + "' for property " + property.getName() + ", dropping it");
+                        LogManager.getLogger(DefaultValueServiceImpl.class).warn("Unable to convert default value '{}' for property {}, dropping it", value, property.getName());
                     }
                 }
             }

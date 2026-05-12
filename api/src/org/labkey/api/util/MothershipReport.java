@@ -33,7 +33,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.logging.LogHelper;
 
-import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -346,7 +345,7 @@ public class MothershipReport implements Runnable
                         }
                     }
                 }
-                LOG.debug("Successfully submitted report to " + _url);
+                LOG.debug("Successfully submitted report to {}", _url);
             }
             finally
             {
@@ -356,7 +355,7 @@ public class MothershipReport implements Runnable
         catch (Throwable t)
         {
             // Don't bother the client if this report fails
-            LOG.debug("Failed to submit report to " + this._target + " at " + _url, t);
+            LOG.debug("Failed to submit report to {} at {}", this._target, _url, t);
         }
     }
 

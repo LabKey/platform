@@ -227,7 +227,7 @@ public class AnalyticsProviderItem
         if (analyticsProvider == null)
         {
             //throw new IllegalArgumentException("Invalid analytic provider name: '" + type + "'.");
-            LOG.warn("Invalid analytic provider name: '" + type + "'.");
+            LOG.warn("Invalid analytic provider name: '{}'.", type);
         }
 
         return analyticsProvider;

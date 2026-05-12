@@ -16,9 +16,12 @@
 
 package org.labkey.api.util;
 
-import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.message.Message;
+import org.apache.logging.log4j.simple.SimpleLogger;
+import org.apache.logging.log4j.util.PropertiesUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -163,7 +166,7 @@ public class ExceptionUtil
             ex = cause;
             cause = null;
 
-            if (ex.getClass() == RuntimeException.class || ex.getClass() == UnexpectedException.class || ex.getClass() == RuntimeSQLException.class || ex instanceof InvocationTargetException || ex instanceof com.google.gwt.user.server.rpc.UnexpectedException)
+            if (ex.getClass() == RuntimeException.class || ex.getClass() == UnexpectedException.class || ex.getClass() == RuntimeSQLException.class || ex instanceof InvocationTargetException)
             {
                 cause = ex.getCause();
             }
@@ -185,8 +188,8 @@ public class ExceptionUtil
         StringWriter sw = new StringWriter();
         e.printStackTrace(new PrintWriter(sw));
         String s = PageFlowUtil.filter(sw.toString());
-        s = s.replaceAll(" ", "&nbsp;");
-        s = s.replaceAll("\t", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
+        s = s.replace(" ", "&nbsp;");
+        s = s.replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
         return HtmlString.unsafe("<pre class='exception-stacktrace'>\n" + s + "</pre>\n");
     }
 
@@ -999,7 +1002,7 @@ public class ExceptionUtil
         //don't log unauthorized (basic-auth challenge), forbiddens, or simple not found (404s)
         if (null != unhandledException && responseStatus != HttpServletResponse.SC_BAD_REQUEST)
         {
-            log.error("Unhandled exception: " + message, unhandledException);
+            log.error("Unhandled exception: {}", message, unhandledException);
         }
 
         ApiResponseWriter.Format responseFormat = ApiResponseWriter.getResponseFormat(request, null);
@@ -1263,7 +1266,7 @@ public class ExceptionUtil
             HashMap<Enum<?>, String> m = _exceptionDecorations.computeIfAbsent(t, _ -> new HashMap<>());
             if (overwrite || !m.containsKey(key))
             {
-                LOG.debug("add decoration to " + t.getClass() + "@" + System.identityHashCode(t) + " " + key + "=" + value);
+                LOG.debug("add decoration to {}@{} {}={}", t.getClass(), System.identityHashCode(t), key, value);
                 m.put(key,value);
                 return true;
             }
@@ -1348,40 +1351,13 @@ public class ExceptionUtil
                 return null;
             };
             SearchService dummySearch = (SearchService) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{SearchService.class}, h);
-            Logger dummyLog = new org.apache.logging.log4j.core.Logger((LoggerContext) LogManager.getContext(), "mock logger", LogManager.getLogger("mock logger").getMessageFactory())
+            Logger dummyLog = new SimpleLogger("mock logger", Level.ALL, false, false, false, false, "", null, new PropertiesUtil(PropertiesUtil.getSystemProperties()), null)
             {
                 @Override
-                public void debug(Object message)
+                public void logMessage(String fqcn, Level level, Marker marker, Message message, Throwable throwable)
                 {
-                }
-                @Override
-                public void debug(Object message, Throwable t)
-                {
-                }
-                @Override
-                public void error(Object message)
-                {
-                }
-                @Override
-                public void error(String message, Throwable t)
-                {
-                    res.addHeader("Logger.error", null!=message? message :null!=t?t.getMessage():"");
-                }
-                @Override
-                public void fatal(Object message)
-                {
-                }
-                @Override
-                public void fatal(Object message, Throwable t)
-                {
-                }
-                @Override
-                public void warn(Object message)
-                {
-                }
-                @Override
-                public void warn(Object message, Throwable t)
-                {
+                    if (level.isMoreSpecificThan(Level.ERROR))
+                        res.addHeader("Logger.error", message.getFormattedMessage());
                 }
             };
             HttpServletRequestWrapper req = new HttpServletRequestWrapper(TestContext.get().getRequest())
@@ -1611,7 +1587,7 @@ public class ExceptionUtil
         }
 
         @Override
-        public void sendRedirect(String s, int i, boolean b) throws IOException
+        public void sendRedirect(String s, int i, boolean b)
         {
             redirect = s;
         }

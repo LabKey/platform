@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
-import java.util.LinkedHashSet;
 
 /**
  * Models a database constraint on a particular table, such as a primary key or UNIQUE constraint.

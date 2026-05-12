@@ -46,8 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static java.util.Collections.singleton;
-
 public class ExperimentListenerImpl implements ExperimentListener
 {
     @Override

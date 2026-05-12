@@ -20,8 +20,6 @@ import org.labkey.api.exp.AbstractFileXarSource;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.vfs.FileLike;
 
-import java.nio.file.Path;
-
 /*
 * User: jeckels
 * Date: Jul 30, 2008

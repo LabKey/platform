@@ -10,10 +10,10 @@ import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -239,7 +239,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
             .toList();
 
         if (sampleCols.size() == 1)
-            additionalCols.put(LinkToStudyKeys.SampleId, sampleCols.get(0).getFieldKey());
+            additionalCols.put(LinkToStudyKeys.SampleId, sampleCols.getFirst().getFieldKey());
 
         if (!selectColumns.containsKey(additionalCols.get(LinkToStudyKeys.Date)))
         {
@@ -250,7 +250,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
                 .toList();
 
             if (dateCols.size() == 1)
-                additionalCols.put(LinkToStudyKeys.Date, dateCols.get(0).getFieldKey());
+                additionalCols.put(LinkToStudyKeys.Date, dateCols.getFirst().getFieldKey());
         }
 
         // Add the TargetStudy FieldKey only if it exists on the Result domain.

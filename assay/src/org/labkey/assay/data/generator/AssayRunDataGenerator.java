@@ -13,7 +13,6 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.gwt.client.assay.AssayException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
@@ -28,7 +27,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.gwt.client.ui.PropertyType.SAMPLE_CONCEPT_URI;
+import static org.labkey.api.exp.PropertyType.SAMPLE_CONCEPT_URI;
 
 public class AssayRunDataGenerator extends DataGenerator<AssayRunDataGenerator.Config>
 {
@@ -56,22 +55,22 @@ public class AssayRunDataGenerator extends DataGenerator<AssayRunDataGenerator.C
         }
         if (_config.getMaxRunsPerDesign() <= 0)
         {
-            _log.info(String.format("No assay run data generated because %s=%d.", Config.MAX_RUNS_PER_DESIGN, _config.getMaxRunsPerDesign()));
+            _log.info("No assay run data generated because {}={}.", Config.MAX_RUNS_PER_DESIGN, _config.getMaxRunsPerDesign());
             return;
         }
         if (_config.getMaxRunsPerDesign() < _config.getMinRunsPerDesign())
         {
-            _log.info(String.format("No assay run data generated because %s (%d) is less than %s (%d).", Config.MAX_RUNS_PER_DESIGN, _config.getMaxRunsPerDesign(), Config.MIN_RUNS_PER_DESIGN, _config.getMinRunsPerDesign()));
+            _log.info("No assay run data generated because {} ({}) is less than {} ({}).", Config.MAX_RUNS_PER_DESIGN, _config.getMaxRunsPerDesign(), Config.MIN_RUNS_PER_DESIGN, _config.getMinRunsPerDesign());
             return;
         }
         if (_config.getMaxRowsPerRun() <= 0)
         {
-            _log.info(String.format("No assay run data generated because %s=%s.", Config.MAX_ROWS_PER_RUN, _config.getMaxRowsPerRun()));
+            _log.info("No assay run data generated because {}={}.", Config.MAX_ROWS_PER_RUN, _config.getMaxRowsPerRun());
             return;
         }
         if (_config.getMaxRowsPerRun() < _config.getMinRowsPerRun())
         {
-            _log.info(String.format("No assay run data generated because %s (%d) is less than %s (%d).", Config.MAX_ROWS_PER_RUN, _config.getMaxRowsPerRun(), Config.MIN_ROWS_PER_RUN, _config.getMinRowsPerRun()));
+            _log.info("No assay run data generated because {} ({}) is less than {} ({}).", Config.MAX_ROWS_PER_RUN, _config.getMaxRowsPerRun(), Config.MIN_ROWS_PER_RUN, _config.getMinRowsPerRun());
             return;
         }
         ViewContext context = new ViewContext();
@@ -88,7 +87,7 @@ public class AssayRunDataGenerator extends DataGenerator<AssayRunDataGenerator.C
             {
                 checkAlive(_job);
                 int numRows = randomInt(_config.getMinRowsPerRun(), _config.getMaxRowsPerRun());
-                _log.info(String.format("Generating %d rows of run data for run %d of design %s", numRows, i, protocol.getName()));
+                _log.info("Generating {} rows of run data for run {} of design {}", numRows, i, protocol.getName());
                 List<Map<String, Object>> rawData = createRows(numRows, resultsDomain);
                 updateSampleProps(protocol.getName(), rawData, resultsDomain);
                 var factory = provider.createRunUploadFactory(protocol, context)
@@ -119,7 +118,7 @@ public class AssayRunDataGenerator extends DataGenerator<AssayRunDataGenerator.C
                 ExpSampleType sampleType = SampleTypeService.get().getSampleType(getContainer(), sampleTypeName);
                 if (sampleType == null)
                 {
-                    _log.warn(String.format("Sample type '%s' referenced in assay design %s not found.", sampleTypeName, protocolName));
+                    _log.warn("Sample type '{}' referenced in assay design {} not found.", sampleTypeName, protocolName);
                     // remove the values set by the default data generator for the row since they won't be valid sample ids.
                     rawData.forEach(row -> row.put(sampleProp.getName(), null));
                 }
@@ -225,7 +224,7 @@ public class AssayRunDataGenerator extends DataGenerator<AssayRunDataGenerator.C
     public static class Driver implements DataGenerationDriver
     {
         @Override
-        public List<CPUTimer> generateData(PipelineJob job, Properties properties) throws ValidationException, AssayException, ExperimentException
+        public List<CPUTimer> generateData(PipelineJob job, Properties properties) throws ValidationException, ExperimentException
         {
             AssayRunDataGenerator generator = new AssayRunDataGenerator(job, new AssayRunDataGenerator.Config(properties));
             generator.generateAssayRunData();

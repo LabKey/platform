@@ -273,7 +273,7 @@ public class XMLWriter {
                 } else {
                     buffer.append(node.getLocalName());
                 }
-                Attr attrs[] = sortAttributes(node.getAttributes());
+                Attr[] attrs = sortAttributes(node.getAttributes());
                 for ( int i = 0; i < attrs.length; i++ ) {
                     Attr attr = attrs[i];
                     buffer.append(' ');
@@ -375,7 +375,7 @@ public class XMLWriter {
         }
 
         int len = attrs.getLength();
-        Attr array[] = new Attr[len];
+        Attr[] array = new Attr[len];
         for ( int i = 0; i < len; i++ ) {
             array[i] = (Attr)attrs.item(i);
         }

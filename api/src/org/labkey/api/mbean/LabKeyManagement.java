@@ -119,7 +119,7 @@ public class LabKeyManagement
         }
         catch (Exception x)
         {
-            LOG.error("error registering mbean : " + name, x);
+            LOG.error("error registering mbean : {}", name, x);
         }
     }
 }

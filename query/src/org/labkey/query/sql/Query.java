@@ -221,7 +221,7 @@ public class Query
         if (null == _querySource)
             throw new IllegalStateException("SQL has not been specified");
 
-        LogManager.getLogger(Query.class).debug("Query.parse()\n" + _querySource);
+        LogManager.getLogger(Query.class).debug("Query.parse()\n{}", _querySource);
         _parse(_querySource, skipSuggestedColumns);
         
         for (QueryException e : _parseErrors)
@@ -715,7 +715,7 @@ public class Query
         {
             ArrayList<QueryException> list = new ArrayList<>();
             parseError(list, message, node);
-            throw list.get(0);
+            throw list.getFirst();
         }
         ai.incrementAndGet();
         return new QueryRecursionReturn();
@@ -771,7 +771,7 @@ public class Query
             }
         }
         if (null == firstError && !resolveExceptions.isEmpty())
-            firstError = resolveExceptions.get(0);
+            firstError = resolveExceptions.getFirst();
 
         if (null != firstError)
         {

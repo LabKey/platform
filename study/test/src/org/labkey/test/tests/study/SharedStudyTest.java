@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.labkey.test.util.PermissionsHelper.READER_ROLE;
 
 @Category({Daily.class})
@@ -411,7 +412,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         clickAndWait(Locator.linkWithText("Change Properties"));
 
         // verify the shared dataset label is readonly while the local dataset is not
-        assertEquals(null, getAttribute(Locator.xpath("//input[@type='text' and @value='" + STUDY2_DATASET + "']"), "readonly"));
+        assertNull(getAttribute(Locator.xpath("//input[@type='text' and @value='" + STUDY2_DATASET + "']"), "readonly"));
         assertEquals("true", getAttribute(Locator.xpath("//input[@type='text' and @value='" + SHARED_DEMOGRAPHICS + "']"), "readonly"));
 
         // hide the demographics dataset in STUDY2

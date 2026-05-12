@@ -52,13 +52,13 @@ public class JunitRunner
         Map<Description, List<CPUTimer>> individualPerfResults;
     }
 
-    static RunnerResult run(Class clazz, String method)
+    static RunnerResult run(Class<?> clazz, String method)
     {
         Request request = Request.method(clazz, method);
         return run(request);
     }
 
-    static RunnerResult run(Class clazz)
+    static RunnerResult run(Class<?> clazz)
     {
         assert !TestCase.class.isAssignableFrom(clazz) : clazz + " is not a TestCase";
         Request request = Request.classes(clazz);
@@ -76,7 +76,7 @@ public class JunitRunner
 
         try
         {
-            LOG.info("Starting suite: " + description + " (" + StringUtilsLabKey.pluralize(desc.testCount(), "test") + ")");
+            LOG.info("Starting suite: {} ({})", description, StringUtilsLabKey.pluralize(desc.testCount(), "test"));
 
             ArrayList<CPUTimer> allTimers = new ArrayList<>();
             Map<Description, ArrayList<CPUTimer>> testTimers = new LinkedHashMap<>();
@@ -86,14 +86,14 @@ public class JunitRunner
                 @Override
                 public void testStarted(Description description)
                 {
-                    LOG.debug("Starting test: " + description);
+                    LOG.debug("Starting test: {}", description);
                     TestContext.get().clearPerfResults();
                 }
 
                 @Override
                 public void testFinished(Description description)
                 {
-                    LOG.debug("Finished test: " + description);
+                    LOG.debug("Finished test: {}", description);
                     ArrayList<CPUTimer> timers = TestContext.get().getPerfResults();
                     testTimers.put(description, timers);
                     allTimers.addAll(timers);
@@ -103,7 +103,7 @@ public class JunitRunner
                 public void testFailure(Failure failure)
                 {
                     Throwable t = failure.getException();
-                    LOG.error("Test failed: " + failure.getDescription() + ":\n" + JunitController.renderTrace(t));
+                    LOG.error("Test failed: {}:\n{}", failure.getDescription(), JunitController.renderTrace(t));
                 }
             });
             Result result = core.run(request);
@@ -118,7 +118,7 @@ public class JunitRunner
         finally
         {
             TestContext.get().clearPerfResults();
-            LOG.info("Completed suite: " + description);
+            LOG.info("Completed suite: {}", description);
         }
     }
 }

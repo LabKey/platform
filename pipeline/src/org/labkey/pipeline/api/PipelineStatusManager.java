@@ -218,7 +218,7 @@ public class PipelineStatusManager
                 }
                 else
                 {
-                    job.getLogger().error("Could not find job in database for job GUID " + job.getJobGUID() + ", unable to set its status to '" + status + "'");
+                    job.getLogger().error("Could not find job in database for job GUID {}, unable to set its status to '{}'", job.getJobGUID(), status);
                     return false;
                 }
             }
@@ -477,7 +477,7 @@ public class PipelineStatusManager
                 List<PipelineStatusFileImpl> children = getSplitStatusFiles(sfExist.getJobId());
                 for (PipelineStatusFileImpl child : children)
                 {
-                    LOG.debug("Resetting parent job ID for child job " + child.getRowId() + " - " + child.getFilePath());
+                    LOG.debug("Resetting parent job ID for child job {} - {}", child.getRowId(), child.getFilePath());
                     child.setJobParent(null);
                     child.beforeUpdate(null, child);
                     updateStatusFile(child);
@@ -700,7 +700,7 @@ public class PipelineStatusManager
                             throw new UnauthorizedException();
                         }
 
-                        LOG.info("Job " + sf.getFilePath() + " was marked as complete by " + user);
+                        LOG.info("Job {} was marked as complete by {}", sf.getFilePath(), user);
                         sf.setStatus(PipelineJob.TaskStatus.complete.toString());
                         sf.setInfo(null);
                         PipelineStatusManager.updateStatusFile(sf);
@@ -802,7 +802,7 @@ public class PipelineStatusManager
                 if (provider != null)
                     provider.preDeleteStatusFile(user, pipelineStatusFile);
 
-                LOG.info("Job " + pipelineStatusFile.getFilePath() + " was deleted by " + user);
+                LOG.info("Job {} was deleted by {}", pipelineStatusFile.getFilePath(), user);
                 statusFileIds.add(pipelineStatusFile.getRowId());
             }
             _schema.getSqlDialect().appendInClauseSql(sql, statusFileIds);

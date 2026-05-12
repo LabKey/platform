@@ -43,7 +43,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
@@ -96,7 +95,7 @@ public enum PropertyType implements SimpleConvert
                 boolValue = (Boolean)value;
             else if (null != value)
                 boolValue = (Boolean) ConvertUtils.convert(value.toString(), Boolean.class);
-            property.floatValue = boolValue == null ? null : boolValue == Boolean.TRUE ? 1.0 : 0.0;
+            property.floatValue = boolValue == null ? null : boolValue ? 1.0 : 0.0;
         }
 
         @Override
@@ -963,6 +962,11 @@ public enum PropertyType implements SimpleConvert
         }
     };
 
+    public static final String PARTICIPANT_CONCEPT_URI = "http://cpas.labkey.com/Study#ParticipantId";
+    public static final String VISIT_CONCEPT_URI = "http://cpas.labkey.com/Study#VisitId";
+    public static final String SAMPLE_CONCEPT_URI = "http://www.labkey.org/exp/xml#sample";
+    public static final String CALCULATED_CONCEPT_URI = "http://www.labkey.org/exp/xml#calculated";
+
     private final String typeURI;
     private final String xarName;
     private final char storageType;
@@ -970,8 +974,8 @@ public enum PropertyType implements SimpleConvert
     private final @NotNull JdbcType jdbcType;
     private final int scale;
     private final String inputType;
-    private final Class javaType;
-    private final Class[] additionalTypes;
+    private final Class<?> javaType;
+    private final Class<?>[] additionalTypes;
 
     private static Map<String, PropertyType> uriToProperty;
     private static Map<String, PropertyType> xarToProperty = null;
@@ -983,8 +987,8 @@ public enum PropertyType implements SimpleConvert
                  int scale,
                  String inputType,
                  CellType excelCellType,
-                 Class javaType,
-                 Class... additionalTypes)
+                 Class<?> javaType,
+                 Class<?>... additionalTypes)
     {
         this.typeURI = typeURI;
         this.xarName = xarName;
@@ -1116,7 +1120,7 @@ public enum PropertyType implements SimpleConvert
         return null == p ? def : p;
     }
 
-    public static PropertyType getFromClass(Class clazz)
+    public static PropertyType getFromClass(Class<?> clazz)
     {
         if (clazz == BigDecimal.class)
             clazz = Double.class;
@@ -1134,7 +1138,7 @@ public enum PropertyType implements SimpleConvert
         {
             if (t.additionalTypes == null || t.additionalTypes.length == 0)
                 continue;
-            for (Class type : t.additionalTypes)
+            for (Class<?> type : t.additionalTypes)
             {
                 if (type.isAssignableFrom(clazz))
                     return t;
@@ -1201,16 +1205,12 @@ public enum PropertyType implements SimpleConvert
 
     public String getValueTypeColumn()
     {
-        switch (this.getStorageType())
+        return switch (this.getStorageType())
         {
-            case 's':
-                return "stringValue";
-            case 'd':
-                return "dateTimeValue";
-            case 'f':
-                return "floatValue";
-            default:
-                throw new IllegalArgumentException("Unknown property type: " + this);
-        }
+            case 's' -> "stringValue";
+            case 'd' -> "dateTimeValue";
+            case 'f' -> "floatValue";
+            default -> throw new IllegalArgumentException("Unknown property type: " + this);
+        };
     }
 }

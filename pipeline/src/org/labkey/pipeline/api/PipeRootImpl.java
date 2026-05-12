@@ -189,7 +189,7 @@ public class PipeRootImpl implements PipeRoot
     {
         if (_uris.isEmpty())
             throw new IllegalStateException("No URI.");
-        return _uris.get(0);
+        return _uris.getFirst();
     }
 
     @Override
@@ -198,7 +198,7 @@ public class PipeRootImpl implements PipeRoot
     {
         if (getRootPaths().isEmpty())
             throw new RuntimeException("No root path set.");
-        return getRootPaths().get(0);
+        return getRootPaths().getFirst();
     }
 
     @Override
@@ -208,7 +208,7 @@ public class PipeRootImpl implements PipeRoot
         assert !_uris.isEmpty();
         if (ROOT_BASE.cloud.equals(_defaultRoot))
         {
-            return CloudStoreService.get().getPath(getContainer(), _cloudStoreName, new org.labkey.api.util.Path(_uris.get(0).getPath()));
+            return CloudStoreService.get().getPath(getContainer(), _cloudStoreName, new org.labkey.api.util.Path(_uris.getFirst().getPath()));
         }
         else
             return getRootPath().toPath();
@@ -374,8 +374,8 @@ public class PipeRootImpl implements PipeRoot
         if (ROOT_BASE.cloud.equals(_defaultRoot))
         {
             // Return the path to the default location
-            var combinedPath = StringUtils.isNotBlank(_uris.get(0).getPath()) ?
-                    org.labkey.api.util.Path.parse(_uris.get(0).getPath()).append(parsedPath) :
+            var combinedPath = StringUtils.isNotBlank(_uris.getFirst().getPath()) ?
+                    org.labkey.api.util.Path.parse(_uris.getFirst().getPath()).append(parsedPath) :
                     parsedPath;
             return CloudStoreService.get().getFileLike(getContainer(), _cloudStoreName, combinedPath);
         }
@@ -433,8 +433,8 @@ public class PipeRootImpl implements PipeRoot
             if (ROOT_BASE.cloud.equals(_defaultRoot))
             {
                 // Return the path to the default location
-                var combinedPath = StringUtils.isNotBlank(_uris.get(0).getPath()) ?
-                        org.labkey.api.util.Path.parse(_uris.get(0).getPath()).append(path) :
+                var combinedPath = StringUtils.isNotBlank(_uris.getFirst().getPath()) ?
+                        org.labkey.api.util.Path.parse(_uris.getFirst().getPath()).append(path) :
                         path;
                 return CloudStoreService.get().getPath(getContainer(), _cloudStoreName, combinedPath);
                 // TODO: Do we need? Check that it's under the root to protect against ../../ type paths

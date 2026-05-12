@@ -223,12 +223,12 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                     if (job != null)
                         job.setStatus("UNZIPPING SPECIMEN ARCHIVE");
 
-                    ctx.getLogger().info("Unzipping specimen archive " + specimenArchive);
+                    ctx.getLogger().info("Unzipping specimen archive {}", specimenArchive);
                     String tempDirName = DateUtil.formatDateTime(new Date(), "yyMMddHHmmssSSS");
                     _unzipDir = specimenArchive.getParent().resolveChild(tempDirName);
                     ZipUtil.unzipToDirectory(specimenArchive, _unzipDir, ctx.getLogger());
 
-                    ctx.getLogger().info("Archive unzipped to " + _unzipDir);
+                    ctx.getLogger().info("Archive unzipped to {}", _unzipDir);
                     return new FileSystemFile(_unzipDir);
                 }
             }

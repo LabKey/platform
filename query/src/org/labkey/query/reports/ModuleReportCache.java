@@ -227,7 +227,7 @@ public class ModuleReportCache
                 .mapToInt(ReportCollections::size)
                 .sum();
 
-            LOG.info(descriptorCount + " report descriptors defined in all modules");
+            LOG.info("{} report descriptors defined in all modules", descriptorCount);
 
             // Make sure the cache retrieves the expected number of report descriptors from a couple test modules, if present
 

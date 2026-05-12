@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -168,7 +169,7 @@ public class BoundMap extends AbstractMap<String, Object> implements Serializabl
 
 
     @Override
-    public Set<Map.Entry<String,Object>> entrySet()
+    public @NotNull Set<Map.Entry<String,Object>> entrySet()
     {
         Set<String> keys = keySet();
         Set<Map.Entry<String,Object>> entries = new HashSet<>();
@@ -233,7 +234,7 @@ public class BoundMap extends AbstractMap<String, Object> implements Serializabl
     }
 
     @Override
-    public Set<String> keySet()
+    public @NotNull Set<String> keySet()
     {
         Set<String> keys = new HashSet<>();
         Set<String> mapKeys = _map.keySet();

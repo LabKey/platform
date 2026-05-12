@@ -192,7 +192,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
             {
                 _jmsType = JmsType.unknown;
             }
-            LOG.info("Found " + _jmsType + " JMS queue.");
+            LOG.info("Found {} JMS queue.", _jmsType);
         }
     }
 
@@ -711,12 +711,12 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
                 }
                 catch (UMOException e)
                 {
-                    LOG.error("Failed to get implementation class from descriptor " + descriptor, e);
+                    LOG.error("Failed to get implementation class from descriptor {}", descriptor, e);
                 }
                 catch (IllegalAccessException | InstantiationException | NoSuchMethodException |
                        InvocationTargetException e)
                 {
-                    LOG.error("Failed to resume jobs for descriptor " + descriptor, e);
+                    LOG.error("Failed to resume jobs for descriptor {}", descriptor, e);
                 }
             }
         }
@@ -1024,7 +1024,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     @Override
     public File getProtocolParametersFile(ExpRun expRun)
     {
-        return expRun.getInputDatas(ANALYSIS_PARAMETERS_ROLE_NAME, null).get(0).getFile();
+        return expRun.getInputDatas(ANALYSIS_PARAMETERS_ROLE_NAME, null).getFirst().getFile();
     }
 
     @Override

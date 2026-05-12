@@ -75,7 +75,7 @@ import java.util.stream.Stream;
         }
         catch (IllegalArgumentException|IllegalStateException e)
         {
-            LOG.warn("Error registering '" + taskId + "' task: " + e.getMessage());
+            LOG.warn("Error registering '{}' task: {}", taskId, e.getMessage());
             return null;
         }
     }
@@ -111,7 +111,7 @@ import java.util.stream.Stream;
         }
         catch (XmlException |IOException e)
         {
-            LOG.error("Error loading task factory '" + taskConfig.getPath() + "':\n" + e.getMessage());
+            LOG.error("Error loading task factory '{}':\n{}", taskConfig.getPath(), e.getMessage());
             return null;
         }
 

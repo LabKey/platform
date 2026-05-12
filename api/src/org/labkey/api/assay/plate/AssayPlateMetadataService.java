@@ -129,7 +129,7 @@ public interface AssayPlateMetadataService
         ExpProtocol protocol,
         AssayProvider provider,
         @Nullable AssayRunUploadContext<?> context
-    ) throws ExperimentException;
+    );
 
     /**
      * Return the domain representing the plate replicate statistical columns that are created for plate based

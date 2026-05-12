@@ -21,7 +21,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
@@ -81,7 +80,7 @@ public class ReturnURLString
 
             if (!urls.isEmpty())
             {
-                URLHelper first = urls.get(0);
+                URLHelper first = urls.getFirst();
                 String s0 = first.toString();
 
                 // See if all the parts are identical

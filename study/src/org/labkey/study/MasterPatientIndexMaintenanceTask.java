@@ -57,7 +57,7 @@ public class MasterPatientIndexMaintenanceTask implements SystemMaintenance.Main
                 MasterPatientIndexService.FolderSettings settings = svc.getFolderSettings(container);
                 if (settings.isEnabled())
                 {
-                    log.info("Starting Master Patient Index Job for folder: " + container.getPath());
+                    log.info("Starting Master Patient Index Job for folder: {}", container.getPath());
                     User reloadUser = UserManager.getUser(settings.getReloadUser());
                     if (reloadUser != null)
                     {
@@ -70,11 +70,11 @@ public class MasterPatientIndexMaintenanceTask implements SystemMaintenance.Main
                         }
                         catch (Exception e)
                         {
-                            log.error("Master Patient Index Maintenance Task failed for folder : " + container.getPath() + " due to : " + e.getMessage());
+                            log.error("Master Patient Index Maintenance Task failed for folder : {} due to : {}", container.getPath(), e.getMessage());
                         }
                     }
                     else
-                        log.error("Unable to resolve the reload user: " + settings.getReloadUser());
+                        log.error("Unable to resolve the reload user: {}", settings.getReloadUser());
                 }
             }
         }

@@ -40,7 +40,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -121,7 +120,7 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     @Nullable
     PipeRoot getPipelineRootSetting(Container container, String type);
 
-    void setPipelineRoot(User user, Container container, String type, boolean searchable, URI... roots) throws SQLException;
+    void setPipelineRoot(User user, Container container, String type, boolean searchable, URI... roots);
 
     boolean canModifyPipelineRoot(User user, Container container);
 

@@ -1102,12 +1102,6 @@ public abstract class CompareType
             sb.append("IS NOT EMPTY");
         }
 
-        @Override
-        public String getFilterOpText()
-        {
-            return null;
-        }
-
     }
 
     private static class ArrayContainsAllClause extends ArrayClause

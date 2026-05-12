@@ -204,7 +204,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
     protected void checkDuplicateKeys(List<String> pkKeys)
     {
-        Object pkKeysObj = pkKeys.size() == 1 ? pkKeys.get(0) : pkKeys;
+        Object pkKeysObj = pkKeys.size() == 1 ? pkKeys.getFirst() : pkKeys;
         if (_pkKeysSeen.contains(pkKeysObj))
             _context.getErrors().addRowError(new ValidationException("Duplicate key provided: " + StringUtils.join(pkKeys, ", ")));
         _pkKeysSeen.add(pkKeysObj);

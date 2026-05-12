@@ -133,7 +133,6 @@ import org.labkey.experiment.api.LineageTest;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.Protocol;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
-import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.api.UniqueValueCounterTestCase;
 import org.labkey.experiment.api.VocabularyDomainKind;
 import org.labkey.experiment.api.data.ChildOfCompareType;

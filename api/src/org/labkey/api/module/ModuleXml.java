@@ -153,7 +153,7 @@ public class ModuleXml
         }
         catch(Exception e)
         {
-            LOG.error("Error trying to read and parse the metadata XML for " + r, e);
+            LOG.error("Error trying to read and parse the metadata XML for {}", r, e);
         }
 
         _moduleProperties = Collections.unmodifiableMap(moduleProperties);
@@ -198,7 +198,7 @@ public class ModuleXml
                 .filter(mx->!mx.getClientDependencySuppliers().isEmpty() || !mx.getModuleProperties().isEmpty())
                 .count();
 
-            LOG.info(nonTrivial + " non-trivial ModuleXml objects");
+            LOG.info("{} non-trivial ModuleXml objects", nonTrivial);
 
             // Make sure the cache retrieves the expected ModuleXml for simpletest and restrictedModule modules, if present
 

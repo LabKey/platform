@@ -109,10 +109,10 @@ public class RScriptEngine extends ExternalScriptEngine
     {
         // consider: make a format class and then just override the specified html, md, functions
         if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.Html)
-            return extensions.get(0) + "html";
+            return extensions.getFirst() + "html";
 
         if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.Markdown)
-            return extensions.get(0) + "md";
+            return extensions.getFirst() + "md";
 
         return null;
     }

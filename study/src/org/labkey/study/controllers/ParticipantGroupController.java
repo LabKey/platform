@@ -344,7 +344,7 @@ public class ParticipantGroupController extends BaseStudyController
                 // try to match a single category by label/container
                 List<ParticipantCategoryImpl> defs = ParticipantGroupManager.getInstance().getParticipantCategoriesByLabel(getContainer(), getUser(), form.getLabel());
                 if (defs.size() == 1)
-                    category = defs.get(0);
+                    category = defs.getFirst();
             }
             else
             {

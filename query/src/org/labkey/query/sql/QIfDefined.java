@@ -23,7 +23,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryParseException;
 
 /**
  * User: matthewb
@@ -112,12 +111,6 @@ public class QIfDefined extends QExpr
     public BaseColumnInfo createColumnInfo(TableInfo table, String name, Query query)
     {
         throw new IllegalStateException();
-    }
-
-    @Override
-    public QueryParseException fieldCheck(QNode parent, SqlDialect d)
-    {
-        return null;
     }
 
     @Override

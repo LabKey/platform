@@ -42,9 +42,9 @@ public abstract class RowIdQueryUpdateService<T> extends AbstractBeanQueryUpdate
     {
         super(table);
         assert table.getPkColumns().size() == 1;
-        assert table.getPkColumns().get(0).getJavaClass() == Integer.class || table.getPkColumns().get(0).getJavaClass() == int.class;
+        assert table.getPkColumns().getFirst().getJavaClass() == Integer.class || table.getPkColumns().getFirst().getJavaClass() == int.class;
 
-        _keyColumn = table.getPkColumnNames().get(0);
+        _keyColumn = table.getPkColumnNames().getFirst();
     }
 
     @Override
@@ -71,10 +71,8 @@ public abstract class RowIdQueryUpdateService<T> extends AbstractBeanQueryUpdate
      * @param container The container in which the bean should live.
      * @param key The primary key.
      * @return The bean instance corresponding to the key.
-     * @throws QueryUpdateServiceException Thrown for provider-specific exceptions.
-     * @throws SQLException Thrown if there was a problem communicating with the database.
      */
-    public abstract T get(User user, Container container, int key) throws QueryUpdateServiceException, SQLException;
+    public abstract T get(User user, Container container, int key);
 
     /**
      * Deletes the bean instance corresponding to the provided key value.
@@ -82,8 +80,7 @@ public abstract class RowIdQueryUpdateService<T> extends AbstractBeanQueryUpdate
      * @param container The container in which the bean should live.
      * @param key The primary key.
      * @throws QueryUpdateServiceException Thrown for provider-specific exceptions.
-     * @throws SQLException Thrown if there was a problem communicating with the database.
      */
-    public abstract void delete(User user, Container container, int key) throws QueryUpdateServiceException, SQLException;
+    public abstract void delete(User user, Container container, int key) throws QueryUpdateServiceException;
 
 }

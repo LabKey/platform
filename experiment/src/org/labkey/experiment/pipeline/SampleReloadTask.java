@@ -75,15 +75,15 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
 
         // guaranteed to only have a single file
         assert support.getInputFiles().size() == 1;
-        FileLike dataFile = support.getInputFiles().get(0);
+        FileLike dataFile = support.getInputFiles().getFirst();
         Logger log = job.getLogger();
 
-        log.info("Loading " + dataFile.getName());
+        log.info("Loading {}", dataFile.getName());
 
         if (params.containsKey(INSERT_OPTION))
         {
             String insertOption = params.get(INSERT_OPTION);
-            log.info("data insert option set as : " + insertOption);
+            log.info("data insert option set as : {}", insertOption);
 
             if (QueryUpdateService.InsertOption.MERGE.name().equalsIgnoreCase(insertOption))
                 _insertOption = QueryUpdateService.InsertOption.MERGE;
@@ -93,7 +93,7 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
         if (params.containsKey(AUDIT_OPTION))
         {
             String auditLevel = params.get(AUDIT_OPTION);
-            log.info("data audit behavior set as : " + auditLevel);
+            log.info("data audit behavior set as : {}", auditLevel);
 
             if ("detailed".equalsIgnoreCase(auditLevel))
                 _auditBehavior = DETAILED;
@@ -103,7 +103,7 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
         if (params.containsKey(ALTERNATE_KEY_LOOKUP_OPTION))
             _alternateKeyLookup = Boolean.parseBoolean(params.get(ALTERNATE_KEY_LOOKUP_OPTION));
 
-        log.info("import by alternate key option set as : " + _alternateKeyLookup);
+        log.info("import by alternate key option set as : {}", _alternateKeyLookup);
 
         if (params.containsKey(SAMPLE_NAME_KEY) && params.containsKey(SAMPLE_ID_KEY))
         {
@@ -119,10 +119,10 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
             sampleName = params.get(SAMPLE_NAME_KEY);
             sampleType = SampleTypeService.get().getSampleType(job.getContainer(), sampleName, true);
             if (sampleType != null)
-                log.info("Sample Type matching the 'name' capture group was resolved : " + sampleName);
+                log.info("Sample Type matching the 'name' capture group was resolved : {}", sampleName);
             else
             {
-                log.error("Sample Type matching the 'name' capture group was not resolved : " + sampleName);
+                log.error("Sample Type matching the 'name' capture group was not resolved : {}", sampleName);
                 return new RecordedActionSet();
             }
         }
@@ -131,10 +131,10 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
             int id = Integer.parseInt(params.get(SAMPLE_ID_KEY));
             sampleType = SampleTypeService.get().getSampleType(id);
             if (sampleType != null)
-                log.info("Sample Type matching the 'id' capture group was resolved : " + sampleType.getName());
+                log.info("Sample Type matching the 'id' capture group was resolved : {}", sampleType.getName());
             else
             {
-                log.error("Sample Type matching the 'id' capture group was not resolved : " + params.get(SAMPLE_ID_KEY));
+                log.error("Sample Type matching the 'id' capture group was not resolved : {}", params.get(SAMPLE_ID_KEY));
                 return new RecordedActionSet();
             }
         }
@@ -149,7 +149,7 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
             // still no resolution to an existing sample type, create a new one inferring the schema from the data file
             if (sampleType == null)
             {
-                log.info("Creating a new Sample Type of name : " + sampleName);
+                log.info("Creating a new Sample Type of name : {}", sampleName);
 
                 try (DataLoader loader = DataLoader.get().createLoader(dataFile, null, true, job.getContainer(), null))
                 {
@@ -183,7 +183,7 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
             }
         }
         importSamples(job.getContainer(), job.getUser(), sampleType, dataFile, log);
-        job.getLogger().info("Done importing " + job.getDescription());
+        job.getLogger().info("Done importing {}", job.getDescription());
         
         return new RecordedActionSet();
     }
@@ -226,7 +226,7 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
                                 context.setAllowImportLookupByAlternateKey(_alternateKeyLookup);
 
                                 int count = qus.loadRows(user, c, loader, context, null);
-                                log.info("Imported a total of " + count + " rows into : " + sampleType.getName());
+                                log.info("Imported a total of {} rows into : {}", count, sampleType.getName());
                                 if (context.getErrors().hasErrors())
                                 {
                                     for (ValidationException error : context.getErrors().getRowErrors())
@@ -242,10 +242,10 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
                         }
                     }
                     else
-                        log.warn("Could not get the update service for sample : " + sampleType.getName());
+                        log.warn("Could not get the update service for sample : {}", sampleType.getName());
                 }
                 else
-                    log.warn("Could not get the tableInfo for sample : " + sampleType.getName());
+                    log.warn("Could not get the tableInfo for sample : {}", sampleType.getName());
             }
             else
                 log.warn("Could not get the samples schema");

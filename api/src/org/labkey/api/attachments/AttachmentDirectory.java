@@ -18,7 +18,6 @@ package org.labkey.api.attachments;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.security.User;
 
 import java.io.File;
@@ -36,9 +35,9 @@ public interface AttachmentDirectory extends AttachmentParent
     String getName();
 
     @Deprecated
-    File getFileSystemDirectory() throws MissingRootDirectoryException;
-    Path getFileSystemDirectoryPath() throws MissingRootDirectoryException;
-    Path getFileSystemDirectoryPath(Container container, boolean create) throws MissingRootDirectoryException;
+    File getFileSystemDirectory();
+    Path getFileSystemDirectoryPath();
+    Path getFileSystemDirectoryPath(Container container, boolean create);
 
     void addAttachment(User user, AttachmentFile attachment) throws IOException;
     void deleteAttachment(User user, @Nullable String name);

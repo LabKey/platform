@@ -131,9 +131,7 @@ public class Timing implements AutoCloseable
             return;
 
         assert custom._parent == this;
-        List<CustomTiming> timings = _customTimings.get(category);
-        if (timings == null)
-            _customTimings.put(category, timings = new LinkedList<>());
+        List<CustomTiming> timings = _customTimings.computeIfAbsent(category, k -> new LinkedList<>());
 
         collapseDuplicate(timings, custom);
         limitList(timings);
@@ -227,8 +225,7 @@ public class Timing implements AutoCloseable
         if (!_timer.started())
             return;
 
-        Integer count = _objects.get(s);
-        _objects.put(s, count == null ? 1 : count.intValue() + 1);
+        _objects.compute(s, (_, count) -> count == null ? 1 : count.intValue() + 1);
     }
 
     public Map<String, Integer> getObjects()

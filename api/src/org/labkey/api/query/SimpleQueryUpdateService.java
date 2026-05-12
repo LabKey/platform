@@ -18,7 +18,6 @@ package org.labkey.api.query;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseTableType;
@@ -125,7 +124,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         if (objectURIColumnName != null && getQueryTable().getColumn(objectURIColumnName) != null)
         {
             boolean hasObjectUriValue = false;
-            Object objectUri = rows.get(0).get(objectURIColumnName);
+            Object objectUri = rows.getFirst().get(objectURIColumnName);
             if (objectUri != null)
                 hasObjectUriValue = !StringUtils.isEmpty((String) objectUri);
 

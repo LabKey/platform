@@ -173,7 +173,7 @@ public class PipelinePathForm extends ViewForm
         {
             throw new IllegalArgumentException("Expected a single file but got " + files.size());
         }
-        return files.get(0);
+        return files.getFirst();
     }
 
     /** Verifies that only a single file was selected and returns it, throwing an exception if there isn't exactly one */
@@ -185,6 +185,6 @@ public class PipelinePathForm extends ViewForm
         {
             throw new IllegalArgumentException("Expected a single file but got " + files.size());
         }
-        return files.get(0);
+        return files.getFirst();
     }
 }

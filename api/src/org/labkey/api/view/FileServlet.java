@@ -76,7 +76,7 @@ public class FileServlet extends HttpServlet
 
         SimpleMetricsService.get().increment("API", "FileServlet", "urlsDispatched");
         String dispatchUrl = containerPath + "/filecontent-sendFile.view?" + (null == fileNameParam ? "fileName=" + PageFlowUtil.encodeURIComponent(fileName) : "");
-        _log.info("FileServlet dispatching " + request.getRequestURL() + " to " + dispatchUrl);
+        _log.info("FileServlet dispatching {} to {}", request.getRequestURL(), dispatchUrl);
         // NOTE other parameters seem to get magically propagated...
         RequestDispatcher r = request.getRequestDispatcher(dispatchUrl);
         r.forward(request, response);

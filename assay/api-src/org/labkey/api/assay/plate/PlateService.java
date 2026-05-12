@@ -240,7 +240,6 @@ public interface PlateService
      * @param percentCalculator A callback to allow the caller to determine the plottable value for a given WellData within its WellGroup.
      * @param type The Type of fit desired.
      * @return A DilutionCurve instance of the appropriate type, if a fit was possible.
-     * @throws FitFailedException Thrown if a curve cannot be fit to the data points.
      */
     DilutionCurve getDilutionCurve(List<WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws FitFailedException;
 

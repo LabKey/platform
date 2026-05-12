@@ -143,7 +143,7 @@ public class DOMUtil
     public static Node getFirstChildNodeWithName(Node node, String name)
     {
         List<Node> nodes = getChildNodesWithName(node, name);
-        return !nodes.isEmpty() ? nodes.get(0) : null;
+        return !nodes.isEmpty() ? nodes.getFirst() : null;
     }
 
     /**
@@ -154,6 +154,6 @@ public class DOMUtil
     public static Node getFirstChildElement(Node node)
     {
         List<Node> nodes = getChildNodes(node, Node.ELEMENT_NODE);
-        return !nodes.isEmpty() ? nodes.get(0) : null;
+        return !nodes.isEmpty() ? nodes.getFirst() : null;
     }
 }

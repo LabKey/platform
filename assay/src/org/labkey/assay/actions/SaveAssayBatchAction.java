@@ -108,7 +108,7 @@ public class SaveAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonFor
             transaction.commit();
         }
         saveHandler.afterSave(getViewContext(), batches, protocol);
-        return AssayJSONConverter.serializeResult(provider, protocol, batches.get(0), getUser());
+        return AssayJSONConverter.serializeResult(provider, protocol, batches.getFirst(), getUser());
     }
 }
 

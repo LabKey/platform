@@ -114,7 +114,7 @@ public class DomainTemplateGroup
                     DomainTemplateGroup group = parse(module.getName(), groupName, doc);
                     if (group.hasErrors())
                     {
-                        LOG.warn("Error parsing domain template '" + groupName + "' in module '" + module.getName() + "'");
+                        LOG.warn("Error parsing domain template '{}' in module '{}'", groupName, module.getName());
                         group.getErrors().forEach(LOG::warn);
                     }
                     return group;
@@ -126,12 +126,12 @@ public class DomainTemplateGroup
             }
             catch (XmlValidationException e)
             {
-                LOG.warn("Error parsing domain template '" + resource + "'", e);
+                LOG.warn("Error parsing domain template '{}'", resource, e);
                 return new DomainTemplateGroup(module.getName(), groupName, Collections.emptyList(), Arrays.asList(e.getMessage(), e.getDetails()));
             }
             catch (XmlException | IllegalArgumentException e)
             {
-                LOG.warn("Error parsing domain template '" + resource + "'", e);
+                LOG.warn("Error parsing domain template '{}'", resource, e);
                 return new DomainTemplateGroup(module.getName(), groupName, Collections.emptyList(), Arrays.asList(e.getMessage()));
             }
 
@@ -230,7 +230,7 @@ public class DomainTemplateGroup
     public void throwErrors() throws BatchValidationException
     {
         if (_errors != null && !_errors.isEmpty())
-            throw new BatchValidationException(new ValidationException(_errors.get(0)));
+            throw new BatchValidationException(new ValidationException(_errors.getFirst()));
     }
 
     public List<Domain> createAndImport(Container c, User u, boolean createDomain, boolean importData) throws BatchValidationException
@@ -329,7 +329,7 @@ public class DomainTemplateGroup
                 .mapToInt(Map::size)
                 .sum();
 
-            LOG.info(templateCount + " domain templates defined in all modules");
+            LOG.info("{} domain templates defined in all modules", templateCount);
 
             // Make sure the cache retrieves the expected number of domain templates in the simpletest module, if present
 

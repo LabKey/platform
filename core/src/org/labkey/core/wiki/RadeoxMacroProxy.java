@@ -16,6 +16,7 @@
 
 package org.labkey.core.wiki;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.wiki.MacroProvider;
 import org.radeox.macro.BaseMacro;
@@ -146,7 +147,7 @@ public class RadeoxMacroProxy extends BaseMacro
         }
 
         @Override
-        public void putAll(Map<? extends String, ? extends String> t)
+        public void putAll(@NotNull Map<? extends String, ? extends String> t)
         {
             throw new UnsupportedOperationException();
         }
@@ -158,7 +159,7 @@ public class RadeoxMacroProxy extends BaseMacro
         }
 
         @Override
-        public Set<String> keySet()
+        public @NotNull Set<String> keySet()
         {
             HashSet<String> keys = new HashSet<>();
 
@@ -171,7 +172,7 @@ public class RadeoxMacroProxy extends BaseMacro
         }
 
         @Override
-        public Collection<String> values()
+        public @NotNull Collection<String> values()
         {
             ArrayList<String> values = new ArrayList<>();
             Set<String> baseKeys = (Set<String>) baseMap.keySet();
@@ -184,7 +185,7 @@ public class RadeoxMacroProxy extends BaseMacro
         }
 
         @Override
-        public Set<Entry<String, String>> entrySet()
+        public @NotNull Set<Entry<String, String>> entrySet()
         {
             Set<Entry<String, String>> values = new HashSet<>();
             Set<Entry<String, String>> baseEntries = (Set<Entry<String, String>>) baseMap.entrySet();

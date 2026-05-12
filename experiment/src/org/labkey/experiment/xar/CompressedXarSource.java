@@ -27,11 +27,8 @@ import org.labkey.api.writer.ZipUtil;
 import org.labkey.vfs.FileLike;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -102,7 +99,7 @@ public class CompressedXarSource extends AbstractFileXarSource
         }
         else
         {
-            _xmlFile = xarFiles.get(0);
+            _xmlFile = xarFiles.getFirst();
         }
     }
 

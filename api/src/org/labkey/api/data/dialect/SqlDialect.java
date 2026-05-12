@@ -1225,7 +1225,7 @@ public abstract class SqlDialect
             throw new IllegalStateException("Need to add " + StringUtilsLabKey.pluralize(shouldAdd.size(), "keyword") + " to " + getProductName() + " reserved word list: " + shouldAdd);
 
         if (!shouldRemove.isEmpty())
-            LOG.info("Should remove " + StringUtilsLabKey.pluralize(shouldRemove.size(), "keyword") + " from " + getClass().getName() + " reserved word list: " + shouldRemove);
+            LOG.info("Should remove {} from {} reserved word list: {}", StringUtilsLabKey.pluralize(shouldRemove.size(), "keyword"), getClass().getName(), shouldRemove);
     }
 
 
@@ -1620,7 +1620,7 @@ public abstract class SqlDialect
             }
             catch (ServletException e)
             {
-                LOG.error("Could not extract connection pool max size from data source \"" + _dsName + "\"");
+                LOG.error("Could not extract connection pool max size from data source \"{}\"", _dsName);
                 return null;
             }
         }
@@ -1633,7 +1633,7 @@ public abstract class SqlDialect
             }
             catch (ServletException e)
             {
-                LOG.error("Could not extract connection num active from data source \"" + _dsName + "\"");
+                LOG.error("Could not extract connection num active from data source \"{}\"", _dsName);
                 return null;
             }
         }
@@ -1645,7 +1645,7 @@ public abstract class SqlDialect
             }
             catch (ServletException e)
             {
-                LOG.error("Could not extract connection num idle from data source \"" + _dsName + "\"");
+                LOG.error("Could not extract connection num idle from data source \"{}\"", _dsName);
                 return null;
             }
         }
@@ -1658,7 +1658,7 @@ public abstract class SqlDialect
             }
             catch (ServletException e)
             {
-                LOG.error("Could not extract connection pool max wait (ms) from data source \"" + _dsName + "\"");
+                LOG.error("Could not extract connection pool max wait (ms) from data source \"{}\"", _dsName);
                 return null;
             }
         }
@@ -1673,7 +1673,7 @@ public abstract class SqlDialect
             }
             catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e)
             {
-                LOG.error("Could not extract connection properties from data source \"" + _dsName + "\"");
+                LOG.error("Could not extract connection properties from data source \"{}\"", _dsName);
                 return null;
             }
         }

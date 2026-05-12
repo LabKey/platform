@@ -688,25 +688,17 @@ public enum JdbcType implements SimpleConvert
 
     public static Object add(@NotNull Object obj1, @NotNull Object obj2, JdbcType type)
     {
-        switch (type)
+        return switch (type)
         {
-            case BIGINT:
-                return ConvertHelper.convert(obj1, Long.class) + ConvertHelper.convert(obj2, Long.class);
-            case DECIMAL:
-                return ConvertHelper.convert(obj1, BigDecimal.class).add(ConvertHelper.convert(obj2, BigDecimal.class));
-            case DOUBLE:
-                return ConvertHelper.convert(obj1, Double.class) + ConvertHelper.convert(obj2, Double.class);
-            case INTEGER:
-                return ConvertHelper.convert(obj1, Integer.class) + ConvertHelper.convert(obj2, Integer.class);
-            case REAL:
-                return ConvertHelper.convert(obj1, Float.class) + ConvertHelper.convert(obj2, Float.class);
-            case SMALLINT:
-                return ConvertHelper.convert(obj1, Short.class) + ConvertHelper.convert(obj2, Short.class);
-            case TINYINT:
-                return ConvertHelper.convert(obj1, Short.class) + ConvertHelper.convert(obj2, Short.class);
-            default:
-                throw new IllegalStateException("Cannot add non-numeric objects.");
-        }
+            case BIGINT -> ConvertHelper.convert(obj1, Long.class) + ConvertHelper.convert(obj2, Long.class);
+            case DECIMAL -> ConvertHelper.convert(obj1, BigDecimal.class).add(ConvertHelper.convert(obj2, BigDecimal.class));
+            case DOUBLE -> ConvertHelper.convert(obj1, Double.class) + ConvertHelper.convert(obj2, Double.class);
+            case INTEGER -> ConvertHelper.convert(obj1, Integer.class) + ConvertHelper.convert(obj2, Integer.class);
+            case REAL -> ConvertHelper.convert(obj1, Float.class) + ConvertHelper.convert(obj2, Float.class);
+            case SMALLINT -> ConvertHelper.convert(obj1, Short.class) + ConvertHelper.convert(obj2, Short.class);
+            case TINYINT -> ConvertHelper.convert(obj1, Short.class) + ConvertHelper.convert(obj2, Short.class);
+            default -> throw new IllegalStateException("Cannot add non-numeric objects.");
+        };
     }
 
     protected Object _fromNumber(Number n)

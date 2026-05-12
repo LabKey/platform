@@ -116,10 +116,10 @@ public class LabKeyProxyServlet extends ProxyServlet
         //TODO document example paths
         String targetUri = getTargetUri(servletRequest);
 
-        LOG.info("theUrl: " + theUrl);
-        LOG.info("getTargetUri(servletRequest): " + getTargetUri(servletRequest));
-        LOG.info("getTargetHost(servletRequest): " + getTargetHost(servletRequest));
-        LOG.info("servletRequest.getRequestURL(): " + servletRequest.getRequestURL());
+        LOG.info("theUrl: {}", theUrl);
+        LOG.info("getTargetUri(servletRequest): {}", getTargetUri(servletRequest));
+        LOG.info("getTargetHost(servletRequest): {}", getTargetHost(servletRequest));
+        LOG.info("servletRequest.getRequestURL(): {}", servletRequest.getRequestURL());
 
         if (flexRedirectProtocol && theUrl.startsWith("https://localhost:") && targetUri.startsWith("http://localhost:"))
         {
@@ -156,7 +156,7 @@ public class LabKeyProxyServlet extends ProxyServlet
             //Issue 42677: 404 Error when initiating a Jupyter Notebook session from RStudio Pro when integrated with LabKey
             // jupyter notebook redirect url contains context and servlet path, resulting in duplicate path
             String sourcePath = getSourcePath(servletRequest);
-            LOG.info("getSourcePath(servletRequest): " + getSourcePath(servletRequest));
+            LOG.info("getSourcePath(servletRequest): {}", getSourcePath(servletRequest));
             if (!theUrl.startsWith(sourcePath))
                 curUrl.append(sourcePath);
 
