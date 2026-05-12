@@ -239,12 +239,12 @@ abstract public class DomainKind<T> implements Handler<String>
 
         if (null != storageTableName)
         {
-            LOG.debug("Invalidating " + schemaName + "." + storageTableName);
+            LOG.debug("Invalidating {}.{}", schemaName, storageTableName);
             getScope().invalidateTable(schemaName, storageTableName, getSchemaType());
         }
         else
         {
-            LOG.debug("Invalidating " + schemaName);
+            LOG.debug("Invalidating {}", schemaName);
             getScope().invalidateSchema(schemaName, getSchemaType());
         }
     }

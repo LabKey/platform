@@ -187,7 +187,7 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
             }
             catch (IllegalArgumentException x)
             {
-                _log.error("could not set property: " + name + "=" + value, x);
+                _log.error("could not set property: {}={}", name, value, x);
             }
         }
 

@@ -509,7 +509,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     }
 
     @Override
-    public boolean supports(Class clazz)
+    public boolean supports(@NotNull Class clazz)
     {
         return getCommandClass().isAssignableFrom(clazz);
     }
@@ -559,7 +559,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        protected BeanWrapper createBeanWrapper()
+        protected @NotNull BeanWrapper createBeanWrapper()
         {
             return new BeanUtilsWrapperImpl((DynaBean)getTarget());
         }
@@ -583,7 +583,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        public Object getPropertyValue(String propertyName) throws BeansException
+        public Object getPropertyValue(@NotNull String propertyName) throws BeansException
         {
             try
             {
@@ -596,7 +596,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        public void setPropertyValue(String propertyName, Object value) throws BeansException
+        public void setPropertyValue(@NotNull String propertyName, Object value) throws BeansException
         {
             try
             {
@@ -609,19 +609,19 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        public boolean isReadableProperty(String propertyName)
+        public boolean isReadableProperty(@NotNull String propertyName)
         {
             return true;
         }
 
         @Override
-        public boolean isWritableProperty(String propertyName)
+        public boolean isWritableProperty(@NotNull String propertyName)
         {
             return true;
         }
 
         @Override
-        public TypeDescriptor getPropertyTypeDescriptor(String s) throws BeansException
+        public TypeDescriptor getPropertyTypeDescriptor(@NotNull String s) throws BeansException
         {
             return null;
         }
@@ -632,25 +632,25 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        public Object getWrappedInstance()
+        public @NotNull Object getWrappedInstance()
         {
             return object;
         }
 
         @Override
-        public Class<?> getWrappedClass()
+        public @NotNull Class<?> getWrappedClass()
         {
             return object.getClass();
         }
 
         @Override
-        public PropertyDescriptor[] getPropertyDescriptors()
+        public PropertyDescriptor @NotNull [] getPropertyDescriptors()
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public PropertyDescriptor getPropertyDescriptor(String propertyName) throws BeansException
+        public @NotNull PropertyDescriptor getPropertyDescriptor(@NotNull String propertyName) throws BeansException
         {
             throw new UnsupportedOperationException();
         }

@@ -116,7 +116,7 @@ public abstract class PipelineProtocol
      */
     protected Map<String, String> getSaveProperties()
     {
-        PropertyDescriptor props[] = PropertyUtils.getPropertyDescriptors(this);
+        PropertyDescriptor[] props = PropertyUtils.getPropertyDescriptors(this);
         Map<String, String> propMap = new HashMap<>();
 
         for (PropertyDescriptor prop : props)

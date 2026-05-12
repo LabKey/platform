@@ -24,7 +24,6 @@ import org.labkey.api.data.MvUtil;
 import org.labkey.api.util.GUID;
 
 import java.io.File;
-import java.sql.Array;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;

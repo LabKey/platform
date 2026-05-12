@@ -146,7 +146,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                                 if (user != null)
                                     currentRow.put("userId", user.getUserId());
                                 else
-                                    ctx.getLogger().warn("No user found matching the display name : " + displayName);
+                                    ctx.getLogger().warn("No user found matching the display name : {}", displayName);
                             }
                             else
                                 ctx.getLogger().warn("Null display name was found.");

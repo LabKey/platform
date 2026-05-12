@@ -26,7 +26,6 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Specimen;
 import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.ManageDatasetsPage;
-import org.labkey.test.util.Ext4Helper;
 
 import java.io.File;
 import java.util.Arrays;

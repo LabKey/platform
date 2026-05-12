@@ -64,7 +64,7 @@ public class FunctionLoader extends PluginLoader {
     if (plugin instanceof Function) {
       repository.put(((Function) plugin).getName().toLowerCase(), plugin);
     } else {
-      log.debug("FunctionLoader: " + plugin.getClass() + " not of Type " + getLoadClass());
+        log.debug("FunctionLoader: {} not of Type {}", plugin.getClass(), getLoadClass());
     }
   }
 

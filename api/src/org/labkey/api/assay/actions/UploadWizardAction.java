@@ -459,7 +459,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             inputNameToValue.put(propName, propValue);
     }
 
-    private ModelAndView getBatchPropertiesView(FormType runForm, boolean errorReshow, BindException errors) throws ServletException, ExperimentException
+    private ModelAndView getBatchPropertiesView(FormType runForm, boolean errorReshow, BindException errors) throws ExperimentException
     {
         // Check if the user is trying to replace a run that's already been replaced
         if (runForm.getReRun() != null)
@@ -511,7 +511,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
      * @param form the form with posted values
      * @param batchDomain domain for the batch fields
      */
-    protected boolean showBatchStep(FormType form, Domain batchDomain) throws ServletException
+    protected boolean showBatchStep(FormType form, Domain batchDomain)
     {
         return batchDomain != null && !batchDomain.getProperties().isEmpty();
     }
@@ -530,27 +530,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         ActionButton newRunButton = new ActionButton(targetURL, "Next", ActionButton.Action.POST);
         newRunButton.setScript("this.className += \" labkey-disabled-button\";", true);
         bbar.add(newRunButton);
-    }
-
-    protected void addCancelButton(ButtonBar bbar)
-    {
-        ActionButton cancelButton = new ActionButton("Cancel", PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
-        bbar.add(cancelButton);
-    }
-
-    protected void addCancelButton(ButtonBar bbar, String returnUrl)
-    {
-        ActionURL link;
-        if (returnUrl != null && !returnUrl.isEmpty())
-        {
-            link = new ActionURL(returnUrl);
-        }
-        else
-        {
-            link = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol);
-        }
-        ActionButton cancelButton = new ActionButton("Cancel", link);
-        bbar.add(cancelButton);
     }
 
     protected void addCancelButton(ButtonBar bbar, ActionURL returnUrl)
@@ -687,7 +666,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             AssayWellExclusionService svc = AssayWellExclusionService.getProvider(_protocol);
             if (svc != null)
             {
-                HttpView exclusionWarning = svc.getAssayReImportWarningView(getContainer(), newRunForm.getReRun());
+                HttpView<?> exclusionWarning = svc.getAssayReImportWarningView(getContainer(), newRunForm.getReRun());
                 if (exclusionWarning != null)
                 {
                     vbox.addView(exclusionWarning);
@@ -695,7 +674,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             }
 
             AssayQCService qcService = AssayQCService.getProvider();
-            HttpView qcWarning = qcService.getAssayReImportWarningView(getContainer(), newRunForm.getReRun());
+            HttpView<?> qcWarning = qcService.getAssayReImportWarningView(getContainer(), newRunForm.getReRun());
             if (qcWarning != null)
             {
                 vbox.addView(qcWarning);
@@ -835,7 +814,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     }
 
     @Override
-    @Nullable
     public void addNavTrail(NavTree root)
     {
         if (null != _protocol)
@@ -951,14 +929,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         @Override
-        public boolean executeStep(FormType form, BindException errors) throws ServletException, SQLException, ExperimentException
+        public boolean executeStep(FormType form, BindException errors)
         {
             // nothing to handle but need to show the run step handler
             return false;
         }
 
         @Override
-        public ModelAndView getNextStep(FormType form, BindException errors) throws ServletException, SQLException, ExperimentException
+        public ModelAndView getNextStep(FormType form, BindException errors) throws ServletException, ExperimentException
         {
             if ((form.isResetDefaultValues() || errors.hasErrors()) && showBatchStep(form, form.getProvider().getBatchDomain(form.getProtocol())))
                 return getBatchPropertiesView(form, !form.isResetDefaultValues(), errors);
@@ -1000,7 +978,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         /**
          * Show the next upload handler step
          */
-        public abstract ModelAndView getNextStep(StepFormClass form, BindException errors) throws ServletException, SQLException, ExperimentException;
+        public abstract ModelAndView getNextStep(StepFormClass form, BindException errors) throws ServletException, ExperimentException;
 
         /**
          * If this is the final step because executeStep returned true, the URL to navigate to
@@ -1058,7 +1036,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         @Override
-        public boolean executeStep(FormType form, BindException errors) throws ServletException, SQLException, ExperimentException
+        public boolean executeStep(FormType form, BindException errors) throws ServletException, ExperimentException
         {
             try
             {
@@ -1084,7 +1062,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         @Override
-        public ModelAndView getNextStep(FormType form, BindException errors) throws ServletException, SQLException, ExperimentException
+        public ModelAndView getNextStep(FormType form, BindException errors) throws ExperimentException
         {
             if (form.isResetDefaultValues() || errors.hasErrors())
                 return getRunPropertiesView(form, !form.isResetDefaultValues(), false, errors);
@@ -1190,9 +1168,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 StringBuilder msgBox = new StringBuilder();
                 HtmlString br = HtmlString.unsafe("<font class=\"labkey-error\">");
                 int cnt = 0;
-                for (Object m : list)
+                for (MessageSourceResolvable m : list)
                 {
-                    HtmlString errStr = HtmlString.of(getViewContext().getMessage((MessageSourceResolvable)m));
+                    HtmlString errStr = HtmlString.of(getViewContext().getMessage(m));
                     if (!uniqueErrorStrs.contains(errStr))
                     {
                         if (cnt++ < MAX_ERRORS)

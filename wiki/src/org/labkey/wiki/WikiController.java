@@ -196,7 +196,7 @@ public class WikiController extends SpringActionController
             //get all containers that include wiki pages
             _containerList = populateWikiContainerList(context);
             if (!_containerList.contains(context.getContainer()))
-                _containerList.add(0, context.getContainer());
+                _containerList.addFirst(context.getContainer());
 
             //get wiki page list for the currently stored container (or current container if null)
             Container cStored;
@@ -348,7 +348,7 @@ public class WikiController extends SpringActionController
             }
             else
             {
-                String firstName = WikiSelectManager.getPageNames(c).iterator().next();
+                String firstName = WikiSelectManager.getPageNames(c).getFirst();
                 wiki = WikiSelectManager.getWiki(c, firstName);
             }
         }
@@ -2300,7 +2300,7 @@ public class WikiController extends SpringActionController
                 throw new UnauthorizedException("You do not have permissions to create a new wiki page in this folder!");
 
             String wikiname = form.getName();
-            LOG.debug("Inserting wiki " + wikiname);
+            LOG.debug("Inserting wiki {}", wikiname);
 
             Container c = getContainer();
             Wiki wiki = new Wiki(c, wikiname);
@@ -2377,9 +2377,9 @@ public class WikiController extends SpringActionController
 
             // issue 12960: if the wiki was updated by a different user, don't allow the save
             if (!wikiUpdate.getPageVersionId().equals(form.getPageVersionId()))
-                throw new NotFoundException("This wiki version has already been updated by a different user.");            
+                throw new NotFoundException("This wiki version has already been updated by a different user.");
 
-            LOG.debug("Updating wiki " + wikiUpdate.getName());
+            LOG.debug("Updating wiki {}", wikiUpdate.getName());
 
             if (!getPermissions().allowUpdate(wikiUpdate))
                 throw new UnauthorizedException("You are not allowed to edit this wiki page.");

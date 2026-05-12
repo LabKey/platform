@@ -587,7 +587,7 @@ public class Lsid
             assertEquals("SampleSet", simpleLsid.getNamespacePrefix());
             assertEquals("Folder-4", simpleLsid.getNamespaceSuffix());
             assertEquals("ReproSet", simpleLsid.getObjectId());
-            assertEquals(null, simpleLsid.getVersion());
+            assertNull(simpleLsid.getVersion());
         }
 
         @Test
@@ -599,7 +599,7 @@ public class Lsid
             assertEquals("SampleSet", simpleLsid.getNamespacePrefix());
             assertEquals("Folder-4", simpleLsid.getNamespaceSuffix());
             assertEquals("ReproSet", simpleLsid.getObjectId());
-            assertEquals(null, simpleLsid.getVersion());
+            assertNull(simpleLsid.getVersion());
         }
 
         @Test
@@ -611,7 +611,7 @@ public class Lsid
             assertEquals("SampleSet", lsid.getNamespacePrefix());
             assertEquals("Folder-4", lsid.getNamespaceSuffix());
             assertEquals("Repro:Set", lsid.getObjectId());
-            assertEquals(null, lsid.getVersion());
+            assertNull(lsid.getVersion());
         }
 
         @Test
@@ -623,7 +623,7 @@ public class Lsid
             assertEquals("SampleSet", lsid.getNamespacePrefix());
             assertEquals("Folder-4", lsid.getNamespaceSuffix());
             assertEquals("Repro:Set", lsid.getObjectId());
-            assertEquals(null, lsid.getVersion());
+            assertNull(lsid.getVersion());
         }
 
         @Test
@@ -635,7 +635,7 @@ public class Lsid
             assertEquals("SampleSet", lsid.getNamespacePrefix());
             assertEquals("Folder-4", lsid.getNamespaceSuffix());
             assertEquals("Repro%Set", lsid.getObjectId());
-            assertEquals(null, lsid.getVersion());
+            assertNull(lsid.getVersion());
         }
 
         @Test
@@ -647,7 +647,7 @@ public class Lsid
             assertEquals("SampleSet", lsid.getNamespacePrefix());
             assertEquals("Folder-4", lsid.getNamespaceSuffix());
             assertEquals("Repro Set", lsid.getObjectId());
-            assertEquals(null, lsid.getVersion());
+            assertNull(lsid.getVersion());
 
             lsid = Lsid.parse("urn:lsid:labkey.com:SampleSet.Folder-4:Repro+Set");
             assertEquals("urn:lsid:labkey.com:SampleSet.Folder-4:Repro+Set", lsid.toString());
@@ -655,7 +655,7 @@ public class Lsid
             assertEquals("SampleSet", lsid.getNamespacePrefix());
             assertEquals("Folder-4", lsid.getNamespaceSuffix());
             assertEquals("Repro Set", lsid.getObjectId());
-            assertEquals(null, lsid.getVersion());
+            assertNull(lsid.getVersion());
         }
 
         @Test
@@ -667,7 +667,7 @@ public class Lsid
             assertEquals("SampleSet", lsid.getNamespacePrefix());
             assertEquals("Folder-4", lsid.getNamespaceSuffix());
             assertEquals("Repro Set", lsid.getObjectId());
-            assertEquals(null, lsid.getVersion());
+            assertNull(lsid.getVersion());
         }
 
         @Test
@@ -679,7 +679,7 @@ public class Lsid
             assertEquals("SampleSet", lsid.getNamespacePrefix());
             assertEquals("Folder-4", lsid.getNamespaceSuffix());
             assertEquals("Repro+Set", lsid.getObjectId());
-            assertEquals(null, lsid.getVersion());
+            assertNull(lsid.getVersion());
         }
 
         @Test

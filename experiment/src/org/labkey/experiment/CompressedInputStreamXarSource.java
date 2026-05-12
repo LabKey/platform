@@ -5,7 +5,6 @@ import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.AbstractFileXarSource;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
@@ -44,7 +43,7 @@ public class CompressedInputStreamXarSource extends AbstractFileXarSource
     }
 
     @Override
-    public void init() throws IOException, ExperimentException
+    public void init() throws IOException
     {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         try (OutputStream stream = new BufferedOutputStream(byteStream))

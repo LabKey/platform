@@ -4,12 +4,10 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;

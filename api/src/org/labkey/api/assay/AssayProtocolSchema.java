@@ -16,8 +16,8 @@
 package org.labkey.api.assay;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.actions.AssayDetailRedirectAction;
 import org.labkey.api.assay.actions.AssayResultDetailsAction;
@@ -541,7 +541,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
     }
 
     @Override
-    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
+    public @NotNull QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
         String name = settings.getQueryName();
         QueryView result = null;
@@ -728,7 +728,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
                                     Map<String, List<Aggregate.Result>> allAggResults = renderContext.getAggregates(dataRegion.getDisplayColumns(), dataRegion.getTable(), dataRegion.getSettings(), dataRegion.getName(), Collections.singletonList(countAgg), dataRegion.getQueryParameters(), dataRegion.isAllowAsync());
                                     List<Aggregate.Result> aggResults = allAggResults.get(countAgg.getFieldKey().toString());
                                     assert aggResults.size() == 1 : "Expected a single aggregate result but got " + aggResults.size();
-                                    int totalRows = ((Number)aggResults.get(0).getValue()).intValue();
+                                    int totalRows = ((Number)aggResults.getFirst().getValue()).intValue();
 
                                     if (totalRows < rowCount)
                                     {

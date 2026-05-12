@@ -65,27 +65,17 @@ public class StatsServiceImpl implements StatsService
     @Override
     public CurveFit getCurveFit(CurveFitType type, DoublePoint[] data, @Nullable Double asymptoteMin, @Nullable Double asymptoteMax)
     {
-        switch (type)
+        return switch (type)
         {
-            case THREE_PARAMETER_ALT:
-                return new ThreeParameterCurveFit(data, asymptoteMax);
-            case FOUR_PARAMETER_SIMPLEX:
-                return new FourParameterSimplex(data);
-            case FIVE_PARAMETER_ALT:
-                return new FiveParameterCurveFit(data, asymptoteMin, asymptoteMax);
-            case THREE_PARAMETER:
-                return new ParameterCurveFit(data, type, 0.0, asymptoteMax);
-            case FOUR_PARAMETER:
-            case FIVE_PARAMETER:
-                return new ParameterCurveFit(data, type, asymptoteMin, asymptoteMax);
-            case POLYNOMIAL:
-                return new PolynomialCurveFit(data);
-            case LINEAR:
-                return new LinearCurveFit(data);
-            case NONE:
-                return new NoCurveFit(data);
-        }
-        throw new IllegalArgumentException("Unable to find a CurveFit implementation for type: " + type.name());
+            case THREE_PARAMETER_ALT -> new ThreeParameterCurveFit(data, asymptoteMax);
+            case FOUR_PARAMETER_SIMPLEX -> new FourParameterSimplex(data);
+            case FIVE_PARAMETER_ALT -> new FiveParameterCurveFit(data, asymptoteMin, asymptoteMax);
+            case THREE_PARAMETER -> new ParameterCurveFit(data, type, 0.0, asymptoteMax);
+            case FOUR_PARAMETER, FIVE_PARAMETER -> new ParameterCurveFit(data, type, asymptoteMin, asymptoteMax);
+            case POLYNOMIAL -> new PolynomialCurveFit(data);
+            case LINEAR -> new LinearCurveFit(data);
+            case NONE -> new NoCurveFit(data);
+        };
     }
 
     public static class TestCase extends Assert

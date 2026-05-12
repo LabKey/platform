@@ -37,7 +37,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.Crypt;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
@@ -250,7 +249,7 @@ public class FileUtil
             }
             catch (IOException e)
             {
-                log.debug(String.format("Unable to clean dir [%1$s]", dir), e);
+                log.debug("Unable to clean dir [{}]", dir, e);
                 return false;
             }
         }
@@ -270,11 +269,11 @@ public class FileUtil
                 lastException = e;
                 // Issue 39579: Folder import sometimes fails to delete temp directory
                 // wait a little then try again
-                log.warn("Failed to delete file. Sleep and try to delete again. " + e.getMessage());
+                log.warn("Failed to delete file. Sleep and try to delete again. {}", e.getMessage());
                 try {Thread.sleep(1000);} catch (InterruptedException x) {/* pass */}
             }
         }
-        log.warn("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir.toFile()), lastException);
+        log.warn("Failed to delete file after 5 attempts: {}", FileUtil.getAbsoluteCaseSensitiveFile(dir.toFile()), lastException);
         return false;
     }
 
@@ -826,7 +825,7 @@ public class FileUtil
         // Creating stack traces is expensive so only bother if we're really going to log it
         if (LOG.isDebugEnabled())
         {
-            LOG.debug("CreateUri from: " + str + " [" + Thread.currentThread().getStackTrace()[2].toString() + "]");
+            LOG.debug("CreateUri from: {} [{}]", str, Thread.currentThread().getStackTrace()[2].toString());
         }
         if (isEncoded)
             str2 = str2.replace(" ", "%20"); // Spaces in paths make URI unhappy
@@ -1025,7 +1024,7 @@ public class FileUtil
                 }
                 catch (URISyntaxException e)
                 {
-                    LOG.debug("Error attempting to conform uri: " + e.getMessage());
+                    LOG.debug("Error attempting to conform uri: {}", e.getMessage());
                     return uri.toString();
                 }
             }
@@ -1189,7 +1188,7 @@ public class FileUtil
         long actual = 0;
         long bytesCopied;
 
-        LOG.debug("Starting to transfer to " + dst + ", expecting " + (expected == -1 ? "an unknown number" : Long.toString(expected)) + " bytes");
+        LOG.debug("Starting to transfer to {}, expecting {} bytes", dst, expected == -1 ? "an unknown number" : Long.toString(expected));
 
         try (FileOutputStream os = new FileOutputStream(dst);
              FileChannel out = os.getChannel();
@@ -1201,7 +1200,7 @@ public class FileUtil
                 actual += bytesCopied;
                 if (actual != expected && bytesCopied != 0)
                 {
-                    LOG.debug("Still transferring to " + dst + ", " + actual + " bytes transferred so far");
+                    LOG.debug("Still transferring to {}, {} bytes transferred so far", dst, actual);
                 }
             }
             while (bytesCopied != 0);
@@ -1212,11 +1211,11 @@ public class FileUtil
         {
             if (success)
             {
-                LOG.debug("Finished transferring " + actual + " bytes to " + dst);
+                LOG.debug("Finished transferring {} bytes to {}", actual, dst);
             }
             else
             {
-                LOG.debug("Failed during transfer, but successfully copied at least " + actual + " bytes to " + dst);
+                LOG.debug("Failed during transfer, but successfully copied at least {} bytes to {}", actual, dst);
             }
         }
     }
@@ -1344,7 +1343,7 @@ quickScan:
                     {
                         if (list.isEmpty())
                             return null;
-                        list.remove(list.size()-1);
+                        list.removeLast();
                     }
                     else
                     {

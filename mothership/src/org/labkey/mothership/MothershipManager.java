@@ -396,7 +396,7 @@ public class MothershipManager
         ObjectMapper mapper = JsonUtil.createDefaultMapper();
         try
         {
-            log.debug("Merging JSON. Old is " + currentValue.length() + " characters, new is " + newValue.length());
+            log.debug("Merging JSON. Old is {} characters, new is {}", currentValue.length(), newValue.length());
             Map<String, Object> currentMap = mapper.readValue(currentValue, Map.class);
             Map<String, Object> newMap = mapper.readValue(newValue, Map.class);
             merge(currentMap, newMap);
@@ -429,7 +429,7 @@ public class MothershipManager
 
     private void logJsonError(String newValue, String serverSessionGUID, Exception e)
     {
-        log.error("Malformed json in mothership report from server session '"+serverSessionGUID + "': " + newValue, e);
+        log.error("Malformed json in mothership report from server session '{}': {}", serverSessionGUID, newValue, e);
     }
 
     public TableInfo getTableInfoExceptionStackTrace()

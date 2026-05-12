@@ -22,8 +22,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponseWriter.Format;
@@ -539,7 +539,7 @@ public class AuthenticationManager
     public static void registerProvider(AuthenticationProvider authProvider, Priority priority)
     {
         if (Priority.High == priority)
-            _allProviders.add(0, authProvider);
+            _allProviders.addFirst(authProvider);
         else
             _allProviders.add(authProvider);
 
@@ -931,7 +931,7 @@ public class AuthenticationManager
         {
             BindException errors = new BindException(new Object(), "dummy");
             getStatus().addUserErrorMessage(errors, this, null, null, location);
-            return errors.hasErrors() ? errors.getAllErrors().get(0).getDefaultMessage() : null;
+            return errors.hasErrors() ? errors.getAllErrors().getFirst().getDefaultMessage() : null;
         }
     }
 
@@ -1060,13 +1060,13 @@ public class AuthenticationManager
                 if (null != user)
                 {
                     addAuditEvent(user, request, user.getEmail() + message);
-                    _log.warn(user.getEmail() + message);
+                    _log.warn("{}{}", user.getEmail(), message);
                 }
                 else if (null != emailAddress)
                 {
                     // Funny audit case -- user doesn't exist, so there's no user to associate with the event. Use guest.
                     addAuditEvent(User.guest, request, emailAddress + message);
-                    _log.warn(emailAddress + message);
+                    _log.warn("{}{}", emailAddress, message);
                 }
                 else
                 {
@@ -1765,7 +1765,7 @@ public class AuthenticationManager
             MockHttpServletRequest req = new MockHttpServletRequest("GET", "/home/project-begin.view")
             {
                 @Override
-                public String getRemoteAddr()
+                public @NotNull String getRemoteAddr()
                 {
                     return remoteAddr[0];
                 }

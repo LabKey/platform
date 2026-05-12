@@ -30,7 +30,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileUrls;
 import org.labkey.api.files.FilesAdminOptions;
-import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
@@ -146,16 +145,9 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
                 if (dir != null)
                 {
-                    try
-                    {
-                        getModelBean().setRoot(dir);
-                        getModelBean().setRootDirectory(dir.getFileSystemDirectoryPath());
-                    }
-                    catch (MissingRootDirectoryException e)
-                    {
-                        // this should never happen
-                        throw new RuntimeException(e);
-                    }
+                    getModelBean().setRoot(dir);
+                    getModelBean().setRootDirectory(dir.getFileSystemDirectoryPath());
+
                 }
                 getModelBean().setRootPath(getRootPath(c, FileContentService.FILE_SETS_LINK, legacyFileRoot));
                 setTitle(legacyFileRoot);
@@ -200,7 +192,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             }
             catch (Throwable t)
             {
-                _log.warn("improper path passed to webpart: [" + path + "]");
+                _log.warn("improper path passed to webpart: [{}]", path);
             }
         }
 
@@ -422,30 +414,23 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
     protected boolean canDisplayPipelineActions()
     {
-        try
+        if (_isPipelineFiles)
+            return true;
+        else if (_isRootNotFilesPipeline)
+            return false;
+
+        // since pipeline actions operate on the pipeline root, if the file content and pipeline roots do not
+        // reference the same location, then import and customize actions should be disabled
+
+        FileContentService svc = FileContentService.get();
+        if (null == svc)
+            throw new IllegalStateException("FileContentService not found.");
+        AttachmentDirectory dir = svc.getMappedAttachmentDirectory(getViewContext().getContainer(), false);
+        PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
+
+        if (null != root && root.isValid() && null != dir && root.getRootNioPath().equals(dir.getFileSystemDirectoryPath()))
         {
-            if (_isPipelineFiles)
-                return true;
-            else if (_isRootNotFilesPipeline)
-                return false;
-
-            // since pipeline actions operate on the pipeline root, if the file content and pipeline roots do not
-            // reference the same location, then import and customize actions should be disabled
-
-            FileContentService svc = FileContentService.get();
-            if (null == svc)
-                throw new IllegalStateException("FileContentService not found.");
-            AttachmentDirectory dir = svc.getMappedAttachmentDirectory(getViewContext().getContainer(), false);
-            PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
-
-            if (null != root && root.isValid() && null != dir && root.getRootNioPath().equals(dir.getFileSystemDirectoryPath()))
-            {
-                return true;
-            }
-        }
-        catch (MissingRootDirectoryException e)
-        {
-            _log.error("Error determining whether pipeline actions can be shown", e);
+            return true;
         }
         return false;
     }
@@ -477,22 +462,16 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         if (null == svc)
             throw new IllegalStateException("FileContentService not found.");
 
-        try {
-            AttachmentDirectory dir;
-            if (null == fileSet)
-                dir = svc.getMappedAttachmentDirectory(container, false);
-            else
-                dir = svc.getRegisteredDirectory(container, fileSet);
+        AttachmentDirectory dir;
+        if (null == fileSet)
+            dir = svc.getMappedAttachmentDirectory(container, false);
+        else
+            dir = svc.getRegisteredDirectory(container, fileSet);
 
-            if (dir != null)
-            {
-                getModelBean().setRoot(dir);
-                getModelBean().setRootDirectory(dir.getFileSystemDirectoryPath());
-            }
-        }
-        catch (MissingRootDirectoryException ex)
+        if (dir != null)
         {
-            setModelBean(null);
+            getModelBean().setRoot(dir);
+            getModelBean().setRootDirectory(dir.getFileSystemDirectoryPath());
         }
     }
 

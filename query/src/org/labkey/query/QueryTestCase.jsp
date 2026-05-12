@@ -651,7 +651,7 @@ d,seven,twelve,day,month,date,duration,guid
                 assertNotNull(table);
 
                 if (!errors.isEmpty())
-                    throw new RuntimeException(errors.get(0));
+                    throw new RuntimeException(errors.getFirst());
 
                 try (Results results = new TableSelector(table).getResults())
                 {
@@ -1219,7 +1219,7 @@ d,seven,twelve,day,month,date,duration,guid
         DataIteratorContext context = new DataIteratorContext();
         rTableInfo.getUpdateService().importRows(user, c, new TestDataLoader(R.getName() + hash, Rsize), context.getErrors(), null, null);
         if (context.getErrors().hasErrors())
-            Assert.fail(context.getErrors().getRowErrors().get(0).toString());
+            Assert.fail(context.getErrors().getRowErrors().getFirst().toString());
 
         ListDefinition S = listService.createList(qtest, "S", ListDefinition.KeyType.AutoIncrementInteger);
         S.setKeyName("rowid");
@@ -1230,7 +1230,7 @@ d,seven,twelve,day,month,date,duration,guid
         context = new DataIteratorContext();
         sTableInfo.getUpdateService().importRows(user, qtest, new TestDataLoader(S.getName() + hash, Rsize), context.getErrors(), null, null);
         if (context.getErrors().hasErrors())
-            Assert.fail(context.getErrors().getRowErrors().get(0).toString());
+            Assert.fail(context.getErrors().getRowErrors().getFirst().toString());
     }
 
 
@@ -1406,7 +1406,7 @@ d,seven,twelve,day,month,date,duration,guid
             }
             else if (!qerrors.isEmpty())
             {
-                throw qerrors.get(0);
+                throw qerrors.getFirst();
             }
             else
             {
@@ -1443,7 +1443,7 @@ d,seven,twelve,day,month,date,duration,guid
             }
             else if (!qerrors.isEmpty())
             {
-                throw qerrors.get(0);
+                throw qerrors.getFirst();
             }
             else
             {
@@ -1867,7 +1867,7 @@ d,seven,twelve,day,month,date,duration,guid
         q.parse(sql);
 
         if (!q.getParseErrors().isEmpty())
-            throw q.getParseErrors().get(0);
+            throw q.getParseErrors().getFirst();
 
         Map<String, QueryTable.TableColumn> involvedColumnMap = new CaseInsensitiveHashMap<>();
         for (QueryTable.TableColumn column : q.getInvolvedTableColumns())

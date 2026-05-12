@@ -238,9 +238,9 @@ public abstract class Method
                 super.validate(fn, args, parseErrors, parseWarnings);
                 if (args.size() != 1)
                     return;
-                int line = args.get(0).getLine();
-                int column = args.get(0).getColumn();
-                if (args.get(0).getTokenType() != SqlBaseLexer.QUOTED_STRING)
+                int line = args.getFirst().getLine();
+                int column = args.getFirst().getColumn();
+                if (args.getFirst().getTokenType() != SqlBaseLexer.QUOTED_STRING)
                 {
                     parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, line, column));
                     return;
@@ -250,7 +250,7 @@ public abstract class Method
                 String propertyName = "";
                 try
                 {
-                    String param = toSimpleString(new SQLFragment(args.get(0).getTokenText()));
+                    String param = toSimpleString(new SQLFragment(args.getFirst().getTokenText()));
                     int dot = param.lastIndexOf('.');
                     if (dot < 0)
                     {
@@ -330,7 +330,7 @@ public abstract class Method
                     return;
                 if (args.get(0).getTokenType() != SqlBaseLexer.QUOTED_STRING)
                 {
-                    parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, args.get(0).getLine(), args.get(0).getColumn()));
+                    parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, args.getFirst().getLine(), args.getFirst().getColumn()));
                     return;
                 }
                 if (args.get(1).getTokenType() != SqlBaseLexer.QUOTED_STRING)
@@ -343,7 +343,7 @@ public abstract class Method
                 Module module = ModuleLoader.getInstance().getModule(moduleName);
                 if (null == module)
                 {
-                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() module not found: " + moduleName, null, args.get(0).getLine(), args.get(0).getColumn()));
+                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() module not found: " + moduleName, null, args.getFirst().getLine(), args.getFirst().getColumn()));
                     return;
                 }
                 String propertyName = toSimpleString(new SQLFragment(args.get(1).getTokenText()));
@@ -1483,7 +1483,7 @@ public abstract class Method
         String s = f.getSQL();
         // am I a simple bound parameter?
         if ("?".equals(s) && f.getParams().size() == 1)
-            return f.getParams().get(0) instanceof String;
+            return f.getParams().getFirst() instanceof String;
         if (!f.getParams().isEmpty())
             return false;
         if (s.endsWith("::VARCHAR"))
@@ -1506,7 +1506,7 @@ public abstract class Method
             throw new IllegalArgumentException(f.toDebugString());
         String s = f.getSQL();
         if ("?".equals(s) && f.getParams().size() == 1)
-            return (String) f.getParams().get(0);
+            return (String) f.getParams().getFirst();
         assert (s.startsWith("'") || s.startsWith("N'"));
         assert (s.endsWith("'") || s.endsWith("'::VARCHAR"));
         if (s.endsWith("::VARCHAR"))

@@ -89,7 +89,7 @@ public class TableChange
             {
                 for (SQLFragment sql : scope.getSqlDialect().getChangeStatements(this))
                 {
-                    LOG.debug("Will issue: " + sql.getSQL());
+                    LOG.debug("Will issue: {}", sql.getSQL());
                     executor.execute(sql);
                 }
                 success = true;

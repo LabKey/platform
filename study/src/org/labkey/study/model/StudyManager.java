@@ -812,12 +812,12 @@ public class StudyManager
                 }
                 catch (DataIntegrityViolationException x)
                 {
-                    _log.debug("Old Dataset: " + old.getName());
-                    _log.debug("    Demographic: " + old.isDemographicData());
-                    _log.debug("    Key: " + old.getKeyPropertyName());
-                    _log.debug("New Dataset: " + datasetDefinition.getName());
-                    _log.debug("    Demographic: " + datasetDefinition.isDemographicData());
-                    _log.debug("    Key: " + datasetDefinition.getKeyPropertyName());
+                    _log.debug("Old Dataset: {}", old.getName());
+                    _log.debug("    Demographic: {}", old.isDemographicData());
+                    _log.debug("    Key: {}", old.getKeyPropertyName());
+                    _log.debug("New Dataset: {}", datasetDefinition.getName());
+                    _log.debug("    Demographic: {}", datasetDefinition.isDemographicData());
+                    _log.debug("    Key: {}", datasetDefinition.getKeyPropertyName());
 
                     if (datasetDefinition.isDemographicData())
                         throw new IllegalArgumentException("Can not change dataset type to demographic for dataset " + datasetDefinition.getName());
@@ -1267,7 +1267,7 @@ public class StudyManager
             p.run();
 
             if (context.getErrors().hasErrors())
-                throw context.getErrors().getRowErrors().get(0);
+                throw context.getErrors().getRowErrors().getFirst();
 
             transaction.commit();
 
@@ -1473,7 +1473,7 @@ public class StudyManager
 
             BatchValidationException errors = context.getErrors();
             if (errors.hasErrors())
-                throw errors.getRowErrors().get(0);
+                throw errors.getRowErrors().getFirst();
 
             transaction.commit();
         }
@@ -1533,7 +1533,7 @@ public class StudyManager
             return null;
         if (visitTags.size() > 1)
             throw new IllegalStateException("Expected only one visit tag with given name.");
-        return visitTags.get(0);
+        return visitTags.getFirst();
     }
 
     public Map<Integer, List<VisitTagMapEntry>> getVisitTagMapMap(Study study)
@@ -2037,7 +2037,7 @@ public class StudyManager
             .toList();
 
         if (cohorts.size() == 1)
-            return cohorts.get(0);
+            return cohorts.getFirst();
 
         return null;
     }
@@ -2382,7 +2382,7 @@ public class StudyManager
         if (null == def)
             return;
 
-        _log.debug("Uncaching dataset: " + def.getName(), new Throwable());
+        _log.debug("Uncaching dataset: {}", def.getName(), new Throwable());
 
         _datasetHelper.clearCache(def.getContainer());
         String uri = def.getTypeURI();
@@ -3956,16 +3956,12 @@ public class StudyManager
     {
         @Migrate // TODO: Switch VisitManager() to take Study and get rid of cast
         StudyImpl studyImpl = (StudyImpl)study;
-        switch (study.getTimepointType())
+        return switch (study.getTimepointType())
         {
-            case VISIT:
-                return new SequenceVisitManager(studyImpl);
-            case CONTINUOUS:
-                return new AbsoluteDateVisitManager(studyImpl);
-            case DATE:
-            default:
-                return new RelativeDateVisitManager(studyImpl);
-        }
+            case VISIT -> new SequenceVisitManager(studyImpl);
+            case CONTINUOUS -> new AbsoluteDateVisitManager(studyImpl);
+            default -> new RelativeDateVisitManager(studyImpl);
+        };
     }
 
     public static SQLFragment timePortionFromDateSQL(String dateColumnName)
@@ -4038,7 +4034,7 @@ public class StudyManager
         if (containers.isEmpty())
             return null;
         else if (containers.size() == 1)
-            return ContainerManager.getForId(containers.get(0));
+            return ContainerManager.getForId(containers.getFirst());
         throw new ParticipantNotUniqueException(ptid);
     }
 

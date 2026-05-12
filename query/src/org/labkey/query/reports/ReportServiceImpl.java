@@ -167,7 +167,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
             throw new IllegalArgumentException("Invalid descriptor instance");
 
         if (null != _descriptors.putIfAbsent(descriptor.getDescriptorType(), descriptor.getClass()))
-            _log.warn("Descriptor type : " + descriptor.getDescriptorType() + " has previously been registered.");
+            _log.warn("Descriptor type : {} has previously been registered.", descriptor.getDescriptorType());
     }
 
     @Override
@@ -920,8 +920,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
                     Dataset dataset = study.getDatasetByLabel(queryName);
                     if (dataset != null && !dataset.getName().equals(dataset.getLabel()))
                     {
-                        ctx.getLogger().error("Report \"" + xmlFileName + "\" could not be imported. Its queryName is \"" + queryName +
-                            ",\" which is a dataset label. Dataset labels are no longer supported; queryName should be set to the dataset name (\"" + dataset.getName() + "\") instead.");
+                        ctx.getLogger().error("Report \"{}\" could not be imported. Its queryName is \"{},\" which is a dataset label. Dataset labels are no longer supported; queryName should be set to the dataset name (\"{}\") instead.", xmlFileName, queryName, dataset.getName());
                         return null;
                     }
                 }

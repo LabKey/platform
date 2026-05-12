@@ -150,7 +150,7 @@ public class AuditController extends SpringActionController
             String selected = form.getView();
 
             if (selected == null)
-                selected = AuditLogService.get().getAuditProviders().get(0).getEventName();
+                selected = AuditLogService.get().getAuditProviders().getFirst().getEventName();
 
             UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
             QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, selected);

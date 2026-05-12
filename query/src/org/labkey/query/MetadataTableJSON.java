@@ -234,7 +234,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 }
                 else if (metadataColumnJSON.getValueExpression() == null)
                 {
-                    log.info("No such column: " + metadataColumnJSON.getName() + " in table: " + schemaName + "." + queryDef.getName() + " in folder: " + container.getName());
+                    log.info("No such column: {} in table: {}.{} in folder: {}", metadataColumnJSON.getName(), schemaName, queryDef.getName(), container.getName());
                 }
             }
 

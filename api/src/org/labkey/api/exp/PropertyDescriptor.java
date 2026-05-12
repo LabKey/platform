@@ -324,7 +324,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         PropertyType type = getPropertyType();
         if (type == null)
         {
-            LOG.warn("Could not determine propertyType from RangeURI " + getRangeURI() + " and ConceptURI " + getConceptURI() + " for PropertyURI " + getPropertyURI() + ", defaulting to string");
+            LOG.warn("Could not determine propertyType from RangeURI {} and ConceptURI {} for PropertyURI {}, defaulting to string", getRangeURI(), getConceptURI(), getPropertyURI());
             type = PropertyType.STRING;
         }
         return type.getJdbcType();

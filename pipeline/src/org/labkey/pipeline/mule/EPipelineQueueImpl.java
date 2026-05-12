@@ -118,7 +118,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
             PipelineJob job = PipelineJob.deserializeJob(statusFile.getJobStore());
             if (job != null)
             {
-                job.getLogger().info("Attempting to cancel job as requested by " + user + ".");
+                job.getLogger().info("Attempting to cancel job as requested by {}.", user);
                 PipelineJob.logStartStopInfo("Attempting to cancel job ID " + job.getJobGUID() + ", " + statusFile.getFilePath() + " as requested by " + user);
             }
 
@@ -147,13 +147,13 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
                 JobRunner.getDefault().execute(() -> {
                     try
                     {
-                        job.getLogger().info("Cancelling remote job by submitting request to " + engine);
+                        job.getLogger().info("Cancelling remote job by submitting request to {}", engine);
                         PipelineJob.logStartStopInfo("Cancelling job by submitting request to " + engine + ". Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
                         engine.cancelJob(job.getJobGUID());
                     }
                     catch (Exception e)
                     {
-                        _log.error("Error attempting to cancel job " + statusFile.getFilePath(), e);
+                        _log.error("Error attempting to cancel job {}", statusFile.getFilePath(), e);
                     }
                 });
                 return true;
@@ -211,7 +211,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         }
         catch (JMSException e)
         {
-            _log.error("Error browsing message queue at '" + ep.getEndpointURI(), e);
+            _log.error("Error browsing message queue at '{}", ep.getEndpointURI(), e);
         }
         finally
         {
@@ -255,7 +255,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         }
         catch (JMSException e)
         {
-            _log.error("Error browsing message queue at '" + ep.getEndpointURI(), e);
+            _log.error("Error browsing message queue at '{}", ep.getEndpointURI(), e);
         }
         finally
         {
@@ -313,13 +313,13 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         MuleClient client = null;
         try
         {
-            _log.debug("Dispatching job: " + job);
+            _log.debug("Dispatching job: {}", job);
             client = new MuleClient();
             client.dispatch(EPipelineQueueImpl.PIPELINE_QUEUE_NAME, job, null);
         }
         catch (Exception e)
         {
-            _log.debug("Error dispatching job: " + job, e);
+            _log.debug("Error dispatching job: {}", job, e);
             throw e;
         }
         finally

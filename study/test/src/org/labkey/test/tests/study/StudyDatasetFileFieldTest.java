@@ -1,7 +1,6 @@
 package org.labkey.test.tests.study;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -296,7 +295,7 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
 
     protected void verifyFileAuditLogs(List<Map<String, Object>> expectedFileData) throws IOException, CommandException
     {
-        List<String> columnNames = expectedFileData.get(0).keySet().stream().map(Object::toString).toList();
+        List<String> columnNames = expectedFileData.getFirst().keySet().stream().map(Object::toString).toList();
         AuditLogHelper auditLogHelper = new AuditLogHelper(this, () -> WebTestHelper.getRemoteApiConnection(false));
         List<Map<String, Object>> events = auditLogHelper.getAuditLogsFromLKS(getProjectName(), AuditLogHelper.AuditEvent.FILE_SYSTEM_EVENT, columnNames, null, expectedFileData.size(), null).getRows();
         assertEquals("Number of file audit log events not as expected", expectedFileData.size(), events.size());

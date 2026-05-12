@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ObjectFactory;
@@ -61,7 +62,6 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
      * @return A map of the bean's properties
      * @throws QueryUpdateServiceException Thrown if there were problems converting
      */
-    @SuppressWarnings("unchecked")
     protected Map<String, Object> mapFromBean(T bean) throws QueryUpdateServiceException
     {
         if(null == bean)
@@ -125,7 +125,7 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
 
     @Override
     protected final Map<String, Object> updateRow(User user, Container container,
-                                                  Map<String, Object> row, Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters)
+                                                  Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         K oldKey = null != oldRow ? keyFromMap(oldRow) : keyFromMap(row);
@@ -179,11 +179,9 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
      * @return The bean after insert. If the bean has a database-assigned key, they key value(s) should
      * be set on the bean. Callers will reload the bean if trigger-assigned values are needed.
      * @throws ValidationException Thrown if the bean is invalid.
-     * @throws DuplicateKeyException Thrown if the key is already used in the database.
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
-     * @throws SQLException Thrown if there was a problem communicating with the database.
      */
-    protected abstract T insert(User user, Container container, T bean) throws ValidationException, DuplicateKeyException, QueryUpdateServiceException, SQLException;
+    protected abstract T insert(User user, Container container, T bean) throws ValidationException, QueryUpdateServiceException;
 
     /**
      * Updates a bean in the database.
@@ -194,9 +192,8 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
      * @return The bean after update. Callers will reload the bean if trigger-assigned values are needed.
      * @throws ValidationException Thrown if the bean is invalid.
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
-     * @throws SQLException Thrown if there is a problem communicating with the database.
      */
-    protected abstract T update(User user, Container container, T bean, K oldKey) throws ValidationException, QueryUpdateServiceException, SQLException;
+    protected abstract T update(User user, Container container, T bean, K oldKey) throws ValidationException, QueryUpdateServiceException;
 
     /**
      * Deletes a bean in the database.

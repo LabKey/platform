@@ -203,19 +203,19 @@ public class CustomViewInfoImpl implements CustomViewInfo
     }
 
     @Override
-    public String getSchemaName()
+    public @NotNull String getSchemaName()
     {
         return _cstmView.getSchema();
     }
 
     @Override
-    public SchemaKey getSchemaPath()
+    public @NotNull SchemaKey getSchemaPath()
     {
         return SchemaKey.fromString(_cstmView.getSchema());
     }
 
     @Override
-    public String getQueryName()
+    public @NotNull String getQueryName()
     {
         return _cstmView.getQueryName();
     }
@@ -250,7 +250,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
             URLHelper src = new URLHelper(_cstmView.getFilter());
             List<String> containerFilterNames = src.getParameterValues(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
             if (!containerFilterNames.isEmpty())
-                return containerFilterNames.get(containerFilterNames.size() - 1);
+                return containerFilterNames.getLast();
             return null;
         }
         catch (URISyntaxException use)

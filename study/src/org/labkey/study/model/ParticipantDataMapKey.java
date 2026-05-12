@@ -16,6 +16,8 @@
 
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * User: Matthew
  * Date: Feb 1, 2006
@@ -63,7 +65,7 @@ public class ParticipantDataMapKey implements Comparable
 
 
     @Override
-    public int compareTo(Object o)
+    public int compareTo(@NotNull Object o)
     {
         ParticipantDataMapKey k = (ParticipantDataMapKey) o;
         if (this.sequenceNum != k.sequenceNum)

@@ -67,7 +67,7 @@ public class EmailTemplateService
     {
         synchronized(_templates)
         {
-            _log.debug("Registering email template " + templateClass.getName());
+            _log.debug("Registering email template {}", templateClass.getName());
             if (_templates.contains(templateClass))
                 throw new IllegalStateException("Template : " + templateClass.getName() + " has previously been registered.");
 
@@ -264,6 +264,6 @@ public class EmailTemplateService
         sql.add(oldClassName + "%");
 
         int updated = new SqlExecutor(tinfo.getSchema()).execute(sql);
-        _log.info("Migrated " + StringUtilsLabKey.pluralize(updated, "template property", "template properties") + " from " + oldClassName + " to " + newClassName);
+        _log.info("Migrated {} from {} to {}", StringUtilsLabKey.pluralize(updated, "template property", "template properties"), oldClassName, newClassName);
     }
 }

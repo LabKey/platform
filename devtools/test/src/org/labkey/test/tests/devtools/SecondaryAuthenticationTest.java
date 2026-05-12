@@ -178,7 +178,7 @@ public class SecondaryAuthenticationTest extends BaseWebDriverTest
 
         // validate the delete entry in the audit log after deleting
         selectRowsResponse = getLatestAuditEntries();
-        row = selectRowsResponse.getRows().get(0);
+        row = selectRowsResponse.getRows().getFirst();
 
         commentColVal = (String) row.get("Comment"); //get a value from Comment column
         change = (String)row.get("Changes");

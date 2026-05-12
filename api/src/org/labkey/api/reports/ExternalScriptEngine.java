@@ -442,7 +442,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
                 scriptFile = getWorkingDir(context).resolveChild(path.getName());
         }
         else
-            scriptFile = getWorkingDir(context).resolveChild("script." + extensions.get(0));
+            scriptFile = getWorkingDir(context).resolveChild("script." + extensions.getFirst());
 
         bindings.put(REWRITTEN_SCRIPT_FILE, scriptFile);
 

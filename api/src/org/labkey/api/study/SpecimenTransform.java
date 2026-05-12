@@ -19,7 +19,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ActionURL;
@@ -56,7 +55,7 @@ public interface SpecimenTransform
     /**
      * An optional post transform step.
      */
-    void postTransform(@Nullable PipelineJob job, FileLike input, FileLike outputArchive) throws PipelineJobException;
+    void postTransform(@Nullable PipelineJob job, FileLike input, FileLike outputArchive);
 
     @Nullable
     ActionURL getManageAction(Container c, User user);
@@ -64,7 +63,7 @@ public interface SpecimenTransform
     /**
      * Returns and saved configuration information
      */
-    ExternalImportConfig getExternalImportConfig(Container c, User user) throws ValidationException;
+    ExternalImportConfig getExternalImportConfig(Container c, User user);
 
     /**
      * An optional capability to import from an external (API) source, data that can be transformed into

@@ -68,7 +68,7 @@ public class DilutionSummary implements Serializable
         ensureSameSample(sampleGroups);
         _curveFitType = curveFitType;
         _sampleGroups = sampleGroups;
-        _firstGroup = sampleGroups.get(0);
+        _firstGroup = sampleGroups.getFirst();
         _assay = assay;
         _lsid = lsid;
         _container = container;
@@ -76,8 +76,8 @@ public class DilutionSummary implements Serializable
 
     private void ensureSameSample(List<WellGroup> groups)
     {
-        String templateName = groups.get(0).getPlate().getName();
-        String wellgroupName = groups.get(0).getName();
+        String templateName = groups.getFirst().getPlate().getName();
+        String wellgroupName = groups.getFirst().getName();
         for (int groupIndex = 1; groupIndex < groups.size(); groupIndex++)
         {
             if (!templateName.equals(groups.get(groupIndex).getPlate().getName()))

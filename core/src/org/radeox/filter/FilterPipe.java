@@ -107,7 +107,7 @@ public class FilterPipe {
     }
 
     if (contains(filter.before(), FIRST_IN_PIPE)) {
-      filterList.add(0, filter);
+      filterList.addFirst(filter);
     } else if (minIndex != -1) {
       filterList.add(minIndex, filter);
 //    } else if (contains(filter.before(), LAST_IN_PIPE)) {
@@ -160,13 +160,13 @@ public class FilterPipe {
           renderContext.setCacheable(true);
         }
         if (null == tmp) {
-          log.warn("FilterPipe.filter: error while filtering: " + f);
+            log.warn("FilterPipe.filter: error while filtering: {}", f);
         } else {
           output = tmp;
         }
         renderContext.commitCache();
       } catch (Exception e) {
-        log.warn("Filtering exception: " + f + " in " + context.getRenderContext(), e);
+          log.warn("Filtering exception: {} in {}", f, context.getRenderContext(), e);
       }
     }
     return output;

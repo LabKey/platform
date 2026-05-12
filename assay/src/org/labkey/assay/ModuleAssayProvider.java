@@ -158,7 +158,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         if (providerConfig.getInputDataFileSuffixArray().length > 0)
         {
             List<String> suffixes = Arrays.asList(providerConfig.getInputDataFileSuffixArray());
-            _dataType = new AssayDataType(TsvDataHandler.NAMESPACE, new FileType(suffixes, suffixes.get(0)));
+            _dataType = new AssayDataType(TsvDataHandler.NAMESPACE, new FileType(suffixes, suffixes.getFirst()));
         }
 
         if (providerConfig.isSetPrimaryDataFileType())
@@ -189,7 +189,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 Module m = ModuleLoader.getInstance().getModule(moduleName);
                 if (m == null)
                 {
-                    LOG.error("unknown required module referenced in assay provider " + providerConfig.getName() + " assay definition: [" + moduleName + "]");
+                    LOG.error("unknown required module referenced in assay provider {} assay definition: [{}]", providerConfig.getName(), moduleName);
                 }
                 else
                 {
@@ -233,7 +233,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         }
         if (defaultSuffix == null)
         {
-            defaultSuffix = suffixes.get(0);
+            defaultSuffix = suffixes.getFirst();
         }
         return new AssayDataType(namespacePrefix, new FileType(suffixes, defaultSuffix), role);
     }
@@ -353,7 +353,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 StringBuilder sb = new StringBuilder();
                 while (!errors.isEmpty())
                 {
-                    XmlError error = errors.remove(0);
+                    XmlError error = errors.removeFirst();
                     sb.append(error.toString());
                     if (!errors.isEmpty())
                         sb.append("\n");
@@ -696,7 +696,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
                             // Prevent a later warning about the script file not existing
                             if (_missingScriptWarnings.add(fileName))
                             {
-                                LOG.warn("Unable to use script file '" + fileName + "' specified in metadata for assay type '" + getName() + "' because the required script engine is not configured.");
+                                LOG.warn("Unable to use script file '{}' specified in metadata for assay type '{}' because the required script engine is not configured.", fileName, getName());
                             }
                         }
                     }
@@ -736,7 +736,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         // Only warn the first time we notice that there's a script that's in the config.xml file but not on disk
         if (_missingScriptWarnings.add(fileName))
         {
-            LOG.warn("Unable to find a script file '" + fileName + "' specified in metadata for assay type '" + getName() + "'");
+            LOG.warn("Unable to find a script file '{}' specified in metadata for assay type '{}'", fileName, getName());
         }
         return null;
     }

@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.io.Writer;
 
@@ -30,7 +32,7 @@ public class StringBuilderWriter extends Writer
     }
 
     @Override
-    public void write(char cbuf[], int off, int len) throws IOException
+    public void write(char @NotNull[] cbuf, int off, int len) throws IOException
     {
         if (_closed)
             throw new IOException("Cannot write to closed writer.");

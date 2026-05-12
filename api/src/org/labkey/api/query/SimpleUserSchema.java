@@ -91,7 +91,7 @@ public class SimpleUserSchema extends UserSchema
                 if (null != table)
                     _available.add(table.getName());
                 else
-                    _log.error("Schema '" + dbschema.getName() + "' provided tableName '" + tableName + "', but not actual table.");
+                    _log.error("Schema '{}' provided tableName '{}', but not actual table.", dbschema.getName(), tableName);
             }
         }
     }
@@ -243,7 +243,7 @@ public class SimpleUserSchema extends UserSchema
         {
             if (getColumn(col.getName()) != null)
             {
-                _log.warn("'" + col.getName() + "' column already exists in '" + col.getParentTable() + "' table. Duplicate column won't be displayed.");
+                _log.warn("'{}' column already exists in '{}' table. Duplicate column won't be displayed.", col.getName(), col.getParentTable());
                 return false;
             }
             return true;
@@ -333,7 +333,7 @@ public class SimpleUserSchema extends UserSchema
                     // Only create this TableInfo if we don't already know the pkColName since it might be expensive
                     TableInfo fkTable = col.getFkTableInfo();
                     if (fkTable != null && fkTable.getPkColumnNames().size() == 1)
-                        pkColName = fkTable.getPkColumnNames().get(0);
+                        pkColName = fkTable.getPkColumnNames().getFirst();
                 }
 
                 if (null != pkColName)

@@ -665,11 +665,11 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             {
                 if (FileUtil.mkdirs(root))
                 {
-                    _log.info("Created site-wide file root " + root);
+                    _log.info("Created site-wide file root {}", root);
                 }
                 else
                 {
-                    _log.error("Failed when attempting to create site-wide file root " + root);
+                    _log.error("Failed when attempting to create site-wide file root {}", root);
                 }
             }
         }
@@ -766,7 +766,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     }
 
     @Override
-    public @Nullable AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException
+    public @Nullable AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException
     {
         return getMappedAttachmentDirectory(c, ContentType.files, createDir);
     }
@@ -786,7 +786,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         }
         catch (IOException e)
         {
-            _log.error("Cannot get mapped directory for " + c.getPath(), e);
+            _log.error("Cannot get mapped directory for {}", c.getPath(), e);
             return null;
         }
     }
@@ -1161,7 +1161,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     {
         try
         {
-            _log.info("moving " + prev.getPath() + " to " + dest.getPath());
+            _log.info("moving {} to {}", prev.getPath(), dest.getPath());
             boolean doRename = true;
 
             // Our best bet for perf is to do a rename, which doesn't require creating an actual copy.
@@ -1406,7 +1406,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 }
             }
         }
-        catch (IOException | UnsetRootDirectoryException ignored) {}
+        catch (UnsetRootDirectoryException ignored) {}
         return children;
     }
 
@@ -1472,7 +1472,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         }
         catch (InvalidPathException | URISyntaxException e)
         {
-            _log.error("Invalid WebDav URL from: " + path, e);
+            _log.error("Invalid WebDav URL from: {}", path, e);
         }
 
         return null;
@@ -1583,14 +1583,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                     {
                         if (fileset.getName().equals(rootName))
                         {
-                            try
-                            {
-                                file = fileset.getFileSystemDirectory();
-                            }
-                            catch (MissingRootDirectoryException e)
-                            {
-                                _log.error("Unable to list files for fileset: " + rootName, e);
-                            }
+                            file = fileset.getFileSystemDirectory();
                             break;
                         }
                     }
@@ -1613,12 +1606,12 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                                     rows.add(new CaseInsensitiveHashMap<>(Collections.singletonMap("DataFileUrl", path.toUri().toString())));
                             });
                 }
-                _log.debug("Inserting " + rows.size() + " rows into " + table);
+                _log.debug("Inserting {} rows into {}", rows.size(), table);
                 qus.insertRows(user, container, rows, errors, null, null);
             }
             catch (Exception e)
             {
-                _log.error("Error listing content of directory: " + file.getAbsolutePath(), e);
+                _log.error("Error listing content of directory: {}", file.getAbsolutePath(), e);
             }
         }
     }
@@ -1720,7 +1713,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         File file = new File(absoluteFilePath);
         if (!NetworkDrive.exists(file))
         {
-            _log.warn("File '" + absoluteFilePath + "' not found and cannot be moved");
+            _log.warn("File '{}' not found and cannot be moved", absoluteFilePath);
             return null;
         }
 
@@ -1731,7 +1724,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         String sourceRootPath = sourceFileRoot.getAbsolutePath();
         if (!absoluteFilePath.startsWith(sourceRootPath))
         {
-            _log.warn("File '" + absoluteFilePath + "' not currently located in source folder '" + sourceRootPath + "'. Not moving.");
+            _log.warn("File '{}' not currently located in source folder '{}'. Not moving.", absoluteFilePath, sourceRootPath);
             return null;
         }
         File targetFileRoot = getFileRoot(targetContainer);

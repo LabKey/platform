@@ -191,7 +191,7 @@ public class TableWriter
         {
             super.writeTable(tableXml);
             if (!_tableInfo.getPkColumnNames().isEmpty())
-                tableXml.setPkColumnName(_tableInfo.getPkColumnNames().get(0));
+                tableXml.setPkColumnName(_tableInfo.getPkColumnNames().getFirst());
         }
 
         @Override
@@ -201,7 +201,7 @@ public class TableWriter
 
             String columnName = column.getName();
 
-            if (!_tableInfo.getPkColumnNames().isEmpty() && columnName.equals(_tableInfo.getPkColumnNames().get(0)))
+            if (!_tableInfo.getPkColumnNames().isEmpty() && columnName.equals(_tableInfo.getPkColumnNames().getFirst()))
             {
                 columnXml.setIsKeyField(true);
 

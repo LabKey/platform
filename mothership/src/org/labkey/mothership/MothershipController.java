@@ -559,7 +559,7 @@ public class MothershipController extends SpringActionController
                 ServerInstallation installation = new ServerInstallation();
                 if (form.getServerGUID() == null)
                 {
-                    logger.warn("No serverGUID specified in exception report from " + serverIP + ", making one up so we don't lose the exception");
+                    logger.warn("No serverGUID specified in exception report from {}, making one up so we don't lose the exception", serverIP);
                     installation.setServerInstallationGUID(GUID.makeGUID());
                 }
                 else

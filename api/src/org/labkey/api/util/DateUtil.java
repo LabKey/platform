@@ -2101,7 +2101,7 @@ Parse:
             try
             {
                 parseDuration("1m2d3h");
-                assertFalse("unsupported conversion", true);
+                fail("unsupported conversion");
             }
             catch (ConversionException x)
             {

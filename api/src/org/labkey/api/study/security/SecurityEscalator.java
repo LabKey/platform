@@ -94,7 +94,7 @@ public abstract class SecurityEscalator implements AutoCloseable
 
         // Get our caller
         List<StackTraceElement> stackTraceElements = Arrays.asList(Thread.currentThread().getStackTrace());
-        String thisFileName = stackTraceElements.get(0).getFileName();
+        String thisFileName = stackTraceElements.getFirst().getFileName();
 
         String serviceName = null;
         List<String> relevantStackTraceElements = new ArrayList<>();

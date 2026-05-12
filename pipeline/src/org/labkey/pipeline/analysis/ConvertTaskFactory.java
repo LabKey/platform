@@ -105,7 +105,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
     {
         List<FileLike> files = job.getJobSupport(FileAnalysisJobSupport.class).getInputFiles();
         assert files != null && files.size() == 1 : "Conversion job must have one file.";
-        return files.get(0);
+        return files.getFirst();
     }
 
     private TaskFactory<?> findCommandFactory(PipelineJob job)
@@ -113,20 +113,20 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         // If this job is not actually running a conversion, then no
         // converter command can be determined.
         List<FileLike> files = job.getJobSupport(FileAnalysisJobSupport.class).getInputFiles();
-        LOG.debug("Checking " + files + " for possible converters");
+        LOG.debug("Checking {} for possible converters", files);
         if (files == null || files.size() != 1)
             return null;
 
         // Otherwise, find the appropriate converter.
         FileLike fileInput = getInputFile(job);
-        LOG.debug("Checking " + fileInput + " against up to " + _commands.length + " possible converters");
+        LOG.debug("Checking {} against up to {} possible converters", fileInput, _commands.length);
         for (TaskId tid : _commands)
         {
-            LOG.debug("Checking " + fileInput + " against " + tid);
+            LOG.debug("Checking {} against {}", fileInput, tid);
             TaskFactory<? extends TaskFactorySettings> factory = PipelineJobService.get().getTaskFactory(tid);
             for (FileType ft : factory.getInputTypes())
             {
-                LOG.debug("Checking " + fileInput + " against " + tid + ": " + ft);
+                LOG.debug("Checking {} against {}: {}", fileInput, tid, ft);
                 try
                 {
                     // If we have a match based on the file type and the factory says that it's a participant based
@@ -140,7 +140,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
                 }
                 catch (IOException e)
                 {
-                    LOG.debug("Exception when checking " + fileInput + ", reporting that " + tid + " is not available", e);
+                    LOG.debug("Exception when checking {}, reporting that {} is not available", fileInput, tid, e);
                     // Consider this command out of the running, caller will report an error if there are no other options
                 }
             }
@@ -211,7 +211,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         if (factory == null)
         {
             job.warn("Unexpected missing converter for job. The pipeline configuration may have changed to remove a previously configured converter.");
-            LOG.warn("Unexpected missing converter for job. The pipeline configuration may have changed to remove a previously configured converter. \n" + job.serializeJob(false));
+            LOG.warn("Unexpected missing converter for job. The pipeline configuration may have changed to remove a previously configured converter. \n{}", job.serializeJob(false));
             return true;
         }
 

@@ -82,13 +82,7 @@ public class ReportConfigurationBean
     {
         // we have to explicitly set the view context for these reports, since the factories aren't being newed-up by Spring in the usual way:
         factory.setViewContext(_viewContext);
-        List<SpecimenVisitReportParameters> factories = _reportFactories.get(category);
-
-        if (factories == null)
-        {
-            factories = new ArrayList<>();
-            _reportFactories.put(category, factories);
-        }
+        List<SpecimenVisitReportParameters> factories = _reportFactories.computeIfAbsent(category, _ -> new ArrayList<>());
 
         factories.add(factory);
     }

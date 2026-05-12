@@ -405,19 +405,19 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
     protected String getMemberInstanceCountAlias(CrosstabMember member)
     {
-        return getSettings().getColumnAxis().getDimensions().get(0).getSourceColumn().getAlias().getId()
+        return getSettings().getColumnAxis().getDimensions().getFirst().getSourceColumn().getAlias().getId()
                     + member.getValueSQLAlias(getSqlDialect()) + COL_INSTANCE_COUNT;
     }
 
     protected String getMemberSortPatternAlias(CrosstabMember member)
     {
-        return getSettings().getColumnAxis().getDimensions().get(0).getSourceColumn().getAlias().getId()
+        return getSettings().getColumnAxis().getDimensions().getFirst().getSourceColumn().getAlias().getId()
                     + member.getValueSQLAlias(getSqlDialect()) + COL_SORT_PATTERN;
     }
 
     protected void addMemberCase(SQLFragment sql, CrosstabMember member, String queryAlias, String ifSql, String elseSql, String alias)
     {
-        CrosstabDimension colDimension = getSettings().getColumnAxis().getDimensions().get(0);
+        CrosstabDimension colDimension = getSettings().getColumnAxis().getDimensions().getFirst();
 
         sql.append("(CASE WHEN ");
         sql.appendDottedIdentifiers(queryAlias, colDimension.getSourceColumn().getAlias());

@@ -118,7 +118,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         List<Portal.PortalPage> sortedPages = Portal.getTabPages(container, showHiddenTabs);
 
         // No page index should be 0
-        assert !(!sortedPages.isEmpty() && sortedPages.get(0).getIndex() <= 0);
+        assert !(!sortedPages.isEmpty() && sortedPages.getFirst().getIndex() <= 0);
 
         String activePortalPage = null;
         Map<String, NavTree> navMap = new LinkedHashMap<>();
@@ -184,7 +184,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                             }
 
                             if (!foundSelected && nav.getChildCount() > 0 && !subContainerTabs.isEmpty())
-                                subContainerTabs.get(0).setSelected(true);
+                                subContainerTabs.getFirst().setSelected(true);
                         }
                     }
                 }
@@ -269,7 +269,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         List<FolderTab> defaults = getDefaultTabs();
         if (!defaults.isEmpty())
         {
-            return defaults.get(0).getName();
+            return defaults.getFirst().getName();
         }
 
         return Portal.DEFAULT_PORTAL_PAGE_ID;
@@ -288,7 +288,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     @Override @NotNull
     public FolderTab getDefaultTab()
     {
-        return _defaultTab == null ? getDefaultTabs().get(0) : _defaultTab;
+        return _defaultTab == null ? getDefaultTabs().getFirst() : _defaultTab;
     }
 
     private NavTree getTabMenu(ViewContext ctx, FolderTab folderTab, Portal.PortalPage portalPage, String folderLabel)

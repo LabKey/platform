@@ -702,7 +702,7 @@ public class InputBuilder<T extends InputBuilder<T>> implements HasHtmlString, S
             return _type;
         }
 
-        public HtmlString getValue()
+        public @Nullable HtmlString getValue()
         {
             return _value;
         }

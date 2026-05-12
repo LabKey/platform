@@ -92,7 +92,7 @@ public class ProductController extends SpringActionController
                 _productIds = Arrays.asList(menuItemsForm.getProductIds().split(","));
                 String missingProducts = _productIds.stream().filter(productId -> !registry.containsProductId(productId)).collect(Collectors.joining(", "));
                 if (!missingProducts.isEmpty())
-                    _log.warn("No such products: " + missingProducts);
+                    _log.warn("No such products: {}", missingProducts);
             }
         }
 

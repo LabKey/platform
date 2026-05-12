@@ -202,7 +202,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
                 }
                 else
                 {
-                    getLogger().error(e.getMessage() + "\n");
+                    getLogger().error("{}\n", e.getMessage());
                     setStatus(TaskStatus.error, e.getMessage());
                 }
             }

@@ -86,7 +86,7 @@ public class MacroRepository extends PluginRepository<Macro> {
     while (iterator.hasNext()) {
       MacroLoader loader = (MacroLoader) iterator.next();
       loader.setRepository(this);
-      log.debug("Loading from: " + loader.getClass());
+        log.debug("Loading from: {}", loader.getClass());
       loader.loadPlugins(this);
     }
   }

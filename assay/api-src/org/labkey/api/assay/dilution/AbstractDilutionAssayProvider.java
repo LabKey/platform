@@ -112,22 +112,12 @@ public abstract class AbstractDilutionAssayProvider<FormType extends DilutionRun
     protected Map<String, Set<String>> getRequiredDomainProperties()
     {
         Map<String, Set<String>> domainMap = super.getRequiredDomainProperties();
-        Set<String> sampleProperties = domainMap.get(ASSAY_DOMAIN_SAMPLE_WELLGROUP);
-        if (sampleProperties == null)
-        {
-            sampleProperties = new HashSet<>();
-            domainMap.put(ASSAY_DOMAIN_SAMPLE_WELLGROUP, sampleProperties);
-        }
+        Set<String> sampleProperties = domainMap.computeIfAbsent(ASSAY_DOMAIN_SAMPLE_WELLGROUP, _ -> new HashSet<>());
         sampleProperties.add(SAMPLE_INITIAL_DILUTION_PROPERTY_NAME);
         sampleProperties.add(SAMPLE_DILUTION_FACTOR_PROPERTY_NAME);
         sampleProperties.add(SAMPLE_METHOD_PROPERTY_NAME);
 
-        Set<String> runProperties = domainMap.get(ExpProtocol.ASSAY_DOMAIN_RUN);
-        if (runProperties == null)
-        {
-            runProperties = new HashSet<>();
-            domainMap.put(ExpProtocol.ASSAY_DOMAIN_RUN, runProperties);
-        }
+        Set<String> runProperties = domainMap.computeIfAbsent(ExpProtocol.ASSAY_DOMAIN_RUN, _ -> new HashSet<>());
         runProperties.add(CURVE_FIT_METHOD_PROPERTY_NAME);
         runProperties.add(CUTOFF_PROPERTIES[0]);
 

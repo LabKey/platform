@@ -48,11 +48,6 @@ public class EPipelineContextListener implements StartupListener, ShutdownListen
     }
 
     @Override
-    public void shutdownPre()
-    {
-    }
-
-    @Override
     public void shutdownStarted()
     {
         if (_muleListenerHelper != null)

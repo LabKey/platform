@@ -161,7 +161,7 @@ public class LocationTable extends BaseStudyTable
             if (1 != rows.size())
                 throw new IllegalStateException("Bulk update not allowed on locations.");
 
-            Map<String, Object> map = rows.get(0);
+            Map<String, Object> map = rows.getFirst();
 
             Integer locId = asInteger(map.get("RowId"));
             if (null == locId)

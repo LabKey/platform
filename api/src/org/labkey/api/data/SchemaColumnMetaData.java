@@ -492,7 +492,7 @@ public class SchemaColumnMetaData
             }
 
             if (null == _titleColumn)
-                _titleColumn = _columns.get(0).getName();
+                _titleColumn = _columns.getFirst().getName();
         }
 
         return _titleColumn;

@@ -218,7 +218,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             int c = _count.incrementAndGet();
 
             if (c % 10 == 0)
-                LogManager.getLogger(DbLoginAuthenticationProvider.class).info(c + " requests");
+                LogManager.getLogger(DbLoginAuthenticationProvider.class).info("{} requests", c);
 
             return c % 100 != 0;
         }

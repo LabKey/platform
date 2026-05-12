@@ -46,7 +46,7 @@ public class JMSMessageToPipelineJob extends AbstractEventAwareTransformer
         String xml = (String) getJMSTransformer().doTransform(src, encoding);
         PipelineJob result = PipelineJob.deserializeJob(xml);
         if (null != result)
-            LOG.debug("Transformed XML to job: " + result);
+            LOG.debug("Transformed XML to job: {}", result);
         return result;
     }
 

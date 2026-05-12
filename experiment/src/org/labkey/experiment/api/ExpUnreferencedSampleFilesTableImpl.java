@@ -7,10 +7,8 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
-import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpUnreferencedSampleFilesTable;
@@ -19,8 +17,6 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.column.BuiltInColumnTypes;
-import org.labkey.api.writer.HtmlWriter;
-import org.labkey.experiment.FileLinkFileListener;
 
 
 public class ExpUnreferencedSampleFilesTableImpl extends FilteredTable<ExpSchema> implements ExpUnreferencedSampleFilesTable

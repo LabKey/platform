@@ -443,7 +443,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public TableInfo getTableInfo(User user, Container container, String name, @Nullable ContainerFilter cf)
     {
-        LOG.debug("Getting tableInfo for table " + name);
+        LOG.debug("Getting tableInfo for table {}", name);
         UserSchema schema = new DataClassUserSchema(container, user);
         return schema.getTable(name, cf);
     }

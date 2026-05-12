@@ -181,11 +181,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<UserSchema>
     {
         super(tinfo, schema);
 
-        LogManager.getLogger(BaseSpecimenPivotTable.class).debug("creating specimen pivot\n" +
-                "SCHEMA=" + schema.getName() + " " + schema.getClass().getSimpleName()+"@"+System.identityHashCode(schema) + "\n" +
-                "TABLE=" + tinfo.getName() + " " + this.getClass().getSimpleName() + "@" + System.identityHashCode(this),
-                new Throwable("stack trace")
-        );
+        LogManager.getLogger(BaseSpecimenPivotTable.class).debug("creating specimen pivot\nSCHEMA={} {}@{}\nTABLE={} {}@{}", schema.getName(), schema.getClass().getSimpleName(), System.identityHashCode(schema), tinfo.getName(), this.getClass().getSimpleName(), System.identityHashCode(this), new Throwable("stack trace"));
 
         addWrapColumn(_rootTable.getColumn(StudyService.get().getSubjectColumnName(getContainer())));
         addWrapColumn(_rootTable.getColumn(StudyService.get().getSubjectVisitColumnName(getContainer())));

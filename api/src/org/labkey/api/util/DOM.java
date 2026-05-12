@@ -918,7 +918,7 @@ public class DOM
                     {
                         ExceptionUtil.logExceptionToMothership(context.getRequest(), nsme);
                         Logger log = LogManager.getLogger(ErrorsTag.class);
-                        log.error("Failed to find a message: " + error, nsme);
+                        log.error("Failed to find a message: {}", error, nsme);
                         return createHtmlFragment("Unknown error: " + error, BR());
                     }
                 })

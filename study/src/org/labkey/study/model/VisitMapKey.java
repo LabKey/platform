@@ -16,6 +16,8 @@
 
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * User: Matthew
  * Date: Feb 1, 2006
@@ -47,7 +49,7 @@ public class VisitMapKey implements Comparable
     }
 
     @Override
-    public int compareTo(Object o)
+    public int compareTo(@NotNull Object o)
     {
         VisitMapKey k = (VisitMapKey) o;
         return this.visitRowId != k.visitRowId ? this.visitRowId - k.visitRowId :

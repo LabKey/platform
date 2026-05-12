@@ -16,7 +16,6 @@
 
 package org.labkey.wiki.model;
 
-import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;

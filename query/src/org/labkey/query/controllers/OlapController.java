@@ -657,12 +657,12 @@ public class OlapController extends SpringActionController
                 OlapConnection conn = controller.getConnection(sd);
                 stmt = conn.createStatement();
                 String query = form.getQuery();
-                OlapController._log.debug("\nSTART executeOlapQuery: --------------------------    --------------------------    --------------------------\n" + query);
+                OlapController._log.debug("\nSTART executeOlapQuery: --------------------------    --------------------------    --------------------------\n{}", query);
                 long ms = System.currentTimeMillis();
                 cs = stmt.executeOlapQuery(query);
                 long d = System.currentTimeMillis() - ms;
                 QueryProfiler.getInstance().track(null, "-- MDX\n" + query + sd.getQueryTag(), null, d, null, true, QueryLogging.emptyQueryLogging());
-                OlapController._log.debug("\nEND executeOlapQuery: " + DateUtil.formatDuration(d) + " --------------------------    --------------------------    --------------------------\n");
+                OlapController._log.debug("\nEND executeOlapQuery: {} --------------------------    --------------------------    --------------------------\n", DateUtil.formatDuration(d));
 
                 StringWriter sw = new StringWriter();
                 Olap4Js.convertCellSet(cs, sw);
@@ -872,7 +872,7 @@ public class OlapController extends SpringActionController
                 {
                     QueryProfiler.getInstance().track(null, "-- CountDistinctQuery \n" + q + "\n" + _olapSchemaDescriptor.getQueryTag(),
                             null, (0 == start || 0 == end) ? 0 : (end - start), null, true, QueryLogging.noValidationNeededQueryLogging());
-                    _log.debug("bitsetquery.executeQuery() took " + DateUtil.formatDuration(end - start));
+                    _log.debug("bitsetquery.executeQuery() took {}", DateUtil.formatDuration(end - start));
                 }
 
                 Olap4Js.convertCellSet(cs, sw);

@@ -366,7 +366,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
         });
 
         if (list.size() == 1)
-            return list.get(0);
+            return list.getFirst();
         else if (list.isEmpty())
             return null;
         else

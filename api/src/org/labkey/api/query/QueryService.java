@@ -63,7 +63,6 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -193,7 +192,7 @@ public interface QueryService
      */
     Map<String, Object> getCustomViewProperties(@Nullable CustomView view, @Nullable User user);
 
-    String getCustomViewNameFromEntityId(Container container, String entityId) throws SQLException;
+    String getCustomViewNameFromEntityId(Container container, String entityId);
 
     /**
      * Loops through the field keys and turns them into ColumnInfos based on the base table
@@ -261,7 +260,7 @@ public interface QueryService
     Results select(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached);
 
     /** superseded by {@link QueryService#getSelectBuilder}  */
-    Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String, Object> parameters, boolean strictColumnList, boolean cached) throws SQLException;
+    Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String, Object> parameters, boolean strictColumnList, boolean cached);
 
     /** superseded by {@link QueryService#getSelectBuilder}  */
     default Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)

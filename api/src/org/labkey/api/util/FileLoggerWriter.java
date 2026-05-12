@@ -14,7 +14,7 @@ import java.io.IOException;
  * */
 public class FileLoggerWriter implements LoggerWriter, AutoCloseable
 {
-    private final String LINE_SEP = System.getProperty("line.separator");
+    private final String LINE_SEP = System.lineSeparator();
     private static final Logger LOG = LogManager.getLogger(FileLoggerWriter.class);
 
     private final File _file;
@@ -31,7 +31,7 @@ public class FileLoggerWriter implements LoggerWriter, AutoCloseable
         }
         catch (IOException e)
         {
-            LOG.error("Failed opening the file - " + _file.getName() , e);
+            LOG.error("Failed opening the file - {}", _file.getName(), e);
         }
 
     }
@@ -45,7 +45,7 @@ public class FileLoggerWriter implements LoggerWriter, AutoCloseable
         }
         catch (IOException e)
         {
-            LOG.error("Unable to close the file - " + _file.getName(), e);
+            LOG.error("Unable to close the file - {}", _file.getName(), e);
         }
     }
 
@@ -79,7 +79,7 @@ public class FileLoggerWriter implements LoggerWriter, AutoCloseable
             }
             catch (IOException e)
             {
-                LOG.error("Failed appending to file - " + _file.getName(), e);
+                LOG.error("Failed appending to file - {}", _file.getName(), e);
             }
         }
         else
