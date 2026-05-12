@@ -821,7 +821,7 @@ public class TabLoader extends DataLoader
                 assertEquals(String.class, l.getColumns()[2].clazz);
                 assertEquals(2, maps.size());
 
-                assertEquals("Header1", maps.get(0).get("column0"));
+                assertEquals("Header1", maps.getFirst().get("column0"));
                 assertEquals("Header2", maps.get(0).get("column1"));
                 assertEquals("Header3", maps.get(0).get("column2"));
 
@@ -874,7 +874,7 @@ public class TabLoader extends DataLoader
                 assertEquals("number of columns not as expected", 3, l.getColumns().length);
                 assertEquals("number of rows not as expected", 1, maps.size());
 
-                Map<String, Object> firstRow = maps.get(0);
+                Map<String, Object> firstRow = maps.getFirst();
                 assertEquals("test1a", firstRow.get("Header1"));
                 assertEquals("test1b", firstRow.get("Header2"));
                 assertEquals(3, firstRow.get("Header3"));
@@ -899,7 +899,7 @@ public class TabLoader extends DataLoader
                 assertEquals("Number of columns not as expected", 3, l.getColumns().length);
                 assertEquals("Number of rows not as expected", 1, maps.size());
 
-                Map<String, Object> firstRow = maps.get(0);
+                Map<String, Object> firstRow = maps.getFirst();
                 assertEquals("\"test1/a\"/b", firstRow.get("Header1"));
                 assertEquals("test1b", firstRow.get("Header2"));
                 assertEquals(3, firstRow.get("Header3"));
@@ -936,7 +936,7 @@ public class TabLoader extends DataLoader
                 assertEquals(String.class, l.getColumns()[17].clazz);
                 assertEquals(7, maps.size());
 
-                Map<String, Object> firstRow = maps.get(0);
+                Map<String, Object> firstRow = maps.getFirst();
                 assertEquals(96, firstRow.get("scan"));
                 assertEquals(false, firstRow.get("accurateMZ"));
                 assertEquals("description", firstRow.get("description"));
@@ -1077,7 +1077,7 @@ public class TabLoader extends DataLoader
                 List<Map<String, Object>> rows = loader.load();
                 assertEquals(2, rows.size());
 
-                Map<String, Object> row = rows.get(0);
+                Map<String, Object> row = rows.getFirst();
                 assertEquals("a", row.get("A"));
                 assertEquals("this\\nis\\tmulti-line", row.get("Multi-Line"));
                 assertEquals("b", row.get("B"));
@@ -1164,7 +1164,7 @@ public class TabLoader extends DataLoader
                 List<Map<String, Object>> rows = loader.load();
                 assertEquals(6, rows.size());
 
-                Map<String, Object> row = rows.get(0);
+                Map<String, Object> row = rows.getFirst();
                 assertEquals("Bob", row.get("Name"));
                 assertEquals("with\ttab\nwith\"quote", row.get("Multi-Line"));
                 assertEquals(10, row.get("Age"));
@@ -1232,7 +1232,7 @@ public class TabLoader extends DataLoader
 
             assertEquals(4, rows.size());
 
-            Map<String, Object> row = rows.get(0);
+            Map<String, Object> row = rows.getFirst();
             assertEquals("biotinylated antihuIgG antibody", row.get("name"));
             assertNull(row.get("description"));
 

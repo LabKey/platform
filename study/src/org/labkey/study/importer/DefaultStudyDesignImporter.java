@@ -96,7 +96,7 @@ public class DefaultStudyDesignImporter
             }
             else
             {
-                ctx.getLogger().info("No table metadata file found to import: " + schemaFileName);
+                ctx.getLogger().info("No table metadata file found to import: {}", schemaFileName);
                 return;
             }
         }
@@ -158,7 +158,7 @@ public class DefaultStudyDesignImporter
                             isDirty = true;
                         }
                         else
-                            ctx.getLogger().warn("Table: " + tableName + " already has a field named: " + ipd.pd.getName() + ", ignoring the imported field");
+                            ctx.getLogger().warn("Table: {} already has a field named: {}, ignoring the imported field", tableName, ipd.pd.getName());
                     }
 
                     if (isDirty)
@@ -166,14 +166,14 @@ public class DefaultStudyDesignImporter
                         if (domain.getDomainKind().canEditDefinition(ctx.getUser(), domain))
                             domain.save(ctx.getUser());
                         else
-                            ctx.getLogger().error("Unable to update the domain for table: " + tableName + " because the user does not have edit privileges.");
+                            ctx.getLogger().error("Unable to update the domain for table: {} because the user does not have edit privileges.", tableName);
                     }
                 }
                 else
-                    ctx.getLogger().warn("Unable to get domain for table: " + tableName);
+                    ctx.getLogger().warn("Unable to get domain for table: {}", tableName);
             }
             else
-                ctx.getLogger().warn("No tableinfo for table : " + tableName);
+                ctx.getLogger().warn("No tableinfo for table : {}", tableName);
         }
     }
 
@@ -244,7 +244,7 @@ public class DefaultStudyDesignImporter
                     }
                 }
                 else
-                    ctx.getLogger().warn("Unable to open the file at: " + fileName);
+                    ctx.getLogger().warn("Unable to open the file at: {}", fileName);
             }
         }
         else

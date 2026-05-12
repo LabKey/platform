@@ -251,7 +251,7 @@ public abstract class BrowserEndpoint extends Endpoint
                             if (to.isOpen())
                                 to.getBasicRemote().sendText(s);
                         }
-                        LOG.trace(debugName + ".onMessage(" + s + ")");
+                        LOG.trace("{}.onMessage({})", debugName, s);
                     }
                     catch (IOException x)
                     {
@@ -269,7 +269,7 @@ public abstract class BrowserEndpoint extends Endpoint
                         if (to.isOpen())
                             to.getBasicRemote().sendBinary(byteBuffer);
                     }
-                    LOG.trace(debugName + ".onMessage(<binary>)");
+                    LOG.trace("{}.onMessage(<binary>)", debugName);
                 }
                 catch (IOException x)
                 {
@@ -286,7 +286,7 @@ public abstract class BrowserEndpoint extends Endpoint
                         if (to.isOpen())
                             to.getBasicRemote().sendPong(pongMessage.getApplicationData());
                     }
-                    LOG.trace(debugName + ".pong()");
+                    LOG.trace("{}.pong()", debugName);
                 }
                 catch (IOException x)
                 {

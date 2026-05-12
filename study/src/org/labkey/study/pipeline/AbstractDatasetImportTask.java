@@ -64,8 +64,8 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
     }
 
     public abstract StudyImpl getStudy();
-    protected abstract String getDatasetsFileName() throws ImportException;
-    protected abstract VirtualFile getDatasetsDirectory() throws ImportException;
+    protected abstract String getDatasetsFileName();
+    protected abstract VirtualFile getDatasetsDirectory();
 
     protected StudyManager getStudyManager()
     {
@@ -106,7 +106,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         }
         else
         {
-            ctx.getLogger().info("Dataset file \"" + datasetsFileName + "\" not found, inferring columns from the dataset files.");
+            ctx.getLogger().info("Dataset file \"{}\" not found, inferring columns from the dataset files.", datasetsFileName);
             reader = new DatasetInferSchemaReader(datasetsDirectory, datasetsFileName, study, ctx);
         }
 
@@ -131,17 +131,17 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                 Set<String> notFound = reader.getDatasetsNotFound();
                 if (!notFound.isEmpty())
                 {
-                    ctx.getLogger().warn("Could not find definitions for " + notFound.size() + " dataset data files: " + StringUtils.join(notFound, ", "));
+                    ctx.getLogger().warn("Could not find definitions for {} dataset data files: {}", notFound.size(), StringUtils.join(notFound, ", "));
                 }
             }
             catch (Exception x)
             {
-                ctx.getLogger().error("Parse failed: " + datasetsFileName, x);
+                ctx.getLogger().error("Parse failed: {}", datasetsFileName, x);
                 return Collections.emptyList();
             }
 
             List<DatasetImportRunnable> runnables = reader.getRunnables();
-            ctx.getLogger().info("Start batch " + datasetsFileName);
+            ctx.getLogger().info("Start batch {}", datasetsFileName);
 
             List<DatasetDefinition> datasets = new ArrayList<>();
 
@@ -168,11 +168,11 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                 }
                 catch (Exception x)
                 {
-                    ctx.getLogger().error("Unexpected error loading " + runnable.getFileName(), x);
+                    ctx.getLogger().error("Unexpected error loading {}", runnable.getFileName(), x);
                 }
             }
 
-            ctx.getLogger().info("Finish batch " + datasetsFileName);
+            ctx.getLogger().info("Finish batch {}", datasetsFileName);
 
             if (syncParticipantVisit)
             {

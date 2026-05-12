@@ -158,7 +158,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
             if (user == null)
             {
                 if (HttpView.hasCurrentView() && HttpView.currentContext() != null)
-                    _log.warn("user was not specified for event type " + event.getEventType() + " in container " + event.getContainer() + "; defaulting to guest user.");
+                    _log.warn("user was not specified for event type {} in container {}; defaulting to guest user.", event.getEventType(), event.getContainer());
                 user = UserManager.getGuestUser();
             }
             if (event.getTransactionId() != null && useTransactionAuditCache)
@@ -197,7 +197,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
             if (databaseReady)
             {
                 if (reselectEvent && events.size()==1)
-                    return LogManager.get().insertEvent(user, events.get(0));
+                    return LogManager.get().insertEvent(user, events.getFirst());
                 LogManager.get().insertEvents(user, events);
             }
         }

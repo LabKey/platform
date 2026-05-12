@@ -201,7 +201,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         }
         catch (Throwable e)
         {
-            _log.error("Indexing error deleting " + StringUtils.trimToEmpty(currentId), e);
+            _log.error("Indexing error deleting {}", StringUtils.trimToEmpty(currentId), e);
             ExceptionUtil.logExceptionToMothership(null, e);
         }
     }

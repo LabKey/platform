@@ -77,7 +77,6 @@ import java.beans.PropertyEditorSupport;
 import java.io.File;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;

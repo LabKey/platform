@@ -17,7 +17,6 @@
 package org.labkey.api.jsp.taglib;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.UnexpectedException;
@@ -26,7 +25,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
-import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.tagext.BodyTagSupport;
 import java.io.IOException;
 
@@ -168,7 +166,7 @@ public class FormTag extends BodyTagSupport
     HtmlString endTag;
 
     @Override
-    public int doStartTag() throws JspException
+    public int doStartTag()
     {
         var pageConfig = HttpView.currentPageConfig();
         var id = getId();
@@ -206,7 +204,7 @@ public class FormTag extends BodyTagSupport
     }
 
     @Override
-    public int doEndTag() throws JspException
+    public int doEndTag()
     {
         try
         {

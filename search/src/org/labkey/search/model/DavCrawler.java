@@ -203,7 +203,7 @@ public class DavCrawler implements ShutdownListener
 
     public void startFull(Path path, boolean force)
     {
-        _log.debug("START FULL: " + path);
+        _log.debug("START FULL: {}", path);
 
         if (null == path)
             path = WebdavService.get().getResolver().getRootPath();
@@ -225,7 +225,7 @@ public class DavCrawler implements ShutdownListener
     {
         if (null != start)
         {
-            _log.debug("START CONTINUOUS " + start);
+            _log.debug("START CONTINUOUS {}", start);
             // make sure path exists
             if (null == nextCrawl)
             {
@@ -291,7 +291,7 @@ public class DavCrawler implements ShutdownListener
 
             _listingRateLimiter.add(1, isCrawlerThread);
 
-            _log.debug("IndexDirectoryJob.run(" + _path + ")");
+            _log.debug("IndexDirectoryJob.run({})", _path);
 
             _directory = getResolver().lookup(_path);
 
@@ -417,7 +417,6 @@ public class DavCrawler implements ShutdownListener
                 }
                 else if (!child.shouldIndex())
                 {
-                    continue;
                 }
                 else if (!skipContainer(child))
                 {
@@ -559,7 +558,7 @@ public class DavCrawler implements ShutdownListener
 
                 if (!Path.rootPath.equals(path))
                 {
-                    _log.debug("findSomeWork():    adding path to in memory queue: " + path.toString() + " (lastCrawl=" + lastCrawl + ", nextCrawl=" + nextCrawl);
+                    _log.debug("findSomeWork():    adding path to in memory queue: {} (lastCrawl={}, nextCrawl={}", path.toString(), lastCrawl, nextCrawl);
                     crawlQueue.add(new IndexDirectoryJob(path, lastCrawl, nextCrawl));
                 }
             }
@@ -573,7 +572,7 @@ public class DavCrawler implements ShutdownListener
         else
         {
             var path = crawlQueue.removeFirst();
-            _log.debug("findSomeWork(): now crawling " + path._directory);
+            _log.debug("findSomeWork(): now crawling {}", path._directory);
             return path;
         }
     }

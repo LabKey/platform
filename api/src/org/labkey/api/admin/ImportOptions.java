@@ -21,7 +21,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.vfs.FileLike;
 
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Set;

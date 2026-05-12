@@ -59,7 +59,7 @@ public class StudyViewsImporter implements InternalStudyImporter
             Study study = ctx.getStudy();
             StudyDocument.Study.StudyViews viewsXml = ctx.getXml().getStudyViews();
 
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             VirtualFile folder = root.getDir(viewsXml.getDir());
             String settingsFileName = viewsXml.getSettings();
@@ -95,16 +95,16 @@ public class StudyViewsImporter implements InternalStudyImporter
                                         ctx.getLogger().warn("Unable to load the custom participant view, there is an active module with an existing custom participant view that cannot be overwritten.");
                                 }
                                 else
-                                    ctx.getLogger().fatal("Unable to load custom participant view file specified in settings : " + participantFileName);
+                                    ctx.getLogger().fatal("Unable to load custom participant view file specified in settings : {}", participantFileName);
                             }
                         }
                     }
                 }
                 else
-                    ctx.getLogger().fatal("Unable to load the study views setting file : " + settingsFileName);
+                    ctx.getLogger().fatal("Unable to load the study views setting file : {}", settingsFileName);
             }
 
-            ctx.getLogger().info("Done importing " + getDescription());
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
     }
 

@@ -18,6 +18,7 @@ package org.labkey.api.action;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.ExceptionUtil;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
@@ -49,7 +50,7 @@ public class NullSafeBindException extends org.springframework.validation.BindEx
     }
 
     @Override
-    public void reject(String errorCode)
+    public void reject(@NotNull String errorCode)
     {
         if (errorCode == null)
         {
@@ -60,7 +61,7 @@ public class NullSafeBindException extends org.springframework.validation.BindEx
     }
 
     @Override
-    public void reject(String errorCode, String defaultMessage)
+    public void reject(@NotNull String errorCode, @NotNull String defaultMessage)
     {
         if (errorCode == null && defaultMessage == null)
         {
@@ -71,7 +72,7 @@ public class NullSafeBindException extends org.springframework.validation.BindEx
     }
 
     @Override
-    public void reject(String errorCode, Object[] errorArgs, String defaultMessage)
+    public void reject(@NotNull String errorCode, Object[] errorArgs, String defaultMessage)
     {
         if (errorCode == null && defaultMessage == null)
         {
@@ -82,7 +83,7 @@ public class NullSafeBindException extends org.springframework.validation.BindEx
     }
 
     @Override
-    public void rejectValue(String field, String errorCode)
+    public void rejectValue(String field, @NotNull String errorCode)
     {
         if (field == null || errorCode == null)
         {
@@ -93,7 +94,7 @@ public class NullSafeBindException extends org.springframework.validation.BindEx
     }
 
     @Override
-    public void rejectValue(String field, String errorCode, String defaultMessage)
+    public void rejectValue(String field, @NotNull String errorCode, @NotNull String defaultMessage)
     {
         if (field == null || (errorCode == null && defaultMessage == null))
         {
@@ -105,7 +106,7 @@ public class NullSafeBindException extends org.springframework.validation.BindEx
     }
 
     @Override
-    public void rejectValue(String field, String errorCode, Object[] errorArgs, String defaultMessage)
+    public void rejectValue(String field, @NotNull String errorCode, Object[] errorArgs, String defaultMessage)
     {
         if (field == null || (errorCode == null && defaultMessage == null))
         {
@@ -117,14 +118,14 @@ public class NullSafeBindException extends org.springframework.validation.BindEx
     }
 
     @Override
-    public void addError(ObjectError error)
+    public void addError(@NotNull ObjectError error)
     {
         checkError(error);
         super.addError(error);
     }
 
     @Override
-    public void addAllErrors(Errors errors)
+    public void addAllErrors(@NotNull Errors errors)
     {
         checkErrors(errors);
         super.addAllErrors(errors);

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.assay.AssayProtocolSchema;
@@ -228,7 +229,7 @@ public class AssaySchemaImpl extends AssaySchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, QuerySettings settings, org.springframework.validation.BindException errors)
+    public @NotNull QueryView createView(ViewContext context, QuerySettings settings, org.springframework.validation.BindException errors)
     {
         // For backward compatibility with <12.2, resolve runs and results query views.
         String name = settings.getQueryName();

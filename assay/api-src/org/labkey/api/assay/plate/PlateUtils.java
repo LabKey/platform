@@ -25,7 +25,6 @@ import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.query.ValidationException;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -88,7 +87,7 @@ public class PlateUtils
         if (!grids.isEmpty())
         {
             assert grids.size() == 1 : "_parseGrids returned more than 1 grid matrix for the data file";
-            return grids.get(0).getData();
+            return grids.getFirst().getData();
         }
         return null;
     }
@@ -126,7 +125,7 @@ public class PlateUtils
                     matrix = parseGridAt(rows, loc.getRow(), loc.getCol(), expectedRows, expectedCols, reader);
                     if (matrix != null)
                     {
-                        LOG.debug(String.format("found labeled grid style plate data at (%d,%d) in %s", rowIdx+1, colIdx+1, dataFile.getName()));
+                        LOG.debug("found labeled grid style plate data at ({},{}) in {}", rowIdx + 1, colIdx + 1, dataFile.getName());
                         gridList.add(new GridInfo(matrix, parseGridAnnotations(rows, prevGridIdx, loc.getRow()-1)));
                         if (!parseAllGrids)
                             return gridList;
@@ -144,7 +143,7 @@ public class PlateUtils
                         matrix = parseGridAt(rows, loc.getRow(), loc.getCol(), expectedRows, expectedCols, reader);
                         if (matrix != null)
                         {
-                            LOG.debug(String.format("found SpectraMax grid style plate data at (%d,%d) in %s", rowIdx+1, colIdx+1, dataFile.getName()));
+                            LOG.debug("found SpectraMax grid style plate data at ({},{}) in {}", rowIdx + 1, colIdx + 1, dataFile.getName());
                             gridList.add(new GridInfo(matrix, parseGridAnnotations(rows, prevGridIdx, loc.getRow()-1)));
                             if (!parseAllGrids)
                                 return gridList;
@@ -202,7 +201,7 @@ public class PlateUtils
             if (row instanceof RowMap<Object> rowMap)
             {
                 List<Object> values = rowMap.values().stream().filter(o -> o instanceof String str && !str.isBlank()).toList();
-                if (values.size() == 1 && values.get(0) instanceof String strValue)
+                if (values.size() == 1 && values.getFirst() instanceof String strValue)
                     annotations.add(strValue.trim());
             }
         }
@@ -246,7 +245,7 @@ public class PlateUtils
         // Check if this is a header row (numbered 1 through 12)
         // If it is, shift down one row and attempt to parse that.
         // If there is no header row or adding an additional row of numbers fails, accept the data as is.
-        if (isSequentialNumbers(values.get(0)))
+        if (isSequentialNumbers(values.getFirst()))
         {
             if (startRow + expectedRows + 1 <= rows.size())
             {
@@ -340,29 +339,30 @@ public class PlateUtils
             // Get the value at the location and convert a double if possible.
             // If the value is not null or a number, stop parsing.
             Object value = rowMap.get(startCol + j);
-            if (value == null)
-                cells[j] = reader != null ? reader.getEmptyWellValue() : 0.0d;
-            else if (value instanceof String)
+            switch (value)
             {
-                try
+                case null -> cells[j] = reader != null ? reader.getEmptyWellValue() : 0.0d;
+                case String s ->
                 {
-                    if (reader != null)
-                        cells[j] = reader.convertWellValue((String)value);
-                    else
-                        cells[j] = Double.parseDouble((String) value);
+                    try
+                    {
+                        if (reader != null)
+                            cells[j] = reader.convertWellValue(s);
+                        else
+                            cells[j] = Double.parseDouble(s);
+                    }
+                    catch (ValidationException | NumberFormatException e)
+                    {
+                        // failed
+                        return null;
+                    }
                 }
-                catch (ValidationException | NumberFormatException e)
+                case Number number -> cells[j] = number.doubleValue();
+                default ->
                 {
-                    // failed
                     return null;
                 }
             }
-            else if (value instanceof Number)
-            {
-                cells[j] = ((Number)value).doubleValue();
-            }
-            else
-                return null;
         }
 
         return cells;
@@ -444,19 +444,19 @@ public class PlateUtils
                     factory.getRowMap(Map.of("column0", "", "column1", "")),
                     factory.getRowMap(Map.of("column0", "Plate1", "column1", "1"))), 0, 1);
             assertEquals("One grid annotation expected", 1, annotations.size());
-            assertEquals("Annotation was not found", "Plate1", annotations.get(0));
+            assertEquals("Annotation was not found", "Plate1", annotations.getFirst());
 
             annotations = parseGridAnnotations(List.of(
                     factory.getRowMap(Map.of("column0", "Plate1", "column1", "")),
                     factory.getRowMap(Map.of("column0", "", "column1", "1"))), 0, 1);
             assertEquals("One grid annotation expected", 1, annotations.size());
-            assertEquals("Annotation was not found", "Plate1", annotations.get(0));
+            assertEquals("Annotation was not found", "Plate1", annotations.getFirst());
 
             annotations = parseGridAnnotations(List.of(
                     factory.getRowMap(Map.of("column0", "", "column1", "Plate1")),
                     factory.getRowMap(Map.of("column0", "", "column1", "1"))), 0, 1);
             assertEquals("One grid annotation expected", 1, annotations.size());
-            assertEquals("Annotation was not found", "Plate1", annotations.get(0));
+            assertEquals("Annotation was not found", "Plate1", annotations.getFirst());
 
             annotations = parseGridAnnotations(List.of(
                     factory.getRowMap(Map.of("column0", "", "column1", "Measure")),

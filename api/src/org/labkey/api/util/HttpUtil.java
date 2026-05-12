@@ -88,7 +88,7 @@ public class HttpUtil
      * @param uri resource
      * @return A String for the content and the final URI.
      */
-    public static Pair<String, URI> getText(URI uri) throws IOException, URISyntaxException, ParseException
+    public static Pair<String, URI> getText(URI uri) throws IOException, URISyntaxException
     {
         try (CustomTiming ignored = MiniProfiler.custom("http", "HTTP get " + uri.getHost() + "/" + uri.getPath());
              CloseableHttpClient client = HttpClientBuilder.create().build())
@@ -109,7 +109,7 @@ public class HttpUtil
                     throw new HttpException("Bad URI", e);
                 }
 
-                LOG.debug("HTTP GET '" + uri + "' -> resolved to '" + finalURI + "'");
+                LOG.debug("HTTP GET '{}' -> resolved to '{}'", uri, finalURI);
                 HttpEntity entity = response.getEntity();
                 String content = EntityUtils.toString(entity);
 
@@ -135,13 +135,13 @@ public class HttpUtil
         Document document = JSoupUtil.convertHtmlToDocument(content, true, errors);
         if (!errors.isEmpty())
         {
-            LOG.warn("Error converting to XHTML document: " + uri + "\n" + errors.get(0));
+            LOG.warn("Error converting to XHTML document: {}\n{}", uri, errors.getFirst());
             return null;
         }
 
         if (document == null)
         {
-            LOG.warn("Error converting to XHTML document: " + uri);
+            LOG.warn("Error converting to XHTML document: {}", uri);
             return null;
         }
 
@@ -150,7 +150,7 @@ public class HttpUtil
         if (refresh != null)
         {
             URI redirectURI = finalURI.resolve(refresh);
-            LOG.info("following meta refresh: " + redirectURI);
+            LOG.info("following meta refresh: {}", redirectURI);
             return getXHTML(redirectURI);
         }
         else

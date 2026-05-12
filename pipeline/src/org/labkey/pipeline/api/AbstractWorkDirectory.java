@@ -160,20 +160,20 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                     copiedFiles.addAll(outputFile(taskPath, role, action));
                 }
 
-                _jobLog.debug("Already copied files: " + copiedFiles);
+                _jobLog.debug("Already copied files: {}", copiedFiles);
 
                 // Slurp up any other files too
                 List<FileLike> additionalFiles = getDir().getChildren();
                 if (!additionalFiles.isEmpty())
                 {
-                    _jobLog.debug("Additional files: " + Arrays.asList(additionalFiles));
+                    _jobLog.debug("Additional files: {}", Arrays.asList(additionalFiles));
                 }
 
                 for (FileLike workFile : remainingFiles)
                 {
                     if (copiedFiles.contains(workFile))
                     {
-                        _jobLog.debug("Skipping copy of file that was already copied as an expected output: " + workFile);
+                        _jobLog.debug("Skipping copy of file that was already copied as an expected output: {}", workFile);
                         int attempts = 0;
                         boolean deleted = false;
                         // Issue 40138 - large files not deleting immediately, so retry and log
@@ -181,7 +181,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                         {
                             if (attempts > 0)
                             {
-                                _jobLog.debug("Attempted to discard " + workFile + " but it still exists. Try #" + attempts + ", delete attempt reported " + deleted);
+                                _jobLog.debug("Attempted to discard {} but it still exists. Try #{}, delete attempt reported {}", workFile, attempts, deleted);
                                 try { Thread.sleep(5000); } catch (InterruptedException ignored) {}
                             }
                             attempts++;
@@ -321,7 +321,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
         try (WorkDirectory.CopyingResource lock = ensureCopyingLock())
         {
-            _jobLog.info("Copying " + source + " to " + target);
+            _jobLog.info("Copying {} to {}", source, target);
             if (source.isDirectory())
             {
                 FileUtil.copyDirectory(source.toNioPathForRead(), target.toNioPathForWrite());
@@ -445,13 +445,13 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 // If the destination exists, rename it out of the way while we try to
                 // replace it. Rename within the same directory is always an atomic action.
                 fileReplace = FT_MOVE.newFile(fileDest.getParent(), fileDest.getName());
-                _jobLog.info("Moving " + fileDest + " to " + fileReplace);
+                _jobLog.info("Moving {} to {}", fileDest, fileReplace);
                 if (!fileDest.renameTo(fileReplace))
                 {
                     throw new IOException("Failed to move file " + fileDest + " to " + fileReplace);
                 }
             }
-            _jobLog.info("Moving " + fileWork + " to " + fileDest);
+            _jobLog.info("Moving {} to {}", fileWork, fileDest);
             boolean directory = fileWork.isDirectory();
             if (fileWork.renameTo(fileDest))
                 fileWork = null;
@@ -496,7 +496,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 FileLike fileRemove = fileReplace;
                 fileReplace = null;    // Output file is successfully in place.
 
-                _jobLog.info("Removing " + fileRemove);
+                _jobLog.info("Removing {}", fileRemove);
                 fileRemove.delete();
             }
             if (fileWork != null)
@@ -533,7 +533,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     @Override
     public void discardFile(FileLike fileWork) throws IOException
     {
-        _jobLog.debug("discarding file: " + fileWork.getPath());
+        _jobLog.debug("discarding file: {}", fileWork.getPath());
         ensureDescendant(fileWork);
         int attempts = 0;
         // Issue 40138 - large files not deleting immediately, so retry and log
@@ -549,7 +549,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
             if (fileWork.exists())
             {
-                _jobLog.debug("Attempted to discard " + fileWork + " but it still exists. Try #" + attempts + ", delete attempt reported " + deleted);
+                _jobLog.debug("Attempted to discard {} but it still exists. Try #{}, delete attempt reported {}", fileWork, attempts, deleted);
                 // Wait five seconds
                 try { Thread.sleep(5000); } catch (InterruptedException ignored) {}
             }
@@ -582,7 +582,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             if (!success && _transferToDirOnFailure != null)
             {
                 FileLike dest = FileUtil.findUniqueFileName(_dir.getName(), _transferToDirOnFailure);
-                _jobLog.debug("after failure, moving working directory to: " + dest.getPath());
+                _jobLog.debug("after failure, moving working directory to: {}", dest.getPath());
 
                 try
                 {
@@ -590,8 +590,8 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 }
                 catch (IOException e)
                 {
-                    _jobLog.error("failed moving working directory from : " + _dir.getPath());
-                    _jobLog.error("to: " + dest.getPath());
+                    _jobLog.error("failed moving working directory from : {}", _dir.getPath());
+                    _jobLog.error("to: {}", dest.getPath());
 
                     throw e;
                 }

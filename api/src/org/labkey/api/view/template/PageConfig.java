@@ -664,7 +664,7 @@ public class PageConfig
         {
             if (_eventHandlers.size() == MAX_EVENT_HANDLERS)
             {
-                LOG.error("Limit of " + MAX_EVENT_HANDLERS + " JavaScript event handlers reached. Subsequent handlers will be dropped. Current handler for " + eh.event + ": " + eh.handler);
+                LOG.error("Limit of " + MAX_EVENT_HANDLERS + " JavaScript event handlers reached. Subsequent handlers will be dropped. Current handler for {}: {}", eh.event, eh.handler);
             }
             var prev = _eventHandlers.put(eh.getKey(), eh);
             assert null == prev || prev.handler.equals(eh.handler) : "Duplicate handler registered. event:" + eh.getKey() + " handler:" + eh.handler();
@@ -737,7 +737,7 @@ public class PageConfig
                 final String eventId = h.getKey();
                 EventHandler prev = eventMap.put(eventId, h);
                 if (null != prev && !Strings.CS.equals(prev.handler, h.handler))
-                    LOG.error("Malformed page. Multiple JavaScript handlers defined for the same '<element_id>#<event>': " + eventId);
+                    LOG.error("Malformed page. Multiple JavaScript handlers defined for the same '<element_id>#<event>': {}", eventId);
             }
         }
 

@@ -91,8 +91,7 @@ public class RequestInfo implements AutoCloseable
                 s = ((MemTrackable)object).toMemTrackerString();
             else
                 s = object.getClass().getName();
-            Integer count = _objects.get(s);
-            _objects.put(s, count == null ? 1 : count.intValue() + 1);
+            _objects.compute(s, (_, count) -> count == null ? 1 : count.intValue() + 1);
             _current.addObject(s);
         }
     }

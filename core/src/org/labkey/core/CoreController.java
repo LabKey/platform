@@ -429,7 +429,7 @@ public class CoreController extends SpringActionController
                 List<ColumnInfo> pkCols = table.getPkColumns();
                 if (pkCols.size() != 1)
                     throw new NotFoundException("Query must have only one pk column");
-                ColumnInfo pkCol = pkCols.get(0);
+                ColumnInfo pkCol = pkCols.getFirst();
 
                 ColumnInfo col = table.getColumn(pd.getName());
                 if (col == null)
@@ -701,12 +701,12 @@ public class CoreController extends SpringActionController
                 }
                 else
                 {
-                    _log.warn("Unable to retrieve icon file: " + path);
+                    _log.warn("Unable to retrieve icon file: {}", path);
                 }
             }
             else
             {
-                _log.warn("No icon file found for extension: " + StringUtils.trimToEmpty(form.getExtension()));
+                _log.warn("No icon file found for extension: {}", StringUtils.trimToEmpty(form.getExtension()));
             }
             return null;
         }

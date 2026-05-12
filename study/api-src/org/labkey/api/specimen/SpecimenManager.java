@@ -91,7 +91,7 @@ public class SpecimenManager
         List<Integer> results = new SqlSelector(SpecimenSchema.get().getSchema(), sql).getArrayList(Integer.class);
         if (1 != results.size())
             throw new IllegalStateException("Expected value from Select Count(*)");
-        return results.get(0);
+        return results.getFirst();
     }
 
     public void deleteSpecimensForVisit(Visit visit)
@@ -179,8 +179,8 @@ public class SpecimenManager
             }
             else
             {
-                sqlVisitRange.add(visitValues.get(0));
-                sqlVisitRange.add(visitValues.get(visitValues.size() - 1));
+                sqlVisitRange.add(visitValues.getFirst());
+                sqlVisitRange.add(visitValues.getLast());
             }
         }
         return sqlVisitRange;

@@ -21,7 +21,7 @@ public class RandomSiteSettingsPropertyHandler extends StandardStartupPropertyHa
         {
             WriteableAppProps writeable = AppProps.getWriteableInstance();
             properties.forEach((rsp, cp) -> {
-                LOG.info("Setting additional site-level startup property '" + rsp.name() + "' to '" + cp.getValue() + "'");
+                LOG.info("Setting additional site-level startup property '{}' to '{}'", rsp.name(), cp.getValue());
                 rsp.setValue(writeable, cp.getValue());
             });
             writeable.save(null);

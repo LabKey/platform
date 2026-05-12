@@ -128,7 +128,7 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
     @Override
     public void declareFields()
     {
-        _log.debug("declareFields " + toStringDebug());
+        _log.debug("declareFields {}", toStringDebug());
     }
 
 

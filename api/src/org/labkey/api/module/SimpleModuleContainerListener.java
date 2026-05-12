@@ -63,7 +63,7 @@ public class SimpleModuleContainerListener implements ContainerManager.Container
         if (userSchema == null)
             return;
 
-        LogManager.getLogger(SimpleModuleContainerListener.class).debug("Purging schema '" + schemaName + "' in container '" + c.getPath() + "'...");
+        LogManager.getLogger(SimpleModuleContainerListener.class).debug("Purging schema '{}' in container '{}'...", schemaName, c.getPath());
 
         // Walk over the dbSchema's tables -- it's faster than walking the UserSchema's tables
         List<TableInfo> sorted = dbSchema.getSortedTables();

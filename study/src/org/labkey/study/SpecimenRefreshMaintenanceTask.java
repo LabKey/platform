@@ -94,8 +94,7 @@ public class SpecimenRefreshMaintenanceTask implements MaintenanceTask
             {
                 try
                 {
-                    log.info("Refreshing specimen data from \"" + sourceStudy.getContainer().getPath() + "\" (" + sourceStudy.getLabel() +
-                        ") to \"" + destinationStudy.getContainer().getPath() + "\" (" + destinationStudy.getLabel() + ")");
+                    log.info("Refreshing specimen data from \"{}\" ({}) to \"{}\" ({})", sourceStudy.getContainer().getPath(), sourceStudy.getLabel(), destinationStudy.getContainer().getPath(), destinationStudy.getLabel());
                     SnapshotSettings settings = snapshot.getSnapshotSettings();
 
                     User user = UserManager.getUser(snapshot.getModifiedBy());

@@ -98,7 +98,7 @@ public class ParticipantGroupImporter implements InternalStudyImporter
     {
         if (xmlObject instanceof ParticipantGroupsDocument doc)
         {
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -164,7 +164,7 @@ public class ParticipantGroupImporter implements InternalStudyImporter
                         }
                         else
                         {
-                            ctx.getLogger().info("Skipping participant group " + group.getLabel() + " since none of its members could be found");
+                            ctx.getLogger().info("Skipping participant group {} since none of its members could be found", group.getLabel());
                         }
                     }
                 }
@@ -172,7 +172,7 @@ public class ParticipantGroupImporter implements InternalStudyImporter
                 ParticipantGroupManager.getInstance().clearCache(ctx.getContainer());
             }
 
-            ctx.getLogger().info("Done importing " + getDescription());
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
     }
 }

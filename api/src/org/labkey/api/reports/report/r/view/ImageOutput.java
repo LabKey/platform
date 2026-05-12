@@ -141,7 +141,7 @@ public class ImageOutput extends AbstractParamReplacement
             }
             else
             {
-                LOG.debug("No file exists for parameter: " + getName());
+                LOG.debug("No file exists for parameter: {}", getName());
             }
 
             return imgUrl;

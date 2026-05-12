@@ -499,7 +499,7 @@ public class SequenceVisitManager extends VisitManager
         long start = System.currentTimeMillis();
         (null==logger?LogManager.getLogger(SequenceVisitManager.class):logger).trace("START UPDATE", new Throwable());
         new SqlExecutor(schema).execute(sqlUpdateVisitRowId);
-        (null==logger?LogManager.getLogger(SequenceVisitManager.class):logger).trace("DONE UPDATE " + DateUtil.formatDuration(System.currentTimeMillis()-start));
+        (null == logger ? LogManager.getLogger(SequenceVisitManager.class) : logger).trace("DONE UPDATE {}", DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
     /** Make sure there is a Visit for each row in StudyData otherwise rows will be orphaned */

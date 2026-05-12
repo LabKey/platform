@@ -121,7 +121,7 @@ public abstract class XarSource implements Serializable
         return result;
     }
 
-    protected abstract String canonicalizeDataFileURL(String dataFileURL) throws XarFormatException;
+    protected abstract String canonicalizeDataFileURL(String dataFileURL);
 
     public abstract FileLike getLogFilePath() throws IOException;
 

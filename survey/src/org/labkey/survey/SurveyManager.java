@@ -252,7 +252,7 @@ public class SurveyManager
 
             if (!errors.isEmpty())
             {
-                Throwable first = errors.get(0);
+                Throwable first = errors.getFirst();
                 if (first instanceof RuntimeException)
                     throw (RuntimeException)first;
                 else
@@ -415,7 +415,7 @@ public class SurveyManager
 
                 if (!errors.isEmpty())
                 {
-                    Throwable first = errors.get(0);
+                    Throwable first = errors.getFirst();
                     if (first instanceof RuntimeException)
                         throw (RuntimeException)first;
                     else
@@ -503,7 +503,7 @@ public class SurveyManager
         {
             List<String> pks = table.getPkColumnNames();
             if (pks.size() == 1)
-                return FieldKey.fromParts(pks.get(0));
+                return FieldKey.fromParts(pks.getFirst());
             else if (table.getColumn(FieldKey.fromParts("EntityId")) != null)
                 return FieldKey.fromParts("EntityId");
             else if (table.getColumn(FieldKey.fromParts("RowId")) != null)
@@ -773,13 +773,13 @@ public class SurveyManager
             }
 
             // check a few of the key properties
-            assertTrue("Unexpected property value", trimmedMap.get("name").equals("test"));
-            assertTrue("Unexpected property value", trimmedMap.get("caption").equals("Test"));
-            assertTrue("Unexpected property value", trimmedMap.get("shortCaption").equals("Test"));
-            assertTrue("Unexpected property value", trimmedMap.get("hidden").equals(false));
-            assertTrue("Unexpected property value", trimmedMap.get("jsonType").equals("string"));
-            assertTrue("Unexpected property value", trimmedMap.get("inputType").equals("text"));
-            assertTrue("Unexpected property value", trimmedMap.get("required").equals(true));
+            assertEquals("Unexpected property value", "test", trimmedMap.get("name"));
+            assertEquals("Unexpected property value", "Test", trimmedMap.get("caption"));
+            assertEquals("Unexpected property value", "Test", trimmedMap.get("shortCaption"));
+            assertEquals("Unexpected property value", false, trimmedMap.get("hidden"));
+            assertEquals("Unexpected property value", "string", trimmedMap.get("jsonType"));
+            assertEquals("Unexpected property value", "text", trimmedMap.get("inputType"));
+            assertEquals("Unexpected property value", true, trimmedMap.get("required"));
         }
     }
 }

@@ -24,8 +24,9 @@ import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.commons.lang3.mutable.MutableLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
@@ -152,7 +153,6 @@ import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
-import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -329,14 +329,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private static final Logger LOG = LogHelper.getLogger(ExperimentServiceImpl.class, "Experiment infrastructure including maintaining runs and lineage");
 
     private final Cache<Long, ExpProtocolImpl> PROTOCOL_ROW_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by RowId",
-        (key, argument) -> getExpProtocol(new SimpleFilter(FieldKey.fromParts("RowId"), key)));
+        (key, _) -> getExpProtocol(new SimpleFilter(FieldKey.fromParts("RowId"), key)));
 
     private final Cache<String, ExpProtocolImpl> PROTOCOL_LSID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by LSID",
-        (key, argument) -> getExpProtocol(new SimpleFilter(FieldKey.fromParts("LSID"), key)));
+        (key, _) -> getExpProtocol(new SimpleFilter(FieldKey.fromParts("LSID"), key)));
 
     private final Cache<String, ExperimentRun> EXPERIMENT_RUN_CACHE = DatabaseCache.get(getExpSchema().getScope(), getTinfoExperimentRun().getCacheSize(), "Experiment Run by LSID", new ExperimentRunCacheLoader());
 
-    private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, argument) ->
+    private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, _) ->
     {
         Container c = ContainerManager.getForId(containerId);
         if (c == null)
@@ -372,7 +372,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public void clearDataClassCache(@Nullable Container c)
     {
-        LOG.debug("clearDataClassCache: " + (c == null ? "all" : c.getPath()));
+        LOG.debug("clearDataClassCache: {}", c == null ? "all" : c.getPath());
         if (c == null)
             dataClassCache.clear();
         else
@@ -539,7 +539,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<ExpRunImpl> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol)
     {
-        return getExpRuns(container, parentProtocol, childProtocol, run -> true);
+        return getExpRuns(container, parentProtocol, childProtocol, _ -> true);
     }
 
     @Override
@@ -924,7 +924,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return null;
         if (materials.size() > 1)
             throw new IllegalArgumentException("Expected 0 or 1 samples, got: " + materials.size());
-        return materials.get(0);
+        return materials.getFirst();
     }
 
     public List<Long> findIdsNotPermittedForOperation(List<? extends ExpMaterial> candidates, SampleTypeService.SampleOperations operation)
@@ -1022,7 +1022,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void enumerateDocuments(SearchService.TaskIndexingQueue queue, final Date modifiedSince)
     {
-        queue.addRunnable((a) -> {
+        queue.addRunnable((_) -> {
             for (ExpSampleTypeImpl sampleType : getIndexableSampleTypes(queue.getContainer(), modifiedSince))
             {
                 sampleType.index(queue, null);
@@ -1078,20 +1078,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
         SqlSelector selector = new SqlSelector(getSchema(), sql);
         selector.setJdbcCaching(false);
-        MutableInt maxRowIdProcessed = new MutableInt(minRowId);
+        MutableLong maxRowIdProcessed = new MutableLong(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
         List<Material> materials = selector.getArrayList(Material.class);
         materials.forEach(m -> {
             ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
             expMaterial.index(queue, null);
-            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expMaterial.getRowId()));
+            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.longValue(), expMaterial.getRowId()));
         });
 
         if (materials.size() == INDEXING_LIMIT)
         {
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            queue.addRunnable((q) -> indexMaterials(q, modifiedSince, maxRowIdProcessed.getValue()));
+            queue.addRunnable((q) -> indexMaterials(q, modifiedSince, maxRowIdProcessed.longValue()));
         }
     }
 
@@ -1116,20 +1116,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
         SqlSelector selector = new SqlSelector(getSchema(), sql);
         selector.setJdbcCaching(false);
-        MutableInt maxRowIdProcessed = new MutableInt(minRowId);
+        MutableLong maxRowIdProcessed = new MutableLong(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
         List<Data> data = selector.getArrayList(Data.class);
         data.forEach(d -> {
             ExpDataImpl expData = new ExpDataImpl(d);
             expData.index(queue, null);
-            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expData.getRowId()));
+            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.longValue(), expData.getRowId()));
         });
 
         if (data.size() == INDEXING_LIMIT)
         {
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            queue.addRunnable((q) -> indexData(q, modifiedSince, maxRowIdProcessed.getValue()));
+            queue.addRunnable((q) -> indexData(q, modifiedSince, maxRowIdProcessed.longValue()));
         }
     }
 
@@ -1301,7 +1301,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .add(dataClass.getModified());
 
         var scope = table.getSchema().getScope();
-        scope.executeWithRetryReadOnly(tx ->
+        scope.executeWithRetryReadOnly(_ ->
                 new SqlSelector(scope, sql).forEachBatch(Data.class, 1000, batch ->
                         queue.addRunnable((q) -> batch.forEach(data ->
                                 new ExpDataImpl(data).index(q, null))
@@ -1390,7 +1390,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (protocols.isEmpty())
             return null;
 
-        return protocols.get(0);
+        return protocols.getFirst();
     }
 
     private void uncacheProtocol(Protocol p)
@@ -1960,7 +1960,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             Long rowId = asLong(cache.remap(ExpSchema.SCHEMA_EXP_DATA, dataClassName, user, c, getContainerFilterTypeForFind(c), dataName));
             if (rowId != null)
-                return dataCache.computeIfAbsent(rowId, (x) -> getExpData(dataClass, rowId));
+                return dataCache.computeIfAbsent(rowId, (_) -> getExpData(dataClass, rowId));
         }
         catch (ConversionException e2)
         {
@@ -1975,7 +1975,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             Long rowId = ConvertHelper.convert(dataName, Long.class);
 
             // now attempt to resolve by rowId
-            return dataCache.computeIfAbsent(rowId, (x) -> getExpData(dataClass, rowId));
+            return dataCache.computeIfAbsent(rowId, (_) -> getExpData(dataClass, rowId));
         }
         catch (ConversionException e1)
         {
@@ -2098,7 +2098,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // We don't care which one we use. It's possible to have multiple matches if a run was deleted that was
             // already part of a hidden run group.
-            return new ExpExperimentImpl(exp.get(0));
+            return new ExpExperimentImpl(exp.getFirst());
         }
         else
         {
@@ -2183,7 +2183,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getInputRoles(container, ContainerFilter.current(container, user), getTinfoMaterialInput(), types);
     }
 
-    private Set<String> getInputRoles(Container container, ContainerFilter filter, TableInfo table, ExpProtocol.ApplicationType... types)
+    private Set<String> getInputRoles(Container ignoredContainer, ContainerFilter filter, TableInfo table, ExpProtocol.ApplicationType... types)
     {
         SQLFragment sql = new SQLFragment("SELECT role FROM ");
         sql.append(table, "t");
@@ -2506,7 +2506,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 type = sampleType.getName();
             }
 
-            parentByType.computeIfAbsent(type, k -> new ArrayList<>());
+            parentByType.computeIfAbsent(type, _ -> new ArrayList<>());
             String parentName = parent.getName();
             if (parentName.contains(","))
                 parentName = "\"" + parentName + "\"";
@@ -2713,7 +2713,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             String parentsInnerToken = ret.addCommonTableExpression(dialect, parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, recursive);
 
             String parentsSelect = map.get("$PARENTS$");
-            parentsSelect = StringUtils.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
+            parentsSelect = Strings.CS.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
             // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
             parentsToken = ret.addCommonTableExpression(dialect, "$PARENTS$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", SQLFragment.unsafe(parentsSelect), recursive);
         }
@@ -2722,13 +2722,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (options.isChildren())
         {
             String childrenInnerSelect = map.get("$CHILDREN_INNER$");
-            childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$EDGES$", edgesToken);
+            childrenInnerSelect = Strings.CS.replace(childrenInnerSelect, "$EDGES$", edgesToken);
             SQLFragment childrenInnerSelectFrag = SQLFragment.unsafe(childrenInnerSelect);
             childrenInnerSelectFrag.addAll(lsidsFrag.getParams());
             String childrenInnerToken = ret.addCommonTableExpression(dialect, childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, recursive);
 
             String childrenSelect = map.get("$CHILDREN$");
-            childrenSelect = StringUtils.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
+            childrenSelect = Strings.CS.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
             // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
             childrenToken = ret.addCommonTableExpression(dialect, "$CHILDREN$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", SQLFragment.unsafe(childrenSelect), recursive);
         }
@@ -2916,7 +2916,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         TableInfo edge = getTinfoEdge();
         int count = new SqlExecutor(edge.getSchema().getScope()).execute("DELETE FROM " + edge /* + (edge.getSqlDialect().isSqlServer() ? " WITH (TABLOCK, HOLDLOCK)" : "")  */ + " WHERE runId=?", runId);
-        LOG.debug("Removed edges for run " + runId + "; count = " + count);
+        LOG.debug("Removed edges for run {}; count = {}", runId, count);
     }
 
     // prepare for bulk insert of edges
@@ -2956,7 +2956,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         try
                         {
                             if (LOG.isDebugEnabled())
-                                LOG.debug("  creating exp.object for " + missingObjectLsids.size() + " nodes:\n" + StringUtils.join(missingObjectLsids));
+                                LOG.debug("  creating exp.object for {} nodes:\n{}", missingObjectLsids.size(), StringUtils.join(missingObjectLsids));
                             for (var missingObjectLsid : missingObjectLsids)
                             {
                                 Map<String, Object> missingObjectRow = allNodesByLsid.get(missingObjectLsid);
@@ -3000,7 +3000,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (cpasType == null || cpasType.equals(ExpMaterial.DEFAULT_CPAS_TYPE) || cpasType.equals("Sample") || cpasType.equals(StudyService.SPECIMEN_NAMESPACE_PREFIX))
             return null;
 
-        return cpasTypeToObjectId.computeIfAbsent(cpasType, (cpasType1) -> {
+        return cpasTypeToObjectId.computeIfAbsent(cpasType, (_) -> {
 
             // NOTE: We can't use OntologyManager.ensureObject() here (which caches) because we don't know what container the SampleType is defined in
             OntologyObject oo = OntologyManager.getOntologyObject(null, cpasType);
@@ -3010,7 +3010,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 ExpSampleType st = SampleTypeService.get().getSampleType(cpasType);
                 if (st != null)
                 {
-                    LOG.debug("  creating exp.object.objectId for owner cpasType '" + cpasType + "' needed by child objects");
+                    LOG.debug("  creating exp.object.objectId for owner cpasType '{}' needed by child objects", cpasType);
                     return OntologyManager.ensureObject(st.getContainer(), cpasType, (Long) null);
                 }
             }
@@ -3048,17 +3048,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         if (paramEdgesNotInDb.isEmpty() && dbEdgesNotInParams.isEmpty())
         {
-            LOG.debug("  all " + params.size() + " run edges and exp.edges match");
+            LOG.debug("  all {} run edges and exp.edges match", params.size());
             return true;
         }
         else
         {
             Map<Long, Identifiable> identifiableMap = new LongHashMap<>();
 
-            LOG.warn("*** Run " + runId + " failed verification: " + (params.size() - paramEdgesNotInDb.size()) + " run edges and exp.edges match");
+            LOG.warn("*** Run {} failed verification: {} run edges and exp.edges match", runId, params.size() - paramEdgesNotInDb.size());
             if (!paramEdgesNotInDb.isEmpty())
             {
-                LOG.warn("  " + paramEdgesNotInDb.size() + " run edges not in exp.edges table:");
+                LOG.warn("  {} run edges not in exp.edges table:", paramEdgesNotInDb.size());
                 if (LOG.isDebugEnabled())
                 {
                     for (List<Object> e : paramEdgesNotInDb)
@@ -3077,7 +3077,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (!dbEdgesNotInParams.isEmpty())
             {
-                LOG.warn("  " + dbEdgesNotInParams.size() + " exp.edge table edges not in run:");
+                LOG.warn("  {} exp.edge table edges not in run:", dbEdgesNotInParams.size());
                 if (LOG.isDebugEnabled())
                 {
                     for (List<Object> e : dbEdgesNotInParams)
@@ -3175,7 +3175,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             this(runId, null, null, null);
         }
 
-        public SyncRunEdgesTask(long runId, Long runObjectId, String runLsid, Container runContainer)
+        public SyncRunEdgesTask(long runId, Long runObjectId, @Nullable String runLsid, @Nullable Container runContainer)
         {
             _runId = runId;
             _runObjectId = runObjectId;
@@ -3214,7 +3214,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         DbScope scope = getExpSchema().getScope();
         if (scope.isTransactionActive())
         {
-            LOG.debug("queueing syncRunEdges for run: " + runId);
+            LOG.debug("queueing syncRunEdges for run: {}", runId);
             DbScope.Transaction tx = scope.getCurrentTransaction();
             tx.addCommitTask(new SyncRunEdgesTask(runId), POSTCOMMIT);
         }
@@ -3230,7 +3230,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         DbScope scope = getExpSchema().getScope();
         if (scope.isTransactionActive())
         {
-            LOG.debug("queueing syncRunEdges for run: " + run.getRowId() + " - " + run.getName());
+            LOG.debug("queueing syncRunEdges for run: {} - {}", run.getRowId(), run.getName());
             DbScope.Transaction tx = scope.getCurrentTransaction();
             tx.addCommitTask(new SyncRunEdgesTask(run.getRowId(), run.getObjectId(), run.getLSID(), run.getContainer()), POSTCOMMIT);
         }
@@ -3317,7 +3317,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         void sync(@Nullable Map<String, Long> cpasTypeToObjectId)
         {
             DbScope expScope = getExpSchema().getScope();
-            expScope.executeWithRetry((DbScope.RetryFn<Void>) tx -> {
+            expScope.executeWithRetry((DbScope.RetryFn<Void>) _ -> {
                 syncInner(cpasTypeToObjectId);
                 return null;
             });
@@ -3334,7 +3334,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             CPUTimer timer = new CPUTimer("sync edges");
             timer.start();
 
-            LOG.debug((verifyEdgesNoInsert ? "Verifying" : "Rebuilding") + " edges for runId " + runId);
+            LOG.debug("{} edges for runId {}", verifyEdgesNoInsert ? "Verifying" : "Rebuilding", runId);
             Set<String> dataToCpasTypes = new HashSet<>();
             // NOTE: Originally, we just filtered exp.data by runId.  This works for most runs but includes intermediate exp.data nodes and caused the ExpTest to fail
             SQLFragment dataObjects = new SQLFragment()
@@ -3357,9 +3357,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (LOG.isDebugEnabled())
             {
                 if (!fromDataLsids.isEmpty())
-                    LOG.debug("  fromDataLsids:\n  " + StringUtils.join(fromDataLsids, "\n  "));
+                    LOG.debug("  fromDataLsids:\n  {}", StringUtils.join(fromDataLsids, "\n  "));
                 if (!toDataLsids.isEmpty())
-                    LOG.debug("  toDataLsids:\n  " + StringUtils.join(toDataLsids, "\n  "));
+                    LOG.debug("  toDataLsids:\n  {}", StringUtils.join(toDataLsids, "\n  "));
             }
 
             SQLFragment materials = new SQLFragment()
@@ -3404,8 +3404,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 removeEdgesForRun(runId);
 
             int edgeCount = fromDataLsids.size() + fromMaterialLsids.size() + toDataLsids.size() + toMaterialLsids.size() + provenanceStartingInputs.size() + provenanceFinalOutputs.size();
-            LOG.debug(String.format("  edge counts: input data=%d, input materials=%d, output data=%d, output materials=%d, input prov=%d, output prov=%d, total=%d",
-                    fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), provenanceStartingInputs.size(), provenanceFinalOutputs.size(), edgeCount));
+            LOG.debug("  edge counts: input data={}, input materials={}, output data={}, output materials={}, input prov={}, output prov={}, total={}", fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), provenanceStartingInputs.size(), provenanceFinalOutputs.size(), edgeCount);
 
             if (edgeCount > 0)
             {
@@ -3416,7 +3415,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     {
                         OntologyObject runObj = OntologyManager.getOntologyObject(runContainer, runLsid);
                         if (runObj == null)
-                            LOG.debug("  run exp.object is null, creating: " + runLsid);
+                            LOG.debug("  run exp.object is null, creating: {}", runLsid);
                     }
                     if (!verifyEdgesNoInsert)
                         runObjectId = OntologyManager.ensureObject(runContainer, runLsid, (Long) null);
@@ -3517,7 +3516,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
 
             timer.stop();
-            LOG.debug("  " + (verifyEdgesNoInsert ? "verified" : "synced") + " edges in " + timer.getDuration());
+            LOG.debug("  {} edges in {}", verifyEdgesNoInsert ? "verified" : "synced", timer.getDuration());
 
             if (!verifyEdgesNoInsert && doIncrementalClosureInvalidation)
             {
@@ -3544,7 +3543,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     getTinfoExperimentRun().getColumns("rowId", "objectid", "lsid", "container"), null, new Sort("rowId")).getMapCollection();
             try (Timing ignored = MiniProfiler.step("create edges"))
             {
-                LOG.debug("Rebuilding edges for " + runs.size() + " runs");
+                LOG.debug("Rebuilding edges for {} runs", runs.size());
                 for (Map<String, Object> run : runs)
                 {
                     var runId = asLong(run.get("rowId"));
@@ -3563,7 +3562,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (timing != null)
             {
                 timing.stop();
-                LOG.debug("Rebuilt all run-based edges: " + timing.getDuration() + " ms");
+                LOG.debug("Rebuilt all run-based edges: {} ms", timing.getDuration());
             }
         }
         ClosureQueryHelper.truncateAndRecreate(LOG);
@@ -3609,7 +3608,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             int runCount = 0;
             try (Timing ignored = MiniProfiler.step("create edges"))
             {
-                LOG.info("Verifying edges for " + runs.size() + " runs in " + c.getPath());
+                LOG.info("Verifying edges for {} runs in {}", runs.size(), c.getPath());
                 for (Map<String, Object> run : runs)
                 {
                     var runId = asLong(run.get("rowId"));
@@ -3625,7 +3624,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                     if (runCount % 1000 == 0)
                     {
-                        LOG.info("  verified " + runCount + " runs...");
+                        LOG.info("  verified {} runs...", runCount);
                     }
                 }
             }
@@ -3633,7 +3632,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (timing != null)
             {
                 timing.stop();
-                LOG.info("Verified edges for " + (limit == null ? "all " : "only ") + runCount + " runs: " + timing.getDuration() + " ms");
+                LOG.info("Verified edges for {}{} runs: {} ms", limit == null ? "all " : "only ", runCount, timing.getDuration());
             }
         }
     }
@@ -3679,7 +3678,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         if (!protocolApplications.isEmpty())
         {
-            protocolApplication = protocolApplications.get(0);
+            protocolApplication = protocolApplications.getFirst();
         }
         return protocolApplication;
     }
@@ -4125,7 +4124,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         for (Map<String, Object> map : maps)
         {
             String runLSID = (String) map.get("RunLSID");
-            List<Material> list = outputMap.computeIfAbsent(runLSID, k -> new ArrayList<>());
+            List<Material> list = outputMap.computeIfAbsent(runLSID, _ -> new ArrayList<>());
             Material m = f.fromMap(map);
             list.add(m);
         }
@@ -4236,7 +4235,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (data.isEmpty())
             return null;
 
-        return new ExpDataImpl(data.get(0));
+        return new ExpDataImpl(data.getFirst());
     }
 
     public Lsid getDataClassLsid(Container container)
@@ -4350,7 +4349,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                 otherUsages.remove(run);
                                 if (!otherUsages.isEmpty())
                                 {
-                                    LOG.debug("Skipping delete of cross-run output data '" + output.getName() + "' (" + output.getRowId() + ") used by other runs: " + otherUsages.stream().map(ExpRun::getName).collect(Collectors.joining(", ")));
+                                    LOG.debug("Skipping delete of cross-run output data '{}' ({}) used by other runs: {}", output.getName(), output.getRowId(), otherUsages.stream().map(ExpRun::getName).collect(Collectors.joining(", ")));
                                     break;
                                 }
 
@@ -4363,7 +4362,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         // CONSIDER: move these properties to the matching output exp.data with the same dataFileUrl?
                         if (hasFileProperties(container, input))
                         {
-                            LOG.debug("Skipping delete of cross-run input data '" + input.getName() + "' (" + input.getRowId() + ") with custom file properties");
+                            LOG.debug("Skipping delete of cross-run input data '{}' ({}) with custom file properties", input.getName(), input.getRowId());
                             continue;
                         }
 
@@ -4402,12 +4401,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // Delete the cross run data completely
                 for (ExpDataImpl data : crossRunInputs)
                 {
-                    LOG.debug("Deleting cross-run input data: name=" + data.getName() + ", rowId=" + data.getRowId() + ", dataFileUrl=" + data.getDataFileUrl());
+                    LOG.debug("Deleting cross-run input data: name={}, rowId={}, dataFileUrl={}", data.getName(), data.getRowId(), data.getDataFileUrl());
                     data.delete(user, false);
                 }
                 for (ExpDataImpl data : crossRunOutputs)
                 {
-                    LOG.debug("Deleting cross-run output data: name=" + data.getName() + ", rowId=" + data.getRowId() + ", dataFileUrl=" + data.getDataFileUrl());
+                    LOG.debug("Deleting cross-run output data: name={}, rowId={}, dataFileUrl={}", data.getName(), data.getRowId(), data.getDataFileUrl());
                     data.delete(user, false);
                 }
 
@@ -4453,7 +4452,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         while (!idsToCheck.isEmpty())
         {
             String idsString = StringUtils.join(idsToCheck.iterator(), ", ");
-            idsToCheck = new HashSet<>();
 
             StringBuilder sb = new StringBuilder();
             sb.append("SELECT ParentProtocolId FROM exp.ProtocolAction WHERE ChildProtocolId IN (");
@@ -4461,7 +4459,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             sb.append(")");
             Long[] newIds = new SqlSelector(getExpSchema(), sb.toString()).getArray(Long.class);
 
-            idsToCheck.addAll(Arrays.asList(newIds));
+            idsToCheck = new HashSet<>(Arrays.asList(newIds));
 
             sb = new StringBuilder();
             sb.append("SELECT ChildProtocolId FROM exp.ProtocolAction WHERE ParentProtocolId IN (");
@@ -4531,7 +4529,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<ExpProtocolImpl> expProtocols = Arrays.stream(protocols).map(ExpProtocolImpl::new).collect(toList());
 
         if (!c.hasPermission(user, AdminPermission.class) && !runs.isEmpty())
-            throw new UnauthorizedException("You do not have sufficient permissions to delete '" + (expProtocols.size() == 1 ? expProtocols.get(0).getName() : "the protocols") + "'.");
+            throw new UnauthorizedException("You do not have sufficient permissions to delete '" + (expProtocols.size() == 1 ? expProtocols.getFirst().getName() : "the protocols") + "'.");
 
         AssayService assayService = AssayService.get();
 
@@ -4724,7 +4722,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         StudyPublishService studyPublishService = StudyPublishService.get();
         if (studyPublishService != null && !allMaterials.isEmpty())
         {
-            ExpSampleType sampleType = allMaterials.get(0).getSampleType();
+            ExpSampleType sampleType = allMaterials.getFirst().getSampleType();
             UserSchema userSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
             TableInfo tableInfo = userSchema.getTable(sampleType.getName());
             if (tableInfo == null)
@@ -4868,7 +4866,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                             {
                                 ExpSampleTypeImpl st = material.getSampleType();
                                 if (st == null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
-                                    LOG.warn("SampleType '" + material.getCpasType() + "' not found while deleting sample '" + material.getName() + "'");
+                                    LOG.warn("SampleType '{}' not found while deleting sample '{}'", material.getCpasType(), material.getName());
                                 sampleTypes.put(cpasType, st);
                             }
                         }
@@ -4889,7 +4887,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     if (!truncateContainer && !Objects.equals(material.getRowId(), material.getRootMaterialRowId()))
                     {
                         ExpSampleType sampleType = material.getSampleType();
-                        sampleTypeAliquotRoots.computeIfAbsent(sampleType, (k) -> new HashSet<>())
+                        sampleTypeAliquotRoots.computeIfAbsent(sampleType, (_) -> new HashSet<>())
                                 .add(material.getRootMaterialRowId());
                     }
                 }
@@ -4907,7 +4905,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         deleteRunsUsingInputs(user, null, rawMaterials);
                     }
                 }
-                LOG.debug("Completed batch of sample deletion. " + count + " rows processed so far");
+                LOG.debug("Completed batch of sample deletion. {} rows processed so far", count);
             }
 
             // generate in clause for the Material LSIDs
@@ -5058,7 +5056,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             transaction.commit();
             if (timing != null)
-                LOG.info("SampleType delete timings\n" + timing.dump());
+                LOG.info("SampleType delete timings\n{}", timing.dump());
             return count;
         }
     }
@@ -5361,7 +5359,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 if (data.getClassId() != null)
                 {
-                    List<Long> byClass = rowIdsByClass.computeIfAbsent(data.getClassId(), k -> new ArrayList<>(10));
+                    List<Long> byClass = rowIdsByClass.computeIfAbsent(data.getClassId(), _ -> new ArrayList<>(10));
                     byClass.add(data.getRowId());
                 }
                 allLsids.add(data.getLSID());
@@ -5646,7 +5644,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             for (ExpData data : datas)
             {
                 ExperimentDataHandler handler = data.findDataHandler();
-                List<ExpData> list = handlers.computeIfAbsent(handler, k -> new ArrayList<>());
+                List<ExpData> list = handlers.computeIfAbsent(handler, _ -> new ArrayList<>());
                 list.add(data);
             }
             for (Map.Entry<ExperimentDataHandler, List<ExpData>> entry : handlers.entrySet())
@@ -6143,7 +6141,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (null == dataClass)
         {
             // this can happen if the DataClass wasn't created completely
-            LOG.warn("Can't find DataClass with rowId " + rowId + " for deletion");
+            LOG.warn("Can't find DataClass with rowId {} for deletion", rowId);
             return;
         }
         if (!dataClass.getContainer().equals(c))
@@ -6470,7 +6468,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         ExpProtocolApplicationImpl protApp = protStepMap.get(srcAppId);
         if (protApp == null)
         {
-            LOG.warn("Could not find cached protocol application " + srcAppId + " when populating run " + expRun.getRowId() + " in " + expRun.getContainer().getPath() + ", attempting to fetch");
+            LOG.warn("Could not find cached protocol application {} when populating run {} in {}, attempting to fetch", srcAppId, expRun.getRowId(), expRun.getContainer().getPath());
             if (srcAppId != null)
             {
                 protApp = getExpProtocolApplication(srcAppId);
@@ -6867,7 +6865,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol; it should have three.");
             }
-            ExpProtocolActionImpl action1 = actions.get(0);
+            ExpProtocolActionImpl action1 = actions.getFirst();
             assert action1.getActionSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
             assert action1.getChildProtocol().getRowId() == parentProtocol.getRowId();
 
@@ -7122,7 +7120,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol; it should have three.");
         }
-        ExpProtocolActionImpl action1 = actions.get(0);
+        ExpProtocolActionImpl action1 = actions.getFirst();
         assert action1.getActionSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
         assert action1.getChildProtocol().getRowId() == parentProtocol.getRowId();
 
@@ -7333,7 +7331,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             // insert into exp.object
             List<List<?>> expObjectParams = params.stream().map(
-                    runParams -> List.of(/* LSID */ runParams.get(0), c.getId())
+                    runParams -> List.of(/* LSID */ runParams.getFirst(), c.getId())
             ).collect(toList());
             String expObjectSql = "INSERT INTO " + OntologyManager.getTinfoObject() +
                     " (ObjectUri, Container) VALUES (?, ?)";
@@ -7346,7 +7344,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             Table.batchExecute(getExpSchema(), sql, params);
 
-            List<String> runLsids = params.stream().map(p -> (String) p.get(0)).toList();
+            List<String> runLsids = params.stream().map(p -> (String) p.getFirst()).toList();
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpExperimentTable.Column.LSID.name()), runLsids, IN);
             Map<String, ExperimentRun> ret = new CaseInsensitiveHashMap<>();
             getExperimentRuns(filter).forEach(er -> ret.put(er.getLSID(), er));
@@ -8146,7 +8144,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            LOG.debug("Saving data class " +  dataClass.getName());
+            LOG.debug("Saving data class {}", dataClass.getName());
             dataClass.save(u);
 
             SchemaKey schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME);
@@ -8206,7 +8204,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             throw new ApiUsageException(reservedError);
     }
 
-    private void validateDataClassOptions(@NotNull Container c, @NotNull User u, @Nullable DataClassDomainKindProperties options)
+    private void validateDataClassOptions(@NotNull Container c, @NotNull User ignoredU, @Nullable DataClassDomainKindProperties options)
     {
         if (options == null)
             return;
@@ -8489,7 +8487,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         // insert base ProtocolAction prior to inserting steps
         ProtocolAction previousAction;
         if (isUpdate)
-            previousAction = getProtocolActions(baseProtocol.getRowId()).get(0);
+            previousAction = getProtocolActions(baseProtocol.getRowId()).getFirst();
         else
         {
             previousAction = insertProtocolAction(baseProtocol, baseProtocol, actionSequence, user);
@@ -8756,7 +8754,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void onBeforeRunSaved(ExpProtocol protocol, ExpRun run, Container container, User user) throws BatchValidationException
+    public void onBeforeRunSaved(ExpProtocol protocol, ExpRun run, Container container, User user)
     {
         for (ExperimentListener listener : _listeners)
         {
@@ -9446,7 +9444,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return metrics;
     }
 
-    public @NotNull Pair<Set<String>, Set<String>> getDataTypesWithRequiredLineage(Integer parentDataTypeRowId, boolean isSampleParent, Container container, User user)
+    public @NotNull Pair<Set<String>, Set<String>> getDataTypesWithRequiredLineage(Integer parentDataTypeRowId, boolean isSampleParent, Container container, User ignoredUser)
     {
         Set<String> sampleTypes = new HashSet<>();
         Set<String> dataClasses = new HashSet<>();
@@ -9544,7 +9542,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return totalCount > withParentCount;
     }
 
-    public String getInvalidRequiredImportAliasUpdate(String dataTypeLsid, boolean isSampleType, Map<String, Map<String, Object>> newAliases, Set<String> existingRequiredInputs, Container c, User u)
+    public String getInvalidRequiredImportAliasUpdate(String dataTypeLsid, boolean isSampleType, Map<String, Map<String, Object>> newAliases, Set<String> existingRequiredInputs, Container c, User ignoredU)
     {
         for (Map.Entry<String, Map<String, Object>> newEntry : newAliases.entrySet())
         {
@@ -9604,7 +9602,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             .add(container.getId())
             .append("\nAND RowId ");
         dialect.appendInClauseSql(currentFolderCountSql, rowIds);
-        int currentFolderSelectionCount = new SqlSelector(expSchema, currentFolderCountSql).getArrayList(Integer.class).get(0);
+        int currentFolderSelectionCount = new SqlSelector(expSchema, currentFolderCountSql).getArrayList(Integer.class).getFirst();
 
         SQLFragment crossFolderCountSql = new SQLFragment()
             .append(" SELECT COUNT(*) FROM ")
@@ -9613,7 +9611,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             .add(container.getId())
             .append("\nAND RowId ");
         dialect.appendInClauseSql(crossFolderCountSql, rowIds);
-        int crossFolderSelectionCount = new SqlSelector(expSchema, crossFolderCountSql).getArrayList(Integer.class).get(0);
+        int crossFolderSelectionCount = new SqlSelector(expSchema, crossFolderCountSql).getArrayList(Integer.class).getFirst();
 
         return new Pair<>(currentFolderSelectionCount, crossFolderSelectionCount);
     }
@@ -9718,7 +9716,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // move audit events associated with the sources that are moving
                 int auditEventCount = QueryService.get().moveAuditEvents(targetContainer, dataIds, "exp.data", dataClassTable.getName());
-                updateCounts.compute("sourceAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount);
+                updateCounts.compute("sourceAuditEvents", (_, c) -> c == null ? auditEventCount : c + auditEventCount);
 
                 // create summary audit entries for the source container only.  The message is pretty generic, so having it
                 // in both source and target doesn't help much.
@@ -9791,7 +9789,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Map<Long, Set<ExpData>> runIdData = new LongHashMap<>();
         dataObjects.forEach(dataObject -> {
             if (dataObject.getRunId() != null)
-                runIdData.computeIfAbsent(dataObject.getRunId(), t -> new HashSet<>()).add(dataObject);
+                runIdData.computeIfAbsent(dataObject.getRunId(), _ -> new HashSet<>()).add(dataObject);
         });
         // find the set of runs associated with data objects that are moving
         List<ExpRun> toUpdate = new ArrayList<>();
@@ -9914,7 +9912,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         Map<ExpProtocol, List<ExpRun>> protocolMap = new HashMap<>();
         assayRuns.forEach(run ->
-                protocolMap.computeIfAbsent(run.getProtocol(), t -> new ArrayList<>()).add(run));
+                protocolMap.computeIfAbsent(run.getProtocol(), _ -> new ArrayList<>()).add(run));
 
         List<String> runLsids = assayRuns.stream().map(ExpRun::getLSID).toList();
 
@@ -9985,13 +9983,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             if (!targetFile.getParentFile().mkdirs())
             {
-                LOG.warn(String.format("Creation of target directory '%s' to move file '%s' to, for '%s' assay run '%s' (field: '%s') failed.",
-                    targetFile.getParent(),
-                    sourceFile.getAbsolutePath(),
-                    assayName,
-                    runName,
-                    fieldName
-                ));
+                LOG.warn("Creation of target directory '{}' to move file '{}' to, for '{}' assay run '{}' (field: '{}') failed.", targetFile.getParent(), sourceFile.getAbsolutePath(), assayName, runName, fieldName);
                 return false;
             }
         }
@@ -10190,7 +10182,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             boolean success = sourceFile.renameTo(targetFile);
             if (!success)
             {
-                LOG.warn(String.format("Rename of '%s' to '%s' failed for %s" , sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), actionComment));
+                LOG.warn("Rename of '{}' to '{}' failed for {}", sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), actionComment);
                 return false;
             }
 
@@ -10431,7 +10423,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             List<? extends ExpMaterialRunInput> materialRunInputs = pa.getMaterialInputs();
             assertEquals(1, materialRunInputs.size());
 
-            ExpMaterialRunInputImpl materialRunInput = (ExpMaterialRunInputImpl)materialRunInputs.get(0);
+            ExpMaterialRunInputImpl materialRunInput = (ExpMaterialRunInputImpl)materialRunInputs.getFirst();
             assertEquals(sampleIn, materialRunInput.getMaterial());
             assertEquals("Sample Goo", materialRunInput.getRole());
             assertEquals(MaterialInput.NAMESPACE, materialRunInput.getLSIDNamespacePrefix());

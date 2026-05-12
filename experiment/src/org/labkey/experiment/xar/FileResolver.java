@@ -104,7 +104,7 @@ public class FileResolver implements Replacer
             throw new XarFormatException("Insufficient files found for FileNameVariation filter " + filter);
         }
         _fileNameVariationsToAdvance.add(filter);
-        return nameVariations.get(0);
+        return nameVariations.getFirst();
     }
 
     private String getFileName(final String filter) throws XarFormatException
@@ -120,7 +120,7 @@ public class FileResolver implements Replacer
         {
             throw new XarFormatException("Insufficient files found for FileName filter " + filter);
         }
-        File f = files.get(0);
+        File f = files.getFirst();
         _fileNamesToAdvance.add(filter);
         try
         {
@@ -135,7 +135,7 @@ public class FileResolver implements Replacer
     private int getCommonCharStartCount(List<String> names)
     {
         int commonStart = 0;
-        String firstName = names.get(0);
+        String firstName = names.getFirst();
         while (commonStart < firstName.length())
         {
             char firstNameChar = firstName.charAt(commonStart);
@@ -155,7 +155,7 @@ public class FileResolver implements Replacer
     private int getCommonCharEndCount(List<String> names)
     {
         int commonEnd = 0;
-        String firstName = names.get(0);
+        String firstName = names.getFirst();
         while (commonEnd < firstName.length())
         {
             char firstNameChar = firstName.charAt(firstName.length() - commonEnd - 1);
@@ -354,7 +354,7 @@ public class FileResolver implements Replacer
             throw new XarFormatException("Insufficient files found for FileBaseName filter " + originalFilter);
         }
         _fileBaseNamesToAdvance.add(originalFilter);
-        return names.get(0);
+        return names.getFirst();
     }
 
     public void advance()
@@ -371,7 +371,7 @@ public class FileResolver implements Replacer
             String filter = entry.getKey();
             if (filtersToAdvance.contains(filter))
             {
-                entry.getValue().remove(0);
+                entry.getValue().removeFirst();
             }
         }
         filtersToAdvance.clear();

@@ -59,7 +59,7 @@ public class AvgFunction implements Function {
             sum += Float.parseFloat((String) table.getXY(x, y));
             count++;
           } catch (NumberFormatException e1) {
-            log.debug("SumFunction: unable to parse " + table.getXY(x, y));
+              log.debug("SumFunction: unable to parse {}", table.getXY(x, y));
           }
         }
       }

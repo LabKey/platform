@@ -80,7 +80,7 @@ public class MuleListenerHelper implements ServletContext
             File muleFile = FileUtil.appendName(configDir, "webserverMuleConfig.xml");
             if (muleFile.isFile())
             {
-                _log.info("Found Mule configuration file override at " + muleFile.getPath());
+                _log.info("Found Mule configuration file override at {}", muleFile.getPath());
                 muleConfigPath = muleFile.getName();
             }
         }
@@ -130,7 +130,7 @@ public class MuleListenerHelper implements ServletContext
                 Integer val = POOL_EXHAUSTED_ACTIONS.get(obj);
                 if (val != null)
                 {
-                    _log.info("Hack for MULE-2289, converting " + obj + " to integer value " + val);
+                    _log.info("Hack for MULE-2289, converting {} to integer value {}", obj, val);
                     return val.intValue();
                 }
                 return conv.convert(clazz, obj);
@@ -225,7 +225,7 @@ public class MuleListenerHelper implements ServletContext
             }
             catch (FileNotFoundException e)
             {
-                _log.debug("Could not find mule config override " + string);
+                _log.debug("Could not find mule config override {}", string);
             }
         }
 

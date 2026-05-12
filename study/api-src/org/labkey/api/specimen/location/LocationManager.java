@@ -151,7 +151,7 @@ public class LocationManager
         }
         else if (table.getName().contains("_specimen"))
         {
-            params.remove(0);
+            params.removeFirst();
             containerColumn = "";
         }
         else
@@ -233,7 +233,7 @@ public class LocationManager
     {
         if (!dateOrderedEvents.isEmpty())
         {
-            SpecimenEvent lastEvent = dateOrderedEvents.get(dateOrderedEvents.size() - 1);
+            SpecimenEvent lastEvent = dateOrderedEvents.getLast();
 
             if (lastEvent.getShipDate() == null &&
                     (lastEvent.getShipBatchNumber() == null || lastEvent.getShipBatchNumber() == 0) &&

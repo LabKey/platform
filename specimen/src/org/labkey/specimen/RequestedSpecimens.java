@@ -43,7 +43,7 @@ public class RequestedSpecimens
                 _providingLocations = Collections.emptyList();
             else
             {
-                Container container = _vials.get(0).getContainer();
+                Container container = _vials.getFirst().getContainer();
                 _providingLocations = new ArrayList<>(_providingLocationIds.size());
 
                 for (Integer locationId : _providingLocationIds)

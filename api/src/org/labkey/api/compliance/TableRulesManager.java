@@ -40,7 +40,7 @@ public class TableRulesManager
     public void addTableRulesProvider(TableRulesProvider provider)
     {
         // Always add to the beginning... we want to iterate in reverse dependency order
-        TABLE_RULES_PROVIDERS.add(0, provider);
+        TABLE_RULES_PROVIDERS.addFirst(provider);
     }
 
     public @NotNull TableRules getTableRules(@NotNull Container c, @NotNull User user, SecurableResource permissionsResource)

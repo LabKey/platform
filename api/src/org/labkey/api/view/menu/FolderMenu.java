@@ -63,7 +63,7 @@ public class FolderMenu extends NavTreeMenu
         ViewContext context = getViewContext();
 
         // as shown above in getNavTree, if elements is not null, then there will be only one element.
-        if (null != elements && (root = elements.get(0)) != null && root.hasChildren())
+        if (null != elements && (root = elements.getFirst()) != null && root.hasChildren())
         {
             DIV(
                 cl("folder-nav"),

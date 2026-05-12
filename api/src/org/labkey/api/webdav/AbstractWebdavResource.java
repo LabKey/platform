@@ -159,7 +159,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         if (data == null || data.isEmpty())
             return null;
 
-        return data.get(0).getCreatedBy();
+        return data.getFirst().getCreatedBy();
     }
 
     @Override
@@ -169,7 +169,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         if (data == null || data.isEmpty())
             return null;
 
-        return data.get(0).getComment();
+        return data.getFirst().getComment();
     }
 
     @Override
@@ -179,7 +179,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         if (data == null || data.isEmpty())
             return null;
 
-        return data.get(0).getModifiedBy();
+        return data.getFirst().getModifiedBy();
     }
 
     @Override

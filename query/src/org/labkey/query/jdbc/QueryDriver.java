@@ -33,8 +33,6 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import static org.labkey.api.util.IntegerUtils.asInteger;
-
 /**
  * User: matthewb
  * Date: 4/25/12

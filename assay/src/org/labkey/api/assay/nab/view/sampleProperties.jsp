@@ -81,7 +81,7 @@
                 <table class="labkey-data-region-legacy labkey-show-borders">
                     <colgroup><%
 
-                        for (PropertyDescriptor pd : sampleData.get(0).keySet())
+                        for (PropertyDescriptor pd : sampleData.getFirst().keySet())
                         {
                             if (!pdsWithData.contains(pd.getName()))
                                 continue;
@@ -95,7 +95,7 @@
                     <%
 
 
-                        for (PropertyDescriptor pd : sampleData.get(0).keySet())
+                        for (PropertyDescriptor pd : sampleData.getFirst().keySet())
                         {
                             if (!pdsWithData.contains(pd.getName()))
                                 continue;

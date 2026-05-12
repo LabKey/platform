@@ -17,13 +17,11 @@
 package org.labkey.api.assay.actions;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayFileWriter;
@@ -275,7 +273,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         }
         if (collectors.size() == 1)
         {
-            return collectors.get(0);
+            return collectors.getFirst();
         }
         return null;
     }
@@ -509,14 +507,14 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 List<ColumnInfo> pks = lookupTable.getPkColumns();
                 if (pks.size() == 1)
                 {
-                    ColumnInfo pk = pks.get(0);
+                    ColumnInfo pk = pks.getFirst();
                     try
                     {
                         Object filterValue = pk.convert(value);
                         SimpleFilter filter = new SimpleFilter(pk.getFieldKey(), filterValue);
                         Set<String> cols = new HashSet<>();
                         cols.add(lookupTable.getTitleColumn());
-                        cols.add(pks.get(0).getName());
+                        cols.add(pks.getFirst().getName());
                         Map<String, Object>[] maps = new TableSelector(lookupTable, cols, filter, null).setForDisplay(true).getMapArray();
                         if (maps.length > 0)
                         {

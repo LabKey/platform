@@ -94,7 +94,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -862,7 +861,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<ProtocolApplicationParameter> getProtocolApplicationParameters(long rowId);
 
-    void moveContainer(Container c, Container cOldParent, Container cNewParent) throws ExperimentException;
+    void moveContainer(Container c, Container cOldParent, Container cNewParent);
 
     LsidType findType(Lsid lsid);
 
@@ -1033,7 +1032,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param job Pipeline job.
      * @return the run created from the job's actions.
      */
-    ExpRun importRun(PipelineJob job, XarSource source) throws SQLException, PipelineJobException, ValidationException;
+    ExpRun importRun(PipelineJob job, XarSource source) throws PipelineJobException, ValidationException;
 
     /**
      * Provides access to an object that should be locked before inserting protocols. Locking when doing

@@ -15,6 +15,7 @@
  */
 package org.labkey.survey.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
@@ -72,7 +73,7 @@ public class SurveyQuerySchema extends UserSchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
+    public @NotNull QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
         if (SURVEY_DESIGN_TABLE_NAME.equalsIgnoreCase(settings.getQueryName()))
             return new SurveyDesignQueryView(this, settings, errors);

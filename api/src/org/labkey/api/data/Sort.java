@@ -496,7 +496,7 @@ public class Sort
                 // if caller provided a columns Map, then ignore columns that are not found
                 if (null != columns)
                 {
-                    LogHelper.getLogger(this.getClass().getPackage(),"Sort").debug("Specified sort column was not found: " + fieldKey);
+                    LogHelper.getLogger(this.getClass().getPackage(), "Sort").debug("Specified sort column was not found: {}", fieldKey);
                     continue;
                 }
                 // NOTE Sort.getSortText() passes in dialect==null

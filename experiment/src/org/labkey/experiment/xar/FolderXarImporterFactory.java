@@ -73,7 +73,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         {
             if (!isValidForImportArchive(ctx))
             {
-                ctx.getLogger().info("xar directory not found in folder " + ctx.getContainer().getPath());
+                ctx.getLogger().info("xar directory not found in folder {}", ctx.getContainer().getPath());
                 return;
             }
 
@@ -81,7 +81,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
 
             if (job != null)
                 job.setStatus("IMPORT " + getDescription());
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(ctx.getContainer());
             if (pipeRoot == null)
@@ -150,7 +150,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
                 reader.parseAndLoad(false, ctx.getAuditBehaviorType());
             }
 
-            ctx.getLogger().info("Done importing " + getDescription());
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
 
         @Override

@@ -20,7 +20,7 @@ public class UserIdColumnInfoTransformer implements ConceptURIColumnInfoTransfor
     {
         if (column.getJdbcType() != JdbcType.INTEGER)
         {
-            LogManager.getLogger(UserIdColumnInfoTransformer.class).error("Column is not of type INT: " + column.getName());
+            LogManager.getLogger(UserIdColumnInfoTransformer.class).error("Column is not of type INT: {}", column.getName());
             return column;
         }
 

@@ -40,7 +40,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -90,22 +89,6 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return hasPermission(user, perm, getContainer());
-    }
-
-    @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm, Container container)
-    {
-        // Guests can't subscribe to anything, or edit anyone else's subscriptions, but they can read the table
-        // It'll have no rows for them
-        if (user.isGuest() && !ReadPermission.class.equals(perm))
-        {
-            return false;
-        }
-
-        // For authenticated users, if they have read access, that's enough to edit their own subscription level
-        // The QueryUpdateService implementation will make sure they have permission to insert/update/delete at the row
-        // level.
-        return container.hasPermission(user, ReadPermission.class);
     }
 
     @Override

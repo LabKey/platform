@@ -76,7 +76,7 @@ public class BatchValidationException extends Exception
     {
         if (rowErrors.isEmpty())
             return null;
-        return rowErrors.get(rowErrors.size()-1);
+        return rowErrors.getLast();
     }
 
     public void addToErrors(Errors errorsTarget)

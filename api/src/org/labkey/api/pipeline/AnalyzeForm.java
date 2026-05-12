@@ -20,10 +20,7 @@ import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
-import org.labkey.api.util.FileUtil;
 import org.labkey.vfs.FileLike;
-
-import java.nio.file.Path;
 
 /**
  * User: tgaluhn

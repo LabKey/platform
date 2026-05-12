@@ -48,7 +48,7 @@ public class TopLevelStudyPropertiesImporter implements InternalStudyImporter
         StudyImpl origStudy = StudyManager.getInstance().getStudy(ctx.getContainer());
         if (origStudy != null)
         {
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             StudyImpl study = origStudy.createMutable();
             StudyDocument.Study studyXml = ctx.getXml();
@@ -128,7 +128,7 @@ public class TopLevelStudyPropertiesImporter implements InternalStudyImporter
                 if (validationException.hasErrors())
                     validationException.getErrors().forEach(ve -> errors.reject(null, ve.getMessage()));
             }
-            ctx.getLogger().info("Done importing " + getDescription());
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
     }
 }

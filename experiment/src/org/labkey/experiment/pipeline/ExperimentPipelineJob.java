@@ -100,7 +100,7 @@ public class ExperimentPipelineJob extends PipelineJob
             }
             catch (IOException e)
             {
-                _log.error("Failed to get log file for " + _xarFile, e);
+                _log.error("Failed to get log file for {}", _xarFile, e);
             }
         }
         return _xarSource;
@@ -144,7 +144,7 @@ public class ExperimentPipelineJob extends PipelineJob
                 List<ExpRun> runs = ExperimentService.get().importXar(source, job, deleteExistingRuns);
                 if (!runs.isEmpty())
                 {
-                    source.setExperimentRunRowId(runs.get(0).getRowId());
+                    source.setExperimentRunRowId(runs.getFirst().getRowId());
                 }
 
                 job.getLogger().info("");

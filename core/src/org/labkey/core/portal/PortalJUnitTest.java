@@ -105,7 +105,7 @@ public class PortalJUnitTest extends Assert
         //Make sure we have a part on our new page
         parts = Portal.getParts(folder, newPageGuid);
         assertEquals(1, parts.size());
-        Map<String,String> props = parts.get(0).getPropertyMap();
+        Map<String,String> props = parts.getFirst().getPropertyMap();
         assertEquals("testPage", props.get("pageName"));
         Portal.addPart(folder,  newPageGuid, filesFactory, location_body, -1, null);
         parts = Portal.getEditableParts(folder, newPageGuid);

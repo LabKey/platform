@@ -173,7 +173,7 @@ public class FastaDataLoader extends DataLoader
 
                         for (String part : header.split("\\s"))
                         {
-                            String field[] = part.split("=");
+                            String[] field = part.split("=");
 
                             if (field.length == 2)
                             {
@@ -198,7 +198,7 @@ public class FastaDataLoader extends DataLoader
         }
 
         @Override
-        public GenericIterator iterator()
+        public @NotNull GenericIterator iterator()
         {
             return new GenericIterator();
         }

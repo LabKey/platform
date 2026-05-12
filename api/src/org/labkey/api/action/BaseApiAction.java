@@ -19,12 +19,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.BatchValidationException;
@@ -583,7 +583,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     }
 
     @Override
-    public final void validate(Object form, Errors errors)
+    public final void validate(@NotNull Object form, @NotNull Errors errors)
     {
         try (Timing ignored = MiniProfiler.step("validate"))
         {

@@ -26,7 +26,6 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.security.xml.GroupType;

@@ -60,7 +60,7 @@ public class ListReloadTask extends PipelineJob.Task<ListReloadTask.Factory>
 
         // guaranteed to only have a single file
         assert support.getInputFiles().size() == 1;
-        FileLike dataFile = support.getInputFiles().get(0);
+        FileLike dataFile = support.getInputFiles().getFirst();
         PipeRoot pr = PipelineService.get().findPipelineRoot(job.getContainer());
 
         if (pr != null)

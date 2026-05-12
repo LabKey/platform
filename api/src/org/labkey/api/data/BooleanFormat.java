@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -157,7 +158,7 @@ public class BooleanFormat extends Format
      * @return              The string buffer passed in
      */
     @Override
-    public StringBuffer format(Object obj, StringBuffer toAppendTo, FieldPosition pos)
+    public StringBuffer format(Object obj, @NotNull StringBuffer toAppendTo, @NotNull FieldPosition pos)
     {
         assert null != toAppendTo;
 
@@ -214,7 +215,7 @@ public class BooleanFormat extends Format
      * @return      A corresponding Boolean for source or null
      */
     @Override
-    public Boolean parseObject(String source, ParsePosition pos)
+    public Boolean parseObject(String source, @NotNull ParsePosition pos)
     {
         if(null == source || source.isEmpty() || !Character.isLetterOrDigit(source.codePointAt(0)))
         {
@@ -260,30 +261,30 @@ public class BooleanFormat extends Format
         {
             //default
             BooleanFormat fmt = new BooleanFormat();
-            assertTrue(fmt.format(Boolean.TRUE).equals(BooleanFormat.DEFAULT_TRUE));
-            assertTrue(fmt.format(Boolean.FALSE).equals(BooleanFormat.DEFAULT_FALSE));
-            assertTrue(fmt.format(null).equals(BooleanFormat.DEFAULT_NULL));
+            assertEquals(BooleanFormat.DEFAULT_TRUE, fmt.format(Boolean.TRUE));
+            assertEquals(BooleanFormat.DEFAULT_FALSE, fmt.format(Boolean.FALSE));
+            assertEquals(BooleanFormat.DEFAULT_NULL, fmt.format(null));
 
             //various format strings
             fmt = new BooleanFormat("Y;N;(null)");
-            assertTrue(fmt.format(Boolean.TRUE).equals("Y"));
-            assertTrue(fmt.format(Boolean.FALSE).equals("N"));
-            assertTrue(fmt.format(null).equals("(null)"));
+            assertEquals("Y", fmt.format(Boolean.TRUE));
+            assertEquals("N", fmt.format(Boolean.FALSE));
+            assertEquals("(null)", fmt.format(null));
 
             fmt = new BooleanFormat("Y;N; ");
-            assertTrue(fmt.format(Boolean.TRUE).equals("Y"));
-            assertTrue(fmt.format(Boolean.FALSE).equals("N"));
+            assertEquals("Y", fmt.format(Boolean.TRUE));
+            assertEquals("N", fmt.format(Boolean.FALSE));
             assertTrue(fmt.format(null).isEmpty());
 
             fmt = new BooleanFormat("Yes;No");
-            assertTrue(fmt.format(Boolean.TRUE).equals("Yes"));
-            assertTrue(fmt.format(Boolean.FALSE).equals("No"));
-            assertTrue(fmt.format(null).equals(BooleanFormat.DEFAULT_NULL));
+            assertEquals("Yes", fmt.format(Boolean.TRUE));
+            assertEquals("No", fmt.format(Boolean.FALSE));
+            assertEquals(BooleanFormat.DEFAULT_NULL, fmt.format(null));
 
             fmt = new BooleanFormat("Yea");
-            assertTrue(fmt.format(Boolean.TRUE).equals("Yea"));
-            assertTrue(fmt.format(Boolean.FALSE).equals(BooleanFormat.DEFAULT_FALSE));
-            assertTrue(fmt.format(null).equals(BooleanFormat.DEFAULT_NULL));
+            assertEquals("Yea", fmt.format(Boolean.TRUE));
+            assertEquals(BooleanFormat.DEFAULT_FALSE, fmt.format(Boolean.FALSE));
+            assertEquals(BooleanFormat.DEFAULT_NULL, fmt.format(null));
         }
 
         @Test

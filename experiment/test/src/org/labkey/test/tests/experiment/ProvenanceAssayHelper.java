@@ -39,7 +39,7 @@ public abstract class ProvenanceAssayHelper extends BaseWebDriverTest implements
         SelectRowsCommand selectCmd = new SelectRowsCommand("exp", "Data");
         selectCmd.setColumns(List.of("LSID"));
         SelectRowsResponse selResp = selectCmd.execute(createDefaultConnection(), getProjectName());
-        Map<String, Object> dataTableRow = selResp.getRows().get(0);
+        Map<String, Object> dataTableRow = selResp.getRows().getFirst();
         return dataTableRow.get("LSID").toString();
     }
 
@@ -137,7 +137,7 @@ public abstract class ProvenanceAssayHelper extends BaseWebDriverTest implements
         SelectRowsCommand cmd = new SelectRowsCommand("assay.General.Provenance Assay", "Data");
         cmd.setColumns(List.of("LSID"));
         SelectRowsResponse response = cmd.execute(cn, getProjectName());
-        Map<String, Object> resultRow = response.getRows().get(0);
+        Map<String, Object> resultRow = response.getRows().getFirst();
         return resultRow.get("LSID").toString();
     }
 }

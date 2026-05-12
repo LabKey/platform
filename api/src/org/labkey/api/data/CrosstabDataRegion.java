@@ -78,7 +78,7 @@ public class CrosstabDataRegion extends DataRegion
                         List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = CrosstabView.columnsByMember(renderers);
 
                         // Output a group header for each column's crosstab member.
-                        CrosstabDimension colDim = _settings.getColumnAxis().getDimensions().get(0);
+                        CrosstabDimension colDim = _settings.getColumnAxis().getDimensions().getFirst();
                         boolean alternate = true;
                         for (Pair<CrosstabMember, List<DisplayColumn>> group : groupedByMember)
                         {

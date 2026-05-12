@@ -148,7 +148,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
 
         if (!qerrors.isEmpty())
         {
-            context.getErrors().addRowError(new ValidationException(qerrors.get(0).getMessage()));
+            context.getErrors().addRowError(new ValidationException(qerrors.getFirst().getMessage()));
             return null;
         }
 

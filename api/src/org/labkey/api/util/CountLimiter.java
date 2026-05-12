@@ -109,12 +109,12 @@ public class CountLimiter
         {
             while (!_history.isEmpty())
             {
-                RateAccumulator last = _history.get(_history.size()-1);
+                RateAccumulator last = _history.getLast();
                 if (last.getStart() + accumulateInterval > now - historyInterval)
                     break;
-                _history.remove(_history.size()-1);
+                _history.removeLast();
             }
-            _history.add(0, _short);
+            _history.addFirst(_short);
             _short = new SimpleRateAccumulator(now);
             _long = aggregateRate(now);
         }

@@ -360,12 +360,6 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     }
 
     @Override
-    public boolean isMetadataEditable()
-    {
-        return true;
-    }
-
-    @Override
     public ActionURL urlFor(QueryAction action, Container container)
     {
         // Allow execute and export URLs

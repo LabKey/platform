@@ -110,7 +110,7 @@
                 <%
                     if (protocolDocs.size() == 1)
                     {
-                        Attachment attachment = protocolDocs.get(0);
+                        Attachment attachment = protocolDocs.getFirst();
                 %>
                 <%=attachment.renderDownloadLink(StudyController.getProtocolDocumentDownloadURL(c, attachment.getName()), "Study Protocol Document")%>
                 <%

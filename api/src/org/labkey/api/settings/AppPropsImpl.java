@@ -522,7 +522,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 
         if (!admins.isEmpty())
         {
-            String defaultValue = admins.get(0).getEmail();
+            String defaultValue = admins.getFirst().getEmail();
             String result = lookupStringValue(administratorContactEmail, defaultValue);
 
             // Check if the configured email is still an admin, otherwise return default value

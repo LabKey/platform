@@ -127,7 +127,7 @@ public class ViewCategoryImporter implements FolderImporter
 
     private void process(Container c, User user, Logger logger, @NotNull CategoriesDocument doc) throws Exception
     {
-        logger.info("Loading " + getDescription());
+        logger.info("Loading {}", getDescription());
 
         DbScope scope = CoreSchema.getInstance().getSchema().getScope();
 
@@ -155,12 +155,12 @@ public class ViewCategoryImporter implements FolderImporter
             transaction.commit();
         }
 
-        logger.info("Done importing " + getDescription());
+        logger.info("Done importing {}", getDescription());
     }
 
     private void process(Container c, User user, Logger logger, @NotNull org.labkey.study.xml.viewCategory.CategoriesDocument doc) throws Exception
     {
-        logger.info("Loading " + getDescription());
+        logger.info("Loading {}", getDescription());
 
         DbScope scope = CoreSchema.getInstance().getSchema().getScope();
 
@@ -188,7 +188,7 @@ public class ViewCategoryImporter implements FolderImporter
             transaction.commit();
         }
 
-        logger.info("Done importing " + getDescription());
+        logger.info("Done importing {}", getDescription());
     }
 
     public static class Factory extends AbstractFolderImportFactory

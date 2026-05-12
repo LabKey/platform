@@ -20,6 +20,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
 
@@ -147,7 +148,7 @@ public class JxlRow implements Row
     }
 
     @Override
-    public Iterator<Cell> iterator()
+    public @NotNull Iterator<Cell> iterator()
     {
         return new JxlCellIterator();
     }

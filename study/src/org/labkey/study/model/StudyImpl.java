@@ -1305,7 +1305,7 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
             testStudy.attachProtocolDocument(Collections.singletonList(file), _context.getUser());
             attachedFiles = testStudy.getProtocolDocuments();
             assertEquals("Expected 1 attached document", 1, attachedFiles.size());
-            assertTrue("Expected filename to be \"Protocol.txt\", but it was \"" + attachedFiles.get(0).getName() + "\"", attachedFiles.get(0).getName().equals("Protocol.txt"));
+            assertEquals("Expected filename to be \"Protocol.txt\", but it was \"" + attachedFiles.getFirst().getName() + "\"", "Protocol.txt", attachedFiles.getFirst().getName());
         }
 
         public void _testDeleteProtocolDoc(Study testStudy) throws SQLException, IOException

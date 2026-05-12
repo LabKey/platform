@@ -122,7 +122,7 @@ public class MdxQueryImpl
         }
         else if (null != membersDef.membersSet && !membersDef.membersSet.isEmpty())
         {
-            Level l = null != membersDef.level ? membersDef.level : membersDef.hierarchy.getLevels().get(membersDef.hierarchy.getLevels().size()-1);
+            Level l = null != membersDef.level ? membersDef.level : membersDef.hierarchy.getLevels().getLast();
             return new _MDX(FN.MemberSet, l, membersDef.membersSet.toArray());
         }
         else
@@ -132,7 +132,7 @@ public class MdxQueryImpl
                 errors.reject(SpringActionController.ERROR_MSG, "level or hiearchy must be specified");
                 throw errors;
             }
-            Level l = null != membersDef.level ? membersDef.level : membersDef.hierarchy.getLevels().get(membersDef.hierarchy.getLevels().size()-1);
+            Level l = null != membersDef.level ? membersDef.level : membersDef.hierarchy.getLevels().getLast();
             _MDX levelExpr = new _MDX(FN.MemberSet, l, new Object[]{l.getUniqueName() + ".members"});
             if (null == membersDef.membersQuery)
                 return levelExpr;
@@ -152,11 +152,11 @@ public class MdxQueryImpl
         }
         if (sets.size() == 1)
         {
-            return (_MDX) sets.get(0);
+            return (_MDX) sets.getFirst();
         }
         else
         {
-            Level level = ((_MDX)sets.get(0)).level;
+            Level level = ((_MDX)sets.getFirst()).level;
             for (Object set : sets)
             {
                 Level next = ((_MDX) set).level;
@@ -185,12 +185,12 @@ public class MdxQueryImpl
         {
             List<Object> arr = setsByLevel.get(k);
             if (arr.size() == 1)
-                sets.add(arr.get(0));
+                sets.add(arr.getFirst());
             else
-                sets.add(new _MDX(FN.Intersect, ((_MDX) arr.get(0)).level, arr));
+                sets.add(new _MDX(FN.Intersect, ((_MDX) arr.getFirst()).level, arr));
         }
         if (sets.size() == 1)
-            return (_MDX)sets.get(0);
+            return (_MDX)sets.getFirst();
         else
             return new _MDX(FN.CrossJoin, sets);
     }
@@ -205,7 +205,7 @@ public class MdxQueryImpl
             sets.add(set);
         }
         if (sets.size() == 1)
-            return (_MDX)sets.get(0);
+            return (_MDX)sets.getFirst();
         else
             return new _MDX(FN.CrossJoin, sets);
     }
@@ -236,7 +236,7 @@ public class MdxQueryImpl
             }
         }
         if (sets.size() == 1)
-            return (_MDX)sets.get(0);
+            return (_MDX)sets.getFirst();
         else
             return new _MDX(FN.Union, level, sets);
     }
@@ -255,17 +255,19 @@ public class MdxQueryImpl
 //        else
 //            op = defaultOperator || "MEMBERS";
 
-        switch (expr.op)
+        return switch (expr.op)
         {
-            case UNION:     return _toUnionExpr(expr);
-            case MEMBERS:   return _toMembersExpr(expr);
-            case INTERSECT: return _toIntersectExpr(expr);
-            case CROSSJOIN: return _toCrossJoinExpr(expr);
-            case XINTERSECT:return _toSmartCrossJoinExpr(expr);
-            default:
+            case UNION -> _toUnionExpr(expr);
+            case MEMBERS -> _toMembersExpr(expr);
+            case INTERSECT -> _toIntersectExpr(expr);
+            case CROSSJOIN -> _toCrossJoinExpr(expr);
+            case XINTERSECT -> _toSmartCrossJoinExpr(expr);
+            default ->
+            {
                 errors.reject(SpringActionController.ERROR_MSG, "unexpected operator: " + expr.op);
                 throw errors;
-        }
+            }
+        };
     }
 
 

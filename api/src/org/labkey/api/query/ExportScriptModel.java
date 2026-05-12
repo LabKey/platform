@@ -105,7 +105,7 @@ public abstract class ExportScriptModel
         }
         catch (Exception e)
         {
-            LOG.error("Failed to export script in " + this.getClass().getName(), e);
+            LOG.error("Failed to export script in {}", this.getClass().getName(), e);
             return "Error generating script export: " + e.getMessage();
         }
     }

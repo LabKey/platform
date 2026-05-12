@@ -155,7 +155,7 @@ public class PlateSetExport
             else if (sourceRows.size() == 1)
             {
                 for (Object[] destinationRow : destinationRows)
-                    plateDataRows.add(ArrayUtils.addAll(sourceRows.get(0), destinationRow));
+                    plateDataRows.add(ArrayUtils.addAll(sourceRows.getFirst(), destinationRow));
             }
             // Catch many-to-many operations
             else if (sourceRows.size() != destinationRows.size())

@@ -49,7 +49,7 @@ public class ParticipantCommentImporter implements InternalStudyImporter
             StudyImpl study = ctx.getStudyImpl();
             StudyDocument.Study.Comments commentsXml = ctx.getXml().getComments();
 
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             if (commentsXml.isSetParticipantCommentDatasetId())
             {
@@ -63,7 +63,7 @@ public class ParticipantCommentImporter implements InternalStudyImporter
                 study.setParticipantVisitCommentProperty(commentsXml.getParticipantVisitCommentDatasetProperty());
             }
 
-            ctx.getLogger().info("Done importing " + getDescription());
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
     }
 

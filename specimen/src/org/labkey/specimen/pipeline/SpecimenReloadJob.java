@@ -24,7 +24,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.Serializable;
 
 /**

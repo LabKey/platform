@@ -103,7 +103,7 @@ public class TaskJmsSelectorFilter extends JmsSelectorFilter
         expr.append("'");
         expr.append(")");
 
-        _log.debug("JMS Select: " + expr);
+        _log.debug("JMS Select: {}", expr);
 
         return expr.toString();
     }
