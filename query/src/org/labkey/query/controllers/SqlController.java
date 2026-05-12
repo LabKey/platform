@@ -69,8 +69,6 @@ import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.math.BigDecimal;
-import java.sql.Array;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -221,108 +219,49 @@ public class SqlController extends SpringActionController
     }
 
     /// Execute a LabKey SQL query and return results as plain text. Designed for lightweight programmatic access without the overhead of QueryView/JSON API responses.
-    ///
-    /// Note this is still experimental as this API does not work well with some features.
-    /// In particular, some columns rely on custom DisplayColumn implementations to return meaningful data,
-    /// and this code path does not use DisplayColumn.  In particular group_concat result (e.g. multi-value foreign keys)
-    /// may not render correctly, as well as lineage columns like MaterialInputs/*.
+    /// This action routes value rendering through DisplayColumn.getTsvFormattedValue() for correct
+    /// type dispatch (e.g. dates as ISO-8601, multi-value columns via their DisplayColumn subclass).
     @RequiresPermission(ReadPermission.class)
     @Marshal(Marshaller.Jackson)
     public class ExecuteAction extends ReadOnlyApiAction<SqlForm>
     {
         JdbcType[] types;
         Unit[] units;
+        DisplayColumn[] dcs;
+        RenderContext renderCtx;
+        ResultSetRowMapFactory rowMapFactory;
 
         void initWriter(Results rs) throws SQLException
         {
             final int count = rs.getMetaData().getColumnCount();
             types = new JdbcType[count];
             units = new Unit[count];
+            dcs = new DisplayColumn[count];
 
             for (int column = 1; column <= count; column++)
             {
-                int index = column-1;
+                int index = column - 1;
                 types[index] = JdbcType.valueOf(rs.getMetaData().getColumnType(column));
-                ColumnInfo ci = rs.getColumn(column);
-                if (null != ci)
-                {
-                    units[index] = ci.getDisplayUnit();
-                }
+                ColumnInfo col = rs.getColumn(column);
+                units[index] = col.getDisplayUnit();
+                DisplayColumn dc = col.getDisplayColumnFactory().createRenderer(col);
+                dc.setWithLookup(false);
+                dc.setFormatString(null);
+                dc.setTsvFormatString(null);
+                dc.setRequiresHtmlFiltering(false);
+                dcs[index] = dc;
             }
+            renderCtx = new RenderContext(getViewContext());
+            renderCtx.setResults(rs);
+            rowMapFactory = ResultSetRowMapFactory.create(rs);
         }
 
         void getStringData(Results rs, ArrayList<String> out) throws SQLException
         {
             out.clear();
-            for (int column = 1; column <= types.length; column++)
-            {
-                int index = column - 1;
-                String value = null;
-
-                if (null != units[index])
-                {
-                    Number storageValue = types[index] == JdbcType.DECIMAL ? rs.getBigDecimal(column) : rs.getDouble(column);
-                    if (!rs.wasNull())
-                        value = String.valueOf(units[index].fromStorageUnitValue(storageValue));
-                }
-                else
-                {
-                    switch (types[index])
-                    {
-                        case TINYINT:
-                        case SMALLINT:
-                        case INTEGER:
-                        {
-                            int i = rs.getInt(column);
-                            value = rs.wasNull() ? null : String.valueOf(i);
-                            break;
-                        }
-                        case CHAR:
-                        case VARCHAR:
-                        case LONGVARCHAR:
-                        {
-                            value = rs.getString(column);
-                            break;
-                        }
-                        case DOUBLE:
-                        case REAL:
-                        {
-                            double d = rs.getDouble(column);
-                            value = rs.wasNull() ? null : String.valueOf(d);
-                            break;
-                        }
-                        case BOOLEAN:
-                        {
-                            boolean b = rs.getBoolean(column);
-                            value = rs.wasNull() ? null : b ? "1" : "0";
-                            break;
-                        }
-                        case DECIMAL:
-                        {
-                            BigDecimal dec = rs.getBigDecimal(column);
-                            value = null == dec ? null : dec.toPlainString();
-                            break;
-                        }
-                        case ARRAY:
-                        {
-                            Array array = rs.getArray(column);
-                            if (null != array)
-                            {
-                                String[] strs = ConvertHelper.convert(array.getArray(), String[].class);
-                                if (null != strs)
-                                    value = PageFlowUtil.joinValuesToStringForExport(List.of(strs));
-                            }
-                            break;
-                        }
-                        default:
-                        {
-                            value = rs.getString(column);
-                            break;
-                        }
-                    }
-                }
-                out.add(value);
-            }
+            renderCtx.setRow(rowMapFactory.getRowMap(rs));
+            for (DisplayColumn dc : dcs)
+                out.add(dc.getTsvFormattedValue(renderCtx));
         }
 
         void writeResults_text(PrintWriter out, Results rs, String sep, String eol) throws SQLException
@@ -520,47 +459,6 @@ public class SqlController extends SpringActionController
         }
     }
 
-
-    /// Like ExecuteAction but routes value rendering through DisplayColumn.getTsvFormattedValue() for correct
-    /// type dispatch (e.g. dates as ISO-8601, multi-value columns via their DisplayColumn subclass).
-    @RequiresPermission(ReadPermission.class)
-    @Marshal(Marshaller.Jackson)
-    public class Execute2Action extends ExecuteAction
-    {
-        DisplayColumn[] dcs;
-        RenderContext renderCtx;
-        ResultSetRowMapFactory rowMapFactory;
-
-        @Override
-        void initWriter(Results rs) throws SQLException
-        {
-            super.initWriter(rs);
-            final int count = rs.getMetaData().getColumnCount();
-            dcs = new DisplayColumn[count];
-            for (int column = 1; column <= count; column++)
-            {
-                ColumnInfo col = rs.getColumn(column);
-                DisplayColumn dc = col.getDisplayColumnFactory().createRenderer(col);
-                dc.setWithLookup(false);
-                dc.setFormatString(null);
-                dc.setTsvFormatString(null);
-                dc.setRequiresHtmlFiltering(false);
-                dcs[column - 1] = dc;
-            }
-            renderCtx = new RenderContext(getViewContext());
-            renderCtx.setResults(rs);
-            rowMapFactory = ResultSetRowMapFactory.create(rs);
-        }
-
-        @Override
-        void getStringData(Results rs, ArrayList<String> out) throws SQLException
-        {
-            out.clear();
-            renderCtx.setRow(rowMapFactory.getRowMap(rs));
-            for (DisplayColumn dc : dcs)
-                out.add(dc.getTsvFormattedValue(renderCtx));
-        }
-    }
 
 
     public static class TestCase extends Assert
@@ -796,6 +694,21 @@ public class SqlController extends SpringActionController
         }
 
         @Test
+        public void testExecuteDate() throws Exception
+        {
+            // Date columns should render as ISO-8601 (space instead of 'T') via DisplayColumn.getTsvFormattedValue()
+            MockHttpServletResponse response = executeSql("lists",
+                "SELECT Name, Created FROM " + LIST_NAME + " ORDER BY Name", Format.split);
+            assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+            String[] tokens = response.getContentAsString().split("[\t\n]");
+            // tokens: meta(3) + colNames(2) + jdbcTypes(2) + data(3 rows * 2 cols = 6) = 13 minimum
+            assertTrue("Expected at least 13 tokens, got " + tokens.length, tokens.length >= 13);
+            assertEquals("Alice", tokens[7]);
+            assertTrue("Created date should be ISO-8601: " + tokens[8],
+                tokens[8].matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.*"));
+        }
+
+        @Test
         public void testNoSql() throws Exception
         {
             MockHttpServletResponse response = executeSql("lists", null, Format.split);
@@ -812,125 +725,5 @@ public class SqlController extends SpringActionController
                 response.getContentAsString().contains("schema not found"));
         }
 
-        private MockHttpServletResponse executeSql2(String schemaName, String sql, Format format) throws Exception
-        {
-            ActionURL url = new ActionURL("sql", "execute2", _folder);
-            if (schemaName != null)
-                url.addParameter("schemaName", schemaName);
-            if (sql != null)
-                url.addParameter("sql", sql);
-            if (null != format)
-                url.addParameter("format", format.name());
-            return ViewServlet.GET(url, TestContext.get().getUser(), null);
-        }
-
-        @Test
-        public void testExecute2() throws Exception
-        {
-            // Basic split format: same data shape as testExecute_mssql
-            MockHttpServletResponse response = executeSql2("lists",
-                "SELECT Name, Age, Score FROM " + LIST_NAME + " ORDER BY Name", Format.split);
-            assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-
-            String content = response.getContentAsString();
-            String[] tokens = content.split("[\t\n]");
-
-            assertTrue("Expected at least 18 tokens, got " + tokens.length, tokens.length >= 18);
-            assertEquals("18.2", tokens[0]);
-            assertEquals("name", tokens[1]);
-            assertEquals("jdbcType", tokens[2]);
-            assertEquals("Name", tokens[3]);
-            assertEquals("Age", tokens[4]);
-            assertEquals("Score", tokens[5]);
-            assertEquals("VARCHAR", tokens[6]);
-            assertEquals("INTEGER", tokens[7]);
-            assertEquals("DOUBLE", tokens[8]);
-            assertEquals("Alice", tokens[9]);
-            assertEquals("30", tokens[10]);
-            assertEquals("95.5", tokens[11]);
-            assertEquals("Bob", tokens[12]);
-            assertEquals("30", tokens[13]);
-            assertEquals("87.3", tokens[14]);
-            assertEquals("Carol", tokens[15]);
-            assertEquals("35", tokens[16]);
-            assertEquals("91.0", tokens[17]);
-
-            // Date column should render as ISO-8601, not a raw JDBC string
-            MockHttpServletResponse dateResponse = executeSql2("lists",
-                "SELECT Name, Created FROM " + LIST_NAME + " ORDER BY Name", Format.split);
-            assertEquals(HttpServletResponse.SC_OK, dateResponse.getStatus());
-            String dateContent = dateResponse.getContentAsString();
-            String[] dateTokens = dateContent.split("[\t\n]");
-            // tokens: meta(3) + colNames(2) + jdbcTypes(2) + data(3 rows * 2 cols = 6) = 13 minimum
-            assertTrue("Expected at least 13 date tokens, got " + dateTokens.length, dateTokens.length >= 13);
-            assertEquals("Alice", dateTokens[7]);
-            // we use space instead of 'T'
-            assertTrue("Created date should be ISO-8601: " + dateTokens[8],
-                dateTokens[8].matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.*"));
-        }
-
-        @Test
-        public void testExecuteCompact2() throws Exception
-        {
-            MockHttpServletResponse response = executeSql2("lists",
-                "SELECT Name, Age FROM " + LIST_NAME + " ORDER BY Age, Name", Format.compact);
-            assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-
-            String content = response.getContentAsString();
-            String sep = "";
-            String eol = "";
-            String ditto = "";
-
-            String[] records = content.split(eol);
-            assertTrue("Expected at least 6 records", records.length >= 6);
-
-            String[] colNames = records[1].split(sep);
-            assertEquals("Name", colNames[0]);
-            assertEquals("Age", colNames[1]);
-
-            String[] row1 = records[3].split(sep, -1);
-            assertEquals("Alice", row1[0]);
-            assertEquals("30", row1[1]);
-
-            String[] row2 = records[4].split(sep, -1);
-            assertEquals("Bob", row2[0]);
-            assertEquals(ditto, row2[1]);
-
-            String[] row3 = records[5].split(sep, -1);
-            assertEquals("Carol", row3[0]);
-            assertEquals("35", row3[1]);
-        }
-
-        @Test
-        public void testExecuteTsv2() throws Exception
-        {
-            MockHttpServletResponse response = executeSql2("lists",
-                "SELECT Name, Age, Score FROM " + LIST_NAME + " ORDER BY Name", Format.tsv);
-            assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-
-            String content = response.getContentAsString();
-            String[] lines = content.split("\n");
-            assertTrue("Expected at least 4 lines (header + 3 data rows), got " + lines.length, lines.length >= 4);
-
-            String[] headers = lines[0].split("\t");
-            assertEquals("Name", headers[0]);
-            assertEquals("Age", headers[1]);
-            assertEquals("Score", headers[2]);
-
-            String[] row1 = lines[1].split("\t");
-            assertEquals("Alice", row1[0]);
-            assertEquals("30", row1[1]);
-            assertEquals("95.5", row1[2]);
-
-            String[] row2 = lines[2].split("\t");
-            assertEquals("Bob", row2[0]);
-            assertEquals("30", row2[1]);
-            assertEquals("87.3", row2[2]);
-
-            String[] row3 = lines[3].split("\t");
-            assertEquals("Carol", row3[0]);
-            assertEquals("35", row3[1]);
-            assertEquals("91.0", row3[2]);
-        }
     }
 }
