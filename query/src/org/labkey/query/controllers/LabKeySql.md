@@ -342,12 +342,12 @@ When writing LabKey SQL queries that work with JSON columns:
 
 ### **Fetching Live Data for LLM Inspection**
 
-The `sql-execute2.view` endpoint is for **the LLM to inspect live data while generating code** — do not emit it in generated Python, R, or other scripts (use the `labkey` client API there instead). Always include `LIMIT` to avoid fetching excess rows.
+The `sql-execute.view` endpoint is for **the LLM to inspect live data while generating code** — do not emit it in generated Python, R, or other scripts (use the `labkey` client API there instead). Always include `LIMIT` to avoid fetching excess rows.
 Unlike the LabKey client APIs (`selectRows`, `executeSql`), this endpoint does not automatically resolve lookups to display values — it returns exactly what the SQL selects. Use LabKey SQL's dot-notation to traverse lookups explicitly when you need a human-readable value. For example, `SELECT CreatedBy FROM lists.MyList` returns a raw integer user ID; `SELECT CreatedBy.DisplayName FROM lists.MyList` returns the display name.
 
 ```bash
 curl -H "Authorization: Bearer <APIKEY>" \
-  "https://<server>/<containerPath>/sql-execute2.view?schemaName=<schema>&sql=SELECT+...+LIMIT+20&format=tsv"
+  "https://<server>/<containerPath>/sql-execute.view?schemaName=<schema>&sql=SELECT+...+LIMIT+20&format=tsv"
 ```
 
 The response is RFC 4180 TSV: a header row of column names followed by one data row per result. Values are rendered via `DisplayColumn.getTsvFormattedValue()` — dates as ISO-8601, multi-value columns correctly serialized.
