@@ -1,7 +1,5 @@
 <%@ page import="org.jetbrains.annotations.NotNull" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
-<%@ page import="org.springframework.mock.web.MockHttpServletRequest" %>
 <%@ page import="org.springframework.mock.web.MockHttpServletResponse" %>
 <%@ page import="java.io.ByteArrayOutputStream" %>
 <%@ page import="java.io.IOException" %>
@@ -15,7 +13,6 @@
 <%@ page import="org.labkey.api.view.ViewServlet" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="java.net.URISyntaxException" %>
-<%@ page import="org.jspecify.annotations.NonNull" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 <%--
 This tests uses MockRequest to test some expected Headers and Meta tags for various types of requests.
