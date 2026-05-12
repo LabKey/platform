@@ -383,6 +383,7 @@ public abstract class Method
         labkeyMethod.put("radians", new JdbcMethod("radians", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("rand", new JdbcMethod("rand", JdbcType.DOUBLE, 0, 1));
         labkeyMethod.put("repeat", new JdbcMethod("repeat", JdbcType.VARCHAR, 2, 2));
+        labkeyMethod.put("right", new JdbcMethod("right", JdbcType.VARCHAR, 2, 2));
         labkeyMethod.put("round", new Method("round", JdbcType.DOUBLE, 1, 2)
         {
             @Override
@@ -1916,7 +1917,6 @@ public abstract class Method
         mssqlMethods.put("replace", new PassthroughMethod("replace", JdbcType.VARCHAR, 3, 3));
         mssqlMethods.put("replicate", new PassthroughMethod("replicate", JdbcType.VARCHAR, 2, 2));
         mssqlMethods.put("reverse", new PassthroughMethod("reverse", JdbcType.VARCHAR, 1, 1));
-        mssqlMethods.put("right", new PassthroughMethod("right", JdbcType.VARCHAR, 2, 2));
         mssqlMethods.put("soundex", new PassthroughMethod("soundex", JdbcType.VARCHAR, 1, 1));
         mssqlMethods.put("space", new PassthroughMethod("space", JdbcType.VARCHAR, 1, 1));
         mssqlMethods.put("str", new PassthroughMethod("str", JdbcType.VARCHAR, 1, 3));
