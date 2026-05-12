@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.35.3-fb-keyboardInteraction.1",
+    "@labkey/components": "7.35.3-fb-keyboardInteraction.2",
     "@labkey/themes": "1.9.2"
   },
   "devDependencies": {
