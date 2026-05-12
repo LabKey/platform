@@ -31,6 +31,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -164,6 +165,16 @@ public class ReportsTable extends FilteredTable<CoreQuerySchema>
                     else
                         throw new UnauthorizedException(String.format("You do not have permission to delete this report from folder : %s", c.getPath()));
                 }
+                else if (c.hasPermission(user, AdminPermission.class))
+                {
+                    // We are trying to delete a report that no longer has a report descriptor type for it registered. We will
+                    // allow admins to clean up the row, no cache clearing is necessary, and no audit record will be added.
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), c.getId());
+                    filter.addCondition(FieldKey.fromParts("RowId"), id);
+                    Table.delete(CoreSchema.getInstance().getTableInfoReport(), filter);
+                }
+                else
+                    throw new IllegalArgumentException("Report not found");
             }
             return oldRowMap;
         }
