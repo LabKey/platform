@@ -143,6 +143,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
@@ -1179,7 +1180,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return new DataClassDataUpdateService(this);
+        QueryUpdateService base = new DataClassDataUpdateService(this);
+        UnaryOperator<QueryUpdateService> decorator = ExperimentService.get().getDataClassUpdateServiceDecorator(_dataClass.getName());
+        return decorator != null ? decorator.apply(base) : base;
     }
 
     class DataClassDataUpdateService extends DefaultQueryUpdateService

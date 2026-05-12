@@ -74,6 +74,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.query.UserSchema;
@@ -102,6 +103,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 import static org.labkey.api.exp.api.ExpDataClass.NEW_DATA_CLASS_ALIAS_VALUE;
 import static org.labkey.api.exp.api.SampleTypeService.NEW_SAMPLE_TYPE_ALIAS_VALUE;
@@ -657,6 +659,19 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpDataClassTable createDataClassTable(String name, UserSchema schema, ContainerFilter cf);
 
     ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClass dataClass);
+
+    /**
+     * Registers a decorator that wraps the {@link QueryUpdateService} returned by the DataClass data table
+     * for DataClass tables with the specified name. This allows modules (e.g. Biologics) to customize
+     * the import pipeline for a specific DataClass, applying to both sync and async import paths.
+     */
+    void registerDataClassUpdateServiceDecorator(String dataClassName, @NotNull UnaryOperator<QueryUpdateService> decorator);
+
+    /**
+     * Returns the decorator registered for the given DataClass name via
+     * {@link #registerDataClassUpdateServiceDecorator}, or {@code null} if none is registered.
+     */
+    @Nullable UnaryOperator<QueryUpdateService> getDataClassUpdateServiceDecorator(String dataClassName);
 
     ExpProtocolTable createProtocolTable(String name, UserSchema schema, ContainerFilter cf);
 

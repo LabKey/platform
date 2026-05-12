@@ -284,11 +284,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -353,6 +355,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private final Map<String, DataType> _dataTypes = new HashMap<>();
     private final Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
     private final Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
+    private final Map<String, UnaryOperator<QueryUpdateService>> _dataClassUpdateServiceDecorators = new ConcurrentHashMap<>();
     private final Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
     private final List<ObjectReferencer> _objectReferencers = new ArrayList<>();
     private final List<ColumnExporter> _columnExporters = new ArrayList<>();
@@ -1588,6 +1591,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClass dataClass)
     {
         return new ExpDataClassDataTableImpl(name, schema, cf, (ExpDataClassImpl) dataClass);
+    }
+
+    @Override
+    public void registerDataClassUpdateServiceDecorator(String dataClassName, @NotNull UnaryOperator<QueryUpdateService> decorator)
+    {
+        _dataClassUpdateServiceDecorators.put(dataClassName.toLowerCase(), decorator);
+    }
+
+    @Override
+    public @Nullable UnaryOperator<QueryUpdateService> getDataClassUpdateServiceDecorator(String dataClassName)
+    {
+        return _dataClassUpdateServiceDecorators.get(dataClassName.toLowerCase());
     }
 
     @Override
