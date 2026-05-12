@@ -343,6 +343,7 @@ When writing LabKey SQL queries that work with JSON columns:
 ### **Fetching Live Data for LLM Inspection**
 
 The `sql-execute2.view` endpoint is for **the LLM to inspect live data while generating code** — do not emit it in generated Python, R, or other scripts (use the `labkey` client API there instead). Always include `LIMIT` to avoid fetching excess rows.
+Unlike the LabKey client APIs (`selectRows`, `executeSql`), this endpoint does not automatically resolve lookups to display values — it returns exactly what the SQL selects. Use LabKey SQL's dot-notation to traverse lookups explicitly when you need a human-readable value. For example, `SELECT CreatedBy FROM lists.MyList` returns a raw integer user ID; `SELECT CreatedBy.DisplayName FROM lists.MyList` returns the display name.
 
 ```bash
 curl -H "Authorization: Bearer <APIKEY>" \
