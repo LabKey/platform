@@ -462,7 +462,7 @@ public interface AuthenticationProvider
         notApplicable(ReportType.never, "not applicable", null),
         badApiKey(ReportType.onFailure, "invalid API key", AuthenticationStatus.BadApiKey) {
             @Override
-            public @Nullable String getEmailAddress(ValidEmail email) throws InvalidEmailException
+            public @Nullable String getEmailAddress(ValidEmail email)
             {
                 // This override prevents logging a strange "apikey@domain.com"-type failure message. Invalid API key
                 // means email is unknown, so always return null.
@@ -491,7 +491,7 @@ public interface AuthenticationProvider
             return _message;
         }
 
-        public @Nullable String getEmailAddress(ValidEmail email) throws InvalidEmailException
+        public @Nullable String getEmailAddress(ValidEmail email)
         {
             return email.getEmailAddress();
         }

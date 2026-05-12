@@ -146,7 +146,7 @@ public class DataIteratorResultsImpl implements Results, TableResultSet
     }
 
     @Override
-    public @NotNull Connection getConnection() throws SQLException
+    public @NotNull Connection getConnection()
     {
         throw new UnsupportedOperationException();
     }

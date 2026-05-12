@@ -23,10 +23,10 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.Action;
@@ -499,7 +499,7 @@ public class VisualizationController extends SpringActionController
     public static class GetDataAction extends MutatingApiAction<VisDataRequest>
     {
         @Override
-        protected ObjectReader getObjectReader(Class c)
+        protected ObjectReader getObjectReader(Class<?> c)
         {
             ObjectReader r = super.getObjectReader(c);
             return r.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
@@ -520,7 +520,7 @@ public class VisualizationController extends SpringActionController
             catch (SQLGenerationException e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
-                _log.warn("Unable to generate visualization SQL. " + e.getMessage());
+                _log.warn("Unable to generate visualization SQL. {}", e.getMessage());
                 return null;
             }
 
@@ -592,7 +592,7 @@ public class VisualizationController extends SpringActionController
     public class cdsGetDataAction extends GetDataAction
     {
         @Override
-        protected ObjectReader getObjectReader(Class c)
+        protected ObjectReader getObjectReader(Class<?> c)
         {
             ObjectReader r = super.getObjectReader(c);
             return r.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
@@ -611,7 +611,7 @@ public class VisualizationController extends SpringActionController
             catch (SQLGenerationException e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
-                _log.warn("Unable to generate visualization SQL. " + e.getMessage());
+                _log.warn("Unable to generate visualization SQL. {}", e.getMessage());
                 return null;
             }
 
@@ -692,7 +692,7 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public void validate(Object o, Errors errors)
+        public void validate(@NotNull Object o, @NotNull Errors errors)
         {
             return; //TODO: Validate XML
         }
@@ -1698,7 +1698,7 @@ public class VisualizationController extends SpringActionController
             assertTrue(vs.isMetaDataOnly());
             assertTrue(vs.isJoinToFirst());
             assertEquals(1, vs.getMeasures().size());
-            VisDataRequest.MeasureInfo mi = vs.getMeasures().get(0);
+            VisDataRequest.MeasureInfo mi = vs.getMeasures().getFirst();
             {
                 VisDataRequest.Measure m = mi.getMeasure();
                 assertNotNull(m);

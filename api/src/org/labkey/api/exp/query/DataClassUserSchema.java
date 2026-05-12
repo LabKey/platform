@@ -15,8 +15,8 @@
  */
 package org.labkey.api.exp.query;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -102,7 +102,7 @@ public class DataClassUserSchema extends AbstractExpSchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
+    public @NotNull QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
         QueryView queryView = super.createView(context, settings, errors);
 

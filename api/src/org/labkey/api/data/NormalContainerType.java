@@ -104,19 +104,13 @@ public class NormalContainerType implements ContainerType
     @Override
     public String getTitleFor(TitleContext tContext, Container currentContainer)
     {
-        switch (tContext)
+        return switch (tContext)
         {
-            case appBar:
-                return currentContainer.getName();
-            case parentInNav:
-                return currentContainer.getTitle();
-            case childInNav:
-                return currentContainer.getTitle();
-            case importTarget:
-                return currentContainer.getPath();
-            default:
-                return currentContainer.getTitle();
-        }
+            case appBar -> currentContainer.getName();
+            case parentInNav -> currentContainer.getTitle();
+            case childInNav -> currentContainer.getTitle();
+            case importTarget -> currentContainer.getPath();
+        };
     }
 
     @Override

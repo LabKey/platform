@@ -109,7 +109,7 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
                 .toList();
 
             // next available dataset ID
-            int nextId = datasetIds.isEmpty() ? 1000 : datasetIds.get(datasetIds.size()-1) + 1;
+            int nextId = datasetIds.isEmpty() ? 1000 : datasetIds.getLast() + 1;
 
             for (DatasetImportRunnable runnable : getRunnables())
             {

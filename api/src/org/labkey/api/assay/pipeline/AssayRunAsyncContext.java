@@ -215,9 +215,9 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
                 valueText = entry.getValue();
 
             if(entry.getKey().getLabel() != null)
-                logger.info("\t"+entry.getKey().getLabel()+": " + valueText);
+                logger.info("\t{}: {}", entry.getKey().getLabel(), valueText);
             else
-                logger.info("\t"+entry.getKey().getName()+": " + valueText);
+                logger.info("\t{}: {}", entry.getKey().getName(), valueText);
         }
         logger.info("----- End Batch Properties -----");
 
@@ -226,18 +226,18 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
 
         for(Map.Entry<String, FileLike> entry : getUploadedData().entrySet())
         {
-            logger.info("\t\t* " + entry.getValue().getName());
+            logger.info("\t\t* {}", entry.getValue().getName());
         }
 
         if(_runName == null)
             logger.info("\tAssay ID: [Blank]");
         else
-            logger.info("\tAssay ID: " + _runName);
+            logger.info("\tAssay ID: {}", _runName);
 
         if(_runComments == null)
             logger.info("\tRun Comments: [Blank]");
         else
-            logger.info("\tRun Comments: " + _runComments);
+            logger.info("\tRun Comments: {}", _runComments);
 
         for (Map.Entry<DomainProperty, String> entry : _runProperties.entrySet())
         {
@@ -247,9 +247,9 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
                 valueText = entry.getValue();
 
             if(entry.getKey().getLabel() != null)
-                logger.info("\t"+entry.getKey().getLabel()+": " + valueText);
+                logger.info("\t{}: {}", entry.getKey().getLabel(), valueText);
             else
-                logger.info("\t"+entry.getKey().getName()+": " + valueText);
+                logger.info("\t{}: {}", entry.getKey().getName(), valueText);
         }
         logger.info("----- End Run Properties -----");
     }

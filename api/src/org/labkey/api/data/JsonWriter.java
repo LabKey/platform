@@ -413,10 +413,7 @@ public class JsonWriter
                         TableInfo parentTable = columnInfo.getParentTable();
                         UserSchema userSchema = parentTable.getUserSchema();
                         String containerInfo = userSchema == null ? "" : " in container " + userSchema.getContainer().getPath();
-                        LOG.warn("Unable to resolve column '" + key + "' on lookup target " + schemaName + "." +
-                                queryName + " referenced by column '" + columnInfo.getName() + "' from table " +
-                                parentTable.getPublicSchemaName() + "." + parentTable.getPublicName() + containerInfo +
-                                ". Using the table's PK instead");
+                        LOG.warn("Unable to resolve column '{}' on lookup target {}.{} referenced by column '{}' from table {}.{}{}. Using the table's PK instead", key, schemaName, queryName, columnInfo.getName(), parentTable.getPublicSchemaName(), parentTable.getPublicName(), containerInfo);
                         key = null;
                     }
                 }

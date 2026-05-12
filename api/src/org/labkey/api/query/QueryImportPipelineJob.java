@@ -305,7 +305,7 @@ public class QueryImportPipelineJob extends PipelineJob
         try
         {
             setStatus(TaskStatus.running);
-            getLogger().info("Starting import " + getDescription());
+            getLogger().info("Starting import {}", getDescription());
 
             if (notificationProvider != null)
                 notificationProvider.onJobStart(this);
@@ -344,7 +344,7 @@ public class QueryImportPipelineJob extends PipelineJob
                 _transactionAuditId = auditEvent.getRowId();
 
             setStatus(TaskStatus.complete);
-            getLogger().info("Done importing " + getDescription() + ". " + importedCount + " row(s) imported.");
+            getLogger().info("Done importing {}. {} row(s) imported.", getDescription(), importedCount);
 
             if (notificationProvider != null)
             {

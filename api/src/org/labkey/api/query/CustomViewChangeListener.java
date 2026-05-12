@@ -154,7 +154,7 @@ public interface CustomViewChangeListener
                 }
                 else
                 {
-                    keyParts.add(0, currentParent.getName());
+                    keyParts.addFirst(currentParent.getName());
                 }
                 currentParent = nextParent;
             }

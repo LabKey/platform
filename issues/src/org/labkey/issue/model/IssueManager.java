@@ -385,8 +385,8 @@ public class IssueManager
                     if (!batchErrors.hasErrors())
                     {
                         assert results.size() == 1;
-                        issue.setIssueId(asInteger(results.get(0).get("IssueId")));
-                        issue.setIssueDefId(asInteger(results.get(0).get("issueDefId")));
+                        issue.setIssueId(asInteger(results.getFirst().get("IssueId")));
+                        issue.setIssueDefId(asInteger(results.getFirst().get("issueDefId")));
                     }
                     else
                         throw batchErrors;
@@ -1504,7 +1504,7 @@ public class IssueManager
             TestContext context = TestContext.get();
 
             User user = context.getUser();
-            assertTrue("login before running this test", null != user);
+            assertNotNull("login before running this test", user);
             assertFalse("login before running this test", user.isGuest());
 
             Container c = JunitUtil.getTestContainer();
@@ -1540,7 +1540,7 @@ public class IssueManager
                 assertEquals(IssueObject.statusOPEN, issue.getStatus());
                 assertEquals(1, issue.getCommentObjects().size());
                 String comment = (issue.getCommentObjects().iterator().next()).getHtmlComment().toString();
-                assertTrue("new issue".equals(comment));
+                assertEquals("new issue", comment);
             }
 
             //

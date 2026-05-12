@@ -170,10 +170,10 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                     plateHitsColumn.setConceptURI("hit-selection");
                     plateHitsColumn.setLabel("Hit Selection");
                     addColumn(plateHitsColumn);
-                    defaultColumns.add(0, plateHitsColumn.getFieldKey());
+                    defaultColumns.addFirst(plateHitsColumn.getFieldKey());
                 }
 
-                defaultColumns.add(0, FieldKey.fromParts("Well", "SampleId"));
+                defaultColumns.addFirst(FieldKey.fromParts("Well", "SampleId"));
 
                 // join to any replicate roll ups
                 Domain replicateDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(getProtocol());

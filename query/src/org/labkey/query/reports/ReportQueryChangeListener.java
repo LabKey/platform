@@ -15,7 +15,6 @@
  */
 package org.labkey.query.reports;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -182,7 +181,7 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
                     }
                     else
                     {
-                        logger.warn("The owner of the '" + descriptor.getReportName() + "' report does not exist: UserId " + descriptor.getModifiedBy());
+                        logger.warn("The owner of the '{}' report does not exist: UserId {}", descriptor.getReportName(), descriptor.getModifiedBy());
                     }
                 }
             }
@@ -254,7 +253,7 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
                     }
                     else
                     {
-                        logger.warn("The owner of the '" + descriptor.getReportName() + "' report does not exist: UserId " + descriptor.getModifiedBy());
+                        logger.warn("The owner of the '{}' report does not exist: UserId {}", descriptor.getReportName(), descriptor.getModifiedBy());
                     }
                 }
             }

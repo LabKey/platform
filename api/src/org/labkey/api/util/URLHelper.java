@@ -670,7 +670,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
         for (Map.Entry<String, Collection<String>> m : map.asMap().entrySet())
         {
             if (m.getValue().size() == 1)
-                mpvs.addPropertyValue(m.getKey(), ((List<String>)m.getValue()).get(0));
+                mpvs.addPropertyValue(m.getKey(), ((List<String>)m.getValue()).getFirst());
             else
                 mpvs.addPropertyValue(m.getKey(), m.getValue().toArray(new String[0]));
         }

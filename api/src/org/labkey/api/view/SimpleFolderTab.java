@@ -86,7 +86,7 @@ public class SimpleFolderTab extends FolderTab.PortalPage
 //            else if (tabTypeString.equalsIgnoreCase("link"))      // FUTURE
 //                _tabType = TAB_TYPE.Link;
             else if (!tabTypeString.equalsIgnoreCase("portal"))
-                LOGGER.error("Container tab type " + tabTypeString + " is not a recognized tab type.");
+                LOGGER.error("Container tab type {} is not a recognized tab type.", tabTypeString);
         }
 
         if (tab.getPreferredWebParts() != null)
@@ -131,13 +131,13 @@ public class SimpleFolderTab extends FolderTab.PortalPage
                         }
                         else
                         {
-                            LOGGER.error("Improper permission class: " + permClassName + ", for folder type: " + getFolderType() + ", tab: " + getName());
+                            LOGGER.error("Improper permission class: {}, for folder type: {}, tab: {}", permClassName, getFolderType(), getName());
                         }
                     }
                     catch (ClassNotFoundException e)
                     {
                         // ignore
-                        LOGGER.error("Unable to find class for permission name: " + permClassName + ", for folder type: " + getFolderType() + ", tab: " + getName());
+                        LOGGER.error("Unable to find class for permission name: {}, for folder type: {}, tab: {}", permClassName, getFolderType(), getName());
                     }
                 }
             }

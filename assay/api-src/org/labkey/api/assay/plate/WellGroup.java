@@ -17,10 +17,8 @@
 package org.labkey.api.assay.plate;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.study.PropertySet;
-import org.labkey.api.view.ActionURL;
 
 import java.util.List;
 import java.util.Set;
@@ -79,12 +77,6 @@ public interface WellGroup extends PropertySet, Identifiable, WellData
     boolean contains(Position position);
 
     String getPositionDescription();
-
-    @Override
-    default @Nullable ActionURL detailsURL()
-    {
-        return null;
-    }
 
     default boolean isZone()
     {

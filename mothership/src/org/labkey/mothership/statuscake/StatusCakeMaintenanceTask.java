@@ -118,7 +118,7 @@ public class StatusCakeMaintenanceTask implements SystemMaintenance.MaintenanceT
         Container targetContainer = ContainerManager.getForPath(containerPath);
         if (targetContainer == null)
         {
-            log.error("No such target container " + containerPath + " found for StatusCake maintenance task");
+            log.error("No such target container {} found for StatusCake maintenance task", containerPath);
             return;
         }
 
@@ -180,7 +180,7 @@ public class StatusCakeMaintenanceTask implements SystemMaintenance.MaintenanceT
                             Server s = new Server(id, name, tags);
 
                             List<History> history = getUptime(s, client, since, statusCakeAPIKey, log);
-                            log.info("Fetched " + s + " with " + history.size() + " history rows");
+                            log.info("Fetched {} with {} history rows", s, history.size());
 
                             serverRows.add(s.toMap());
                             historyRows.addAll(history.stream().map(History::toMap).toList());
@@ -229,7 +229,7 @@ public class StatusCakeMaintenanceTask implements SystemMaintenance.MaintenanceT
 
     private void insertRows(Logger log, TableInfo table, User user, Container targetContainer, List<Map<String, Object>> rows) throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        log.info("Populating " + table.getName() + " with " + rows.size() + " rows");
+        log.info("Populating {} with {} rows", table.getName(), rows.size());
         BatchValidationException errors = new BatchValidationException();
         // Skip detailed audit via BulkLoad
         table.getUpdateService().insertRows(user, targetContainer, rows, errors, Map.of(BulkLoad, true), null);
@@ -285,7 +285,7 @@ public class StatusCakeMaintenanceTask implements SystemMaintenance.MaintenanceT
 
         if (result.size() == limit)
         {
-            History h = result.get(result.size() - 1);
+            History h = result.getLast();
             result.addAll(getUptime(server, client, h.end(), statusCakeAPIKey ,log));
         }
 

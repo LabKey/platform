@@ -16,8 +16,8 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
@@ -124,7 +124,7 @@ public class QueryPivot extends AbstractQueryRelation
             }
             QNode source = col._node;
             if (source instanceof QAs)
-                source = source.childList().get(0);
+                source = source.childList().getFirst();
             QAggregate.Type rollupType = null;
             if (source instanceof QAggregate)
             {
@@ -497,7 +497,7 @@ public class QueryPivot extends AbstractQueryRelation
         }
 
         @Override
-        void copyColumnAttributesTo(BaseColumnInfo to)
+        void copyColumnAttributesTo(@NotNull BaseColumnInfo to)
         {
             _s.copyColumnAttributesTo(to);
             if (_aggregates.containsKey(_s.getFieldKey().getName()))
@@ -694,7 +694,7 @@ public class QueryPivot extends AbstractQueryRelation
         }
 
         @Override
-        void copyColumnAttributesTo(BaseColumnInfo to)
+        void copyColumnAttributesTo(@NotNull BaseColumnInfo to)
         {
             _agg.copyColumnAttributesTo(to);
 
@@ -810,7 +810,7 @@ public class QueryPivot extends AbstractQueryRelation
 
             if (!getParseErrors().isEmpty())
             {
-                QueryException qe = getParseErrors().get(0);
+                QueryException qe = getParseErrors().getFirst();
                 _query.decorateException(qe);
                 throw qe;
             }
@@ -911,7 +911,7 @@ public class QueryPivot extends AbstractQueryRelation
                 if (null == fromSql)
                 {
                     if (!getParseErrors().isEmpty())
-                        throw getParseErrors().get(0);
+                        throw getParseErrors().getFirst();
                     QueryParseException qpe = new QueryParseException("Error compiling query" + (null != _query._debugName ? ": " + _query._debugName : ""), null, 0, 0);
                     _query.decorateException(qpe);
                     throw qpe;
@@ -1013,7 +1013,7 @@ public class QueryPivot extends AbstractQueryRelation
                 Map<String, IConstant> pivotValues = getPivotValues();
                 if (!getParseErrors().isEmpty())
                 {
-                    throw getParseErrors().get(0);
+                    throw getParseErrors().getFirst();
                 }
 
                 _members = new ArrayList<>(pivotValues.size());
@@ -1063,19 +1063,18 @@ public class QueryPivot extends AbstractQueryRelation
         if (aggType == null)
             return null;
 
-        switch (aggType)
+        return switch (aggType)
         {
-            case AVG:           return CrosstabMeasure.AggregateFunction.AVG;
-            case COUNT:         return CrosstabMeasure.AggregateFunction.COUNT;
-            case GROUP_CONCAT:  return CrosstabMeasure.AggregateFunction.GROUP_CONCAT;
-            case MAX:           return CrosstabMeasure.AggregateFunction.MAX;
-            case MIN:           return CrosstabMeasure.AggregateFunction.MIN;
-            case STDDEV:        return CrosstabMeasure.AggregateFunction.STDDEV;
-            case STDERR:        return CrosstabMeasure.AggregateFunction.STDERR;
-            case SUM:           return CrosstabMeasure.AggregateFunction.SUM;
-            default:
-                throw new IllegalArgumentException(aggType.toString());
-        }
+            case AVG -> CrosstabMeasure.AggregateFunction.AVG;
+            case COUNT -> CrosstabMeasure.AggregateFunction.COUNT;
+            case GROUP_CONCAT -> CrosstabMeasure.AggregateFunction.GROUP_CONCAT;
+            case MAX -> CrosstabMeasure.AggregateFunction.MAX;
+            case MIN -> CrosstabMeasure.AggregateFunction.MIN;
+            case STDDEV -> CrosstabMeasure.AggregateFunction.STDDEV;
+            case STDERR -> CrosstabMeasure.AggregateFunction.STDERR;
+            case SUM -> CrosstabMeasure.AggregateFunction.SUM;
+            default -> throw new IllegalArgumentException(aggType.toString());
+        };
     }
 
     private CrosstabMember createCrosstabMember(Object value, String caption)
@@ -1161,7 +1160,7 @@ public class QueryPivot extends AbstractQueryRelation
 
             if (!getParseErrors().isEmpty())
             {
-                throw getParseErrors().get(0);
+                throw getParseErrors().getFirst();
             }
 
             for (String displayField : pivotValues.keySet())

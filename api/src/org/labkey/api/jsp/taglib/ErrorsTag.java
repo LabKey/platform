@@ -74,7 +74,7 @@ public class ErrorsTag extends TagSupport
                                 out.print(HtmlString.unsafe("Unknown error: " + m));
                                 ExceptionUtil.logExceptionToMothership((HttpServletRequest)pageContext.getRequest(), nsme);
                                 Logger log = LogManager.getLogger(ErrorsTag.class);
-                                log.error("Failed to find a message: " + m, nsme);
+                                log.error("Failed to find a message: {}", m, nsme);
                             }
                             out.println(HtmlString.BR);
                         }

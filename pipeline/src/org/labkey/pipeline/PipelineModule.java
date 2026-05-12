@@ -399,7 +399,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             }
             catch (RuntimeSQLException e)
             {
-                _log.error("Unable to move job into error - " + incompleteFile.getFilePath(), e);
+                _log.error("Unable to move job into error - {}", incompleteFile.getFilePath(), e);
             }
         }
     }

@@ -159,7 +159,7 @@ public class StatusDetailsBean
                 }
                 catch (IOException e)
                 {
-                    LOG.warn("Error reading log file '" + strPath + "' at offset " + logOffset + ": " + e.getMessage(), e);
+                    LOG.warn("Error reading log file '{}' at offset {}: {}", strPath, logOffset, e.getMessage(), e);
                     statusLog = StatusDetailLog.createError("Error reading log file at offset " + logOffset + ": " + e.getMessage(), logOffset);
                 }
             }

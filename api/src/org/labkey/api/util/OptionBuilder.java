@@ -89,7 +89,7 @@ public class OptionBuilder implements HasHtmlString, SafeToRender
             return _disabled;
         }
 
-        public HtmlString getLabel()
+        public @NotNull HtmlString getLabel()
         {
             return _label;
         }

@@ -943,7 +943,7 @@ public class ExpDataIterators
             {
                 if (parents.size() > 1)
                     context.getErrors().addRowError(new ValidationException(String.format("Multiple %s values are provided.", ALIQUOTED_FROM_INPUT)));
-                return parents.get(0);
+                return parents.getFirst();
             }
         }
 
@@ -1622,7 +1622,7 @@ public class ExpDataIterators
         if ((dataOutputs.isEmpty() && (materialOutputs.isEmpty() || (materialOutputs.size() == 1 && materialOutputs.contains(runItem))))
            || (materialOutputs.isEmpty() && dataOutputs.size() == 1 && dataOutputs.contains(runItem)))
         {
-            LOG.debug("Run item '" + runItem.getName() + "' has existing source derivation run '" + existingDerivationRun.getRowId() + "' -- run has no other outputs, deleting run");
+            LOG.debug("Run item '{}' has existing source derivation run '{}' -- run has no other outputs, deleting run", runItem.getName(), existingDerivationRun.getRowId());
             // if run has no other outputs, delete the run completely
             runItem.setSourceApplication(null);
             try
@@ -1640,7 +1640,7 @@ public class ExpDataIterators
         }
         else
         {
-            LOG.debug("Run item '" + runItem.getName() + "' has existing source derivation run '" + existingDerivationRun.getRowId() + "' -- run has other " + dataOutputs.size() + " data outputs and " + materialOutputs.size() + " material outputs, removing sample from run");
+            LOG.debug("Run item '{}' has existing source derivation run '{}' -- run has other {} data outputs and {} material outputs, removing sample from run", runItem.getName(), existingDerivationRun.getRowId(), dataOutputs.size(), materialOutputs.size());
             // if the existing run has other outputs, remove the run as the source application for this sample
             // and remove it as an output from the run
             runItem.setSourceApplication(null);

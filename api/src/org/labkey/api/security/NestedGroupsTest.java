@@ -104,7 +104,7 @@ public class NestedGroupsTest extends Assert
         // Grab the first group (if there is one) in the home project
         Container home = ContainerManager.getHomeContainer();
         List<Group> homeGroups = SecurityManager.getGroups(home, false);
-        @Nullable Group homeGroup = !homeGroups.isEmpty() ? homeGroups.get(0) : null;
+        @Nullable Group homeGroup = !homeGroups.isEmpty() ? homeGroups.getFirst() : null;
 
         final Group all = create(ALL);
         Group divA = create(DIV_A);

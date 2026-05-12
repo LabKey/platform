@@ -991,6 +991,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         _isRootDbSequence = isRootDbSequence;
     }
 
+    @Override
     public boolean isMultiValued()
     {
         return _isMultiValued;
@@ -1141,16 +1142,16 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     displayColumnName = xfk.getFkDisplayColumnName().getStringValue();
                     useRawFKValue = xfk.getFkDisplayColumnName().getUseRawValue();
                 }
-                _fk = new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), key.fkName, false, displayColumnName, useRawFKValue);
+                _fk = new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.getFirst(), key.fkName, false, displayColumnName, useRawFKValue);
             }
             else
             {
                 String type = xfk.getFkMultiValued();
 
                 if (AbstractTableInfo.MultiValuedFkType.junction.name().equals(type))
-                    _fk = new MultiValuedForeignKey(new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), key.fkName, false), xfk.getFkJunctionLookup());
+                    _fk = new MultiValuedForeignKey(new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.getFirst(), key.fkName, false), xfk.getFkJunctionLookup());
                 else
-                    LOG.warn(String.format("Error in FK configuration for table : \"%s\". The multi value FK type : \"%s\" is not supported.", getParentTable().getName(), type));
+                    LOG.warn("Error in FK configuration for table : \"{}\". The multi value FK type : \"{}\" is not supported.", getParentTable().getName(), type);
             }
         }
 
@@ -1304,7 +1305,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                         }
                         else
                         {
-                            LOG.error("Class is not a DisplayColumnFactory: " + displayColumnClassName);
+                            LOG.error("Class is not a DisplayColumnFactory: {}", displayColumnClassName);
                         }
                     }
                 }
@@ -1315,7 +1316,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                 // Defer logging an error until column is actually used, Issue #44103
                 // Substitute a factory that provides a renderer that displays and logs the error at render time
                 LOG.debug(message, e);
-                _displayColumnFactory = colInfo -> {
+                _displayColumnFactory = _ -> {
                     LOG.error(message, e);
                     return new SimpleDisplayColumn()
                     {
@@ -1475,7 +1476,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         private final String _dbSchemaName;
         private final String _tableName;
         private String _lookupKey;
-        private String _fkName;
+        private final String _fkName;
         private final String _displayColumnName;
         private final boolean _joinWithContainer;
         private final boolean _useRawFKValue;
@@ -1607,7 +1608,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     List<String> pkColumnNames = tableInfo.getPkColumnNames();
                     if (pkColumnNames.size() == 1)
                     {
-                        _lookupKey = pkColumnNames.get(0);
+                        _lookupKey = pkColumnNames.getFirst();
                     }
                 }
                 return null;
@@ -1783,7 +1784,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
             if (i == -1)
             {
-                LOG.warn("Skipping multiple column foreign key " + key.fkName + " ON " + parentTable.getName());
+                LOG.warn("Skipping multiple column foreign key {} ON {}", key.fkName, parentTable.getName());
                 continue;
             }
 
@@ -1792,13 +1793,13 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
             if (col == null)
             {
-                LOG.error("Column in FK definition was not found " + colName + ". Skipping constraint " + key.fkName);
+                LOG.error("Column in FK definition was not found {}. Skipping constraint {}", colName, key.fkName);
                 continue;
             }
 
             if (col._fk != null)
             {
-                LOG.warn("More than one FK defined for column " + parentTable.getName() + "." + col.getName() + ". Skipping constraint " + key.fkName);
+                LOG.warn("More than one FK defined for column {}.{}. Skipping constraint {}", parentTable.getName(), col.getName(), key.fkName);
                 continue;
             }
 

@@ -91,9 +91,8 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             PipelineService.get().queueJob(job);
 
             job.getLogger().info("Retrying job.");
-            job.getLogger().debug("Database indicates active task ID is " + job.getActiveTaskId() + (sf.getActiveHostName() == null ? "" : ", assigned to host '" + sf.getActiveHostName() + "'"));
-            job.getLogger().debug("Retry details: Old Job ID: " + oldJobId +
-                    (Strings.CI.equals(sf.getJobId(), job.getJobGUID()) ? "" : ", new Job ID: " + job.getJobGUID()));
+            job.getLogger().debug("Database indicates active task ID is {}{}", job.getActiveTaskId(), sf.getActiveHostName() == null ? "" : ", assigned to host '" + sf.getActiveHostName() + "'");
+            job.getLogger().debug("Retry details: Old Job ID: {}{}", oldJobId, Strings.CI.equals(sf.getJobId(), job.getJobGUID()) ? "" : ", new Job ID: " + job.getJobGUID());
         }
         catch (PipelineValidationException e)
         {

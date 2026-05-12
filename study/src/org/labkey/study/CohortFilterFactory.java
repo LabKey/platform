@@ -333,7 +333,7 @@ public class CohortFilterFactory
         List<String> parts = fk.getParts();
         if (!parts.isEmpty())
         {
-            String first = parts.get(0);
+            String first = parts.getFirst();
             if (Strings.CI.equals(first, subject))
             {
                 ArrayList<String> t = new ArrayList<>(parts);

@@ -30,7 +30,6 @@ import org.labkey.vfs.FileLike;
 import java.io.File;
 import java.net.URI;
 import java.nio.file.Path;
-import java.sql.SQLException;
 
 /**
  * Represents a virtual experiment object. Typically, a file on disk, but could be something pointed at by any URI including S3 objects.
@@ -94,7 +93,7 @@ public interface ExpData extends ExpRunItem
     @Nullable
     ExpDataClass getDataClass(@Nullable User user);
 
-    void importDataFile(PipelineJob job, XarSource xarSource) throws ExperimentException, SQLException;
+    void importDataFile(PipelineJob job, XarSource xarSource) throws ExperimentException;
 
     /** @return the search document id for this material */
     String getDocumentId();

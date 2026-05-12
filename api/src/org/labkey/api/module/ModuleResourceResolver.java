@@ -62,9 +62,9 @@ public class ModuleResourceResolver implements Resolver
             ensureListeners(r);
 
         if (null == r)
-            LOG.debug("missed resource: " + key);
+            LOG.debug("missed resource: {}", key);
         else if (r.exists())
-            LOG.debug("resolved resource: " + key + " -> " + r);
+            LOG.debug("resolved resource: {} -> {}", key, r);
 
         return r;
     };
@@ -96,13 +96,13 @@ public class ModuleResourceResolver implements Resolver
 
                 if (_pathsWithListeners.add(path))
                 {
-                    LOG.debug("registering a listener on: " + r);
+                    LOG.debug("registering a listener on: {}", r);
 
                     ((DirectoryResource) r).registerListener(WATCHER, new ModuleResourceResolverListener(), ENTRY_CREATE, ENTRY_DELETE);
                 }
                 else
                 {
-                    LOG.debug("NOT registering a listener on: " + r);
+                    LOG.debug("NOT registering a listener on: {}", r);
                     // Short-circuit -- if a path is registered then we know its ancestors are registered, so no need to keep looping
                     return;
                 }
@@ -180,7 +180,7 @@ public class ModuleResourceResolver implements Resolver
         @Override
         public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
         {
-            LOG.debug(entry + " created");
+            LOG.debug("{} created", entry);
             java.nio.file.Path nioPath = directory.resolve(entry);
             if (Files.isDirectory(nioPath))
                 ensureListeners(resolve(_root.getRelativePath(nioPath)));
@@ -190,7 +190,7 @@ public class ModuleResourceResolver implements Resolver
         @Override
         public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
         {
-            LOG.debug(entry + " deleted");
+            LOG.debug("{} deleted", entry);
             java.nio.file.Path nioPath = directory.resolve(entry);
             if (Files.isDirectory(nioPath))
                 _pathsWithListeners.remove(_root.getRelativePath(nioPath));
@@ -200,7 +200,7 @@ public class ModuleResourceResolver implements Resolver
         @Override
         public void directoryDeleted(java.nio.file.Path directory)
         {
-            LOG.debug("Directory " + directory + " deleted");
+            LOG.debug("Directory {} deleted", directory);
             _pathsWithListeners.remove(_root.getRelativePath(directory));
             clear(); // Clear all resources and children in this module. A bit heavy-handed, but attempts at targeted approaches have been wrong.
         }

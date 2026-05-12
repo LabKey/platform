@@ -16,6 +16,7 @@
 package org.labkey.pipeline;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
@@ -96,19 +97,18 @@ public class PipelineDirectoryImpl implements PipelineDirectory
                 Files.walkFileTree(dir, Collections.emptySet(), 1, new SimpleFileVisitor<>()
                 {
                     @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    public @NotNull FileVisitResult visitFile(@NotNull Path file, @NotNull BasicFileAttributes attrs)
                     {
                         _files.put(file.getFileName().toString(), file);
                         return FileVisitResult.CONTINUE;
                     }
 
                     @Override
-                    public FileVisitResult visitFileFailed(Path file, IOException exc)
+                    public @NotNull FileVisitResult visitFileFailed(@NotNull Path file, @NotNull IOException exc)
                     {
                         // Issue 44843 - be tolerant of not being able to get the full metadata (which we aren't even using)
                         // Don't output a full stack trace since it'll be very verbose
-                        LOG.warn("Failed to visit " + file + " in container " + _root.getContainer().getPath() +
-                                ". Its permissions may prevent retrieving metadata. Error: " + exc);
+                        LOG.warn("Failed to visit {} in container {}. Its permissions may prevent retrieving metadata. Error: {}", file, _root.getContainer().getPath(), exc);
                         _files.put(file.getFileName().toString(), file);
                         return FileVisitResult.CONTINUE;
                     }
@@ -136,7 +136,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
             }
         catch (IOException e)
         {
-            LOG.error("Error attempting to determine if File exists." + f, e);
+            LOG.error("Error attempting to determine if File exists.{}", f, e);
             return false;
         }
     }
@@ -237,7 +237,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
                 return rc;
             if (!files1.isEmpty())
             {
-                rc = FileUtil.getFileName(files1.get(0)).compareToIgnoreCase(FileUtil.getFileName(files2.get(0)));
+                rc = FileUtil.getFileName(files1.getFirst()).compareToIgnoreCase(FileUtil.getFileName(files2.getFirst()));
                 if (rc != 0)
                     return rc;
             }

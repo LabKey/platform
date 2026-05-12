@@ -41,7 +41,6 @@ import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -224,7 +223,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
                 {
                     ExpSampleType sampleType = service.getSampleType(getContainer(), typeName, true);
                     if (sampleType == null)
-                        _log.warn(String.format("Unable to resolve sample type by name '%s'.", typeName));
+                        _log.warn("Unable to resolve sample type by name '{}'.", typeName);
                     else
                         _sampleTypes.add(sampleType);
                 }
@@ -255,7 +254,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         int numFolders = _config.getNumFolders();
         if (numFolders <= 0)
         {
-            _log.info(String.format("No folders generated because %s=%d", Config.NUM_FOLDERS, numFolders));
+            _log.info("No folders generated because {}={}", Config.NUM_FOLDERS, numFolders);
             return;
         }
         CPUTimer timer = addTimer(String.format("%d sub-folders", numFolders));
@@ -274,7 +273,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
             i++;
         }
         timer.stop();
-        _log.info(String.format("Generating %d sub-folders took %s", numFolders, timer.getDuration() + "."));
+        _log.info("Generating {} sub-folders took {}", numFolders, timer.getDuration() + ".");
     }
 
     public void generateSampleTypes(String namePrefix, String namingPatternPrefix) throws ExperimentException, SQLException
@@ -282,7 +281,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         checkAlive(_job);
         int numSampleTypes = _config.getNumSampleTypes();
         if (numSampleTypes <= 0) {
-            _log.info(String.format("No sample types generated because %s=%d", Config.NUM_SAMPLE_TYPES, numSampleTypes));
+            _log.info("No sample types generated because {}={}", Config.NUM_SAMPLE_TYPES, numSampleTypes);
             return;
         }
         int minFields = _config.getMinFields();
@@ -312,7 +311,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         }
         timer.stop();
 
-        _log.info(String.format("Generating %d sample types took %s", numSampleTypes, timer.getDuration() + "."));
+        _log.info("Generating {} sample types took {}", numSampleTypes, timer.getDuration() + ".");
     }
 
     private ExpSampleType generateSampleType(String sampleTypeName, @Nullable String namingPattern, int numFields) throws ExperimentException, SQLException
@@ -324,7 +323,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         addDomainProperties(props, numFields);
 
         SampleTypeService service = SampleTypeService.get();
-        _log.info(String.format("Creating Sample Type '%s' with %d fields", sampleTypeName, numFields+2));
+        _log.info("Creating Sample Type '{}' with {} fields", sampleTypeName, numFields + 2);
         return service.createSampleType(_container, _user, sampleTypeName,
                 "Generated sample type", props, List.of(), -1, -1, -1, -1, namingPattern, null, null, null,
                 randomIndex(LABEL_COLORS), randomIndex(UNITS));
@@ -338,7 +337,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         int numSamples = config.getMinSamples();
         if (numSamples <= 0 && config.getMaxSamples() <= 0)
         {
-            _log.info(String.format("No samples generated because %s=%d and %s=%d", Config.MIN_SAMPLES, numSamples, Config.MAX_SAMPLES, config.getMaxSamples()));
+            _log.info("No samples generated because {}={} and {}={}", Config.MIN_SAMPLES, numSamples, Config.MAX_SAMPLES, config.getMaxSamples());
             return;
         }
         List<String> parentTypes = new ArrayList<>(config.getSampleTypeParents());
@@ -352,12 +351,12 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
             dataClassParents.addAll(ExperimentService.get().getDataClasses(getContainer(), false).stream().map(ExpDataClass::getName).toList());
         for (ExpSampleType sampleType : getSampleTypes(_config.getSampleTypeNames()))
         {
-            _log.info(String.format("Generating %d samples for sample type '%s'.", numSamples, sampleType.getName()));
+            _log.info("Generating {} samples for sample type '{}'.", numSamples, sampleType.getName());
             CPUTimer timer = addTimer(String.format("%d '%s' samples", numSamples, sampleType.getName()));
             timer.start();
             int numGenerated = generateSamples(sampleType, numSamples, dataClassParents, parentTypes);
             timer.stop();
-            _log.info(String.format("Generating %d samples for sample type '%s' took %s.", numGenerated, sampleType.getName(), timer.getDuration()));
+            _log.info("Generating {} samples for sample type '{}' took {}.", numGenerated, sampleType.getName(), timer.getDuration());
 
             numSamples = Math.min(numSamples + sampleIncrement, config.getMaxSamples());
             if (!hasParentTypes)
@@ -380,7 +379,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
                 sampleTypeParents.isEmpty() ? numDerived : Math.round(numDerived * _config.getPctDerivedFromSamples());
         if (!dataClassParentTypes.isEmpty() && numDerivedFromDataClass > 0)
         {
-            _log.info(String.format("Generating %d samples derived from data class objects.", numDerivedFromDataClass));
+            _log.info("Generating {} samples derived from data class objects.", numDerivedFromDataClass);
 
             int numPerParentGroup = numDerivedFromDataClass / dataClassParentTypes.size();
             int numTypesPer = randomInt(_config.getMinDataClassParentTypesPerSample(), Math.min(_config.getMaxDataClassParentTypesPerSample(), dataClassParentTypes.size()));
@@ -409,7 +408,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         if (!sampleTypeParents.isEmpty() && numDerivedFromSamples > 0)
         {
             checkAlive(_job);
-            _log.info(String.format("Generated %d samples derived from sample types", numDerivedFromSamples));
+            _log.info("Generated {} samples derived from sample types", numDerivedFromSamples);
             int numPerParentType = numDerivedFromSamples / sampleTypeParents.size();
             for (String parentType : sampleTypeParents)
             {
@@ -427,7 +426,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
     {
         if (_config.getMaxAliquotsPerParent() <= 0)
         {
-            _log.info(String.format("Generating no aliquots because %s is %d", Config.MAX_ALIQUOTS_PER_SAMPLE, _config.getMaxAliquotsPerParent()));
+            _log.info("Generating no aliquots because {} is {}", Config.MAX_ALIQUOTS_PER_SAMPLE, _config.getMaxAliquotsPerParent());
             return 0;
         }
 
@@ -440,7 +439,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
 
         }
 
-        _log.info(String.format("Generating %d aliquots for sample type '%s' ...", quantity, sampleType.getName()));
+        _log.info("Generating {} aliquots for sample type '{}' ...", quantity, sampleType.getName());
         CPUTimer timer = addTimer(String.format("%d '%s' aliquots", quantity, sampleType.getName()));
         timer.start();
         int totalAliquots = 0;
@@ -452,14 +451,14 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
             List<Map<String, Object>> parents = getRandomSamples(sampleType, Math.min(10, Math.max(quantity, quantity / 100)));
             numGenerated = generateAliquotsForParents(sampleType, parents, svc, quantity - totalAliquots, 0, 1, randomInt(1, _config.getMaxGenerations()), sampleStatuses);
             totalAliquots += numGenerated;
-            _log.info("... " + totalAliquots);
+            _log.info("... {}", totalAliquots);
             iterations++;
         }
         while (totalAliquots < quantity && numGenerated > 0);
         timer.stop();
         if (totalAliquots < quantity)
-            _log.warn(String.format("Generated only %d aliquots after %d iterations", totalAliquots, iterations));
-        _log.info(String.format("Generating %d aliquots for sample type '%s' in %d iterations took %s.", totalAliquots, sampleType.getName(), iterations, timer.getDuration()));
+            _log.warn("Generated only {} aliquots after {} iterations", totalAliquots, iterations);
+        _log.info("Generating {} aliquots for sample type '{}' in {} iterations took {}.", totalAliquots, sampleType.getName(), iterations, timer.getDuration());
         return totalAliquots;
     }
 
@@ -506,7 +505,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
             if (errors.hasErrors())
                 throw errors;
         }
-        _log.info(String.format("...... %d (generation %d)", (numGenerated + generatedCount), generation));
+        _log.info("...... {} (generation {})", (numGenerated + generatedCount), generation);
         // for some of the aliquots, possibly generate further aliquot generations
         if (generatedCount < quantity && generation < maxGenerations)
         {
@@ -557,7 +556,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         TableInfo tableInfo = getSamplesSchema().getTable(sampleType.getName());
         if (tableInfo == null)
         {
-            _log.warn("Sample type '" + sampleType.getName() + "' not found.");
+            _log.warn("Sample type '{}' not found.", sampleType.getName());
             return Collections.emptyList();
         }
         SQLFragment sql = limitFromOffsetSqlFrag(tableInfo, "RowId, Name", limit, totalSampleCount);
@@ -572,7 +571,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         TableInfo tableInfo = getDataClassSchema().getTable(dataClass.getName());
         if (tableInfo == null)
         {
-            _log.warn("Data class '" + dataClass.getName() + "' not found.");
+            _log.warn("Data class '{}' not found.", dataClass.getName());
             return Collections.emptyList();
         }
         SQLFragment sql = limitFromOffsetSqlFrag(tableInfo, "RowId, Name", limit, totalSampleCount);
@@ -613,7 +612,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
     }
 
 
-    public void poolSamples(ExpSampleType sampleType, QueryUpdateService service, int numPooled) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
+    public void poolSamples(ExpSampleType sampleType, QueryUpdateService service, int numPooled)
     {
 //        // TODO This can pool samples from different generations, which seems a little odd, but we'll go with it for now.
 //        List<Map<String, Object>> rows = new ArrayList<>();
@@ -672,7 +671,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         addDomainProperties(props, numFields);
 
-        log.info(String.format("Creating Data Class '%s' with %d fields", dataClassName, numFields));
+        log.info("Creating Data Class '{}' with {} fields", dataClassName, numFields);
         DataClassDomainKindProperties options = new DataClassDomainKindProperties();
         options.setDescription("Custom data class with " + numFields + " fields");
         options.setNameExpression(namingPattern);
@@ -692,7 +691,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
     {
         if (_config.getMaxChildrenPerParent() <= 0)
         {
-            _log.info(String.format("No derivatives generated since maxChildrenPerParent is %d", _config.getMaxChildrenPerParent()));
+            _log.info("No derivatives generated since maxChildrenPerParent is {}", _config.getMaxChildrenPerParent());
             return 0;
         }
 
@@ -717,7 +716,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
             });
 
         }
-        _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' ...", quantity, sampleType.getName(), parentInput, parentQueryNames));
+        _log.info("Generating {} '{}' samples derived from '{}/{}' ...", quantity, sampleType.getName(), parentInput, parentQueryNames);
         CPUTimer timer = addTimer(String.format("%d '%s/%s' derived samples", quantity, parentInput, parentQueryNames));
         timer.start();
         BatchValidationException errors = new BatchValidationException();
@@ -763,11 +762,11 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
             dataChanged = numImported > 0;
             totalImported += numImported;
 
-            _log.info("... " + totalImported);
+            _log.info("... {}", totalImported);
         }
         timer.stop();
 
-        _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' took %s.", quantity, sampleType.getName(), parentInput, parentQueryNames, timer.getDuration()));
+        _log.info("Generating {} '{}' samples derived from '{}/{}' took {}.", quantity, sampleType.getName(), parentInput, parentQueryNames, timer.getDuration());
         return totalImported;
     }
 
@@ -783,7 +782,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
     public void logTimes()
     {
         _log.info("===== Timing Summary ======");
-        _timers.forEach((timer) -> _log.info(String.format("%s\t%s", timer.getName(), timer.getDuration())));
+        _timers.forEach((timer) -> _log.info("{}\t{}", timer.getName(), timer.getDuration()));
     }
 
     public CPUTimer addTimer(String name)
@@ -796,7 +795,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
     private int generateDomainData(int totalRows, QueryUpdateService service, Domain domain, Container container) throws BatchValidationException, SQLException
     {
         checkAlive(_job);
-        _log.info(String.format("Generating %d rows of data ...", totalRows));
+        _log.info("Generating {} rows of data ...", totalRows);
         int numImported = 0;
         int batchSize = Math.min(MAX_BATCH_SIZE, totalRows);
         BatchValidationException errors = new BatchValidationException();
@@ -804,7 +803,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         {
             List<Map<String, Object>> rows = createRows(Math.min(batchSize, totalRows - numImported), domain);
             numImported += importRows(rows, errors, service, container);
-            _log.info("... " + numImported);
+            _log.info("... {}", numImported);
         }
         return numImported;
     }
@@ -812,7 +811,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
     private int generateSampleData(int totalRows, QueryUpdateService service, ExpSampleType sampleType, Container container) throws BatchValidationException, SQLException
     {
         checkAlive(_job);
-        _log.info(String.format("Generating %d rows of data ...", totalRows));
+        _log.info("Generating {} rows of data ...", totalRows);
         int numImported = 0;
         int batchSize = Math.min(MAX_BATCH_SIZE, totalRows);
         BatchValidationException errors = new BatchValidationException();
@@ -820,7 +819,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         {
             List<Map<String, Object>> rows = createSampleRows(Math.min(batchSize, totalRows - numImported), sampleType);
             numImported += importRows(rows, errors, service, container);
-            _log.info("... " + numImported);
+            _log.info("... {}", numImported);
         }
         return numImported;
     }

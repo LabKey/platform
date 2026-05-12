@@ -66,7 +66,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
                 lookupCol = childKeyFk.createLookupColumn(childKey, childKeyFk.getLookupColumnName());
                 if (lookupCol == null)
                 {
-                    LOG.warn("Failed to create lookup column from '" + childKey.getName() + "' to '" + childKeyFk.getLookupSchemaName() + "." + childKeyFk.getLookupTableName() + "." + childKeyFk.getLookupColumnName() + "'");
+                    LOG.warn("Failed to create lookup column from '{}' to '{}.{}.{}'", childKey.getName(), childKeyFk.getLookupSchemaName(), childKeyFk.getLookupTableName(), childKeyFk.getLookupColumnName());
                 }
                 else
                 {

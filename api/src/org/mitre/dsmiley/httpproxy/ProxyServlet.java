@@ -389,7 +389,7 @@ public class ProxyServlet extends HttpServlet {
                 copyResponseEntity(proxyResponse, servletResponse, proxyRequest, servletRequest);
             }
         } catch (Exception e) {
-            handleRequestException(proxyRequest, proxyResponse, e);
+            handleRequestException(proxyResponse, e);
         } finally {
             // make sure the entire entity was consumed, so the connection is released
             if (proxyResponse != null)
@@ -399,7 +399,7 @@ public class ProxyServlet extends HttpServlet {
         }
     }
 
-    protected void handleRequestException(HttpRequest proxyRequest, HttpResponse proxyResponse, Exception e) throws ServletException, IOException {
+    protected void handleRequestException(HttpResponse proxyResponse, Exception e) throws IOException {
         // LKS override
 
         // Note: We used to "abort" the request, but that doesn't seem possible anymore
@@ -628,9 +628,9 @@ public class ProxyServlet extends HttpServlet {
      */
     protected String getRealCookie(String cookieValue) {
         StringBuilder escapedCookie = new StringBuilder();
-        String cookies[] = cookieValue.split("[;,]");
+        String[] cookies = cookieValue.split("[;,]");
         for (String cookie : cookies) {
-            String cookieSplit[] = cookie.split("=");
+            String[] cookieSplit = cookie.split("=");
             if (cookieSplit.length == 2) {
                 String cookieName = cookieSplit[0].trim();
                 if (cookieName.startsWith(getCookieNamePrefix(cookieName))) {

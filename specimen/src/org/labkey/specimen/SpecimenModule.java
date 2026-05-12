@@ -41,7 +41,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
@@ -174,7 +173,7 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public void importSpecimenArchive(@Nullable FileLike inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge, boolean syncParticipantVisit) throws PipelineJobException, ValidationException
+            public void importSpecimenArchive(@Nullable FileLike inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge, boolean syncParticipantVisit) throws PipelineJobException
             {
                 AbstractSpecimenTask.doImport(inputFile, job, ctx, merge, syncParticipantVisit);
             }

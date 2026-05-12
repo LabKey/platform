@@ -47,7 +47,7 @@ public final class TableExtension
 
     public static TableExtension create(AbstractTableInfo primaryTable, TableInfo extensionTable)
     {
-        String pkColumn = extensionTable.getPkColumnNames().get(0); // Note this only works for simple primary keys, not compound.
+        String pkColumn = extensionTable.getPkColumnNames().getFirst(); // Note this only works for simple primary keys, not compound.
         String fkColumn = extensionTable.getColumn(pkColumn).getFk().getLookupColumnName();
 
         return create(primaryTable, extensionTable, fkColumn, pkColumn, LookupColumn.JoinType.leftOuter);

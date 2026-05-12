@@ -29,7 +29,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
 import jakarta.servlet.ServletException;
-import java.sql.SQLException;
+
 import java.util.Map;
 
 /**
@@ -92,7 +92,7 @@ public abstract class PlateBasedUploadWizardAction <FormType extends PlateUpload
         }
 
         @Override
-        public boolean executeStep(FormType form, BindException errors) throws ServletException, SQLException, ExperimentException
+        public boolean executeStep(FormType form, BindException errors) throws ServletException, ExperimentException
         {
             form.setSampleProperties(_postedSampleProperties);
             for (Map.Entry<String, Map<DomainProperty, String>> entry : _postedSampleProperties.entrySet())

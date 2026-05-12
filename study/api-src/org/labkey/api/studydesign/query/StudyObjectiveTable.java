@@ -93,12 +93,6 @@ public class StudyObjectiveTable extends StudyDesignBaseTable
     }
 
     @Override
-    public boolean supportsContainerFilter()
-    {
-        return true;
-    }
-
-    @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         checkedPermissions.add(perm);

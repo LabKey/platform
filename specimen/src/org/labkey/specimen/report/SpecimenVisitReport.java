@@ -38,7 +38,6 @@ import org.labkey.specimen.query.SpecimenQueryView;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -307,7 +306,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         FieldKey oldFieldKey = FieldKey.fromString(oldKey);
         for (SimpleFilter.FilterClause clause : filter.getClauses())
         {
-            if (clause.getFieldKeys().size() == 1 && oldFieldKey.equals(clause.getFieldKeys().get(0)))
+            if (clause.getFieldKeys().size() == 1 && oldFieldKey.equals(clause.getFieldKeys().getFirst()))
             {
                 if (clause.getParamVals().length > 1)
                     throw new UnsupportedOperationException("Only single filters are supported on column " + newKey);

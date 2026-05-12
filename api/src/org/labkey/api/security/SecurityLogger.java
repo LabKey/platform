@@ -59,7 +59,7 @@ public class SecurityLogger extends org.apache.logging.log4j.core.Logger
     public static void pushSecurityContext(String description, User user)
     {
         List<ThreadSecurityContext> a = threadsecuritycontexts.get();
-        a.add(new ThreadSecurityContext(user,description,a.get(a.size()-1)));
+        a.add(new ThreadSecurityContext(user,description,a.getLast()));
         if (null != description)
             indent("<" + description + (null == user ? "" : " " + user.getName()) + ">");
     }
@@ -71,10 +71,10 @@ public class SecurityLogger extends org.apache.logging.log4j.core.Logger
         if (a.size()==1)
             return;
         outdent();
-        String desc = a.get(a.size()-1).description;
+        String desc = a.getLast().description;
         if (null != desc)
-            instance.debug("</" + desc + ">");
-        a.remove(a.size()-1);
+            instance.debug("</{}>", desc);
+        a.removeLast();
     }
 
 
@@ -83,7 +83,7 @@ public class SecurityLogger extends org.apache.logging.log4j.core.Logger
         if (null != msg)
             instance.debug(msg);
         List<ThreadSecurityContext> a = threadsecuritycontexts.get();
-        a.get(a.size()-1).indent++;
+        a.getLast().indent++;
         return true;
     }
 
@@ -91,8 +91,8 @@ public class SecurityLogger extends org.apache.logging.log4j.core.Logger
     public static boolean outdent()
     {
         List<ThreadSecurityContext> a = threadsecuritycontexts.get();
-        if (a.get(a.size()-1).indent > 0)
-            a.get(a.size()-1).indent--;
+        if (a.getLast().indent > 0)
+            a.getLast().indent--;
         return true;
     }
 
@@ -135,7 +135,7 @@ public class SecurityLogger extends org.apache.logging.log4j.core.Logger
     private static Object indentMsg(Object msg)
     {
         List<ThreadSecurityContext> a = threadsecuritycontexts.get();
-        int indent = a.get(a.size()-1).indent;
+        int indent = a.getLast().indent;
         if (0 >= indent)
             return msg;
         return StringUtils.repeat(' ', indent * 2) + String.valueOf(msg);

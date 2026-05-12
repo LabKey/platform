@@ -25,6 +25,8 @@
 
 package org.radeox.util;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.io.Writer;
 
@@ -66,7 +68,7 @@ public class StringBufferWriter extends Writer {
   }
 
    @Override
-   public void write(char cbuf[], int off, int len) {
+   public void write(@NotNull char[] cbuf, int off, int len) {
     if ((off < 0) || (off > cbuf.length) || (len < 0) ||
         ((off + len) > cbuf.length) || ((off + len) < 0)) {
       throw new IndexOutOfBoundsException();
@@ -77,7 +79,7 @@ public class StringBufferWriter extends Writer {
   }
 
   @Override
-  public void write(String str) {
+  public void write(@NotNull String str) {
     buffer.append(str);
   }
 

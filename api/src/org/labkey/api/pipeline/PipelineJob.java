@@ -824,13 +824,13 @@ abstract public class PipelineJob extends Job implements Serializable, Container
             try
             {
                 logStartStopInfo("Starting to run task '" + factory.getId() + "' for job '" + this + "' with log file " + getLogFilePath());
-                getLogger().info("Starting to run task '" + factory.getId() + "' at location '" + factory.getExecutionLocation() + "'");
+                getLogger().info("Starting to run task '{}' at location '{}'", factory.getId(), factory.getExecutionLocation());
                 if (PipelineJobService.get().getLocationType() != PipelineJobService.LocationType.WebServer)
                 {
                     PipelineJobService.RemoteServerProperties remoteProps = PipelineJobService.get().getRemoteServerProperties();
                     if (remoteProps != null)
                     {
-                        getLogger().info("on host: '" + remoteProps.getHostName() + "'");
+                        getLogger().info("on host: '{}'", remoteProps.getHostName());
                     }
                 }
 
@@ -845,7 +845,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
             }
             finally
             {
-                getLogger().info((success ? "Successfully completed" : "Failed to complete") + " task '" + factory.getId() + "'");
+                getLogger().info("{} task '{}'", success ? "Successfully completed" : "Failed to complete", factory.getId());
                 logStartStopInfo((success ? "Successfully completed" : "Failed to complete") + " task '" + factory.getId() + "' for job '" + this + "' with log file " + getLogFile());
 
                 try
@@ -886,7 +886,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         else
         {
             logStartStopInfo("Skipping already completed task '" + factory.getId() + "' for job '" + this + "' with log file " + getLogFile());
-            getLogger().info("Skipping already completed task '" + factory.getId() + "' at location '" + factory.getExecutionLocation() + "'");
+            getLogger().info("Skipping already completed task '{}' at location '{}'", factory.getId(), factory.getExecutionLocation());
         }
 
         if (getActiveTaskStatus() != TaskStatus.complete && getActiveTaskStatus() != TaskStatus.cancelled)
@@ -1279,7 +1279,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
     {
         Process proc;
 
-        String commandName = pb.command().get(0);
+        String commandName = pb.command().getFirst();
         commandName = commandName.substring(
                 Math.max(commandName.lastIndexOf('/'), commandName.lastIndexOf('\\')) + 1);
         header(commandName + " output");
@@ -1301,7 +1301,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
 
             // If the command has a path, then prepend its parent directory to the PATH
             // environment variable as well.
-            String exePath = pb.command().get(0);
+            String exePath = pb.command().getFirst();
             if (exePath != null && !exePath.isEmpty() && exePath.indexOf(File.separatorChar) != -1)
             {
                 File fileExe = new File(exePath);
@@ -1401,7 +1401,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
                     int result = proc.exitValue();
                     if (result != 0)
                     {
-                        throw new ToolExecutionException("Failed running " + pb.command().get(0) + ", exit code " + result, result);
+                        throw new ToolExecutionException("Failed running " + pb.command().getFirst() + ", exit code " + result, result);
                     }
 
                     int count = output.get();

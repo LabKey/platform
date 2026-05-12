@@ -68,7 +68,7 @@ public class StandardDialectStringHandler implements DialectStringHandler
                     if (params.isEmpty())
                         ret.append("NULL /*?missing?*/");
                     else
-                        ret.append(formatParameter(params.remove(0)));
+                        ret.append(formatParameter(params.removeFirst()));
                     current++;
                     begin = current;
                 }

@@ -463,7 +463,7 @@ public class ExceptionStackTrace
                     "\tat org.apache.commons.beanutils.BeanUtils.populate(BeanUtils.java:298)");
 
             assertEquals(stackTrace1.getStackTraceHash(), stackTrace2.getStackTraceHash());
-            assertFalse(stackTrace1.getStackTraceHash().equals(stackTrace3.getStackTraceHash()));
+            assertNotEquals(stackTrace1.getStackTraceHash(), stackTrace3.getStackTraceHash());
         }
 
         @Test

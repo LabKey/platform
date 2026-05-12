@@ -110,7 +110,7 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
         TaskPipeline<?> tp = super.getTaskPipeline();
         if (tp == null)
         {
-            LOG.warn("Task pipeline " + _taskPipelineId + " not found.");
+            LOG.warn("Task pipeline {} not found.", _taskPipelineId);
         }
         return (FileAnalysisTaskPipeline) tp; 
     }

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reader;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.vfs.FileLike;
 
 import java.io.BufferedReader;
@@ -42,7 +43,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
 
     // Force subclasses to implement to provide callers a more appropriate name.
     @Override
-    public abstract FastaIterator iterator();
+    public abstract @NotNull FastaIterator iterator();
 
     public void setCharacterFilter(CharacterFilter characterFilter)
     {

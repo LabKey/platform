@@ -172,10 +172,10 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
 
     private static List<char[]> removeDuplicateSubstringsBetweenSegments(List<char[]> segments)
     {
-        char[] firstSegment = segments.get(0);
+        char[] firstSegment = segments.getFirst();
         List<char[]> filtered = remove(segments.subList(1, segments.size()), firstSegment);
         List<char[]> ret = filtered.size() > 1 ? removeDuplicateSubstringsBetweenSegments(filtered) : filtered;
-        ret.add(0, firstSegment);
+        ret.addFirst(firstSegment);
 
         return ret;
     }

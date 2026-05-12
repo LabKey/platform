@@ -45,7 +45,7 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
     @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
-        LOG.info("Exporting study to " + vf.getLocation());
+        LOG.info("Exporting study to {}", vf.getLocation());
 
         Set<String> dataTypes = ctx.getDataTypes();
 
@@ -89,7 +89,7 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
             throw e;
         }
 
-        LOG.info("Done exporting study to " + vf.getLocation());
+        LOG.info("Done exporting study to {}", vf.getLocation());
     }
 
     public static boolean includeDatasetMetadata(StudyExportContext ctx)

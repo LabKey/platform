@@ -216,7 +216,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
             }
             if (s.isNew())
             {
-                _log.debug("Created HttpSession: " + s.getId() + " " + _user.getEmail());
+                _log.debug("Created HttpSession: {} {}", s.getId(), _user.getEmail());
             }
             return s;
         }
@@ -334,7 +334,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         public void setAttribute(String s, Object o)
         {
             if (_log.isDebugEnabled())
-                _log.debug("Session.setAttribute(" + s + ", " + o + ")");
+                _log.debug("Session.setAttribute({}, {})", s, o);
             if (null==_real)
                 _attributes.put(s, o);
             else

@@ -152,18 +152,12 @@ public class AssayTableMetadata
         if (pair == null)
             return null;
 
-        switch (pair.first)
+        return switch (pair.first)
         {
-            case Result:
-                return getTargetStudyFieldKeyOnResults();
-
-            case Run:
-                return getTargetStudyFieldKeyOnRun();
-
-            case Batch:
-            default:
-                return getTargetStudyFieldKeyOnBatch();
-        }
+            case Result -> getTargetStudyFieldKeyOnResults();
+            case Run -> getTargetStudyFieldKeyOnRun();
+            default -> getTargetStudyFieldKeyOnBatch();
+        };
     }
 
     protected FieldKey getTargetStudyFieldKeyOnResults()

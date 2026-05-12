@@ -42,11 +42,11 @@ public class LabKeyWebappMuleXmlConfigurationBuilder extends MuleXmlConfiguratio
 
         if (is != null)
         {
-            LOG.debug("Resource " + resource + " is found in Servlet Context.");
+            LOG.debug("Resource {} is found in Servlet Context.", resource);
         }
         else
         {
-            LOG.debug("Resource " + resourcePath + " is not found in Servlet Context, loading from classpath or as external file");
+            LOG.debug("Resource {} is not found in Servlet Context, loading from classpath or as external file", resourcePath);
         }
 
         if (is == null && webappClasspath != null)
@@ -59,7 +59,7 @@ public class LabKeyWebappMuleXmlConfigurationBuilder extends MuleXmlConfiguratio
             }
             catch (ConfigurationException e)
             {
-                LOG.debug("Resource " + resourcePath + " is not found in filesystem");
+                LOG.debug("Resource {} is not found in filesystem", resourcePath);
             }
         }
 

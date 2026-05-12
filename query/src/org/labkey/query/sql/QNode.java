@@ -443,7 +443,7 @@ abstract public class QNode implements Cloneable
             QExpr methodName = null;
             if (expr instanceof QMethodCall)
             {
-                methodName = (QExpr)expr.childList().get(0);
+                methodName = (QExpr)expr.childList().getFirst();
                 if (null == methodName.getFieldKey())
                     methodName = null;
             }

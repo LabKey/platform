@@ -27,7 +27,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.AbstractWebdavResourceCollection;
-import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
@@ -37,7 +36,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -133,12 +131,6 @@ public class ReportWebdavProvider implements WebdavService.Provider
         {
             return true;
         }
-
-        @Override
-        public boolean isFile()
-        {
-            return false;
-        }
     }
 
     public static class ViewResource extends AbstractDocumentResource
@@ -157,22 +149,9 @@ public class ReportWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        @NotNull
-        public Collection<WebdavResolver.History> getHistory()
-        {
-            return Collections.emptyList();
-        }
-
-        @Override
         public boolean exists()
         {
             return true;
-        }
-
-        @Override
-        public boolean isCollection()
-        {
-            return false;
         }
 
         @Override
@@ -262,10 +241,5 @@ public class ReportWebdavProvider implements WebdavService.Provider
             }
         }
 
-        @Override
-        public WebdavResource find(Path.Part name)
-        {
-            return null;
-        }
     }
 }

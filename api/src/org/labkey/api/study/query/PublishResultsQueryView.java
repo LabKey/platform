@@ -302,9 +302,9 @@ public class PublishResultsQueryView extends QueryView
             // support for lineage and multivalue columns
             List<Object> values = ((IMultiValuedDisplayColumn)dc).getDisplayValues(ctx);
             if (values.size() == 1)
-                return values.get(0);
+                return values.getFirst();
             else
-                LOG.warn("Unable to use the value returned from column : " + col.getName() + " because this multi-value column returned more than a single value.");
+                LOG.warn("Unable to use the value returned from column : {} because this multi-value column returned more than a single value.", col.getName());
         }
         return col.getValue(ctx);
     }

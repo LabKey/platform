@@ -301,7 +301,7 @@ public class ButtonBarConfig
         }
         else
         {
-            LOG.warn("Specified permission class " + permissionClassName + " was not found");
+            LOG.warn("Specified permission class {} was not found", permissionClassName);
         }
         return null;
     }

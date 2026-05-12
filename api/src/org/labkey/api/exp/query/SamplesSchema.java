@@ -228,7 +228,7 @@ public class SamplesSchema extends AbstractExpSchema implements UserSchema.HasCo
     public ExpMaterialTable createSampleTable(@Nullable ExpSampleType st, ContainerFilter cf)
     {
         if (log.isTraceEnabled())
-            log.trace("CREATE TABLE: " + (null==st ? "null" : st.getName()) + " schema=" + System.identityHashCode(this), new Throwable());
+            log.trace("CREATE TABLE: {} schema={}", null == st ? "null" : st.getName(), System.identityHashCode(this), new Throwable());
 
         ExpMaterialTable ret = ExperimentService.get().createMaterialTable(this, cf, st);
         ret.populate();

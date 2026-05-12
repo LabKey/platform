@@ -431,10 +431,5 @@ public class PipelineEmailPreferences
             ContextListener.removeShutdownListener(this);
             _timer.cancel();
         }
-
-        @Override
-        public void shutdownStarted()
-        {
-        }
     }
 }

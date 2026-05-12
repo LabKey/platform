@@ -641,7 +641,7 @@ public class CoreQuerySchema extends UserSchema
         TableInfo t;
         t = def.getTable(this, errors, true);
         if (!errors.isEmpty())
-            throw errors.get(0);
+            throw errors.getFirst();
         ((BaseColumnInfo)t.getColumn("UserId")).setDisplayColumnFactory(new DisplayColumnFactory()
         {
             @Override

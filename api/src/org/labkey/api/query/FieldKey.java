@@ -223,7 +223,7 @@ public class FieldKey extends QueryKey<FieldKey>
     public FieldKey removeParent(String rootPart)
     {
         List<String> parts = getParts();
-        if (parts.size() > 1 && parts.get(0).equalsIgnoreCase(rootPart))
+        if (parts.size() > 1 && parts.getFirst().equalsIgnoreCase(rootPart))
         {
             parts = parts.subList(1, parts.size());
             return FieldKey.fromParts(parts);
@@ -317,16 +317,16 @@ public class FieldKey extends QueryKey<FieldKey>
         @Test
         public void testCompare()
         {
-            assertTrue(new FieldKey(null,"a").compareTo(new FieldKey(null,"a")) == 0);
-            assertTrue(new FieldKey(null,"a").compareTo(new FieldKey(null,"A")) == 0);
+            assertEquals(0, new FieldKey(null, "a").compareTo(new FieldKey(null, "a")));
+            assertEquals(0, new FieldKey(null, "a").compareTo(new FieldKey(null, "A")));
             assertTrue(new FieldKey(null,"a").compareTo(new FieldKey(null,"b")) < 0);
             assertTrue(new FieldKey(null,"a").compareTo(new FieldKey(null,"B")) < 0);
-            assertTrue(new FieldKey(null,"A").compareTo(new FieldKey(null,"a")) == 0);
-            assertTrue(new FieldKey(null,"A").compareTo(new FieldKey(null,"A")) == 0);
+            assertEquals(0, new FieldKey(null, "A").compareTo(new FieldKey(null, "a")));
+            assertEquals(0, new FieldKey(null, "A").compareTo(new FieldKey(null, "A")));
             assertTrue(new FieldKey(null,"A").compareTo(new FieldKey(null,"b")) < 0);
             assertTrue(new FieldKey(null,"A").compareTo(new FieldKey(null,"B")) < 0);
 
-            assertTrue(fromParts("a","b").compareTo(fromParts("a","b")) == 0);
+            assertEquals(0, fromParts("a", "b").compareTo(fromParts("a", "b")));
             assertTrue(fromParts("a","b").compareTo(fromParts("b","a")) < 0);
             assertTrue(fromParts("b","a").compareTo(fromParts("a","b")) > 0);
             assertTrue(fromParts("a","b").compareTo(fromParts("a","c")) < 0);

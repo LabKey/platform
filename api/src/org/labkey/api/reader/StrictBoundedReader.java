@@ -1,7 +1,6 @@
 package org.labkey.api.reader;
 
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.test.TestWhen;
@@ -62,7 +61,7 @@ public class StrictBoundedReader extends Reader
     }
 
     @Override
-    public int read(char @NonNull [] cbuf, int off, int len) throws IOException
+    public int read(char @NotNull [] cbuf, int off, int len) throws IOException
     {
         ensureOpen();
         if (charsRead >= maxChars)

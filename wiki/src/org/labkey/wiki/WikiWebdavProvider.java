@@ -59,7 +59,6 @@ import org.labkey.wiki.model.WikiVersion;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
@@ -180,21 +179,9 @@ public class WikiWebdavProvider implements WebdavService.Provider
         {
             return false;
         }
-        
-        @Override
-        public boolean isFile()
-        {
-            return false;
-        }
 
         @Override
         public long getCreated()
-        {
-            return Long.MIN_VALUE;
-        }
-
-        @Override
-        public long getLastModified()
         {
             return Long.MIN_VALUE;
         }
@@ -384,13 +371,6 @@ public class WikiWebdavProvider implements WebdavService.Provider
         {
             return Long.MIN_VALUE;
         }
-
-        @Override
-        public long getLastModified()
-        {
-            return Long.MIN_VALUE;
-        }
-
         @Override
         public String getExecuteHref(ViewContext context)
         {
@@ -512,12 +492,6 @@ public class WikiWebdavProvider implements WebdavService.Provider
             return !_properties.isEmpty();
         }
 
-
-        @Override
-        public boolean isCollection()
-        {
-            return false;
-        }
 
         @Override
         public User getCreatedBy()
@@ -724,10 +698,5 @@ public class WikiWebdavProvider implements WebdavService.Provider
             return perms;
         }
 
-        @Override
-        public File getFile()
-        {
-            return null;
-        }
     }
 }

@@ -23,7 +23,6 @@ import org.junit.Assert;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.CanAccessLockedProjectsPermission;

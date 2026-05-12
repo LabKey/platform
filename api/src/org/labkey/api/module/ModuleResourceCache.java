@@ -261,7 +261,7 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
 
         if (_pathsWithListeners.add(getPathsWithListenersKey(module, mdr.getDir().toPath())))
         {
-            LOG.debug("registering a listener on: " + resource);
+            LOG.debug("registering a listener on: {}", resource);
             mdr.registerListener(_watcher, getListener(module), ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
         }
     }

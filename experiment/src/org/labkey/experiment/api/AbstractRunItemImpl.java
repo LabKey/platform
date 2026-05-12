@@ -441,7 +441,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
                         if (!values.isEmpty())
                         {
                             if (values.size() == 1)
-                                jsonData.put(fieldKey.toString(), values.get(0));
+                                jsonData.put(fieldKey.toString(), values.getFirst());
                             else
                                 jsonData.put(fieldKey.toString(), values);
                         }
@@ -472,7 +472,8 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
                                 keywordsLo.addAll(values);
                                 continue;
                             }
-                            default -> LOG.debug("Unable to index column " + fieldKey.toString() + " with property: " + searchProperty.name() + ". Not yet supported.");
+                            default ->
+                                    LOG.debug("Unable to index column {} with property: {}. Not yet supported.", fieldKey.toString(), searchProperty.name());
                         }
                     }
 

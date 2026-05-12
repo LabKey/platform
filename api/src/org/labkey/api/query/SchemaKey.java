@@ -75,10 +75,10 @@ public class SchemaKey extends QueryKey<SchemaKey>
         return fromParts(Arrays.asList(parts));
     }
 
-    static public SchemaKey fromParts(Enum... parts)
+    static public SchemaKey fromParts(Enum<?>... parts)
     {
         List<String> strings = new ArrayList<>(parts.length);
-        for (Enum part : parts)
+        for (Enum<?> part : parts)
         {
             strings.add(part.toString());
         }
@@ -102,7 +102,7 @@ public class SchemaKey extends QueryKey<SchemaKey>
         super(parent, name);
     }
 
-    public SchemaKey(SchemaKey parent, Enum name)
+    public SchemaKey(SchemaKey parent, Enum<?> name)
     {
         super(parent, name.toString());
     }
@@ -120,7 +120,7 @@ public class SchemaKey extends QueryKey<SchemaKey>
     }
 
     @Override
-    public int compareTo(SchemaKey o)
+    public int compareTo(@NotNull SchemaKey o)
     {
         return CASE_INSENSITIVE_ORDER.compare(this, o);
     }
@@ -202,16 +202,16 @@ public class SchemaKey extends QueryKey<SchemaKey>
         @Test
         public void test()
         {
-            assertTrue(new SchemaKey(null,"a").compareTo(new SchemaKey(null,"a")) == 0);
-            assertTrue(new SchemaKey(null,"a").compareTo(new SchemaKey(null,"A")) == 0);
+            assertEquals(0, new SchemaKey(null, "a").compareTo(new SchemaKey(null, "a")));
+            assertEquals(0, new SchemaKey(null, "a").compareTo(new SchemaKey(null, "A")));
             assertTrue(new SchemaKey(null,"a").compareTo(new SchemaKey(null,"b")) < 0);
             assertTrue(new SchemaKey(null,"a").compareTo(new SchemaKey(null,"B")) < 0);
-            assertTrue(new SchemaKey(null,"A").compareTo(new SchemaKey(null,"a")) == 0);
-            assertTrue(new SchemaKey(null,"A").compareTo(new SchemaKey(null,"A")) == 0);
+            assertEquals(0, new SchemaKey(null, "A").compareTo(new SchemaKey(null, "a")));
+            assertEquals(0, new SchemaKey(null, "A").compareTo(new SchemaKey(null, "A")));
             assertTrue(new SchemaKey(null,"A").compareTo(new SchemaKey(null,"b")) < 0);
             assertTrue(new SchemaKey(null,"A").compareTo(new SchemaKey(null,"B")) < 0);
 
-            assertTrue(fromParts("a","b").compareTo(fromParts("a","b")) == 0);
+            assertEquals(0, fromParts("a", "b").compareTo(fromParts("a", "b")));
             assertTrue(fromParts("a","b").compareTo(fromParts("b","a")) < 0);
             assertTrue(fromParts("b","a").compareTo(fromParts("a","b")) > 0);
             assertTrue(fromParts("a","b").compareTo(fromParts("a","c")) < 0);

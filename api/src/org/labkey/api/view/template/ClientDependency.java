@@ -69,7 +69,7 @@ public abstract class ClientDependency
 
     static
     {
-        ContextListener.addModuleChangeListener(m -> CACHE.clear());
+        ContextListener.addModuleChangeListener(_ -> CACHE.clear());
     }
 
     public enum TYPE
@@ -134,7 +134,7 @@ public abstract class ClientDependency
         if (null != ctx)
             url = HttpView.getContextURLHelper();
 
-        LOG.warn(message + (null != url ? " URL: " + url.getLocalURIString() : ""));
+        LOG.warn("{}{}", message, null != url ? " URL: " + url.getLocalURIString() : "");
     }
 
     public static boolean isExternalDependency(String path)
@@ -235,7 +235,7 @@ public abstract class ClientDependency
                 return (Supplier<ClientDependency>) ()->{
                     var cd = supplier.get();
                     if (null == cd)
-                        LOG.error("Unable to load <dependency> in " + name);
+                        LOG.error("Unable to load <dependency> in {}", name);
                     return cd;
                 };
             })
@@ -261,7 +261,7 @@ public abstract class ClientDependency
                 if (m != null)
                     return ClientDependency.fromModule(m);
 
-                LOG.error("Unable to find module: '" + moduleName + "' referenced in " + name);
+                LOG.error("Unable to find module: '{}' referenced in {}", moduleName, name);
                 return null;
             })
             .collect(Collectors.toList());

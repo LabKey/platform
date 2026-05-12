@@ -27,9 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX;
-import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS_ALIAS_PREFIX;
 
 public class ExperimentQueryChangeListener implements QueryChangeListener

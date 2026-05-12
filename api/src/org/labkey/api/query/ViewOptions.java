@@ -18,7 +18,6 @@ package org.labkey.api.query;
 
 import org.labkey.api.security.User;
 
-import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -30,8 +29,8 @@ public interface ViewOptions
     List<ViewFilterItem> getViewFilterItems();
     void setViewFilterItems(List<ViewFilterItem> items);
 
-    void save(User user) throws SQLException;
-    void delete(User user) throws SQLException;
+    void save(User user);
+    void delete(User user);
 
     interface ViewFilterItem
     {

@@ -16,8 +16,8 @@
 package org.labkey.api.data;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
@@ -229,19 +229,19 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public Collection values()
+    public @NotNull Collection values()
     {
         return _ctx.values();
     }
 
     @Override
-    public Set entrySet()
+    public @NotNull Set entrySet()
     {
         return _ctx.entrySet();
     }
 
     @Override
-    public Set keySet()
+    public @NotNull Set keySet()
     {
         return _ctx.keySet();
     }

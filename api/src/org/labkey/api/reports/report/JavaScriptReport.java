@@ -76,17 +76,11 @@ public class JavaScriptReport extends ScriptReport
     }
 
     @Override
-    public boolean hasClientDependencies()
-    {
-        return false;
-    }
-
-    @Override
     public @NotNull String getDesignerHelpHtml()
     {
         try
         {
-            return new JspTemplate("/org/labkey/api/reports/report/view/javaScriptReportHelp.jsp").render();
+            return new JspTemplate<>("/org/labkey/api/reports/report/view/javaScriptReportHelp.jsp").render();
         }
         catch (Exception e)
         {

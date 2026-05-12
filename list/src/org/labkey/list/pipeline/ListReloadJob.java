@@ -71,7 +71,7 @@ public class ListReloadJob extends PipelineJob
 
         String fileName = _dataFile.getName();
 
-        getLogger().info("Loading " + fileName);
+        getLogger().info("Loading {}", fileName);
 
         List<String> errors = new LinkedList<>();
         try
@@ -89,6 +89,6 @@ public class ListReloadJob extends PipelineJob
         for (String error : errors)
             getLogger().error(error);
 
-        getLogger().info("Done importing " + getDescription());
+        getLogger().info("Done importing {}", getDescription());
     }
 }

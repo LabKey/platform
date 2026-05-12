@@ -20,7 +20,6 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
 
-import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.tagext.BodyTagSupport;
 import java.io.IOException;
 
@@ -30,7 +29,7 @@ public class ScriptTag extends BodyTagSupport
     static final HtmlString endTag = HtmlString.unsafe("</script>");
 
     @Override
-    public int doStartTag() throws JspException
+    public int doStartTag()
     {
         try
         {
@@ -45,7 +44,7 @@ public class ScriptTag extends BodyTagSupport
     }
 
     @Override
-    public int doEndTag() throws JspException
+    public int doEndTag()
     {
         try
         {

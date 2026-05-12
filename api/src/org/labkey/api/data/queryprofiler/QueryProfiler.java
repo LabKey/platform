@@ -466,7 +466,7 @@ public class QueryProfiler
         {
             // The log option is useful for retrieving actual timing information about very long-running queries when
             // proxy timeouts prevent viewing the plan via the web page
-            LOG.info("An administrator initiated the logging of this query execution plan with actual timing:\n" + sqlWithParameters + fullPlan);
+            LOG.info("An administrator initiated the logging of this query execution plan with actual timing:\n{}{}", sqlWithParameters, fullPlan);
             view = new HtmlView(HtmlString.of("Execution plan with actual timing was logged to the primary site log file"));
         }
         else
@@ -619,7 +619,7 @@ public class QueryProfiler
             }
             catch (InterruptedException e)
             {
-                LOG.debug(getClass().getSimpleName() + " is terminating due to interruption");
+                LOG.debug("{} is terminating due to interruption", getClass().getSimpleName());
             }
         }
 
@@ -629,7 +629,7 @@ public class QueryProfiler
             {
                 while (_longSqlTextQueries.size() >= MAX_LONG_SQL_QUERIES)
                 {
-                    WeakReference<QueryTracker> ref = _longSqlTextQueries.remove(0);
+                    WeakReference<QueryTracker> ref = _longSqlTextQueries.removeFirst();
                     QueryTracker oldTracker = ref.get();
                     if (oldTracker != null)
                     {

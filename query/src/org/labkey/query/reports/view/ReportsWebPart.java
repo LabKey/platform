@@ -33,7 +33,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.PrintWriter;
 import java.util.Map;
 import java.util.Objects;
 
