@@ -25,7 +25,7 @@ public interface MemTrackerListener
 {
     /**
      * Called before GC and tallying of held objects. Implementors should purge held objects and (optionally) add
-     * objects to the passed in set that should be ignored .
+     * objects to the passed in set that should be ignored.
      */
     void beforeReport(Set<Object> set);
 }
