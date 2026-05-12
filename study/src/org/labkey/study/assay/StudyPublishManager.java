@@ -1356,7 +1356,7 @@ public class StudyPublishManager implements StudyPublishService
                     for (ColumnInfo c : resultTable.getColumns())
                     {
                         // Check for a column with the PTID concept URI instead
-                        if (org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()))
+                        if (PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()))
                         {
                             ptidFK = c.getFieldKey();
                         }
@@ -1717,7 +1717,7 @@ public class StudyPublishManager implements StudyPublishService
 
                 if (col != null)
                 {
-                    if (org.labkey.api.gwt.client.ui.PropertyType.VISIT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
+                    if (PropertyType.VISIT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
                     {
                         if (!fieldKeyMap.containsKey(LinkToStudyKeys.VisitId) && col.getJdbcType().isReal())
                             fieldKeyMap.put(LinkToStudyKeys.VisitId, ci.getFieldKey());
@@ -1727,7 +1727,7 @@ public class StudyPublishManager implements StudyPublishService
                             fieldKeyMap.put(LinkToStudyKeys.VisitLabel, ci.getFieldKey());
                     }
 
-                    if (!fieldKeyMap.containsKey(LinkToStudyKeys.ParticipantId) && org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
+                    if (!fieldKeyMap.containsKey(LinkToStudyKeys.ParticipantId) && PropertyType.PARTICIPANT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
                     {
                         fieldKeyMap.put(LinkToStudyKeys.ParticipantId, ci.getFieldKey());
                     }

@@ -69,7 +69,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.labkey.api.gwt.client.ui.PropertyType.CALCULATED_CONCEPT_URI;
+import static org.labkey.api.exp.PropertyType.CALCULATED_CONCEPT_URI;
 
 /**
  * User: jeckels
@@ -82,12 +82,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
     private String _definitionFolder;
 
     private static final Logger log = LogHelper.getLogger(MetadataTableJSON.class, "Visual editor support for table/query metadata");
-
-    @Override
-    public boolean isEditable(MetadataColumnJSON field)
-    {
-        return true;
-    }
 
     public boolean isUserDefinedQuery()
     {
@@ -129,7 +123,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             ArrayList<QueryException> errors = new ArrayList<>();
             TablesDocument doc = moduleQueryDef.getParsedMetadata().getTablesDocument(errors);
             if (!errors.isEmpty())
-                throw UnexpectedException.wrap(errors.get(0));
+                throw UnexpectedException.wrap(errors.getFirst());
 
             if (doc != null)
             {
@@ -139,7 +133,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                     List<TableType> tableTypes = Collections.singletonList(tables.getTableArray(0));
                     tableInfo.overlayMetadata(tableTypes, schema, errors);
                     if (!errors.isEmpty())
-                        throw UnexpectedException.wrap(errors.get(0));
+                        throw UnexpectedException.wrap(errors.getFirst());
                 }
             }
         }
@@ -484,7 +478,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                                     fk.setFkColumnName(rawLookupColumnName);
                                 // Issue 48973: don't overwrite existing target FK columns that were set via source
                                 else if (fk.getFkColumnName() == null)
-                                    fk.setFkColumnName(pkCols.get(0));
+                                    fk.setFkColumnName(pkCols.getFirst());
 
                                 if (targetContainer != null)
                                     fk.setFkFolderPath(targetContainer.getPath());
@@ -751,7 +745,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         if (queryDefs != null && !queryDefs.isEmpty())
         {
             // Use the last QueryDef's metadata -- this should be the user's metadata override in the database if it exists
-            QueryDef queryDef = queryDefs.get(queryDefs.size()-1);
+            QueryDef queryDef = queryDefs.getLast();
 
             if (!container.getId().equals(queryDef.getContainerId()))
             {

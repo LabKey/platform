@@ -16,7 +16,6 @@
 package org.labkey.study.query;
 
 import org.apache.commons.beanutils.converters.IntegerConverter;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.ValidationException;
@@ -37,6 +35,7 @@ import org.labkey.study.model.StudyManager;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
@@ -140,7 +139,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
             String newDescription = (String)row.get("description");
 
             if (!cohort.getLabel().equals(newLabel) || (cohort.isEnrolled() != newEnrolled)
-                || !PropertyUtil.nullSafeEquals(cohort.getSubjectCount(), newSubjectCount)
+                || !Objects.equals(cohort.getSubjectCount(), newSubjectCount)
                 || !Strings.CS.equals(cohort.getDescription(), newDescription))
             {
                 cohort = cohort.createMutable();
@@ -153,7 +152,8 @@ public class CohortUpdateService extends AbstractQueryUpdateService
                 {
                     cohort.setLabel(newLabel);
                 }
-                if (!PropertyUtil.nullSafeEquals(cohort.getSubjectCount(), newSubjectCount))
+                Object o1 = cohort.getSubjectCount();
+                if (!Objects.equals(o1, newSubjectCount))
                 {
                     cohort.setSubjectCount(newSubjectCount);
                 }

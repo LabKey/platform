@@ -102,7 +102,6 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.io.File;
@@ -127,7 +126,7 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.assay.AssayRunUploadContext.ReImportOption.MERGE_DATA;
 import static org.labkey.api.exp.OntologyManager.NO_OP_ROW_CALLBACK;
-import static org.labkey.api.gwt.client.ui.PropertyType.SAMPLE_CONCEPT_URI;
+import static org.labkey.api.exp.PropertyType.SAMPLE_CONCEPT_URI;
 import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 
 public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentDataHandler implements ValidationDataHandler

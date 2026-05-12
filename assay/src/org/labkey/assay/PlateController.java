@@ -22,7 +22,6 @@ import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.JsonInputLimit;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -46,7 +45,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
@@ -76,7 +74,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ZipFile;
-import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateSetExport;
@@ -85,7 +82,6 @@ import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.WellGroupImpl;
 import org.labkey.assay.plate.model.CreatePlateSetOptions;
 import org.labkey.assay.plate.model.ReformatOptions;
-import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -214,17 +210,6 @@ public class PlateController extends SpringActionController
         {
             root.addChild("Plates");
         }           
-    }
-
-    /** Delete soon! */
-    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
-    public static class DesignerServiceAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService() throws IllegalStateException
-        {
-            return new PlateDataServiceImpl(getViewContext());
-        }
     }
 
     public static class RowIdForm
@@ -605,63 +590,6 @@ public class PlateController extends SpringActionController
         {
             setHelpTopic("editPlateTemplate");
             root.addChild("Plate Editor");
-        }
-    }
-
-    /** Delete soon! */
-    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
-    public class DesignerGwtAction extends SimpleViewAction<DesignerForm>
-    {
-        @Override
-        public ModelAndView getView(DesignerForm form, BindException errors)
-        {
-            Map<String, String> properties = new HashMap<>();
-            String templateName = null;
-            Long plateId = null;
-
-            if (form.getTemplateName() != null)
-            {
-                plateId = form.getPlateId();
-                templateName = form.getTemplateName();
-            }
-            else if (form.getPlateId() != null)
-            {
-                Plate plate = PlateManager.get().getPlate(getContainer(), form.getPlateId());
-                if (plate != null)
-                {
-                    plateId = plate.getRowId();
-                    templateName = plate.getName();
-                }
-            }
-
-            if (templateName != null)
-            {
-                properties.put("copyTemplate", Boolean.toString(form.isCopy()));
-                properties.put("templateName", templateName);
-                if (plateId != null)
-                    properties.put("plateId", String.valueOf(plateId));
-                if (form.isCopy())
-                    properties.put("defaultPlateName", getUniqueName(getContainer(), templateName));
-                else
-                    properties.put("defaultPlateName", templateName);
-            }
-
-            if (form.getAssayType() != null)
-                properties.put("assayTypeName", form.getAssayType());
-            if (form.getTemplateType() != null)
-                properties.put("templateTypeName", form.getTemplateType());
-
-            properties.put("templateRowCount", String.valueOf(form.getRowCount()));
-            properties.put("templateColumnCount", String.valueOf(form.getColCount()));
-
-            return new AssayGWTView(gwt.client.org.labkey.plate.designer.client.TemplateDesigner.class, properties);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            setHelpTopic("editPlateTemplate");
-            root.addChild("Plate Editor (GWT)");
         }
     }
 

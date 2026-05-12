@@ -82,8 +82,8 @@
 <%@ page import="java.util.concurrent.TimeUnit" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
 <%@ page import="org.labkey.api.dataiterator.MapDataIterator" %>
-<%@ page import="static org.labkey.api.exp.api.ExperimentService.asInteger" %>
-<%@ page import="static org.labkey.api.exp.api.ExperimentService.asLong" %>
+<%@ page import="static org.labkey.api.util.IntegerUtils.asInteger" %>
+<%@ page import="static org.labkey.api.util.IntegerUtils.asLong" %>
 <%@ page import="static java.util.Collections.emptyList" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>

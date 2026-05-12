@@ -40,9 +40,9 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -1049,7 +1049,7 @@ public class PublishResultsQueryView extends QueryView
         // if visit or date columns don't exist, see if they can be resolved through the standard concept URIs
         List<ColumnInfo> timepointCols = selectColumns.stream()
                 .filter(c -> PropertyType.VISIT_CONCEPT_URI.equalsIgnoreCase(c.getConceptURI()))
-                .collect(Collectors.toList());
+                .toList();
 
         for (ColumnInfo col : timepointCols)
         {
