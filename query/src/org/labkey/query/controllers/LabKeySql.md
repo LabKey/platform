@@ -337,3 +337,16 @@ When writing LabKey SQL queries that work with JSON columns:
 4. **Use `jsonb_build_object()` to construct JSON** — for building JSON from column values: `jsonb_build_object('id', rowid, 'name', label)`.
 5. **Check database type first** — these functions only work on PostgreSQL. If the target server may use MS SQL Server, do not use them.
 6. **The `validateSQL` MCP tool can verify syntax** — use it to check JSON function calls before the user saves a query.
+
+-----
+
+### **Fetching Live Data for LLM Inspection**
+
+The `sql-execute2.view` endpoint is for **the LLM to inspect live data while generating code** — do not emit it in generated Python, R, or other scripts (use the `labkey` client API there instead). Always include `LIMIT` to avoid fetching excess rows.
+
+```bash
+curl -H "Authorization: Bearer <APIKEY>" \
+  "https://<server>/<containerPath>/sql-execute2.view?schemaName=<schema>&sql=SELECT+...+LIMIT+20&format=tsv"
+```
+
+The response is RFC 4180 TSV: a header row of column names followed by one data row per result. Values are rendered via `DisplayColumn.getTsvFormattedValue()` — dates as ISO-8601, multi-value columns correctly serialized.
