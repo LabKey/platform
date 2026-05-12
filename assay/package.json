@@ -32,9 +32,15 @@
     "moduleNameMapper": {
       "\\.(scss|css)$": "<rootDir>/test/js/fileMock.js"
     },
-    "moduleFileExtensions": ["tsx", "ts", "js"],
+    "moduleFileExtensions": [
+      "tsx",
+      "ts",
+      "js"
+    ],
     "preset": "ts-jest",
-    "setupFilesAfterEnv": ["<rootDir>/test/js/setup.ts"],
+    "setupFilesAfterEnv": [
+      "<rootDir>/test/js/setup.ts"
+    ],
     "testEnvironment": "jsdom",
     "testMatch": null,
     "testRegex": "(\\.(test))\\.(ts|tsx)$",
@@ -49,18 +55,18 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.35.1"
+    "@labkey/components": "7.35.2"
   },
   "devDependencies": {
-    "@labkey/build": "9.1.2",
+    "@labkey/build": "9.1.3",
     "@labkey/eslint-config": "1.2.0",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
-    "jest": "30.3.0",
-    "jest-cli": "30.3.0",
-    "jest-environment-jsdom": "30.3.0",
+    "jest": "30.4.2",
+    "jest-cli": "30.4.2",
+    "jest-environment-jsdom": "30.4.1",
     "jest-teamcity-reporter": "0.9.0",
-    "ts-jest": "29.4.6"
+    "ts-jest": "29.4.9"
   }
 }
