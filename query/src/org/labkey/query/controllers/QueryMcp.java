@@ -8,12 +8,16 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.mcp.McpException;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryParseException;
@@ -44,7 +48,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 public class QueryMcp implements McpService.McpImpl
 {
     @McpResource(
-        uri = "resource://org/labkey/query/controllers/LabKeySql.md",
+        uri = "resource://org/labkey/query/controllers/prompts/LabKeySql.md",
         mimeType = "application/markdown",
         name = "LabKey SQL",
         description = "Provide documentation for LabKey SQL specific syntax")
@@ -54,7 +58,7 @@ public class QueryMcp implements McpService.McpImpl
         String markdown = IOUtils.resourceToString("org/labkey/query/controllers/prompts/LabKeySql.md", null, QueryController.class.getClassLoader());
         return new ReadResourceResult(List.of(
             new TextResourceContents(
-                "resource://org/labkey/query/controllers/LabKeySql.md",
+                "resource://org/labkey/query/controllers/prompts/LabKeySql.md",
                 "application/markdown",
                 markdown
             )
@@ -156,6 +160,33 @@ public class QueryMcp implements McpService.McpImpl
         return "success";
     }
 
+    @Tool(description = "Validate a SQL expression for a calculated column. The set of available columns and their types — including any PHI-restricted columns — is supplied by the hosting endpoint, not by the caller; you only need to provide the expression itself.")
+    @RequiresPermission(ReadPermission.class)
+    String validateCalculatedColumnExpression(
+            ToolContext toolContext,
+            @ToolParam(description = "SQL expression for the calculated column") String expression
+    )
+    {
+        var context = getContext(toolContext);
+
+        @SuppressWarnings("unchecked")
+        Map<FieldKey, JdbcType> columnMap = (Map<FieldKey, JdbcType>) toolContext.getContext().get("columnMap");
+        @SuppressWarnings("unchecked")
+        List<FieldKey> phiColumns = (List<FieldKey>) toolContext.getContext().get("phiColumns");
+
+        if (columnMap == null)
+            throw new McpException("validateCalculatedColumnExpression requires a columnMap supplied by the hosting endpoint; it cannot be invoked directly.");
+
+        try
+        {
+            QueryController.parseCalculatedColumn(context.getContainer(), context.getUser(), expression, columnMap, phiColumns);
+        }
+        catch (QueryException x)
+        {
+            return "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below:\n```" + x.getMessage() + "```";
+        }
+        return "success";
+    }
 
     /* For now, list all schemas. CONSIDER support incremental querying. */
     public static Map<SchemaKey, UserSchema> _listAllSchemas(DefaultSchema root)

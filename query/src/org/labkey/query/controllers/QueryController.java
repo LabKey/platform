@@ -154,7 +154,6 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
@@ -8098,19 +8097,27 @@ public class QueryController extends SpringActionController
         }
     }
 
-    private static Pair<JdbcType, Set<FieldKey>> parseCalculatedColumn(ViewContext context, ParseForm form) throws QueryException
+    record CalculatedColumnParseResult(JdbcType jdbcType, Set<FieldKey> requiredColumns) { }
+
+    static CalculatedColumnParseResult parseCalculatedColumn(
+        Container container,
+        User user,
+        String expression,
+        Map<FieldKey, JdbcType> columnMap,
+        @Nullable List<FieldKey> phiColumns
+    ) throws QueryException
     {
-        var schema = DefaultSchema.get(context.getUser(), context.getContainer()).getUserSchema("core");
+        var schema = DefaultSchema.get(user, container).getUserSchema("core");
         var table = new VirtualTable<>(schema.getDbSchema(), "EXPR", schema){};
-        ColumnInfo calculatedCol = QueryServiceImpl.get().createQueryExpressionColumn(table, new FieldKey(null, "expr"), form.getExpression(), null);
+        ColumnInfo calculatedCol = QueryServiceImpl.get().createQueryExpressionColumn(table, new FieldKey(null, "expr"), expression, null);
         Map<FieldKey, ColumnInfo> columns = new HashMap<>();
 
-        for (var entry : form.getColumnMap().entrySet())
+        for (var entry : columnMap.entrySet())
         {
             BaseColumnInfo entryCol = new BaseColumnInfo(entry.getKey(), entry.getValue());
             // bindQueryExpressionColumn has a check that restricts PHI columns from being used in expressions,
             // so we need to set the PHI level to something other than NotPHI on these fake BaseColumnInfo objects
-            if (form.getPhiColumns().contains(entry.getKey()))
+            if (phiColumns != null && phiColumns.contains(entry.getKey()))
                 entryCol.setPHI(PHI.PHI);
             columns.put(entry.getKey(), entryCol);
             table.addColumn(entryCol);
@@ -8121,7 +8128,7 @@ public class QueryController extends SpringActionController
         QueryServiceImpl.get().bindQueryExpressionColumn(calculatedCol, columns, false, requiredColumns);
         var jdbcType = calculatedCol.getJdbcType();
 
-        return Pair.of(jdbcType, requiredColumns);
+        return new CalculatedColumnParseResult(jdbcType, requiredColumns);
     }
 
     /**
@@ -8166,13 +8173,10 @@ public class QueryController extends SpringActionController
             if (errors.hasErrors())
                 return errors;
             JSONObject result = new JSONObject(Map.of("success",true));
-            Set<FieldKey> requiredColumns = Collections.emptySet();
-            JdbcType jdbcType = JdbcType.OTHER;
+            CalculatedColumnParseResult parsedResult = new CalculatedColumnParseResult(JdbcType.OTHER, Collections.emptySet());
             try
             {
-                var parsedResult = parseCalculatedColumn(getViewContext(), form);
-                jdbcType = parsedResult.first;
-                requiredColumns = parsedResult.second;
+                parsedResult = parseCalculatedColumn(getViewContext().getContainer(), getViewContext().getUser(), form.getExpression(), form.getColumnMap(), form.getPhiColumns());
             }
             catch (QueryException x)
             {
@@ -8182,10 +8186,10 @@ public class QueryController extends SpringActionController
             }
             finally
             {
-                if (!requiredColumns.isEmpty())
+                if (!parsedResult.requiredColumns().isEmpty())
                 {
                     JSONObject columnMap = new JSONObject();
-                    for (FieldKey fk : requiredColumns)
+                    for (FieldKey fk : parsedResult.requiredColumns())
                     {
                         JdbcType type = Objects.requireNonNullElse(form.getColumnMap().get(fk), JdbcType.OTHER);
                         columnMap.put(fk.toString(), type);
@@ -8193,7 +8197,7 @@ public class QueryController extends SpringActionController
                     result.put("columnMap", columnMap);
                 }
             }
-            result.put("jdbcType", jdbcType.name());
+            result.put("jdbcType", parsedResult.jdbcType().name());
             return result;
         }
     }
@@ -8549,7 +8553,8 @@ public class QueryController extends SpringActionController
             return "The following documentation describes you, the Calculated Column Expression Assistant:\n\n" +
                     getPromptResource(PromptResource.ExpressionAssistant) +
                     "\n\nThe following documentation describes LabKey SQL:\n\n" +
-                    getPromptResource(PromptResource.LabKeySql);
+                    getPromptResource(PromptResource.LabKeySql) +
+                    "\n\nWhen you produce a SQL expression for the calculated column you should use validate it using the validateCalculatedColumnExpression tool.";
         }
 
         @Override
@@ -8577,9 +8582,13 @@ public class QueryController extends SpringActionController
 
                 try
                 {
+                    // Context for the QueryMcp.validateCalculatedColumnExpression() tool
+                    McpContext.get()
+                            .put("columnMap", form.getColumnMap())
+                            .put("phiColumns", form.getPhiColumns());
+
                     responses = McpService.get().sendMessageEx(chatSession, prompt);
                     sqlResponse = extractSql(responses);
-                    sqlResponse = validateExpressionWithRetry(chatSession, form, sqlResponse);
                 }
                 catch (ServerException x)
                 {
@@ -8600,28 +8609,6 @@ public class QueryController extends SpringActionController
             {
                 return errorResponse(x);
             }
-        }
-
-        private SqlResponse validateExpressionWithRetry(ChatClient chatSession, ParseForm form, SqlResponse sqlResponse)
-        {
-            if (null == sqlResponse.sql())
-                return sqlResponse;
-
-            try
-            {
-                form.setExpression(sqlResponse.sql());
-                parseCalculatedColumn(getViewContext(), form);
-            }
-            catch (QueryException x)
-            {
-                String validationPrompt = "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below, can you attempt to fix this?\n```" + x.getMessage() + "```";
-                var responses = McpService.get().sendMessageEx(chatSession, validationPrompt);
-                var newSqlResponse = extractSql(responses);
-                if (isNotBlank(newSqlResponse.sql()))
-                    return newSqlResponse;
-            }
-
-            return sqlResponse;
         }
     }
     
