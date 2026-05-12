@@ -342,7 +342,7 @@ public class MenuViewFactory
     {
         List<List<Renderable>> lists = Lists.partition(renderables, MAX_PER_COLUMN);
         int columns = lists.size();
-        int rows = lists.get(0).size();
+        int rows = lists.getFirst().size();
         for (int i = 0; i < rows; i++)
         {
             int idx = i;

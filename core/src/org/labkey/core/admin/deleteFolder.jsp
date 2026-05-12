@@ -37,7 +37,7 @@
     Container primaryContainer = getContainer();
     User user = getUser();
 
-    String message = containersToDelete.size() == 1 ? containersToDelete.get(0).isProject() ? "project and its subfolders" : "folder" : "folders";
+    String message = containersToDelete.size() == 1 ? containersToDelete.getFirst().isProject() ? "project and its subfolders" : "folder" : "folders";
 
     %>
         <table class="labkey-data-region">
@@ -137,10 +137,10 @@
 
     }
 
-        String containerType = containersToDelete.size() == 1 ? containersToDelete.get(0).getContainerNoun() : "";
-        String name = containersToDelete.size() == 1 ? containersToDelete.get(0).getName() : "these " + containersToDelete.size() +" folders";
+        String containerType = containersToDelete.size() == 1 ? containersToDelete.getFirst().getContainerNoun() : "";
+        String name = containersToDelete.size() == 1 ? containersToDelete.getFirst().getName() : "these " + containersToDelete.size() +" folders";
         boolean showSubfolder = containersToDelete.size() != 1;
-        boolean hasSubFolders = containersToDelete.size() == 1 && !containersToDelete.get(0).getChildren().isEmpty();
+        boolean hasSubFolders = containersToDelete.size() == 1 && !containersToDelete.getFirst().getChildren().isEmpty();
         boolean usePlural = containersToDelete.size() > 1 || hasSubFolders;;
 
         %>

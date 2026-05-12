@@ -76,7 +76,7 @@ public class ExperimentStressTest
             else
                 noun = "derived samples";
         }
-        LOG.info("** inserting " + rowCount + " " + noun + " " + "...");
+        LOG.info("** inserting {} {} ...", rowCount, noun);
         int existingNameCount = existingNames != null ? existingNames.size() : 0;
 
         // generate some data
@@ -120,7 +120,7 @@ public class ExperimentStressTest
                 throw errors;
 
             tx.commit();
-            LOG.info("** inserted " + inserted.size() + " " + noun);
+            LOG.info("** inserted {} {}", inserted.size(), noun);
 
             // get the inserted names
             return inserted.stream().map(row -> (String)row.get("name")).collect(Collectors.toList());
@@ -175,7 +175,7 @@ public class ExperimentStressTest
         Assume.assumeFalse("Issue 47033: Test does not yet pass on SQL Server. Skipping.",
                 CoreSchema.getInstance().getSqlDialect().isSqlServer());
 
-        LOG.info("** starting sample type insert test " + mode._description);
+        LOG.info("** starting sample type insert test {}", mode._description);
         final User user = TestContext.get().getUser();
         final Container c = JunitUtil.getTestContainer();
 
@@ -199,7 +199,7 @@ public class ExperimentStressTest
 
         final int threads = mode._thread;
         final int races = mode._race;
-        LOG.info("** starting racy inserts (threads=" + threads + ", races=" + races + ", rows=" + rowsToInsert + ")");
+        LOG.info("** starting racy inserts (threads={}, races={}, rows=" + rowsToInsert + ")", threads, races);
         JunitUtil.createRaces(() -> {
 
             try

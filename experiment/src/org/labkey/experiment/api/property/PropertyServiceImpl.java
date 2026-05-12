@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.ser.FilterProvider;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.fhcrc.cpas.exp.xml.DefaultType;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
@@ -73,9 +72,7 @@ import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
 import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -491,7 +488,6 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
                 .addFilter("listDomainsActionFilter", gwtDomainPropertiesFilter);
         om.setFilterProvider(gwtDomainFilterProvider);
         om.addMixIn(GWTDomain.class, GWTDomainMixin.class);
-        om.addMixIn(GWTPropertyDescriptor.class, GWTPropertyDescriptorMixin.class);
         om.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
     }
 
@@ -684,7 +680,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
 
                         if (!vocabDomains.isEmpty())
                         {
-                            DomainProperty dp = vocabDomains.get(0).getPropertyByURI(key);
+                            DomainProperty dp = vocabDomains.getFirst().getPropertyByURI(key);
                             vocabularyDomainProperties.add(dp);
                         }
                     }
@@ -701,7 +697,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         DbSchema schema = ExperimentService.get().getSchema();
         String lengthFn = schema.getSqlDialect().getVarcharLengthFunction();
 
-        TableInfo t = new ExpSchema(User.getAdminServiceUser(), ContainerManager.getRoot()).getTable(ExpSchema.TableType.Fields.name(), ContainerFilter.getUnsafeEverythingFilter());
+        TableInfo t = new ExpSchema(User.getAdminServiceUser(), ContainerManager.getRoot()).getTableOrThrow(ExpSchema.TableType.Fields.name(), ContainerFilter.getUnsafeEverythingFilter());
         long storageColumnNameMismatches = new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getRowCount();
 
         return Map.of(
@@ -752,7 +748,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
                 key = key.split("#")[1];
             }
             key = key.replace("xsd:", "");
-            result.compute(key, (k, v) -> v == null ? value : v.intValue() + value);
+            result.compute(key, (_, v) -> v == null ? value : v.intValue() + value);
         }
         return result;
     }

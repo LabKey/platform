@@ -418,11 +418,11 @@ public class ChangeSummary
             }
             catch (ConfigurationException | AddressException e)
             {
-                _log.error("error sending update email to " + to, e);
+                _log.error("error sending update email to {}", to, e);
             }
             catch (Exception e)
             {
-                _log.error("error sending update email to " + to, e);
+                _log.error("error sending update email to {}", to, e);
                 ExceptionUtil.logExceptionToMothership(null, e);
             }
         }

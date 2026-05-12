@@ -78,7 +78,7 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
 
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
-                ctx.getLogger().info("Loading " + getDescription());
+                ctx.getLogger().info("Loading {}", getDescription());
 
                 List<String> schemaXmlFileNames = externalSchemaDir.list();
 
@@ -88,8 +88,8 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
                         importSchema(ctx, root, externalSchemaDir, schemaFileName);
                 }
 
-                ctx.getLogger().info(StringUtilsLabKey.pluralize(schemaXmlFileNames.size(), "external schema definition") + " imported");
-                ctx.getLogger().info("Done importing " + getDescription());
+                ctx.getLogger().info("{} imported", StringUtilsLabKey.pluralize(schemaXmlFileNames.size(), "external schema definition"));
+                ctx.getLogger().info("Done importing {}", getDescription());
 
                 ExternalSchemaDefCache.uncache(ctx.getContainer()); // issue 25498
             }
@@ -140,7 +140,7 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
                 if (container != null)
                     form.setTypedValue("dataSource", container.getId());
                 else
-                    ctx.getLogger().warn("LinkedSchemaDef's source container '" + containerPath + "' does not exist; ignoring schema.");
+                    ctx.getLogger().warn("LinkedSchemaDef's source container '{}' does not exist; ignoring schema.", containerPath);
             }
             else
                 throw new ImportException("Unable to get an instance of external or linked schema from " + relativePath);

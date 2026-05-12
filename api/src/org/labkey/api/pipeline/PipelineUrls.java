@@ -24,8 +24,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.vfs.FileLike;
 
-import java.nio.file.Path;
-
 /**
  * <code>PipelineUrls</code> a UrlProvider for the pipeline UI.
  */

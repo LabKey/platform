@@ -1008,7 +1008,7 @@ public class ExcelLoader extends DataLoader
                 assertEquals(18, map.size());
             }
 
-            Map<String, Object> firstRow = data.get(0);
+            Map<String, Object> firstRow = data.getFirst();
             checkFirstRow(firstRow);
         }
 

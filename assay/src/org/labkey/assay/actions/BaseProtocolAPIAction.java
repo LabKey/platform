@@ -132,7 +132,7 @@ public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> exte
         if (protocols.size() > 1)
             throw new NotFoundException("More than one assay protocol named '" + protocolName + "' was found.");
 
-        return Pair.of(protocols.get(0), provider);
+        return Pair.of(protocols.getFirst(), provider);
     }
 
     protected abstract ApiResponse executeAction(ExpProtocol protocol, FORM form, BindException errors) throws Exception;

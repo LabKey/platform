@@ -9,7 +9,6 @@ import org.quartz.DateBuilder;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleScheduleBuilder;
@@ -53,7 +52,7 @@ public class JobStatusRetryJob implements org.quartz.Job
     }
 
     @Override
-    public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
+    public void execute(JobExecutionContext jobExecutionContext)
     {
         // Attempt the updates to the DB rows again in the hopes that the DB is back online
         if (!_queuedUpdates.isEmpty())

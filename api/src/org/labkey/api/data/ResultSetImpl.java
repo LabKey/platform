@@ -74,7 +74,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
         {
             if (!_wasClosed)
             {
-                _log.error("ResultSet was not closed. Created by thread " + _creatingThreadName + " with stacktrace: " + ExceptionUtil.renderStackTrace(_debugCreated));
+                _log.error("ResultSet was not closed. Created by thread {} with stacktrace: {}", _creatingThreadName, ExceptionUtil.renderStackTrace(_debugCreated));
                 close(true);
             }
         }

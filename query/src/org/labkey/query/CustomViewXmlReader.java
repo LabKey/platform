@@ -311,7 +311,7 @@ public class CustomViewXmlReader
         }
         catch (XmlException | IOException | XmlValidationException e)
         {
-            LOG.error("Failed to parse custom view file from custom module at location " + path + ", falling back on default view", e);
+            LOG.error("Failed to parse custom view file from custom module at location {}, falling back on default view", path, e);
             CustomViewXmlReader reader = new CustomViewXmlReader();
             reader.addError(e.getMessage());
             return reader;
@@ -425,7 +425,7 @@ public class CustomViewXmlReader
                 ret.add(new AnalyticsProviderItem(agg));
             }
             else
-                LOG.warn("Invalid summary statistic type: " + type);
+                LOG.warn("Invalid summary statistic type: {}", type);
         }
         return ret;
     }
@@ -449,7 +449,7 @@ public class CustomViewXmlReader
             if (analyticsProvider != null)
                 ret.add(new AnalyticsProviderItem(FieldKey.fromString(column), type, analytic.getLabel()));
             else
-                LOG.warn("Invalid analytics provider name: " + type);
+                LOG.warn("Invalid analytics provider name: {}", type);
         }
 
         return ret;

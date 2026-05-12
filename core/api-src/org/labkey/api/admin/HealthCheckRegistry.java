@@ -78,7 +78,7 @@ public class HealthCheckRegistry
         Map<String, HealthCheck> categoryChecks = _healthCheckCategories.get(category);
         if (categoryChecks.containsKey(name))
         {
-            LOG.error("Health check with name '" + name + "' already exists in category '" + category + "'.  New check not registered.");
+            LOG.error("Health check with name '{}' already exists in category '{}'.  New check not registered.", name, category);
             return;
         }
         _healthCheckCategories.get(category).put(name, healthCheck);

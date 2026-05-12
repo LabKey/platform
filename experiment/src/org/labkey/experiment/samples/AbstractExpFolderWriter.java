@@ -179,7 +179,7 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
             // NOTE: This assumes that we are exporting the junction table and lookup target tables.  Is that ok?
             // NOTE: This needs to happen after the Alias column is handled since it has a MultiValuedForeignKey.
             // CONSIDER: Alternate strategy would be to export the lookup target values?
-            ctx.getLogger().info("Skipping multi-value column: " + col.getName());
+            ctx.getLogger().info("Skipping multi-value column: {}", col.getName());
         }
         else if (ExpMaterialTable.Column.AliquotedFromLSID.name().equalsIgnoreCase(col.getName()))
         {

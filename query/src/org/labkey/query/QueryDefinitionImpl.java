@@ -217,7 +217,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 String referrer = request.getHeader("Referer");
                 extra = " [url=" + request.getRequestURI() + (null != referrer ? ", referrer=" + referrer : "") + "]";
             }
-            log.info("Could not find the requested custom view named '" + name + "'" + " in " + getSchemaPath() + "." + getQueryDef().getName() + " in the container " + _container.getPath() + " for user " + owner + extra);
+            log.info("Could not find the requested custom view named '{}' in {}.{} in the container {} for user {}{}", name, getSchemaPath(), getQueryDef().getName(), _container.getPath(), owner, extra);
         }
         return result;
     }
@@ -482,7 +482,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         String sql = getSql();
         if (sql != null)
         {
-            log.debug("Parsing query " + schema.getSchemaName() + "." + getName());
+            log.debug("Parsing query {}.{}", schema.getSchemaName(), getName());
             query.parse(sql, skipSuggestedColumns);
         }
         if (includeMetadata)
@@ -569,12 +569,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 if (null == table || (null != errors && !errors.isEmpty() && !errors.stream().allMatch(error -> error instanceof QueryParseException && ((QueryParseException)error).isWarning())))
                     return null;
 
-                log.debug("Caching table " + schema.getName() + "." + table.getName());
+                log.debug("Caching table {}.{}", schema.getName(), table.getName());
                 _cache.put(key, table);
             }
             else
             {
-                log.debug("Returning cached table '" + getName() + "', " + (includeMetadata ? "with" : "without") + " metadata");
+                log.debug("Returning cached table '{}', {} metadata", getName(), includeMetadata ? "with" : "without");
             }
 
             return table;
@@ -1075,7 +1075,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 {
                     // Don't completely die if someone specified invalid metadata XML. Log a warning
                     // and render without the custom metadata.
-                    log.warn("Unable to parse metadata XML for " + getSchemaName() + "." + getName() + " in " + getContainer(), e);
+                    log.warn("Unable to parse metadata XML for {}.{} in {}", getSchemaName(), getName(), getContainer(), e);
                 }
             }
             if (_document == null)

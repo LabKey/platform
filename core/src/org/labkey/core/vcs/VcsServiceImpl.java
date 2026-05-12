@@ -94,7 +94,7 @@ public class VcsServiceImpl implements VcsService
         private String log(File dir, String... command)
         {
             String cl = String.join(" ", command);
-            LOG.info(dir + ": " + cl);
+            LOG.info("{}: {}", dir, cl);
 
             return cl;
         }

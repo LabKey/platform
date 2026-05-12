@@ -290,7 +290,6 @@ import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
-import org.labkey.query.model.MetadataTableJSONMixin;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.ExternalSchemaDefCache;
@@ -1185,22 +1184,7 @@ public class QueryController extends SpringActionController
                     sql = "SELECT * FROM \"" + form.ff_baseTableName + "\"";
                 newDef.setSql(sql);
 
-                try
-                {
-                    newDef.save(getUser(), getContainer());
-                }
-                catch (SQLException x)
-                {
-                    if (RuntimeSQLException.isConstraintException(x))
-                    {
-                        errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists.");
-                        return false;
-                    }
-                    else
-                    {
-                        throw x;
-                    }
-                }
+                newDef.save(getUser(), getContainer());
 
                 _successUrl = newDef.urlFor(form.ff_redirect);
                 return true;
@@ -1545,11 +1529,6 @@ public class QueryController extends SpringActionController
                     }
                     response.put("parseWarnings", errorArray);
                 }
-            }
-            catch (SQLException e)
-            {
-                errors.reject(ERROR_MSG, "An exception occurred: " + e);
-                LOG.error("Error", e);
             }
             catch (RuntimeException e)
             {
@@ -2153,7 +2132,7 @@ public class QueryController extends SpringActionController
                 }
                 else
                 {
-                    sheetNames.put(entry.getValue().get(0), name);
+                    sheetNames.put(entry.getValue().getFirst(), name);
                 }
             }
             ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx) {
@@ -3306,7 +3285,7 @@ public class QueryController extends SpringActionController
         {
             List<Map<String, Object>> list = doInsertUpdate(tableForm, errors, true);
             if (null != list && list.size() == 1)
-                insertedRow = list.get(0);
+                insertedRow = list.getFirst();
             return 0 == errors.getErrorCount();
         }
 
@@ -3585,7 +3564,7 @@ public class QueryController extends SpringActionController
             {
                 List<QueryException> qpes = view.getParseErrors();
                 if (!qpes.isEmpty())
-                    throw qpes.get(0);
+                    throw qpes.getFirst();
                 throw new NotFoundException(form.getQueryName());
             }
 
@@ -3961,10 +3940,10 @@ public class QueryController extends SpringActionController
                 return null;
             }
 
-            ColumnInfo col = columns.get(settings.getFieldKeys().get(0));
+            ColumnInfo col = columns.get(settings.getFieldKeys().getFirst());
             if (col == null)
             {
-                errors.reject(ERROR_MSG, "\"" + settings.getFieldKeys().get(0).getName() + "\" is not a valid column.");
+                errors.reject(ERROR_MSG, "\"" + settings.getFieldKeys().getFirst().getName() + "\" is not a valid column.");
                 return null;
             }
 
@@ -3993,7 +3972,7 @@ public class QueryController extends SpringActionController
 
                 // Regenerate the column since the alias may have changed after call to getSelectSQL()
                 columns = service.getColumns(table, settings.getFieldKeys());
-                var colGetAgain = columns.get(settings.getFieldKeys().get(0));
+                var colGetAgain = columns.get(settings.getFieldKeys().getFirst());
                 // I don't believe the above comment, so here's an assert
                 assert(colGetAgain.getAlias().equals(col.getAlias()));
 
@@ -4062,7 +4041,7 @@ public class QueryController extends SpringActionController
             if (null == fieldKeys || fieldKeys.size() != 1)
                 errors.reject(ERROR_MSG, "GetColumnSummaryStats requires that only one column be requested.");
             else
-                _colFieldKey = fieldKeys.get(0);
+                _colFieldKey = fieldKeys.getFirst();
         }
 
         @Override
@@ -4171,7 +4150,7 @@ public class QueryController extends SpringActionController
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
             if (!qpe.isEmpty())
-                throw qpe.get(0);
+                throw qpe.getFirst();
             if (null != t)
                 setTarget(t);
             _auditBehaviorType = form.getAuditBehavior();
@@ -4386,7 +4365,7 @@ public class QueryController extends SpringActionController
                     throws SQLException, BatchValidationException
             {
                 BatchValidationException errors = new BatchValidationException();
-                DataIteratorBuilder it = new ListofMapsDataIterator.Builder(rows.get(0).keySet(), rows);
+                DataIteratorBuilder it = new ListofMapsDataIterator.Builder(rows.getFirst().keySet(), rows);
                 qus.importRows(user, container, it, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
@@ -4735,7 +4714,7 @@ public class QueryController extends SpringActionController
                 if (commandType == CommandType.moveRows)
                 {
                     // moveRows returns a single map of updateCounts
-                    response.put("updateCounts", responseRows.get(0));
+                    response.put("updateCounts", responseRows.getFirst());
                 }
                 else if (commandType != CommandType.importRows)
                 {
@@ -7704,9 +7683,7 @@ public class QueryController extends SpringActionController
             PropertyService propertyService = PropertyService.get();
             if (null != propertyService)
             {
-                ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-                mapper.addMixIn(GWTPropertyDescriptor.class, MetadataTableJSONMixin.class);
-                return mapper;
+                return JsonUtil.DEFAULT_MAPPER.copy();
             }
             else
             {
@@ -8210,7 +8187,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public Object execute(QueryImportTemplateForm form, BindException errors) throws ValidationException, QueryUpdateServiceException, SQLException, ExperimentException, MetadataUnavailableException
+        public Object execute(QueryImportTemplateForm form, BindException errors) throws ValidationException, QueryUpdateServiceException, ExperimentException, MetadataUnavailableException
         {
             User user = getUser();
             Container container = getContainer();

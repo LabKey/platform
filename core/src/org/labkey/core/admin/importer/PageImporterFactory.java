@@ -103,7 +103,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
 
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
-                ctx.getLogger().info("Loading " + getDescription());
+                ctx.getLogger().info("Loading {}", getDescription());
 
                 PagesDocument pagesDocXml;
                 String pagesFileName = pagesXml.getFile();
@@ -199,7 +199,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                 // Clear the cache one more time - attempt to avoid race condition on TeamCity
                 WebPartCache.remove(ctx.getContainer());
 
-                ctx.getLogger().info("Done importing " + pageXmls.size() + " page(s) with " + webpartCount + " webpart(s)");
+                ctx.getLogger().info("Done importing {} page(s) with {} webpart(s)", pageXmls.size(), webpartCount);
             }
         }
 

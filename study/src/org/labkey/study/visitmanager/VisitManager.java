@@ -788,9 +788,6 @@ public abstract class VisitManager
         }
 
         @Override
-        public void shutdownPre() {}
-
-        @Override
         public void shutdownStarted()
         {
             if (TIMER != null)
@@ -802,7 +799,7 @@ public abstract class VisitManager
 
     void _dump(String sql)
     {
-        LOGGER.debug("DUMP -- " + sql);
+        LOGGER.debug("DUMP -- {}", sql);
         DbScope s = StudySchema.getInstance().getScope();
         new SqlExecutor(s).executeWithResults(new SQLFragment(sql), (rs, conn) ->
         {

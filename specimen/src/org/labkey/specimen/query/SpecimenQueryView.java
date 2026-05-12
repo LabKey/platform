@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Aggregate;
-import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -71,7 +70,6 @@ import org.labkey.specimen.settings.DisplaySettings;
 import org.labkey.specimen.settings.RepositorySettings;
 import org.labkey.specimen.settings.SettingsManager;
 
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -871,19 +869,19 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
         if (_viewType.isForExport())
         {
             // Remove rowId column and update column, if present
-            DisplayColumn column = cols.get(0);
+            DisplayColumn column = cols.getFirst();
             if (column.getName().equalsIgnoreCase("rowid") || column.getName().equalsIgnoreCase("update"))
-                cols.remove(0);
-            column = cols.get(0);
+                cols.removeFirst();
+            column = cols.getFirst();
             if (column.getName().equalsIgnoreCase("rowid") || column.getName().equalsIgnoreCase("update"))
-                cols.remove(0);
+                cols.removeFirst();
         }
 
         if (_viewType.isVialView())
         {
             if (_showHistoryLinks)
             {
-                cols.add(0, new SimpleDisplayColumn("[history]")
+                cols.addFirst(new SimpleDisplayColumn("[history]")
                 {
                     @Override
                     public String renderURL(RenderContext ctx)
@@ -913,7 +911,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
         if (settings.isEnableRequests() && !_viewType.isForExport() && getViewContext().getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
         {
             // Only add this column if we're using advanced specimen management and not exported to email or attachment
-            cols.add(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,
+            cols.addFirst(new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,
                     SettingsManager.get().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
         }
 
@@ -982,7 +980,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
         _showRecordSelectors = showRecordSelectors;
     }
 
-    public String getSimpleHtmlTable() throws SQLException, IOException
+    public String getSimpleHtmlTable() throws SQLException
     {
         getSettings().setMaxRows(Table.ALL_ROWS);
         DataView view = createDataView();
@@ -1036,11 +1034,5 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
             url.addParameter(entry.getKey(), entry.getValue());
 
         button.addMenuItem("Manage Views", url);
-    }
-
-    @Override
-    protected ColumnHeaderType getColumnHeaderType()
-    {
-        return ColumnHeaderType.Caption;
     }
 }

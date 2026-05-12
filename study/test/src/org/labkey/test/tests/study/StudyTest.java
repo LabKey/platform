@@ -156,10 +156,10 @@ public class StudyTest extends StudyBaseTest
             RowsResponse saveResp = insertCmd.execute(cn, getProjectName() + "/" + getFolderName());
 
             // Spot check return values for inserted values and user defined and built-in columns in response
-            assertEquals("Save rows return has incorrect value for: MouseId", "92104", saveResp.getRows().get(0).get("MouseId"));
-            assertEquals("Save rows return has incorrect value for: DEMraco", "first", saveResp.getRows().get(0).get("DEMraco"));
-            assertTrue("Save rows return is missing field: DEMasian", saveResp.getRows().get(0).keySet().contains("DEMasian"));
-            assertTrue("Save rows return is missing field: ModifiedBy", saveResp.getRows().get(0).keySet().contains("ModifiedBy"));
+            assertEquals("Save rows return has incorrect value for: MouseId", "92104", saveResp.getRows().getFirst().get("MouseId"));
+            assertEquals("Save rows return has incorrect value for: DEMraco", "first", saveResp.getRows().getFirst().get("DEMraco"));
+            assertTrue("Save rows return is missing field: DEMasian", saveResp.getRows().getFirst().keySet().contains("DEMasian"));
+            assertTrue("Save rows return is missing field: ModifiedBy", saveResp.getRows().getFirst().keySet().contains("ModifiedBy"));
         }
         catch (IOException | CommandException e)
         {
@@ -178,10 +178,10 @@ public class StudyTest extends StudyBaseTest
             selectResp = selectCmd.execute(cn, "/" + getProjectName() + "/" + getFolderName());
 
             // Spot check response values for inserted values and user defined and built-in columns
-            assertEquals("Select rows return has incorrect value for: MouseId", "92104", selectResp.getRows().get(0).get("MouseId"));
-            assertEquals("Select rows return has incorrect value for: DEMraco", "first", selectResp.getRows().get(0).get("DEMraco"));
-            assertTrue("Select rows return is missing field: DEMasian", selectResp.getRows().get(0).keySet().contains("DEMasian"));
-            assertTrue("Save rows return is missing field: ModifiedBy", selectResp.getRows().get(0).keySet().contains("ModifiedBy"));
+            assertEquals("Select rows return has incorrect value for: MouseId", "92104", selectResp.getRows().getFirst().get("MouseId"));
+            assertEquals("Select rows return has incorrect value for: DEMraco", "first", selectResp.getRows().getFirst().get("DEMraco"));
+            assertTrue("Select rows return is missing field: DEMasian", selectResp.getRows().getFirst().keySet().contains("DEMasian"));
+            assertTrue("Save rows return is missing field: ModifiedBy", selectResp.getRows().getFirst().keySet().contains("ModifiedBy"));
         }
         catch (IOException | CommandException e)
         {
@@ -190,17 +190,17 @@ public class StudyTest extends StudyBaseTest
 
         log("Updating dataset row via API");
         UpdateRowsCommand updateCmd = new UpdateRowsCommand("study", "DEM-1");
-        updateCmd.addRow(Map.of("MouseId", "92104", "SequenceNum", 0, "DEMraco", "second", "lsid", selectResp.getRows().get(0).get("lsid")));
+        updateCmd.addRow(Map.of("MouseId", "92104", "SequenceNum", 0, "DEMraco", "second", "lsid", selectResp.getRows().getFirst().get("lsid")));
 
         try
         {
             RowsResponse updateResp = updateCmd.execute(cn, getProjectName() + "/" + getFolderName());
 
             // Spot check response values for updated values and user defined and built-in columns
-            assertEquals("Save rows return has incorrect value for: MouseId", "92104", updateResp.getRows().get(0).get("MouseId"));
-            assertEquals("Save rows return has incorrect value for: DEMraco", "second", updateResp.getRows().get(0).get("DEMraco"));
-            assertTrue("Save rows return is missing field: DEMasian", updateResp.getRows().get(0).keySet().contains("DEMasian"));
-            assertTrue("Save rows return is missing field: ModifiedBy", updateResp.getRows().get(0).keySet().contains("ModifiedBy"));
+            assertEquals("Save rows return has incorrect value for: MouseId", "92104", updateResp.getRows().getFirst().get("MouseId"));
+            assertEquals("Save rows return has incorrect value for: DEMraco", "second", updateResp.getRows().getFirst().get("DEMraco"));
+            assertTrue("Save rows return is missing field: DEMasian", updateResp.getRows().getFirst().keySet().contains("DEMasian"));
+            assertTrue("Save rows return is missing field: ModifiedBy", updateResp.getRows().getFirst().keySet().contains("ModifiedBy"));
         }
         catch (IOException | CommandException e)
         {
@@ -218,10 +218,10 @@ public class StudyTest extends StudyBaseTest
             selectResp = selectCmd.execute(cn, "/" + getProjectName() + "/" + getFolderName());
 
             // Spot check response values for updated values and user defined and built-in columns
-            assertEquals("Select rows return has incorrect value for: MouseId", "92104", selectResp.getRows().get(0).get("MouseId"));
-            assertEquals("Select rows return has incorrect value for: DEMraco", "second", selectResp.getRows().get(0).get("DEMraco"));
-            assertTrue("Select rows return is missing field: DEMasian", selectResp.getRows().get(0).keySet().contains("DEMasian"));
-            assertTrue("Save rows return is missing field: ModifiedBy", selectResp.getRows().get(0).keySet().contains("ModifiedBy"));
+            assertEquals("Select rows return has incorrect value for: MouseId", "92104", selectResp.getRows().getFirst().get("MouseId"));
+            assertEquals("Select rows return has incorrect value for: DEMraco", "second", selectResp.getRows().getFirst().get("DEMraco"));
+            assertTrue("Select rows return is missing field: DEMasian", selectResp.getRows().getFirst().keySet().contains("DEMasian"));
+            assertTrue("Save rows return is missing field: ModifiedBy", selectResp.getRows().getFirst().keySet().contains("ModifiedBy"));
         }
         catch (IOException | CommandException e)
         {
@@ -438,7 +438,7 @@ public class StudyTest extends StudyBaseTest
             persistingLists.remove(allList);
 
             attemptCreateExpectError("1", "does not exist in this study.", "bad List ");
-            String id = pIDs.get(0);
+            String id = pIDs.getFirst();
             attemptCreateExpectError(id + ", " + id, "Duplicates are not allowed in a group", "Bad List 2");
         }
 
@@ -794,7 +794,7 @@ public class StudyTest extends StudyBaseTest
                 clickAndWait(Locator.tagWithAttribute("a", "data-original-title","edit").index(0));
                 setFormElement(Locator.input("quf_TextField"), newText);
                 clickButton("Submit");
-                List<String> updatedTextField = Arrays.asList(newText, textField.get(0));
+                List<String> updatedTextField = Arrays.asList(newText, textField.getFirst());
 
                 // Verify new state
                 table = new DataRegionTable("Dataset", this);
@@ -999,7 +999,7 @@ public class StudyTest extends StudyBaseTest
         List<Map<String,Object>> rows = selectResp.getRows();
         assertEquals("Unexpected size of datasetAuditEvent log", previousCount + 1, rows.size());
         log("Dataset audit log contents: " + rows);
-        assertEquals("A new dataset record was inserted", rows.get(rows.size() - 1).get("Comment"));
+        assertEquals("A new dataset record was inserted", rows.getLast().get("Comment"));
     }
 
     private SelectRowsResponse getDatasetAuditLog()

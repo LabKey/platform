@@ -102,7 +102,7 @@ public interface AntiVirusService
 
     default void warnAndAuditLog(Logger log, String logmessage, ViewBackgroundInfo info, @Nullable String originalName)
     {
-        log.warn((null != info.getUser() ? info.getUser().getEmail() + " " : "") + logmessage);
+        log.warn("{}{}", null != info.getUser() ? info.getUser().getEmail() + " " : "", logmessage);
         FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(
                 info.getContainer(), logmessage
         );

@@ -90,7 +90,7 @@ public class QueryImporter implements FolderImporter
 
             if (null != job)
                 job.setStatus("IMPORT " + getDescription());
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             // get the list of files and split them into sql and xml file name arrays
             ArrayList<String> sqlFileNames = new ArrayList<>();
@@ -168,14 +168,14 @@ public class QueryImporter implements FolderImporter
                 UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaKey);
                 if (schema == null)
                 {
-                    ctx.getLogger().warn("Skipping import: " + queryImportMessage(schemaName, queryName, null, metaFileName, "schema doesn't exist."));
+                    ctx.getLogger().warn("Skipping import: {}", queryImportMessage(schemaName, queryName, null, metaFileName, "schema doesn't exist."));
                     continue;
                 }
 
                 if (!schema.getTableNames().contains(queryName))
                 {
                     // warn if the table doesn't exist -- it may be created later during the import (e.g., a SampleType may be created as a part of the import process)
-                    ctx.getLogger().warn("Importing: " + queryImportMessage(schemaName, queryName, null, metaFileName, "Creating metadata xml override for table that doesn't exist"));
+                    ctx.getLogger().warn("Importing: {}", queryImportMessage(schemaName, queryName, null, metaFileName, "Creating metadata xml override for table that doesn't exist"));
                     qic.unresolvedMetadataFiles.put(metaFileName, queryDoc);//
                 }
 
@@ -199,8 +199,8 @@ public class QueryImporter implements FolderImporter
                 QueryService.get().fireQueryChanged(ctx.getUser(), ctx.getContainer(), null, schemaKey, property, changes);
             }
 
-            ctx.getLogger().info(sqlFileNames.size() + " quer" + (1 == sqlFileNames.size() ? "y" : "ies") + " imported");
-            ctx.getLogger().info("Done importing " + getDescription());
+            ctx.getLogger().info("{} quer{} imported", sqlFileNames.size(), 1 == sqlFileNames.size() ? "y" : "ies");
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
     }
 
@@ -238,7 +238,7 @@ public class QueryImporter implements FolderImporter
             // Don't attempt to replace an existing module-based query... that won't go well. Just warn and move on. #30081
             if (!StringUtils.isEmpty(queryDef.getModuleName()))
             {
-                ctx.getLogger().warn("Skipping import: " + queryImportMessage(schemaName, queryName, sqlFileName, metaFileName, "can't overwrite existing module-based query"));
+                ctx.getLogger().warn("Skipping import: {}", queryImportMessage(schemaName, queryName, sqlFileName, metaFileName, "can't overwrite existing module-based query"));
                 return;
             }
 
@@ -274,7 +274,7 @@ public class QueryImporter implements FolderImporter
         }
         else if (queryDef.getSql() != null)
         {
-            ctx.getLogger().warn("Skipping import: " + queryImportMessage(schemaName, queryName, sqlFileName, metaFileName, "can't overwrite existing custom query with only metadata xml override"));
+            ctx.getLogger().warn("Skipping import: {}", queryImportMessage(schemaName, queryName, sqlFileName, metaFileName, "can't overwrite existing custom query with only metadata xml override"));
             return;
         }
 
@@ -286,7 +286,7 @@ public class QueryImporter implements FolderImporter
         Collection<QueryPropertyChange<?>> changes = queryDef.save(ctx.getUser(), ctx.getContainer(), false);
         if (created)
         {
-            List<String> queries = createdQueries.computeIfAbsent(schemaKey, k -> new ArrayList<>());
+            List<String> queries = createdQueries.computeIfAbsent(schemaKey, _ -> new ArrayList<>());
             queries.add(queryName);
         }
         else if (changes != null)
@@ -295,7 +295,7 @@ public class QueryImporter implements FolderImporter
             {
                 // Group changed queries by schemaKey/QueryProperty
                 Pair<SchemaKey, QueryProperty> key = Pair.of(schemaKey, change.getProperty());
-                List<QueryPropertyChange<?>> changesBySchemaProperty = changedQueries.computeIfAbsent(key, k -> new ArrayList<>());
+                List<QueryPropertyChange<?>> changesBySchemaProperty = changedQueries.computeIfAbsent(key, _ -> new ArrayList<>());
                 changesBySchemaProperty.add(change);
             }
         }
@@ -322,7 +322,7 @@ public class QueryImporter implements FolderImporter
         List<PipelineJobWarning> warnings = new ArrayList<>();
 
         //validate all queries in all schemas in the container
-        ctx.getLogger().info("Post-processing " + getDescription());
+        ctx.getLogger().info("Post-processing {}", getDescription());
 
         if (ctx.isSkipQueryValidation())
         {
@@ -380,11 +380,11 @@ public class QueryImporter implements FolderImporter
                 if (valid != null && valid)
                 {
                     assert validator.getTotalCount() == validator.getValidCount();
-                    ctx.getLogger().info(String.format("Finished validating queries: All %d passed validation.", validator.getTotalCount()));
+                    ctx.getLogger().info("Finished validating queries: All {} passed validation.", validator.getTotalCount());
                 }
                 else
                 {
-                    ctx.getLogger().info(String.format("Finished validating queries: %d of %d failed validation.", validator.getInvalidCount(), validator.getTotalCount()));
+                    ctx.getLogger().info("Finished validating queries: {} of {} failed validation.", validator.getInvalidCount(), validator.getTotalCount());
                 }
 
 
@@ -402,7 +402,7 @@ public class QueryImporter implements FolderImporter
             }
         }
 
-        ctx.getLogger().info("Done post-processing " + getDescription());
+        ctx.getLogger().info("Done post-processing {}", getDescription());
         return warnings;
     }
 

@@ -97,7 +97,7 @@ public class CrossFolderDataClassTest extends BaseWebDriverTest
                 1, shownData.size());
 
         // ensure the record shows the expected rowId and DataClass/Name values
-        var newRecord = shownData.get(0);
+        var newRecord = shownData.getFirst();
         assertEquals("Expect Jeff to be the name value",
                 "Jeff", newRecord.get("Name"));
         assertNotNull("Expect metadata rowId to be shown in subfolder view",

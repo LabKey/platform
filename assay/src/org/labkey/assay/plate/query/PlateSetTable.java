@@ -194,7 +194,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
             // generate a value for the lsid
             final TableInfo plateSetTable = getQueryTable();
             lsidGenerator.addColumn(plateSetTable.getColumn(PlateTable.Column.Lsid.name()),
-                    (Supplier) () -> PlateManager.get().getLsid(PlateSet.class, container));
+                    (Supplier<?>) () -> PlateManager.get().getLsid(PlateSet.class, container));
 
             SimpleTranslator nameExpressionTranslator = new SimpleTranslator(lsidGenerator, context);
             nameExpressionTranslator.setDebugName("nameExpressionTranslator");
@@ -252,7 +252,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (plateSet == null)
                 throw new QueryUpdateServiceException(String.format("Plate set could not be found for ID : %d", rowId));
 
-            List<Plate> plates = plateSet.getPlates();
+            List<? extends Plate> plates = plateSet.getPlates();
             if (!plates.isEmpty())
                 throw new QueryUpdateServiceException(String.format("Plate set has %d plates associated with it and cannot be deleted.", plates.size()));
 

@@ -56,8 +56,7 @@ public class RequeueLostJobsRequest implements StatusRequest
     {
         if (PipelineService.get().getPipelineQueue().isLocal())
         {
-            _log.error("Attempted to requeue lost jobs for location " + Arrays.asList(_locations) + " but this server " +
-                "is not using an external JMS queue. Change your configuration to point to a different JMS queue.");
+            _log.error("Attempted to requeue lost jobs for location {} but this server is not using an external JMS queue. Change your configuration to point to a different JMS queue.", Arrays.asList(_locations));
         }
 
         // Do this in a separate thread because Mule doesn't deal with queuing different events while processing an
@@ -75,14 +74,14 @@ public class RequeueLostJobsRequest implements StatusRequest
                       */
                     synchronized(LOCK)
                     {
-                        _log.info("Requeueing jobs for location " + location + (_hostName == null ? "" : " and host name " + _hostName));
+                        _log.info("Requeueing jobs for location {}{}", location, _hostName == null ? "" : " and host name " + _hostName);
                         for (PipelineStatusFileImpl sf : PipelineStatusManager.getStatusFilesForLocation(location, true))
                         {
                             if (!_jobIds.contains(sf.getJobId()) && sf.getJobStore() != null && (sf.getActiveHostName() == null || sf.getActiveHostName().equals(_hostName)))
                             {
                                 try
                                 {
-                                    _log.info("Requeueing job: "  + sf.getDescription());
+                                    _log.info("Requeueing job: {}", sf.getDescription());
                                     PipelineJobService.get().getJobStore().retry(sf);
                                 }
                                 catch (IOException | NoSuchJobException e)

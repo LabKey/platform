@@ -187,13 +187,13 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         List<ExpExperimentImpl> exps = getExperiments();
         if (!exps.contains(batch))
         {
-            LOG.warn("Expected batch '" + batch.getRowId() + "' to be in list of experiments: " + exps);
+            LOG.warn("Expected batch '{}' to be in list of experiments: {}", batch.getRowId(), exps);
             return false;
         }
 
         if (!getProtocol().equals(batch.getBatchProtocol()))
         {
-            LOG.warn("Expected batch '" + batch.getRowId() + "' to have same protocol as run.  Expected protocol '" + getProtocol() + "', but found '" + batch.getBatchProtocol() + "'");
+            LOG.warn("Expected batch '{}' to have same protocol as run.  Expected protocol '{}', but found '{}'", batch.getRowId(), getProtocol(), batch.getBatchProtocol());
             return false;
         }
 
@@ -803,7 +803,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 listM.add(m);
                 if (getMaterialInputs().containsKey(m))
                 {
-                    ExpProtocolApplication runNode = getProtocolApplications().get(0);
+                    ExpProtocolApplication runNode = getProtocolApplications().getFirst();
                     assert runNode.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun;
                     listPA.add(runNode);
                     continue;
@@ -816,7 +816,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 listD.add(d);
                 if (getDataInputs().containsKey(d))
                 {
-                    ExpProtocolApplication runNode = getProtocolApplications().get(0);
+                    ExpProtocolApplication runNode = getProtocolApplications().getFirst();
                     assert runNode.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun;
                     listPA.add(runNode);
                     continue;
@@ -972,12 +972,12 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         // Warn if the move fails for some reason (file is open / file deleted during archive)
         catch (IOException e)
         {
-            LOG.warn("Unable to archive file:  " + e.getMessage());
+            LOG.warn("Unable to archive file:  {}", e.getMessage());
         }
         // Fail silently if the parent directory does not exist - archiving is a best effort action
         catch (ExperimentException e)
         {
-            LOG.warn("Unable to read parent directory: " + e.getMessage());
+            LOG.warn("Unable to read parent directory: {}", e.getMessage());
         }
     }
 

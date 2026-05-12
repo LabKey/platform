@@ -91,13 +91,13 @@ public class CountOfUniqueValueTableCustomizer implements TableCustomizer
         }
         if (null == counterType)
         {
-            _log.warn("Error in counter definition '" + counterName + "': CounterType required");
+            _log.warn("Error in counter definition '{}': CounterType required", counterName);
             valid = false;
         }
 
         if (!Collections.disjoint(pairedColumnNames, attachedColumnNames))
         {
-            _log.warn("Error in counter definition '" + counterName + "': column included as both a paired and an attached column");
+            _log.warn("Error in counter definition '{}': column included as both a paired and an attached column", counterName);
             valid = false;
         }
 
@@ -112,7 +112,7 @@ public class CountOfUniqueValueTableCustomizer implements TableCustomizer
             }
             catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e)
             {
-                _log.warn("Error instantiating counter '" + counterName + "' of type " + counterType + ": " + e.getMessage(), e);
+                _log.warn("Error instantiating counter '{}' of type {}: {}", counterName, counterType, e.getMessage(), e);
             }
         }
         _counterDefinition = counterDefinition;

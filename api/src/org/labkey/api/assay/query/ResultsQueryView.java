@@ -25,7 +25,6 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -221,12 +220,6 @@ public class ResultsQueryView extends AssayBaseQueryView
             }
 
         }
-    }
-
-    @Override
-    protected ColumnHeaderType getColumnHeaderType()
-    {
-        return ColumnHeaderType.Caption;
     }
 
     public static class ResultsDataRegion extends DataRegion

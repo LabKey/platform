@@ -137,7 +137,7 @@ public class RolapTestCase extends Assert
 
         Hierarchy hParticipant = cube.getHierarchies().get("Participant");
         assertNotNull(hParticipant);
-        Level lAll = hParticipant.getLevels().get(0);
+        Level lAll = hParticipant.getLevels().getFirst();
         assertNotNull(lAll);
         assertEquals("(All)", lAll.getName());
         Level lParticipant = hParticipant.getLevels().get(1);
@@ -196,10 +196,10 @@ public class RolapTestCase extends Assert
     private Map<String,Integer> oneColumnResult(CellSet cs)
     {
         Map<String,Integer> ret = new CaseInsensitiveTreeMap<>();
-        Position colPosition = cs.getAxes().get(0).getPositions().get(0);
+        Position colPosition = cs.getAxes().get(0).getPositions().getFirst();
         for (Position rowPosition : cs.getAxes().get(1).getPositions())
         {
-            Member m = rowPosition.getMembers().get(0);
+            Member m = rowPosition.getMembers().getFirst();
             Cell cell = cs.getCell(colPosition, rowPosition);
             Object v = cell.getValue();
             Integer i = null==v ? null : ((Number)v).intValue();

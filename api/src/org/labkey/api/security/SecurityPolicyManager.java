@@ -238,7 +238,7 @@ public class SecurityPolicyManager
                 UserPrincipal principal = SecurityManager.getPrincipal(assignment.getUserId());
                 if (principal == null)
                 {
-                    logger.info("Principal " + assignment.getUserId() + " no longer in database. Removing from policy.");
+                    logger.info("Principal {} no longer in database. Removing from policy.", assignment.getUserId());
                     continue;
                 }
                 Table.insert(null, table, assignment);
@@ -550,7 +550,7 @@ public class SecurityPolicyManager
             Role role = RoleManager.getRole(assignmentXml.getRole().getName());
             if (role == null)
             {
-                ctx.getLogger().warn("Invalid role name ignored: " + assignmentXml.getRole());
+                ctx.getLogger().warn("Invalid role name ignored: {}", assignmentXml.getRole());
                 continue;
             }
             try
@@ -562,7 +562,7 @@ public class SecurityPolicyManager
                         UserPrincipal principal = GroupManager.getGroup(ctx.getContainer(), groupRef.getName(), groupRef.getType());
                         if (principal == null)
                         {
-                            ctx.getLogger().warn("Non-existent group in role assignment for role " + assignmentXml.getRole().getName() + " will be ignored: " + groupRef.getName());
+                            ctx.getLogger().warn("Non-existent group in role assignment for role {} will be ignored: {}", assignmentXml.getRole().getName(), groupRef.getName());
                         }
                         else
                         {
@@ -581,7 +581,7 @@ public class SecurityPolicyManager
 
                             if (principal == null)
                             {
-                                ctx.getLogger().warn("Non-existent user in role assignment for role " + assignmentXml.getRole() + " will be ignored: " + userRef.getName());
+                                ctx.getLogger().warn("Non-existent user in role assignment for role {} will be ignored: {}", assignmentXml.getRole(), userRef.getName());
                             }
                             else
                             {
@@ -590,7 +590,7 @@ public class SecurityPolicyManager
                         }
                         catch (ValidEmail.InvalidEmailException e)
                         {
-                            ctx.getLogger().error("Invalid email in role assignment for role " + assignmentXml.getRole());
+                            ctx.getLogger().error("Invalid email in role assignment for role {}", assignmentXml.getRole());
                         }
                     }
                 }

@@ -162,7 +162,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                         if (visit != null)
                             newRow.put("visitId", visit.getId());
                         else
-                            ctx.getLogger().warn("No visit found matching the sequence num : " + newRow.get("visitId.sequenceNumMin"));
+                            ctx.getLogger().warn("No visit found matching the sequence num : {}", newRow.get("visitId.sequenceNumMin"));
                     }
                     else
                         ctx.getLogger().warn("Null sequence num found.");

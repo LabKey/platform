@@ -130,7 +130,7 @@ public class PlateMapExcelWriter extends ExcelWriter
 
                 if (row == null)
                 {
-                    logger.error("Well data not found for row " + rowIdx);
+                    logger.error("Well data not found for row {}", rowIdx);
                     continue;
                 }
 
@@ -138,13 +138,13 @@ public class PlateMapExcelWriter extends ExcelWriter
 
                 if (well == null)
                 {
-                    logger.error("Well data not found for row: " + rowIdx + ", col: " + (colIdx - 1));
+                    logger.error("Well data not found for row: {}, col: {}", rowIdx, colIdx - 1);
                     continue;
                 }
 
                 if (displayColumns.size() == 1)
                 {
-                    DisplayColumn displayColumn = displayColumns.get(0);
+                    DisplayColumn displayColumn = displayColumns.getFirst();
                     var col = getDisplayFieldColumnInfo(displayColumn);
                     Object value = col.getValue(well);
 
@@ -220,7 +220,7 @@ public class PlateMapExcelWriter extends ExcelWriter
                 displayColumns = displayCols.stream().filter(dc -> !excludeFromSummary.contains(dc.getColumnInfo().getFieldKey())).toList();
             }
             else if (sheetNumber == 1) // Sample ID view
-                displayColumns = List.of(displayCols.get(0));
+                displayColumns = List.of(displayCols.getFirst());
             else // CustomField view
             {
                 PlateCustomField customField = getCustomFields().get(sheetNumber - 2);
@@ -232,7 +232,7 @@ public class PlateMapExcelWriter extends ExcelWriter
         }
         catch (Exception e)
         {
-            logger.error("Error rendering sheet " + sheetNumber + ": " + e.getMessage());
+            logger.error("Error rendering sheet {}: {}", sheetNumber, e.getMessage());
         }
     }
 

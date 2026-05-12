@@ -55,7 +55,7 @@ public class HtmlDisplayColumnFactory implements DisplayColumnFactory
             if (errors.isEmpty())
                 return HtmlString.unsafe(tidyHtml);
             else
-                return HtmlString.of(errors.get(0));
+                return HtmlString.of(errors.getFirst());
         }
     }
 }

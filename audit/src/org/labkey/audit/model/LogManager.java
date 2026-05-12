@@ -113,7 +113,7 @@ public class LogManager
         if (events.isEmpty())
             return;
 
-        AuditTypeEvent type = events.get(0);
+        AuditTypeEvent type = events.getFirst();
 
         // Out of an abundance of caution and backward compatible behavior, do one-at-a-time logging if
         // there is no transaction.  Can revisit if this is not necessary.
@@ -251,7 +251,7 @@ public class LogManager
                 int scale = prop.getSize();
                 if (s.length() > scale)
                 {
-                    _log.warn("Audit field input : \n" + prop.getName() + "\nexceeded the maximum length : " + scale);
+                    _log.warn("Audit field input : \n{}\nexceeded the maximum length : {}", prop.getName(), scale);
                     String trimmed = s.substring(0, scale-3) + "...";
                     values.put(prop.getName(), trimmed);
                     changed = true;
@@ -269,7 +269,7 @@ public class LogManager
                 int scale = dp.getScale();
                 if (scale > 0 && s.length() > scale)
                 {
-                    _log.warn("Audit field input : \n" + pd.getName() + "\nexceeded the maximum length : " + scale);
+                    _log.warn("Audit field input : \n{}\nexceeded the maximum length : {}", pd.getName(), scale);
                     String trimmed;
                     if (scale > 100)
                         trimmed = s.substring(0, scale-3) + "...";

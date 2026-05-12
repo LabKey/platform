@@ -47,7 +47,7 @@ public interface TableResultSet extends ResultSet, Iterable<Map<String, Object>>
      * Implementations should prefer to return ConnectionWrapper instead of the underlying connection as it has
      * more context. */
     @Nullable
-    Connection getConnection() throws SQLException;
+    Connection getConnection();
 
     default <T> T getWrapped(Class<T> clz)
     {

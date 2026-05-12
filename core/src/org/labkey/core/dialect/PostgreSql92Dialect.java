@@ -807,24 +807,6 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             }
         }
 
-        // TODO: This loop should not guess the name of the old indices; instead, it should look them up.
-        // TableChange.setIndexedColumns() could set _indexRenames providing the name, and then this code uses that info.
-        // Or maybe schemaTableInfo.getAllIndices() and then use Index.isSameIndex() to find names. Issue 53838.
-        for (Map.Entry<PropertyStorageSpec.Index, PropertyStorageSpec.Index> oldToNew : change.getIndexRenames().entrySet())
-        {
-            PropertyStorageSpec.Index oldIndex = oldToNew.getKey();
-            PropertyStorageSpec.Index newIndex = oldToNew.getValue();
-            String oldName = nameIndex(change.getTableName(), oldIndex.columnNames); // TODO: Look up name
-            String newName = nameIndex(change.getTableName(), newIndex.columnNames);
-            if (!oldName.equals(newName))
-            {
-                SQLFragment f = new SQLFragment("ALTER INDEX ");
-                f.appendIdentifier(change.getSchemaName()).append(".").appendIdentifier(oldName);
-                f.append(" RENAME TO ").appendIdentifier(newName);
-                statements.add(f);
-            }
-        }
-
         return statements;
     }
 
@@ -1136,7 +1118,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                     }
                     catch (BadSqlGrammarException x)
                     {
-                        LOG.warn("could not clean up postgres function : temp." + name, x);
+                        LOG.warn("could not clean up postgres function : temp.{}", name, x);
                     }
                 }
             });

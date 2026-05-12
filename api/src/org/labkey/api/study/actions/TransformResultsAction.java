@@ -24,7 +24,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 

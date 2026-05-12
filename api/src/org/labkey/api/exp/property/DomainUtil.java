@@ -117,7 +117,7 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
-import static org.labkey.api.gwt.client.ui.PropertyType.CALCULATED_CONCEPT_URI;
+import static org.labkey.api.exp.PropertyType.CALCULATED_CONCEPT_URI;
 import static org.labkey.api.util.StringExpressionFactory.SUBSTITUTION_EXP_PATTERN;
 
 public class DomainUtil
@@ -786,7 +786,7 @@ public class DomainUtil
     public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user,
                                                              boolean updateDomainName, @Nullable String auditComment, @Nullable String auditUserComment, @Nullable Map<String, Object> oldProps, @Nullable Map<String, Object> newProps)
     {
-        LOG.info("Updating domain descriptor for " + orig.getName());
+        LOG.info("Updating domain descriptor for {}", orig.getName());
         assert orig.getDomainURI().equals(update.getDomainURI());
 
         // Issue 52824: when updating, remove domain descriptor from cache so others don't see a descriptor from the cache in a partially updated state
@@ -1165,7 +1165,7 @@ public class DomainUtil
         if (pd.getPropertyId() > 0)
             return null;
 
-        LOG.debug("Adding property for " + pd.getName());
+        LOG.debug("Adding property for {}", pd.getName());
         if (StringUtils.isEmpty(pd.getPropertyURI()))
         {
             String newPropertyURI = createUniquePropertyURI(domain.getTypeURI(), null, propertyUrisInUse);
@@ -1179,7 +1179,7 @@ public class DomainUtil
         LOG.debug("Property added as string property");
         defaultValues.put(p, pd.getDefaultValue());
         _copyProperties(p, pd, errors);
-        LOG.debug("Properties copied from " + pd + " to " + p.getPropertyDescriptor() );
+        LOG.debug("Properties copied from {} to {}", pd, p.getPropertyDescriptor());
         updatePropertyValidators(p, null, pd);
 
         return p;

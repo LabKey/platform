@@ -274,7 +274,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         insertRowsCommand.addRow(row1);
         RowsResponse insertResponse = insertRowsCommand.execute(connection, getCurrentContainerPath());
         List<Map<String, Object>> responseRows = insertResponse.getRows();
-        dataClassRowIds[2] = (int)responseRows.get(0).get("rowid");
+        dataClassRowIds[2] = (int)responseRows.getFirst().get("rowid");
 
         _searchHelper.enqueueSearchItem("dataclass:" + DATA_CLASS_DOMAIN_1 + " AND " + DATA_CLASS_ICE_CREAM,
                 Locator.linkContainingText(DATA_CLASS_1_NAME_1));

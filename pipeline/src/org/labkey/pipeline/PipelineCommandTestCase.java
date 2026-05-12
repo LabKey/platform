@@ -25,7 +25,6 @@ import org.labkey.api.pipeline.cmd.BooleanToSwitch;
 import org.labkey.api.pipeline.cmd.ListToCommandArgs;
 import org.labkey.api.pipeline.cmd.RequiredSwitch;
 import org.labkey.api.pipeline.cmd.SubstitutionWithSwitch;
-import org.labkey.api.pipeline.cmd.TaskToCommandArgs;
 import org.labkey.api.pipeline.cmd.UnixCompactSwitchFormat;
 import org.labkey.api.pipeline.cmd.UnixNewSwitchFormat;
 import org.labkey.api.pipeline.cmd.UnixSwitchFormat;
@@ -116,7 +115,7 @@ public class PipelineCommandTestCase extends Assert
         test2.setSwitchName("b");
         List<String> args2 = test2.toArgs("yes");
         assertEquals("Unexpected length for BooleanToSwitch args", 1, args2.size());
-        assertEquals("Unexpected arg for ValueWithSwitch", "-b", args2.get(0));
+        assertEquals("Unexpected arg for ValueWithSwitch", "-b", args2.getFirst());
         args2 = test2.toArgs("no");
         assertEquals("Unexpected length for BooleanToSwitch args", 0, args2.size());
         args2 = test2.toArgs("somethingNotYesOrNo");
@@ -133,18 +132,18 @@ public class PipelineCommandTestCase extends Assert
         test3.setSwitchName("c");
         List<String> args3 = test3.toArgsInner(null, null, null);
         assertEquals("Unexpected length for RequiredSwitch args", 1, args3.size());
-        assertEquals("Unexpected arg for RequiredSwitch", "--c", args3.get(0));
+        assertEquals("Unexpected arg for RequiredSwitch", "--c", args3.getFirst());
         test3.setValue("Test3");
         args3 = test3.toArgsInner(null, null, null);
         assertEquals("Unexpected length for RequiredSwitch args", 1, args3.size());
-        assertEquals("Unexpected arg for RequiredSwitch", "--c=Test3", args3.get(0));
+        assertEquals("Unexpected arg for RequiredSwitch", "--c=Test3", args3.getFirst());
 
         ValueToSwitch test4 = new ValueToSwitch();
         test4.setSwitchFormat(new UnixCompactSwitchFormat());
         test4.setSwitchName("d");
         List<String> args4 = test4.toArgs("anything");
         assertEquals("Unexpected length for ValueToSwitch args", 1, args4.size());
-        assertEquals("Unexpected arg for ValueToSwitch", "-d", args4.get(0));
+        assertEquals("Unexpected arg for ValueToSwitch", "-d", args4.getFirst());
         args4 = test4.toArgs(null);
         assertEquals("Unexpected length for ValueToSwitch args", 0, args4.size());
 

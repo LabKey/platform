@@ -113,7 +113,7 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
                 SpecimensDocument specimensDoc = (SpecimensDocument)settingsDir.getXmlBean(xmlSettings.getSettings());
                 importSettings(ctx, specimensDoc.getSpecimens());
 
-                ctx.getLogger().info("Done importing " + getDescription());
+                ctx.getLogger().info("Done importing {}", getDescription());
             }
         }
     }
@@ -203,7 +203,7 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
                     String newStatusLabel = xmlStatusArray[i].isSetLabel() && xmlStatusArray[i].getLabel() != null && !xmlStatusArray[i].getLabel().isEmpty() ? xmlStatusArray[i].getLabel() : null;
                     if (inUseStatusLabels.contains(newStatusLabel))
                     {
-                        ctx.getLogger().warn("Skipping request status that matches an existing status label: " + newStatusLabel);
+                        ctx.getLogger().warn("Skipping request status that matches an existing status label: {}", newStatusLabel);
                     }
                     else if (newStatusLabel != null)
                     {
@@ -289,8 +289,7 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
 
                                     if (location == null)
                                     {
-                                        ctx.getLogger().warn("Request actor group not created for \"" + actor.getLabel()
-                                                + ", " + newActorGroup.getName() + "\". Could not find matching study location.");
+                                        ctx.getLogger().warn("Request actor group not created for \"{}, {}\". Could not find matching study location.", actor.getLabel(), newActorGroup.getName());
                                         continue;
                                     }
                                 }
@@ -354,14 +353,14 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
                 {
                     SpecimenRequestRequirement requirement = new SpecimenRequestRequirement();
                     requirement.setContainer(ctx.getContainer());
-                    requirement.setActorId(matchingActors.get(0).getRowId());
+                    requirement.setActorId(matchingActors.getFirst().getRowId());
                     requirement.setDescription(xmlReq.getDescription());
                     requirement.setRequestId(-1);
                     SpecimenRequestRequirementProvider.get().createDefaultRequirement(ctx.getUser(), requirement, type);
                 }
                 else
                 {
-                    ctx.getLogger().warn("Could not find matching actor with label: " + xmlReq.getActor());
+                    ctx.getLogger().warn("Could not find matching actor with label: {}", xmlReq.getActor());
                 }
             }
         }
@@ -425,7 +424,7 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
                         inputs.add(input);
                     }
                     else
-                        ctx.getLogger().info("There is currently a form with the same title: " + form.getTitle() + ", skipping this from import");
+                        ctx.getLogger().info("There is currently a form with the same title: {}, skipping this from import", form.getTitle());
                 }
                 inputs.sort(Comparator.comparingInt(SpecimenRequestInput::getDisplayOrder));
                 SpecimenRequestManager.get().saveNewSpecimenRequestInputs(ctx.getContainer(), inputs.toArray(new SpecimenRequestInput[0]));

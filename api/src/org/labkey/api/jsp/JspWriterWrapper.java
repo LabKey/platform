@@ -205,13 +205,13 @@ public class JspWriterWrapper extends JspWriter
     }
 
     @Override
-    public void write(@NotNull char[] cbuf) throws IOException
+    public void write(char @NotNull [] cbuf) throws IOException
     {
         _jspWriter.write(cbuf);
     }
 
     @Override
-    public void write(@NotNull char[] cbuf, int off, int len) throws IOException
+    public void write(char @NotNull [] cbuf, int off, int len) throws IOException
     {
         _jspWriter.write(cbuf, off, len);
     }

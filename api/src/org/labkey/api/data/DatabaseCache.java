@@ -540,7 +540,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             }
 
             @Override
-            public ConnectionWrapper getPooledConnection(ConnectionType type, Logger log) throws SQLException
+            public ConnectionWrapper getPooledConnection(ConnectionType type, Logger log)
             {
                 return new ConnectionWrapper(null, null, null, type, log)
                 {

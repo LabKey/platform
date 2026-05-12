@@ -43,7 +43,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -315,7 +314,7 @@ public interface Dataset extends StudyEntity
 
     Dataset createMutable(); // See Issue 52211
 
-    void save(User user) throws SQLException;
+    void save(User user);
 
     boolean isQueryDataset();
 

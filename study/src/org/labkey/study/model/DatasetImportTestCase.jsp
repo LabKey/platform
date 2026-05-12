@@ -266,7 +266,7 @@ public void test() throws Throwable
     {
         List<ValidationException> l = x.getRowErrors();
         if (!l.isEmpty())
-            throw l.get(0);
+            throw l.getFirst();
         throw x;
     }
     finally
@@ -291,9 +291,9 @@ private void _testDatasetUpdateService(StudyImpl study) throws Throwable
     // insert one row
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++this.counterRow), "Value", 1.0));
     List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-    String msg = !errors.getRowErrors().isEmpty() ? errors.getRowErrors().get(0).toString() : "no message";
+    String msg = !errors.getRowErrors().isEmpty() ? errors.getRowErrors().getFirst().toString() : "no message";
     assertFalse(msg, errors.hasErrors());
-    Map<String,Object> firstRowMap = ret.get(0);
+    Map<String,Object> firstRowMap = ret.getFirst();
     String lsidRet = (String)firstRowMap.get("lsid");
     assertNotNull(lsidRet);
     assertTrue("lsid should end with "+":101.A1.20110101.0000.Test"+counterRow + ".  Was: " + lsidRet, lsidRet.endsWith(":101.A1.20110101.0000.Test"+counterRow));
@@ -310,7 +310,7 @@ private void _testDatasetUpdateService(StudyImpl study) throws Throwable
     // duplicate row
     qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
     //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test1
-    assertTrue(errors.getRowErrors().get(0).getMessage().contains("Duplicates were found"));
+    assertTrue(errors.getRowErrors().getFirst().getMessage().contains("Duplicates were found"));
 
     // different participant
     rows.clear(); errors.clear();
@@ -336,39 +336,39 @@ private void _testDatasetUpdateService(StudyImpl study) throws Throwable
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (counterRow), "Value", 1.0));
     qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
     //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test3
-    assertTrue(errors.getRowErrors().get(0).getMessage().contains("Duplicates were found in the database or imported data"));
+    assertTrue(errors.getRowErrors().getFirst().getMessage().contains("Duplicates were found in the database or imported data"));
 
     // missing participantid
     rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", null, "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0));
     qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
     //study:Label: All dataset rows must include a value for SubjectID
-    msg = errors.getRowErrors().get(0).getMessage();
+    msg = errors.getRowErrors().getFirst().getMessage();
     assertTrue(msg.contains("required") || msg.contains("must include"));
-    assertTrue(errors.getRowErrors().get(0).getMessage().contains("SubjectID"));
+    assertTrue(errors.getRowErrors().getFirst().getMessage().contains("SubjectID"));
 
     // missing date
     rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", null, "Measure", "Test" + (++counterRow), "Value", 1.0));
     qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
     //study:Label: Row 1 does not contain required field date.
-    assertTrue(errors.getRowErrors().get(0).getMessage().toLowerCase().contains("date"));
+    assertTrue(errors.getRowErrors().getFirst().getMessage().toLowerCase().contains("date"));
 
     // missing required property field (Measure in map)
     rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", null, "Value", 1.0));
     qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
     //study:Label: Row 1 does not contain required field Measure.
-    assertTrue(errors.getRowErrors().get(0).getMessage().contains("required"));
-    assertTrue(errors.getRowErrors().get(0).getMessage().contains("Measure"));
+    assertTrue(errors.getRowErrors().getFirst().getMessage().contains("required"));
+    assertTrue(errors.getRowErrors().getFirst().getMessage().contains("Measure"));
 
     // missing required property field (Measure not in map)
     rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Value", 1.0));
     qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
     //study:Label: Row 1 does not contain required field Measure.
-    assertTrue(errors.getRowErrors().get(0).getMessage().contains("does not contain required field"));
-    assertTrue(errors.getRowErrors().get(0).getMessage().contains("Measure"));
+    assertTrue(errors.getRowErrors().getFirst().getMessage().contains("does not contain required field"));
+    assertTrue(errors.getRowErrors().getFirst().getMessage().contains("Measure"));
 
     // legal MV indicator
     rows.clear(); errors.clear();
@@ -381,7 +381,7 @@ private void _testDatasetUpdateService(StudyImpl study) throws Throwable
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "N/A"));
     qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
     //study:Label: Value: Could not convert value 'N/A' (String) for Double field 'Value'
-    assertTrue(errors.getRowErrors().get(0).getMessage().endsWith(ConvertHelper.getStandardConversionErrorMessage("N/A", "Value", Double.class)));
+    assertTrue(errors.getRowErrors().getFirst().getMessage().endsWith(ConvertHelper.getStandardConversionErrorMessage("N/A", "Value", Double.class)));
 
     // conversion test
     rows.clear(); errors.clear();
@@ -394,7 +394,7 @@ private void _testDatasetUpdateService(StudyImpl study) throws Throwable
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1, "Number", 101));
     qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
     //study:Label: Value '101.0' for field 'Number' is invalid.
-    assertTrue(errors.getRowErrors().get(0).getMessage().contains("is invalid"));
+    assertTrue(errors.getRowErrors().getFirst().getMessage().contains("is invalid"));
 
     rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (counterRow), "Value", 1, "Number", 99));
@@ -410,7 +410,7 @@ private void _testDatasetUpdateService(StudyImpl study) throws Throwable
     assertFalse(errors.hasErrors());
     qcstates = QCStateManager.getInstance().getStates(study.getContainer());
     assertEquals(1, qcstates.size());
-    assertEquals("dirty" , qcstates.get(0).getLabel());
+    assertEquals("dirty" , qcstates.getFirst().getLabel());
 
     // let's try to update a row
     rows.clear(); errors.clear();
@@ -454,18 +454,18 @@ private void _testDatasetDetailedLogging(StudyImpl study) throws Throwable
     errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Initial", "Value", 1.0));
     List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, config, null);
-    String msg = !errors.getRowErrors().isEmpty() ? errors.getRowErrors().get(0).toString() : "no message";
+    String msg = !errors.getRowErrors().isEmpty() ? errors.getRowErrors().getFirst().toString() : "no message";
     assertFalse(msg, errors.hasErrors());
-    Map<String,Object> firstRowMap = ret.get(0);
+    Map<String,Object> firstRowMap = ret.getFirst();
     String lsidRet = (String)firstRowMap.get("lsid");
     assertNotNull(lsidRet);
 
     SimpleFilter f = new SimpleFilter(new FieldKey(null,"RowId"),rowid, CompareType.GT);
     List<DatasetAuditProvider.DatasetAuditEvent> events = AuditLogService.get().getAuditEvents(study.getContainer(),_context.getUser(),DATASET_AUDIT_EVENT,f,new Sort("-RowId"));
     assertFalse(events.isEmpty());
-    assertNull(events.get(0).getOldRecordMap());
-    assertNotNull(events.get(0).getNewRecordMap());
-    Map<String,String> newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
+    assertNull(events.getFirst().getOldRecordMap());
+    assertNotNull(events.getFirst().getNewRecordMap());
+    Map<String,String> newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.getFirst().getNewRecordMap()));
     assertEquals(lsidRet, newRecordMap.get("lsid"));
     assertEquals("Initial", newRecordMap.get("Measure"));
     assertEquals("1.0", newRecordMap.get("Value"));
@@ -479,14 +479,14 @@ private void _testDatasetDetailedLogging(StudyImpl study) throws Throwable
 
     events = AuditLogService.get().getAuditEvents(study.getContainer(),_context.getUser(),DATASET_AUDIT_EVENT,f,new Sort("-RowId"));
     assertFalse(events.isEmpty());
-    assertNotNull(events.get(0).getOldRecordMap());
-    Map<String,String> oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getOldRecordMap()));
+    assertNotNull(events.getFirst().getOldRecordMap());
+    Map<String,String> oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.getFirst().getOldRecordMap()));
     assertFalse(oldRecordMap.containsKey("lsid"));
     assertEquals("Initial", newRecordMap.get("Measure"));
     assertEquals("1.0", newRecordMap.get("Value"));
     assertEquals(2, oldRecordMap.size());
-    assertNotNull(events.get(0).getNewRecordMap());
-    newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
+    assertNotNull(events.getFirst().getNewRecordMap());
+    newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.getFirst().getNewRecordMap()));
     assertFalse(newRecordMap.containsKey("lsid"));
     assertEquals("Updated",newRecordMap.get("Measure"));
     assertEquals("2.0", newRecordMap.get("Value"));
@@ -501,14 +501,14 @@ private void _testDatasetDetailedLogging(StudyImpl study) throws Throwable
 
     events = AuditLogService.get().getAuditEvents(study.getContainer(),_context.getUser(),DATASET_AUDIT_EVENT,f,new Sort("-RowId"));
     assertFalse(events.isEmpty());
-    assertNotNull(events.get(0).getOldRecordMap());
-    oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getOldRecordMap()));
+    assertNotNull(events.getFirst().getOldRecordMap());
+    oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.getFirst().getOldRecordMap()));
     assertFalse(oldRecordMap.containsKey("lsid"));
     assertEquals("Updated", newRecordMap.get("Measure"));
     assertEquals("2.0", newRecordMap.get("Value"));
     assertEquals(2, oldRecordMap.size());
-    assertNotNull(events.get(0).getNewRecordMap());
-    newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
+    assertNotNull(events.getFirst().getNewRecordMap());
+    newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.getFirst().getNewRecordMap()));
     assertFalse(newRecordMap.containsKey("lsid"));
     assertEquals("Merged",newRecordMap.get("Measure"));
     assertEquals("3.0", newRecordMap.get("Value"));
@@ -805,7 +805,7 @@ private void _testDaysSinceStartCalculation(Study study) throws Throwable
         rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A2", "Date", "2016-02-02 10:00", "Measure", "Test"+(++counterRow), "Value", 1.0));
 
         List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, qusErrors, null, null);
-        String msg = !qusErrors.getRowErrors().isEmpty() ? qusErrors.getRowErrors().get(0).toString() : "no message";
+        String msg = !qusErrors.getRowErrors().isEmpty() ? qusErrors.getRowErrors().getFirst().toString() : "no message";
         assertFalse(msg, qusErrors.hasErrors());
 
         try (ResultSet rs = new TableSelector(tableInfo).getResultSet())
@@ -842,7 +842,7 @@ private void  _testDatasetTransformExport(Study study) throws Throwable
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "DS1", "Date", jan1, "Measure", "Test" + (++this.counterRow), "Value", 0.0));
     List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
     assertFalse(errors.hasErrors());
-    Map<String,Object> firstRowMap = ret.get(0);
+    Map<String,Object> firstRowMap = ret.getFirst();
 
     // Ensure alternateIds are generated for all participants
     StudyManager.getInstance().generateNeededAlternateParticipantIds(study, _context.getUser());

@@ -359,18 +359,18 @@ public class ChildStudyDefinition
     public void logSelections(Logger logger)
     {
         logger.info("----- Start Selected Properties -----");
-        logger.info("Name: " + getName());
-        logger.info("Timepoint Type: " + getTimepointType());
-        logger.info("Source Path: " + getSrcPath());
-        logger.info("Destination Path: " + getDstPath());
-        logger.info("Participant Groups: " + (isParticipantGroupsAll() ? "All" : Arrays.toString(getGroups())));
-        logger.info("Datasets: " + Arrays.toString(getDatasets()));
-        logger.info("Data Refresh: " + (isUpdate() ? (getUpdateDelay() > 0 ? "Automatic" : "Manual") : "None"));
-        logger.info("Visits: " + arrayToString(getVisits()));
-        logger.info("Specimens: " + (isIncludeSpecimens() ? (isSpecimenRefresh() ? "Nightly refresh" : "One-time snapshot") : "None"));
-        logger.info("Study Objects: " + arrayToString(getStudyProps()));
-        logger.info("Folder Objects: " + arrayToString(getFolderProps()));
-        logger.info("Publish Options: [" + String.join("; ", getPublishOptionsArr()) + "]");
+        logger.info("Name: {}", getName());
+        logger.info("Timepoint Type: {}", getTimepointType());
+        logger.info("Source Path: {}", getSrcPath());
+        logger.info("Destination Path: {}", getDstPath());
+        logger.info("Participant Groups: {}", isParticipantGroupsAll() ? "All" : Arrays.toString(getGroups()));
+        logger.info("Datasets: {}", Arrays.toString(getDatasets()));
+        logger.info("Data Refresh: {}", isUpdate() ? (getUpdateDelay() > 0 ? "Automatic" : "Manual") : "None");
+        logger.info("Visits: {}", arrayToString(getVisits()));
+        logger.info("Specimens: {}", isIncludeSpecimens() ? (isSpecimenRefresh() ? "Nightly refresh" : "One-time snapshot") : "None");
+        logger.info("Study Objects: {}", arrayToString(getStudyProps()));
+        logger.info("Folder Objects: {}", arrayToString(getFolderProps()));
+        logger.info("Publish Options: [{}]", String.join("; ", getPublishOptionsArr()));
         logger.info("----- End Selected Properties -----");
     }
 

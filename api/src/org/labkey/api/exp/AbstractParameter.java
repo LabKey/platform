@@ -275,15 +275,14 @@ public abstract class AbstractParameter extends BoundMap
             else
             {
                 if (!type.equals(SimpleTypeNames.STRING))
-                    log.error("Unrecognized valueType '" + type + "' saved as string");
+                    log.error("Unrecognized valueType '{}' saved as string", type);
                 type = SimpleTypeNames.STRING;
                 val = stringValue;
             }
         }
         catch (ConversionException | NumberFormatException e)
         {
-            log.error("Failed to load value " + stringValue
-                    + ". Declared as type ;" + type + "' Saved as string instead");
+            log.error("Failed to load value {}. Declared as type ;{}' Saved as string instead", stringValue, type);
             type = SimpleTypeNames.STRING;
             val = stringValue;
         }

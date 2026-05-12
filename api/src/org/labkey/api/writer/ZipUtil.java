@@ -134,7 +134,7 @@ public class ZipUtil
                 }
 
                 if (null != log)
-                    log.info("Expanding " + entry.getName());
+                    log.info("Expanding {}", entry.getName());
 
                 FileUtil.createDirectories(destFile.getParent());
                 if (Files.exists(destFile))

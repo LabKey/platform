@@ -15,6 +15,7 @@
  */
 package org.labkey.query.olap;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.MemTracker;
 import org.olap4j.AllocationPolicy;
 import org.olap4j.Axis;
@@ -88,7 +89,7 @@ public class QubeCellSet implements CellSet
             _axes.add(new _MeasureAxis(Axis.ROWS, measure));
         else
             _axes.add(new _MemberAxis(Axis.ROWS, rows));
-        _columnCount = _axes.get(0).getPositionCount();
+        _columnCount = _axes.getFirst().getPositionCount();
         _results = results;
         assert MemTracker.getInstance().put(this);
     }
@@ -1430,7 +1431,7 @@ public class QubeCellSet implements CellSet
         }
 
         @Override
-        public ListIterator<Position> iterator()
+        public @NotNull ListIterator<Position> iterator()
         {
             return (Collections.unmodifiableList(_positions)).listIterator();
         }

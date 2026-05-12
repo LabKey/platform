@@ -77,8 +77,8 @@ public class FourParameterSimplex extends ParameterCurveFit implements Multivari
             }
         }
 
-        _log.info("optimizer : " + _lastOptimizer + " fit error : " + calculateFitError(createParams(_bestFit)));
-        _log.info("params " + createParams(_bestFit).toMap());
+        _log.info("optimizer : {} fit error : {}", _lastOptimizer, calculateFitError(createParams(_bestFit)));
+        _log.info("params {}", createParams(_bestFit).toMap());
 
         return createParams(_bestFit);
     }

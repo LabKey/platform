@@ -1254,7 +1254,7 @@ public class AssayController extends SpringActionController
             // Unfortunately this seems to be the best way to figure out the name of the URL parameter to filter by batch id
             ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, ContainerManager.getHomeContainer());
             fakeURL.addFilter(AssayProtocolSchema.RUNS_TABLE_NAME, AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
-            return fakeURL.getParameters().get(0).getKey();
+            return fakeURL.getParameters().getFirst().getKey();
         }
     }
 

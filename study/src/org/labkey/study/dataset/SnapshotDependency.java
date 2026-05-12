@@ -138,12 +138,12 @@ public abstract class SnapshotDependency
                             catch (Throwable e)
                             {
                                 // issue : 45996 don't fail all snapshots due to a dependency checking error
-                                _log.warn("An error occurred checking dependencies for snapshot : " + snapshot.getName() + " in folder : " + snapshot.getContainer().getPath(), e);
+                                _log.warn("An error occurred checking dependencies for snapshot : {} in folder : {}", snapshot.getName(), snapshot.getContainer().getPath(), e);
                             }
                         }
                     }
                     else
-                        _log.debug("Failed checking dependencies for container: " + dsDef.getContainer().getPath() + ", it has been deleted.");
+                        _log.debug("Failed checking dependencies for container: {}, it has been deleted.", dsDef.getContainer().getPath());
 
                     return new ArrayList<>(dependencies.values());
                 }
@@ -151,7 +151,7 @@ public abstract class SnapshotDependency
                 {
                     // ignore container conversion errors, most likely a race condition where the container has been deleted but
                     // the dependency thread continues to check (issue: 11659)
-                    _log.info("Failed checking dependencies for container: " + sourceData.getContainer().getPath(), e);
+                    _log.info("Failed checking dependencies for container: {}", sourceData.getContainer().getPath(), e);
                 }
             }
             return Collections.emptyList();
@@ -194,7 +194,7 @@ public abstract class SnapshotDependency
                     {
                         if (datasetKey.equals(key))
                         {
-                            _log.info("Snapshot: " + qsDef.getName() + " base table: " + key + " matched modified dataset table");
+                            _log.info("Snapshot: {} base table: {} matched modified dataset table", qsDef.getName(), key);
                             return true;
                         }
                     }

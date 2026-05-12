@@ -38,6 +38,7 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.validation.BindException;
 
 import jakarta.servlet.ServletException;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
@@ -168,7 +169,7 @@ public class SqlController extends SpringActionController
     public class ExecuteAction extends ReadOnlyApiAction<SqlForm>
     {
         @Override
-        public Object execute(SqlForm form, BindException errors) throws ServletException
+        public Object execute(SqlForm form, BindException errors) throws ServletException, SQLException, IOException
         {
             String schemaString = form.getSchema();
             SchemaKey schemaKey = null == schemaString ? new SchemaKey(null,"core") : SchemaKey.decode(schemaString);
@@ -222,10 +223,6 @@ public class SqlController extends SpringActionController
             catch (QueryParseException x)
             {
                 errors.reject(ERROR_MSG, x.getMessage());
-            }
-            catch (SQLException|IOException x)
-            {
-                throw new ServletException(x);
             }
             return null;
         }

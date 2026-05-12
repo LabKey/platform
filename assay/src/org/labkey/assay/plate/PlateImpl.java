@@ -237,13 +237,16 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     }
 
     @JsonIgnore
-    protected WellGroupImpl storeWellGroup(WellGroupImpl group)
+    public WellGroupImpl storeWellGroup(WellGroupImpl group)
     {
         group.setPlate(this);
 
         if (_groups == null)
             _groups = new HashMap<>();
         Map<String, WellGroupImpl> groupsByType = _groups.computeIfAbsent(group.getType(), k -> new LinkedHashMap<>());
+        // If this group has a rowId, remove any stale entry keyed under the old name (rename case).
+        if (group.getRowId() != null)
+            groupsByType.values().removeIf(existing -> group.getRowId().equals(existing.getRowId()));
         groupsByType.put(group.getName(), group);
         if (!wellGroupsInOrder(groupsByType))
         {
@@ -281,14 +284,14 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
     @JsonIgnore
     @Override
-    public @NotNull List<WellGroup> getWellGroups(Position position)
+    public @NotNull List<WellGroupImpl> getWellGroups(Position position)
     {
-        List<WellGroup> wellGroups = getWellGroups();
+        List<WellGroupImpl> wellGroups = getWellGroups();
         if (wellGroups.isEmpty())
             return Collections.emptyList();
 
-        List<WellGroup> groups = new ArrayList<>();
-        for (WellGroup group : wellGroups)
+        List<WellGroupImpl> groups = new ArrayList<>();
+        for (WellGroupImpl group : wellGroups)
         {
             if (group.contains(position))
                 groups.add(group);
@@ -299,12 +302,12 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
     @JsonIgnore
     @Override
-    public @NotNull List<WellGroup> getWellGroups()
+    public @NotNull List<WellGroupImpl> getWellGroups()
     {
         if (_groups == null)
             return Collections.emptyList();
 
-        List<WellGroup> allGroups = new ArrayList<>();
+        List<WellGroupImpl> allGroups = new ArrayList<>();
         for (Map<String, WellGroupImpl> groups : _groups.values())
             allGroups.addAll(groups.values());
 

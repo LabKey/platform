@@ -238,7 +238,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         {
             ExpData data = ExperimentService.get().getExpDataByURL(file, getContainer());
             if (data != null)
-                LOG.info("Found existing data: rowId=" + data.getRowId() + ", url=" + data.getDataFileUrl());
+                LOG.info("Found existing data: rowId={}, url={}", data.getRowId(), data.getDataFileUrl());
             if (data != null && data.getRun() != null)
             {
                 ExpRun previousRun = data.getRun();

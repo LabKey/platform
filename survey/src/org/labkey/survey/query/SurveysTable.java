@@ -203,7 +203,7 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
             List<Throwable> errors = SurveyManager.get().fireBeforeDeleteSurvey(c, user, survey);
             if (!errors.isEmpty())
-                throw new QueryUpdateServiceException(errors.get(0).getMessage());
+                throw new QueryUpdateServiceException(errors.getFirst().getMessage());
 
             Map<String, Object> row = super.deleteRow(user, c, oldRowMap);
 

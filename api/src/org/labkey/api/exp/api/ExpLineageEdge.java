@@ -2,7 +2,6 @@ package org.labkey.api.exp.api;
 
 import org.labkey.api.collections.LongHashSet;
 
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 

@@ -5,7 +5,6 @@ import io.modelcontextprotocol.server.McpServerFeatures;
 import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -152,7 +151,7 @@ public interface McpService extends ToolCallbackProvider
     void registerResources(@NotNull List<McpServerFeatures.SyncResourceSpecification> resources);
 
     @Override
-    ToolCallback @NonNull [] getToolCallbacks();
+    ToolCallback @NotNull [] getToolCallbacks();
 
     default ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
     {

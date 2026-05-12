@@ -46,7 +46,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -256,7 +255,7 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                 {
                     List<? extends ExpProtocolApplication> applications = derivationRun.getProtocolApplications();
                     assert applications.size() == 3 : "Expected three protocol applications in each sample derivation run.";
-                    ExpProtocolApplication firstApplication = applications.get(0);
+                    ExpProtocolApplication firstApplication = applications.getFirst();
                     assert firstApplication.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun :
                             "Expected first protocol application to be of type ExperimentRun.";
                     firstApplication.addDataInput(context.getUser(), sampleMetadataFile, AbstractPlateBasedAssayProvider.SAMPLE_METADATA_INPUT_ROLE);

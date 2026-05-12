@@ -5680,7 +5680,7 @@ public class SpecimenController extends SpringActionController
                 }
                 catch (Exception e)
                 {
-                    LOG.error("Error encountered trying to get " + StudyService.get().getSubjectNounSingular(getContainer()) + " comments", e);
+                    LOG.error("Error encountered trying to get {} comments", StudyService.get().getSubjectNounSingular(getContainer()), e);
                 }
             }
             return null;

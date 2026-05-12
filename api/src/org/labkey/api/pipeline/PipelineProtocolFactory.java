@@ -175,8 +175,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
                }
                else if (archiveDir.isFile())
                {
-                   LOG.error("Unable to create archived directory because a file with that name exists in the protocol directory: "
-                           + getProtocolDir(root, false));
+                   LOG.error("Unable to create archived directory because a file with that name exists in the protocol directory: {}", getProtocolDir(root, false));
                    return false;
                }
             }
@@ -222,7 +221,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         }
         catch (IOException e)
         {
-            LOG.debug("Error attempting to delete protocol file " + protocolFile, e);
+            LOG.debug("Error attempting to delete protocol file {}", protocolFile, e);
             return false;
         }
     }

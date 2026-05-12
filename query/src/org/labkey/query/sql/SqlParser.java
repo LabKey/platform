@@ -132,7 +132,7 @@ public class SqlParser
         {
             while (!_pool.isEmpty())
             {
-                SoftReference<T> r = _pool.remove(0);
+                SoftReference<T> r = _pool.removeFirst();
                 T t = r.get();
                 if (null != t)
                     return t;
@@ -200,7 +200,7 @@ public class SqlParser
             parser.reset(str, _parseErrors);
             ParserRuleReturnScope selectScope = parser.statement();
             if (!_parseErrors.isEmpty())
-                throw _parseErrors.get(0);
+                throw _parseErrors.getFirst();
             return (Tree) selectScope.getTree();
         }
     }
@@ -250,10 +250,10 @@ public class SqlParser
 
                 // PARAMETERS
 
-                if (!list.isEmpty() && list.get(0).getType() == SqlBaseParser.PARAMETERS)
+                if (!list.isEmpty() && list.getFirst().getType() == SqlBaseParser.PARAMETERS)
                 {
                     _parameters = new ArrayList<>();
-                    parameters = list.remove(0);
+                    parameters = list.removeFirst();
                     for (Object parameter : parameters.getChildren())
                     {
                         QParameter p = convertParameter((CommonTree)parameter);
@@ -270,9 +270,9 @@ public class SqlParser
                 // COMMON TABLE EXPRESSIONS
 
                 QNode qnodeWith = null;
-                if (!list.isEmpty() && list.get(0).getType() == SqlBaseParser.WITH)
+                if (!list.isEmpty() && list.getFirst().getType() == SqlBaseParser.WITH)
                 {
-                    CommonTree withStmt = list.remove(0);
+                    CommonTree withStmt = list.removeFirst();
                     if (null == _dialect || _dialect.isLabKeyWithSupported())    // Check dialect if we have one
                         qnodeWith = convertParseTree(withStmt);
                     else
@@ -288,7 +288,7 @@ public class SqlParser
                     return null;
                 }
 
-                CommonTree selectStmt = list.remove(0);
+                CommonTree selectStmt = list.removeFirst();
                 if (selectStmt.getType() != QUERY && !isSetOperator(selectStmt.getType()))
                 {
                     errors.add(new QueryParseException(tokenName(selectStmt.getType()) + " statements are not supported", null, parseRoot.getLine(), parseRoot.getCharPositionInLine()));
@@ -338,16 +338,11 @@ public class SqlParser
 
     private boolean isSetOperator(int type)
     {
-        switch (type)
+        return switch (type)
         {
-            case UNION:
-            case UNION_ALL:
-            case INTERSECT:
-            case EXCEPT:
-                return true;
-            default:
-                return false;
-        }
+            case UNION, UNION_ALL, INTERSECT, EXCEPT -> true;
+            default -> false;
+        };
     }
 
 
@@ -678,121 +673,121 @@ public class SqlParser
 
     public static String tokenName(int type)
     {
-        switch (type)
+        return switch (type)
         {
-            case EOF: return "EOF";
-            case AGGREGATE: return "AGGREGATE FUNCTION";
-            case ALIAS: return "AS";
-            case EXPR_LIST: return "EXPR LIST";
-            case IN_LIST: return "IN LIST";
-            case IS_NOT: return "IS NOT";
-            case METHOD_CALL: return "METHOD CALL";
-            case NOT_BETWEEN: return "NOT BETWEEN";
-            case NOT_IN: return "NOT IN";
-            case NOT_LIKE: return "NOT LIKE";
-            case QUERY: return "QUERY";
-            case RANGE: return "RANGE";
-            case ROW_STAR: return "*";
-            case SELECT_FROM: return "SELECT FROM";
-            case UNARY_MINUS: return "-";
-            case UNARY_PLUS: return "+";
-            case UNION_ALL: return "UNION ALL";
-            case ALL: return "ALL";
-            case ANY: return "ANY";
-            case AND: return "AND";
-            case AS: return "AS";
-            case ASCENDING: return "ASCENDING";
-            case AVG: return "AVG";
-            case BETWEEN: return "BETWEEN";
-            case CASE: return "CASE";
-            case CASE2: return "CASE";
-            case CAST: return "CAST";
-            case COUNT: return "COUNT";
-            case DATATYPE: return "DATATYPE";
-            case DELETE: return "DELETE";
-            case DESCENDING: return "DESCENDING";
-            case DISTINCT: return "DISTINCT";
-            case DOT: return "DOT";
-            case ELSE: return "ELSE";
-            case END: return "END";
-            case ESCAPE: return "ESCAPE";
-            case EXISTS: return "EXISTS";
-            case FALSE: return "FALSE";
-            case FROM: return "FROM";
-            case FULL: return "FULL";
-            case GROUP: return "GROUP";
-            case HAVING: return "HAVING";
-            case IFDEFINED: return "IFDEFINED";
-            case IN: return "IN";
-            case INNER: return "INNER";
-            case INSERT: return "INSERT";
-            case INTO: return "INTO";
-            case IS: return "IS";
-            case JOIN: return "JOIN";
-            case LEFT: return "LEFT";
-            case LIKE: return "LIKE";
-            case LIMIT: return "LIMIT";
-            case MAX: return "MAX";
-            case GROUP_CONCAT: return "GROUP_CONCAT";
-            case MIN: return "MIN";
-            case NOT: return "NOT";
-            case NULL: return "NULL";
-            case ON: return "ON";
-            case OR: return "OR";
-            case ORDER: return "ORDER";
-            case OUTER: return "OUTER";
-            case RIGHT: return "RIGHT";
-            case SELECT: return "SELECT";
-            case SET: return "SET";
-            case SOME: return "SOME";
-            case STDDEV: return "STDDEV";
-            case SUM: return "SUM";
-            case THEN: return "THEN";
-            case TRUE: return "TRUE";
-            case UNION: return "UNION";
-            case UPDATE: return "UPDATE";
-            case WHERE: return "WHERE";
-            case WHEN: return "WHEN";
-            case COMMA: return ",";
-            case EQ: return "=";
-            case OPEN: return "(";
-            case CLOSE: return ")";
-            case NUM_INT: return "NUMBER";
-            case BIT_OR: return "|";
-            case BIT_XOR: return "^";
-            case NE: return "!=";
-            case SQL_NE: return "<>";
-            case LT: return "<";
-            case GT: return ">";
-            case LE: return "<=";
-            case GE: return ">=";
-            case CONCAT: return "||";
-            case PLUS: return "+";
-            case MINUS: return "-";
-            case BIT_AND: return "&";
-            case STAR: return "*";
-            case DIV: return "/";
-            case MODULO: return "%";
-            case PARAM: return "?";
-            case QUOTED_STRING: return "QUOTED STRING";
-            case NUM_LONG: return "NUMBER";
-            case NUM_DOUBLE: return "NUMBER";
-            case NUM_FLOAT: return "NUMBER";
-            case IDENT: return "IDENTIFIER";
-            case QUOTED_IDENTIFIER: return "QUOTED IDENTIFIER";
-            case COLON: return ":";
-            case ID_START_LETTER: return "ID_START_LETTER";
-            case ID_LETTER: return "ID_LETTER";
-            case WS: return "WHITE SPACE";
-            case EXPONENT: return "EXPONENT";
-            case FLOAT_SUFFIX: return "FLOAT_SUFFIX";
-            case HEX_DIGIT: return "HEX_DIGIT";
-            case COMMENT: return "COMMENT";
-            case LINE_COMMENT: return "LINE COMMENT";
-            case EXCEPT: return "EXCEPT";
-            case INTERSECT: return "INTERSECT";
-        }
-        return null;
+            case EOF -> "EOF";
+            case AGGREGATE -> "AGGREGATE FUNCTION";
+            case ALIAS -> "AS";
+            case EXPR_LIST -> "EXPR LIST";
+            case IN_LIST -> "IN LIST";
+            case IS_NOT -> "IS NOT";
+            case METHOD_CALL -> "METHOD CALL";
+            case NOT_BETWEEN -> "NOT BETWEEN";
+            case NOT_IN -> "NOT IN";
+            case NOT_LIKE -> "NOT LIKE";
+            case QUERY -> "QUERY";
+            case RANGE -> "RANGE";
+            case ROW_STAR -> "*";
+            case SELECT_FROM -> "SELECT FROM";
+            case UNARY_MINUS -> "-";
+            case UNARY_PLUS -> "+";
+            case UNION_ALL -> "UNION ALL";
+            case ALL -> "ALL";
+            case ANY -> "ANY";
+            case AND -> "AND";
+            case AS -> "AS";
+            case ASCENDING -> "ASCENDING";
+            case AVG -> "AVG";
+            case BETWEEN -> "BETWEEN";
+            case CASE -> "CASE";
+            case CASE2 -> "CASE";
+            case CAST -> "CAST";
+            case COUNT -> "COUNT";
+            case DATATYPE -> "DATATYPE";
+            case DELETE -> "DELETE";
+            case DESCENDING -> "DESCENDING";
+            case DISTINCT -> "DISTINCT";
+            case DOT -> "DOT";
+            case ELSE -> "ELSE";
+            case END -> "END";
+            case ESCAPE -> "ESCAPE";
+            case EXISTS -> "EXISTS";
+            case FALSE -> "FALSE";
+            case FROM -> "FROM";
+            case FULL -> "FULL";
+            case GROUP -> "GROUP";
+            case HAVING -> "HAVING";
+            case IFDEFINED -> "IFDEFINED";
+            case IN -> "IN";
+            case INNER -> "INNER";
+            case INSERT -> "INSERT";
+            case INTO -> "INTO";
+            case IS -> "IS";
+            case JOIN -> "JOIN";
+            case LEFT -> "LEFT";
+            case LIKE -> "LIKE";
+            case LIMIT -> "LIMIT";
+            case MAX -> "MAX";
+            case GROUP_CONCAT -> "GROUP_CONCAT";
+            case MIN -> "MIN";
+            case NOT -> "NOT";
+            case NULL -> "NULL";
+            case ON -> "ON";
+            case OR -> "OR";
+            case ORDER -> "ORDER";
+            case OUTER -> "OUTER";
+            case RIGHT -> "RIGHT";
+            case SELECT -> "SELECT";
+            case SET -> "SET";
+            case SOME -> "SOME";
+            case STDDEV -> "STDDEV";
+            case SUM -> "SUM";
+            case THEN -> "THEN";
+            case TRUE -> "TRUE";
+            case UNION -> "UNION";
+            case UPDATE -> "UPDATE";
+            case WHERE -> "WHERE";
+            case WHEN -> "WHEN";
+            case COMMA -> ",";
+            case EQ -> "=";
+            case OPEN -> "(";
+            case CLOSE -> ")";
+            case NUM_INT -> "NUMBER";
+            case BIT_OR -> "|";
+            case BIT_XOR -> "^";
+            case NE -> "!=";
+            case SQL_NE -> "<>";
+            case LT -> "<";
+            case GT -> ">";
+            case LE -> "<=";
+            case GE -> ">=";
+            case CONCAT -> "||";
+            case PLUS -> "+";
+            case MINUS -> "-";
+            case BIT_AND -> "&";
+            case STAR -> "*";
+            case DIV -> "/";
+            case MODULO -> "%";
+            case PARAM -> "?";
+            case QUOTED_STRING -> "QUOTED STRING";
+            case NUM_LONG -> "NUMBER";
+            case NUM_DOUBLE -> "NUMBER";
+            case NUM_FLOAT -> "NUMBER";
+            case IDENT -> "IDENTIFIER";
+            case QUOTED_IDENTIFIER -> "QUOTED IDENTIFIER";
+            case COLON -> ":";
+            case ID_START_LETTER -> "ID_START_LETTER";
+            case ID_LETTER -> "ID_LETTER";
+            case WS -> "WHITE SPACE";
+            case EXPONENT -> "EXPONENT";
+            case FLOAT_SUFFIX -> "FLOAT_SUFFIX";
+            case HEX_DIGIT -> "HEX_DIGIT";
+            case COMMENT -> "COMMENT";
+            case LINE_COMMENT -> "LINE COMMENT";
+            case EXCEPT -> "EXCEPT";
+            case INTERSECT -> "INTERSECT";
+            default -> null;
+        };
     }
 
 
@@ -896,7 +891,7 @@ public class SqlParser
                 var divisorType = children.size() > 1 ? children.get(1).getTokenType() : 0;
                 if (divisorType==METHOD_CALL)
                 {
-                    var method = children.get(1).childList().get(0);
+                    var method = children.get(1).childList().getFirst();
                     if ("NULLIF".equalsIgnoreCase(method.getTokenText()))
                         usesNullIf = true;
                 }
@@ -1008,7 +1003,7 @@ public class SqlParser
                     args.add(exprList.childList().get(1));
                     args.add(exprList.childList().get(2));
                     exprList._replaceChildren(args);
-                    validateTimestampConstant(args.get(0));
+                    validateTimestampConstant(args.getFirst());
                 }
                 else if (name.equals("age"))
                 {
@@ -1065,7 +1060,7 @@ public class SqlParser
 
                     if (children.size() > 1 && first(children) instanceof QDistinct)
                     {
-                        children.remove(0);
+                        children.removeFirst();
                         distinct = true;
                     }
 
@@ -1871,8 +1866,8 @@ public class SqlParser
         QIdentifier methodName = null;
         if (expr instanceof QMethodCall)
         {
-            if (expr.childList().get(0) instanceof QIdentifier)
-                methodName = (QIdentifier)expr.childList().get(0);
+            if (expr.childList().getFirst() instanceof QIdentifier)
+                methodName = (QIdentifier)expr.childList().getFirst();
         }
 
         QExpr ret = (QExpr) expr.clone();
@@ -2139,7 +2134,7 @@ public class SqlParser
             List<QueryParseException> errors = new ArrayList<>();
             QNode q = (new SqlParser()).parseQuery(sql,errors,null);
             if (!errors.isEmpty())
-                fail(errors.get(0), sql);
+                fail(errors.getFirst(), sql);
             assertNotNull(q);
         }
 

@@ -309,8 +309,8 @@ public class ExpGeneratorHelper
         Map<URI, ExpData> datas = new LinkedHashMap<>();
 
         // Set up the inputs to the whole run
-        ExpProtocolApplication inputApp = run.addProtocolApplication(user, expActions.get(0), protocol.getApplicationType(), "Run inputs");
-        ExpProtocolApplication outputApp = run.addProtocolApplication(user, expActions.get(expActions.size() - 1), ExpProtocol.ApplicationType.ExperimentRunOutput, "Run outputs");
+        ExpProtocolApplication inputApp = run.addProtocolApplication(user, expActions.getFirst(), protocol.getApplicationType(), "Run inputs");
+        ExpProtocolApplication outputApp = run.addProtocolApplication(user, expActions.getLast(), ExpProtocol.ApplicationType.ExperimentRunOutput, "Run outputs");
         for (Map.Entry<URI, String> runInput : runInputsWithRoles.entrySet())
         {
             URI uri = runInput.getKey();
@@ -589,17 +589,17 @@ public class ExpGeneratorHelper
      */
     static private boolean validateProtocol(Map<String, ExpProtocol> protocolCache, List<String> protocolSequence, ExpProtocol parentProtocol, String description, Logger log)
     {
-        log.debug("Checking " + parentProtocol.getLSID() + " to see if it is a match");
+        log.debug("Checking {} to see if it is a match", parentProtocol.getLSID());
         List<? extends ExpProtocolAction> existingSteps = parentProtocol.getSteps();
         // Two extra steps in the database, one to mark the run inputs, one to mark the run outputs
         if (existingSteps.size() != protocolSequence.size() + 2)
         {
-            log.debug("Wrong number of steps in existing protocol, expected " + (protocolSequence.size() + 2) + " but was " + existingSteps.size());
+            log.debug("Wrong number of steps in existing protocol, expected {} but was {}", protocolSequence.size() + 2, existingSteps.size());
             return false;
         }
         if (!description.equals(parentProtocol.getName()))
         {
-            log.debug("Parent protocol names do not match, expected " + description + " but was " + parentProtocol.getName());
+            log.debug("Parent protocol names do not match, expected {} but was {}", description, parentProtocol.getName());
             return false;
         }
 
@@ -609,19 +609,19 @@ public class ExpGeneratorHelper
             ExpProtocol childProtocol = step.getChildProtocol();
             if (step.getActionSequence() != sequence)
             {
-                log.debug("Wrong sequence number, expected " + sequence + " but was " + step.getActionSequence());
+                log.debug("Wrong sequence number, expected {} but was {}", sequence, step.getActionSequence());
                 return false;
             }
             if (sequence == 1)
             {
                 if (childProtocol.getApplicationType() != ExpProtocol.ApplicationType.ExperimentRun)
                 {
-                    log.debug("Expected first step to be of type ExperimentRun, but was " + childProtocol.getApplicationType());
+                    log.debug("Expected first step to be of type ExperimentRun, but was {}", childProtocol.getApplicationType());
                     return false;
                 }
                 if (childProtocol.getRowId() != parentProtocol.getRowId())
                 {
-                    log.debug("Expected first step to match up with parent protocol rowId " + parentProtocol.getRowId() + " but was " + childProtocol.getRowId());
+                    log.debug("Expected first step to match up with parent protocol rowId {} but was {}", parentProtocol.getRowId(), childProtocol.getRowId());
                     return false;
                 }
             }
@@ -629,19 +629,19 @@ public class ExpGeneratorHelper
             {
                 if (childProtocol.getApplicationType() != ExpProtocol.ApplicationType.ExperimentRunOutput)
                 {
-                    log.debug("Expected last step to be of type ExperimentRunOutput, but was " + childProtocol.getApplicationType());
+                    log.debug("Expected last step to be of type ExperimentRunOutput, but was {}", childProtocol.getApplicationType());
                     return false;
                 }
                 Lsid outputLsid = createOutputProtocolLSID(new Lsid(parentProtocol.getLSID()));
                 String outputName = outputLsid.getObjectId();
                 if (!childProtocol.getName().equals(outputName))
                 {
-                    log.debug("Expected last step to have name " + outputName + " but was " + childProtocol.getName());
+                    log.debug("Expected last step to have name {} but was {}", outputName, childProtocol.getName());
                     return false;
                 }
                 if (!childProtocol.getLSID().equals(outputLsid.toString()))
                 {
-                    log.debug("Expected last step to have LSID " + outputLsid + " but was " + childProtocol.getLSID());
+                    log.debug("Expected last step to have LSID {} but was {}", outputLsid, childProtocol.getLSID());
                     return false;
                 }
             }
@@ -650,17 +650,17 @@ public class ExpGeneratorHelper
                 String protocolName = protocolSequence.get(sequence - 2);
                 if (childProtocol.getApplicationType() != ExpProtocol.ApplicationType.ProtocolApplication)
                 {
-                    log.debug("Expected step with sequence " + sequence + " to be of type ProtocolApplication, but was " + childProtocol.getApplicationType());
+                    log.debug("Expected step with sequence {} to be of type ProtocolApplication, but was {}", sequence, childProtocol.getApplicationType());
                     return false;
                 }
                 if (!childProtocol.getName().equals(protocolName))
                 {
-                    log.debug("Expected step with sequence " + sequence + " to have name " + protocolName + " but was " + childProtocol.getName());
+                    log.debug("Expected step with sequence {} to have name {} but was {}", sequence, protocolName, childProtocol.getName());
                     return false;
                 }
                 if (childProtocol.getRowId() != protocolCache.get(protocolName).getRowId())
                 {
-                    log.debug("Expected step with sequence " + sequence + " to match up with protocol rowId " + protocolCache.get(protocolName).getRowId() + " but was " + childProtocol.getRowId());
+                    log.debug("Expected step with sequence {} to match up with protocol rowId {} but was {}", sequence, protocolCache.get(protocolName).getRowId(), childProtocol.getRowId());
                     return false;
                 }
             }

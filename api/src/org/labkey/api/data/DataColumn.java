@@ -756,7 +756,7 @@ public class DataColumn extends DisplayColumn
             options.add(new OptionBuilder().build());
 
         Set<String> selectedValues = strValues.isEmpty() ? Set.of() :
-                strValues.size()==1 ? (null == strValues.get(0) ? Set.of() : Set.of(strValues.get(0))) :
+                strValues.size()==1 ? (null == strValues.getFirst() ? Set.of() : Set.of(strValues.getFirst())) :
                 new HashSet<>(strValues);
         for (NamedObject entry : entryList)
         {

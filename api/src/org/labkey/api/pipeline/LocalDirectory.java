@@ -18,8 +18,8 @@ package org.labkey.api.pipeline;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.FileUtil;
 import org.labkey.vfs.FileLike;
@@ -61,7 +61,7 @@ public class LocalDirectory implements Serializable
 
     @JsonCreator
     private LocalDirectory(
-            @JsonProperty("_localDirectoryFile") FileLike localDirectoryFile,
+            @JsonProperty("_localDirectoryFile") @NotNull FileLike localDirectoryFile,
             @JsonProperty("_isTemporary") boolean isTemporary,
             @JsonProperty("_pipeRoot") PipeRoot pipeRoot,
             @JsonProperty("_baseLogFileName") String baseLogFileName,
@@ -169,14 +169,14 @@ public class LocalDirectory implements Serializable
                     if (!tempFile.exists())
                     {
                         FileUtil.copyFile(path, tempFile, StandardCopyOption.COPY_ATTRIBUTES);
-                        log.info("Created temp file because input is from cloud: " + path);
+                        log.info("Created temp file because input is from cloud: {}", path);
                     }
                     return tempFile;
                 }
             }
             catch (IOException e)
             {
-                log.error("IO Error: " + e.getMessage());
+                log.error("IO Error: {}", e.getMessage());
             }
         }
         return null;
@@ -203,16 +203,16 @@ public class LocalDirectory implements Serializable
             FileLike tempFile = containerDir.resolveChild(tempFileName);
             if (!tempFile.exists())
             {
-                log.debug("Copying file to container's temp directory: " + remotePath);
+                log.debug("Copying file to container's temp directory: {}", remotePath);
                 FileUtil.copyFile(remotePath, tempFile, StandardCopyOption.COPY_ATTRIBUTES);
-                log.debug("Copied " + tempFile.getSize() + " bytes.");
+                log.debug("Copied {} bytes.", tempFile.getSize());
             }
             return tempFile;
         }
         catch (NoSuchFileException e)
         {
             // Avoid a separate round-trip just to determine if file is available, as it adds ~1 overhead per call
-            log.debug("Could not find remote file: " + remotePath + ", unable to copy locally");
+            log.debug("Could not find remote file: {}, unable to copy locally", remotePath);
             return null;
         }
         catch (IOException e)

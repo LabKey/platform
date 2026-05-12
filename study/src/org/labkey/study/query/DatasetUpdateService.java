@@ -25,7 +25,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.assay.AssayFileWriter;
-import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ResultSetRowMapFactory;
@@ -588,7 +587,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> _update(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
+    protected Map<String, Object> _update(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws ValidationException
     {
         try (DbScope.Transaction transaction = StudyService.get().getDatasetSchema().getScope().ensureTransaction())
         {
@@ -1034,7 +1033,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             assertFalse(errors.hasErrors());
             assertNotNull(result);
             assertEquals(1, result.size());
-            var map = result.get(0);
+            var map = result.getFirst();
             assertEquals("S1", map.get(SUBJECT_COLUMN_NAME));
             assertEquals("f", map.get("Field1"));
             assertEquals("s", map.get("SELECT"));
@@ -1059,7 +1058,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
                 fail(errors.getMessage());
             assertNotNull(result);
             assertEquals(1, result.size());
-            map = result.get(0);
+            map = result.getFirst();
             assertEquals("S2", map.get(SUBJECT_COLUMN_NAME));
             // All other columns are preserved
             assertEquals("f", map.get("Field1"));
@@ -1092,7 +1091,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
                 fail(errors.getMessage());
             assertNotNull(result);
             assertEquals(1, result.size());
-            map = result.get(0);
+            map = result.getFirst();
             assertEquals("S2", map.get(SUBJECT_COLUMN_NAME));
             assertEquals("fUpdated", map.get("Field1"));
             assertEquals("sUpdated", map.get("SELECT"));

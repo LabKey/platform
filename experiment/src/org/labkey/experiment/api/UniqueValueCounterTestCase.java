@@ -155,7 +155,7 @@ public class UniqueValueCounterTestCase
         if (errors.hasErrors())
             throw errors;
         assertEquals(1, inserted.size());
-        assertEquals("STP.12.1.SUF4B", inserted.get(0).get("name"));
+        assertEquals("STP.12.1.SUF4B", inserted.getFirst().get("name"));
 
 
         // GOOD INSERT - not including the attached column 'three' is ok
@@ -166,7 +166,7 @@ public class UniqueValueCounterTestCase
         if (errors.hasErrors())
             throw errors;
         assertEquals(1, inserted.size());
-        assertEquals("STP.10.5.SUF1", inserted.get(0).get("name"));
+        assertEquals("STP.10.5.SUF1", inserted.getFirst().get("name"));
 
 
         // BAD INSERT - Duplicate name
@@ -294,7 +294,7 @@ public class UniqueValueCounterTestCase
         inserted = svc.insertRows(user, c, rows, errors, null, null);
         assertFalse(errors.hasErrors());
         assertEquals(1, inserted.size());
-        assertEquals("DC-10.1.5", inserted.get(0).get("name"));
+        assertEquals("DC-10.1.5", inserted.getFirst().get("name"));
 
 
         // NOTE: This test case doesn't repro for SampleType because the CoerceDataIterator is run before the CounterDataIteratorBuilder and will include null values for any missing columns

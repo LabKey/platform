@@ -56,12 +56,6 @@ public class CustomQueryDefinitionImpl extends QueryDefinitionImpl
     }
 
     @Override
-    public boolean isMetadataEditable()
-    {
-        return true;
-    }
-
-    @Override
     public String getSql()
     {
         return getQueryDef().getSql();

@@ -77,16 +77,4 @@ public class SchemaTreeWalker<R, P> extends SimpleSchemaTreeVisitor<R, P>
         }
         return r;
     }
-
-    @Override
-    public R visitTable(TableInfo table, Path path, P param)
-    {
-        return defaultAction(table, path, param);
-    }
-
-    @Override
-    public R visitTableError(UserSchema schema, String name, Exception e, Path path, P param)
-    {
-        return defaultErrorAction(schema, name, e, path, param);
-    }
 }
