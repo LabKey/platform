@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -33,7 +34,6 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
@@ -394,7 +394,7 @@ public class SqlController extends SpringActionController
             SchemaKey schemaKey = null == schemaString ? new SchemaKey(null,"core") : SchemaKey.decode(schemaString);
 
             { // spring binding doesn't handle this form very well (
-                if (!StringUtils.contains(getViewContext().getRequest().getContentType(),"json"))
+                if (!Strings.CS.contains(getViewContext().getRequest().getContentType(),"json"))
                 {
                     // white space is broken for separators, so rebind just in case
                     if (StringUtils.isNotEmpty((String)getProperty("sep")))
@@ -403,7 +403,7 @@ public class SqlController extends SpringActionController
                         form.setEol((String)getProperty("eol"));
                     for (PropertyValue pv : getPropertyValues().getPropertyValues())
                     {
-                        if (StringUtils.startsWith(pv.getName(),"parameters."))
+                        if (Strings.CS.startsWith(pv.getName(),"parameters."))
                         {
                             String name = pv.getName().substring("parameters.".length());
                             Object value = pv.getValue();
