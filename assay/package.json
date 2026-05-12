@@ -49,7 +49,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.35.2-pageStructure.9"
+    "@labkey/components": "7.35.2-pageStructure.10"
   },
   "devDependencies": {
     "@labkey/build": "9.1.2",
