@@ -26,8 +26,16 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.MemBean" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.text.DecimalFormat" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("admin/caches.js");
+    }
+%>
 <%
     JspView<MemBean> me = HttpView.currentView();
     MemBean bean = me.getModelBean();
@@ -45,11 +53,16 @@
 %>
 <% if (hasAdminPerm) { %>
 <p>
-    <%=link("Clear Caches, GC and Refresh", AdminController.getMemTrackerURL(true, true))%>
-    <%=link("GC and Refresh", AdminController.getMemTrackerURL(false, true))%>
-    <%=link("Refresh", AdminController.getMemTrackerURL(false, false))%>
+    <a href="#" id="clearCachesGc" class="labkey-text-link">Clear Caches, GC and Refresh</a>
+    <a href="#" id="gcOnly" class="labkey-text-link">GC and Refresh</a>
+    <a href="#" id="refreshPage" class="labkey-text-link">Refresh</a>
     <% if (getUser().hasSiteAdminPermission()) { %> <%=link("Memory Stress Test", new ActionURL(AdminController.MemoryStressTestAction.class, ContainerManager.getRoot()))%> <% } %>
+    <span id="cacheSpinner" style="display:none; margin-left:8px;">
+        <span style="display:inline-block; width:14px; height:14px; border:2px solid #ccc; border-top-color:#333; border-radius:50%; animation:lk-spin 0.7s linear infinite; vertical-align:middle;"></span>
+    </span>
+    <style>@keyframes lk-spin { to { transform: rotate(360deg); } }</style>
 </p>
+<div id="cacheError" class="labkey-error" style="display:none;"></div>
 <% } %>
 <table class="labkey-wp">
     <tr class="labkey-wp-header">

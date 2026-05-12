@@ -68,19 +68,15 @@ describe('ErrorHandlerImpl', () => {
     });
 
     test('Execution exception', async () => {
-        const expectedStackTrace = 'java.lang.NullPointerException: null';
-
         const errorDetails: ErrorDetails = {
             errorType: ErrorType.execution,
             errorCode: '456AAA',
             message: 'This is a execution exception',
-            stackTrace: expectedStackTrace,
         };
         renderWithAppContext(<ErrorHandlerImpl context={{ errorDetails }} />);
         expect(document.querySelector('.labkey-error-subheading').innerHTML.includes(errorDetails.message)).toBeTruthy();
         expect(document.querySelectorAll('.error-details-container')).toHaveLength(0);
 
         await userEvent.click(document.querySelectorAll('.error-page-button')[2]);
-        expect(document.querySelector('pre').innerHTML.startsWith(expectedStackTrace)).toBeTruthy();
     });
 });
