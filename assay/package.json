@@ -55,7 +55,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.35.3-fb-keyboardInteraction.0"
+    "@labkey/components": "7.35.3-fb-keyboardInteraction.1"
   },
   "devDependencies": {
     "@labkey/build": "9.1.3",
