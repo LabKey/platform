@@ -59,7 +59,11 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     @Override
     protected String getServicePrompt()
     {
-        return getPromptResource(PromptResource.ExpressionAssistant);
+        // Explicitly pass in the LabKey SQL documentation until we get McpResources registered and available
+        // to the client
+        return getPromptResource(PromptResource.ExpressionAssistant) +
+            "\n\nLabKey SQL documentation:\n\n" +
+            getPromptResource(PromptResource.LabKeySql);
     }
 
     @Override
