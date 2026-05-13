@@ -237,7 +237,7 @@ Here is a summary of the available functions and methods in LabKey SQL.
 
 ### **9. JSON and JSONB Operators and Functions (PostgreSQL Only)**
 
-LabKey SQL supports PostgreSQL JSON and JSONB operators and functions for working with JSON data stored in columns. These are **not available on MS SQL Server**. LabKey SQL does not natively understand arrays, but functions that expect them may still work. See the [PostgreSQL docs](https://www.postgresql.org/docs/14/functions-json.html) for detailed usage.
+LabKey SQL supports PostgreSQL JSON and JSONB operators and functions for working with JSON data stored in columns. These are **not available on MS SQL Server**. See the [PostgreSQL docs](https://www.postgresql.org/docs/14/functions-json.html) for detailed usage. 
 
 #### **Operators via `json_op`**
 
@@ -337,3 +337,33 @@ When writing LabKey SQL queries that work with JSON columns:
 4. **Use `jsonb_build_object()` to construct JSON** — for building JSON from column values: `jsonb_build_object('id', rowid, 'name', label)`.
 5. **Check database type first** — these functions only work on PostgreSQL. If the target server may use MS SQL Server, do not use them.
 6. **The `validateSQL` MCP tool can verify syntax** — use it to check JSON function calls before the user saves a query.
+
+-----
+
+### **10. Array Functions (PostgreSQL Only)**
+
+LabKey SQL supports a set of array construction and comparison functions. These are **not available on MS SQL Server**. They route through dialect-specific SQL generation rather than passing through directly to PostgreSQL.
+
+#### **Construction**
+
+* `ARRAY[elem, ...]` → ARRAY: builds an array from zero or more elements of any type. Equivalent to PostgreSQL `ARRAY[...]`.
+* `TEXT_ARRAY[elem, ...]` → TEXT[]: like `ARRAY[]` but casts the result to `TEXT[]`.
+
+#### **Element Membership**
+
+* `array_contains_element(array, element)` → BOOLEAN: true if the element appears in the array. Equivalent to PostgreSQL `element = ANY(array)`. Use `NOT array_contains_element(arr, val)` for the negative — there is no separate "does not contain" function.
+
+#### **Array-vs-Array Comparisons**
+
+* `array_contains_all(array_a, array_b)` → BOOLEAN: true if every element of `array_b` is in `array_a`. Equivalent to PostgreSQL `array_a @> array_b`.
+* `array_contains_any(array_a, array_b)` → BOOLEAN: true if at least one element of `array_b` is in `array_a`. Equivalent to PostgreSQL `array_a && array_b`.
+* `array_contains_none(array_a, array_b)` → BOOLEAN: true if no element of `array_b` is in `array_a`.
+* `array_is_same(array_a, array_b)` → BOOLEAN: unordered set equality — both arrays contain exactly the same elements regardless of order. Use `NOT array_is_same(...)` for the negative.
+
+#### **Emptiness**
+
+* `array_is_empty(array)` → BOOLEAN: true if the array has no elements. The argument must be of type ARRAY; a type mismatch is caught at query-parse time.
+
+#### **Not Supported**
+
+`array_length`, `array_append`, `array_prepend`, `array_cat`, `array_remove`, `array_replace`, `array_position`, `array_to_string`, and subscript access (`arr[n]`) are not available in LabKey SQL.
