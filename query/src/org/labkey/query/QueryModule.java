@@ -99,6 +99,7 @@ import org.labkey.query.analytics.SummaryStatisticsAnalyticsProvider;
 import org.labkey.query.audit.GridViewAuditProvider;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
+import org.labkey.query.controllers.ExpressionAssistantAgentAction;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.controllers.QueryMcp;
@@ -428,7 +429,7 @@ public class QueryModule extends DefaultModule
             MemberSet.TestCase.class,
             MetadataElementBase.TestCase.class,
             Method.TestCase.class,
-            QueryController.ExpressionAssistantTestCase.class,
+            ExpressionAssistantAgentAction.TestCase.class,
             QNode.TestCase.class,
             Query.TestCase.class,
             ReportsController.SerializationTest.class,

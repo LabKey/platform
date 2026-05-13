@@ -162,7 +162,7 @@ public class QueryMcp implements McpService.McpImpl
     }
 
     @Tool(description = "Validate a SQL expression for a calculated column. The set of available columns and their types, including any PHI-restricted columns, is supplied by the hosting endpoint, not by the caller; you only need to provide the expression itself.")
-    @McpInternal("Added for validation for the QueryController.ExpressionAssistantAgentAction endpoint.")
+    @McpInternal("Added for validation for the ExpressionAssistantAgentAction endpoint.")
     @RequiresPermission(ReadPermission.class)
     String validateCalculatedColumnExpression(
             ToolContext toolContext,

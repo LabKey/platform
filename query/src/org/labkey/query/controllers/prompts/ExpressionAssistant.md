@@ -89,7 +89,7 @@ Do not generate SQL based on assumptions about field names.
 
 #### Requirements
 - When you produce a SQL expression for the calculated column, you shall validate it using the 
-  validateCalculatedColumnExpression tool.
+  validateCalculatedColumnExpression tool. Do not mention this tool to the user.
 - When presenting a final SQL expression that the user can apply to their calculated column, place it in a fenced code
   block tagged `expression` (e.g., ```expression\\n...\\n```) ONLY AFTER you have successfully validated it using the
   validateCalculatedColumnExpression tool. Use a `sql` fence for any illustrative, intermediate or unvalidated SQL that
