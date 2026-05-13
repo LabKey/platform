@@ -52,6 +52,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
 import org.labkey.api.dataiterator.CachingDataIterator;
+import org.labkey.api.dataiterator.DataClassDataIteratorTransformer;
 import org.labkey.api.dataiterator.CoerceDataIterator;
 import org.labkey.api.dataiterator.DataClassUpdateAddColumnsDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
@@ -1120,9 +1121,20 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             final int batchSize = _context.getInsertOption().batch ? BATCH_SIZE : 1;
             step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId(), batchSize, _dataClass.getMinGenId());
 
+            // Apply registered DataClass-specific DataIterator transformer (e.g., Molecule Component-N/X → components JSON)
+            DataIteratorBuilder step1 = step0;
+            DataClassDataIteratorTransformer transformer = ExperimentService.get().getDataClassDataIteratorTransformer(_dataClass.getName());
+            if (transformer != null)
+            {
+                if (transformer.prepareTranslator(step0, columnNameMap, context))
+                    step1 = LoggingDataIterator.wrap(transformer.wrapDataIterator(step0, context));
+                if (context.getErrors().hasErrors())
+                    return null;
+            }
+
             // Table Counters
             ExpDataClassDataTableImpl queryTable = ExpDataClassDataTableImpl.this;
-            var counterDIB = ExpDataIterators.CounterDataIteratorBuilder.create(step0, _dataClass.getContainer(), queryTable, ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId());
+            var counterDIB = ExpDataIterators.CounterDataIteratorBuilder.create(step1, _dataClass.getContainer(), queryTable, ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId());
             DataIterator di;
 
             // Generate names
@@ -1180,9 +1192,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public QueryUpdateService getUpdateService()
     {
-        QueryUpdateService base = new DataClassDataUpdateService(this);
-        UnaryOperator<QueryUpdateService> decorator = ExperimentService.get().getDataClassUpdateServiceDecorator(_dataClass.getName());
-        return decorator != null ? decorator.apply(base) : base;
+        return new DataClassDataUpdateService(this);
     }
 
     class DataClassDataUpdateService extends DefaultQueryUpdateService

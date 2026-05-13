@@ -94,6 +94,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.dataiterator.DataClassDataIteratorTransformer;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.AbstractParameter;
@@ -355,7 +356,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private final Map<String, DataType> _dataTypes = new HashMap<>();
     private final Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
     private final Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
-    private final Map<String, UnaryOperator<QueryUpdateService>> _dataClassUpdateServiceDecorators = new ConcurrentHashMap<>();
+    private final Map<String, Supplier<DataClassDataIteratorTransformer>> _dataClassDataIteratorTransformers = new ConcurrentHashMap<>();
     private final Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
     private final List<ObjectReferencer> _objectReferencers = new ArrayList<>();
     private final List<ColumnExporter> _columnExporters = new ArrayList<>();
@@ -1594,15 +1595,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void registerDataClassUpdateServiceDecorator(String dataClassName, @NotNull UnaryOperator<QueryUpdateService> decorator)
+    public void registerDataClassDataIteratorTransformer(String dataClassName, @NotNull Supplier<DataClassDataIteratorTransformer> factory)
     {
-        _dataClassUpdateServiceDecorators.put(dataClassName.toLowerCase(), decorator);
+        _dataClassDataIteratorTransformers.put(dataClassName.toLowerCase(), factory);
     }
 
     @Override
-    public @Nullable UnaryOperator<QueryUpdateService> getDataClassUpdateServiceDecorator(String dataClassName)
+    public @Nullable DataClassDataIteratorTransformer getDataClassDataIteratorTransformer(String dataClassName)
     {
-        return _dataClassUpdateServiceDecorators.get(dataClassName.toLowerCase());
+        Supplier<DataClassDataIteratorTransformer> factory = _dataClassDataIteratorTransformers.get(dataClassName.toLowerCase());
+        return factory != null ? factory.get() : null;
     }
 
     @Override

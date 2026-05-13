@@ -32,6 +32,7 @@ import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataClassDataIteratorTransformer;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentProtocolHandler;
@@ -102,6 +103,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import static org.labkey.api.exp.api.ExpDataClass.NEW_DATA_CLASS_ALIAS_VALUE;
@@ -660,17 +662,19 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClass dataClass);
 
     /**
-     * Registers a decorator that wraps the {@link QueryUpdateService} returned by the DataClass data table
-     * for DataClass tables with the specified name. This allows modules (e.g. Biologics) to customize
-     * the import pipeline for a specific DataClass, applying to both sync and async import paths.
+     * Registers a factory that creates a {@link DataClassDataIteratorTransformer}
+     * for the specified DataClass name. The transformer is applied in the pre-trigger DataIterator pipeline,
+     * allowing modules to add computed columns (e.g., transforming flat columns into JSON) that work
+     * uniformly for file imports, API imports, folder imports, and background pipeline jobs.
+     * A fresh instance is created per import via the factory since transformers may be stateful.
      */
-    void registerDataClassUpdateServiceDecorator(String dataClassName, @NotNull UnaryOperator<QueryUpdateService> decorator);
+    void registerDataClassDataIteratorTransformer(String dataClassName, @NotNull Supplier<DataClassDataIteratorTransformer> factory);
 
     /**
-     * Returns the decorator registered for the given DataClass name via
-     * {@link #registerDataClassUpdateServiceDecorator}, or {@code null} if none is registered.
+     * Returns a fresh {@link DataClassDataIteratorTransformer} for the given
+     * DataClass name, or {@code null} if none is registered.
      */
-    @Nullable UnaryOperator<QueryUpdateService> getDataClassUpdateServiceDecorator(String dataClassName);
+    @Nullable DataClassDataIteratorTransformer getDataClassDataIteratorTransformer(String dataClassName);
 
     ExpProtocolTable createProtocolTable(String name, UserSchema schema, ContainerFilter cf);
 
