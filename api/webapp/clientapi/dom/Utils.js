@@ -78,7 +78,7 @@ LABKEY.Utils = new function(impl, $) {
         var html = [
             '<div class="modal-header">',
                 (!disableCloseBtn && supportsModal() ? '<button type="button" class="close" data-dismiss="modal">&times;</button>' : ''),
-                '<h4 class="modal-title">' + LABKEY.Utils.encodeHtml(title) + '</h4>',
+                '<h2 class="modal-title">' + LABKEY.Utils.encodeHtml(title) + '</h2>',
             '</div>',
             '<div class="modal-body">'
         ];
