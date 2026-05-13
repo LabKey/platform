@@ -33,6 +33,10 @@ export interface AuthConfigProvider {
 export interface GlobalSettingsOptions {
     AutoCreateAccounts?: boolean;
     DefaultDomain?: string;
+    LoginAttemptEnabled?: boolean;
+    LoginAttemptLimit?: string;
+    LoginAttemptPeriod?: string;
+    LoginAttemptResetTime?: string;
     SelfRegistration?: boolean;
     SelfServiceEmailChanges?: boolean;
 }
