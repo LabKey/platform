@@ -53,7 +53,6 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -70,7 +69,6 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.List;
 import java.util.Map;
 
 import static org.labkey.api.data.ContainerManager.REQUIRE_USER_COMMENTS_PROPERTY_NAME;
@@ -383,7 +381,7 @@ public class AuditController extends SpringActionController
         @Override
         public Object execute(AuditTransactionForm form, BindException errors)
         {
-            Pair<List<Long>, Map<Long, Long>> results;
+            AuditLogImpl.TransactionRowIds results;
             User elevatedUser = ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser());
             ContainerFilter cf = ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getContainer(), elevatedUser);
             if (form.isSampleType())
@@ -393,8 +391,8 @@ public class AuditController extends SpringActionController
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", true);
-            response.put("rowIds", results.first);
-            response.put("dataTypeRowCounts", results.second);
+            response.put("rowIds", results.rowIds());
+            response.put("dataTypeRowCounts", results.dataTypeRowCounts());
 
             return response;
         }

@@ -295,7 +295,9 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                                     context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
                                     context.putConfigParameter(QueryUpdateService.ConfigParameters.SkipInsertOptionValidation, Boolean.TRUE); // allow merge during folder import, needed for eval data loading
                                     context.setLookupResolutionType(LookupResolutionType.alternateThenPrimaryKey);
-                                    ((AbstractQueryUpdateService)qus).setAttachmentDirectory(dir.getDir(tableName));
+                                    AbstractQueryUpdateService aqus = qus instanceof AbstractQueryUpdateService a ? a : qus.unwrap(AbstractQueryUpdateService.class);
+                                    if (aqus != null)
+                                        aqus.setAttachmentDirectory(dir.getDir(tableName));
                                     Map<Enum, Object> options = new HashMap<>();
                                     try
                                     {

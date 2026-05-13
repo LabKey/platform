@@ -324,4 +324,16 @@ public interface QueryUpdateService extends HasPermission
 
     /** Set up the data iterator for any special behavior needed for the target table */
     default void configureDataIteratorContext(DataIteratorContext context) {}
+
+    /**
+     * Unwrap a decorator to access the underlying service of the given type.
+     * Decorators should override this to delegate to their inner service.
+     * Returns {@code null} if the requested type is not available.
+     */
+    default @Nullable <T> T unwrap(Class<T> iface)
+    {
+        if (iface.isInstance(this))
+            return iface.cast(this);
+        return null;
+    }
 }

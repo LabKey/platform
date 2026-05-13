@@ -248,7 +248,9 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         return new ActionURL(AuditController.ShowAuditLogAction.class, ContainerManager.getRoot());
     }
 
-    public Pair<List<Long>, Map<Long, Long>> getTransactionSampleIds(long transactionAuditId, User user, Container container, @Nullable ContainerFilter containerFilter)
+    public record TransactionRowIds(List<Long> rowIds, Map<Long, Long> dataTypeRowCounts) {}
+
+    public TransactionRowIds getTransactionSampleIds(long transactionAuditId, User user, Container container, @Nullable ContainerFilter containerFilter)
     {
         List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(transactionAuditId).second;
         List<SampleTimelineAuditEvent> events;
@@ -271,10 +273,10 @@ public class AuditLogImpl implements AuditLogService, StartupListener
             dataTypeRowCounts.merge(event.getSampleTypeId(), 1L, Long::sum);
             sampleIds.add(event.getSampleId());
         });
-        return Pair.of(sampleIds, dataTypeRowCounts);
+        return new TransactionRowIds(sampleIds, dataTypeRowCounts);
     }
 
-    public Pair<List<Long>, Map<Long, Long>> getTransactionSourceIds(long transactionAuditId, User user, Container container, @Nullable ContainerFilter containerFilter)
+    public TransactionRowIds getTransactionSourceIds(long transactionAuditId, User user, Container container, @Nullable ContainerFilter containerFilter)
     {
         List<String> lsids = new ArrayList<>();
         List<Long> sourceIds = new ArrayList<>();
@@ -310,6 +312,6 @@ public class AuditLogImpl implements AuditLogService, StartupListener
             TableSelector selector = new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton("RowId"), filter, null);
             sourceIds.addAll(selector.getArrayList(Long.class));
         }
-        return Pair.of(sourceIds,  dataTypeRowCounts);
+        return new TransactionRowIds(sourceIds, dataTypeRowCounts);
     }
 }
