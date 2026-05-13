@@ -154,6 +154,7 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
@@ -8553,7 +8554,8 @@ public class QueryController extends SpringActionController
             return "The following documentation describes you, the Calculated Column Expression Assistant:\n\n" +
                     getPromptResource(PromptResource.ExpressionAssistant) +
                     "\n\nRefer to the \"LabKey SQL\" documentation resource for how to work with LabKey SQL.\n\n" +
-                    "\n\nWhen you produce a SQL expression for the calculated column you should use validate it using the validateCalculatedColumnExpression tool.";
+                    "\n\nWhen you produce a SQL expression for the calculated column you should use validate it using the validateCalculatedColumnExpression tool." +
+                    "\n\nWhen presenting a final SQL expression that the user can apply to their calculated column, place it in a fenced code block tagged `expression` (e.g. ```expression\\n...\\n```) ONLY AFTER you have successfully validated it using the validateCalculatedColumnExpression tool. Use a `sql` fence for any illustrative, intermediate, or unvalidated SQL that the user should NOT directly apply. Each `expression` block will be rendered with an \"Apply Expression\" affordance, so emit one for each distinct expression the user can choose to apply.";
         }
 
         @Override
@@ -8577,7 +8579,6 @@ public class QueryController extends SpringActionController
 
                 ChatClient chatSession = getChat(true);
                 List<McpService.MessageResponse> responses;
-                SqlResponse sqlResponse;
 
                 try
                 {
@@ -8587,7 +8588,6 @@ public class QueryController extends SpringActionController
                             .put("phiColumns", form.getPhiColumns());
 
                     responses = McpService.get().sendMessageEx(chatSession, prompt);
-                    sqlResponse = extractSql(responses);
                 }
                 catch (ServerException x)
                 {
@@ -8597,12 +8597,11 @@ public class QueryController extends SpringActionController
                             "success", Boolean.FALSE));
                 }
 
-                var ret = new JSONObject(Map.of("success", Boolean.TRUE, "conversationId", getConversationId()));
-                if (null != sqlResponse.sql())
-                    ret.put("sql", sqlResponse.sql());
-                if (null != sqlResponse.html())
-                    ret.put("html", sqlResponse.html());
-                return ret;
+                JSONArray segments = buildSegments(responses);
+                return new JSONObject(Map.of(
+                        "success", Boolean.TRUE,
+                        "conversationId", getConversationId(),
+                        "segments", segments));
             }
             catch (ClientException x)
             {
@@ -9033,6 +9032,93 @@ public class QueryController extends SpringActionController
     {
     }
 
+    /**
+     * Walks the markdown of each MessageResponse and produces an ordered list of segments.
+     * Each segment is either a rendered-HTML span or a fenced SQL block. SQL blocks fenced as
+     * `expression` are tagged "expression" (the model's assertion that this SQL has been validated
+     * and is safe to apply); blocks fenced as `sql` are tagged "sql" (illustrative / unvalidated).
+     */
+    static JSONArray buildSegments(List<McpService.MessageResponse> responses)
+    {
+        JSONArray segments = new JSONArray();
+        MarkdownService md = MarkdownService.get();
+        StringBuilder htmlBuf = new StringBuilder();
+
+        for (var response : responses)
+        {
+            String text = response.text();
+            if (isBlank(text))
+                continue;
+
+            String[] lines = text.split("\n", -1);
+            int i = 0;
+            while (i < lines.length)
+            {
+                String tag = fenceTag(lines[i]);
+                if ("sql".equals(tag) || "expression".equals(tag))
+                {
+                    int j = i + 1;
+                    StringBuilder code = new StringBuilder();
+                    while (j < lines.length && !"```".equals(lines[j].trim()))
+                    {
+                        if (!code.isEmpty()) code.append("\n");
+                        code.append(lines[j]);
+                        j++;
+                    }
+                    if (j >= lines.length)
+                    {
+                        // Unterminated fence — treat the rest as markdown so we don't drop content.
+                        if (!htmlBuf.isEmpty()) htmlBuf.append("\n");
+                        for (int k = i; k < lines.length; k++)
+                        {
+                            htmlBuf.append(lines[k]);
+                            if (k < lines.length - 1) htmlBuf.append("\n");
+                        }
+                        break;
+                    }
+                    flushHtmlSegment(segments, htmlBuf, md);
+                    segments.put(new JSONObject(Map.of("type", tag, "sql", code.toString())));
+                    i = j + 1;
+                }
+                else
+                {
+                    if (!htmlBuf.isEmpty()) htmlBuf.append("\n");
+                    htmlBuf.append(lines[i]);
+                    i++;
+                }
+            }
+        }
+        flushHtmlSegment(segments, htmlBuf, md);
+        return segments;
+    }
+
+    private static String fenceTag(String line)
+    {
+        String trimmed = line.trim();
+        if (!trimmed.startsWith("```"))
+            return null;
+        String rest = trimmed.substring(3).trim();
+        return rest.isEmpty() ? null : rest.toLowerCase();
+    }
+
+    private static void flushHtmlSegment(JSONArray segments, StringBuilder buf, MarkdownService md)
+    {
+        if (buf.isEmpty()) return;
+        String raw = buf.toString().strip();
+        buf.setLength(0);
+        if (raw.isEmpty()) return;
+        String html;
+        try
+        {
+            html = md != null ? md.toHtml(raw) : raw;
+        }
+        catch (Exception x)
+        {
+            html = raw;
+        }
+        segments.put(new JSONObject(Map.of("type", "html", "html", html)));
+    }
+
     static SqlResponse extractSql(List<McpService.MessageResponse> responses)
     {
         HtmlStringBuilder html = HtmlStringBuilder.of();
@@ -9054,5 +9140,161 @@ public class QueryController extends SpringActionController
             html.append(response.html());
         }
         return new SqlResponse(html.getHtmlString(), sql);
+    }
+
+    public static class ExpressionAssistantTestCase extends Assert
+    {
+        private static McpService.MessageResponse markdownResponse(String md)
+        {
+            return new McpService.MessageResponse("text/markdown", md, HtmlString.of(md));
+        }
+
+        private static JSONObject segment(JSONArray segments, int i)
+        {
+            return segments.getJSONObject(i);
+        }
+
+        @Test
+        public void emptyResponseList()
+        {
+            JSONArray segments = buildSegments(List.of());
+            assertEquals(0, segments.length());
+        }
+
+        @Test
+        public void blankMessageProducesNoSegments()
+        {
+            JSONArray segments = buildSegments(List.of(markdownResponse(""), markdownResponse("   ")));
+            assertEquals(0, segments.length());
+        }
+
+        @Test
+        public void proseOnlyProducesSingleHtmlSegment()
+        {
+            JSONArray segments = buildSegments(List.of(markdownResponse("Hello, here is some advice.")));
+            assertEquals(1, segments.length());
+            assertEquals("html", segment(segments, 0).getString("type"));
+            assertTrue(segment(segments, 0).getString("html").contains("Hello, here is some advice."));
+        }
+
+        @Test
+        public void expressionFenceProducesExpressionSegment()
+        {
+            String md = "```expression\nSELECT 1\n```";
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            assertEquals(1, segments.length());
+            assertEquals("expression", segment(segments, 0).getString("type"));
+            assertEquals("SELECT 1", segment(segments, 0).getString("sql"));
+        }
+
+        @Test
+        public void sqlFenceProducesSqlSegment()
+        {
+            String md = "```sql\nSELECT 1\n```";
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            assertEquals(1, segments.length());
+            assertEquals("sql", segment(segments, 0).getString("type"));
+            assertEquals("SELECT 1", segment(segments, 0).getString("sql"));
+        }
+
+        @Test
+        public void interleavedProseAndFencesProduceOrderedSegments()
+        {
+            String md = String.join("\n",
+                "Here are two options.",
+                "",
+                "Option A (illustrative):",
+                "```sql",
+                "SELECT a FROM t",
+                "```",
+                "",
+                "Option B (ready to apply):",
+                "```expression",
+                "SELECT b FROM t",
+                "```",
+                "Pick whichever fits."
+            );
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            assertEquals(5, segments.length());
+            assertEquals("html", segment(segments, 0).getString("type"));
+            assertEquals("sql", segment(segments, 1).getString("type"));
+            assertEquals("SELECT a FROM t", segment(segments, 1).getString("sql"));
+            assertEquals("html", segment(segments, 2).getString("type"));
+            assertEquals("expression", segment(segments, 3).getString("type"));
+            assertEquals("SELECT b FROM t", segment(segments, 3).getString("sql"));
+            assertEquals("html", segment(segments, 4).getString("type"));
+        }
+
+        @Test
+        public void multipleExpressionFencesEachBecomeOwnSegment()
+        {
+            String md = String.join("\n",
+                "```expression",
+                "SELECT 1",
+                "```",
+                "```expression",
+                "SELECT 2",
+                "```"
+            );
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            assertEquals(2, segments.length());
+            assertEquals("expression", segment(segments, 0).getString("type"));
+            assertEquals("SELECT 1", segment(segments, 0).getString("sql"));
+            assertEquals("expression", segment(segments, 1).getString("type"));
+            assertEquals("SELECT 2", segment(segments, 1).getString("sql"));
+        }
+
+        @Test
+        public void unterminatedFenceFallsBackToHtml()
+        {
+            String md = "Here's an expression:\n```expression\nSELECT 1\n(no closing fence)";
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            // No expression segment is emitted; the unterminated portion is folded into html so
+            // content isn't dropped.
+            assertEquals(1, segments.length());
+            assertEquals("html", segment(segments, 0).getString("type"));
+            assertTrue(segment(segments, 0).getString("html").contains("SELECT 1"));
+        }
+
+        @Test
+        public void unknownFenceLanguageIsTreatedAsProse()
+        {
+            String md = "```python\nprint('hi')\n```";
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            // Only sql/expression are split out; other fenced blocks stay in the html segment.
+            assertEquals(1, segments.length());
+            assertEquals("html", segment(segments, 0).getString("type"));
+        }
+
+        @Test
+        public void fenceTagIsCaseInsensitive()
+        {
+            String md = "```EXPRESSION\nSELECT 1\n```";
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            assertEquals(1, segments.length());
+            assertEquals("expression", segment(segments, 0).getString("type"));
+            assertEquals("SELECT 1", segment(segments, 0).getString("sql"));
+        }
+
+        @Test
+        public void preservesMultilineSqlBody()
+        {
+            String md = "```expression\nSELECT a,\n       b\nFROM t\n```";
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            assertEquals(1, segments.length());
+            assertEquals("SELECT a,\n       b\nFROM t", segment(segments, 0).getString("sql"));
+        }
+
+        @Test
+        public void multipleMessageResponsesAreConcatenatedInOrder()
+        {
+            McpService.MessageResponse r1 = markdownResponse("First response prose.");
+            McpService.MessageResponse r2 = markdownResponse("```expression\nSELECT 1\n```");
+            JSONArray segments = buildSegments(List.of(r1, r2));
+            assertEquals(2, segments.length());
+            assertEquals("html", segment(segments, 0).getString("type"));
+            assertEquals("expression", segment(segments, 1).getString("type"));
+            assertEquals("SELECT 1", segment(segments, 1).getString("sql"));
+        }
     }
 }

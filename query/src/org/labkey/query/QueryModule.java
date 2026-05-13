@@ -428,6 +428,7 @@ public class QueryModule extends DefaultModule
             MemberSet.TestCase.class,
             MetadataElementBase.TestCase.class,
             Method.TestCase.class,
+            QueryController.ExpressionAssistantTestCase.class,
             QNode.TestCase.class,
             Query.TestCase.class,
             ReportsController.SerializationTest.class,
