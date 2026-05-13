@@ -8551,11 +8551,7 @@ public class QueryController extends SpringActionController
         @Override
         protected String getServicePrompt()
         {
-            return "The following documentation describes you, the Calculated Column Expression Assistant:\n\n" +
-                    getPromptResource(PromptResource.ExpressionAssistant) +
-                    "\n\nRefer to the \"LabKey SQL\" documentation resource for how to work with LabKey SQL.\n\n" +
-                    "\n\nWhen you produce a SQL expression for the calculated column you should use validate it using the validateCalculatedColumnExpression tool." +
-                    "\n\nWhen presenting a final SQL expression that the user can apply to their calculated column, place it in a fenced code block tagged `expression` (e.g. ```expression\\n...\\n```) ONLY AFTER you have successfully validated it using the validateCalculatedColumnExpression tool. Use a `sql` fence for any illustrative, intermediate, or unvalidated SQL that the user should NOT directly apply. Each `expression` block will be rendered with an \"Apply Expression\" affordance, so emit one for each distinct expression the user can choose to apply.";
+            return getPromptResource(PromptResource.ExpressionAssistant);
         }
 
         @Override
@@ -8564,11 +8560,6 @@ public class QueryController extends SpringActionController
             try (var _ = McpContext.withContext(getViewContext()))
             {
                 String prompt = form.getPrompt();
-
-                var escapedResponse = escapeResponse(prompt);
-                if (null != escapedResponse)
-                    return escapedResponse;
-
                 if (isBlank(prompt))
                 {
                     return new JSONObject(Map.of(
