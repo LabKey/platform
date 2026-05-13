@@ -30,6 +30,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -63,6 +64,7 @@ public class CustomViewsTable extends FilteredTable<QueryUserSchema>
 
         setName(QueryUserSchema.CUSTOM_VIEWS_TABLE_NAME);
         setDescription("Contains a row for each saved custom view. Available only to administrators.");
+        setDetailsURL(DetailsURL.fromString("query-detailsQueryRow.view?schemaName=query&queryName=customViews&customViewId=${customViewId}",null, null));
 
         setImportURL(LINK_DISABLER);
         wrapAllColumns(true);
