@@ -13,6 +13,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.mcp.McpException;
+import org.labkey.api.mcp.McpInternal;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
@@ -160,7 +161,8 @@ public class QueryMcp implements McpService.McpImpl
         return "success";
     }
 
-    @Tool(description = "Validate a SQL expression for a calculated column. The set of available columns and their types — including any PHI-restricted columns — is supplied by the hosting endpoint, not by the caller; you only need to provide the expression itself.")
+    @Tool(description = "Validate a SQL expression for a calculated column. The set of available columns and their types, including any PHI-restricted columns, is supplied by the hosting endpoint, not by the caller; you only need to provide the expression itself.")
+    @McpInternal("Added for validation for the QueryController.ExpressionAssistantAgentAction endpoint.")
     @RequiresPermission(ReadPermission.class)
     String validateCalculatedColumnExpression(
             ToolContext toolContext,
@@ -175,7 +177,7 @@ public class QueryMcp implements McpService.McpImpl
         List<FieldKey> phiColumns = (List<FieldKey>) toolContext.getContext().get("phiColumns");
 
         if (columnMap == null)
-            throw new McpException("validateCalculatedColumnExpression requires a columnMap supplied by the hosting endpoint; it cannot be invoked directly.");
+            throw new IllegalArgumentException("validateCalculatedColumnExpression requires a columnMap supplied by the endpoint; it cannot be invoked directly.");
 
         try
         {
@@ -185,6 +187,7 @@ public class QueryMcp implements McpService.McpImpl
         {
             return "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below:\n```" + x.getMessage() + "```";
         }
+
         return "success";
     }
 

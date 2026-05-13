@@ -8552,8 +8552,7 @@ public class QueryController extends SpringActionController
         {
             return "The following documentation describes you, the Calculated Column Expression Assistant:\n\n" +
                     getPromptResource(PromptResource.ExpressionAssistant) +
-                    "\n\nThe following documentation describes LabKey SQL:\n\n" +
-                    getPromptResource(PromptResource.LabKeySql) +
+                    "\n\nRefer to the \"LabKey SQL\" documentation resource for how to work with LabKey SQL.\n\n" +
                     "\n\nWhen you produce a SQL expression for the calculated column you should use validate it using the validateCalculatedColumnExpression tool.";
         }
 
