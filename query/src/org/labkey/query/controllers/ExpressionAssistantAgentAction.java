@@ -17,6 +17,9 @@ package org.labkey.query.controllers;
 
 import com.google.genai.errors.ClientException;
 import com.google.genai.errors.ServerException;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -38,12 +41,15 @@ import java.util.List;
 import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.query.controllers.QueryController.getPromptResource;
 
 @RequiresPermission(ReadPermission.class)
 @RequiresLogin
 public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseForm>
 {
+    private static final Logger LOG = LogManager.getLogger(ExpressionAssistantAgentAction.class);
+
     @Override
     protected String getAgentName()
     {
@@ -61,8 +67,11 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     {
         try (var _ = McpContext.withContext(getViewContext()))
         {
+            boolean firstTurn = isBlank(form.getConversationId());
             String prompt = form.getPrompt();
-            if (isBlank(prompt))
+            String composedPrompt = composePrompt(firstTurn, prompt, form.getDomainFields(), form.getFieldExpression(), form.getFieldError());
+
+            if (isBlank(composedPrompt))
             {
                 return new JSONObject(Map.of(
                         "contentType", "text/plain",
@@ -80,7 +89,8 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                         .put("columnMap", form.getColumnMap())
                         .put("phiColumns", form.getPhiColumns());
 
-                responses = McpService.get().sendMessageEx(chatSession, prompt);
+                LOG.info("Expression assistant prompt: {}", prompt);
+                responses = McpService.get().sendMessageEx(chatSession, composedPrompt);
             }
             catch (ServerException x)
             {
@@ -100,6 +110,63 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         {
             return errorResponse(x);
         }
+    }
+
+    /**
+     * Combines the user's prompt with any first-turn context supplied by the client (the catalog
+     * of available fields, the current expression, and an error message when auto-evaluating an
+     * invalid expression). When {@code firstTurn} is false the context fields are ignored, and the
+     * user's prompt is returned verbatim.
+     */
+    static String composePrompt(boolean firstTurn, String userPrompt, JSONArray domainFields, String fieldExpression, String fieldError)
+    {
+        if (!firstTurn)
+            return StringUtils.defaultString(userPrompt);
+
+        boolean autoEvaluate = isBlank(userPrompt) && isNotBlank(fieldError);
+        if (isBlank(userPrompt) && !autoEvaluate)
+            return "";
+
+        StringBuilder sb = new StringBuilder();
+        if (domainFields != null && !domainFields.isEmpty())
+        {
+            sb.append("The following enumerates the available columns and their types:\n");
+            sb.append(fence(domainFields.toString(), "json"));
+        }
+
+        if (autoEvaluate)
+        {
+            if (isNotBlank(fieldExpression))
+            {
+                sb.append("The user already has the following calculated column expression:\n");
+                sb.append(fence(fieldExpression));
+            }
+            sb.append("This expression contains an error:\n");
+            sb.append(fence(fieldError));
+            sb.append("Evaluate this expression and see if you can determine how to fix this error. If you can, point them out and propose corrections.");
+        }
+        else if (sb.isEmpty())
+        {
+            sb.append(userPrompt);
+        }
+        else
+        {
+            sb.append("Generate a calculated column expression that matches the following description:\n");
+            sb.append(userPrompt);
+        }
+
+        return sb.toString();
+    }
+
+    static String fence(String body)
+    {
+        return fence(body, "");
+    }
+
+    /** Wraps {@code body} in a markdown fenced code block, optionally tagged with a language. */
+    static String fence(String body, String tag)
+    {
+        return "```" + tag + "\n" + body + "\n```\n";
     }
 
     /**
@@ -342,6 +409,72 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             assertEquals("html", segment(segments, 0).getString("type"));
             assertEquals("expression", segment(segments, 1).getString("type"));
             assertEquals("SELECT 1", segment(segments, 1).getString("sql"));
+        }
+
+        @Test
+        public void testFence()
+        {
+            assertEquals("```json\n{\"a\":1}\n```\n", fence("{\"a\":1}", "json"));
+            assertEquals("```\nSELECT 1\n```\n", fence("SELECT 1", ""));
+            assertEquals("```sql\nline1\nline2\n```\n", fence("line1\nline2", "sql"));
+            assertEquals("```json\n\n```\n", fence("", "json"));
+        }
+
+        private static JSONArray fields(String json)
+        {
+            return new JSONArray(json);
+        }
+
+        @Test
+        public void composePromptFollowUpTurnIgnoresContextAndReturnsUserPromptVerbatim()
+        {
+            // Once a conversation is underway, the catalog/expression/error are already in chat history.
+            assertEquals("more please", composePrompt(false, "more please", fields("[{\"name\":\"A\"}]"), "SELECT 1", "boom"));
+        }
+
+        @Test
+        public void composePromptFirstTurnWrapsWithFieldsCatalogAndInstruction()
+        {
+            String composed = composePrompt(true, "sum A and B", fields("[{\"name\":\"A\"}]"), null, null);
+            assertTrue(composed.contains("available columns"));
+            assertTrue(composed.contains("```json\n[{\"name\":\"A\"}]\n```"));
+            assertTrue(composed.contains("Generate a calculated column expression"));
+            assertTrue(composed.endsWith("sum A and B"));
+        }
+
+        @Test
+        public void composePromptAutoEvaluateIncludesExpressionAndError()
+        {
+            String composed = composePrompt(true, "", fields("[{\"name\":\"A\"}]"), "SELECT bad", "syntax error");
+            assertTrue(composed.contains("available columns"));
+            assertTrue(composed.contains("```\nSELECT bad\n```"));
+            assertTrue(composed.contains("```\nsyntax error\n```"));
+            assertTrue(composed.contains("Evaluate this expression"));
+            assertFalse("auto-evaluate must not include the change/new instruction line",
+                    composed.contains("Generate a calculated column expression"));
+        }
+
+        @Test
+        public void composePromptAutoEvaluateWithoutExpressionStillIncludesError()
+        {
+            String composed = composePrompt(true, "", null, null, "boom");
+            assertTrue(composed.contains("```\nboom\n```"));
+            assertFalse(composed.contains("user already has the following"));
+        }
+
+        @Test
+        public void composePromptEmptyWhenNothingToSay()
+        {
+            // First turn with no user prompt and no error context — caller renders the no-op shrug response.
+            assertEquals("", composePrompt(true, "", null, null, null));
+            assertEquals("", composePrompt(true, null, fields("[]"), "expr", null));
+        }
+
+        @Test
+        public void composePromptFirstTurnWithoutDomainFieldsSkipsWrapping()
+        {
+            // No catalog to inject — don't bother prepending the "Generate a calculated column" preamble.
+            assertEquals("just do it", composePrompt(true, "just do it", null, null, null));
         }
     }
 }

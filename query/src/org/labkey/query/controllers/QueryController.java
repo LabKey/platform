@@ -8044,6 +8044,9 @@ public class QueryController extends SpringActionController
         String expression = "";
         Map<FieldKey, JdbcType> columnMap = new HashMap<>();
         List<FieldKey> phiColumns = new ArrayList<>();
+        JSONArray domainFields;
+        String fieldExpression;
+        String fieldError;
 
         Map<FieldKey, JdbcType> getColumnMap()
         {
@@ -8068,6 +8071,36 @@ public class QueryController extends SpringActionController
         public void setPhiColumns(List<FieldKey> phiColumns)
         {
             this.phiColumns = phiColumns;
+        }
+
+        public JSONArray getDomainFields()
+        {
+            return domainFields;
+        }
+
+        public void setDomainFields(JSONArray domainFields)
+        {
+            this.domainFields = domainFields;
+        }
+
+        public String getFieldExpression()
+        {
+            return fieldExpression;
+        }
+
+        public void setFieldExpression(String fieldExpression)
+        {
+            this.fieldExpression = fieldExpression;
+        }
+
+        public String getFieldError()
+        {
+            return fieldError;
+        }
+
+        public void setFieldError(String fieldError)
+        {
+            this.fieldError = fieldError;
         }
 
         @Override
@@ -8096,6 +8129,12 @@ public class QueryController extends SpringActionController
                 setPrompt(json.getString("prompt"));
             if (json.has("conversationId"))
                 setConversationId(json.getString("conversationId"));
+            if (json.has("domainFields"))
+                setDomainFields(json.getJSONArray("domainFields"));
+            if (json.has("fieldExpression"))
+                setFieldExpression(json.getString("fieldExpression"));
+            if (json.has("fieldError"))
+                setFieldError(json.getString("fieldError"));
         }
     }
 
