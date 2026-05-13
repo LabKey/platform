@@ -12,7 +12,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.mcp.McpException;
 import org.labkey.api.mcp.McpInternal;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.query.DefaultSchema;
