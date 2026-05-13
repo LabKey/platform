@@ -25,6 +25,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -56,6 +57,7 @@ public class QueriesTable extends FilteredTable<QueryUserSchema>
 
         setName(QueryUserSchema.QUERIES_TABLE_NAME);
         setDescription("Contains a row for each query (or metadata) in the database. Available only to administrators.");
+        setDetailsURL(DetailsURL.fromString("query-detailsQueryRow.view?schemaName=query&queryName=queries&queryDefId=${queryDefId}",null, null));
 
         setImportURL(LINK_DISABLER);
         wrapAllColumns(true);
