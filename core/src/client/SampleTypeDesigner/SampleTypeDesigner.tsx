@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-import React from 'react';
+import React, { FC } from 'react';
 import { ActionURL, getServerContext } from '@labkey/api';
 import {
     Alert,
+    AppContexts,
     BeforeUnload,
     DomainDesign,
     DomainDetails,
@@ -27,7 +28,6 @@ import {
     SampleTypeDesigner,
     SampleTypeModel,
     getSampleDomainDefaultSystemFields,
-    withServerContext,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -171,4 +171,8 @@ class SampleTypeDesignerWrapper extends React.PureComponent<any, State> {
     }
 }
 
-export const App = withServerContext(SampleTypeDesignerWrapper);
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <SampleTypeDesignerWrapper />
+    </AppContexts>
+);

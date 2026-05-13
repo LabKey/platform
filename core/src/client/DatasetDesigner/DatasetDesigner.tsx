@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-import React, { PureComponent, ReactNode } from 'react';
+import React, { FC, PureComponent, ReactNode } from 'react';
 import {
     Alert,
+    AppContexts,
     DatasetDesignerPanels,
     DatasetModel,
     fetchDatasetDesign,
     LoadingSpinner,
     BeforeUnload,
-    withServerContext,
 } from '@labkey/components';
 import { ActionURL, Domain, getServerContext } from '@labkey/api';
 
@@ -141,4 +141,8 @@ class DatasetDesigner extends PureComponent<any, State> {
     }
 }
 
-export const App = withServerContext(DatasetDesigner);
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <DatasetDesigner />
+    </AppContexts>
+);

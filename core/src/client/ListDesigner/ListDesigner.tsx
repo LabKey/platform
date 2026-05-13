@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React, { ReactNode } from 'react';
+import React, { FC, ReactNode } from 'react';
 import { ActionURL, PermissionTypes, Security } from '@labkey/api';
 import {
     Alert,
+    AppContexts,
     LoadingSpinner,
     ListDesignerPanels,
     ListModel,
     fetchListDesign,
     getListIdFromDomainId,
     BeforeUnload,
-    withServerContext,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -154,4 +154,8 @@ export class ListDesigner extends React.Component<Props, State> {
     }
 }
 
-export const App = withServerContext(ListDesigner);
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <ListDesigner />
+    </AppContexts>
+);

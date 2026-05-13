@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react';
+import React, { FC } from 'react';
 import { ActionURL, getServerContext } from "@labkey/api";
 import {
     Alert,
+    AppContexts,
     LoadingSpinner,
     IssuesListDefModel,
     BeforeUnload,
     IssuesListDefDesignerPanels,
     fetchIssuesListDefDesign,
-    withServerContext,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -131,4 +131,8 @@ class IssuesListDesigner extends React.Component<{}, State> {
     }
 }
 
-export const App = withServerContext(IssuesListDesigner);
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <IssuesListDesigner />
+    </AppContexts>
+);

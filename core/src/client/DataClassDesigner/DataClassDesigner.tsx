@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react';
+import React, { FC } from 'react';
 import { ActionURL, getServerContext } from "@labkey/api";
 import {
     Alert,
+    AppContexts,
     BeforeUnload,
     DataClassDesigner,
     DataClassModel,
     fetchDataClass,
     LoadingSpinner,
-    withServerContext
 } from '@labkey/components';
 
 import "../DomainDesigner.scss"
@@ -113,4 +113,8 @@ class DataClassDesignerWrapper extends React.Component<any, State> {
     }
 }
 
-export const App = withServerContext(DataClassDesignerWrapper);
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <DataClassDesignerWrapper />
+    </AppContexts>
+);

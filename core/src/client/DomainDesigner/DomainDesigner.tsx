@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-import React from 'react';
+import React, { FC } from 'react';
 import { ActionURL, getServerContext } from '@labkey/api';
 import {
     LoadingSpinner,
     Alert,
+    AppContexts,
     DomainForm,
     DomainDesign,
     fetchDomain,
@@ -28,7 +29,6 @@ import {
     resolveErrorMessage,
     DomainException,
     Modal,
-    withServerContext,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -269,4 +269,8 @@ class DomainDesigner extends React.PureComponent<any, Partial<IAppState>> {
     }
 }
 
-export const App = withServerContext(DomainDesigner);
+export const App: FC = () => (
+    <AppContexts>
+        <DomainDesigner />
+    </AppContexts>
+);
