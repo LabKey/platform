@@ -154,7 +154,6 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
@@ -8878,6 +8877,7 @@ public class QueryController extends SpringActionController
         @Override
         public void validateForm(SqlPromptForm sqlPromptForm, Errors errors)
         {
+            super.validateForm(sqlPromptForm, errors);
             _form = sqlPromptForm;
         }
 

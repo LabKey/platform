@@ -208,9 +208,11 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                     }
                     if (j >= lines.length)
                     {
-                        // Unterminated fence — treat the rest as markdown so we don't drop content.
+                        // Unterminated fence — fold the body back into prose so we don't drop content,
+                        // but skip the opening fence line itself so the user doesn't see a stray
+                        // "```expression" rendered as a code marker.
                         if (!htmlBuf.isEmpty()) htmlBuf.append("\n");
-                        for (int k = i; k < lines.length; k++)
+                        for (int k = i + 1; k < lines.length; k++)
                         {
                             htmlBuf.append(lines[k]);
                             if (k < lines.length - 1) htmlBuf.append("\n");
@@ -367,11 +369,12 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         {
             String md = "Here's an expression:\n```expression\nSELECT 1\n(no closing fence)";
             JSONArray segments = buildSegments(List.of(markdownResponse(md)));
-            // No expression segment is emitted; the unterminated portion is folded into html so
-            // content isn't dropped.
             assertEquals(1, segments.length());
             assertEquals("html", segment(segments, 0).getString("type"));
-            assertTrue(segment(segments, 0).getString("html").contains("SELECT 1"));
+            String html = segment(segments, 0).getString("html");
+            assertTrue("body should survive: " + html, html.contains("SELECT 1"));
+            assertTrue("leading prose should survive: " + html, html.contains("Here&#39;s an expression:") || html.contains("Here's an expression:"));
+            assertFalse("opening fence must be stripped: " + html, html.contains("```"));
         }
 
         @Test

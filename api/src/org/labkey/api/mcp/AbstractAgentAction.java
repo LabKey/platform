@@ -10,13 +10,18 @@ import org.json.JSONObject;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.SessionHelper;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
 
 /**
  * "Agent" it is too strong a word, but if you want to create a tools-specific chat endpoint, then
@@ -26,6 +31,8 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  */
 public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnlyApiAction<F>
 {
+    private static final int MAX_ISSUED_CONVERSATION_IDS = 16;
+
     protected GUID conversationId;
 
     protected abstract String getAgentName();
@@ -36,7 +43,7 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
     {
         String conversationName = getAgentName() + ":" + getConversationId();
 
-        HttpSession session = getViewContext().getRequest().getSession(true);
+        HttpSession session = getViewContext().getSession();
         ChatClient chatSession = McpService.get().getChat(session, conversationName, this::getServicePrompt, create);
 
         return chatSession;
@@ -52,7 +59,8 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
                 ChatClient chatSession = getChat(false); // CONSIDER: getChat(boolean ifStarted)
                 if (null != chatSession)
                     McpService.get().close(getViewContext().getSession(), chatSession);
-                 return "OK, let's start over.";
+                getIssuedConversationIds(getViewContext().getSession()).remove(conversationId);
+                return "OK, let's start over.";
             }
         }
         return null;
@@ -61,11 +69,33 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
     @Override
     public void validateForm(F form, Errors errors)
     {
-        // If the client provided a valid conversationId, use it. Otherwise, generate a conversationId.
-        if (form.getConversationId() != null)
-            conversationId = new GUID(form.getConversationId());
-        else
-            conversationId = new GUID();
+        // Only honor a client-supplied conversationId if this agent previously issued this session that
+        // id. Otherwise, generate a fresh one. This prevents a same-session caller from splicing into
+        // another conversation by guessing or replaying a GUID.
+        Set<GUID> issued = getIssuedConversationIds(getViewContext().getSession());
+        String supplied = form.getConversationId();
+        if (supplied != null)
+        {
+            GUID candidate;
+
+            try
+            {
+                candidate = new GUID(supplied);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.rejectValue("conversationId", ERROR_GENERIC, "Invalid conversationId");
+                return;
+            }
+
+            if (issued.contains(candidate))
+            {
+                conversationId = candidate;
+                return;
+            }
+        }
+        conversationId = new GUID();
+        issued.add(conversationId);
     }
 
     @Override
@@ -82,13 +112,15 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
             // call getChat() after handleEscape()
             ChatClient chatSession = getChat(true);
             if (null == chatSession)
+            {
                 return new JSONObject(Map.of(
                         "contentType", "text/plain",
                         "response", "Service is not ready yet",
                         "success", Boolean.FALSE));
+            }
 
             McpService.MessageResponse response = McpService.get().sendMessage(chatSession, prompt);
-            var ret = new JSONObject(Map.of("success", Boolean.TRUE));
+            var ret = new JSONObject(Map.of("success", Boolean.TRUE, "conversationId", conversationId));
             if (!HtmlString.isBlank(response.html()))
             {
                 ret.put("contentType", "text/html");
@@ -136,11 +168,31 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
         return new JSONObject(Map.of(
                 "contentType", "text/plain",
                 "text", escapeResponse,
+                "conversationId", conversationId,
                 "success", Boolean.TRUE));
     }
 
     protected GUID getConversationId()
     {
         return conversationId;
+    }
+
+    private String getIssuedConversationIdsKey()
+    {
+        return getAgentName() + "#issuedConversationIds";
+    }
+
+    private Set<GUID> getIssuedConversationIds(HttpSession session)
+    {
+        return SessionHelper.getAttribute(session, getIssuedConversationIdsKey(), () ->
+                Collections.synchronizedSet(Collections.newSetFromMap(
+                        new LinkedHashMap<>(16, 0.75f, false)
+                        {
+                            @Override
+                            protected boolean removeEldestEntry(Map.Entry<GUID, Boolean> eldest)
+                            {
+                                return size() > MAX_ISSUED_CONVERSATION_IDS;
+                            }
+                        })));
     }
 }

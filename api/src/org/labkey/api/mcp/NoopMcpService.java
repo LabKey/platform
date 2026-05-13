@@ -22,6 +22,12 @@ class NoopMcpService implements McpService
     }
 
     @Override
+    public boolean isEnabled()
+    {
+        return false;
+    }
+
+    @Override
     public boolean isReady()
     {
         return false;
@@ -30,19 +36,16 @@ class NoopMcpService implements McpService
     @Override
     public void registerTools(@NotNull List<ToolCallback> tools, McpImpl mcp)
     {
-
     }
 
     @Override
     public void registerPrompts(@NotNull List<McpServerFeatures.SyncPromptSpecification> prompts)
     {
-
     }
 
     @Override
     public void registerResources(@NotNull List<McpServerFeatures.SyncResourceSpecification> resources)
     {
-
     }
 
     @Override
