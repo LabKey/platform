@@ -27,6 +27,15 @@
   margin-bottom: 14px;
 }
 
+.global-settings__text-row-section {
+  margin-left: 17px;
+  margin-top: 8px;
+}
+
+.global-settings__text-row-section.disabled {
+  opacity: 0.5;
+}
+
 .global-settings__text {
   margin-left: 14px;
 }
