@@ -4540,27 +4540,6 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        protected String getQueryImportProviderName()
-        {
-            PropertyValue pv = _form.getInitParameters().getPropertyValue(QUERY_IMPORT_PIPELINE_PROVIDER_PARAM);
-            return pv == null ? null : (String) pv.getValue();
-        }
-
-        @Override
-        protected String getQueryImportDescription()
-        {
-            PropertyValue pv = _form.getInitParameters().getPropertyValue(QUERY_IMPORT_PIPELINE_DESCRIPTION_PARAM);
-            return pv == null ? null : (String) pv.getValue();
-        }
-
-        @Override
-        protected String getQueryImportJobNotificationProviderName()
-        {
-            PropertyValue pv = _form.getInitParameters().getPropertyValue(QUERY_IMPORT_NOTIFICATION_PROVIDER_PARAM);
-            return pv == null ? null : (String) pv.getValue();
-        }
-
-        @Override
         protected boolean isBackgroundImportSupported()
         {
             return true;

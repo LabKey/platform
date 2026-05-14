@@ -31,6 +31,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
     public enum ImportType {
         samples,
         sources,
+        registry,
         assays;
 
         public static ImportType getImportType(PipelineJob job)
@@ -41,7 +42,11 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
                 if (schemaName.equalsIgnoreCase("samples"))
                     return samples;
                 else if (schemaName.equalsIgnoreCase("exp.data"))
+                {
+                    if ("Biologics".equalsIgnoreCase(queryImportPipelineJob.getImportContextBuilder().getJobNotificationProvider()))
+                        return registry;
                     return sources;
+                }
                 else if (schemaName.equalsIgnoreCase("exp"))
                 {
                     String queryName = queryImportPipelineJob.getImportContextBuilder().getQueryName();
