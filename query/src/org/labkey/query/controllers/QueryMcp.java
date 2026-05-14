@@ -156,7 +156,7 @@ public class QueryMcp implements McpService.McpImpl
         catch (Exception x)
         {
             // CONSIDER remove line line/character information from DB errors as they won't match the LabKey SQL
-            return "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below:\n```" + x.getMessage() + "```";
+            return "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below:\n```\n" + x.getMessage() + "\n```";
         }
         return "success";
     }
@@ -185,7 +185,7 @@ public class QueryMcp implements McpService.McpImpl
         }
         catch (QueryException x)
         {
-            return "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below:\n```" + x.getMessage() + "```";
+            return "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below:\n```\n" + x.getMessage() + "\n```";
         }
 
         return "success";
