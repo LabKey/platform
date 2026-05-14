@@ -65,7 +65,7 @@ class NoopMcpService implements McpService
     }
 
     @Override
-    public ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier, boolean createIfNotExists)
+    public ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier, boolean createIfNotExists)
     {
         return null;
     }
