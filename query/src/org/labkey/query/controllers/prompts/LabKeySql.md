@@ -367,3 +367,43 @@ LabKey SQL supports a set of array construction and comparison functions. These 
 #### **Not Supported**
 
 `array_length`, `array_append`, `array_prepend`, `array_cat`, `array_remove`, `array_replace`, `array_position`, `array_to_string`, and subscript access (`arr[n]`) are not available in LabKey SQL.
+
+### **11. CAST**
+
+Use `CAST(expression AS type)` to convert a value from one type to another. **LabKey SQL's validator does not 
+reliably detect type mismatches** — errors only surface as runtime exceptions, so use CAST proactively whenever 
+there is ambiguity (e.g., a date stored as VARCHAR passed to a date/time function).
+
+**Important:** PostgreSQL's `::type` shorthand (e.g., `col::integer`) is **not** supported in LabKey SQL. Always use `CAST()`.
+
+* **Supported target types:**
+  * Integers: `TINYINT`, `SMALLINT`, `INTEGER`, `BIGINT`
+  * Floating point: `REAL`, `FLOAT`, `DOUBLE`
+  * Fixed-point: `NUMERIC`, `DECIMAL`
+  * Boolean: `BOOLEAN`, `BIT`
+  * String: `CHAR`, `VARCHAR`, `LONGVARCHAR`
+  * Date/time: `DATE`, `TIME`, `TIMESTAMP`
+  * Other: `GUID`
+
+* **Examples:**
+    * **String column used as a number:**
+      ```sql
+      CAST(stringCol AS DOUBLE)
+      ```
+    * **String column used as a timestamp:**
+      ```sql
+      CAST(stringCol AS TIMESTAMP)
+      ```
+    * **Number formatted as a string (e.g., for concatenation):**
+      ```sql
+      CAST(numericCol AS VARCHAR) || ' units'
+      ```
+    * **Ensuring integer division doesn't truncate:**
+      ```sql
+      CAST(numerator AS DOUBLE) / denominator
+      ```
+
+* **Quick Reference:**
+  1. **VARCHAR passed to a date/time function** — wrap it: `CAST(col AS TIMESTAMP)`.
+  2. **Integer arithmetic truncates unexpectedly** — cast one operand to `DOUBLE`.
+  3. **Do not rely on `validateSQL` for type errors** — mismatches only appear at runtime.
