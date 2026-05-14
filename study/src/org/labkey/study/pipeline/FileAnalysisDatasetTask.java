@@ -15,6 +15,7 @@
  */
 package org.labkey.study.pipeline;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.NullSafeBindException;
@@ -101,7 +102,7 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
             {
                 if (params.containsKey(DATASET_ID_KEY))
                 {
-                    int datasetId = Integer.parseInt(params.get(DATASET_ID_KEY));
+                    int datasetId = NumberUtils.toInt(params.get(DATASET_ID_KEY));
                     if (StudyManager.getInstance().getDatasetDefinition(study, datasetId) != null)
                     {
                         _ctx.getLogger().info("Dataset matching the 'id' capture group was resolved : {}", datasetId);
