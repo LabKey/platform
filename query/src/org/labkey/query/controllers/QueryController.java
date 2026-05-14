@@ -8562,18 +8562,28 @@ public class QueryController extends SpringActionController
     enum PromptResource
     {
         ExpressionAssistant,
-        LabKeySql
-    }
+        LabKeySql;
 
-    static String getPromptResource(PromptResource resource)
-    {
-        try
+        String resource()
         {
-            return IOUtils.resourceToString("org/labkey/query/controllers/prompts/" + resource.name() + ".md", null, QueryController.class.getClassLoader());
+            try
+            {
+                return IOUtils.resourceToString(resourceName(), null, QueryController.class.getClassLoader());
+            }
+            catch (IOException x)
+            {
+                throw new ConfigurationException("error loading resource", x);
+            }
         }
-        catch (IOException x)
+
+        String resourceName()
         {
-            throw new ConfigurationException("error loading resource", x);
+            return "org/labkey/query/controllers/prompts/" + name() + ".md";
+        }
+
+        String uri()
+        {
+            return "resource://" + resourceName();
         }
     }
 
@@ -8891,7 +8901,7 @@ public class QueryController extends SpringActionController
         protected String getServicePrompt()
         {
             StringBuilder serviceMessage = new StringBuilder();
-            serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(getPromptResource(PromptResource.LabKeySql)).append("\n\n");
+            serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(PromptResource.LabKeySql.resource()).append("\n\n");
             serviceMessage.append("NOTE: Prefer using lookup syntax rather than JOIN where possible.\n");
             serviceMessage.append("NOTE: When helping generate SQL please don't use names of tables and columns from documentation examples. Always refer to the available tools for retrieving database metadata.\n");
 

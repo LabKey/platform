@@ -42,7 +42,6 @@ import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.labkey.query.controllers.QueryController.getPromptResource;
 
 @RequiresPermission(ReadPermission.class)
 @RequiresLogin
@@ -59,11 +58,8 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     @Override
     protected String getServicePrompt()
     {
-        // Explicitly pass in the LabKey SQL documentation until we get McpResources registered and available
-        // to the client
-        return getPromptResource(PromptResource.ExpressionAssistant) +
-            "\n\nLabKey SQL documentation:\n\n" +
-            getPromptResource(PromptResource.LabKeySql);
+        return PromptResource.ExpressionAssistant.resource() +
+            "\n\nBefore starting, load the LabKey SQL documentation using the \"readResource\" tool with the URI \"" + PromptResource.LabKeySql.uri() + "\"\n\n";
     }
 
     @Override
