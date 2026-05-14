@@ -29,6 +29,7 @@ import org.labkey.api.query.SimpleSchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.query.QueryServiceImpl;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.query.sql.SqlParser;
@@ -180,7 +181,7 @@ public class QueryMcp implements McpService.McpImpl
 
         try
         {
-            QueryController.parseCalculatedColumn(context.getContainer(), context.getUser(), expression, columnMap, phiColumns);
+            QueryServiceImpl.get().parseCalculatedColumn(context.getContainer(), context.getUser(), expression, columnMap, phiColumns);
         }
         catch (QueryException x)
         {

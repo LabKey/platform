@@ -117,7 +117,6 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcMetaDataSelector;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.JsonWriter;
-import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
@@ -135,7 +134,6 @@ import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -286,6 +284,7 @@ import org.labkey.query.MetadataTableJSON;
 import org.labkey.query.ModuleCustomQueryDefinition;
 import org.labkey.query.ModuleCustomView;
 import org.labkey.query.QueryServiceImpl;
+import org.labkey.query.QueryServiceImpl.CalculatedColumnParseResult;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
@@ -8137,40 +8136,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-    record CalculatedColumnParseResult(JdbcType jdbcType, Set<FieldKey> requiredColumns) { }
-
-    static CalculatedColumnParseResult parseCalculatedColumn(
-        Container container,
-        User user,
-        String expression,
-        Map<FieldKey, JdbcType> columnMap,
-        @Nullable List<FieldKey> phiColumns
-    ) throws QueryException
-    {
-        var schema = DefaultSchema.get(user, container).getUserSchema("core");
-        var table = new VirtualTable<>(schema.getDbSchema(), "EXPR", schema){};
-        ColumnInfo calculatedCol = QueryServiceImpl.get().createQueryExpressionColumn(table, new FieldKey(null, "expr"), expression, null);
-        Map<FieldKey, ColumnInfo> columns = new HashMap<>();
-
-        for (var entry : columnMap.entrySet())
-        {
-            BaseColumnInfo entryCol = new BaseColumnInfo(entry.getKey(), entry.getValue());
-            // bindQueryExpressionColumn has a check that restricts PHI columns from being used in expressions,
-            // so we need to set the PHI level to something other than NotPHI on these fake BaseColumnInfo objects
-            if (phiColumns != null && phiColumns.contains(entry.getKey()))
-                entryCol.setPHI(PHI.PHI);
-            columns.put(entry.getKey(), entryCol);
-            table.addColumn(entryCol);
-        }
-
-        // TODO: calculating jdbcType still uses calculatedCol.getParentTable().getColumns()
-        var requiredColumns = new HashSet<FieldKey>();
-        QueryServiceImpl.get().bindQueryExpressionColumn(calculatedCol, columns, false, requiredColumns);
-        var jdbcType = calculatedCol.getJdbcType();
-
-        return new CalculatedColumnParseResult(jdbcType, requiredColumns);
-    }
-
     /**
      * Since this api purpose is to return parse errors, it does not generally return success:false.
      * <br>
@@ -8216,7 +8181,7 @@ public class QueryController extends SpringActionController
             CalculatedColumnParseResult parsedResult = new CalculatedColumnParseResult(JdbcType.OTHER, Collections.emptySet());
             try
             {
-                parsedResult = parseCalculatedColumn(getViewContext().getContainer(), getViewContext().getUser(), form.getExpression(), form.getColumnMap(), form.getPhiColumns());
+                parsedResult = QueryServiceImpl.get().parseCalculatedColumn(getViewContext().getContainer(), getViewContext().getUser(), form.getExpression(), form.getColumnMap(), form.getPhiColumns());
             }
             catch (QueryException x)
             {
