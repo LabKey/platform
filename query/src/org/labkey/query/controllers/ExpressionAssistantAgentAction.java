@@ -28,15 +28,18 @@ import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.query.controllers.QueryController.ParseForm;
 import org.labkey.query.controllers.QueryController.PromptResource;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.validation.BindException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -255,6 +258,12 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         {
             html = raw;
         }
+
+        var validateErrors = new ArrayList<String>();
+        PageFlowUtil.validateHtml(html, validateErrors, validateErrors);
+        if (!validateErrors.isEmpty())
+            throw new RuntimeValidationException("Invalid HTML markup. " + String.join("\n", validateErrors));
+
         segments.put(new JSONObject(Map.of("type", "html", "html", html)));
     }
 
@@ -412,6 +421,18 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             assertEquals("html", segment(segments, 0).getString("type"));
             assertEquals("expression", segment(segments, 1).getString("type"));
             assertEquals("SELECT 1", segment(segments, 1).getString("sql"));
+        }
+
+        @Test
+        public void flushHtmlSegmentRejectsScriptTag()
+        {
+            JSONArray segments = new JSONArray();
+            StringBuilder buf = new StringBuilder("<div>Here is a greeting:</div><script>alert('xss')</script>");
+            RuntimeValidationException ex = assertThrows(RuntimeValidationException.class,
+                    () -> flushHtmlSegment(segments, buf, null));
+            assertTrue("expected validation error message, got: " + ex.getMessage(),
+                    ex.getMessage().contains("Illegal element <script>"));
+            assertEquals("no segment should be emitted when validation fails", 0, segments.length());
         }
 
         @Test
