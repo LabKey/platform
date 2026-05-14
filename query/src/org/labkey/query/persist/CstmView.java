@@ -16,12 +16,14 @@
 
 package org.labkey.query.persist;
 
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.util.UnexpectedException;
 
 import java.io.Serializable;
+import java.util.Map;
 
 public final class CstmView extends Entity implements Cloneable, Serializable
 {
@@ -137,6 +139,27 @@ public final class CstmView extends Entity implements Cloneable, Serializable
         {
             throw UnexpectedException.wrap(cnse);
         }
+    }
+
+    public static Map<String, Object> toRow(CstmView view)
+    {
+        Map<String, Object> row = new CaseInsensitiveHashMap<>();
+        row.put("customViewId", view.getCustomViewId());
+        row.put("entityId", view.getEntityId());
+        row.put("schema", view.getSchema());
+        row.put("queryName", view.getQueryName());
+        row.put("name", view.getName());
+        row.put("customViewOwner", view.getCustomViewOwner());
+        row.put("container", view.getContainerId());
+        row.put("columns", view.getColumns());
+        row.put("filter", view.getFilter());
+        row.put("flags", view.getFlags());
+        row.put("created", view.getCreated());
+        row.put("createdBy", view.getCreatedBy());
+        row.put("modified", view.getModified());
+        row.put("modifiedBy", view.getModifiedBy());
+
+        return row;
     }
 
     static
