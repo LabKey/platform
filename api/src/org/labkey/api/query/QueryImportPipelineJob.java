@@ -279,7 +279,7 @@ public class QueryImportPipelineJob extends PipelineJob
             }
 
             url =  target.getGridURL(getContainer());
-            if (_transactionAuditId > 0)
+            if (url != null && _transactionAuditId > 0)
                 url.addParameter("transactionAuditId", String.valueOf(_transactionAuditId));
 
             return url;
