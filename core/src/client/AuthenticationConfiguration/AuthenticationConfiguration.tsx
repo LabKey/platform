@@ -1,6 +1,6 @@
 import React, { FC, memo, PureComponent, useMemo } from 'react';
 import { ActionURL, Ajax, getServerContext, Utils } from '@labkey/api';
-import { LoadingSpinner, resolveErrorMessage, Alert, withAppUser, ServerContextProvider } from '@labkey/components';
+import { Alert, AppContexts, LoadingSpinner, resolveErrorMessage } from '@labkey/components';
 
 import { GlobalSettings } from '../components/GlobalSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
@@ -347,12 +347,9 @@ class AuthenticationConfiguration extends PureComponent<{}, Partial<State>> {
     }
 }
 
-export const App: FC = memo(() => {
-    const initialServerContext = useMemo(() => withAppUser(getServerContext()), []);
-
-    return (
-        <ServerContextProvider initialContext={initialServerContext}>
-            <AuthenticationConfiguration />
-        </ServerContextProvider>
-    );
-});
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <AuthenticationConfiguration />
+    </AppContexts>
+);
+App.displayName = 'App';
