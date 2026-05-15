@@ -557,9 +557,21 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         if (thisValue != null)
         {
             if (isDerivationField && presentDerivationWarning != null)
-                LOG.warn(presentDerivationWarning);
+            {
+                if (!hasLoggedWarning(presentDerivationWarning))
+                {
+                    LOG.warn(presentDerivationWarning);
+                    addLoggedWarning(presentDerivationWarning);
+                }
+            }
             else if (!isDerivationField && presentNonDerivationWarning != null)
-                LOG.warn(presentNonDerivationWarning);
+            {
+                if (!hasLoggedWarning(presentNonDerivationWarning))
+                {
+                    LOG.warn(presentNonDerivationWarning);
+                    addLoggedWarning(presentNonDerivationWarning);
+                }
+            }
         }
 
         return null;
