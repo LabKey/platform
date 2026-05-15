@@ -18,17 +18,16 @@ import { ActionURL, PermissionTypes, Security } from '@labkey/api';
 import {
     Alert,
     AppContexts,
-    LoadingSpinner,
-    ListDesignerPanels,
-    ListModel,
+    BeforeUnload,
     fetchListDesign,
     getListIdFromDomainId,
-    BeforeUnload,
+    ListDesignerPanels,
+    ListModel,
+    LoadingSpinner,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface Props {}
 
 interface State {
@@ -146,8 +145,8 @@ export class ListDesigner extends React.Component<Props, State> {
                 <ListDesignerPanels
                     initModel={model}
                     onCancel={this.onCancel}
-                    onComplete={this.onComplete}
                     onChange={this.onChange}
+                    onComplete={this.onComplete}
                 />
             </BeforeUnload>
         );

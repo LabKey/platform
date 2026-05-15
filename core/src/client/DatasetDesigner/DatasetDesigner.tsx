@@ -18,24 +18,24 @@ import React, { FC, PureComponent, ReactNode } from 'react';
 import {
     Alert,
     AppContexts,
+    BeforeUnload,
     DatasetDesignerPanels,
     DatasetModel,
     fetchDatasetDesign,
     LoadingSpinner,
-    BeforeUnload,
 } from '@labkey/components';
 import { ActionURL, Domain, getServerContext } from '@labkey/api';
 
 import '../DomainDesigner.scss';
 
 interface State {
-    model: DatasetModel;
     isLoadingModel: boolean;
     message?: string;
+    model: DatasetModel;
 }
 
 class DatasetDesigner extends PureComponent<any, State> {
-    private _dirty: boolean = false;
+    private _dirty = false;
 
     constructor(props) {
         super(props);
@@ -133,8 +133,8 @@ class DatasetDesigner extends PureComponent<any, State> {
                 <DatasetDesignerPanels
                     initModel={model}
                     onCancel={this.onCancel}
-                    onComplete={this.onComplete}
                     onChange={this.onChange}
+                    onComplete={this.onComplete}
                 />
             </BeforeUnload>
         );
