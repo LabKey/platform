@@ -22,12 +22,43 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.Math.min;
 
-/**
- * User: matthewb
- * Date: Jan 14, 2010
- * Time: 10:01:10 AM
- */
-
+/// Enforces a maximum throughput over a sliding time window.
+///
+/// Callers accumulate units of work (bytes, requests, operations) against a target [Rate].
+/// Internally, time is divided into sub-windows that are rotated as time passes, so the
+/// enforced rate reflects recent activity rather than an all-time average.
+///
+/// ## Throttling a background thread
+///
+/// Use [#add(long)] to block until the rate budget allows. The return value is the
+/// number of milliseconds spent waiting.
+///
+/// ```java
+/// var limiter = new RateLimiter("file io", 1_000_000, TimeUnit.SECONDS); // 1 MB/s
+/// for (File f : files) {
+///     limiter.add(f.length()); // blocks if over rate
+///     index(f);
+/// }
+/// ```
+///
+/// ## Recording without blocking
+///
+/// Use [#tryAdd(long)] to accumulate without pausing — for threads that should track
+/// rate but never stall:
+///
+/// ```java
+/// limiter.tryAdd(1); // record the event, return current delay in ms
+/// ```
+///
+/// ## Probing the current delay
+///
+/// Use [#getDelay()] to check how far ahead of the target rate the limiter is,
+/// without accumulating or blocking:
+///
+/// ```java
+/// if (limiter.getDelay() > THRESHOLD_MS)
+///     return TOO_MANY_REQUESTS;
+/// ```
 public class RateLimiter
 {
     final String _name;
@@ -114,16 +145,23 @@ public class RateLimiter
     }
 
 
-   /*
-    * RateLimiter.add() is thread-safe
-    * returns how far (in ms) we are ahead of the target rate
-    */
+    /** Accumulate {@code count} units and block until the rate budget allows. Returns ms spent waiting. */
+    public synchronized long add(long count)
+    {
+        return _pause(_updateCounts(count));
+    }
+
+    /** Accumulate {@code count} units without blocking. Returns how far ahead of the target rate we are (ms). */
+    public synchronized long tryAdd(long count)
+    {
+        return _updateCounts(count);
+    }
+
+    /** @deprecated Use {@link #add(long)} or {@link #tryAdd(long)} */
+    @Deprecated
     public synchronized long add(long count, boolean wait)
     {
-        long delay = _updateCounts(count);
-        if (!wait)
-            return delay;
-        return _pause(delay);
+        return wait ? add(count) : tryAdd(count);
     }
 
 
@@ -170,8 +208,6 @@ public class RateLimiter
     {
         private static final double DELTA = 1E-8;
 
-        long _end = 0;
-
         @org.junit.Test
         public void test()
         {
@@ -180,50 +216,75 @@ public class RateLimiter
             assertEquals("RateLimiter:test 1/MILLISECOND", l.toString());
             assertEquals(1000.0, l.getTarget().getRate(TimeUnit.SECONDS), DELTA);
 
-            Runnable run = new Runnable()
+            long end = System.currentTimeMillis() + 5000;
+            Runnable run = () ->
             {
-                @Override
-                public void run()
+                while (System.currentTimeMillis() < end)
                 {
-                    while (System.currentTimeMillis() < _end)
-                    {
-                        l.add(1,true);
-                        l.add(4,true);
-                        l.add(2,true);
-                        l.add(5,true);
-                    }
+                    l.add(1);
+                    l.add(4);
+                    l.add(2);
+                    l.add(5);
                 }
             };
             Thread[] threads = new Thread[4];
             for (int i=0 ; i<4 ; i++)
                 threads[i] = new Thread(run);
-
-            _end = System.currentTimeMillis() + 5000;
             for (int i=0 ; i<4 ; i++)
                 threads[i].start();
             for (int i=0 ; i<4 ; i++)
-                try {threads[i].join(20000);}catch(InterruptedException x){}
+                try {threads[i].join(20000);} catch (InterruptedException x) {}
 
-            // count should be about 1.0
-            RateAccumulator counter = l._long;
-            double a = counter.getRate(_end);
-            assertTrue(a < 2.0);
-            assertTrue(a > 0.1);
+            // target is 1/ms; after ~5s count should be roughly 5000
+            double rate = (double) l.getCount() / 5000.0;
+            assertTrue(rate < 2.0);
+            assertTrue(rate > 0.1);
         }
 
         @org.junit.Test
         public void test2()
         {
-            final RateLimiter l = new RateLimiter("test",new Rate(1,TimeUnit.SECONDS),10000,500);
+            final RateLimiter l = new RateLimiter("test", new Rate(1, TimeUnit.SECONDS), 10000, 500);
             long start = System.currentTimeMillis();
             for (int i=0 ; i<10 ; i++)
-            {
-                l.add(1,true);
-            }
-            long finish = System.currentTimeMillis();
-            long duration = finish-start;
+                l.add(1);
+            long duration = System.currentTimeMillis() - start;
             assertTrue(duration > 5000);
             assertTrue(duration < 15000);
+        }
+
+        @org.junit.Test
+        public void testTryAdd()
+        {
+            // history < 20s so useSystem=true; accum=500 for fast sub-window turnover
+            RateLimiter l = new RateLimiter("test", new Rate(10, TimeUnit.SECONDS), 5000, 500);
+
+            // Under rate: 5 units against a 10/s target — the 1s rate floor means this reads as under-rate
+            assertEquals(0, l.tryAdd(5));
+
+            // Way over rate: must return positive delay without blocking
+            long start = System.currentTimeMillis();
+            long delay = l.tryAdd(10000);
+            assertTrue("tryAdd must not block", System.currentTimeMillis() - start < 200);
+            assertTrue("should report delay when over rate", delay > 0);
+        }
+
+        @org.junit.Test
+        public void testGetDelay()
+        {
+            RateLimiter l = new RateLimiter("test", new Rate(10, TimeUnit.SECONDS), 5000, 500);
+            assertEquals("fresh limiter has no delay", 0, l.getDelay());
+            l.tryAdd(10000);
+            assertTrue("over-rate limiter should report positive delay", l.getDelay() > 0);
+        }
+
+        @org.junit.Test
+        public void testGetCount()
+        {
+            RateLimiter l = new RateLimiter("test", new Rate(1, TimeUnit.SECONDS), 5000, 500);
+            l.tryAdd(7);
+            l.tryAdd(3);
+            assertEquals(10, l.getCount());
         }
     }
 }

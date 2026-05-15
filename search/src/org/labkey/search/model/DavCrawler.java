@@ -289,7 +289,10 @@ public class DavCrawler implements ShutdownListener
         {
             boolean isCrawlerThread = Thread.currentThread() == _crawlerThread;
 
-            _listingRateLimiter.add(1, isCrawlerThread);
+            if (isCrawlerThread)
+                _listingRateLimiter.add(1);
+            else
+                _listingRateLimiter.tryAdd(1);
 
             _log.debug("IndexDirectoryJob.run({})", _path);
 
@@ -409,7 +412,10 @@ public class DavCrawler implements ShutdownListener
                     {
                         if (!f.isFile())
                             continue;
-                        _fileIORateLimiter.add(f.length(), isCrawlerThread);
+                        if (isCrawlerThread)
+                            _fileIORateLimiter.add(f.length());
+                        else
+                            _fileIORateLimiter.tryAdd(f.length());
                     }
 
                     _task.getQueue(null, SearchService.PRIORITY.crawl).addResource(child);
