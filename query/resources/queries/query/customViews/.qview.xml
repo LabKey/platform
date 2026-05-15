@@ -1,0 +1,8 @@
+<customView xmlns="http://labkey.org/data/xml/queryCustomView">
+    <sorts>
+        <sort column="container/name" descending="false"/>
+        <sort column="schema" descending="false"/>
+        <sort column="queryName" descending="false"/>
+        <sort column="name" descending="false"/>
+    </sorts>
+</customView>
