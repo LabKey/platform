@@ -254,6 +254,12 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             Boolean isCrossType = queryImportPipelineJob.getImportContextBuilder().getOptionParamsMap().get(AbstractQueryImportAction.Params.crossTypeImport);
             if (isCrossType)
                 urlFragment = "/crossType/" + importType.name() + "?";
+            else if (info != null && info.containsKey("viewJobDataUrl"))
+            {
+                urlFragment = info.get("viewJobDataUrl").toString();
+                if (!urlFragment.endsWith("?"))
+                    urlFragment += "?";
+            }
             else
             {
                 String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
