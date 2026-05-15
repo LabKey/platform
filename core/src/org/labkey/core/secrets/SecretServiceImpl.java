@@ -12,6 +12,7 @@ import org.labkey.api.secrets.SecretProperty;
 import org.labkey.api.secrets.SecretService;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Collection;
@@ -69,7 +70,9 @@ public class SecretServiceImpl implements SecretService
     @Override
     public void register(@NotNull SecretProperty property)
     {
-        _registeredSecrets.put(property.getPropertyName(), property);
+        var prev = _registeredSecrets.put(property.getPropertyName(), property);
+        if (null != prev)
+            throw new ConfigurationException("Duplicate secret registered: " + property.getPropertyName());
     }
 
     @Override
