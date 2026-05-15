@@ -76,7 +76,7 @@ public class RateLimiter
     SimpleRateAccumulator _short;
 
     // collection of 'short' intervals
-    ArrayList<RateAccumulator> _history = new ArrayList<>(4);
+    ArrayList<SimpleRateAccumulator> _history = new ArrayList<>(4);
 
     public RateLimiter(String name, Rate rate)
     {
@@ -121,7 +121,7 @@ public class RateLimiter
     {
         long start = now;
         long count = 0;
-        for (RateAccumulator a : _history)
+        for (var a : _history)
         {
             if (a.getStart() + historyInterval < now)
                 continue;
@@ -189,7 +189,7 @@ public class RateLimiter
         {
             while (!_history.isEmpty())
             {
-                RateAccumulator last = _history.getLast();
+                var last = _history.getLast();
                 if (last.getStart() + accumulateInterval > now - historyInterval)
                     break;
                 _history.removeLast();
