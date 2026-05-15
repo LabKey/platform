@@ -39,16 +39,11 @@ public class JobIncompleteFilter implements UMOFilter
             return true;
 
         PipelineJob job = (PipelineJob) payload;
-        switch (job.getActiveTaskStatus())
+        return switch (job.getActiveTaskStatus())
         {
-            case error:
-                return false;
-
-            case complete:
-                return (job.getActiveTaskId() != null);
-
-            default:
-                return true;
-        }
+            case error -> false;
+            case complete -> (job.getActiveTaskId() != null);
+            default -> true;
+        };
     }
 }

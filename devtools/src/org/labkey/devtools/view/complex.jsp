@@ -73,17 +73,17 @@
             <tr><td>b</td><td><input name="beans[<%=i%>].b" value="<%=h(form.getBeans().get(i).getB())%>"></td></tr>
             <%errorRow(out,"form.beans["+i+"].c");%>
             <tr><td colspan=2><%=formatErrorsForPath("form.c")%></td></tr>
-            <tr><td>c</td><td><input name="beans[<%=i%>].c" value="<%=h(form.getBeans().get(0).getC())%>"></td></tr>
+            <tr><td>c</td><td><input name="beans[<%=i%>].c" value="<%=h(form.getBeans().getFirst().getC())%>"></td></tr>
             <%errorRow(out,"form.beans["+i+"].int");%>
-            <tr><td>int</td><td><input name="beans[<%=i%>].int" value="<%=form.getBeans().get(0).getInt()%>"></td></tr>
+            <tr><td>int</td><td><input name="beans[<%=i%>].int" value="<%=form.getBeans().getFirst().getInt()%>"></td></tr>
             <%errorRow(out,"form.beans["+i+"].positive");%>
-            <tr><td>Positive Number</td><td><input name="beans[<%=i%>].positive" value="<%=form.getBeans().get(0).getPositive()%>"></td></tr>
+            <tr><td>Positive Number</td><td><input name="beans[<%=i%>].positive" value="<%=form.getBeans().getFirst().getPositive()%>"></td></tr>
             <%errorRow(out,"form.beans["+i+"].required");%>
-            <tr><td>Required String</td><td><input name="beans[<%=i%>].required" value="<%=h(form.getBeans().get(0).getRequired())%>"></td></tr>
-            <tr><td>Text</td><td><textarea name="beans[<%=i%>].text" rows="12" cols="60"><%=h(form.getBeans().get(0).getText())%></textarea></td></tr>
-            <tr><td>x</td><td><input name="beans[<%=i%>].x" value="<%=h(form.getBeans().get(0).getX())%>"></td></tr>
-            <tr><td>y</td><td><input name="beans[<%=i%>].y" value="<%=h(form.getBeans().get(0).getY())%>"></td></tr>
-            <tr><td>z</td><td><input name="beans[<%=i%>].z" value="<%=h(form.getBeans().get(0).getZ())%>"></td></tr>
+            <tr><td>Required String</td><td><input name="beans[<%=i%>].required" value="<%=h(form.getBeans().getFirst().getRequired())%>"></td></tr>
+            <tr><td>Text</td><td><textarea name="beans[<%=i%>].text" rows="12" cols="60"><%=h(form.getBeans().getFirst().getText())%></textarea></td></tr>
+            <tr><td>x</td><td><input name="beans[<%=i%>].x" value="<%=h(form.getBeans().getFirst().getX())%>"></td></tr>
+            <tr><td>y</td><td><input name="beans[<%=i%>].y" value="<%=h(form.getBeans().getFirst().getY())%>"></td></tr>
+            <tr><td>z</td><td><input name="beans[<%=i%>].z" value="<%=h(form.getBeans().getFirst().getZ())%>"></td></tr>
     <%
         if (enctype.startsWith("multipart"))
         {

@@ -165,9 +165,9 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         if (r.exists())
         {
             if (null != r.getFile())
-                _log.debug(normalized + " -> " + r.getFile().getPath());
+                _log.debug("{} -> {}", normalized, r.getFile().getPath());
             else
-                _log.debug(normalized + " -> " + r);
+                _log.debug("{} -> {}", normalized, r);
             if (r instanceof _PublicResource)
                 _allStaticFiles.put(normalized,r);
         }

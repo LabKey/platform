@@ -32,7 +32,7 @@ public interface SampleStatusService
     static SampleStatusService get()
     {
         if (!_providers.isEmpty())
-            return _providers.get(0);
+            return _providers.getFirst();
 
         return _defaultProvider;
     }

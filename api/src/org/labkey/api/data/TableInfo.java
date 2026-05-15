@@ -209,6 +209,12 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         {
             columns.add(column);
         }
+
+        public String display()
+        {
+            String display = indexType.name().toUpperCase() + " " + name + " " + columns.stream().map(ColumnInfo::getName).toList();
+            return filterCondition == null ? display : display + " + " + filterCondition;
+        }
     }
 
     /** Get a list of columns that specifies a unique key, may return the same result as getPKColumns()
@@ -222,11 +228,6 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * NOTE: Postgres does not consider rows with NULL values to be "equal" so NULLs may be repeated!
      */
     @NotNull List<ColumnInfo> getAlternateKeyColumns();
-
-    @NotNull default Set<String> getAltKeysForUpdate()
-    {
-       return Collections.emptySet();
-    }
 
     @Nullable default Set<String> getDisabledSystemFields()
     {

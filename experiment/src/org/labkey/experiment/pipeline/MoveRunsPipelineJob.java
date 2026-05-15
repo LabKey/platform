@@ -64,11 +64,11 @@ public class MoveRunsPipelineJob extends PipelineJob
             ExpRun run = ExperimentService.get().getExpRun(runId);
             if (run == null)
             {
-                getLogger().info("No run found for RowId " + runId);
+                getLogger().info("No run found for RowId {}", runId);
             }
             else
             {
-                getLogger().info(run.getName() + " (RowId = " + runId + ")");
+                getLogger().info("{} (RowId = {})", run.getName(), runId);
             }
         }
     }

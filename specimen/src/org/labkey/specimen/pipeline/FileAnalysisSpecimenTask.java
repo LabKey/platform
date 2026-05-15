@@ -41,7 +41,7 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
         List<FileLike> paths = support.getInputFiles();
         // there should only be a single file associated with this task
         assert paths.size() == 1;
-        return paths.get(0);
+        return paths.getFirst();
     }
 
     @Override

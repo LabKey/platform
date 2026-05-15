@@ -340,7 +340,7 @@
 
         // verify the exp.data is attached to the run
         assertEquals(1, run.getDataOutputs().size());
-        final ExpData originalOutputData = run.getDataOutputs().get(0);
+        final ExpData originalOutputData = run.getDataOutputs().getFirst();
         assertEquals(file.getName(), originalOutputData.getName());
 
         final long dataRowId = originalOutputData.getRowId();
@@ -479,7 +479,7 @@
         // and that it has the same dataFileUrl as the input file
         var dataOutputs = assayRun.getDataOutputs();
         assertEquals(1, dataOutputs.size());
-        var assayOutputData = dataOutputs.get(0);
+        var assayOutputData = dataOutputs.getFirst();
         assertNotEquals(firstData, assayOutputData);
         assertEquals(firstData.getDataFileUrl(), assayOutputData.getDataFileUrl());
 
@@ -491,7 +491,7 @@
         log.info("delete the run and verify the duplicate exp.data was also deleted");
         assayRun.delete(user);
         dataList = ExperimentService.get().getAllExpDataByURL(firstData.getDataFileUrl(), null);
-        assertEquals(firstData, dataList.get(0));
+        assertEquals(firstData, dataList.getFirst());
         assertEquals(1, dataList.size());
     }
 

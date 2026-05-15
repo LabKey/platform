@@ -37,6 +37,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
@@ -482,13 +483,13 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         if (kind == null)
         {
-            LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no domain kind.");
+            LOG.info("Sample type '{}' ({}) has no domain kind.", st.getName(), st.getRowId());
             return null;
         }
         else if (kind.getStorageSchemaName() == null)
         {
             // e.g., SpecimenSampleTypeDomainKind is not provisioned
-            LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no provisioned storage schema.");
+            LOG.info("Sample type '{}' ({}) has no provisioned storage schema.", st.getName(), st.getRowId());
             return null;
         }
 
@@ -500,7 +501,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
         if (provisionedTable == null)
         {
-            LOG.error("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no provisioned table.");
+            LOG.error("Sample type '{}' ({}) has no provisioned table.", st.getName(), st.getRowId());
             return null;
         }
 
@@ -566,7 +567,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
         if (null == kind || null == kind.getStorageSchemaName())
         {
-            LOG.error("DataClass '" + dc.getName() + "' (" + dc.getRowId() + ") has no provisioned storage schema.");
+            LOG.error("DataClass '{}' ({}) has no provisioned storage schema.", dc.getName(), dc.getRowId());
             return;
         }
 
@@ -582,7 +583,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
         if (provisionedTable == null)
         {
-            LOG.error("DataClass '" + dc.getName() + "' (" + dc.getRowId() + ") has no provisioned table.");
+            LOG.error("DataClass '{}' ({}) has no provisioned table.", dc.getName(), dc.getRowId());
             return;
         }
 
@@ -817,4 +818,135 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (!badColumnNames.isEmpty())
             LOG.error("Some storage column names are still too long!! {}", badColumnNames);
     }
+
+    /**
+     * Called from exp-26.005-26.006.sql
+     * Drop the lsid column from existing provisioned DataClass tables.
+     */
+    @SuppressWarnings("unused")
+    @DeferredUpgrade
+    public static void dropProvisionedDataClassLsidColumn(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        {
+            TableInfo source = ExperimentServiceImpl.get().getTinfoDataClass();
+            List<ExpDataClassImpl> dataClasses = new TableSelector(source, null, null)
+                    .stream(DataClass.class)
+                    .map(ExpDataClassImpl::new)
+                    .toList();
+
+            LOG.info("Dropping the lsid column from {} data classes", dataClasses.size());
+
+            int successCount = 0;
+            for (ExpDataClassImpl dc : dataClasses)
+            {
+                boolean success = dropDataClassLsid(dc);
+                if (success)
+                    successCount++;
+            }
+
+            LOG.info("Dropped lsid column from {} of {} data classes successfully.", successCount, dataClasses.size());
+
+            tx.commit();
+        }
+    }
+
+    private static boolean dropDataClassLsid(ExpDataClassImpl dc)
+    {
+        Domain domain = dc.getDomain();
+        DataClassDomainKind kind = null;
+        try
+        {
+            kind = (DataClassDomainKind) domain.getDomainKind();
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
+        if (null == kind || null == kind.getStorageSchemaName())
+            return false;
+
+        DbSchema schema = DataClassDomainKind.getSchema();
+
+        StorageProvisioner.get().ensureStorageTable(domain, kind, schema.getScope());
+        domain = PropertyService.get().getDomain(domain.getTypeId());
+        assert (null != domain && null != domain.getStorageTableName());
+
+        SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
+        if (provisionedTable == null)
+        {
+            LOG.error("DataClass '{}' ({}) has no provisioned table.", dc.getName(), dc.getRowId());
+            return false;
+        }
+
+        String lsidColumnName = "lsid";
+        ColumnInfo lsidColumn = provisionedTable.getColumn(FieldKey.fromParts(lsidColumnName));
+        if (lsidColumn == null)
+        {
+            LOG.info("No lsid column found on table '{}'. Skipping drop.", provisionedTable.getName());
+            return false;
+        }
+
+        Set<String> indicesToRemove = new HashSet<>();
+        for (var index : provisionedTable.getAllIndices())
+        {
+            var indexColumns = index.columns();
+            if (indexColumns.contains(lsidColumn))
+            {
+                if (indexColumns.size() > 1)
+                    LOG.info("Dropping index '{}' on table '{}' because it contains the lsid column.", index.name(), provisionedTable.getName());
+
+                indicesToRemove.add(index.name());
+            }
+        }
+
+        if (!indicesToRemove.isEmpty())
+            StorageProvisionerImpl.get().dropTableIndices(domain, indicesToRemove);
+        else
+            LOG.info("No indices found on table '{}' that contain the lsid column.", provisionedTable.getName());
+
+        DbScope primary = DbScope.getLabKeyScope();
+        // postgres automatically drops FK associated with column when column is dropped
+        if (primary.getSqlDialect().isSqlServer())
+        {
+            boolean hasFKDropped = false;
+            ForeignKey lsidFKCol = lsidColumn.getFk();
+            if (lsidFKCol != null)
+            {
+                String lsidFKName = lsidFKCol.getFkName();
+                if (lsidFKName != null)
+                {
+                    StorageProvisionerImpl.get().dropTableConstraints(domain, Collections.singleton(lsidFKName));
+                    hasFKDropped = true;
+                }
+            }
+
+            if (!hasFKDropped) // GitHub Issue 1117: this could happen if the dataclass is created by folder import
+                LOG.info("No FK found on table '{}' that contain the lsid column.", provisionedTable.getName());
+        }
+
+        // Remanufacture a property descriptor that matches the original LSID property descriptor.
+        var spec = new PropertyStorageSpec(lsidColumnName, JdbcType.VARCHAR, 300).setNullable(false);
+        PropertyDescriptor pd = new PropertyDescriptor();
+        pd.setContainer(dc.getContainer());
+        pd.setDatabaseDefaultValue(spec.getDefaultValue());
+        pd.setName(spec.getName());
+        pd.setJdbcType(spec.getJdbcType(), spec.getSize());
+        pd.setNullable(spec.isNullable());
+        pd.setMvEnabled(spec.isMvEnabled());
+        pd.setPropertyURI(DomainUtil.createUniquePropertyURI(domain.getTypeURI(), null, new CaseInsensitiveHashSet()));
+        pd.setDescription(spec.getDescription());
+        pd.setImportAliases(spec.getImportAliases());
+        pd.setScale(spec.getSize());
+        DomainPropertyImpl dp = new DomainPropertyImpl((DomainImpl) domain, pd);
+
+        LOG.debug("Dropping lsid column from table '{}' for data class '{}' in folder {}.", provisionedTable.getName(), dc.getName(), dc.getContainer().getPath());
+        StorageProvisionerImpl.get().dropProperties(domain, Set.of(dp));
+
+        return true;
+    }
+
 }

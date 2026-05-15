@@ -97,7 +97,7 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
 
             if (null != job)
                 job.setStatus("IMPORT " + getDescription());
-            log.info("Starting " + getDescription());
+            log.info("Starting {}", getDescription());
 
             for (String file: xarDir.list())
             {
@@ -155,7 +155,7 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                             log.error("Failed to initialize runs XAR source", e);
                             throw(e);
                         }
-                        log.info("Importing the runs XAR file: " + runsXarFile.getName());
+                        log.info("Importing the runs XAR file: {}", runsXarFile.getName());
                         XarReader runsReader = new FolderXarImporterFactory.FolderExportXarReader(runsXarSource, job, ctx);
                         runsReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                         runsReader.parseAndLoad(false, ctx.getAuditBehaviorType());
@@ -183,7 +183,7 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                     log.info("No types XAR file to process.");
 
                 transaction.commit();
-                log.info("Finished " + getDescription());
+                log.info("Finished {}", getDescription());
             }
         }
     }
@@ -280,7 +280,7 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                     TableInfo tinfo = userSchema.getTable(tableName);
                     if (tinfo != null)
                     {
-                        log.info("Importing data file: " + dataFileName);
+                        log.info("Importing data file: {}", dataFileName);
                         try (InputStream is = dir.getInputStream(dataFileName))
                         {
                             if (null != is)
@@ -308,13 +308,13 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                                     options.put(SampleTypeService.ConfigParameters.DeferAliquotRuns, true);
                                     if (isUpdate)
                                         options.put(QueryUpdateService.ConfigParameters.SkipRequiredFieldValidation, true);
-                                    options.put(ExperimentService.QueryOptions.UseLsidForUpdate, !isUpdate);
                                     options.put(ExperimentService.QueryOptions.DeferRequiredLineageValidation, true);
+                                    options.put(ExperimentService.QueryOptions.UseProvidedLsidForXarImport, !isUpdate);
                                     context.setConfigParameters(options);
 
                                     DataIterator data = new ResolveLsidAndFileLinkDataIterator(loader.getDataIterator(context), xarContext, expObject instanceof ExpDataClass ? "DataClass" : ExpMaterial.DEFAULT_CPAS_TYPE, tinfo);
                                     int count = qus.loadRows(ctx.getUser(), ctx.getContainer(), data, context, null);
-                                    log.info("Imported a total of " + count + " rows into : " + tableName);
+                                    log.info("Imported a total of {} rows into : {}", count, tableName);
 
                                     if (context.getErrors().hasErrors())
                                     {
@@ -323,24 +323,24 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                                     }
                                 }
                                 else
-                                    log.error("Unable to import TSV data for " + dataFileName + ". Could not find query update service for table " + tableName + ".");
+                                    log.error("Unable to import TSV data for {}. Could not find query update service for table {}.", dataFileName, tableName);
                             }
                         }
                     }
                     else
                     {
-                        log.error("Failed to find table '" + schemaName + "." + tableName + "' to import data file: " + dataFileName);
+                        log.error("Failed to find table '{}.{}' to import data file: {}", schemaName, tableName, dataFileName);
                     }
                 }
                 else if (fileRequired && !excludeTable(tableName))
                 {
-                    log.error("Unable to import TSV data for table " + tableName + ". File not found.");
+                    log.error("Unable to import TSV data for table {}. File not found.", tableName);
                 }
             }
         }
         else
         {
-            log.error("Could not find " + schemaName + " schema.");
+            log.error("Could not find {} schema.", schemaName);
         }
     }
 

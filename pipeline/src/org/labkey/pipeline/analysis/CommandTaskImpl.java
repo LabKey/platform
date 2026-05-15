@@ -284,7 +284,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             List<TaskToCommandArgs> converters = getConverters();
             assert converters != null && !converters.isEmpty() :
                     "No converters found in " + getId();
-            TaskToCommandArgs commandNameConverter = converters.get(0);
+            TaskToCommandArgs commandNameConverter = converters.getFirst();
 
             CommandTaskImpl task = createTask(job);
             // Need to set up the work directory so that it can figure out what arguments will be used in the call
@@ -539,7 +539,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             List<String> originalFiles = getOriginalFiles(key);
             if (originalFiles.size() == 1)
             {
-                replacements.put(DataTransformService.ORIGINAL_SOURCE_PATH, Matcher.quoteReplacement(originalFiles.get(0).replaceAll("\\\\", "/")));
+                replacements.put(DataTransformService.ORIGINAL_SOURCE_PATH, Matcher.quoteReplacement(originalFiles.getFirst().replaceAll("\\\\", "/")));
             }
         }
 
@@ -710,7 +710,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         // Just output the command line, if debug mode is set.
         if (_factory.isPreview())
         {
-            getJob().header(args.get(0) + " output");
+            getJob().header(args.getFirst() + " output");
             getJob().info(commandLine);
 
             return false;

@@ -51,13 +51,13 @@ public class TableChange
     private final Collection<PropertyStorageSpec> _columns = new LinkedHashSet<>();
     private final Map<String, String> _columnRenames = new LinkedHashMap<>();
     private final Map<String, Integer> _columnResizes = new LinkedHashMap<>();
-    private final Map<Index, Index> _indexRenames = new LinkedHashMap<>();
     private final Domain _domain;
 
     private Collection<Index> _indices = new LinkedHashSet<>();
     private Collection<PropertyStorageSpec.ForeignKey> _foreignKeys = Collections.emptySet();
     private Collection<Constraint> _constraints;
     private Set<String> _indicesToBeDroppedByName;
+    private Set<String> _constraintsToBeDroppedByName;
     private IndexSizeMode _sizeMode = IndexSizeMode.Auto;
     private Map<String, PropertyType> _oldPropTypes;
 
@@ -89,7 +89,7 @@ public class TableChange
             {
                 for (SQLFragment sql : scope.getSqlDialect().getChangeStatements(this))
                 {
-                    LOG.debug("Will issue: " + sql.getSQL());
+                    LOG.debug("Will issue: {}", sql.getSQL());
                     executor.execute(sql);
                 }
                 success = true;
@@ -115,6 +115,7 @@ public class TableChange
                 case RenameColumns -> !getColumnRenames().isEmpty();
                 case AddIndices -> !getIndexedColumns().isEmpty();
                 case DropIndicesByName -> !getIndicesToBeDroppedByName().isEmpty();
+                case DropConstraintsByName -> !getConstraintsToBeDroppedByName().isEmpty();
                 case AddConstraints, DropConstraints -> !getConstraints().isEmpty();
                 default -> true;
             };
@@ -156,7 +157,7 @@ public class TableChange
                     // SQLServer creates a non-unique index for single large text columns with a "_hashed_" prefix.
                     // The uniqueness is enforced by a database trigger.
                     boolean unique = index.indexType() == TableInfo.IndexType.Unique ||
-                            (schema.getSqlDialect().isSqlServer() && columnNames.size() == 1 && columnNames.get(0).startsWith(PropertyStorageSpec.HASHED_COLUMN_PREFIX));
+                            (schema.getSqlDialect().isSqlServer() && columnNames.size() == 1 && columnNames.getFirst().startsWith(PropertyStorageSpec.HASHED_COLUMN_PREFIX));
 
                     // remove the _hashed_ column prefix for SQLServer
                     if (schema.getSqlDialect().isSqlServer() && unique)
@@ -248,19 +249,6 @@ public class TableChange
         _columnRenames.put(oldName, newName);
     }
 
-    /**
-     * Index will be renamed using the columns listed in the Index.
-     * The columns used by the index won't be changed. We need to
-     * pass the list of columns since the index name is created by the dialect.
-     *
-     * @param oldIndex Old index to be renamed.
-     * @param newIndex New index to be renamed.
-     */
-    public void addIndexRename(Index oldIndex, Index newIndex)
-    {
-        _indexRenames.put(oldIndex, newIndex);
-    }
-
     public void dropColumnExactName(String name)
     {
         if (_type != ChangeType.DropColumns)
@@ -288,22 +276,9 @@ public class TableChange
         return Collections.unmodifiableMap(_columnRenames);
     }
 
-    /**
-     * @return  map where key = old index, value = new index
-     */
-    public Map<Index, Index> getIndexRenames()
-    {
-        return Collections.unmodifiableMap(_indexRenames);
-    }
-
     public Collection<Index> getIndexedColumns()
     {
         return _indices;
-    }
-
-    public void setIndexedColumns(Collection<Index> indices)
-    {
-        _indices = indices;
     }
 
     public void setIndexedColumns(Domain domain, Collection<Index> indices)
@@ -319,6 +294,16 @@ public class TableChange
     public void setIndicesToBeDroppedByName(Set<String> indicesToBeDroppedByName)
     {
         _indicesToBeDroppedByName = indicesToBeDroppedByName;
+    }
+
+    public Set<String> getConstraintsToBeDroppedByName()
+    {
+        return _constraintsToBeDroppedByName;
+    }
+
+    public void setConstraintsToBeDroppedByName(Set<String> constraintsToBeDroppedByName)
+    {
+        _constraintsToBeDroppedByName = constraintsToBeDroppedByName;
     }
 
     public Collection<PropertyStorageSpec.ForeignKey> getForeignKeys()
@@ -371,6 +356,7 @@ public class TableChange
         ResizeColumns,
         ChangeColumnTypes,
         DropIndicesByName,
+        DropConstraintsByName,
         AddIndices,
         DropConstraints,
         AddConstraints

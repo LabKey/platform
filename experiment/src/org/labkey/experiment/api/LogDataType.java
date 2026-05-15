@@ -17,18 +17,11 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.DataType;
-import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.view.ActionURL;
 
 public class LogDataType extends DataType
 {
     public LogDataType()
     {
         super("Log");
-    }
-    @Override
-    public ActionURL getDetailsURL(ExpData dataObject)
-    {
-        return null;
     }
 }

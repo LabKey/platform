@@ -175,7 +175,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
                 }
                 else
                 {
-                    LOG.warn("Duplicate property name found with " + column.getName() + ", PropertyURI: " + entry.getValue().getPropertyURI());
+                    LOG.warn("Duplicate property name found with {}, PropertyURI: {}", column.getName(), entry.getValue().getPropertyURI());
                 }
             }
         }

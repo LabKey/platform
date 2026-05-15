@@ -118,7 +118,7 @@ public class SubfolderWriter extends BaseFolderWriter
             List<Container> noSubfolders = new ArrayList<>();
             writer.getChildrenToExport(fec, childList, noSubfolders);
             assertEquals("Expected one container tab subfolder", 1, noSubfolders.size());
-            assertEquals("containertab", noSubfolders.get(0).getName());
+            assertEquals("containertab", noSubfolders.getFirst().getName());
         }
     }
 }

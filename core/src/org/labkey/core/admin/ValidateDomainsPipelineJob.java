@@ -70,7 +70,7 @@ public class ValidateDomainsPipelineJob extends PipelineJob
         setStatus(TaskStatus.running);
         getLogger().info("Starting to check domains");
         StorageProvisioner.ProvisioningReport pr = StorageProvisioner.get().getProvisioningReport();
-        getLogger().info(String.format("%d domains use Storage Provisioner", pr.getProvisionedDomains().size()));
+        getLogger().info("{} domains use Storage Provisioner", pr.getProvisionedDomains().size());
         int errorCount = 0;
         for (StorageProvisioner.ProvisioningReport.DomainReport dr : pr.getProvisionedDomains())
         {
@@ -85,7 +85,7 @@ public class ValidateDomainsPipelineJob extends PipelineJob
             errorCount++;
             getLogger().error(error);
         }
-        getLogger().info("Check complete, " + errorCount + " errors found");
+        getLogger().info("Check complete, {} errors found", errorCount);
         setStatus(TaskStatus.complete, "Job finished at: " + DateUtil.nowISO());
     }
 }

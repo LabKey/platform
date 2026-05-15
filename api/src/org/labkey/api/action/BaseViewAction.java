@@ -66,7 +66,6 @@ import org.springframework.validation.Validator;
 import org.springframework.web.bind.ServletRequestDataBinder;
 import org.springframework.web.bind.ServletRequestParameterPropertyValues;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.beans.PropertyDescriptor;
@@ -76,7 +75,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -376,7 +374,6 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
 
     public static @NotNull BindException springBindParameters(Object command, String commandName, PropertyValues params)
     {
-        Predicate<String> allow = command instanceof HasAllowBindParameter allowBP ? allowBP.allowBindParameter() : HasAllowBindParameter.getDefaultPredicate();
         ServletRequestDataBinder binder = new ServletRequestDataBinder(command, commandName);
 
         String[] fields = binder.getDisallowedFields();
@@ -391,6 +388,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         try
         {
             // most paths probably called getPropertyValuesForFormBinding() already, but this is a public static method, so call it again
+            Predicate<String> allow = command instanceof HasAllowBindParameter allowBP ? allowBP.allowBindParameter() : HasAllowBindParameter.getDefaultPredicate();
             binder.bind(getPropertyValuesForFormBinding(params, allow));
             BindException errors = new NullSafeBindException(binder.getBindingResult());
             return errors;
@@ -432,13 +430,13 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return new BindingErrorProcessor()
         {
             @Override
-            public void processMissingFieldError(String missingField, BindingResult bindingResult)
+            public void processMissingFieldError(@NotNull String missingField, @NotNull BindingResult bindingResult)
             {
                 defaultBEP.processMissingFieldError(missingField, bindingResult);
             }
 
             @Override
-            public void processPropertyAccessException(PropertyAccessException ex, BindingResult bindingResult)
+            public void processPropertyAccessException(@NotNull PropertyAccessException ex, @NotNull BindingResult bindingResult)
             {
                 Object newValue = ex.getPropertyChangeEvent().getNewValue();
                 if (newValue instanceof String)
@@ -511,7 +509,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     }
 
     @Override
-    public boolean supports(Class clazz)
+    public boolean supports(@NotNull Class clazz)
     {
         return getCommandClass().isAssignableFrom(clazz);
     }
@@ -561,7 +559,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        protected BeanWrapper createBeanWrapper()
+        protected @NotNull BeanWrapper createBeanWrapper()
         {
             return new BeanUtilsWrapperImpl((DynaBean)getTarget());
         }
@@ -585,7 +583,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        public Object getPropertyValue(String propertyName) throws BeansException
+        public Object getPropertyValue(@NotNull String propertyName) throws BeansException
         {
             try
             {
@@ -598,7 +596,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        public void setPropertyValue(String propertyName, Object value) throws BeansException
+        public void setPropertyValue(@NotNull String propertyName, Object value) throws BeansException
         {
             try
             {
@@ -611,19 +609,19 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        public boolean isReadableProperty(String propertyName)
+        public boolean isReadableProperty(@NotNull String propertyName)
         {
             return true;
         }
 
         @Override
-        public boolean isWritableProperty(String propertyName)
+        public boolean isWritableProperty(@NotNull String propertyName)
         {
             return true;
         }
 
         @Override
-        public TypeDescriptor getPropertyTypeDescriptor(String s) throws BeansException
+        public TypeDescriptor getPropertyTypeDescriptor(@NotNull String s) throws BeansException
         {
             return null;
         }
@@ -634,25 +632,25 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        public Object getWrappedInstance()
+        public @NotNull Object getWrappedInstance()
         {
             return object;
         }
 
         @Override
-        public Class<?> getWrappedClass()
+        public @NotNull Class<?> getWrappedClass()
         {
             return object.getClass();
         }
 
         @Override
-        public PropertyDescriptor[] getPropertyDescriptors()
+        public PropertyDescriptor @NotNull [] getPropertyDescriptors()
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public PropertyDescriptor getPropertyDescriptor(String propertyName) throws BeansException
+        public @NotNull PropertyDescriptor getPropertyDescriptor(@NotNull String propertyName) throws BeansException
         {
             throw new UnsupportedOperationException();
         }

@@ -16,7 +16,6 @@
 package org.labkey.filecontent;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.Lsid;

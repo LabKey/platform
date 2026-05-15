@@ -585,17 +585,17 @@ public class QueryManager
         {
             if (change.getProperty() != property)
             {
-               _log.error(String.format("Property '%s' doesn't match change property '%s'", property, change.getProperty()));
+               _log.error("Property '{}' doesn't match change property '{}'", property, change.getProperty());
                 valid = false;
             }
             if (change.getOldValue() != null && !property.getPropertyClass().isInstance(change.getOldValue()))
             {
-                _log.error(String.format("Old value '%s' isn't an instance of property '%s' class '%s'", change.getOldValue(), property, property.getPropertyClass()));
+                _log.error("Old value '{}' isn't an instance of property '{}' class '{}'", change.getOldValue(), property, property.getPropertyClass());
                 valid = false;
             }
             if (change.getNewValue() != null && !property.getPropertyClass().isInstance(change.getNewValue()))
             {
-                _log.error(String.format("New value '%s' isn't an instance of property '%s' class '%s'", change.getNewValue(), property, property.getPropertyClass()));
+                _log.error("New value '{}' isn't an instance of property '{}' class '{}'", change.getNewValue(), property, property.getPropertyClass());
                 valid = false;
             }
         }
@@ -1119,9 +1119,9 @@ public class QueryManager
 
     private static Long percentile(double percentile, List<Long> sortedCounts) {
         if (percentile <= 0.01)
-            return sortedCounts.get(0);
+            return sortedCounts.getFirst();
         if (percentile >= 99.99)
-            return sortedCounts.get(sortedCounts.size() - 1);
+            return sortedCounts.getLast();
         return sortedCounts.get((int) Math.round(percentile / 100.0 * (sortedCounts.size() - 1)));
     }
 

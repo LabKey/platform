@@ -81,7 +81,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
                 return;
             }
 
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             StudyManager studyManager = StudyManager.getInstance();
             VisitManager visitManager = studyManager.getVisitManager(study);
@@ -132,7 +132,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
                 {
                     if (!visitTags.containsKey(visitTagRecord.getVisitTagName()))
                     {
-                        ctx.getLogger().error("Visit references non-existent visit tag: " + visitTagRecord.getVisitTagName());
+                        ctx.getLogger().error("Visit references non-existent visit tag: {}", visitTagRecord.getVisitTagName());
                     }
                     else
                     {
@@ -140,7 +140,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
                         String visitTagMapKey = StudyManager.makeVisitTagMapKey(visitTagRecord.getVisitTagName(), visit.getRowId(), cohortId);
                         if (visitTagMapKeys.contains(visitTagMapKey))
                         {
-                            ctx.getLogger().info("VisitTagMap entry already in table or archive: " + visitTagMapKey);
+                            ctx.getLogger().info("VisitTagMap entry already in table or archive: {}", visitTagMapKey);
                         }
                         else
                         {
@@ -167,7 +167,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
                 }
             }
 
-            ctx.getLogger().info("Done importing " + getDescription());
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
     }
 

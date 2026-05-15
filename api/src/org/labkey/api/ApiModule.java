@@ -116,6 +116,7 @@ import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.MapLoader;
+import org.labkey.api.reader.StrictBoundedReader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.ReportType;
@@ -439,6 +440,7 @@ public class ApiModule extends CodeOnlyModule
             SimpleFilter.InClauseTestCase.class,
             SimpleFilter.SqlClauseTestCase.class,
             SqlScanner.TestCase.class,
+            StrictBoundedReader.TestCase.class,
             StringExpressionFactory.TestCase.class,
             StringUtilsLabKey.TestCase.class,
             SubfolderWriter.TestCase.class,

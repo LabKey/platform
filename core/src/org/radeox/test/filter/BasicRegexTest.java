@@ -43,6 +43,7 @@ import org.radeox.macro.code.XmlCodeFilter;
 import java.text.MessageFormat;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -98,7 +99,7 @@ public class BasicRegexTest {
     Matcher m = Matcher.create("test xsl test", p);
     assertTrue("Word found", m.contains());
     m = Matcher.create("testxsltest", p);
-    assertTrue("Word not found", !m.contains());
+      assertFalse("Word not found", m.contains());
   }
 
   @org.junit.Test

@@ -153,7 +153,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
                 {
                     // Unfortunately, we have to catch Exception here, since BeanUtils throws RuntimeExceptions
                     // for various failures.
-                    LOG.warn("Couldn't set property " + entry.getKey() + " on " + view.getClass() + " to value " + entry.getValue(), e);
+                    LOG.warn("Couldn't set property {} on {} to value {}", entry.getKey(), view.getClass(), entry.getValue(), e);
                 }
             }
             else

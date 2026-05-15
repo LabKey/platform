@@ -101,7 +101,7 @@ public class LineagePerfTest extends Assert
         row.put("name", name);
         row.put("id", data.size());
         data.add(row);
-        LOG.debug("New data: " + name);
+        LOG.debug("New data: {}", name);
         return 1;
     }
 
@@ -113,7 +113,7 @@ public class LineagePerfTest extends Assert
         row.put("name", name);
         row.put("age", samples.size());
         samples.add(row);
-        LOG.debug("New sample: " + name);
+        LOG.debug("New sample: {}", name);
         return 1;
     }
 
@@ -164,15 +164,15 @@ public class LineagePerfTest extends Assert
         if (numDataParents == 0 && numSampleParents == 0)
             return generateNewSample(data, samples, random);
 
-        LOG.debug("Derive " + numChildren + " from " + numDataParents + " data and " + numSampleParents + " samples");
+        LOG.debug("Derive {} from {} data and {} samples", numChildren, numDataParents, numSampleParents);
 
         String dataParents = pickParents(data, numDataParents, random);
         if (dataParents != null)
-            LOG.debug("  data parents:  " + dataParents);
+            LOG.debug("  data parents:  {}", dataParents);
 
         String sampleParents = pickParents(samples, numSampleParents, random);
         if (sampleParents != null)
-            LOG.debug("  sample parents:  " + sampleParents);
+            LOG.debug("  sample parents:  {}", sampleParents);
 
         // now generate the derived children
         List<String> childNames = new ArrayList<>();
@@ -190,7 +190,7 @@ public class LineagePerfTest extends Assert
             childNames.add(name);
         }
 
-        LOG.debug("  children: " + StringUtils.join(childNames, ", "));
+        LOG.debug("  children: {}", StringUtils.join(childNames, ", "));
         return numChildren;
     }
 
@@ -356,10 +356,10 @@ public class LineagePerfTest extends Assert
             List<Map<String, Object>> insertedDatas = dcTable.getUpdateService().insertRows(_user, _container, data, errors, null, null);
             if (errors.hasErrors())
                 throw errors;
-            LOG.info("inserted " + data.size() + " data");
+            LOG.info("inserted {} data", data.size());
             insertDataTimer.stop();
 
-            Map<String, Object> firstDataMap = insertedDatas.get(0);
+            Map<String, Object> firstDataMap = insertedDatas.getFirst();
             Long firstDataRowId = asLong(firstDataMap.get("rowId"));
             assertNotNull(firstDataRowId);
             firstData = ExperimentService.get().getExpData(firstDataRowId);
@@ -378,7 +378,7 @@ public class LineagePerfTest extends Assert
             ssTable.getUpdateService().insertRows(_user, _container, samples, errors, null, null);
             if (errors.hasErrors())
                 throw errors;
-            LOG.info("inserted " + samples.size() + " samples");
+            LOG.info("inserted {} samples", samples.size());
             insertSamplesTimer.stop();
 
             tx.commit();
@@ -431,7 +431,7 @@ public class LineagePerfTest extends Assert
 
         for (int i = 0; i < 10; i++)
         {
-            LOG.info("iteration: " + i);
+            LOG.info("iteration: {}", i);
 
             // insert a new sample
             LOG.info("  creating sample");

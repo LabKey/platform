@@ -82,7 +82,7 @@ public class WikiRendererDisplayColumn extends DataColumn
                 }
                 catch (IllegalArgumentException err)
                 {
-                    _log.error("Bad wiki renderer type: " + rendererTypeName, err);
+                    _log.error("Bad wiki renderer type: {}", rendererTypeName, err);
                 }
             }
 

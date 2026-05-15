@@ -93,7 +93,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -131,6 +130,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     String EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS = "org.labkey.api.exp.api.ExperimentService#FROM_EXPANCESTORS";
 
+    String EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE = "org.labkey.experiment.api.SampleTypeUpdateServiceDI#ALLOW_ROW_ID_SAMPLE_MERGE";
+
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
     int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
@@ -150,10 +151,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     enum QueryOptions
     {
-        UseLsidForUpdate,
+        UseProvidedLsidForXarImport,
         GetSampleRecomputeCol,
         SkipBulkRemapCache,
         DeferRequiredLineageValidation,
+        AddLsidColForDataClassUpdate,
+        ShouldCommitRowsBeforeContinuing
     }
 
     enum DataTypeForExclusion
@@ -843,7 +846,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<ProtocolApplicationParameter> getProtocolApplicationParameters(long rowId);
 
-    void moveContainer(Container c, Container cOldParent, Container cNewParent) throws ExperimentException;
+    void moveContainer(Container c, Container cOldParent, Container cNewParent);
 
     LsidType findType(Lsid lsid);
 
@@ -1014,7 +1017,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param job Pipeline job.
      * @return the run created from the job's actions.
      */
-    ExpRun importRun(PipelineJob job, XarSource source) throws SQLException, PipelineJobException, ValidationException;
+    ExpRun importRun(PipelineJob job, XarSource source) throws PipelineJobException, ValidationException;
 
     /**
      * Provides access to an object that should be locked before inserting protocols. Locking when doing

@@ -161,7 +161,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
                 try
                 {
                     if (log)
-                        ctx.getLogger().info("Loading datasets manifest from " + datasetsXmlFilename);
+                        ctx.getLogger().info("Loading datasets manifest from {}", datasetsXmlFilename);
 
                     XmlObject doc = datasetDir.getXmlBean(datasetsXmlFilename);
                     if (doc instanceof DatasetsDocument)

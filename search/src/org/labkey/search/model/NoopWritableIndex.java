@@ -112,7 +112,7 @@ public class NoopWritableIndex implements WritableIndexManager
     private void log(String action)
     {
         if (0 == (_errors.get() % 10000))
-            _log.warn("Unable to " + action + "; " + _statusMessage);
+            _log.warn("Unable to {}; {}", action, _statusMessage);
 
         _errors.incrementAndGet();
     }

@@ -32,15 +32,15 @@ import java.util.Set;
 public class PlateCache
 {
     private static final PlateLoader _loader = new PlateLoader();
-    private static final Cache<String, Plate> PLATE_CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Plate Cache", _loader);
+    private static final Cache<String, PlateImpl> PLATE_CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Plate Cache", _loader);
     private static final Logger LOG = LogManager.getLogger(PlateCache.class);
 
-    private static class PlateLoader implements CacheLoader<String, Plate>
+    private static class PlateLoader implements CacheLoader<String, PlateImpl>
     {
         private final Map<Container, Set<Long>> _containerPlateMap = new HashMap<>();            // internal collection to help un-cache all plates for a container
 
         @Override
-        public Plate load(@NotNull String key, @Nullable Object argument)
+        public PlateImpl load(@NotNull String key, @Nullable Object argument)
         {
             // parse the cache key
             PlateCacheKey cacheKey = new PlateCacheKey(key);
@@ -53,10 +53,10 @@ public class PlateCache
 
             if (plates.size() == 1)
             {
-                PlateBean bean = plates.get(0);
+                PlateBean bean = plates.getFirst();
 
-                Plate plate = PlateManager.get().populatePlate(bean);
-                LOG.debug(String.format("Caching plate \"%s\" for folder %s", plate.getName(), cacheKey._container.getPath()));
+                PlateImpl plate = PlateManager.get().populatePlate(bean);
+                LOG.debug("Caching plate \"{}\" for folder {}", plate.getName(), cacheKey._container.getPath());
 
                 // add all cache keys for this plate
                 addCacheKeys(cacheKey, plate);
@@ -65,7 +65,7 @@ public class PlateCache
             return null;
         }
 
-        private void addCacheKeys(PlateCacheKey cacheKey, Plate plate)
+        private void addCacheKeys(PlateCacheKey cacheKey, PlateImpl plate)
         {
             if (plate != null)
             {
@@ -84,14 +84,14 @@ public class PlateCache
                 if (cacheKey._type != PlateCacheKey.Type.plateId)
                     PLATE_CACHE.put(PlateCacheKey.getCacheKey(plate.getContainer(), plate.getPlateId()), plate);
 
-                _containerPlateMap.computeIfAbsent(cacheKey._container, k -> new HashSet<>()).add(plate.getRowId());
+                _containerPlateMap.computeIfAbsent(cacheKey._container, _ -> new HashSet<>()).add(plate.getRowId());
             }
         }
     }
 
-    public static @Nullable Plate getPlate(Container c, long rowId)
+    public static @Nullable PlateImpl getPlate(Container c, long rowId)
     {
-        Plate plate = PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, rowId));
+        PlateImpl plate = PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, rowId));
         // We allow plates to be mutated, return a copy of the cached object which still references the
         // original wells and well groups
         return plate != null ? plate.copy() : null;
@@ -150,30 +150,30 @@ public class PlateCache
         ).getArrayList(Long.class);
     }
 
-    private static @NotNull List<Plate> getPlates(Container c, @Nullable SimpleFilter filter)
+    private static @NotNull List<? extends Plate> getPlates(Container c, @Nullable SimpleFilter filter)
     {
         List<Long> ids = getPlateIDs(c, filter);
         return ids.stream().map(id -> PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, id))).toList();
     }
 
-    public static @NotNull List<Plate> getPlates(Container c)
+    public static @NotNull List<? extends Plate> getPlates(Container c)
     {
         return getPlates(c, null);
     }
 
-    public static @NotNull List<Plate> getPlatesForPlateSet(Container c, Long plateSetRowId)
+    public static @NotNull List<? extends Plate> getPlatesForPlateSet(Container c, Long plateSetRowId)
     {
         return getPlates(c, new SimpleFilter(FieldKey.fromParts(PlateTable.Column.PlateSet.name()), plateSetRowId));
     }
 
-    public static @NotNull List<Plate> getPlateTemplates(Container c)
+    public static @NotNull List<? extends Plate> getPlateTemplates(Container c)
     {
         return getPlates(c, new SimpleFilter(FieldKey.fromParts(PlateTable.Column.Template.name()), true));
     }
 
     public static void uncache(Container c)
     {
-        LOG.debug(String.format("Clearing cache for folder %s", c.getPath()));
+        LOG.debug("Clearing cache for folder {}", c.getPath());
 
         // uncache all plates for this container
         if (_loader._containerPlateMap.containsKey(c))
@@ -202,7 +202,7 @@ public class PlateCache
 
     public static void uncache(Container c, Plate plate)
     {
-        LOG.debug(String.format("Un-caching plate \"%s\" for folder %s", plate.getPlateId(), c.getPath()));
+        LOG.debug("Un-caching plate \"{}\" for folder {}", plate.getPlateId(), c.getPath());
 
         if (plate.getPlateId() == null)
             throw new IllegalArgumentException("Plate cannot be uncached, plateId is null");

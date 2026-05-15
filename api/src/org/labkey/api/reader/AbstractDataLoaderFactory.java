@@ -72,7 +72,7 @@ public abstract class AbstractDataLoaderFactory extends AbstractDocumentParser i
     {
         List<String> contentType = getFileType().getContentTypes();
         if (!contentType.isEmpty())
-            return contentType.get(0);
+            return contentType.getFirst();
 
         return null;
     }

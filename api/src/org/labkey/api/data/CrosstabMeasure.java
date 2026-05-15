@@ -95,16 +95,12 @@ public class CrosstabMeasure
         @NotNull
         public JdbcType getAggregateSqlType(ColumnInfo sourceCol)
         {
-            switch(this)
+            return switch (this)
             {
-                case COUNT:
-                    return JdbcType.BIGINT;
-                case AVG:
-                case STDDEV:
-                    return JdbcType.DECIMAL;
-                default:
-                    return sourceCol.getJdbcType();
-            }
+                case COUNT -> JdbcType.BIGINT;
+                case AVG, STDDEV -> JdbcType.DECIMAL;
+                default -> sourceCol.getJdbcType();
+            };
         }
 
         public SQLFragment getSqlExpression(SqlDialect sqlDialect, SQLFragment columnSQL)

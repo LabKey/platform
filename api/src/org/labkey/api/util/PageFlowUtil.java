@@ -107,7 +107,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.awt.*;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;

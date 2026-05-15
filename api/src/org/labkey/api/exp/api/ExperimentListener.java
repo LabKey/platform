@@ -41,7 +41,8 @@ public interface ExperimentListener
     default void afterRunSaved(Container container, User user, ExpProtocol protocol, ExpRun run) { }
 
     /** Called before the experiment run is saved (in-transaction). */
-    default void beforeRunSaved(Container container, User user, ExpProtocol protocol, ExpRun run) throws BatchValidationException { }
+    default void beforeRunSaved(Container container, User user, ExpProtocol protocol, ExpRun run)
+    { }
 
     /** Called after run data is uploaded. */
     default void afterResultDataCreated(Container container, User user, ExpRun run, ExpProtocol protocol) throws BatchValidationException { }

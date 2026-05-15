@@ -329,18 +329,14 @@ public interface DockerService
         public static ContainerStatus mapDockerNativeStatus(String status)
         {
             // Map Docker API statuses to ours
-            switch (status)
+            return switch (status)
             {
-                case "running":
-                    return RUNNING;
-                case "restarting":
-                    return STARTING;
-                case "exited":
-                    return STOPPED;
+                case "running" -> RUNNING;
+                case "restarting" -> STARTING;
+                case "exited" -> STOPPED;
                 // TODO: Created, Paused, Dead
-                default:
-                    return NOTSTARTED;
-            }
+                default -> NOTSTARTED;
+            };
         }
     }
 

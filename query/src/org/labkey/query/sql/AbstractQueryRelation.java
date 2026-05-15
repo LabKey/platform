@@ -317,7 +317,7 @@ public abstract class AbstractQueryRelation implements QueryRelation
         public int addRef(@NotNull Object refer)
         {
             int i = ref.increment(refer);
-            _log.debug("addRef( " + this.getDebugString() + ", " + refer + " ) = " + i);
+            _log.debug("addRef( {}, {} ) = {}", this.getDebugString(), refer, i);
             return i;
         }
 

@@ -85,7 +85,7 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport, Cl
         _ctx.setActivity(options.getActivity());
         _ctx.setNewFolderImport(options.isNewFolderImport());
 
-        LOG.info("Pipeline job initialized for importing folder archive to folder " + c.getPath());
+        LOG.info("Pipeline job initialized for importing folder archive to folder {}", c.getPath());
     }
 
     @Override

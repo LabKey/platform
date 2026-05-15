@@ -51,6 +51,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 
+import java.util.Calendar;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.text.DecimalFormat;
@@ -94,9 +95,9 @@ public abstract class Method
                     if (text.length() >= 2 && text.startsWith("'") && text.endsWith("'"))
                         text = text.substring(1, text.length() - 1);
                     TimestampDiffInterval i = TimestampDiffInterval.parse(text);
-                    if (!(i == TimestampDiffInterval.SQL_TSI_MONTH || i == TimestampDiffInterval.SQL_TSI_YEAR))
+                    if (!(i == TimestampDiffInterval.SQL_TSI_DAY || i == TimestampDiffInterval.SQL_TSI_MONTH || i == TimestampDiffInterval.SQL_TSI_YEAR))
                     {
-                        parseErrors.add(new QueryParseException("AGE function supports SQL_TSI_YEAR or SQL_TSI_MONTH", null,
+                        parseErrors.add(new QueryParseException("AGE function supports SQL_TSI_DAY, SQL_TSI_MONTH, or SQL_TSI_YEAR", null,
                                 nodeInterval.getLine(), nodeInterval.getColumn()));
                     }
                 }
@@ -116,6 +117,14 @@ public abstract class Method
             public MethodInfo getMethodInfo()
             {
                 return new AgeInYearsMethodInfo();
+            }
+        });
+        labkeyMethod.put("age_in_days", new Method(JdbcType.INTEGER, 2, 2)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new AgeInDaysMethodInfo();
             }
         });
         labkeyMethod.put("asin", new JdbcMethod("asin", JdbcType.DOUBLE, 1, 1));
@@ -229,9 +238,9 @@ public abstract class Method
                 super.validate(fn, args, parseErrors, parseWarnings);
                 if (args.size() != 1)
                     return;
-                int line = args.get(0).getLine();
-                int column = args.get(0).getColumn();
-                if (args.get(0).getTokenType() != SqlBaseLexer.QUOTED_STRING)
+                int line = args.getFirst().getLine();
+                int column = args.getFirst().getColumn();
+                if (args.getFirst().getTokenType() != SqlBaseLexer.QUOTED_STRING)
                 {
                     parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, line, column));
                     return;
@@ -241,7 +250,7 @@ public abstract class Method
                 String propertyName = "";
                 try
                 {
-                    String param = toSimpleString(new SQLFragment(args.get(0).getTokenText()));
+                    String param = toSimpleString(new SQLFragment(args.getFirst().getTokenText()));
                     int dot = param.lastIndexOf('.');
                     if (dot < 0)
                     {
@@ -321,7 +330,7 @@ public abstract class Method
                     return;
                 if (args.get(0).getTokenType() != SqlBaseLexer.QUOTED_STRING)
                 {
-                    parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, args.get(0).getLine(), args.get(0).getColumn()));
+                    parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, args.getFirst().getLine(), args.getFirst().getColumn()));
                     return;
                 }
                 if (args.get(1).getTokenType() != SqlBaseLexer.QUOTED_STRING)
@@ -334,7 +343,7 @@ public abstract class Method
                 Module module = ModuleLoader.getInstance().getModule(moduleName);
                 if (null == module)
                 {
-                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() module not found: " + moduleName, null, args.get(0).getLine(), args.get(0).getColumn()));
+                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() module not found: " + moduleName, null, args.getFirst().getLine(), args.getFirst().getColumn()));
                     return;
                 }
                 String propertyName = toSimpleString(new SQLFragment(args.get(1).getTokenText()));
@@ -889,10 +898,12 @@ public abstract class Method
                 return new AgeInYearsMethodInfo().getSQL(dialect, arguments);
             if (i == TimestampDiffInterval.SQL_TSI_MONTH)
                 return new AgeInMonthsMethodInfo().getSQL(dialect, arguments);
+            if (i == TimestampDiffInterval.SQL_TSI_DAY)
+                return new AgeInDaysMethodInfo().getSQL(dialect, arguments);
             if (null == i)
                 throw new IllegalArgumentException("AGE(" + arguments[2].getSQL() + ")");
             else
-                throw new IllegalArgumentException("AGE only supports YEAR and MONTH");
+                throw new IllegalArgumentException("AGE only supports DAY, MONTH, and YEAR");
         }
     }
 
@@ -968,6 +979,29 @@ public abstract class Method
                     .append(monthB).append("-").append(monthA)
                     .append(") END)");
             return ret;
+        }
+    }
+
+
+    static class AgeInDaysMethodInfo extends AbstractMethodInfo
+    {
+        AgeInDaysMethodInfo()
+        {
+            super(JdbcType.INTEGER);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            MethodInfo convert = labkeyMethod.get("convert").getMethodInfo();
+            SQLFragment dateType = new SQLFragment("DATE");
+            SQLFragment startDate = convert.getSQL(dialect, new SQLFragment[]{arguments[0], dateType});
+            SQLFragment endDate = convert.getSQL(dialect, new SQLFragment[]{arguments[1], dateType});
+
+            if (dialect.isPostgreSQL())
+                return new SQLFragment("(").append(endDate).append(" - ").append(startDate).append(")");
+
+            return dialect.getDateDiff(Calendar.DATE, endDate, startDate);
         }
     }
 
@@ -1449,7 +1483,7 @@ public abstract class Method
         String s = f.getSQL();
         // am I a simple bound parameter?
         if ("?".equals(s) && f.getParams().size() == 1)
-            return f.getParams().get(0) instanceof String;
+            return f.getParams().getFirst() instanceof String;
         if (!f.getParams().isEmpty())
             return false;
         if (s.endsWith("::VARCHAR"))
@@ -1472,7 +1506,7 @@ public abstract class Method
             throw new IllegalArgumentException(f.toDebugString());
         String s = f.getSQL();
         if ("?".equals(s) && f.getParams().size() == 1)
-            return (String) f.getParams().get(0);
+            return (String) f.getParams().getFirst();
         assert (s.startsWith("'") || s.startsWith("N'"));
         assert (s.endsWith("'") || s.endsWith("'::VARCHAR"));
         if (s.endsWith("::VARCHAR"))

@@ -73,21 +73,9 @@ public class QResolveTableColumn extends QIfDefined
         }
 
         /* have to call getColumn() so table knows column is in use */
-        return table.getColumn(list.get(0).getFieldKey().getName());
+        return table.getColumn(list.getFirst().getFieldKey().getName());
     }
 
-
-    @Override
-    public void appendSql(SqlBuilder builder, Query query)
-    {
-        throw new IllegalStateException();
-    }
-
-    @Override
-    public boolean isConstant()
-    {
-        return false;
-    }
 
     @Override
     public void appendSource(SourceBuilder builder)

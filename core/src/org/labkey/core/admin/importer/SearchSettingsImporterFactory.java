@@ -59,9 +59,9 @@ public class SearchSettingsImporterFactory extends AbstractFolderImportFactory
             {
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
-                ctx.getLogger().info("Loading " + getDescription());
+                ctx.getLogger().info("Loading {}", getDescription());
                 ContainerManager.updateSearchable(c, ctx.getXml().getSearchable(), ctx.getUser());
-                ctx.getLogger().info("Done importing " + getDescription());
+                ctx.getLogger().info("Done importing {}", getDescription());
             }
         }
 

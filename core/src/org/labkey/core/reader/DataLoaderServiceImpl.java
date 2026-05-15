@@ -193,7 +193,7 @@ public class DataLoaderServiceImpl implements DataLoaderService
             if (matches.size() > 1)
                 _log.warn("More than one DataLoader FileType matches");
 
-            return matches.get(0);
+            return matches.getFirst();
         }
 
         // No file extension or all FileType for that extension didn't match.
@@ -210,7 +210,7 @@ public class DataLoaderServiceImpl implements DataLoaderService
             if (matches.size() > 1)
                 _log.warn("More than one DataLoader FileType matches");
 
-            return matches.get(0);
+            return matches.getFirst();
         }
 
         return null;

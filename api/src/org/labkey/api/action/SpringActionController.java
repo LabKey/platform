@@ -23,9 +23,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiResponseWriter.Format;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -46,7 +46,6 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
@@ -96,7 +95,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -226,7 +224,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException
+    public void setApplicationContext(@NotNull ApplicationContext applicationContext) throws BeansException
     {
         _applicationContext = applicationContext;
     }
@@ -630,7 +628,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             boolean actionIsAllowed = (null != action && action.getClass().isAnnotationPresent(AllowedDuringUpgrade.class));
 
             if (null != action)
-                _log.debug("Action " + action.getClass() + " allowed: " + actionIsAllowed);
+                _log.debug("Action {} allowed: {}", action.getClass(), actionIsAllowed);
 
             if (!actionIsAllowed)
             {
@@ -656,7 +654,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     // ignore
                 }
 
-                if (!user.hasRootPermission(TroubleshooterPermission.class))
+                if (!user.isTroubleshooter())
                 {
                     if (HttpUtil.isApiLike(request, action))
                     {
@@ -721,7 +719,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             List<NavTree> children = root.getChildren();
             page.setNavTrail(children);
             if (null == page.getTitle())
-                page.setTitle(children.get(children.size() - 1).getText());
+                page.setTitle(children.getLast().getText());
         }
 
         return page.getTemplate().getTemplate(context, mv, page);
@@ -1085,7 +1083,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 ActionNames actionNames = actionClass.getAnnotation(ActionNames.class);
 
                 _allNames = (null != actionNames ? initializeNames(actionNames.value().split(",")) : initializeNames(getDefaultActionName()));
-                _primaryName = _allNames.get(0);
+                _primaryName = _allNames.getFirst();
 
                 Constructor<?> con = null;
 
@@ -1137,7 +1135,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 }
                 catch (IllegalAccessException | InstantiationException | InvocationTargetException e)
                 {
-                    _log.error("Unexpected error attempting to instantiate " + getActionClass(), e);
+                    _log.error("Unexpected error attempting to instantiate {}", getActionClass(), e);
                     throw new RuntimeException(e);
                 }
             }
@@ -1242,8 +1240,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
         {
             ArrayList<Class<?>> list = currentAction.get();
             assert !list.isEmpty();
-            assert list.get(list.size()-1) == c;
-            list.remove(list.size() - 1);
+            assert list.getLast() == c;
+            list.removeLast();
         }
     }
 
@@ -1262,7 +1260,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         {
             ArrayList<Class<?>> list = currentAction.get();
             if (!list.isEmpty())
-                return list.get(list.size()-1);
+                return list.getLast();
         }
         return null;
     }
@@ -1291,7 +1289,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         else if (null != vc && "GET".equals(vc.getRequest().getMethod()))
         {
             readonly = true;
-            _log.warn("Action " + c.getName() + " accepted GET unexpectedly... might need to update executingMutatingSql()");
+            _log.warn("Action {} accepted GET unexpectedly... might need to update executingMutatingSql()", c.getName());
         }
 
         if (readonly)

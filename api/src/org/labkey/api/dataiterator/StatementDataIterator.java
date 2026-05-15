@@ -406,7 +406,7 @@ public class StatementDataIterator extends AbstractDataIterator
                 if (_currentBatchSize > 0) // flush the statement batch buffer
                     processBatch(_currentBatchSize, _currentRowNumber);
                 if (_log != null)
-                    _log.info("Committing " + Integer.toString(_txSize) + " rows");
+                    _log.info("Committing {} rows", Integer.toString(_txSize));
                 _currentStmt.getScope().getCurrentTransaction().commitAndKeepConnection();
             }
 
@@ -538,6 +538,7 @@ public class StatementDataIterator extends AbstractDataIterator
     {
         if (null != _keyColumnInfo.get(i))
             return _keyValues.get(i);
+
         return _data.get(i);
     }
 
@@ -922,7 +923,7 @@ public class StatementDataIterator extends AbstractDataIterator
         }
 
         @Override
-        public boolean next() throws BatchValidationException
+        public boolean next()
         {
             currentRow++;
             if (currentRow == totalRows || (currentRow % rowsPerBatch == (rowsPerBatch-1)))

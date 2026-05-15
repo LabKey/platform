@@ -135,6 +135,10 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.security.AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY;
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
 import static org.labkey.api.security.AuthenticationManager.DEFAULT_DOMAIN;
+import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_ENABLED_KEY;
+import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_LIMIT_KEY;
+import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_PERIOD_KEY;
+import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_RESET_TIME_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_REGISTRATION_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY;
 
@@ -472,7 +476,7 @@ public class LoginController extends SpringActionController
             {
                 if (!expectedKatpcha.equalsIgnoreCase(StringUtils.trimToNull(form.getKaptchaText())))
                 {
-                    logger.warn("Captcha text did not match for self-registration attempt for " + form.getEmail());
+                    logger.warn("Captcha text did not match for self-registration attempt for {}", form.getEmail());
                     errors.reject(ERROR_MSG,"Verification text does not match, please retry.");
                 }
             }
@@ -485,7 +489,7 @@ public class LoginController extends SpringActionController
 
             if (!AuthenticationManager.isRegistrationEnabled())
             {
-                _log.warn("Attempt to register user using email " + form.getEmail() + " with registration not enabled");
+                _log.warn("Attempt to register user using email {} with registration not enabled", form.getEmail());
                 throw new NotFoundException("Registration is not enabled.");
             }
 
@@ -1601,9 +1605,9 @@ public class LoginController extends SpringActionController
             if (errors.hasErrors())
             {
                 if (_unrecoverableError)
-                    _log.warn("Verification failed: " + form.getEmail() + " " + form.getVerification());
+                    _log.warn("Verification failed: {} {}", form.getEmail(), form.getVerification());
                 else
-                    _log.warn("Password entry error: " + form.getEmail());
+                    _log.warn("Password entry error: {}", form.getEmail());
             }
         }
 
@@ -2244,6 +2248,8 @@ public class LoginController extends SpringActionController
             ));
 
             AuthenticationManager.setDefaultDomain(getUser(), form.getDefaultDomain());
+            if (AuthenticationManager.saveLoginAttemptSettings(getUser(), form.isLoginAttemptEnabled(), form.getLoginAttemptLimit(), form.getLoginAttemptPeriod(), form.getLoginAttemptResetTime()))
+                LoginAttemptDisableLoginProvider.reloadCache();
 
             // rowId arrays will be posted only if they are dirty
             AuthenticationManager.reorderConfigurations(getUser(), "LDAP", form.getFormConfigurations());
@@ -2260,6 +2266,10 @@ public class LoginController extends SpringActionController
         private boolean _selfServiceEmailChanges;
         private boolean _autoCreateAccounts;
         private String _defaultDomain;
+        private boolean _loginAttemptEnabled;
+        private int _loginAttemptLimit = 3;
+        private int _loginAttemptPeriod = 30;
+        private int _loginAttemptResetTime = 5;
         private int[] _formConfigurations;
         private int[] _ssoConfigurations;
         private int[] _secondaryConfigurations;
@@ -2306,6 +2316,50 @@ public class LoginController extends SpringActionController
         public void setDefaultDomain(String defaultDomain)
         {
             _defaultDomain = defaultDomain;
+        }
+
+        public boolean isLoginAttemptEnabled()
+        {
+            return _loginAttemptEnabled;
+        }
+
+        @SuppressWarnings("unused")
+        public void setLoginAttemptEnabled(boolean loginAttemptEnabled)
+        {
+            _loginAttemptEnabled = loginAttemptEnabled;
+        }
+
+        public int getLoginAttemptLimit()
+        {
+            return _loginAttemptLimit;
+        }
+
+        @SuppressWarnings("unused")
+        public void setLoginAttemptLimit(int loginAttemptLimit)
+        {
+            _loginAttemptLimit = loginAttemptLimit;
+        }
+
+        public int getLoginAttemptPeriod()
+        {
+            return _loginAttemptPeriod;
+        }
+
+        @SuppressWarnings("unused")
+        public void setLoginAttemptPeriod(int loginAttemptPeriod)
+        {
+            _loginAttemptPeriod = loginAttemptPeriod;
+        }
+
+        public int getLoginAttemptResetTime()
+        {
+            return _loginAttemptResetTime;
+        }
+
+        @SuppressWarnings("unused")
+        public void setLoginAttemptResetTime(int loginAttemptResetTime)
+        {
+            _loginAttemptResetTime = loginAttemptResetTime;
         }
 
         public int[] getFormConfigurations()
@@ -2529,7 +2583,11 @@ public class LoginController extends SpringActionController
                 SELF_REGISTRATION_KEY, AuthenticationManager.isRegistrationEnabled(),
                 SELF_SERVICE_EMAIL_CHANGES_KEY, AuthenticationManager.isSelfServiceEmailChangesEnabled(),
                 AUTO_CREATE_ACCOUNTS_KEY, AuthenticationManager.isAutoCreateAccountsEnabled(),
-                DEFAULT_DOMAIN, AuthenticationManager.getDefaultDomain()
+                DEFAULT_DOMAIN, AuthenticationManager.getDefaultDomain(),
+                LOGIN_ATTEMPT_ENABLED_KEY, AuthenticationManager.isLoginAttemptControlEnabled(),
+                LOGIN_ATTEMPT_LIMIT_KEY, String.valueOf(AuthenticationManager.getLoginAttemptLimit()),
+                LOGIN_ATTEMPT_PERIOD_KEY, String.valueOf(AuthenticationManager.getLoginAttemptPeriod()),
+                LOGIN_ATTEMPT_RESET_TIME_KEY, String.valueOf(AuthenticationManager.getLoginAttemptResetTime())
             );
 
             // Primary providers

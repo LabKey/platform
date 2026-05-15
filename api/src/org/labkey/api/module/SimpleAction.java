@@ -15,6 +15,7 @@
  */
 package org.labkey.api.module;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.data.Container;
@@ -76,7 +77,7 @@ public class SimpleAction extends BaseViewAction<Object> implements NavTrailActi
     }
 
     @Override
-    public void validate(Object target, Errors errors)
+    public void validate(@NotNull Object target, @NotNull Errors errors)
     {
         //since simple HTML views don't interact with permanent storage (i.e., the database)
         //we really don't need to do much validation here

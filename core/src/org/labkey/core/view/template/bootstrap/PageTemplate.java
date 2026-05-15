@@ -127,7 +127,7 @@ public class PageTemplate extends JspView<PageConfig>
         {
             // Add the main page for the workbook to the nav trail
             navTrail = new ArrayList<>(navTrail);
-            navTrail.add(0, new NavTree(context.getContainer().getTitle(), context.getContainer().getStartURL(context.getUser())));
+            navTrail.addFirst(new NavTree(context.getContainer().getTitle(), context.getContainer().getStartURL(context.getUser())));
         }
 
         List<NavTree> appNavTrail = appBar.setNavTrail(navTrail, context);

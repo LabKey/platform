@@ -92,11 +92,11 @@ public class ThumbnailServiceImpl implements ThumbnailService
     {
         if (!QUEUE.offer(new ThumbnailRenderingBean(provider, imageType, thumbnailType)))
         {
-            LOG.warn("Thumbnail rendering queue is full, skipping thumbnail rendering for " + provider);
+            LOG.warn("Thumbnail rendering queue is full, skipping thumbnail rendering for {}", provider);
         }
         else
         {
-            LOG.debug("Queued thumbnail rendering for " + provider);
+            LOG.debug("Queued thumbnail rendering for {}", provider);
         }
     }
 
@@ -154,7 +154,7 @@ public class ThumbnailServiceImpl implements ThumbnailService
 
             if (null == svc)
             {
-                LOG.warn(getClass().getSimpleName() + " is terminating because ThumbnailService is null");
+                LOG.warn("{} is terminating because ThumbnailService is null", getClass().getSimpleName());
                 return;
             }
 
@@ -164,7 +164,7 @@ public class ThumbnailServiceImpl implements ThumbnailService
                 while (!interrupted())
                 {
                     ThumbnailRenderingBean bean = QUEUE.take();
-                    LOG.debug("Rendering thumbnail for " + bean.getProvider());
+                    LOG.debug("Rendering thumbnail for {}", bean.getProvider());
                     ThumbnailProvider provider = bean.getProvider();
                     ImageType type = bean.getImageType();
 
@@ -181,13 +181,13 @@ public class ThumbnailServiceImpl implements ThumbnailService
                     {
                         // No matter what, clear this entry from the cache.
                         ThumbnailCache.remove(provider, type);
-                        LOG.debug("Finished rendering thumbnail for " + bean.getProvider());
+                        LOG.debug("Finished rendering thumbnail for {}", bean.getProvider());
                     }
                 }
             }
             catch (InterruptedException e)
             {
-                LOG.debug(getClass().getSimpleName() + " is terminating due to interruption");
+                LOG.debug("{} is terminating due to interruption", getClass().getSimpleName());
             }
         }
 
@@ -195,11 +195,6 @@ public class ThumbnailServiceImpl implements ThumbnailService
         public void shutdownPre()
         {
             interrupt();
-        }
-
-        @Override
-        public void shutdownStarted()
-        {
         }
     }
 }

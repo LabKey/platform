@@ -90,7 +90,7 @@ public class StudyImportInitialTask
             StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
             if (null == study)
             {
-                ctx.getLogger().info("Loading study from " + originalFileName);
+                ctx.getLogger().info("Loading study from {}", originalFileName);
                 ctx.getLogger().info("Creating study");
 
                 // Create study
@@ -114,7 +114,7 @@ public class StudyImportInitialTask
             }
             else
             {
-                ctx.getLogger().info("Reloading study from " + originalFileName);
+                ctx.getLogger().info("Reloading study from {}", originalFileName);
 
                 TimepointType timepointType = study.getTimepointType();
                 if (studyXml.isSetTimepointType())
@@ -182,7 +182,7 @@ public class StudyImportInitialTask
 
     private static void throwFirstErrorAsPipelineJobException(BindException errors) throws PipelineJobException
     {
-        ObjectError firstError = errors.getAllErrors().get(0);
+        ObjectError firstError = errors.getAllErrors().getFirst();
         throw new PipelineJobException("ERROR: " + firstError.getDefaultMessage());
     }
 }

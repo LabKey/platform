@@ -117,7 +117,6 @@ import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
@@ -125,6 +124,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
+import org.labkey.experiment.api.ExpRunItemTableImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
@@ -155,6 +155,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -872,9 +873,6 @@ public class ExpDataIterators
         ExpDataIterators.DerivationDataIteratorBuilder ddib = new ExpDataIterators.DerivationDataIteratorBuilder(di, container, user, isSample, dataType, skipAliquot, true);
         DataIteratorContext context = new DataIteratorContext();
         context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
-        Map<Enum, Object> configParameters = new HashMap<>();
-        configParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
-        context.setConfigParameters(configParameters);
         DataIterator derive = ddib.getDataIterator(context);
         new Pump(derive, context).run();
         if (context.getErrors().hasErrors())
@@ -945,7 +943,7 @@ public class ExpDataIterators
             {
                 if (parents.size() > 1)
                     context.getErrors().addRowError(new ValidationException(String.format("Multiple %s values are provided.", ALIQUOTED_FROM_INPUT)));
-                return parents.get(0);
+                return parents.getFirst();
             }
         }
 
@@ -1451,9 +1449,10 @@ public class ExpDataIterators
 
     private static class DataUpdateDerivationDataIterator extends DerivationDataIteratorBase
     {
-        // Map from Data name to Set of (parentColName, parentName)
-        final Map<String, Set<Pair<String, String>>> _parentNames;
-        final boolean _useLsid;
+        // Map from Data key (RowId or name) to Set of (parentColName, parentName)
+        final Map<Object, Set<Pair<String, String>>> _parentNames;
+        final Integer _rowIdCol;
+        final boolean _useRowId;
 
         protected DataUpdateDerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean checkRequiredParent)
         {
@@ -1461,7 +1460,8 @@ public class ExpDataIterators
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _parentNames = new LinkedHashMap<>();
-            _useLsid = map.containsKey("lsid") && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
+            _rowIdCol = map.getOrDefault(ExpDataTable.Column.RowId.name(), -1);
+            _useRowId = map.containsKey(ExpDataTable.Column.RowId.name());
         }
 
         @Override
@@ -1476,9 +1476,15 @@ public class ExpDataIterators
             // For each iteration, collect the parent col values
             if (hasNext)
             {
-                String key = null;
-                if (_useLsid && _lsidCol != null)
-                    key = (String) get(_lsidCol);
+                Object key = null;
+                if (_useRowId && _rowIdCol != null)
+                {
+                    key = get(_rowIdCol);
+                    if (key instanceof String k)
+                        key = Long.parseLong(k);
+                    else
+                        key = asLong(key);
+                }
                 else if (_nameCol != null)
                     key = (String) get(_nameCol);
 
@@ -1506,9 +1512,11 @@ public class ExpDataIterators
                     Map<Long, ExpData> dataCache = new LongHashMap<>();
 
                     List<UploadSampleRunRecord> runRecords = new ArrayList<>();
-                    for (String key : _parentNames.keySet())
+                    for (Object key : _parentNames.keySet())
                     {
-                        ExpData expData = _useLsid ? ExperimentService.get().getExpData(key) : getDataClass().getData(_container, key);
+                        ExpData expData = _useRowId
+                            ? ExperimentService.get().getExpData((Long) key)
+                            : getDataClass().getData(_container, (String) key);
                         if (expData == null)
                             continue;
 
@@ -1614,7 +1622,7 @@ public class ExpDataIterators
         if ((dataOutputs.isEmpty() && (materialOutputs.isEmpty() || (materialOutputs.size() == 1 && materialOutputs.contains(runItem))))
            || (materialOutputs.isEmpty() && dataOutputs.size() == 1 && dataOutputs.contains(runItem)))
         {
-            LOG.debug("Run item '" + runItem.getName() + "' has existing source derivation run '" + existingDerivationRun.getRowId() + "' -- run has no other outputs, deleting run");
+            LOG.debug("Run item '{}' has existing source derivation run '{}' -- run has no other outputs, deleting run", runItem.getName(), existingDerivationRun.getRowId());
             // if run has no other outputs, delete the run completely
             runItem.setSourceApplication(null);
             try
@@ -1632,7 +1640,7 @@ public class ExpDataIterators
         }
         else
         {
-            LOG.debug("Run item '" + runItem.getName() + "' has existing source derivation run '" + existingDerivationRun.getRowId() + "' -- run has other " + dataOutputs.size() + " data outputs and " + materialOutputs.size() + " material outputs, removing sample from run");
+            LOG.debug("Run item '{}' has existing source derivation run '{}' -- run has other {} data outputs and {} material outputs, removing sample from run", runItem.getName(), existingDerivationRun.getRowId(), dataOutputs.size(), materialOutputs.size());
             // if the existing run has other outputs, remove the run as the source application for this sample
             // and remove it as an output from the run
             runItem.setSourceApplication(null);
@@ -2430,15 +2438,8 @@ public class ExpDataIterators
             }
             else
             {
-                if (isMergeOrUpdate)
-                {
-                    boolean isUpdateUsingLsid = isUpdateOnly &&
-                            colNameMap.containsKey(ExpDataTable.Column.LSID.name()) &&
-                            context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
-
-                    if (isUpdateUsingLsid && !canUpdateNames)
-                        dontUpdate.add(ExpDataTable.Column.Name.name());
-                }
+                if (isUpdateOnly && !canUpdateNames)
+                    dontUpdate.add(ExpDataTable.Column.Name.name());
             }
 
             // Since we support detailed audit logging, add the ExistingRecordDataIterator here just before TableInsertDataIterator.
@@ -2482,11 +2483,15 @@ public class ExpDataIterators
                     .setCommitRowsBeforeContinuing(true)
                     .setFailOnEmptyUpdate(false));
 
+            // Biologics reclassify uses afterUpdate to update other data that depend on the completion of update of the triggering data
+            Object checkShouldCommitFn = ((ExpRunItemTableImpl<?>) _expTable).getCustomTableConfig(ExperimentService.QueryOptions.ShouldCommitRowsBeforeContinuing);
+            boolean shouldCommitRowsBeforeContinuing = checkShouldCommitFn instanceof Predicate<?> fn && ((Predicate<Set<String>>) fn).test(colNameMap.keySet());
             // pass in remap columns to help reconcile columns that may be aliased in the virtual table
             dib = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(dib, _propertiesTable, _container)
                     .setKeyColumns(propertyKeyColumns)
                     .setDontUpdate(dontUpdate)
                     .setRemapSchemaColumns(((UpdateableTableInfo) _expTable).remapSchemaColumns())
+                    .setCommitRowsBeforeContinuing(shouldCommitRowsBeforeContinuing)
                     .setFailOnEmptyUpdate(false));
 
             if (colNameMap.containsKey(Flag.name()) || colNameMap.containsKey("comment"))
@@ -2702,29 +2707,20 @@ public class ExpDataIterators
                 FieldKey dataKey;
                 boolean isNumeric;
 
-                if (_isSamples)
-                {
-                    var foundId = RowId.namesAndLabels().stream()
-                            .filter(map::containsKey)
-                            .findFirst();
+                var foundId = RowId.namesAndLabels().stream()
+                        .filter(map::containsKey)
+                        .findFirst();
 
-                    if (foundId.isPresent())
-                    {
-                        index = map.get(foundId.get());
-                        dataKey = RowId.fieldKey();
-                        isNumeric = true;
-                    }
-                    else
-                    {
-                        index = map.getOrDefault(Name.name(), -1);
-                        dataKey = Name.fieldKey();
-                        isNumeric = false;
-                    }
+                if (foundId.isPresent())
+                {
+                    index = map.get(foundId.get());
+                    dataKey = RowId.fieldKey();
+                    isNumeric = true;
                 }
                 else
                 {
-                    index = map.getOrDefault(ExpDataTable.Column.Name.name(), -1);
-                    dataKey = ExpDataTable.Column.Name.fieldKey();
+                    index = map.getOrDefault(Name.name(), -1);
+                    dataKey = Name.fieldKey();
                     isNumeric = false;
                 }
 

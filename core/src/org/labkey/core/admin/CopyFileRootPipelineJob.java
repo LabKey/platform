@@ -184,7 +184,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
             }
             else if (Files.exists(destDir) && !Files.isDirectory(destDir))          // Dest doesn't have to exist
             {
-                getLogger().warn("Destination exists and is not directory: " + FileUtil.pathToString(destDir));
+                getLogger().warn("Destination exists and is not directory: {}", FileUtil.pathToString(destDir));
                 status = TaskStatus.error;
             }
             else
@@ -302,7 +302,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
                     {
                         if (FileUtil.hasCloudScheme(destDir) && StringUtils.contains(pathString, "%"))
                         {
-                            getLogger().warn("Cannot copy directory '" + pathString + "' to cloud, because its name contains '%'.");
+                            getLogger().warn("Cannot copy directory '{}' to cloud, because its name contains '%'.", pathString);
                             status = TaskStatus.error;
                         }
                         else
@@ -413,7 +413,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
     private void logStatTime(List<Long> lastStatTime, final Pair<Integer, Long> stats, final Pair<Integer, Long> origStats)
     {
         Long currentTime = System.currentTimeMillis();
-        if (currentTime - lastStatTime.get(0) > 1000*60)
+        if (currentTime - lastStatTime.getFirst() > 1000*60)
         {
             info((origStats.first - stats.first) + " out of " + origStats.first + " files copied (" +
                     (origStats.second - stats.second) + " out of " + origStats.second + " bytes)");
@@ -441,7 +441,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
                 }
                 catch (IOException e)
                 {
-                    getLogger().warn("Error deleting file '" + FileUtil.pathToString(path) + "'", e);
+                    getLogger().warn("Error deleting file '{}'", FileUtil.pathToString(path), e);
                     throw new UncheckedIOException(e);
                 }
             });
@@ -457,7 +457,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
         }
         catch (IOException e)
         {
-            getLogger().warn("Error deleting directory '" + FileUtil.pathToString(dirPath) + "'", e);
+            getLogger().warn("Error deleting directory '{}'", FileUtil.pathToString(dirPath), e);
             throw new UncheckedIOException(e);
         }
     }

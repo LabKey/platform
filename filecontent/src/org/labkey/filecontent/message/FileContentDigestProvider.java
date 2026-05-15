@@ -191,7 +191,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
         catch (Exception e)
         {
             // Don't fail the request because of this error
-            _log.warn("Unable to send email for the file notification: " + e.getMessage());
+            _log.warn("Unable to send email for the file notification: {}", e.getMessage());
         }
     }
 

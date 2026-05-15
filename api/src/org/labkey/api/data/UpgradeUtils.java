@@ -55,7 +55,7 @@ public class UpgradeUtils
      */
     public static void uniquifyValues(ColumnInfo column, @Nullable ColumnInfo additionalGroupingColumn, @Nullable SimpleFilter filter, Sort sort, boolean caseSensitive, boolean ignoreNulls)
     {
-        LOG.info("Removing duplicate values from " + column.getParentTable().toString() + "." + column.getName());
+        LOG.info("Removing duplicate values from {}.{}", column.getParentTable().toString(), column.getName());
 
         // Do an aggregate query to determine all groups (containers or container + additional grouping column combinations) with uniqueness problems in this column
         List<SimpleFilter> groupFilters = getFiltersForGroupsWithDuplicateValues(column, additionalGroupingColumn, filter, caseSensitive, ignoreNulls);
@@ -81,7 +81,7 @@ public class UpgradeUtils
         String columnName = col.getName();
         Set<ColumnInfo> selectColumns = Collections.singleton(col);
 
-        LOG.info("  Updating duplicate values in group represented by: " + filter.getFilterText());
+        LOG.info("  Updating duplicate values in group represented by: {}", filter.getFilterText());
 
         // First, grab all the existing values so when we have to change a value we don't collide with another existing value.
         Set<String> existingValues = getSet(caseSensitive);
@@ -111,7 +111,7 @@ public class UpgradeUtils
                 }
                 while(newValues.contains(candidateValue) || existingValues.contains(candidateValue));
 
-                LOG.info("    Changing " + value + " to " + candidateValue);
+                LOG.info("    Changing {} to {}", value, candidateValue);
 
                 value = candidateValue;
 

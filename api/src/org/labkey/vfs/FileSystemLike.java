@@ -1,8 +1,6 @@
 package org.labkey.vfs;
 
 import com.fasterxml.jackson.databind.DeserializationContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;

@@ -87,7 +87,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
         _filesInput = filesInput;
         _inputTypes = FileType.findTypes(protocol.getInputTypes(), _filesInput);
-        _dirData = filesInput.get(0).getParent();
+        _dirData = filesInput.getFirst().getParent();
         _protocolName = protocolName;
 
         _fileParameters = fileParameters;
@@ -123,7 +123,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         }
         else
         {
-            _baseName = protocol.getBaseName(_filesInput.get(0));
+            _baseName = protocol.getBaseName(_filesInput.getFirst());
         }
 
         String logFile = protocol.timestampLog() ? FileUtil.makeFileNameWithTimestamp(_baseName) : _baseName;
@@ -162,7 +162,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         // Change parameters which are specific to the fraction job.
         _filesInput = new ArrayList<>(filesInput);
         _inputTypes = FileType.findTypes(job._inputTypes, _filesInput);
-        _baseName = (_inputTypes.isEmpty() ? filesInput.get(0).getName() : _inputTypes.get(0).getBaseName(filesInput.get(0)));
+        _baseName = (_inputTypes.isEmpty() ? filesInput.getFirst().getName() : _inputTypes.getFirst().getBaseName(filesInput.getFirst()));
 
         setupLocalDirectoryAndJobLog(getPipeRoot(), _baseName);
     }
@@ -289,7 +289,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
             if (!NetworkDrive.exists(dir))
             {
-                log.info("Creating output directory under pipeline root: " + dir);
+                log.info("Creating output directory under pipeline root: {}", dir);
                 try
                 {
                     dir.mkdirs();
@@ -305,7 +305,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             dir = analysisDirectory.resolveChild(outputDir);
             if (!NetworkDrive.exists(dir))
             {
-                log.info("Creating output directory under pipeline analysis dir: " + dir);
+                log.info("Creating output directory under pipeline analysis dir: {}", dir);
                 try
                 {
                     dir.mkdirs();
@@ -381,9 +381,9 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
     private void logParameters(String description, FileLike file, Map<String, String> parameters)
     {
-        _log.debug(description + " " + parameters.size() + " parameters (" + file + "):");
+        _log.debug("{} {} parameters ({}):", description, parameters.size(), file);
         for (Map.Entry<String, String> entry : new TreeMap<>(parameters).entrySet())
-            _log.debug(entry.getKey() + " = " + entry.getValue());
+            _log.debug("{} = {}", entry.getKey(), entry.getValue());
         _log.debug("");
     }
 

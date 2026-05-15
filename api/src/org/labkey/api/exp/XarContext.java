@@ -29,8 +29,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.Path;
-import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.net.URI;

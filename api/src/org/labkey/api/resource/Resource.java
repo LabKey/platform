@@ -90,7 +90,6 @@ public interface Resource
      *  Return false to force contentDisposition=attachment.
      * This does not mean the browser knows how to inline the document.  see MimeType.canInline().
      */
-    @Nullable
     default boolean allowInline()
     {
         return true;

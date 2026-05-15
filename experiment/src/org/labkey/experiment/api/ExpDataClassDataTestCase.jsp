@@ -107,8 +107,8 @@
 <%@ page import="java.util.concurrent.TimeUnit" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="static org.labkey.api.util.PageFlowUtil.encodeURIComponent" %>
-<%@ page import="static org.labkey.api.exp.api.ExperimentService.asInteger" %>
-<%@ page import="static org.labkey.api.exp.api.ExperimentService.asLong" %>
+<%@ page import="static org.labkey.api.util.IntegerUtils.asInteger" %>
+<%@ page import="static org.labkey.api.util.IntegerUtils.asLong" %>
 <%@ page import="static org.hamcrest.Matchers.containsString" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -286,10 +286,10 @@ private void testNameExpressionGeneration(ExpDataClassImpl dataClass, TableInfo 
     }
 
     assertEquals(1, ret.size());
-    assertEquals(1, ret.get(0).get("genId"));
-    assertEquals(expectedName, ret.get(0).get("name"));
+    assertEquals(1, ret.getFirst().get("genId"));
+    assertEquals(expectedName, ret.getFirst().get("name"));
 
-    Long rowId = asLong(ret.get(0).get("RowId"));
+    Long rowId = asLong(ret.getFirst().get("RowId"));
     ExpData data = ExperimentService.get().getExpData(rowId);
     ExpData data1 = ExperimentService.get().getExpData(dataClass, expectedName);
     assertEquals(data, data1);
@@ -316,7 +316,7 @@ private void testInsertIntoSubfolder(ExpDataClassImpl dataClass, TableInfo table
     }
 
     assertEquals(1, ret.size());
-    assertEquals(sub.getId(), ret.get(0).get("folder"));
+    assertEquals(sub.getId(), ret.getFirst().get("folder"));
 
     ExpData data = ExperimentService.get().getExpData(dataClass, expectedSubName);
     assertNotNull(data);
@@ -395,7 +395,7 @@ private void testDeleteExpData(ExpDataClassImpl dataClass, User user, int expect
     List<? extends ExpData> datas = dataClass.getDatas();
     assertEquals(expectedCount, datas.size());
 
-    datas.get(0).delete(user);
+    datas.getFirst().delete(user);
     assertEquals(expectedCount-1, dataClass.getDatas().size());
 }
 
@@ -434,7 +434,7 @@ private void testInsertAliases(ExpDataClassImpl dataClass, TableInfo table) thro
     try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
     {
         List<Map<String, Object>> ret = helper.insertRows(c, rows, table.getName());
-        insertedRowId = asLong(ret.get(0).get("rowId"));
+        insertedRowId = asLong(ret.getFirst().get("rowId"));
         tx.commit();
     }
 
@@ -471,7 +471,7 @@ private void verifyAliasesViaSelectRows(String schemaName, String queryName, lon
         SelectRowsResponse resp = cmd.execute(conn, c.getPath());
 
         assertEquals(1, resp.getRowCount().intValue());
-        Map<String, Object> row0 = resp.getRows().get(0);
+        Map<String, Object> row0 = resp.getRows().getFirst();
         Map<String, Object> row0data = (Map<String, Object>)row0.get("data");
         // expected 17.1 format for the row's data:
         // {
@@ -645,8 +645,8 @@ public void testDomainTemplate() throws Exception
         }
 
         assertEquals(1, ret.size());
-        assertEquals(5, asInteger(ret.get(0).get("pri")).intValue());
-        assertEquals("p5", ret.get(0).get("title"));
+        assertEquals(5, asInteger(ret.getFirst().get("pri")).intValue());
+        assertEquals("p5", ret.getFirst().get("title"));
     }
 
     // Issue 35579: Cannot create non-auto-increment Integer PK list via Domain.create
@@ -673,8 +673,8 @@ public void testDomainTemplate() throws Exception
         }
 
         assertEquals(1, ret.size());
-        assertEquals(3, asInteger(ret.get(0).get("m")).intValue());
-        assertEquals("Milestone 3", ret.get(0).get("title"));
+        assertEquals(3, asInteger(ret.getFirst().get("m")).intValue());
+        assertEquals("Milestone 3", ret.getFirst().get("title"));
     }
 
     // verify the "TodoList" DataClass was created and data was imported
@@ -728,7 +728,7 @@ public void testContainerDelete() throws Exception
         }
 
         assertEquals(1, ret.size());
-        dataRowId1 = asLong(ret.get(0).get("RowId"));
+        dataRowId1 = asLong(ret.getFirst().get("RowId"));
     }
 
     // setup: insert into sub container
@@ -748,7 +748,7 @@ public void testContainerDelete() throws Exception
         }
 
         assertEquals(1, ret.size());
-        dataRowId2 = asLong(ret.get(0).get("RowId"));
+        dataRowId2 = asLong(ret.getFirst().get("RowId"));
     }
 
     // test: delete container, ensure everything is removed
@@ -911,7 +911,7 @@ public void testDataClassWithVocabularyProperties() throws Exception
     var insertedDataClassRows = helper.insertRows(c, rowsToInsert, dataClassName);
     assertEquals(1, insertedDataClassRows.size());
 
-    var insertedDataClass = insertedDataClassRows.get(0);
+    var insertedDataClass = insertedDataClassRows.getFirst();
     Long insertedRowId = asLong(insertedDataClass.get("RowId"));
     String insertedLsid = (String)insertedDataClass.get("LSID");
 
@@ -974,7 +974,7 @@ public void testViewSupportForVocabularyDomains() throws Exception
 
     var insertedSampleRows = helper.insertRows(c, rows ,sampleName, schema);
 
-    var insertedSample = insertedSampleRows.get(0);
+    var insertedSample = insertedSampleRows.getFirst();
     Long insertedSampleRowId = asLong(insertedSample.get("RowId"));
 
     // Create a vocab domain with lookup prop to the sample type
@@ -1256,7 +1256,7 @@ public void testUpdateAuditForLongField() throws Exception
         filter.addCondition(FieldKey.fromParts("queryName"), dataClassName);
         List<AuditTypeEvent> events = AuditLogService.get().getAuditEvents(c, user, "QueryUpdateAuditEvent", filter, new Sort("-RowId"));
         assertEquals("Number of audit events not as expected", 2, events.size()); // should have one for insert and one for update
-        String oldRecordMap = ((DetailedAuditTypeEvent) events.get(0)).getOldRecordMap();
+        String oldRecordMap = ((DetailedAuditTypeEvent) events.getFirst()).getOldRecordMap();
         assertTrue("Old record map (" + oldRecordMap + ") does not contain expected field", oldRecordMap.contains(encodeURIComponent(fieldName) + "=Initial"));
     }
 }

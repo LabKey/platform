@@ -91,7 +91,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         // WARNING: This method is for pipeline maintenance only.  Do not put
         //          important functionality side-effects in here, since this
         //          function is not supported in the Enterprise Pipeline.
-        LOG.debug("RUNNING:   " + job.toString());
+        LOG.debug("RUNNING:   {}", job.toString());
         boolean removed = _pending.remove(job);
         assert removed;
         _running.add(job);
@@ -112,7 +112,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         //          function is not supported in the Enterprise Pipeline.
         try
         {
-            LOG.debug("COMPLETED: " + job.toString());
+            LOG.debug("COMPLETED: {}", job.toString());
 
             // Clear centrally to avoid needing to set in each job. See PipelineJobRunner for equivalent functionality
             // when running through Enterprise Pipeline
@@ -188,7 +188,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
             PipelineJob job = PipelineJob.deserializeJob(statusFile.getJobStore());
             if (job != null)
             {
-                job.getLogger().info("Attempting to cancel as requested by " + user);
+                job.getLogger().info("Attempting to cancel as requested by {}", user);
                 PipelineJob.logStartStopInfo("Attempting to cancel job ID " + job.getJobGUID() + ", " + statusFile.getFilePath() + " as requested by " + user);
             }
         }

@@ -398,7 +398,7 @@ public class QueryServiceImpl implements QueryService
             .append(negate ? " NOT" : "")
             .append(" IN (")
             .append(" SELECT ")
-            .append(t.getColumns().get(0).getValueSql("_"))
+            .append(t.getColumns().getFirst().getValueSql("_"))
             .append(" FROM ")
             .append(fromSql)
             .append(")");
@@ -490,7 +490,7 @@ public class QueryServiceImpl implements QueryService
                 parseResult = new SqlParser(null, null).parseExpr(expression, errors);
             expr = parseResult;
             if (!errors.isEmpty())
-                throw new ConversionException(errors.get(0));
+                throw new ConversionException(errors.getFirst());
         }
 
         @Override
@@ -526,7 +526,7 @@ public class QueryServiceImpl implements QueryService
             QExpr methodName = null;
             if (expr instanceof QMethodCall)
             {
-                methodName = (QExpr) expr.childList().get(0);
+                methodName = (QExpr) expr.childList().getFirst();
                 if (null == methodName.getFieldKey())
                     methodName = null;
             }
@@ -569,7 +569,7 @@ public class QueryServiceImpl implements QueryService
             {
                 if (query.getParseErrors().isEmpty())
                     query.getParseErrors().add(new QueryException("Unexpected error parsing where filter"));
-                throw query.getParseErrors().get(0);
+                throw query.getParseErrors().getFirst();
             }
             return ret;
         }
@@ -605,7 +605,7 @@ public class QueryServiceImpl implements QueryService
             QExpr methodName = null;
             if (expr instanceof QMethodCall)
             {
-                methodName = (QExpr) expr.childList().get(0);
+                methodName = (QExpr) expr.childList().getFirst();
                 if (null == methodName.getFieldKey())
                     methodName = null;
             }
@@ -872,7 +872,7 @@ public class QueryServiceImpl implements QueryService
         // helper function to add a queryDef to the return map if it hasn't already been added
         Consumer<QueryDef> addQueryDefToMap = (queryDef) -> {
             Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
-            ret.computeIfAbsent(key, (key2) -> new CustomQueryDefinitionImpl(user, container, queryDef));
+            ret.computeIfAbsent(key, (_) -> new CustomQueryDefinitionImpl(user, container, queryDef));
         };
 
         // session queries have highest priority
@@ -967,7 +967,7 @@ public class QueryServiceImpl implements QueryService
     private void addCustomQueryDefToMap(User user, Container c, Map<Entry<String, String>, QueryDefinition> map, QueryDef queryDef)
     {
         Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
-        map.computeIfAbsent(key, (key2) -> new CustomQueryDefinitionImpl(user, c, queryDef));
+        map.computeIfAbsent(key, (_) -> new CustomQueryDefinitionImpl(user, c, queryDef));
     }
 
     @Override
@@ -1362,7 +1362,7 @@ public class QueryServiceImpl implements QueryService
         {
             Container viewContainer = cstmView.lookupContainer();
             if (viewContainer != null)
-                containerViews.computeIfAbsent(viewContainer, k -> new ArrayList<>()).add(cstmView);
+                containerViews.computeIfAbsent(viewContainer, _ -> new ArrayList<>()).add(cstmView);
         }
 
         for (Map.Entry<Container, List<CstmView>> containerCstmViews: containerViews.entrySet())
@@ -1698,12 +1698,7 @@ public class QueryServiceImpl implements QueryService
         }
 
         ContainerSchemaKey key = new ContainerSchemaKey(container, schemaName);
-        Map<String, SessionQuery> queries = containerQueries.get(key);
-        if (queries == null)
-        {
-            queries = new ConcurrentHashMap<>();
-            containerQueries.put(key, queries);
-        }
+        Map<String, SessionQuery> queries = containerQueries.computeIfAbsent(key, _ -> new ConcurrentHashMap<>());
         return queries;
     }
 
@@ -2025,7 +2020,7 @@ public class QueryServiceImpl implements QueryService
 
         if (unresolvedColumns != null && !unresolvedColumns.isEmpty())
         {
-            LOG.debug("Unable to resolve the following columns on table " + table.getName() + ": " + unresolvedColumns);
+            LOG.debug("Unable to resolve the following columns on table {}: {}", table.getName(), unresolvedColumns);
 
             for (FieldKey field : unresolvedColumns)
             {
@@ -2096,7 +2091,7 @@ public class QueryServiceImpl implements QueryService
         // This could be made more general, but I don't think there's a need.  To reduce testing
         // just handle expObject() for now, instead of table methods more generally.
         // Also, we could just expose "objectid" column on all of the experiment tables.
-        if (fieldKey.equals(expObjectIdFieldKey) && table instanceof ExpTable expTable)
+        if (fieldKey.equals(expObjectIdFieldKey) && table instanceof ExpTable<?> expTable)
         {
             ColumnInfo expObjectColumn = expTable.getExpObjectColumn();
             if (null != expObjectColumn)
@@ -2105,7 +2100,8 @@ public class QueryServiceImpl implements QueryService
                 columnMap.put(expObjectIdFieldKey, expObjectColumn);
                 return expObjectColumn;
             }
-            unresolvedColumns.add(new FieldKey(null, "expObject()"));
+            if (unresolvedColumns != null)
+                unresolvedColumns.add(new FieldKey(null, "expObject()"));
             return null;
         }
 
@@ -2125,7 +2121,8 @@ public class QueryServiceImpl implements QueryService
                     boolean invalidArrayFilter = (isArrayFilter && !isArrayColumn) || (!isArrayFilter && isArrayColumn);
                     if (invalidArrayFilter)
                     {
-                        unresolvedColumns.add(fieldKey);
+                        if (unresolvedColumns != null)
+                            unresolvedColumns.add(fieldKey);
                         return column; // return column, but mark as unresolvedColumns to drop filters
                     }
                 }
@@ -2163,7 +2160,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LOG.warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
+                LOG.warn("Could not load schema {} from {}", def.getSourceSchemaName(), def.getDataSource(), e);
             }
         }
 
@@ -2182,7 +2179,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LOG.warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
+                LOG.warn("Could not load schema {} from {}", def.getSourceSchemaName(), def.getDataSource(), e);
             }
         }
 
@@ -2204,7 +2201,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LOG.error("Error creating linked schema " + def.getUserSchemaName(), e);
+                LOG.error("Error creating linked schema {}", def.getUserSchemaName(), e);
             }
         }
 
@@ -2224,7 +2221,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LOG.error("Error creating linked schema " + def.getUserSchemaName(), e);
+                LOG.error("Error creating linked schema {}", def.getUserSchemaName(), e);
             }
         }
 
@@ -2256,7 +2253,7 @@ public class QueryServiceImpl implements QueryService
         }
         catch (Exception e)
         {
-            LOG.error("Error deleting linked schema " + name, e);
+            LOG.error("Error deleting linked schema {}", name, e);
         }
     }
 
@@ -2283,7 +2280,7 @@ public class QueryServiceImpl implements QueryService
                         }
                         catch (XmlException | XmlValidationException | IOException e)
                         {
-                            LOG.error("Skipping '" + name + "' schema template file: " + e.getMessage());
+                            LOG.error("Skipping '{}' schema template file: {}", name, e.getMessage());
                         }
                     }
                 }
@@ -2320,7 +2317,7 @@ public class QueryServiceImpl implements QueryService
                         }
                         catch (XmlException e)
                         {
-                            LOG.error("Skipping '" + name + "' schema template file: " + XmlBeansUtil.getErrorMessage(e));
+                            LOG.error("Skipping '{}' schema template file: {}", name, XmlBeansUtil.getErrorMessage(e));
                         }
                         catch (XmlValidationException e)
                         {
@@ -2332,7 +2329,7 @@ public class QueryServiceImpl implements QueryService
                         }
                         catch (IOException e)
                         {
-                            LOG.error("Skipping '" + name + "' schema template file: " + e.getMessage());
+                            LOG.error("Skipping '{}' schema template file: {}", name, e.getMessage());
                         }
                     }
                 }
@@ -2894,12 +2891,12 @@ public class QueryServiceImpl implements QueryService
             this.query = query;
 
             if (!query.getParseErrors().isEmpty())
-                throw query.getParseErrors().get(0);
+                throw query.getParseErrors().getFirst();
 
             this.table = query.getTableInfo();
 
             if (!query.getParseErrors().isEmpty())
-                throw query.getParseErrors().get(0);
+                throw query.getParseErrors().getFirst();
         }
 
         @Override
@@ -3038,7 +3035,7 @@ public class QueryServiceImpl implements QueryService
         return ret;
     }
 
-     /** Compute and set the metadata for this column based on the source expressoin and the xml override */
+     /** Compute and set the metadata for this column based on the source expression and the xml override */
     @Override
     public void bindQueryExpressionColumn(ColumnInfo col, Map<FieldKey,ColumnInfo> columns, boolean validateOnly, @Nullable Set<FieldKey> referencedKeys) throws QueryParseException
     {
@@ -3443,7 +3440,7 @@ public class QueryServiceImpl implements QueryService
 
         if (null == descriptor)
         {
-            LOG.warn("OLAP schema descriptor not found: " + configId);
+            LOG.warn("OLAP schema descriptor not found: {}", configId);
         }
         else
         {
@@ -3844,19 +3841,19 @@ public class QueryServiceImpl implements QueryService
                 .mapToInt(MultiValuedMap::size)
                 .sum();
 
-            LOG.info(moduleCustomViewCount + " custom views defined in all modules");
+            LOG.info("{} custom views defined in all modules", moduleCustomViewCount);
 
             int moduleQueryCount = MODULE_QUERY_DEF_CACHE.streamAllResourceMaps()
                 .mapToInt(MultiValuedMap::size)
                 .sum();
 
-            LOG.info(moduleQueryCount + " module queries defined in all modules");
+            LOG.info("{} module queries defined in all modules", moduleQueryCount);
 
             int moduleQueryMetadataCount = MODULE_QUERY_METADATA_DEF_CACHE.streamAllResourceMaps()
                 .mapToInt(MultiValuedMap::size)
                 .sum();
 
-            LOG.info(moduleQueryMetadataCount + " module query metadata overrides defined in all modules");
+            LOG.info("{} module query metadata overrides defined in all modules", moduleQueryMetadataCount);
 
             // Make sure the cache retrieves the expected number of custom views, queries, and metadata overrides from the simpletest module, if present
 

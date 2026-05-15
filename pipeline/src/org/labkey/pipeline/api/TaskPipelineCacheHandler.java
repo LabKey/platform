@@ -83,7 +83,7 @@ import java.util.stream.Stream;
         }
         catch (IllegalArgumentException|IllegalStateException e)
         {
-            LOG.warn("Error registering '" + taskId + "' pipeline: " + e.getMessage());
+            LOG.warn("Error registering '{}' pipeline: {}", taskId, e.getMessage());
             return null;
         }
     }

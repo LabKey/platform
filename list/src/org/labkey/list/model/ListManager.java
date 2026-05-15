@@ -552,7 +552,7 @@ public class ListManager implements SearchService.DocumentProvider
                     }
                     catch (Exception ex)
                     {
-                        LOG.error("Error indexing list '" + list.getName() + "' in container '" + q.getContainer().getPath() + "'.", ex);
+                        LOG.error("Error indexing list '{}' in container '{}'.", list.getName(), q.getContainer().getPath(), ex);
                     }
                 }
             }
@@ -579,7 +579,7 @@ public class ListManager implements SearchService.DocumentProvider
             Container c = def.lookupContainer();
             if (!ContainerManager.exists(c))
             {
-                LOG.info("List container has been deleted or is being deleted; not indexing list \"" + def.getName() + "\"");
+                LOG.info("List container has been deleted or is being deleted; not indexing list \"{}\"", def.getName());
             }
             else
             {
@@ -593,7 +593,7 @@ public class ListManager implements SearchService.DocumentProvider
         Container c = def.lookupContainer();
         if (!ContainerManager.exists(c))
         {
-            LOG.info("List container has been deleted or is being deleted; not indexing list \"" + def.getName() + "\"");
+            LOG.info("List container has been deleted or is being deleted; not indexing list \"{}\"", def.getName());
         }
         else
         {
@@ -763,7 +763,7 @@ public class ListManager implements SearchService.DocumentProvider
                 r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
 
                 queue.addResource(r);
-                LOG.debug("List \"" + list + "\": Queued indexing of item with PK = " + pk);
+                LOG.debug("List \"{}\": Queued indexing of item with PK = {}", list, pk);
             });
         }
     }
@@ -824,7 +824,7 @@ public class ListManager implements SearchService.DocumentProvider
 
                         attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
                         queue.addResource(attachmentRes);
-                        LOG.debug("List \"" + list + "\": Queued indexing of attachment \"" + documentName + "\" for item with PK = " + map.get(list.getKeyName()));
+                        LOG.debug("List \"{}\": Queued indexing of attachment \"{}\" for item with PK = {}", list, documentName, map.get(list.getKeyName()));
                     });
                 });
             });
@@ -927,7 +927,7 @@ public class ListManager implements SearchService.DocumentProvider
                 };
 
                 queue.addResource(r);
-                LOG.debug("List \"" + list + "\": Queued indexing of entire list document");
+                LOG.debug("List \"{}\": Queued indexing of entire list document", list);
             }
         }
     }
@@ -1122,7 +1122,7 @@ public class ListManager implements SearchService.DocumentProvider
         list = ListDefinitionImpl.of(getList(list.getContainer(), list.getListId()));
         long modified = list.getModified().getTime();
         String warning = ms < modified ? ". WARNING: LastIndexed is less than Modified! " + ms + " vs. " + modified : "";
-        LOG.debug("List \"" + list + "\": Set LastIndexed for entire list document" + warning);
+        LOG.debug("List \"{}\": Set LastIndexed for entire list document{}", list, warning);
     }
 
 
@@ -1143,7 +1143,7 @@ public class ListManager implements SearchService.DocumentProvider
                 new SqlExecutor(sti.getSchema()).execute(sqlf);
             }
             String warning = ms < modified ? ". WARNING: LastIndexed is less than Modified! " + ms + " vs. " + modified : "";
-            LOG.debug("List \"" + list + "\": Set LastIndexed for item with PK = " + pk + warning);
+            LOG.debug("List \"{}\": Set LastIndexed for item with PK = {}{}", list, pk, warning);
         }
     }
 
@@ -1172,7 +1172,7 @@ public class ListManager implements SearchService.DocumentProvider
             Domain domain = list.getDomain();
             if (null != domain && null != domain.getStorageTableName())
             {
-                LOG.info("List " + listDef.getContainerPath() + " - " + listDef.getName() + ": Set to index each item, so clearing last indexed");
+                LOG.info("List {} - {}: Set to index each item, so clearing last indexed", listDef.getContainerPath(), listDef.getName());
                 clearLastIndexed(scope, listSchemaName + "." + domain.getStorageTableName());
             }
         }

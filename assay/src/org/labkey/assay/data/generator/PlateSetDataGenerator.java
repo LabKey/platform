@@ -68,17 +68,15 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
             _plateType = getPlateType();
             if (_plateType == null)
             {
-                _log.error(String.format("Unable to resolve plate type (%s). Plate types must be expressed in the format : <rows>x<columns> eg: 8x12", config.getPlateType()));
+                _log.error("Unable to resolve plate type ({}). Plate types must be expressed in the format : <rows>x<columns> eg: 8x12", config.getPlateType());
                 return;
             }
 
             // generate plates and plate sets
             if (config.getPlateLineageDepth() > 0)
-                _log.info(String.format("Generating %d root Plate set(s) with %d level(s)",
-                        config.getNumPlatesets(),
-                        config.getPlateLineageDepth()));
+                _log.info("Generating {} root Plate set(s) with {} level(s)", config.getNumPlatesets(), config.getPlateLineageDepth());
             else
-                _log.info(String.format("Generating %d root Plate set(s)", config.getNumPlatesets()));
+                _log.info("Generating {} root Plate set(s)", config.getNumPlatesets());
 
             try
             {
@@ -93,7 +91,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
                     if (config.getPlateLineageDepth() > 0)
                         createLevel(parentPlateSet, 0);
                 }
-                _log.info(String.format("Created a total of %d plate sets.", _plateSetsCreated));
+                _log.info("Created a total of {} plate sets.", _plateSetsCreated);
                 timer.stop();
 
                 if (config._importPlatesets)
@@ -118,31 +116,31 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
     {
         if (config.getNumPlatesets() <= 0)
         {
-            _log.info(String.format("No plate sets generated because %s=%d", Config.NUM_PLATESETS, config.getNumPlatesets()));
+            _log.info("No plate sets generated because {}={}", Config.NUM_PLATESETS, config.getNumPlatesets());
             return false;
         }
 
         if (config.getPlatesPerPlateset() > PlateSet.MAX_PLATES)
         {
-            _log.error(String.format("The number of plates per plates ets cannot exceed %d", PlateSet.MAX_PLATES));
+            _log.error("The number of plates per plates ets cannot exceed {}", PlateSet.MAX_PLATES);
             return false;
         }
 
         if (config.getPlateLineageDepth() > MAX_LINEAGE_DEPTH)
         {
-            _log.error(String.format("The max plate set lineage depth cannot exceed %d", MAX_LINEAGE_DEPTH));
+            _log.error("The max plate set lineage depth cannot exceed {}", MAX_LINEAGE_DEPTH);
             return false;
         }
 
         if ((config.getPrimaryPlateSetsPerLevel() + config.getAssayPlateSetsPerLevel()) > MAX_PLATE_SETS_PER_LEVEL)
         {
-            _log.error(String.format("The max number of plate sets per level cannot exceed %d", MAX_PLATE_SETS_PER_LEVEL));
+            _log.error("The max number of plate sets per level cannot exceed {}", MAX_PLATE_SETS_PER_LEVEL);
             return false;
         }
 
         if (config.getMinCustomProperties() > config.getMaxCustomProperties())
         {
-            _log.error(String.format("The max number of plate sets per level cannot exceed %d", MAX_PLATE_SETS_PER_LEVEL));
+            _log.error("The max number of plate sets per level cannot exceed {}", MAX_PLATE_SETS_PER_LEVEL);
             return false;
         }
 
@@ -295,7 +293,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
     {
         if (_assayPlateSets.isEmpty())
             throw new ValidationException("There are no assay plate sets to import");
-        _log.info(String.format("Importing data for %d plate sets.", _assayPlateSets.size()));
+        _log.info("Importing data for {} plate sets.", _assayPlateSets.size());
 
         AssayProvider provider = AssayService.get().getProvider(TsvAssayProvider.NAME);
         if (provider == null)
@@ -367,11 +365,11 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
         {
             MathStat stats = StatsService.get().getStats(_plateTimings);
 
-            _log.info(String.format("%s\t%s", "Per Plate", DateUtil.formatDuration((long)stats.getMean())));
-            _log.info(String.format("%s\t%s", "Per Plate (std dev)", stats.getStdDev()));
+            _log.info("{}\t{}", "Per Plate", DateUtil.formatDuration((long) stats.getMean()));
+            _log.info("{}\t{}", "Per Plate (std dev)", stats.getStdDev());
         }
         else
-            _log.info(String.format("%s\t%s", "Per Plate", DateUtil.formatDuration(_plateTimings.get(0).longValue())));
+            _log.info("{}\t{}", "Per Plate", DateUtil.formatDuration(_plateTimings.getFirst().longValue()));
     }
 
     public static class Config extends DataGenerator.Config

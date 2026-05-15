@@ -138,7 +138,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
                         if (_allowReuseExistingTempDirectory && dirParent.exists())
                         {
-                            log.info("parent directory exists, reusing: " + dirParent.getPath());
+                            log.info("parent directory exists, reusing: {}", dirParent.getPath());
                         }
                         else
                         {
@@ -172,7 +172,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
                     if (_allowReuseExistingTempDirectory && tempDir.exists())
                     {
-                        log.info("working directory exists, reusing: " + dirParent.getPath());
+                        log.info("working directory exists, reusing: {}", dirParent.getPath());
                     }
                     else
                     {
@@ -396,12 +396,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
      */
     private static synchronized Lock getInMemoryLockObject(File f)
     {
-        Lock result = _locks.get(f);
-        if (result == null)
-        {
-            result = new ReentrantLock();
-            _locks.put(f, result);
-        }
+        Lock result = _locks.computeIfAbsent(f, _ -> new ReentrantLock());
         return result;
     }
 
@@ -412,11 +407,11 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
         // Issue 25166: this was a pre-existing potential bug.  If _sharedTempDirectory is true, we create a second level
         // of temp directory above the primary working dir.  this is added to make sure we clean this up.
-        _jobLog.debug("inspecting remote work dir: " + (_folderToClean == null ? _dir.getPath() : _folderToClean.getPath()));
+        _jobLog.debug("inspecting remote work dir: {}", _folderToClean == null ? _dir.getPath() : _folderToClean.getPath());
         if (success && _folderToClean != null && !_dir.equals(_folderToClean))
         {
-            _jobLog.debug("removing entire work dir through: " + _folderToClean.getPath());
-            _jobLog.debug("starting with: " + _dir.getPath());
+            _jobLog.debug("removing entire work dir through: {}", _folderToClean.getPath());
+            _jobLog.debug("starting with: {}", _dir.getPath());
             FileLike toCheck = _dir;
 
             //debugging only:
@@ -429,7 +424,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             {
                 if (!toCheck.exists())
                 {
-                    _jobLog.debug("directory does not exist: " + toCheck.getPath());
+                    _jobLog.debug("directory does not exist: {}", toCheck.getPath());
                     toCheck = toCheck.getParent();
                     continue;
                 }
@@ -437,13 +432,13 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                 List<FileLike> children = toCheck.getChildren();
                 if (children.isEmpty())
                 {
-                    _jobLog.debug("removing directory: " + toCheck.getPath());
+                    _jobLog.debug("removing directory: {}", toCheck.getPath());
                     FileUtil.deleteDir(toCheck);
                     toCheck = toCheck.getParent();
                 }
                 else
                 {
-                    _jobLog.debug("work directory has children, will not delete: " + toCheck.getPath());
+                    _jobLog.debug("work directory has children, will not delete: {}", toCheck.getPath());
                     _jobLog.debug("files:");
                     for (FileLike fn : children)
                     {
@@ -491,11 +486,11 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             }
         }
 
-        _jobLog.debug("Acquiring lock #" + lockInfo.getCurrentLock());
+        _jobLog.debug("Acquiring lock #{}", lockInfo.getCurrentLock());
         File f = _lockDirectory.resolveChild("lock" + lockInfo.getCurrentLock()).toNioPathForWrite().toFile();
         FileChannel lockChannel = new FileOutputStream(f, true).getChannel();
         FileLockCopyingResource result = new FileLockCopyingResource(lockChannel, lockInfo.getCurrentLock(), f);
-        _jobLog.debug("Lock #" + lockInfo.getCurrentLock() + " acquired");
+        _jobLog.debug("Lock #{} acquired", lockInfo.getCurrentLock());
 
         return result;
     }
@@ -630,7 +625,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             {
                 _state.close();
                 _cleanable.clean();
-                _jobLog.debug("Lock #" + _lockNumber + " released");
+                _jobLog.debug("Lock #{} released", _lockNumber);
                 _lock = null;
                 _channel = null;
                 super.close();

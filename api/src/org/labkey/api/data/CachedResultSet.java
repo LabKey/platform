@@ -204,7 +204,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
     }
 
     @Override
-    public @Nullable Connection getConnection() throws SQLException
+    public @Nullable Connection getConnection()
     {
         return null;
     }

@@ -36,7 +36,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.util.Map;
 import java.util.Set;
 

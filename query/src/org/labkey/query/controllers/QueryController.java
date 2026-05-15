@@ -90,7 +90,6 @@ import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.IntHashMap;
-import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
@@ -291,9 +290,7 @@ import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
-import org.labkey.query.model.MetadataTableJSONMixin;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
-import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.ExternalSchemaDefCache;
 import org.labkey.query.persist.LinkedSchemaDef;
@@ -1187,22 +1184,7 @@ public class QueryController extends SpringActionController
                     sql = "SELECT * FROM \"" + form.ff_baseTableName + "\"";
                 newDef.setSql(sql);
 
-                try
-                {
-                    newDef.save(getUser(), getContainer());
-                }
-                catch (SQLException x)
-                {
-                    if (RuntimeSQLException.isConstraintException(x))
-                    {
-                        errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists.");
-                        return false;
-                    }
-                    else
-                    {
-                        throw x;
-                    }
-                }
+                newDef.save(getUser(), getContainer());
 
                 _successUrl = newDef.urlFor(form.ff_redirect);
                 return true;
@@ -1547,11 +1529,6 @@ public class QueryController extends SpringActionController
                     }
                     response.put("parseWarnings", errorArray);
                 }
-            }
-            catch (SQLException e)
-            {
-                errors.reject(ERROR_MSG, "An exception occurred: " + e);
-                LOG.error("Error", e);
             }
             catch (RuntimeException e)
             {
@@ -2155,7 +2132,7 @@ public class QueryController extends SpringActionController
                 }
                 else
                 {
-                    sheetNames.put(entry.getValue().get(0), name);
+                    sheetNames.put(entry.getValue().getFirst(), name);
                 }
             }
             ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx) {
@@ -3308,7 +3285,7 @@ public class QueryController extends SpringActionController
         {
             List<Map<String, Object>> list = doInsertUpdate(tableForm, errors, true);
             if (null != list && list.size() == 1)
-                insertedRow = list.get(0);
+                insertedRow = list.getFirst();
             return 0 == errors.getErrorCount();
         }
 
@@ -3587,7 +3564,7 @@ public class QueryController extends SpringActionController
             {
                 List<QueryException> qpes = view.getParseErrors();
                 if (!qpes.isEmpty())
-                    throw qpes.get(0);
+                    throw qpes.getFirst();
                 throw new NotFoundException(form.getQueryName());
             }
 
@@ -3963,10 +3940,10 @@ public class QueryController extends SpringActionController
                 return null;
             }
 
-            ColumnInfo col = columns.get(settings.getFieldKeys().get(0));
+            ColumnInfo col = columns.get(settings.getFieldKeys().getFirst());
             if (col == null)
             {
-                errors.reject(ERROR_MSG, "\"" + settings.getFieldKeys().get(0).getName() + "\" is not a valid column.");
+                errors.reject(ERROR_MSG, "\"" + settings.getFieldKeys().getFirst().getName() + "\" is not a valid column.");
                 return null;
             }
 
@@ -3995,7 +3972,7 @@ public class QueryController extends SpringActionController
 
                 // Regenerate the column since the alias may have changed after call to getSelectSQL()
                 columns = service.getColumns(table, settings.getFieldKeys());
-                var colGetAgain = columns.get(settings.getFieldKeys().get(0));
+                var colGetAgain = columns.get(settings.getFieldKeys().getFirst());
                 // I don't believe the above comment, so here's an assert
                 assert(colGetAgain.getAlias().equals(col.getAlias()));
 
@@ -4064,7 +4041,7 @@ public class QueryController extends SpringActionController
             if (null == fieldKeys || fieldKeys.size() != 1)
                 errors.reject(ERROR_MSG, "GetColumnSummaryStats requires that only one column be requested.");
             else
-                _colFieldKey = fieldKeys.get(0);
+                _colFieldKey = fieldKeys.getFirst();
         }
 
         @Override
@@ -4173,7 +4150,7 @@ public class QueryController extends SpringActionController
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
             if (!qpe.isEmpty())
-                throw qpe.get(0);
+                throw qpe.getFirst();
             if (null != t)
                 setTarget(t);
             _auditBehaviorType = form.getAuditBehavior();
@@ -4388,7 +4365,7 @@ public class QueryController extends SpringActionController
                     throws SQLException, BatchValidationException
             {
                 BatchValidationException errors = new BatchValidationException();
-                DataIteratorBuilder it = new ListofMapsDataIterator.Builder(rows.get(0).keySet(), rows);
+                DataIteratorBuilder it = new ListofMapsDataIterator.Builder(rows.getFirst().keySet(), rows);
                 qus.importRows(user, container, it, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
@@ -4737,7 +4714,7 @@ public class QueryController extends SpringActionController
                 if (commandType == CommandType.moveRows)
                 {
                     // moveRows returns a single map of updateCounts
-                    response.put("updateCounts", responseRows.get(0));
+                    response.put("updateCounts", responseRows.getFirst());
                 }
                 else if (commandType != CommandType.importRows)
                 {
@@ -6325,203 +6302,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-    /** Minimalist, secret UI to help users recover if they've created a broken view somehow */
-    @RequiresPermission(AdminPermission.class)
-    public class ManageViewsAction extends SimpleViewAction<QueryForm>
-    {
-        @SuppressWarnings("UnusedDeclaration")
-        public ManageViewsAction()
-        {
-        }
-
-        public ManageViewsAction(ViewContext ctx)
-        {
-            setViewContext(ctx);
-        }
-
-        @Override
-        public ModelAndView getView(QueryForm form, BindException errors)
-        {
-            return new JspView<>("/org/labkey/query/view/manageViews.jsp", form, errors);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            new BeginAction(getViewContext()).addNavTrail(root);
-            root.addChild("Manage Views", QueryController.this.getViewContext().getActionURL());
-        }
-    }
-
-
-    /** Minimalist, secret UI to help users recover if they've created a broken view somehow */
-    @RequiresPermission(AdminPermission.class)
-    public class InternalDeleteView extends ConfirmAction<InternalViewForm>
-    {
-        @Override
-        public ModelAndView getConfirmView(InternalViewForm form, BindException errors)
-        {
-            return new JspView<>("/org/labkey/query/view/internalDeleteView.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(InternalViewForm form, BindException errors)
-        {
-            CstmView view = form.getViewAndCheckPermission();
-            QueryManager.get().delete(getUser(), view);
-            return true;
-        }
-
-        @Override
-        public void validateCommand(InternalViewForm internalViewForm, Errors errors)
-        {
-        }
-
-        @Override
-        @NotNull
-        public ActionURL getSuccessURL(InternalViewForm internalViewForm)
-        {
-            return new ActionURL(ManageViewsAction.class, getContainer());
-        }
-    }
-
-    /** Minimalist, secret UI to help users recover if they've created a broken view somehow */
-    @RequiresPermission(AdminPermission.class)
-    public class InternalSourceViewAction extends FormViewAction<InternalSourceViewForm>
-    {
-        @Override
-        public void validateCommand(InternalSourceViewForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public ModelAndView getView(InternalSourceViewForm form, boolean reshow, BindException errors)
-        {
-            CstmView view = form.getViewAndCheckPermission();
-            form.ff_inherit = QueryManager.get().canInherit(view.getFlags());
-            form.ff_hidden = QueryManager.get().isHidden(view.getFlags());
-            form.ff_columnList = view.getColumns();
-            form.ff_filter = view.getFilter();
-            return new JspView<>("/org/labkey/query/view/internalSourceView.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(InternalSourceViewForm form, BindException errors)
-        {
-            CstmView view = form.getViewAndCheckPermission();
-            int flags = view.getFlags();
-            flags = QueryManager.get().setCanInherit(flags, form.ff_inherit);
-            flags = QueryManager.get().setIsHidden(flags, form.ff_hidden);
-            view.setFlags(flags);
-            view.setColumns(form.ff_columnList);
-            view.setFilter(form.ff_filter);
-            QueryManager.get().update(getUser(), view);
-            return true;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(InternalSourceViewForm form)
-        {
-            return new ActionURL(ManageViewsAction.class, getContainer());
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            new ManageViewsAction(getViewContext()).addNavTrail(root);
-            root.addChild("Edit source of Grid View");
-        }
-    }
-
-    /** Minimalist, secret UI to help users recover if they've created a broken view somehow */
-    @RequiresPermission(AdminPermission.class)
-    public class InternalNewViewAction extends FormViewAction<InternalNewViewForm>
-    {
-        int _customViewId = 0;
-
-        @Override
-        public void validateCommand(InternalNewViewForm form, Errors errors)
-        {
-            if (StringUtils.trimToNull(form.ff_schemaName) == null)
-            {
-                errors.reject(ERROR_MSG, "Schema name cannot be blank.");
-            }
-            if (StringUtils.trimToNull(form.ff_queryName) == null)
-            {
-                errors.reject(ERROR_MSG, "Query name cannot be blank");
-            }
-        }
-
-        @Override
-        public ModelAndView getView(InternalNewViewForm form, boolean reshow, BindException errors)
-        {
-            return new JspView<>("/org/labkey/query/view/internalNewView.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(InternalNewViewForm form, BindException errors)
-        {
-            if (form.ff_share)
-            {
-                if (!getContainer().hasPermission(getUser(), AdminPermission.class))
-                    throw new UnauthorizedException();
-            }
-            List<CstmView> existing = QueryManager.get().getCstmViews(getContainer(), form.ff_schemaName, form.ff_queryName, form.ff_viewName, form.ff_share ? null : getUser(), false, false);
-            CstmView view;
-            if (!existing.isEmpty())
-            {
-            }
-            else
-            {
-                view = new CstmView();
-                view.setSchema(form.ff_schemaName);
-                view.setQueryName(form.ff_queryName);
-                view.setName(form.ff_viewName);
-                view.setContainerId(getContainer().getId());
-                if (form.ff_share)
-                {
-                    view.setCustomViewOwner(null);
-                }
-                else
-                {
-                    view.setCustomViewOwner(getUser().getUserId());
-                }
-                if (form.ff_inherit)
-                {
-                    view.setFlags(QueryManager.get().setCanInherit(view.getFlags(), form.ff_inherit));
-                }
-                InternalViewForm.checkEdit(getViewContext(), view);
-                try
-                {
-                    view = QueryManager.get().insert(getUser(), view);
-                }
-                catch (Exception e)
-                {
-                    LogManager.getLogger(QueryController.class).error("Error", e);
-                    errors.reject(ERROR_MSG, "An exception occurred: " + e);
-                    return false;
-                }
-                _customViewId = view.getCustomViewId();
-            }
-            return true;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(InternalNewViewForm form)
-        {
-            ActionURL forward = new ActionURL(InternalSourceViewAction.class, getContainer());
-            forward.addParameter("customViewId", Integer.toString(_customViewId));
-            return forward;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Create New Grid View");
-         }
-    }
-
-
     @ActionNames("clearSelected, selectNone")
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
@@ -7903,9 +7683,7 @@ public class QueryController extends SpringActionController
             PropertyService propertyService = PropertyService.get();
             if (null != propertyService)
             {
-                ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-                mapper.addMixIn(GWTPropertyDescriptor.class, MetadataTableJSONMixin.class);
-                return mapper;
+                return JsonUtil.DEFAULT_MAPPER.copy();
             }
             else
             {
@@ -8409,7 +8187,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public Object execute(QueryImportTemplateForm form, BindException errors) throws ValidationException, QueryUpdateServiceException, SQLException, ExperimentException, MetadataUnavailableException
+        public Object execute(QueryImportTemplateForm form, BindException errors) throws ValidationException, QueryUpdateServiceException, ExperimentException, MetadataUnavailableException
         {
             User user = getUser();
             Container container = getContainer();
@@ -8599,10 +8377,6 @@ public class QueryController extends SpringActionController
                 new ManageRemoteConnectionsAction(),
                 new ReloadExternalSchemaAction(),
                 new ReloadAllUserSchemas(),
-                controller.new ManageViewsAction(),
-                controller.new InternalDeleteView(),
-                controller.new InternalSourceViewAction(),
-                controller.new InternalNewViewAction(),
                 new QueryExportAuditRedirectAction()
             );
 

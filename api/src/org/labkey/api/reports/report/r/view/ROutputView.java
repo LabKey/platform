@@ -153,11 +153,11 @@ public class ROutputView extends HttpView<Object>
         FileLike newFile = root.resolveChild(FileUtil.makeFileNameWithTimestamp(FileUtil.getBaseName(file.getName()), FileUtil.getExtension(file)));
         newFile.delete();
 
-        LOG.debug("Moving '" + file + "' to '" + newFile + "'");
+        LOG.debug("Moving '{}' to '{}'", file, newFile);
         if (file.renameTo(newFile))
             return newFile;
 
-        LOG.debug("Failed to move " + file + "' to '" + newFile + "'");
+        LOG.debug("Failed to move {}' to '{}'", file, newFile);
         return null;
     }
 

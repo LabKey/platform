@@ -59,7 +59,7 @@ public class ClientDependencyCacheLoader implements CacheLoader<Pair<Path, ModeT
 
         if (primaryType == null)
         {
-            LOG.warn("Client dependency type not recognized: " + path);
+            LOG.warn("Client dependency type not recognized: {}", path);
             return null;
         }
 

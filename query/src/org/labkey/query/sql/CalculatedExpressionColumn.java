@@ -23,8 +23,8 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +97,14 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         }
     }
 
+    @Override
+    public Set<FieldKey> getReferencedFieldKeys()
+    {
+        if (_allFieldKeys == null)
+            return Collections.emptySet();
+
+        return Collections.unmodifiableSet(_allFieldKeys);
+    }
 
     public void computeMetaData(Map<FieldKey,ColumnInfo> columns)
     {
@@ -174,7 +182,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
                     .setFailOnUnrecognizedMethodName(true);
             QExpr expr = parser.parseExpr(_labKeySql, errors);
             if (!errors.isEmpty())
-                throw errors.get(0);
+                throw errors.getFirst();
             _parsedExpr = expr;
         }
 
@@ -263,7 +271,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         QExpr methodName = null;
         if (expr instanceof QMethodCall)
         {
-            methodName = (QExpr) expr.childList().get(0);
+            methodName = (QExpr) expr.childList().getFirst();
             if (null == methodName.getFieldKey())
                 methodName = null;
         }
@@ -397,7 +405,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         }
 
         @Override
-        protected SchemaColumnMetaData createSchemaColumnMetaData() throws SQLException
+        protected SchemaColumnMetaData createSchemaColumnMetaData()
         {
             return new SchemaColumnMetaData(this, colsToAdd, xmlToApply);
         }

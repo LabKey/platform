@@ -193,7 +193,7 @@ public class SpecimenManager
         if (vials == null || vials.isEmpty())
             return Collections.emptyMap();
 
-        Container container = vials.get(0).getContainer();
+        Container container = vials.getFirst().getContainer();
         final Map<Vial, SpecimenComment> result = new HashMap<>();
         int offset = 0;
 
@@ -392,7 +392,7 @@ public class SpecimenManager
     {
         List<AdditiveType> additiveTypes = getAdditiveTypes(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
         if (!additiveTypes.isEmpty())
-            return additiveTypes.get(0);
+            return additiveTypes.getFirst();
         return null;
     }
 
@@ -408,7 +408,7 @@ public class SpecimenManager
     {
         List<DerivativeType> derivativeTypes = getDerivativeTypes(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
         if (!derivativeTypes.isEmpty())
-            return derivativeTypes.get(0);
+            return derivativeTypes.getFirst();
         return null;
     }
 
@@ -444,7 +444,7 @@ public class SpecimenManager
             throw new IllegalStateException("Expected at least one vial to exactly match the specified global unique ID: " + globalUniqueId);
         }
         else
-            return matches.get(0);
+            return matches.getFirst();
     }
 
     /** Looks for any specimens that have the given id as a globalUniqueId  */
@@ -452,7 +452,7 @@ public class SpecimenManager
     {
         List<PrimaryType> primaryTypes = getPrimaryTypes(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId), null);
         if (!primaryTypes.isEmpty())
-            return primaryTypes.get(0);
+            return primaryTypes.getFirst();
         return null;
     }
 
@@ -529,7 +529,7 @@ public class SpecimenManager
         List<Vial> vials = getVials(container, user, filter);
         if (vials.isEmpty())
             return null;
-        return vials.get(0);
+        return vials.getFirst();
     }
 
     public void deleteSpecimen(@NotNull Vial vial, boolean clearCaches)
@@ -564,7 +564,7 @@ public class SpecimenManager
         TableInfo tableInfo = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
         SQLFragment sql = new SQLFragment("SELECT MAX(ExternalId) FROM ");
         sql.append(tableInfo);
-        return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Long.class).get(0);
+        return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Long.class).getFirst();
     }
 
     public String getFirstProcessedByInitials(List<SpecimenEvent> dateOrderedEvents)

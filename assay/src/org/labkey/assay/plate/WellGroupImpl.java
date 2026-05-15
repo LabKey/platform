@@ -145,8 +145,8 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
         if (_positions == null || _positions.isEmpty())
             return "";
         if (_positions.size() == 1)
-            return _positions.get(0).getDescription();
-        return _positions.get(0).getDescription() + "-" + _positions.get(_positions.size() - 1).getDescription();
+            return _positions.getFirst().getDescription();
+        return _positions.getFirst().getDescription() + "-" + _positions.getLast().getDescription();
     }
 
     @Override
@@ -189,7 +189,7 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
     {
         if (_positions.isEmpty())
             return null;
-        return _positions.get(0);
+        return _positions.getFirst();
     }
 
     /**
@@ -209,7 +209,7 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
             _overlappingGroups = new LinkedHashSet<>();
             for (Position position : getPositions())
             {
-                List<WellGroup> groups = _plate.getWellGroups(position);
+                List<? extends WellGroup> groups = _plate.getWellGroups(position);
                 for (WellGroup group : groups)
                 {
                     if (group != this)
@@ -313,7 +313,7 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
     {
         if (_plate == null && _plateId != null)
         {
-            _plate = (PlateImpl) PlateCache.getPlate(getContainer(), _plateId);
+            _plate = PlateCache.getPlate(getContainer(), _plateId);
         }
         return _plate;
     }
@@ -468,7 +468,7 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
                 Type.REPLICATE.equals(getType()));
         if (1 != dilutionDataRows.size())
             throw new IllegalStateException("Expected a single DilutionData row to calculate wellgroup stats, but found " + dilutionDataRows.size() + " rows");
-        _dilutionDataRow = dilutionDataRows.get(0);
+        _dilutionDataRow = dilutionDataRows.getFirst();
         _mean = _dilutionDataRow.getMean();
         _min = _dilutionDataRow.getMin();
         _max = _dilutionDataRow.getMax();

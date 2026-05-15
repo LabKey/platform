@@ -56,7 +56,7 @@
     {
         if (bean.urlExcelTemplates.size() == 1)
         {
-            Pair<String, String> p = bean.urlExcelTemplates.get(0);
+            Pair<String, String> p = bean.urlExcelTemplates.getFirst();
             %><%= button(p.first).href(p.second).usePost() %><br>&nbsp;<br><%
         }
         else

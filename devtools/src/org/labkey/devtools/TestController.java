@@ -19,12 +19,19 @@ package org.labkey.devtools;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.JsonInputLimit;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -32,12 +39,14 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpService;
+import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -52,6 +61,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -61,6 +71,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiService;
@@ -68,6 +79,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -395,11 +407,6 @@ public class TestController extends SpringActionController
             _enctype = "multipart/form-data";
         }
 
-        @Override
-        public boolean handlePost(SimpleForm simpleForm, BindException errors)
-        {
-            return false;
-        }
     }
 
 
@@ -798,21 +805,13 @@ public class TestController extends SpringActionController
         @Override
         public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
         {
-            Exception exception;
-            switch (form.getMessage())
+            Exception exception = switch (form.getMessage())
             {
-                case "ISE":
-                    exception = new IllegalStateException();
-                    break;
-                case "NPE":
-                    exception = new NullPointerException();
-                    break;
-                case "NPE2":
-                    exception = new NullPointerException();
-                    break;
-                default:
-                    throw new IllegalArgumentException(form.getMessage());
-            }
+                case "ISE" -> new IllegalStateException();
+                case "NPE" -> new NullPointerException();
+                case "NPE2" -> new NullPointerException();
+                default -> throw new IllegalArgumentException(form.getMessage());
+            };
             ExceptionUtil.decorateException(exception, ExceptionUtil.ExceptionInfo.ExtraMessage, "testing", true);
             throw exception;
         }
@@ -1404,4 +1403,93 @@ public class TestController extends SpringActionController
             }
         }
     }
+
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    @JsonInputLimit(50)
+    public static class TestJsonObjectInputLimitAction extends MutatingApiAction<SimpleApiJsonForm>
+    {
+        @Override
+        public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
+        {
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    @JsonInputLimit(50)
+    @Marshal(Marshaller.Jackson)
+    public static class TestJacksonInputLimitAction extends MutatingApiAction<TestJsonInputLimitForm>
+    {
+        @Override
+        public ApiResponse execute(TestJsonInputLimitForm form, BindException errors)
+        {
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    public static class TestJsonInputLimitForm
+    {
+        private String value;
+
+        public String getValue() { return value; }
+        public void setValue(String value) { this.value = value; }
+    }
+
+    public static class JsonInputLimitTest extends Assert
+    {
+        // 14 chars — well under the 50-char limit on the test actions
+        private static final String UNDER_LIMIT = "{\"value\":\"ok\"}";
+        // 62 chars — over the 50-char limit
+        private static final String OVER_LIMIT = "{\"value\":\"" + "x".repeat(50) + "\"}";
+        private static final Map<String, Object> JSON_HEADERS = Map.of("Content-Type", "application/json");
+
+        @Test
+        public void testJsonObjectInputLimitOk() throws Exception
+        {
+            MockHttpServletResponse response = ViewServlet.POST(
+                    new ActionURL(TestJsonObjectInputLimitAction.class, ContainerManager.getRoot()),
+                    TestContext.get().getUser(),
+                    JSON_HEADERS,
+                    UNDER_LIMIT
+            );
+            assertEquals("Expected 200 for request within limit", HttpServletResponse.SC_OK, response.getStatus());
+        }
+
+        @Test
+        public void testJsonObjectInputLimitExceeded() throws Exception
+        {
+            MockHttpServletResponse response = ViewServlet.POST(
+                    new ActionURL(TestJsonObjectInputLimitAction.class, ContainerManager.getRoot()),
+                    TestContext.get().getUser(),
+                    JSON_HEADERS,
+                    OVER_LIMIT
+            );
+            assertEquals("Expected 400 for request exceeding limit", HttpServletResponse.SC_BAD_REQUEST, response.getStatus());
+        }
+
+        @Test
+        public void testJacksonInputLimitOk() throws Exception
+        {
+            MockHttpServletResponse response = ViewServlet.POST(
+                    new ActionURL(TestJacksonInputLimitAction.class, ContainerManager.getRoot()),
+                    TestContext.get().getUser(),
+                    JSON_HEADERS,
+                    UNDER_LIMIT
+            );
+            assertEquals("Expected 200 for request within limit", HttpServletResponse.SC_OK, response.getStatus());
+        }
+
+        @Test
+        public void testJacksonInputLimitExceeded() throws Exception
+        {
+            MockHttpServletResponse response = ViewServlet.POST(
+                    new ActionURL(TestJacksonInputLimitAction.class, ContainerManager.getRoot()),
+                    TestContext.get().getUser(),
+                    JSON_HEADERS,
+                    OVER_LIMIT
+            );
+            assertEquals("Expected 400 for request exceeding limit", HttpServletResponse.SC_BAD_REQUEST, response.getStatus());
+        }
+    }
+
 }

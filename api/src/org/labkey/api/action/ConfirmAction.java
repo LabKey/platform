@@ -129,7 +129,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
     public abstract boolean handlePost(FORM form, BindException errors) throws Exception;
 
     @Override
-    public void validate(Object form, Errors errors)
+    public void validate(@NotNull Object form, @NotNull Errors errors)
     {
         validateCommand((FORM)form, errors);
     }

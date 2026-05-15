@@ -143,43 +143,28 @@ public class WorkbookContainerType implements ContainerType
     @Override
     public String getTitleFor(TitleContext context, Container currentContainer)
     {
-        switch (context)
+        return switch (context)
         {
-            case appBar:
-                return currentContainer.getTitle();
-            case parentInNav:
-                return currentContainer.getParent() != null ? currentContainer.getParent().getTitle() : currentContainer.getTitle();
-            case childInNav:
-                return currentContainer.getName();
-            case importTarget:
-                return currentContainer.getTitle();
-            default:
-                return currentContainer.getTitle();
-        }
+            case appBar -> currentContainer.getTitle();
+            case parentInNav ->
+                    currentContainer.getParent() != null ? currentContainer.getParent().getTitle() : currentContainer.getTitle();
+            case childInNav -> currentContainer.getName();
+            case importTarget -> currentContainer.getTitle();
+            default -> currentContainer.getTitle();
+        };
     }
 
     @Override
     public Container getContainerFor(DataType dataType, Container currentContainer)
     {
-        switch (dataType)
+        return switch (dataType)
         {
             //The intent is that outside of these specially supported actions, return the current container (parent otherwise)
             //Note: fileRoot has been deliberately removed to allow per-workbook override
-            case customQueryViews:
-            case domainDefinitions:
-            case dataspace:
-            case fileAdmin:
-            case navVisibility:
-            case permissions:
-            case properties:
-            case protocol:
-            case folderManagement:
-            case tabParent:
-            case sharedSchemaOwner:
-                return currentContainer.getParent();
-            default:
-                return currentContainer;
-        }
+            case customQueryViews, domainDefinitions, dataspace, fileAdmin, navVisibility, permissions, properties,
+                 protocol, folderManagement, tabParent, sharedSchemaOwner -> currentContainer.getParent();
+            default -> currentContainer;
+        };
     }
 
     @Override
@@ -303,7 +288,7 @@ public class WorkbookContainerType implements ContainerType
                 throw errors2;
             }
 
-            toInsertWb.forEach(x -> x.put("container", workbooks.get(0).getId()));  //store this for use downstream
+            toInsertWb.forEach(x -> x.put("container", workbooks.getFirst().getId()));  //store this for use downstream
 
             List<Map<String, Object>> allChildRows = new ArrayList<>();
             allChildRows.addAll(toInsert2);
@@ -311,7 +296,7 @@ public class WorkbookContainerType implements ContainerType
             validateRowsByContainer(usProject, childTable, allChildRows, primaryChildField);
 
             List<Map<String, Object>> wbRows = new ArrayList<>(allChildRows);
-            wbRows.removeIf(x -> !workbooks.get(0).getId().equals(x.get("container")));
+            wbRows.removeIf(x -> !workbooks.getFirst().getId().equals(x.get("container")));
             validateRowsByContainer(usWorkbook0, childTable, wbRows, primaryChildField);
 
             validateLookups(usProject, childTable, FieldKey.fromString(lookupField + "/" + parentField));
@@ -323,7 +308,7 @@ public class WorkbookContainerType implements ContainerType
             if (tiChild.getPkColumnNames().contains(primaryChildField))
             {
                 List<Map<String, Object>> duplicateKeyRows = new ArrayList<>();
-                duplicateKeyRows.add(createChildRow(workbooks.get(0), primaryChildField, "Row" + (i - 1), lookupField, null, extraRowValues));
+                duplicateKeyRows.add(createChildRow(workbooks.getFirst(), primaryChildField, "Row" + (i - 1), lookupField, null, extraRowValues));
                 BatchValidationException errors3 = new BatchValidationException();
                 usWorkbook0.getTable(childTable).getUpdateService().insertRows(_context.getUser(), usWorkbook0.getContainer(), duplicateKeyRows, errors3, Collections.emptyMap(), null);
                 if (!errors3.hasErrors())
@@ -331,7 +316,7 @@ public class WorkbookContainerType implements ContainerType
                     throw new Exception("This indicates the duplicate key insert was allowed");
                 }
 
-                assertThat("Unexpected error message.  Message was: " + errors3.getRowErrors().get(0).getMessage(), errors3.getRowErrors().get(0).getMessage(), containsString("duplicate key"));
+                assertThat("Unexpected error message.  Message was: " + errors3.getRowErrors().getFirst().getMessage(), errors3.getRowErrors().getFirst().getMessage(), containsString("duplicate key"));
             }
         }
 

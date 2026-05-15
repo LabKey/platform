@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
@@ -453,6 +454,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         DataIterator it = etl.getDataIterator(context);
 
+        if (null == it)
+            return 0;
+
         try
         {
             if (null != rows)
@@ -574,9 +578,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         // TODO optimize ArrayListMap?
         Set<String> colNames;
 
-        if (!rows.isEmpty() && rows.get(0) instanceof ArrayListMap)
+        if (!rows.isEmpty() && rows.getFirst() instanceof ArrayListMap)
         {
-            colNames = ((ArrayListMap)rows.get(0)).getFindMap().keySet();
+            colNames = ((ArrayListMap)rows.getFirst()).getFindMap().keySet();
         }
         else
         {
@@ -808,7 +812,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (rowsToUpdate.size() == 1)
             return true;
 
-        Set<String> keys = rowsToUpdate.get(0).keySet();
+        Set<String> keys = rowsToUpdate.getFirst().keySet();
         int keySize = keys.size();
 
         for (int i = 1 ; i < rowsToUpdate.size(); i ++)
@@ -901,6 +905,142 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             service.onActionComplete(container, user, (Long) configParameters.get(WorkflowService.WorkflowConfigs.ActionId));
 
         return result;
+    }
+
+    /**
+     * Hook called by {@link #updateRowsUsingPartitionedDIB} once per partition before that partition is processed.
+     * A partition is a maximal consecutive run of rows that all share the same set of column names (keys).
+     * <p>
+     * Subclasses can override to enforce invariants on a particular key-column combination — for example,
+     * requiring that certain columns always appear together. Throw a runtime exception to reject the partition.
+     *
+     * @param columns the set of column names present in the rows of the current partition
+     */
+    protected void validatePartitionedRowKeys(Collection<String> columns)
+    {
+        // do nothing
+    }
+
+    /**
+     * Updates a list of rows through the DataIteratorBuilder pipeline, automatically partitioning the input
+     * into consecutive groups that share the same set of column names (keys). Each partition is processed
+     * independently through {@link #_updateRowsUsingDIB}, allowing a single call to handle heterogeneous
+     * row maps (e.g. some rows keyed by RowId, others by Name) without requiring the caller to pre-split them.
+     * <p>
+     * Audit summary logging is suppressed for individual partitions and emitted once at the end.
+     * Cross-partition duplicate keys are detected and reported as errors.
+     * If any partition produces errors, a {@link DbScope.RetryPassthroughException} is thrown so that
+     * an enclosing {@code executeWithRetry()} block will not attempt to commit the transaction.
+     */
+    protected List<Map<String, Object>> updateRowsUsingPartitionedDIB(
+            DbScope.Transaction tx,
+            User user,
+            Container container,
+            List<Map<String, Object>> rows,
+            BatchValidationException errors,
+            @Nullable Map<Enum, Object> configParameters,
+            Map<String, Object> extraScriptContext
+    )
+    {
+        int index = 0;
+        int numPartitions = 0;
+        List<Map<String, Object>> ret = new ArrayList<>();
+
+        Set<Long> observedRowIds = new HashSet<>();
+        Set<String> observedNames = new CaseInsensitiveHashSet();
+
+        while (index < rows.size())
+        {
+            CaseInsensitiveHashSet rowKeys = new CaseInsensitiveHashSet(rows.get(index).keySet());
+
+            validatePartitionedRowKeys(rowKeys);
+
+            int nextIndex = index + 1;
+            while (nextIndex < rows.size() && rowKeys.equals(new CaseInsensitiveHashSet(rows.get(nextIndex).keySet())))
+                nextIndex++;
+
+            List<Map<String, Object>> rowsToProcess = rows.subList(index, nextIndex);
+            index = nextIndex;
+            numPartitions++;
+
+            DataIteratorContext context = getDataIteratorContext(errors, InsertOption.UPDATE, configParameters);
+
+            // skip audit summary for the partitions, we will perform it once at the end
+            context.putConfigParameter(ConfigParameters.SkipAuditSummary, true);
+
+            List<Map<String, Object>> subRet = _updateRowsUsingDIB(user, container, rowsToProcess, context, extraScriptContext);
+
+            // we need to throw if we don't want executeWithRetry() attempt commit()
+            if (context.getErrors().hasErrors())
+                throw new DbScope.RetryPassthroughException(context.getErrors());
+
+            if (subRet != null)
+            {
+                ret.addAll(subRet);
+
+                // Check if duplicate rows have been processed across the partitions
+                // Only start checking for duplicates after the first partition has been processed.
+                if (numPartitions > 1)
+                {
+                    // If we are on the second partition, then lazily check all previous rows, otherwise check only the current partition
+                    checkPartitionForDuplicates(numPartitions == 2 ? ret : subRet, observedRowIds, observedNames, errors);
+                }
+
+                if (errors.hasErrors())
+                    throw new DbScope.RetryPassthroughException(errors);
+            }
+        }
+
+        if (numPartitions > 1)
+        {
+            var auditEvent = tx.getAuditEvent();
+            if (auditEvent != null)
+                auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.DataIteratorPartitions, numPartitions);
+        }
+
+        _addSummaryAuditEvent(container, user, getDataIteratorContext(errors, InsertOption.UPDATE, configParameters), ret.size());
+
+        return ret;
+    }
+
+    /**
+     * Identifies the column names used to detect duplicate keys across partitions in
+     * {@link #updateRowsUsingPartitionedDIB}. Return {@code null} for either field to skip that check.
+     * The base implementation returns {@code (null, null)}, disabling duplicate detection.
+     * Subclasses whose tables support partitioned updates should override with the appropriate column names.
+     */
+    public record PartitionKeyColumns(@Nullable String numericKey, @Nullable String stringKey) {}
+
+    protected PartitionKeyColumns getPartitionKeyColumns()
+    {
+        return new PartitionKeyColumns(null, null);
+    }
+
+    private void checkPartitionForDuplicates(List<Map<String, Object>> partitionRows, Set<Long> globalRowIds, Set<String> globalNames, BatchValidationException errors)
+    {
+        PartitionKeyColumns keys = getPartitionKeyColumns();
+        for (Map<String, Object> row : partitionRows)
+        {
+            if (keys.numericKey() != null)
+            {
+                Long rowId = MapUtils.getLong(row, keys.numericKey());
+                if (rowId != null && !globalRowIds.add(rowId))
+                {
+                    errors.addRowError(new ValidationException("Duplicate key provided: " + rowId));
+                    return;
+                }
+            }
+
+            if (keys.stringKey() != null)
+            {
+                Object nameObj = row.get(keys.stringKey());
+                if (nameObj != null && !globalNames.add(nameObj.toString()))
+                {
+                    errors.addRowError(new ValidationException("Duplicate key provided: " + nameObj));
+                    return;
+                }
+            }
+        }
     }
 
     protected void checkDuplicateUpdate(Object pkVals) throws ValidationException
@@ -1402,7 +1542,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             int count=0;
             try (var tx = rTableInfo.getSchema().getScope().ensureTransaction())
             {
-                var ret = qus.mergeRows(user, c, MapDataIterator.of(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
+                var ret = qus.mergeRows(user, c, MapDataIterator.of(mergeRows.getFirst().keySet(), mergeRows), errors, null, null);
                 if (!errors.hasErrors())
                 {
                     tx.commit();
@@ -1425,7 +1565,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             mergeRows = new ArrayList<>();
             mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
             mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-UP-2"));
-            qus.mergeRows(user, c, MapDataIterator.of(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
+            qus.mergeRows(user, c, MapDataIterator.of(mergeRows.getFirst().keySet(), mergeRows), errors, null, null);
             assertTrue(errors.hasErrors());
             assertTrue("Duplicate key error: " + errors.getMessage(), errors.getMessage().contains("Duplicate key provided: 2"));
         }
@@ -1450,7 +1590,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP"));
             DataIteratorContext context = new DataIteratorContext();
             context.setInsertOption(InsertOption.UPDATE);
-            var count = qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
+            var count = qus.loadRows(user, c, MapDataIterator.of(updateRows.getFirst().keySet(), updateRows), context, null);
             assertFalse(context.getErrors().hasErrors());
             assertEquals(1, count);
             var rows = getRows();
@@ -1463,7 +1603,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             updateRows = new ArrayList<>();
             updateRows.add(CaseInsensitiveHashMap.of(pkName,123,colName,"NEW"));
             updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
-            qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
+            qus.loadRows(user, c, MapDataIterator.of(updateRows.getFirst().keySet(), updateRows), context, null);
             assertTrue(context.getErrors().hasErrors());
 
             // Issue 52728: update should fail if duplicate key is provide
@@ -1474,7 +1614,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             // use DIB
             context = new DataIteratorContext();
             context.setInsertOption(InsertOption.UPDATE);
-            qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
+            qus.loadRows(user, c, MapDataIterator.of(updateRows.getFirst().keySet(), updateRows), context, null);
             assertTrue(context.getErrors().hasErrors());
             assertTrue("Duplicate key error: " + context.getErrors().getMessage(), context.getErrors().getMessage().contains("Duplicate key provided: 2"));
 
@@ -1515,7 +1655,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             mergeRows.add(CaseInsensitiveHashMap.of(pkName,3,colName,"THREE"));
             DataIteratorContext context = new DataIteratorContext();
             context.setInsertOption(InsertOption.REPLACE);
-            var count = qus.loadRows(user, c, MapDataIterator.of(mergeRows.get(0).keySet(), mergeRows), context, null);
+            var count = qus.loadRows(user, c, MapDataIterator.of(mergeRows.getFirst().keySet(), mergeRows), context, null);
             assertFalse(context.getErrors().hasErrors());
             assertEquals(2, count);
             var rows = getRows();

@@ -48,7 +48,7 @@ public class SpecimenReportWebPartFactory extends BaseWebPartFactory
         Set<String> categories = bean.getCategories();
 
         // First element of first category is the default (should be "TypeSummary")
-        SpecimenVisitReportParameters factory = bean.getFactories(categories.iterator().next()).get(0);
+        SpecimenVisitReportParameters factory = bean.getFactories(categories.iterator().next()).getFirst();
         assert "TypeSummary".equals(factory.getReportType());
 
         if (null == name)

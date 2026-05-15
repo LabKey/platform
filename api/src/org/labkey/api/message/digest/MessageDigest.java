@@ -35,7 +35,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -177,7 +176,7 @@ public abstract class MessageDigest
             {
                 JobDataMap map = context.getJobDetail().getJobDataMap();
                 MessageDigest digest = (MessageDigest)map.get(MESSAGE_DIGEST_KEY);
-                _log.debug("Sending message digest for " + digest.getName());
+                _log.debug("Sending message digest for {}", digest.getName());
                 digest.sendMessageDigest();
             }
             catch(Exception e)

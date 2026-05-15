@@ -105,7 +105,7 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
         return columns;
     }
 
-    private static void writeRow(Map<String, Object> row, List<String> columns, PrintWriter pw, TSVWriter tsvWriter) throws IOException, BatchValidationException
+    private static void writeRow(Map<String, Object> row, List<String> columns, PrintWriter pw, TSVWriter tsvWriter) throws IOException
     {
         String sep;
         sep = "";

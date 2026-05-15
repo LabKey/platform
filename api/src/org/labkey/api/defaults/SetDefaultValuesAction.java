@@ -16,7 +16,6 @@
 package org.labkey.api.defaults;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -337,7 +336,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
             else
                 overrideHtml.append("These values override defaults set in the following folder:");
             overrideHtml.unsafeAppend("</span><br>");
-            Container container = overridees.get(overridees.size() - 1);
+            Container container = overridees.getLast();
             overrideHtml.append(editURL(container, domainIdForm));
         }
         List<Container> overriders = DefaultValueService.get().getDefaultValueOverriders(domainIdForm.getContainer(), domain);

@@ -274,7 +274,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                 if (null == ptidColumn)
                     ptidColumn = in;
                 else
-                    LOG.error("More than one ptid column found: " + ptidColumn.getName() + " and " + in.getName());
+                    LOG.error("More than one ptid column found: {} and {}", ptidColumn.getName(), in.getName());
             }
 
             if (in.getPropertyURI().equals(sequenceURI))
@@ -282,7 +282,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                 if (null == sequenceColumn)
                     sequenceColumn = in;
                 else
-                    LOG.error("More than one sequence number column found: " + sequenceColumn.getName() + " and " + in.getName());
+                    LOG.error("More than one sequence number column found: {} and {}", sequenceColumn.getName(), in.getName());
             }
 
             if (in.getPropertyURI().equals(qcStateURI))
@@ -290,7 +290,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                 if (null == qcStateColumn)
                     qcStateColumn = in;
                 else
-                    LOG.error("More than one qc state column found: " + qcStateColumn.getName() + " and " + in.getName());
+                    LOG.error("More than one qc state column found: {} and {}", qcStateColumn.getName(), in.getName());
             }
         }
 

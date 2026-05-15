@@ -396,7 +396,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         }
         catch (ValidationException e)
         {
-            e.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), newRows.get(0), 0);
+            e.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), newRows.getFirst(), 0);
             errors.addRowError(e);
             throw errors;
         }
@@ -516,7 +516,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         ArrayList<Integer> counts = new SqlSelector(getQueryTable().getSchema(), sql).getArrayList(Integer.class);
         if (counts.size() > 1)
             throw new IllegalStateException("Expected one and only one count of rows.");
-        else if (!counts.isEmpty() && counts.get(0) != 0)
+        else if (!counts.isEmpty() && counts.getFirst() != 0)
             throw new ValidationException("Specimen may not be edited when it's in a non-final request.");
     }
 
@@ -529,7 +529,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         ArrayList<Integer> counts = new SqlSelector(getQueryTable().getSchema(), sql).getArrayList(Integer.class);
         if (counts.size() > 1)
             throw new ValidationException("Expected one and only one count of rows.");
-        else if (!counts.isEmpty() && counts.get(0) != 0)
+        else if (!counts.isEmpty() && counts.getFirst() != 0)
             throw new ValidationException("Specimen may not be deleted because it has been used in a request.");
     }
 

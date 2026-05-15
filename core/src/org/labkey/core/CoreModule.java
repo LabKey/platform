@@ -253,6 +253,7 @@ import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
+import org.labkey.core.login.LoginAttemptDisableLoginProvider;
 import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
@@ -275,6 +276,7 @@ import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.PostgresTableSizesTable;
 import org.labkey.core.query.PostgresUserSchema;
+import org.labkey.core.query.ReportsTable;
 import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
@@ -446,14 +448,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("notification", NotificationController.class);
         addController("product", ProductController.class);
 
+        WarningService.setInstance(new WarningServiceImpl());
+
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
         AttachmentService.setInstance(new AttachmentServiceImpl());
         AnalyticsService.setInstance(new AnalyticsServiceImpl());
         RhinoService.register();
         CacheManager.addListener(RhinoService::clearCaches);
         NotificationService.setInstance(NotificationServiceImpl.getInstance());
-
-        WarningService.setInstance(new WarningServiceImpl());
 
         ViewService.setInstance(ViewServiceImpl.getInstance());
         OptionalFeatureService.setInstance(new OptionalFeatureServiceImpl());
@@ -975,6 +977,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
         FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
 
+        AuthenticationManager.registerProvider(new LoginAttemptDisableLoginProvider());
         AnalyticsServiceImpl.get().resetCSP();
 
         if (moduleContext.isNewInstall() && ModuleLoader.getInstance().shouldInsertData())
@@ -1464,7 +1467,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             SqlScriptController.TestCase.class,
             TableViewFormTestCase.class,
             UnknownSchemasTest.class,
-            UserController.TestCase.class
+            UserController.TestCase.class,
+            ReportsTable.TestCase.class
         );
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());
@@ -1684,7 +1688,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 // using guest user since the server startup doesn't have a true user (this will be used for audit events)
                 ContainerManager.getHomeContainer().setFolderType(folderType, User.guest);
             else
-                LOG.error("Unable to find folder type for home project during server startup: " + folderTypeEntry.getValue());
+                LOG.error("Unable to find folder type for home project during server startup: {}", folderTypeEntry.getValue());
         }
 
         StartupPropertyEntry resetPermissionsEntry = props.get(homeProjectResetPermissions);

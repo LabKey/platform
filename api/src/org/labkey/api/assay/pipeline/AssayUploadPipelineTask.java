@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.util.FileType;
 
@@ -23,7 +22,7 @@ public class AssayUploadPipelineTask extends PipelineJob.Task<AssayUploadPipelin
     }
 
     @Override
-    public @NotNull RecordedActionSet run() throws PipelineJobException
+    public @NotNull RecordedActionSet run()
     {
         ((AssayUploadPipelineJob<?>)getJob()).doWork();
         return new RecordedActionSet();
