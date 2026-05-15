@@ -421,7 +421,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     protected void init()
     {
         SecretServiceImpl secretService = new SecretServiceImpl();
-        secretService.handleStartupProperties();
         SecretService.setInstance(secretService);
         ContextListener.addShutdownListener(ShutdownListener.of("SecretService", null, secretService::shutdown));
 
@@ -973,6 +972,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         checkForMissingDbViews();
 
+        ((SecretServiceImpl)SecretService.get()).handleStartupProperties();
         ProductConfiguration.handleStartupProperties();
 
         // This listener deletes all properties; make sure it executes after most of the other listeners

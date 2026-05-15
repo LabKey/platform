@@ -1,5 +1,6 @@
 package org.labkey.core.secrets;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,10 +15,7 @@ import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -31,18 +29,18 @@ public class SecretServiceImpl implements SecretService
 
     // Secrets loaded from startup properties / environment variables
     private final Map<String, String> _startupSecrets = new ConcurrentHashMap<>();
-    // Names of all registered SecretProperty instances (for documentation and env filtering)
-    private final Set<String> _registeredNames = Collections.synchronizedSet(new HashSet<>());
+    // Registered SecretProperty instances keyed by property name (for documentation and env filtering)
+    private final Map<String, SecretProperty> _registeredSecrets = new ConcurrentHashMap<>();
 
     private volatile ExternalSecretProvider _externalProvider = null;
 
-    // Refresh timer — used when an ExternalSecretProvider is registered
-    private final ScheduledExecutorService _scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread t = new Thread(r, "SecretService-refresh");
-        t.setDaemon(true);
-        return t;
-    });
-    private volatile ScheduledFuture<?> _refreshFuture = null;
+//    // Refresh timer — used when an ExternalSecretProvider is registered
+//    private final ScheduledExecutorService _scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+//        Thread t = new Thread(r, "SecretService-refresh");
+//        t.setDaemon(true);
+//        return t;
+//    });
+//    private volatile ScheduledFuture<?> _refreshFuture = null;
 
     /**
      * Register a LenientStartupPropertyHandler to capture all "secret.*" entries from
@@ -58,6 +56,12 @@ public class SecretServiceImpl implements SecretService
                 public void handle(Collection<StartupPropertyEntry> entries)
                 {
                     entries.forEach(entry -> _startupSecrets.put(entry.getName(), entry.getValue()));
+                    for (var name : _registeredSecrets.keySet())
+                    {
+                        var s = System.getenv(name);
+                        if (StringUtils.isNotBlank(s))
+                            _startupSecrets.put(name,s);
+                    }
                 }
             });
     }
@@ -65,13 +69,16 @@ public class SecretServiceImpl implements SecretService
     @Override
     public void register(@NotNull SecretProperty property)
     {
-        _registeredNames.add(property.getPropertyName());
+        _registeredSecrets.put(property.getPropertyName(), property);
     }
 
     @Override
     public @Nullable String getSecret(@NotNull SecretProperty property)
     {
         String name = property.getPropertyName();
+        var registered = _registeredSecrets.get(name);
+        if (registered != property)
+            return null;
 
         // External provider (e.g., SSM) has highest priority
         ExternalSecretProvider provider = _externalProvider;
@@ -95,28 +102,28 @@ public class SecretServiceImpl implements SecretService
     public void setExternalProvider(@NotNull ExternalSecretProvider provider)
     {
         _externalProvider = provider;
-        scheduleRefresh();
+//        scheduleRefresh();
     }
 
     /** Cancel the refresh timer on server shutdown. */
     public void shutdown()
     {
-        if (_refreshFuture != null)
-            _refreshFuture.cancel(false);
-        _scheduler.shutdown();
+//        if (_refreshFuture != null)
+//            _refreshFuture.cancel(false);
+//        _scheduler.shutdown();
     }
 
-    private void scheduleRefresh()
-    {
-        if (_refreshFuture != null)
-            _refreshFuture.cancel(false);
-
-        _refreshFuture = _scheduler.scheduleAtFixedRate(() -> {
-            ExternalSecretProvider p = _externalProvider;
-            if (p != null)
-                p.refreshAll(Collections.unmodifiableSet(_registeredNames));
-        }, 5, 5, TimeUnit.MINUTES);
-    }
+//    private void scheduleRefresh()
+//    {
+//        if (_refreshFuture != null)
+//            _refreshFuture.cancel(false);
+//
+//        _refreshFuture = _scheduler.scheduleAtFixedRate(() -> {
+//            ExternalSecretProvider p = _externalProvider;
+//            if (p != null)
+//                p.refreshAll(_registeredSecrets.keySet());
+//        }, 5, 5, TimeUnit.MINUTES);
+//    }
 
     // Singleton SecretProperty used as the documentation entry for the "secret" scope on the
     // Startup Properties admin page. The scope name is "secret" and the property name is "*"
