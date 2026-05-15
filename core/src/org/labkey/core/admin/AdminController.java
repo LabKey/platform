@@ -3396,7 +3396,14 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView<>("/org/labkey/core/admin/properties.jsp", System.getenv());
+            Map<String, String> env = new LinkedHashMap<>(System.getenv());
+            env.replaceAll((name, value) -> {
+                String lc = name.toLowerCase();
+                if (lc.contains("secret") || lc.contains("password"))
+                    return "[REDACTED]";
+                return value;
+            });
+            return new JspView<>("/org/labkey/core/admin/properties.jsp", env);
         }
 
         @Override

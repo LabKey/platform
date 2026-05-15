@@ -158,6 +158,7 @@ import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
 import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
+import org.labkey.api.secrets.SecretService;
 import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -295,6 +296,7 @@ import org.labkey.core.statistics.SummaryStatisticRegistryImpl;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.LimitActiveUsersSettings;
 import org.labkey.core.user.UserController;
+import org.labkey.core.secrets.SecretServiceImpl;
 import org.labkey.core.vcs.VcsServiceImpl;
 import org.labkey.core.view.ShortURLServiceImpl;
 import org.labkey.core.view.TableViewFormTestCase;
@@ -418,6 +420,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     protected void init()
     {
+        SecretServiceImpl secretService = new SecretServiceImpl();
+        secretService.handleStartupProperties();
+        SecretService.setInstance(secretService);
+        ContextListener.addShutdownListener(ShutdownListener.of("SecretService", null, secretService::shutdown));
+
         ContainerService.setInstance(new ContainerServiceImpl());
         FolderSerializationRegistry.setInstance(new FolderSerializationRegistryImpl());
         ExternalToolsViewService.setInstance(new ExternalToolsViewServiceImpl());
@@ -1495,6 +1502,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             OutOfRangeDisplayColumn.TestCase.class,
             PostgreSqlVersion.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,
+            SecretServiceImpl.TestCase.class,
             StatsServiceImpl.TestCase.class,
 
 

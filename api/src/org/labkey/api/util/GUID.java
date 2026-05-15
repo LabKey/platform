@@ -126,7 +126,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
 
         try
         {
-            ProcessBuilder cmd = new ProcessBuilder("ipconfig.exe", "/all");
+            LabKeyProcessBuilder cmd = new LabKeyProcessBuilder("ipconfig.exe", "/all");
             cmd.redirectErrorStream(true);
             p = cmd.start();
         }
@@ -135,7 +135,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
         {
             try
             {
-                ProcessBuilder cmd = new ProcessBuilder("ifconfig", "-a");
+                LabKeyProcessBuilder cmd = new LabKeyProcessBuilder("ifconfig", "-a");
                 cmd.redirectErrorStream(true);
                 p = cmd.start();
             }
