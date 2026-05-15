@@ -102,6 +102,12 @@ public class SecretServiceImpl implements SecretService
     }
 
     @Override
+    public boolean isRegisteredSecret(@NotNull String name)
+    {
+        return _registeredSecrets.containsKey(name);
+    }
+
+    @Override
     public void setExternalProvider(@NotNull ExternalSecretProvider provider)
     {
         _externalProvider = provider;
@@ -157,10 +163,22 @@ public class SecretServiceImpl implements SecretService
         }
 
         @Test
-        public void testMissingSecret()
+        public void testUnregisteredSecretReturnsNull()
+        {
+            // getSecret() requires the same instance passed to register(); a fresh instance with
+            // the same name must not be able to retrieve a secret it didn't declare.
+            SecretServiceImpl svc = new SecretServiceImpl();
+            SecretProperty prop = new SecretProperty("some.KEY");
+            svc._startupSecrets.put("some.KEY", "value");
+            assertNull("unregistered property must not retrieve a secret", svc.getSecret(prop));
+        }
+
+        @Test
+        public void testRegisteredSecretWithNoValueReturnsNull()
         {
             SecretServiceImpl svc = new SecretServiceImpl();
             SecretProperty prop = new SecretProperty("nonexistent.KEY");
+            svc.register(prop);
             assertNull(svc.getSecret(prop));
         }
 
@@ -183,6 +201,7 @@ public class SecretServiceImpl implements SecretService
             });
 
             SecretProperty prop = new SecretProperty("my.KEY");
+            svc.register(prop);
             assertEquals("from-external", svc.getSecret(prop));
             svc.shutdown();
         }

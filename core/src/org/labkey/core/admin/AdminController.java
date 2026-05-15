@@ -188,6 +188,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.secrets.SecretService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
@@ -3396,10 +3397,11 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
+            SecretService secrets = SecretService.get();
             Map<String, String> env = new LinkedHashMap<>(System.getenv());
             env.replaceAll((name, value) -> {
                 String lc = name.toLowerCase();
-                if (lc.contains("secret") || lc.contains("password"))
+                if (lc.contains("secret") || lc.contains("password") || secrets.isRegisteredSecret(name))
                     return "[REDACTED]";
                 return value;
             });

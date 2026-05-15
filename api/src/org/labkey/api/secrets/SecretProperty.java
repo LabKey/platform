@@ -8,7 +8,8 @@ import org.labkey.api.settings.StartupProperty;
  * {@link SecretService#getSecret}.
  *
  * Startup property file convention: {@code secret.<propertyName>=<value>}
- * Environment variable convention:  {@code labkey.prop.secret.<propertyName>=<value>}
+ * Java property convention:  {@code -Plabkey.prop.secret.<propertyName>=<value>}
+ * Environment variable convention: {@code export <propertyName>=<value>}
  */
 public class SecretProperty implements StartupProperty
 {

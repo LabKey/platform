@@ -43,8 +43,17 @@ public interface SecretService
     /**
      * Retrieve the value of a secret. Returns {@code null} if the secret has not been
      * configured in any source. Never logs or caches the returned value.
+     *
+     * <p><strong>Identity contract:</strong> the {@code property} argument must be the exact
+     * {@code static final} instance that was passed to {@link #register}. A freshly constructed
+     * {@code new SecretProperty("SOME_KEY")} will always return {@code null}, even if a secret
+     * with that name is configured. This prevents unregistered callers from reading secrets
+     * they did not declare.
      */
     @Nullable String getSecret(@NotNull SecretProperty property);
+
+    /** Returns true if the given property name has been registered via {@link #register}. */
+    boolean isRegisteredSecret(@NotNull String name);
 
     /**
      * Register an {@link ExternalSecretProvider} (e.g., AWS SSM). The provider is

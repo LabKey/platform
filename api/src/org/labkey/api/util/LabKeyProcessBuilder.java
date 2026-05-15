@@ -87,10 +87,10 @@ public class LabKeyProcessBuilder
     private void sanitizeEnvironment()
     {
         SecretService secrets = ServiceRegistry.get().getService(SecretService.class);
-
-        _pb.environment().keySet().removeIf(name ->
-            name.toLowerCase().contains("secret") ||
-            name.toLowerCase().contains("password")
-        );
+        _pb.environment().keySet().removeIf(name -> {
+            String lc = name.toLowerCase();
+            return lc.contains("secret") || lc.contains("password") ||
+                   (secrets != null && secrets.isRegisteredSecret(name));
+        });
     }
 }
