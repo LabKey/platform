@@ -2253,7 +2253,7 @@ boxPlot.render();
             },
             yLeft: {
                 scaleType: 'continuous',
-                domain: config.properties.yAxisDomain,
+                domain: config.properties.yZoomDomain || config.properties.yAxisDomain,
                 trans: yAxisScaleOverride || config.properties.yAxisScale || 'linear',
                 tickFormat: function(val) {
                     return LABKEY.vis.isValid(val) && (val > 100000 || val < -100000) ? val.toExponential() : val;
