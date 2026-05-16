@@ -1,6 +1,5 @@
 package org.labkey.api.mcp;
 
-
 import io.modelcontextprotocol.server.McpServerFeatures;
 import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.Logger;
@@ -43,20 +42,20 @@ import java.util.function.Supplier;
 ///     permission annotation is required, otherwise your tool will not be registered.**
 /// 4.  Add `ToolContext` as the first parameter to the method
 /// 5.  Add additional required or optional parameters to the method signature, as needed. Note that "required" is the
-///     default. Again here, the parameter descriptions are very important. Provide examples of parameter values.
+///     default. Again, here, the parameter descriptions are very important. Provide examples of parameter values.
 /// 6.  Use the helper method `getContext(ToolContext)` to retrieve the current `Container` and `User`
 /// 7.  Use the helper method `getUser(ToolContext)` in the rare cases where you need just a `User`
 /// 8.  Perform additional permissions checking (beyond what the annotations offer), where appropriate
 /// 9.  Filter all results to the current container, of course
 /// 10. For any error conditions, throw exceptions with detailed information. These will get translated into appropriate
-///     failure responses and the LLM client will attempt to correct any problems (hopefully).
+///     failure responses, and the LLM client will attempt to correct any problems (hopefully).
 /// 11. For success cases, return a String with a message or JSON content, for example, `JSONObject.toString()`. Spring
 ///     has some limited ability to convert other objects into JSON strings, but we haven't experimented with that. See
 ///     `DefaultToolCallResultConverter` and the ability to provide a custom result converter via the `@Tool` annotation.
 ///
 /// At registration time, the framework will:
 /// - Ensure all tools are annotated for permissions
-/// - Ensure there aren't multiple tools with the same name
+/// - Ensure there are not multiple tools with the same name
 ///
 /// On every tool request, before invoking any tool code, the framework will:
 /// - Authenticate the user or provide a guest user
@@ -88,7 +87,7 @@ public interface McpService extends ToolCallbackProvider
     {
         default ContainerUser getContext(ToolContext toolContext)
         {
-            User user = (User)toolContext.getContext().get("user");
+            User user = getUser(toolContext);
             Container container = (Container)toolContext.getContext().get("container");
             if (container == null)
                 throw new McpException("No container path is set. Ask the user which container/folder they want to use (you can call listContainers to show available options), then call setContainer before retrying.");
@@ -103,7 +102,7 @@ public interface McpService extends ToolCallbackProvider
         // Every MCP resource should call this on every invocation
         default void incrementResourceRequestCount(String resource)
         {
-            if (!OptionalFeatureService.get().isFeatureEnabled(ENABLE_MCP_SERVER_FLAG))
+            if (!get().isEnabled())
                 throw new RuntimeException("The MCP server is not enabled for external requests. Consider toggling the experimental feature flag.");
 
             get().incrementResourceRequestCount(resource);
@@ -121,6 +120,11 @@ public interface McpService extends ToolCallbackProvider
     static void setInstance(McpService service)
     {
         ServiceRegistry.get().registerService(McpService.class, service);
+    }
+
+    default boolean isEnabled()
+    {
+        return OptionalFeatureService.get().isFeatureEnabled(ENABLE_MCP_SERVER_FLAG);
     }
 
     boolean isReady();
@@ -153,22 +157,22 @@ public interface McpService extends ToolCallbackProvider
     @Override
     ToolCallback @NotNull [] getToolCallbacks();
 
-    default ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
+    default ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier)
     {
-        return getChat(session, agentName, systemPromptSupplier, true);
+        return getChat(session, conversationName, systemPromptSupplier, true);
     }
 
     void saveSessionContainer(ToolContext context, Container container);
 
     void incrementResourceRequestCount(String resource);
 
-    ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier, boolean createIfNotExists);
+    ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier, boolean createIfNotExists);
 
     void close(HttpSession session, ChatClient chat);
 
     record MessageResponse(String contentType, String text, HtmlString html) {}
 
-    /** get consolidated response (good for many text oriented agents/use-cases) */
+    /** get a consolidated response (good for many text-oriented agents/use-cases) */
     MessageResponse sendMessage(ChatClient chat, String message);
 
     /** get individual response parts, useful for agents that generate SQL or programmatic responses */
