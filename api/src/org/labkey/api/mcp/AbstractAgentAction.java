@@ -32,6 +32,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
 public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnlyApiAction<F>
 {
     private static final int MAX_ISSUED_CONVERSATION_IDS = 16;
+    private static final int MAX_PROMPT_CHAR_LENGTH = 4_000;
 
     protected GUID conversationId;
 
@@ -69,6 +70,10 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
     @Override
     public void validateForm(F form, Errors errors)
     {
+        String prompt = form.getPrompt();
+        if (prompt != null && prompt.length() > MAX_PROMPT_CHAR_LENGTH)
+            errors.rejectValue("prompt", ERROR_GENERIC, "Prompt cannot exceed " + MAX_PROMPT_CHAR_LENGTH + " characters.");
+
         // Only honor a client-supplied conversationId if this agent previously issued this session that
         // id. Otherwise, generate a fresh one. This prevents a same-session caller from splicing into
         // another conversation by guessing or replaying a GUID.
