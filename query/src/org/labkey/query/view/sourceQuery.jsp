@@ -388,10 +388,15 @@
             addChatItem(chatItem);
         }
 
+        let firstChat = true;
+        let conversationId;
+
         async function queryAgent(prompt) {
             return new Promise((resolve, reject) => {
                 LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('query', 'queryagent.api', undefined, { prompt: prompt }),
+                    url: LABKEY.ActionURL.buildURL('query', 'queryAgent.api'),
+                    method: 'POST',
+                    jsonData: { conversationId, prompt },
                     success: LABKEY.Utils.getCallbackWrapper(response => {
                         resolve(response);
                     }),
@@ -401,8 +406,6 @@
                 });
             });
         }
-
-        let firstChat = true;
 
         function initialPrompt() {
             if (!firstChat)
@@ -445,6 +448,7 @@
                 startLoading();
 
                 const response = await queryAgent(initialPrompt() + prompt);
+                conversationId = response.conversationId;
 
                 if (response.sql) {
                     Ext4.getCmp('qep').getSourceEditor().setValue(response.sql);

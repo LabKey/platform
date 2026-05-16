@@ -117,7 +117,6 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcMetaDataSelector;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.JsonWriter;
-import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
@@ -135,7 +134,6 @@ import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -154,7 +152,6 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
@@ -287,6 +284,7 @@ import org.labkey.query.MetadataTableJSON;
 import org.labkey.query.ModuleCustomQueryDefinition;
 import org.labkey.query.ModuleCustomView;
 import org.labkey.query.QueryServiceImpl;
+import org.labkey.query.QueryServiceImpl.CalculatedColumnParseResult;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
@@ -383,10 +381,11 @@ public class QueryController extends SpringActionController
     );
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryController.class,
-        ValidateQueryAction.class,
-        ValidateQueriesAction.class,
-        GetSchemaQueryTreeAction.class,
+        ExpressionAssistantAgentAction.class,
         GetQueryDetailsAction.class,
+        GetSchemaQueryTreeAction.class,
+        ValidateQueriesAction.class,
+        ValidateQueryAction.class,
         ViewQuerySourceAction.class
     );
 
@@ -7840,11 +7839,14 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public static class ParseForm implements ApiJsonForm
+    public static class ParseForm extends PromptForm implements ApiJsonForm
     {
         String expression = "";
-        Map<FieldKey,JdbcType> columnMap = new HashMap<>();
+        Map<FieldKey, JdbcType> columnMap = new HashMap<>();
         List<FieldKey> phiColumns = new ArrayList<>();
+        JSONArray domainFields;
+        String fieldExpression;
+        String fieldError;
 
         Map<FieldKey, JdbcType> getColumnMap()
         {
@@ -7871,6 +7873,36 @@ public class QueryController extends SpringActionController
             this.phiColumns = phiColumns;
         }
 
+        public JSONArray getDomainFields()
+        {
+            return domainFields;
+        }
+
+        public void setDomainFields(JSONArray domainFields)
+        {
+            this.domainFields = domainFields;
+        }
+
+        public String getFieldExpression()
+        {
+            return fieldExpression;
+        }
+
+        public void setFieldExpression(String fieldExpression)
+        {
+            this.fieldExpression = fieldExpression;
+        }
+
+        public String getFieldError()
+        {
+            return fieldError;
+        }
+
+        public void setFieldError(String fieldError)
+        {
+            this.fieldError = fieldError;
+        }
+
         @Override
         public void bindJson(JSONObject json)
         {
@@ -7893,9 +7925,18 @@ public class QueryController extends SpringActionController
                     }
                 }
             }
+            if (json.has("prompt"))
+                setPrompt(json.getString("prompt"));
+            if (json.has("conversationId"))
+                setConversationId(json.getString("conversationId"));
+            if (json.has("domainFields"))
+                setDomainFields(json.getJSONArray("domainFields"));
+            if (json.has("fieldExpression"))
+                setFieldExpression(json.getString("fieldExpression"));
+            if (json.has("fieldError"))
+                setFieldError(json.getString("fieldError"));
         }
     }
-
 
     /**
      * Since this api purpose is to return parse errors, it does not generally return success:false.
@@ -7939,27 +7980,10 @@ public class QueryController extends SpringActionController
             if (errors.hasErrors())
                 return errors;
             JSONObject result = new JSONObject(Map.of("success",true));
-            var requiredColumns = new HashSet<FieldKey>();
-            JdbcType jdbcType = JdbcType.OTHER;
+            CalculatedColumnParseResult parsedResult = new CalculatedColumnParseResult(JdbcType.OTHER, Collections.emptySet());
             try
             {
-                var schema = DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()).getUserSchema("core");
-                var table = new VirtualTable<>(schema.getDbSchema(), "EXPR", schema){};
-                ColumnInfo calculatedCol = QueryServiceImpl.get().createQueryExpressionColumn(table, new FieldKey(null, "expr"), form.getExpression(), null);
-                Map<FieldKey,ColumnInfo> columns = new HashMap<>();
-                for (var entry : form.getColumnMap().entrySet())
-                {
-                    BaseColumnInfo entryCol = new BaseColumnInfo(entry.getKey(), entry.getValue());
-                    // bindQueryExpressionColumn has a check that restricts PHI columns from being used in expressions
-                    // so we need to set the PHI level to something other than NotPHI on these fake BaseColumnInfo objects
-                    if (form.getPhiColumns().contains(entry.getKey()))
-                        entryCol.setPHI(PHI.PHI);
-                    columns.put(entry.getKey(), entryCol);
-                    table.addColumn(entryCol);
-                }
-                // TODO: calculating jdbcType still uses calculatedCol.getParentTable().getColumns()
-                QueryServiceImpl.get().bindQueryExpressionColumn(calculatedCol, columns, false, requiredColumns);
-                jdbcType = calculatedCol.getJdbcType();
+                parsedResult = QueryServiceImpl.get().parseCalculatedColumn(getViewContext().getContainer(), getViewContext().getUser(), form.getExpression(), form.getColumnMap(), form.getPhiColumns());
             }
             catch (QueryException x)
             {
@@ -7969,10 +7993,10 @@ public class QueryController extends SpringActionController
             }
             finally
             {
-                if (!requiredColumns.isEmpty())
+                if (!parsedResult.requiredColumns().isEmpty())
                 {
                     JSONObject columnMap = new JSONObject();
-                    for (FieldKey fk : requiredColumns)
+                    for (FieldKey fk : parsedResult.requiredColumns())
                     {
                         JdbcType type = Objects.requireNonNullElse(form.getColumnMap().get(fk), JdbcType.OTHER);
                         columnMap.put(fk.toString(), type);
@@ -7980,7 +8004,7 @@ public class QueryController extends SpringActionController
                     result.put("columnMap", columnMap);
                 }
             }
-            result.put("jdbcType", jdbcType.name());
+            result.put("jdbcType", parsedResult.jdbcType().name());
             return result;
         }
     }
@@ -8302,7 +8326,34 @@ public class QueryController extends SpringActionController
         }
     }
 
-    
+    enum PromptResource
+    {
+        ExpressionAssistant,
+        LabKeySql;
+
+        String resource()
+        {
+            try
+            {
+                return IOUtils.resourceToString(resourceName(), null, QueryController.class.getClassLoader());
+            }
+            catch (IOException x)
+            {
+                throw new ConfigurationException("error loading resource", x);
+            }
+        }
+
+        String resourceName()
+        {
+            return "org/labkey/query/controllers/prompts/" + name() + ".md";
+        }
+
+        String uri()
+        {
+            return "resource://" + resourceName();
+        }
+    }
+
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override
@@ -8575,7 +8626,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-
     public static class SqlPromptForm extends PromptForm
     {
         public String schemaName;
@@ -8591,7 +8641,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(ReadPermission.class)
     @RequiresLogin
     public static class QueryAgentAction extends AbstractAgentAction<SqlPromptForm>
@@ -8601,6 +8650,7 @@ public class QueryController extends SpringActionController
         @Override
         public void validateForm(SqlPromptForm sqlPromptForm, Errors errors)
         {
+            super.validateForm(sqlPromptForm, errors);
             _form = sqlPromptForm;
         }
 
@@ -8614,7 +8664,7 @@ public class QueryController extends SpringActionController
         protected String getServicePrompt()
         {
             StringBuilder serviceMessage = new StringBuilder();
-            serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(getSQLHelp()).append("\n\n");
+            serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(PromptResource.LabKeySql.resource()).append("\n\n");
             serviceMessage.append("NOTE: Prefer using lookup syntax rather than JOIN where possible.\n");
             serviceMessage.append("NOTE: When helping generate SQL please don't use names of tables and columns from documentation examples. Always refer to the available tools for retrieving database metadata.\n");
 
@@ -8631,36 +8681,19 @@ public class QueryController extends SpringActionController
             return serviceMessage.toString();
         }
 
-        String getSQLHelp()
-        {
-            try
-            {
-                return IOUtils.resourceToString("org/labkey/query/controllers/LabKeySql.md", null, QueryController.class.getClassLoader());
-            }
-            catch (IOException x)
-            {
-                throw new ConfigurationException("error loading resource", x);
-            }
-        }
-
         @Override
         public Object execute(SqlPromptForm form, BindException errors) throws Exception
         {
             // save form here for context in getServicePrompt()
             _form = form;
 
-            try (var mcpPush = McpContext.withContext(getViewContext()))
+            try (var _ = McpContext.withContext(getViewContext()))
             {
                 String prompt = form.getPrompt();
 
-                String escapeResponse = handleEscape(prompt);
+                JSONObject escapeResponse = escapeResponse(prompt);
                 if (null != escapeResponse)
-                {
-                    return new JSONObject(Map.of(
-                            "contentType", "text/plain",
-                            "text", escapeResponse,
-                            "success", Boolean.TRUE));
-                }
+                    return escapeResponse;
 
                 // TODO when/how to do we reset or isolate different chat sessions, e.g. if two SQL windows are open concurrently?
                 ChatClient chatSession = getChat(true);
@@ -8731,11 +8764,7 @@ public class QueryController extends SpringActionController
             }
             catch (ClientException ex)
             {
-                var ret = new JSONObject(Map.of(
-                        "text", ex.getMessage(),
-                        "user", getViewContext().getUser().getName(),
-                        "success", Boolean.FALSE));
-                return ret;
+                return errorResponse(ex);
             }
         }
     }
@@ -8766,4 +8795,5 @@ public class QueryController extends SpringActionController
         }
         return new SqlResponse(html.getHtmlString(), sql);
     }
+
 }
