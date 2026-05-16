@@ -23,6 +23,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -109,6 +110,8 @@ public class AJAXDetailsDisplayColumn extends DataColumn
                 id(divId),
                 (DOM.Renderable) ret -> {
                     super.renderGridCellContents(ctx, out);
+                    // U+2060 WORD JOINER: prevents a line break between the name and the popup icon
+                    out.write(HtmlString.unsafe("\u2060"));
                     return ret;
                 }
             ).appendTo(out);
