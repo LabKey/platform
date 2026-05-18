@@ -15,7 +15,6 @@ import org.labkey.api.util.GUID;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,6 +26,7 @@ public abstract class Action extends CreatedModified
     public static final String ASSAY_TYPES_KEY = "assayTypes";
     public static final String NUM_PER_PARENT_KEY = "numPerParent";
     public static final String UPDATE_STATUS_KEY = "updateStatus";
+    public static final String REMOVE_FROM_STORAGE_KEY = "removeFromStorage";
     public static final String STATUS_KEY = "sampleStatus";
     protected Long _rowId;
     protected int _ordinal;
@@ -158,6 +158,11 @@ public abstract class Action extends CreatedModified
         return Collections.emptyList();
     }
 
+    private static boolean isSampleStatusKey(String key)
+    {
+        return key.equals(STATUS_KEY) || key.equals(UPDATE_STATUS_KEY) || key.equals(REMOVE_FROM_STORAGE_KEY);
+    }
+
     @JsonIgnore
     public List<String> validateInputParameters(int ordinal, Container container)
     {
@@ -201,19 +206,29 @@ public abstract class Action extends CreatedModified
         }
         else if (_type == WorkflowService.ActionType.AliquotSamples)
         {
+            List<String> messages = new ArrayList<>();
+
             if (_inputParameters == null || !_inputParameters.has(NUM_PER_PARENT_KEY))
-                return List.of(prefix + NUM_PER_PARENT_KEY + " is required for action of type " + _type + ".");
+                messages.add(prefix + NUM_PER_PARENT_KEY + " is required for action of type " + _type + ".");
             else
             {
                 try {
                     int numPerParent = _inputParameters.getInt(NUM_PER_PARENT_KEY);
                     if (numPerParent < 0)
-                        return List.of(prefix + NUM_PER_PARENT_KEY + " cannot be negative.");
+                        messages.add(prefix + NUM_PER_PARENT_KEY + " cannot be negative.");
                 }
                 catch (Exception e) {
-                    return List.of(prefix + NUM_PER_PARENT_KEY + " must be an integer.");
+                    messages.add(prefix + NUM_PER_PARENT_KEY + " must be an integer.");
                 }
             }
+
+            if (_inputParameters != null && (_inputParameters.has(UPDATE_STATUS_KEY) || _inputParameters.has(STATUS_KEY)))
+            {
+                List<String> statusMessages = validateStatus(container, prefix, true);
+                messages.addAll(statusMessages);
+            }
+
+            return messages;
         }
         else if (_type == WorkflowService.ActionType.DeriveSamples || _type == WorkflowService.ActionType.PoolSamples)
         {
@@ -225,7 +240,7 @@ public abstract class Action extends CreatedModified
             // sample type IDs and validate against those.
             List<String> sampleTypeIds = new ArrayList<>();
             _inputParameters.keys().forEachRemaining(id -> {
-                if (id.equals(UPDATE_STATUS_KEY) || id.equals(STATUS_KEY)) return;
+                if (isSampleStatusKey(id)) return;
                 sampleTypeIds.add(id);
             });
 
@@ -243,7 +258,7 @@ public abstract class Action extends CreatedModified
             for (String id : sampleTypeIds)
             {
                 // validated above
-                if (id.equals(UPDATE_STATUS_KEY) || id.equals(STATUS_KEY)) continue;
+                if (isSampleStatusKey(id)) continue;
 
                 try
                 {
