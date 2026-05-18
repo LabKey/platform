@@ -39,6 +39,7 @@ import java.util.Set;
 
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.id;
+import static org.labkey.api.util.DOM.Attribute.style;
 
 /**
  * Uses LABKEY.Ext.CalloutTip to provide additional details, summoned via AJAX
@@ -107,10 +108,10 @@ public class AJAXDetailsDisplayColumn extends DataColumn
             props.put("target", divId);
 
             SPAN(
-                id(divId),
+                id(divId).at(style, "display:inline-flex;flex-wrap:nowrap"),
                 (DOM.Renderable) ret -> {
                     super.renderGridCellContents(ctx, out);
-                    // U+2060 WORD JOINER: prevents a line break between the name and the popup icon
+                    // U+2060 WORD JOINER: belt-and-suspenders line-break prevention for non-CSS contexts
                     out.write(HtmlString.unsafe("\u2060"));
                     return ret;
                 }
