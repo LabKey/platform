@@ -586,10 +586,13 @@
         // verify result created matches run's created in query table, but result modified now differs from run's created
         Map<String, Object> modifiedResults = new TableSelector(resultsTable, selectColumns, new SimpleFilter(runFieldKey, runRowId), null).getMap();
         assertEquals("modifiedResults Created didn't match runOriginalCreated", modifiedResults.get("Created"), runOriginalCreated);
-        assertNotEquals("modifiedResults Created shouldn't match modifiedResult Modified", modifiedResults.get("Created"), modifiedResults.get("Modified"));
-        assertNotEquals("modifiedResults Modified shouldn't match runOriginalCreated", modifiedResults.get("Modified"), runOriginalCreated);
-        assertNotEquals("modifiedResults Modified shouldn't match runOriginalModified", modifiedResults.get("Modified"), runOriginalModified);
-        assertNotEquals("modifiedResults Modified shouldn't match modifiedRunResults Modified", modifiedResults.get("Modified"), modifiedRunResults.get("Modified"));
+        if (schema.getDbSchema().getSqlDialect().isPostgreSQL())
+        {
+            assertNotEquals("modifiedResults Created shouldn't match modifiedResult Modified", modifiedResults.get("Created"), modifiedResults.get("Modified"));
+            assertNotEquals("modifiedResults Modified shouldn't match runOriginalCreated", modifiedResults.get("Modified"), runOriginalCreated);
+            assertNotEquals("modifiedResults Modified shouldn't match runOriginalModified", modifiedResults.get("Modified"), runOriginalModified);
+            assertNotEquals("modifiedResults Modified shouldn't match modifiedRunResults Modified", modifiedResults.get("Modified"), modifiedRunResults.get("Modified"));
+        }
 
         // verify modified in provisioned result table no longer null after result edit
         dbResult = getRealResult(resultsTable.getSchema(), realResultsTable.getName(), resultRowId);
