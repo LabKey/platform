@@ -580,19 +580,16 @@
         updated.put("ResultProp", 200);
         updated.put("RowId", resultRowId);
         errors = new BatchValidationException();
-        Thread.sleep(5); // SQL Server timestamps aren't granular enough to guarantee different modified time
+        Thread.sleep(schema.getDbSchema().getSqlDialect().isSqlServer() ? 100 : 5); // SQL Server timestamps aren't granular enough to guarantee different modified time
         resultsQUS.updateRows(user, c, Collections.singletonList(updated), null, errors, null, null);
 
         // verify result created matches run's created in query table, but result modified now differs from run's created
         Map<String, Object> modifiedResults = new TableSelector(resultsTable, selectColumns, new SimpleFilter(runFieldKey, runRowId), null).getMap();
         assertEquals("modifiedResults Created didn't match runOriginalCreated", modifiedResults.get("Created"), runOriginalCreated);
-        if (schema.getDbSchema().getSqlDialect().isPostgreSQL())
-        {
-            assertNotEquals("modifiedResults Created shouldn't match modifiedResult Modified", modifiedResults.get("Created"), modifiedResults.get("Modified"));
-            assertNotEquals("modifiedResults Modified shouldn't match runOriginalCreated", modifiedResults.get("Modified"), runOriginalCreated);
-            assertNotEquals("modifiedResults Modified shouldn't match runOriginalModified", modifiedResults.get("Modified"), runOriginalModified);
-            assertNotEquals("modifiedResults Modified shouldn't match modifiedRunResults Modified", modifiedResults.get("Modified"), modifiedRunResults.get("Modified"));
-        }
+        assertNotEquals("modifiedResults Created shouldn't match modifiedResult Modified", modifiedResults.get("Created"), modifiedResults.get("Modified"));
+        assertNotEquals("modifiedResults Modified shouldn't match runOriginalCreated", modifiedResults.get("Modified"), runOriginalCreated);
+        assertNotEquals("modifiedResults Modified shouldn't match runOriginalModified", modifiedResults.get("Modified"), runOriginalModified);
+        assertNotEquals("modifiedResults Modified shouldn't match modifiedRunResults Modified", modifiedResults.get("Modified"), modifiedRunResults.get("Modified"));
 
         // verify modified in provisioned result table no longer null after result edit
         dbResult = getRealResult(resultsTable.getSchema(), realResultsTable.getName(), resultRowId);
