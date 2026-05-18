@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React, { ReactNode } from 'react';
+import React, { FC, ReactNode } from 'react';
 import { ActionURL, PermissionTypes, Security } from '@labkey/api';
 import {
     Alert,
-    LoadingSpinner,
-    ListDesignerPanels,
-    ListModel,
+    AppContexts,
+    BeforeUnload,
     fetchListDesign,
     getListIdFromDomainId,
-    BeforeUnload,
-    withServerContext,
+    ListDesignerPanels,
+    ListModel,
+    LoadingSpinner,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface Props {}
 
 interface State {
@@ -146,12 +145,16 @@ export class ListDesigner extends React.Component<Props, State> {
                 <ListDesignerPanels
                     initModel={model}
                     onCancel={this.onCancel}
-                    onComplete={this.onComplete}
                     onChange={this.onChange}
+                    onComplete={this.onComplete}
                 />
             </BeforeUnload>
         );
     }
 }
 
-export const App = withServerContext(ListDesigner);
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <ListDesigner />
+    </AppContexts>
+);
