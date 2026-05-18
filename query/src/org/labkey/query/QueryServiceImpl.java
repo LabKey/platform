@@ -44,6 +44,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.AuditConfigurable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
@@ -60,6 +61,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.Results;
@@ -73,6 +75,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpTable;
@@ -3047,6 +3050,40 @@ public class QueryServiceImpl implements QueryService
             calc.computeMetaData(columns);
     }
 
+    public record CalculatedColumnParseResult(JdbcType jdbcType, Set<FieldKey> requiredColumns) { }
+
+    public CalculatedColumnParseResult parseCalculatedColumn(
+        Container container,
+        User user,
+        String expression,
+        Map<FieldKey, JdbcType> columnMap,
+        @Nullable List<FieldKey> phiColumns
+    ) throws QueryException
+    {
+        var schema = DefaultSchema.get(user, container).getUserSchema("core");
+        var table = new VirtualTable<>(schema.getDbSchema(), "EXPR", schema){};
+        ColumnInfo calculatedCol = createQueryExpressionColumn(table, new FieldKey(null, "expr"), expression, null);
+        Map<FieldKey, ColumnInfo> columns = new HashMap<>();
+
+        for (var entry : columnMap.entrySet())
+        {
+            BaseColumnInfo entryCol = new BaseColumnInfo(entry.getKey(), entry.getValue());
+            // bindQueryExpressionColumn has a check that restricts PHI columns from being used in expressions,
+            // so we need to set the PHI level to something other than NotPHI on these fake BaseColumnInfo objects
+            if (phiColumns != null && phiColumns.contains(entry.getKey()))
+                entryCol.setPHI(PHI.PHI);
+            columns.put(entry.getKey(), entryCol);
+            table.addColumn(entryCol);
+        }
+
+        // TODO: calculating jdbcType still uses calculatedCol.getParentTable().getColumns()
+        var requiredColumns = new HashSet<FieldKey>();
+        bindQueryExpressionColumn(calculatedCol, columns, false, requiredColumns);
+        var jdbcType = calculatedCol.getJdbcType();
+
+        return new CalculatedColumnParseResult(jdbcType, requiredColumns);
+    }
+
     @Override
     public void addCompareType(CompareType type)
     {
@@ -3884,6 +3921,102 @@ public class QueryServiceImpl implements QueryService
             catch (Exception e)
             {
                 assertTrue(e.getMessage().contains("Syntax error near 'UNION'"));
+            }
+        }
+
+        @Test
+        public void testParseCalculatedColumn() throws QueryException
+        {
+            QueryServiceImpl qs = QueryServiceImpl.get();
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+
+            FieldKey rowId = new FieldKey(null, "RowId");
+            FieldKey sortOrder = new FieldKey(null, "SortOrder");
+            FieldKey name = new FieldKey(null, "Name");
+            FieldKey title = new FieldKey(null, "Title");
+
+            // Integer arithmetic over existing core.Containers columns
+            {
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(rowId, JdbcType.INTEGER);
+                columnMap.put(sortOrder, JdbcType.INTEGER);
+
+                CalculatedColumnParseResult result = qs.parseCalculatedColumn(c, user, "RowId + SortOrder", columnMap, null);
+                assertEquals(JdbcType.INTEGER, result.jdbcType());
+                assertEquals(Set.of(rowId, sortOrder), result.requiredColumns());
+            }
+
+            // String concatenation; only references a subset of supplied columns
+            {
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(name, JdbcType.VARCHAR);
+                columnMap.put(title, JdbcType.VARCHAR);
+                columnMap.put(rowId, JdbcType.INTEGER);
+
+                CalculatedColumnParseResult result = qs.parseCalculatedColumn(c, user, "Name || '_' || Title", columnMap, null);
+                assertEquals(JdbcType.VARCHAR, result.jdbcType());
+                assertEquals(Set.of(name, title), result.requiredColumns());
+            }
+
+            // Client-supplied columns that don't exist yet on the domain are honored — the parser
+            // trusts the supplied columnMap rather than the live schema.
+            {
+                FieldKey newColA = new FieldKey(null, "NewColA");
+                FieldKey newColB = new FieldKey(null, "NewColB");
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(newColA, JdbcType.DOUBLE);
+                columnMap.put(newColB, JdbcType.DOUBLE);
+
+                CalculatedColumnParseResult result = qs.parseCalculatedColumn(c, user, "NewColA * NewColB", columnMap, null);
+                assertEquals(JdbcType.DOUBLE, result.jdbcType());
+                assertEquals(Set.of(newColA, newColB), result.requiredColumns());
+            }
+
+            // Referencing a column that the client did not supply is an error
+            {
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(rowId, JdbcType.INTEGER);
+
+                try
+                {
+                    qs.parseCalculatedColumn(c, user, "RowId + Missing", columnMap, null);
+                    fail("Expected QueryException for reference to unknown column");
+                }
+                catch (QueryException _)
+                {
+                }
+            }
+
+            // Syntactically invalid expressions throw QueryException
+            {
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(rowId, JdbcType.INTEGER);
+
+                try
+                {
+                    qs.parseCalculatedColumn(c, user, "RowId +", columnMap, null);
+                    fail("Expected QueryException for syntactically invalid expression");
+                }
+                catch (QueryException _)
+                {
+                }
+            }
+
+            // PHI-flagged columns cannot be referenced from calculated column expressions
+            {
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(rowId, JdbcType.INTEGER);
+                columnMap.put(sortOrder, JdbcType.INTEGER);
+
+                try
+                {
+                    qs.parseCalculatedColumn(c, user, "RowId + SortOrder", columnMap, List.of(sortOrder));
+                    fail("Expected QueryException when expression references a PHI column");
+                }
+                catch (QueryException _)
+                {
+                }
             }
         }
     }

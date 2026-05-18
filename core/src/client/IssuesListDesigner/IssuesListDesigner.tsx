@@ -13,29 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react';
-import { ActionURL, getServerContext } from "@labkey/api";
+import React, { FC } from 'react';
+import { ActionURL, getServerContext } from '@labkey/api';
 import {
     Alert,
-    LoadingSpinner,
-    IssuesListDefModel,
+    AppContexts,
     BeforeUnload,
-    IssuesListDefDesignerPanels,
     fetchIssuesListDefDesign,
-    withServerContext,
+    IssuesListDefDesignerPanels,
+    IssuesListDefModel,
+    LoadingSpinner,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
 
 type State = {
-    isLoadingModel: boolean,
-    message?: string,
-    model?: IssuesListDefModel
-}
+    isLoadingModel: boolean;
+    message?: string;
+    model?: IssuesListDefModel;
+};
 
 class IssuesListDesigner extends React.Component<{}, State> {
-
-    private _dirty: boolean = false;
+    private _dirty = false;
 
     constructor(props) {
         super(props);
@@ -50,14 +49,14 @@ class IssuesListDesigner extends React.Component<{}, State> {
 
         fetchIssuesListDefDesign(issueDefName)
             .then((model: IssuesListDefModel) => {
-                this.setState(() => ({model, isLoadingModel: false}));
+                this.setState({ model, isLoadingModel: false });
             })
-            .catch((error) => {
-                this.setState(() => ({message: error.exception, isLoadingModel: false}));
+            .catch(error => {
+                this.setState({ message: error.exception, isLoadingModel: false });
             });
     }
 
-    handleWindowBeforeUnload = (event) => {
+    handleWindowBeforeUnload = event => {
         if (this._dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
@@ -73,7 +72,9 @@ class IssuesListDesigner extends React.Component<{}, State> {
 
     getIssuesListUrl(model?: IssuesListDefModel): string {
         if (model && model.issueDefName) {
-            return ActionURL.buildURL('issues', 'list', getServerContext().container.path, {issueDefName: model.issueDefName});
+            return ActionURL.buildURL('issues', 'list', getServerContext().container.path, {
+                issueDefName: model.issueDefName,
+            });
         }
 
         return ActionURL.buildURL('issues', 'begin', getServerContext().container.path);
@@ -94,27 +95,30 @@ class IssuesListDesigner extends React.Component<{}, State> {
         const { model } = this.state;
         const domainContainer = model.domain.getDomainContainer();
         const sourceUrl = ActionURL.buildURL('issues', 'list', domainContainer, {
-            issueDefName: model.issueDefName
+            issueDefName: model.issueDefName,
         });
 
         return (
             <Alert bsStyle={'info'}>
-                The fields definition for this issues list comes from a shared domain in another container and will
-                not be updatable from this page. To manage the fields definition for this shared issues list,
-                go to the <a href={sourceUrl}><b>source container</b></a>.
+                The fields definition for this issues list comes from a shared domain in another container and will not
+                be updatable from this page. To manage the fields definition for this shared issues list, go to the{' '}
+                <a href={sourceUrl}>
+                    <b>source container</b>
+                </a>
+                .
             </Alert>
-        )
+        );
     }
 
     render() {
         const { isLoadingModel, message, model } = this.state;
 
         if (message) {
-            return <Alert>{message}</Alert>
+            return <Alert>{message}</Alert>;
         }
 
         if (isLoadingModel) {
-            return <LoadingSpinner/>
+            return <LoadingSpinner />;
         }
 
         return (
@@ -123,12 +127,16 @@ class IssuesListDesigner extends React.Component<{}, State> {
                 <IssuesListDefDesignerPanels
                     initModel={model}
                     onCancel={this.onCancel}
-                    onComplete={this.onComplete}
                     onChange={this.onChange}
+                    onComplete={this.onComplete}
                 />
             </BeforeUnload>
         );
     }
 }
 
-export const App = withServerContext(IssuesListDesigner);
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <IssuesListDesigner />
+    </AppContexts>
+);

@@ -14,35 +14,34 @@
  * limitations under the License.
  */
 
-import React from 'react';
+import React, { FC } from 'react';
 import { ActionURL, getServerContext } from '@labkey/api';
 import {
     Alert,
+    AppContexts,
     BeforeUnload,
     DomainDesign,
     DomainDetails,
+    getSampleDomainDefaultSystemFields,
     getSampleSet,
     getSampleTypeDetails,
     LoadingSpinner,
     SampleTypeDesigner,
     SampleTypeModel,
-    getSampleDomainDefaultSystemFields,
-    withServerContext,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
 
 interface State {
-    sampleType?: DomainDetails
-    isLoading: boolean,
-    message?: string
+    isLoading: boolean;
+    message?: string;
+    sampleType?: DomainDetails;
 }
 
 const UPDATE_SAMPLE_TYPE_ACTION = 'updateMaterialSource';
 
 class SampleTypeDesignerWrapper extends React.PureComponent<any, State> {
-
-    private _dirty: boolean = false;
+    private _dirty = false;
 
     constructor(props) {
         super(props);
@@ -72,26 +71,34 @@ class SampleTypeDesignerWrapper extends React.PureComponent<any, State> {
         const rowId = this.getRowIdParam();
         if (rowId) {
             //Get SampleType from experiment service
-            getSampleSet({rowId})
+            getSampleSet({ rowId })
                 .then(results => {
                     const sampleSet = results.get('sampleSet');
-                    const {domainId} = sampleSet;
+                    const { domainId } = sampleSet;
 
                     // Then query for actual domain design
                     getSampleTypeDetails(undefined, domainId)
                         .then((sampleType: DomainDetails) => {
-                            let updatedSampleType = sampleType.setIn(['options', 'systemFields'], systemFields) as DomainDetails;
-                            this.setState(()=> ({sampleType: updatedSampleType, isLoading: false}));
-                        }).catch(error => {
-                            this.setState(() => ({message: 'Sample type does not exist in this container for domainId ' + domainId + '.', isLoading: false}));
-                        }
-                    );
+                            const updatedSampleType = sampleType.setIn(
+                                ['options', 'systemFields'],
+                                systemFields
+                            ) as DomainDetails;
+                            this.setState(() => ({ sampleType: updatedSampleType, isLoading: false }));
+                        })
+                        .catch(error => {
+                            this.setState(() => ({
+                                message: 'Sample type does not exist in this container for domainId ' + domainId + '.',
+                                isLoading: false,
+                            }));
+                        });
                 })
                 .catch(error => {
-                    this.setState(() => ({message: 'Sample type does not exist in this container for rowId ' + rowId + '.', isLoading: false}));
+                    this.setState(() => ({
+                        message: 'Sample type does not exist in this container for rowId ' + rowId + '.',
+                        isLoading: false,
+                    }));
                 });
-        }
-        else {
+        } else {
             const { name, nameReadOnly } = ActionURL.getParameters();
 
             //Creating a new Sample Type
@@ -104,11 +111,11 @@ class SampleTypeDesignerWrapper extends React.PureComponent<any, State> {
                         options: sampleType.options.set('systemFields', systemFields),
                     }) as DomainDetails;
 
-                    this.setState(()=> ({sampleType: updatedSampleType, isLoading: false}));
-                }).catch(error => {
-                    this.setState(() => ({message: error.exception, isLoading: false}));
-                }
-            );
+                    this.setState(() => ({ sampleType: updatedSampleType, isLoading: false }));
+                })
+                .catch(error => {
+                    this.setState(() => ({ message: error.exception, isLoading: false }));
+                });
         }
     }
 
@@ -125,7 +132,7 @@ class SampleTypeDesignerWrapper extends React.PureComponent<any, State> {
     onComplete = (response: DomainDesign) => {
         const rowId = this.getRowIdParam();
         const url = rowId
-            ? ActionURL.buildURL('experiment', 'showSampleType', getServerContext().container.path, {rowId: rowId})
+            ? ActionURL.buildURL('experiment', 'showSampleType', getServerContext().container.path, { rowId: rowId })
             : ActionURL.buildURL('experiment', 'listSampleTypes', getServerContext().container.path);
 
         this.navigate(url);
@@ -146,11 +153,11 @@ class SampleTypeDesignerWrapper extends React.PureComponent<any, State> {
         const { isLoading, message, sampleType } = this.state;
 
         if (message) {
-            return <Alert>{message}</Alert>
+            return <Alert>{message}</Alert>;
         }
 
         if (isLoading) {
-            return <LoadingSpinner/>
+            return <LoadingSpinner />;
         }
 
         const isUpdate = !!this.getRowIdParam();
@@ -158,17 +165,21 @@ class SampleTypeDesignerWrapper extends React.PureComponent<any, State> {
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
                 <SampleTypeDesigner
+                    includeDataClasses={true}
                     initModel={sampleType}
-                    onComplete={this.onComplete}
+                    isUpdate={isUpdate}
                     onCancel={this.onCancel}
                     onChange={this.onChange}
-                    includeDataClasses={true}
+                    onComplete={this.onComplete}
                     showLinkToStudy={true}
-                    isUpdate={isUpdate}
                 />
             </BeforeUnload>
-        )
+        );
     }
 }
 
-export const App = withServerContext(SampleTypeDesignerWrapper);
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <SampleTypeDesignerWrapper />
+    </AppContexts>
+);
