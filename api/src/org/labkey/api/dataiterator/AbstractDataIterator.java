@@ -16,7 +16,6 @@
 
 package org.labkey.api.dataiterator;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
@@ -144,15 +143,6 @@ public abstract class AbstractDataIterator implements DataIterator
         return _context.getDataSource();
     }
 
-    protected boolean hasLoggedWarning(@NotNull String warning)
-    {
-        return _context.hasLoggedWarning(warning);
-    }
-
-    protected void addLoggedWarning(@NotNull String warning)
-    {
-        _context.addLoggedWarning(warning);
-    }
 
     protected Integer indexOfExistingRecord;
 

@@ -26,7 +26,6 @@ import org.labkey.api.query.QueryUpdateService;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -61,7 +60,6 @@ public class DataIteratorContext
     private final Set<String> _passThroughBuiltInColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _alternateKeys = new CaseInsensitiveHashSet();
-    private final Set<String> _loggedWarnings = new HashSet<>();
     private String _dataSource;
     private boolean _withLookupRemapping = true;
 
@@ -337,16 +335,6 @@ public class DataIteratorContext
     public QueryImportPipelineJob getBackgroundJob()
     {
         return _backgroundJob;
-    }
-
-    public boolean hasLoggedWarning(@NotNull String warning)
-    {
-        return _loggedWarnings.contains(warning);
-    }
-
-    public void addLoggedWarning(@NotNull String warning)
-    {
-        _loggedWarnings.add(warning);
     }
 
 }
