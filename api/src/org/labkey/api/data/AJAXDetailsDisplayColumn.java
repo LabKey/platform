@@ -111,8 +111,6 @@ public class AJAXDetailsDisplayColumn extends DataColumn
                 id(divId).at(style, "display:inline-flex;flex-wrap:nowrap"),
                 (DOM.Renderable) ret -> {
                     super.renderGridCellContents(ctx, out);
-                    // U+2060 WORD JOINER: belt-and-suspenders line-break prevention for non-CSS contexts
-                    out.write(HtmlString.unsafe("\u2060"));
                     return ret;
                 }
             ).appendTo(out);

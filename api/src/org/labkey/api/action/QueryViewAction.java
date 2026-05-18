@@ -167,6 +167,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
      * Create the specially configured query view.
      * @param dataRegion null as a convenience when only a single QueryView is being used
      */
+    @Nullable
     protected abstract ViewType createQueryView(Form form, BindException errors, boolean forExport, @Nullable String dataRegion) throws Exception;
 
     public static class QueryExportForm extends QueryForm
