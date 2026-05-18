@@ -16,6 +16,7 @@
 
 package org.labkey.api.action;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ExcelWriter;
@@ -135,7 +136,9 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
     /**
      * Correctly configures the QueryView to use the QueryViewAction for export purposes
      * @param dataRegion null as a convenience when only a single QueryView is being used
+     * @throws NotFoundException if passed a dataRegion name that doesn't exist
      */
+    @NotNull
     protected final ViewType createInitializedQueryView(Form form, BindException errors, boolean forExport, @Nullable String dataRegion) throws Exception
     {
         ViewType result = createQueryView(form, errors, forExport, dataRegion);
