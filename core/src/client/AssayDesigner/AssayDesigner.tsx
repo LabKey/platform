@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react';
-import { ActionURL, Security, Utils, getServerContext, PermissionTypes } from '@labkey/api';
+import React, { FC } from 'react';
+import { ActionURL, getServerContext, PermissionTypes, Security, Utils } from '@labkey/api';
 import {
     Alert,
+    AppContexts,
     AssayDesignerPanels,
     AssayProtocolModel,
     BeforeUnload,
     DomainFieldsDisplay,
-    getProtocol,
-    LoadingSpinner,
-    ServerContext,
-    ServerContextProvider,
-    withAppUser,
-    inferDomainFromFile,
-    setDomainFields,
-    getWebDavUrl,
     GENERAL_ASSAY_PROVIDER_NAME,
+    getProtocol,
+    getWebDavUrl,
+    inferDomainFromFile,
+    LoadingSpinner,
+    setDomainFields,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -43,11 +41,10 @@ type State = {
     protocolId: number;
     providerName?: string;
     returnUrl: string;
-    serverContext: ServerContext;
 };
 
-export class App extends React.Component<any, State> {
-    private _dirty: boolean = false;
+class AssayDesigner extends React.Component<any, State> {
+    private _dirty = false;
 
     constructor(props) {
         super(props);
@@ -69,7 +66,6 @@ export class App extends React.Component<any, State> {
             copy,
             isLoadingModel: true,
             returnUrl,
-            serverContext: withAppUser(getServerContext()),
         };
     }
 
@@ -113,10 +109,10 @@ export class App extends React.Component<any, State> {
 
     // Issue 45315: Support inferring the assay results domain from a file system file
     async resetDataDomainFromFile(model: AssayProtocolModel): Promise<AssayProtocolModel> {
-        const { serverContext } = this.state;
         const { path, file } = ActionURL.getParameters();
         const webdavUrl =
-            ActionURL.getBaseURL(true) + getWebDavUrl(serverContext.container.path, path + (path ? '/' : '') + file);
+            ActionURL.getBaseURL(true) +
+            getWebDavUrl(getServerContext().container.path, path + (path ? '/' : '') + file);
 
         try {
             const response = await inferDomainFromFile(webdavUrl, 3);
@@ -127,7 +123,7 @@ export class App extends React.Component<any, State> {
                 return model.merge({ domains }) as AssayProtocolModel;
             }
         } catch (error) {
-            // no-op, file wasn't found or the domain couldn't be inferred so stick to the domain template from the assay protocol
+            // no-op, file wasn't found or the domain couldn't be inferred, so stick to the domain template from the assay protocol
             return model;
         }
     }
@@ -184,7 +180,7 @@ export class App extends React.Component<any, State> {
     }
 
     render() {
-        const { isLoadingModel, hasDesignAssayPerm, message, model, serverContext } = this.state;
+        const { isLoadingModel, hasDesignAssayPerm, message, model } = this.state;
 
         if (message) {
             return <Alert>{message}</Alert>;
@@ -201,66 +197,71 @@ export class App extends React.Component<any, State> {
         }
 
         return (
-            <ServerContextProvider initialContext={serverContext}>
-                <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
-                    {hasDesignAssayPerm && (
-                        <AssayDesignerPanels
-                            initModel={model}
-                            onChange={this.onChange}
-                            onCancel={this.onCancel}
-                            onComplete={this.onComplete}
-                        />
-                    )}
-                    {!hasDesignAssayPerm && (
-                        <>
-                            <div className="panel panel-default">
-                                <div className="panel-heading">
-                                    <div className="panel-title">{model.name}</div>
-                                </div>
-                                <div className="panel-body">
-                                    <table>
-                                        {this.renderReadOnlyProperty('Provider', model.providerName)}
-                                        {this.renderReadOnlyProperty('Description', model.description)}
-                                        {this.renderReadOnlyProperty('Plate Template', model.selectedPlateTemplate)}
-                                        {this.renderReadOnlyProperty('Detection Method', model.selectedDetectionMethod)}
-                                        {this.renderReadOnlyProperty(
-                                            'Metadata Input Format',
-                                            model.selectedMetadataInputFormat
-                                        )}
-                                        {this.renderReadOnlyProperty('QC States', model.qcEnabled)}
-                                        {this.renderReadOnlyProperty(
-                                            'Auto-Copy Data to Study',
-                                            model.autoCopyTargetContainer
-                                                ? model.autoCopyTargetContainer['path']
-                                                : undefined
-                                        )}
-                                        {this.renderReadOnlyProperty('Import in Background', model.backgroundUpload)}
-                                        {this.renderReadOnlyProperty(
-                                            'Transform Scripts',
-                                            model.protocolTransformScripts,
-                                            model.protocolTransformScripts.size === 0
-                                        )}
-                                        {this.renderReadOnlyProperty(
-                                            'Save Script Data for Debugging',
-                                            model.saveScriptFiles
-                                        )}
-                                        {this.renderReadOnlyProperty(
-                                            'Module-Provided Scripts',
-                                            model.moduleTransformScripts,
-                                            model.moduleTransformScripts.size === 0
-                                        )}
-                                        {this.renderReadOnlyProperty('Editable Runs', model.editableRuns)}
-                                        {this.renderReadOnlyProperty('Editable Results', model.editableResults)}
-                                    </table>
-                                </div>
+            <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
+                {hasDesignAssayPerm && (
+                    <AssayDesignerPanels
+                        initModel={model}
+                        onCancel={this.onCancel}
+                        onChange={this.onChange}
+                        onComplete={this.onComplete}
+                    />
+                )}
+                {!hasDesignAssayPerm && (
+                    <>
+                        <div className="panel panel-default">
+                            <div className="panel-heading">
+                                <div className="panel-title">{model.name}</div>
                             </div>
-                            {model.domains
-                                .map((domain, index) => <DomainFieldsDisplay key={index} domain={domain} />)
-                                .toArray()}
-                        </>
-                    )}
-                </BeforeUnload>
-            </ServerContextProvider>
+                            <div className="panel-body">
+                                <table>
+                                    {this.renderReadOnlyProperty('Provider', model.providerName)}
+                                    {this.renderReadOnlyProperty('Description', model.description)}
+                                    {this.renderReadOnlyProperty('Plate Template', model.selectedPlateTemplate)}
+                                    {this.renderReadOnlyProperty('Detection Method', model.selectedDetectionMethod)}
+                                    {this.renderReadOnlyProperty(
+                                        'Metadata Input Format',
+                                        model.selectedMetadataInputFormat
+                                    )}
+                                    {this.renderReadOnlyProperty('QC States', model.qcEnabled)}
+                                    {this.renderReadOnlyProperty(
+                                        'Auto-Copy Data to Study',
+                                        model.autoCopyTargetContainer
+                                            ? model.autoCopyTargetContainer['path']
+                                            : undefined
+                                    )}
+                                    {this.renderReadOnlyProperty('Import in Background', model.backgroundUpload)}
+                                    {this.renderReadOnlyProperty(
+                                        'Transform Scripts',
+                                        model.protocolTransformScripts,
+                                        model.protocolTransformScripts.size === 0
+                                    )}
+                                    {this.renderReadOnlyProperty(
+                                        'Save Script Data for Debugging',
+                                        model.saveScriptFiles
+                                    )}
+                                    {this.renderReadOnlyProperty(
+                                        'Module-Provided Scripts',
+                                        model.moduleTransformScripts,
+                                        model.moduleTransformScripts.size === 0
+                                    )}
+                                    {this.renderReadOnlyProperty('Editable Runs', model.editableRuns)}
+                                    {this.renderReadOnlyProperty('Editable Results', model.editableResults)}
+                                </table>
+                            </div>
+                        </div>
+                        {model.domains
+                            .map((domain, index) => <DomainFieldsDisplay domain={domain} key={index} />)
+                            .toArray()}
+                    </>
+                )}
+            </BeforeUnload>
         );
     }
 }
+
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <AssayDesigner />
+    </AppContexts>
+);
+App.displayName = 'App';
