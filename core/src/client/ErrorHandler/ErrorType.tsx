@@ -211,7 +211,6 @@ const CONFIGURATION_DETAILS = (errorDetails: ErrorDetails) => (
         </div>
 
         {DETAILS_SUB_INSTRUCTION}
-        <pre>{errorDetails.stackTrace}</pre>
     </>
 );
 
@@ -231,21 +230,21 @@ const EXECUTION_INSTRUCTION = (errorDetails: ErrorDetails) => (
                 {' '}
                 find help resources here{' '}
             </a>{' '}
-            and may find troubleshooting hints by reading the full stack trace in the View Details section
-            below.
+            and may find troubleshooting hints by reading the full stack trace in the server logs.
         </div>
         <div className="labkey-error-instruction">
             Your unique reference code is: <b>{errorDetails.errorCode}</b>
         </div>
     </>
 );
-const EXECUTION_DETAILS = (errorDetails: ErrorDetails) => <pre>{errorDetails.stackTrace}</pre>;
+const EXECUTION_DETAILS = () => null;
 
 type ErrorTypeInfo = {
     details: (errorDetails?: ErrorDetails) => ReactNode;
     heading: (errorMessage?: string) => ReactNode;
     imagePath: string;
     instruction: (errorDetails?: ErrorDetails) => ReactNode;
+    showDetailsBtn: boolean;
     subHeading: (errorMessage?: string) => ReactNode;
 };
 
@@ -257,6 +256,7 @@ const ERROR_TYPE_INFO: { [key in ErrorType]: ErrorTypeInfo } = {
         heading: CONFIGURATION_HEADING,
         imagePath: 'configuration_error.svg',
         instruction: CONFIGURATION_INSTRUCTION,
+        showDetailsBtn: true,
         subHeading: CONFIGURATION_SUBHEADING,
     },
     execution: {
@@ -264,6 +264,7 @@ const ERROR_TYPE_INFO: { [key in ErrorType]: ErrorTypeInfo } = {
         heading: ERROR_HEADING,
         imagePath: 'code_error.svg',
         instruction: EXECUTION_INSTRUCTION,
+        showDetailsBtn: false,
         subHeading: EXECUTION_SUB_HEADING,
     },
     notFound: {
@@ -271,6 +272,7 @@ const ERROR_TYPE_INFO: { [key in ErrorType]: ErrorTypeInfo } = {
         heading: NOTFOUND_HEADING,
         imagePath: 'notFound_error.svg',
         instruction: NOTFOUND_INSTRUCTION,
+        showDetailsBtn: true,
         subHeading: NOTFOUND_SUBHEADING,
     },
     permission: {
@@ -278,6 +280,7 @@ const ERROR_TYPE_INFO: { [key in ErrorType]: ErrorTypeInfo } = {
         heading: ERROR_HEADING,
         imagePath: 'permission_error.svg',
         instruction: PERMISSION_INSTRUCTION,
+        showDetailsBtn: true,
         subHeading: PERMISSION_SUBHEADING,
     },
 };
@@ -308,6 +311,11 @@ export const getInstruction = (errorDetails: ErrorDetails): ReactNode => {
     if (!info) return null;
 
     return <div className="labkey-error-instruction">{info.instruction(errorDetails)}</div>;
+};
+
+export const getShowDetailsBtn = (errorDetails: ErrorDetails): boolean => {
+    const info = ERROR_TYPE_INFO[errorDetails.errorType];
+    return info?.showDetailsBtn ?? true;
 };
 
 export const getViewDetails = (errorDetails: ErrorDetails): ReactNode => {

@@ -24,19 +24,6 @@
 
 <div id="<%=h(appId)%>"></div>
 
-<%
-    StringBuilder stackTrace = new StringBuilder();
-    if (null != model.getException())
-    {
-        stackTrace.append(model.getException().toString());
-        for (StackTraceElement stackTraceElement : model.getException().getStackTrace())
-        {
-            stackTrace.append("\n");
-            stackTrace.append(stackTraceElement.toString());
-        }
-    }
-%>
-
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     /*
          This error page may be invoked without the themes having been loaded for this container.
@@ -52,7 +39,6 @@
             errorDetails : {
                 message: <%=q(model.getHeading())%>,
                 errorType: <%=q(model.getErrorType())%>,
-                stackTrace: <%=q(stackTrace.toString())%>,
                 errorCode: <%=q(model.getErrorCode())%>,
                 advice: <%=q(model.getAdvice())%>
             }
