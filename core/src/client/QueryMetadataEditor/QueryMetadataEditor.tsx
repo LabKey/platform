@@ -15,9 +15,10 @@
  */
 
 import { List } from 'immutable';
-import React, { PureComponent } from 'react';
+import React, { FC, PureComponent } from 'react';
 import {
     Alert,
+    AppContexts,
     BeforeUnload,
     DomainDesign,
     DomainField,
@@ -25,7 +26,6 @@ import {
     IBannerMessage,
     LoadingSpinner,
     Modal,
-    withServerContext,
     IFieldChange,
 } from '@labkey/components';
 import { ActionURL, getServerContext } from '@labkey/api';
@@ -435,4 +435,8 @@ class QueryMetadataEditor extends PureComponent<any, Partial<IAppState>> {
     }
 }
 
-export const App = withServerContext(QueryMetadataEditor);
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <QueryMetadataEditor />
+    </AppContexts>
+);
