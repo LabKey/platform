@@ -3,18 +3,19 @@
     <div class="labkey-error" id="errors"></div>
     <div class="auth-form-body">
         <label for="email">Email</label>
-        <input id="email" name="email" type="text" class="input-block" tabindex="1" autocomplete="off">
+        <input id="email" name="email" type="text" class="input-block" autocomplete="off">
         <label for="password">Password</label>
         <div class="forgot-password-link">
             <a href="login-resetPassword.view">Forgot password</a>
         </div>
-        <input id="password" name="password" type="password" class="input-block" tabindex="2" autocomplete="off">
-        <input tabindex="3" type="checkbox" name="remember" id="remember" checked> Remember my email address
+        <input id="password" name="password" type="password" class="input-block" autocomplete="off">
+        <input aria-labelledby="remember-label" type="checkbox" name="remember" id="remember" checked >
+        <span id="remember-label">Remember my email address</span>
         <div class="termsOfUseSection" hidden>
             <div class="auth-header auth-item">Terms of Use</div>
             <div class="toucontent auth-item termsOfUseContent"></div>
             <div class="auth-item">
-                <input type="checkbox" tabindex="4" name="approvedTermsOfUse" id="approvedTermsOfUse" class="auth-item">
+                <input type="checkbox" name="approvedTermsOfUse" id="approvedTermsOfUse" class="auth-item">
                 <label for="approvedTermsOfUse">I agree to these terms</label>
             </div>
         </div>
@@ -22,9 +23,9 @@
         <div class="auth-item auth-credentials-submit">
             <!-- Note: login.js attaches an authenticateUser() click event to elements with classes "loginSubmitButton" and "signin-btn" -->
             <input type="submit" tabindex="-1" class="loginSubmitButton"/>
-            <a tabindex="5" class="labkey-button primary signin-btn"><span>Sign In</span></a>
+            <button class="labkey-button primary signin-btn"><span>Sign In</span></button>
             <span class="registrationSection" hidden>
-                <a class="labkey-button" id="registerButton" href="login-register.view">Register</a>
+                <button class="labkey-button" id="registerButton" href="login-register.view">Register</button>
             </span>
         </div>
         <div class="signing-in-msg" hidden>
