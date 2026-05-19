@@ -10,6 +10,8 @@ import org.labkey.api.data.CreatedModified;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.util.GUID;
 
@@ -130,29 +132,44 @@ public abstract class Action extends CreatedModified
     private List<String> validateStatus(Container container, String prefix, boolean updateKeyExpected)
     {
         boolean updateStatus = true;
+        boolean removeFromStorage = _inputParameters.has(REMOVE_FROM_STORAGE_KEY) && _inputParameters.getBoolean(REMOVE_FROM_STORAGE_KEY);
 
         if (updateKeyExpected)
         {
-            updateStatus = _inputParameters.getBoolean(UPDATE_STATUS_KEY);
+            updateStatus = _inputParameters.has(UPDATE_STATUS_KEY) && _inputParameters.getBoolean(UPDATE_STATUS_KEY);
             if (updateStatus && !_inputParameters.has(STATUS_KEY))
                 return List.of(prefix + STATUS_KEY + " is required for action of type " + _type + " when " + UPDATE_STATUS_KEY + " is true.");
             if (!updateStatus && _inputParameters.has(STATUS_KEY))
                 return List.of(prefix + STATUS_KEY + " is not allowed for action of type " + _type + " when " + UPDATE_STATUS_KEY + " is false.");
         }
 
-        if (updateStatus && container != null)
+        if (removeFromStorage && !_inputParameters.has(STATUS_KEY))
+            return List.of(prefix + STATUS_KEY + " is required for action of type " + _type + " when " + REMOVE_FROM_STORAGE_KEY + " is true.");
+
+        if ((updateStatus || removeFromStorage) && _inputParameters.has(STATUS_KEY) && container != null)
         {
+            DataState state;
+            long statusId;
             try
             {
-                long statusId = _inputParameters.getLong(STATUS_KEY);
-                SampleStatusService sampleStatusService = SampleStatusService.get();
-                if (sampleStatusService.getStateForRowId(container, statusId) == null)
-                    return List.of(prefix + "Invalid " + STATUS_KEY + " (" + statusId + ").");
+                statusId = _inputParameters.getLong(STATUS_KEY);
+                state = SampleStatusService.get().getStateForRowId(container, statusId);
             }
             catch (Exception e)
             {
                 return List.of(prefix + "Invalid " + STATUS_KEY + ".");
             }
+
+            if (state == null)
+                return List.of(prefix + "Invalid " + STATUS_KEY + " (" + statusId + ").");
+
+            if (removeFromStorage && !ExpSchema.SampleStateType.Consumed.name().equals(state.getStateType()))
+                return List.of(prefix + STATUS_KEY + " (" + statusId + ") must represent a " + ExpSchema.SampleStateType.Consumed.name() + " state when " + REMOVE_FROM_STORAGE_KEY + " is true.");
+        }
+        else if (!updateKeyExpected && !_inputParameters.has(STATUS_KEY) && !removeFromStorage)
+        {
+            // UpdateSampleStatus with non-empty params but no STATUS_KEY or REMOVE_FROM_STORAGE_KEY is invalid
+            return List.of(prefix + "Invalid " + STATUS_KEY + ".");
         }
 
         return Collections.emptyList();
@@ -222,7 +239,7 @@ public abstract class Action extends CreatedModified
                 }
             }
 
-            if (_inputParameters != null && (_inputParameters.has(UPDATE_STATUS_KEY) || _inputParameters.has(STATUS_KEY)))
+            if (_inputParameters != null && (_inputParameters.has(UPDATE_STATUS_KEY) || _inputParameters.has(STATUS_KEY) || _inputParameters.has(REMOVE_FROM_STORAGE_KEY)))
             {
                 List<String> statusMessages = validateStatus(container, prefix, true);
                 messages.addAll(statusMessages);
@@ -294,7 +311,7 @@ public abstract class Action extends CreatedModified
             if (!invalidCounts.isEmpty())
                 messages.add(prefix + "invalid sample count values " + invalidCounts + ".");
 
-            if (_inputParameters.has(UPDATE_STATUS_KEY) || _inputParameters.has(STATUS_KEY))
+            if (_inputParameters.has(UPDATE_STATUS_KEY) || _inputParameters.has(STATUS_KEY) || _inputParameters.has(REMOVE_FROM_STORAGE_KEY))
             {
                 List<String> statusMessages = validateStatus(container, prefix, true);
 
