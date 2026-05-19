@@ -36,6 +36,8 @@ public class QueryImportPipelineJob extends PipelineJob
 
     private long _transactionAuditId;
 
+    private Map<String, Object> _additionalJobResponseInfo;
+
     protected QueryImportPipelineJob()
     {}
 
@@ -343,9 +345,6 @@ public class QueryImportPipelineJob extends PipelineJob
             if (auditEvent != null)
                 _transactionAuditId = auditEvent.getRowId();
 
-            setStatus(TaskStatus.complete);
-            getLogger().info("Done importing {}. {} row(s) imported.", getDescription(), importedCount);
-
             if (notificationProvider != null)
             {
                 Map<String, Object> results = new HashMap<>();
@@ -359,8 +358,15 @@ public class QueryImportPipelineJob extends PipelineJob
 
                 if (!diContext.getResponseInfo().isEmpty())
                     results.putAll(diContext.getResponseInfo());
-                notificationProvider.onJobSuccess(this, results);
+
+                _additionalJobResponseInfo = results;
             }
+
+            setStatus(TaskStatus.complete);
+            getLogger().info("Done importing {}. {} row(s) imported.", getDescription(), importedCount);
+
+            if (notificationProvider != null)
+                notificationProvider.onJobSuccess(this, getAdditionalJobResponseInfo());
         }
         catch (QueryImportJobCancelledException e)
         {
@@ -413,6 +419,11 @@ public class QueryImportPipelineJob extends PipelineJob
     public long getTransactionAuditId()
     {
         return _transactionAuditId;
+    }
+
+    public Map<String, Object> getAdditionalJobResponseInfo()
+    {
+        return _additionalJobResponseInfo;
     }
 
 }
