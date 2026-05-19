@@ -234,7 +234,9 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
     {
-        return RESERVED_NAMES;
+        Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
+        reserved.addAll(getTemplateReservedPropertyNames(domain));
+        return reserved;
     }
 
     @Override

@@ -270,6 +270,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
+        reserved.addAll(getTemplateReservedPropertyNames(domain));
 
         if (domain == null)
         {

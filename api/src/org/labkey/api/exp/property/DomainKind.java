@@ -61,9 +61,9 @@ abstract public class DomainKind<T> implements Handler<String>
     abstract public String getKindName();
 
     /**
-     * Return a class of DomainKind's bean which carries domain specific properties.
-     * This class will be used when marshalling/unmarshalling via Jackson during Create and Save/Update Domain
-     * @return Class of DomainKind's bean with domain specific properties
+     * Return a class of DomainKind's bean which carries domain-specific properties.
+     * This class will be used when marshaling/unmarshaling via Jackson during Create and Save/Update Domain
+     * @return Class of DomainKind's bean with domain-specific properties
      */
     abstract public Class<? extends T> getTypeClass();
 
@@ -108,15 +108,45 @@ abstract public class DomainKind<T> implements Handler<String>
     abstract public void deletePropertyDescriptor(Domain domain, User user, PropertyDescriptor pd);
 
     /**
-     * Return the set of names that should not be allowed for properties. E.g.
-     * the names of columns from the hard table underlying this type
+     * Return the set of names that should not be allowed for properties. E.g., the names of columns
+     * from the hard table underlying this type.
+     * <p>
+     * Subclasses should typically override this method and union their kind-specific reserved set with
+     * {@link #getTemplateReservedPropertyNames(Domain)} (or with {@code super.getReservedPropertyNames(...)}
+     * when the override does not also override the {@code forCreate} variant). Doing so ensures that
+     * names declared in a {@code DomainTemplate}'s {@code <reservedColumnNames>} element are honored.
+     *
      * @return set of strings containing the names. This will be compared ignoring case
      */
-    abstract public Set<String> getReservedPropertyNames(Domain domain, User user);
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    {
+        return getTemplateReservedPropertyNames(domain);
+    }
 
     public Set<String> getReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         return getReservedPropertyNames(domain, user);
+    }
+
+    /**
+     * Returns reserved column names declared in the {@link DomainTemplate} that this domain was created from
+     * (if any). These extend the kind's statically reserved set.
+     */
+    @NotNull
+    protected Set<String> getTemplateReservedPropertyNames(@Nullable Domain domain)
+    {
+        if (domain == null)
+            return Collections.emptySet();
+
+        TemplateInfo info = domain.getTemplateInfo();
+        if (info == null)
+            return Collections.emptySet();
+
+        DomainTemplate template = DomainTemplate.findTemplate(info, getKindName());
+        if (template == null)
+            return Collections.emptySet();
+
+        return template.getReservedColumnNames();
     }
 
     public Set<String> getReservedPropertyNamePrefixes()
@@ -132,14 +162,14 @@ abstract public class DomainKind<T> implements Handler<String>
     abstract public Set<String> getMandatoryPropertyNames(Domain domain);
 
     // CONSIDER: have DomainKind supply and IDomainInstance or similar
-    // so that it can hold instance data (e.g. a DatasetDefinition)
+    // so that it can hold instance data (e.g., a DatasetDefinition)
 
     /**
      * Get DomainKind specific properties.
      * @param domain The domain design.
      * @param container Container
      * @param user User
-     * @return Return object that holds DomainKind specific properties.
+     * @return Return an object that holds DomainKind specific properties.
      */
     abstract public @Nullable T getDomainKindProperties(GWTDomain<?> domain, Container container, User user);
 
