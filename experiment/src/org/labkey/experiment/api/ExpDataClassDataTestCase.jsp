@@ -17,7 +17,6 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
 <%@ page import="org.junit.After" %>
-<%@ page import="org.junit.Assume" %>
 <%@ page import="org.junit.Before" %>
 <%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.action.ApiUsageException" %>
@@ -67,8 +66,6 @@
 <%@ page import="org.labkey.api.gwt.client.model.GWTDomain" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTIndex" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTPropertyDescriptor" %>
-<%@ page import="org.labkey.api.module.Module" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.query.BatchValidationException" %>
 <%@ page import="org.labkey.api.query.DefaultSchema" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
@@ -470,7 +467,7 @@ private void testEmptyInsert(TableInfo table, User user) throws Exception
 @Test
 public void testDataClassFromTemplate() throws Exception
 {
-    requireSimpleTestModule();
+    ExpProvisionedTableTestHelper.requireSimpleTestModule(c);
     final Container sub = ContainerManager.createContainer(c, "sub2", _user);
     final String domainName = "mydataclass";
 
@@ -568,7 +565,7 @@ private String createConceptLookupList(Container c, User user) throws Exception
 @Test
 public void testDomainTemplate() throws Exception
 {
-    requireSimpleTestModule();
+    ExpProvisionedTableTestHelper.requireSimpleTestModule(c);
     final Container sub = ContainerManager.createContainer(c, "sub3", _user);
     DomainTemplateGroup templateGroup = DomainTemplateGroup.get(c, "todolist");
     assertNotNull(templateGroup);
@@ -1204,18 +1201,4 @@ private @NotNull TableInfo getDataClassTable(String dataClassName)
     return schema.getTableOrThrow(dataClassName);
 }
 
-private void requireSimpleTestModule()
-{
-    if (!AppProps.getInstance().isDevMode()) // Skip test in production mode if necessary modules are not available
-    {
-        Assume.assumeTrue("List module is required to test data class templates", ModuleLoader.getInstance().getModule("list") != null);
-        Assume.assumeTrue("simpletest module is required to test data class templates", ModuleLoader.getInstance().getModule("simpletest") != null);
-    }
-
-    Set<Module> activeModules = new HashSet<>(c.getActiveModules());
-    Module m = ModuleLoader.getInstance().getModule("simpletest");
-    assertNotNull("This test requires 'simpletest' module to be deployed", m);
-    activeModules.add(m);
-    c.setActiveModules(activeModules);
-}
 %>
