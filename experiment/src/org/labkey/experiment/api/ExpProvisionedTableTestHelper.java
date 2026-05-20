@@ -1,5 +1,6 @@
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -7,6 +8,7 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -164,5 +166,37 @@ public class ExpProvisionedTableTestHelper
 
         for (String e : expected)
             Assert.assertTrue("Failed to find '" + e + "' in multivalue '" + s + "'", s.contains(e));
+    }
+
+    public void verifyReservedColumnNames(Container c, User user, @NotNull Domain domain)
+    {
+        DomainKind<?> kind = domain.getDomainKind();
+        Assert.assertNotNull(kind);
+
+        // Verify <reservedColumnNames> from the template are honored by the DomainKind
+        Set<String> reservedNames = kind.getReservedPropertyNames(domain, user);
+        Assert.assertTrue("Expected template reserved name 'reservedOne' in: " + reservedNames,
+                reservedNames.stream().anyMatch(n -> n.equalsIgnoreCase("reservedOne")));
+        Assert.assertTrue("Expected template reserved name 'ReservedTwo' in: " + reservedNames,
+                reservedNames.stream().anyMatch(n -> n.equalsIgnoreCase("ReservedTwo")));
+
+        // Attempt to add a field whose name collides with a template-reserved name (mixed case)
+        GWTDomain<GWTPropertyDescriptor> origGwt = DomainUtil.getDomainDescriptor(user, domain);
+        GWTDomain<GWTPropertyDescriptor> updateGwt = new GWTDomain<>(origGwt);
+        List<GWTPropertyDescriptor> updatedFields = new ArrayList<>(updateGwt.getFields());
+        updatedFields.add(new GWTPropertyDescriptor("RESERVEDONE", "http://www.w3.org/2001/XMLSchema#string"));
+        updateGwt.setFields(updatedFields);
+        ValidationException ve = DomainUtil.updateDomainDescriptor(origGwt, updateGwt, c, user);
+        Assert.assertTrue("Expected a validation error when adding a reserved-name field", ve.hasErrors());
+        Assert.assertTrue("Expected error message to flag the reserved name: " + ve.getMessage(),
+                ve.getMessage().toLowerCase().contains("reserved"));
+
+        // A non-reserved field name should validate cleanly
+        GWTDomain<GWTPropertyDescriptor> okUpdate = new GWTDomain<>(origGwt);
+        List<GWTPropertyDescriptor> okFields = new ArrayList<>(okUpdate.getFields());
+        okFields.add(new GWTPropertyDescriptor("nonReservedField", "http://www.w3.org/2001/XMLSchema#string"));
+        okUpdate.setFields(okFields);
+        ValidationException okVe = DomainUtil.validateProperties(domain, okUpdate, kind, origGwt, user);
+        Assert.assertFalse("Did not expect validation errors for a non-reserved field: " + okVe.getMessage(), okVe.hasErrors());
     }
 }

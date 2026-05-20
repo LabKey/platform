@@ -73,7 +73,6 @@
 <%@ page import="org.labkey.api.query.QueryUpdateService" %>
 <%@ page import="org.labkey.api.query.SchemaKey" %>
 <%@ page import="org.labkey.api.query.UserSchema" %>
-<%@ page import="org.labkey.api.query.ValidationException" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.User" %>
@@ -473,9 +472,7 @@ public void testDataClassFromTemplate() throws Exception
 
     DomainTemplateGroup templateGroup = DomainTemplateGroup.get(c, "TestingFromTemplate");
     assertNotNull(templateGroup);
-    assertFalse(
-            "Errors in template: " + StringUtils.join(templateGroup.getErrors(), ", "),
-            templateGroup.hasErrors());
+    assertFalse("Errors in template: " + StringUtils.join(templateGroup.getErrors(), ", "), templateGroup.hasErrors());
 
     DomainTemplate template = templateGroup.getTemplate("testingFromTemplate");
     assertNotNull(template);
@@ -494,31 +491,7 @@ public void testDataClassFromTemplate() throws Exception
     Set<String> mandatory = kind.getMandatoryPropertyNames(domain);
     assertTrue("Expected template to set 'aa' as mandatory: " + mandatory, mandatory.contains("aa"));
 
-    // Verify <reservedColumnNames> from the template are honored by the DomainKind
-    Set<String> reservedNames = kind.getReservedPropertyNames(domain, _user);
-    assertTrue("Expected template reserved name 'reservedOne' in: " + reservedNames,
-            reservedNames.stream().anyMatch(n -> n.equalsIgnoreCase("reservedOne")));
-    assertTrue("Expected template reserved name 'ReservedTwo' in: " + reservedNames,
-            reservedNames.stream().anyMatch(n -> n.equalsIgnoreCase("ReservedTwo")));
-
-    // Attempt to add a field whose name collides with a template-reserved name (mixed case)
-    GWTDomain<GWTPropertyDescriptor> origGwt = DomainUtil.getDomainDescriptor(_user, domain);
-    GWTDomain<GWTPropertyDescriptor> updateGwt = new GWTDomain<>(origGwt);
-    List<GWTPropertyDescriptor> updatedFields = new ArrayList<>(updateGwt.getFields());
-    updatedFields.add(new GWTPropertyDescriptor("RESERVEDONE", "http://www.w3.org/2001/XMLSchema#string"));
-    updateGwt.setFields(updatedFields);
-    ValidationException ve = DomainUtil.updateDomainDescriptor(origGwt, updateGwt, c, _user);
-    assertTrue("Expected a validation error when adding a reserved-name field", ve.hasErrors());
-    assertTrue("Expected error message to flag the reserved name: " + ve.getMessage(),
-            ve.getMessage().toLowerCase().contains("reserved"));
-
-    // A non-reserved field name should validate cleanly
-    GWTDomain<GWTPropertyDescriptor> okUpdate = new GWTDomain<>(origGwt);
-    List<GWTPropertyDescriptor> okFields = new ArrayList<>(okUpdate.getFields());
-    okFields.add(new GWTPropertyDescriptor("nonReservedField", "http://www.w3.org/2001/XMLSchema#string"));
-    okUpdate.setFields(okFields);
-    ValidationException okVe = DomainUtil.validateProperties(domain, okUpdate, kind, origGwt, _user);
-    assertFalse("Did not expect validation errors for a non-reserved field: " + okVe.getMessage(), okVe.hasErrors());
+    helper.verifyReservedColumnNames(c, _user, domain);
 
     ExpDataClassImpl dataClass = (ExpDataClassImpl)ExperimentService.get().getDataClass(c, domainName);
     assertNotNull(dataClass);
@@ -571,7 +544,7 @@ public void testDomainTemplate() throws Exception
     assertNotNull(templateGroup);
     assertFalse("Errors in template: " + StringUtils.join(templateGroup.getErrors(), ", "), templateGroup.hasErrors());
 
-    List<Domain> created = templateGroup.createAndImport(sub, _user, true, true);
+    templateGroup.createAndImport(sub, _user, true, true);
 
     // verify the "Priority" list was created and data was imported
     UserSchema listSchema = QueryService.get().getUserSchema(_user, sub, "lists");
@@ -646,6 +619,13 @@ public void testDomainTemplate() throws Exception
 
     Collection<String> aliases = data.getAliases();
     assertTrue("Expected aliases to contain 'xsd' and 'domain templates', got: " + aliases, aliases.containsAll(List.of("xsd", "domain templates")));
+
+    // Verify reserved column names on lists
+    TableInfo categoryTable = listSchema.getTable("Category");
+    Domain categoryDomain = categoryTable.getDomain();
+    assertNotNull(categoryDomain);
+
+    helper.verifyReservedColumnNames(c, _user, categoryTable.getDomain());
 }
 
 // Issue 25224: NPE trying to delete a folder with a DataClass with at least one result row in it
