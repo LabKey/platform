@@ -73,7 +73,7 @@ public abstract class BaseStudyDomainKind extends BaseAbstractDomainKind
     protected abstract TableInfo getTableInfo();
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         TableInfo table = getTableInfo();
         return table.getColumnNameSet();

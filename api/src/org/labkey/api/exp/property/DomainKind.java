@@ -109,23 +109,41 @@ abstract public class DomainKind<T> implements Handler<String>
 
     /**
      * Return the set of names that should not be allowed for properties. E.g., the names of columns
-     * from the hard table underlying this type.
+     * from the hard table underlying this type, unioned with any names declared in the
+     * {@link DomainTemplate}'s {@code <reservedColumnNames>} element that this domain was created from.
      * <p>
-     * Subclasses should typically override this method and union their kind-specific reserved set with
-     * {@link #getTemplateReservedPropertyNames(Domain)} (or with {@code super.getReservedPropertyNames(...)}
-     * when the override does not also override the {@code forCreate} variant). Doing so ensures that
-     * names declared in a {@code DomainTemplate}'s {@code <reservedColumnNames>} element are honored.
+     * This method is {@code final}; subclasses contribute their kind-specific reserved set by overriding
+     * {@link #getKindReservedPropertyNames(Domain, User, boolean)}. The base class always unions that
+     * set with the template-declared set.
      *
      * @return set of strings containing the names. This will be compared ignoring case
      */
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    public final Set<String> getReservedPropertyNames(Domain domain, User user)
     {
-        return getTemplateReservedPropertyNames(domain);
+        return getReservedPropertyNames(domain, user, false);
     }
 
-    public Set<String> getReservedPropertyNames(Domain domain, User user, boolean forCreate)
+    public final Set<String> getReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
-        return getReservedPropertyNames(domain, user);
+        Set<String> reserved = new CaseInsensitiveHashSet(getKindReservedPropertyNames(domain, user, forCreate));
+        reserved.addAll(getTemplateReservedPropertyNames(domain));
+        return reserved;
+    }
+
+    /**
+     * Return the kind-specific set of names that should not be allowed for properties. Subclasses override
+     * this to contribute their static/hard-coded reserved names. The base class will automatically union
+     * the result with any names declared in the {@link DomainTemplate}'s {@code <reservedColumnNames>}
+     * element via {@link #getReservedPropertyNames(Domain, User, boolean)}.
+     *
+     * @param forCreate true when validating names during domain creation; some kinds reserve additional
+     *                  names only at creation time.
+     * @return set of strings containing the names.
+     */
+    @NotNull
+    protected Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
+    {
+        return Collections.emptySet();
     }
 
     /**

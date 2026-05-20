@@ -261,16 +261,9 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
-    {
-        return getReservedPropertyNames(domain, user, false);
-    }
-
-    @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user, boolean forCreate)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
-        reserved.addAll(getTemplateReservedPropertyNames(domain));
 
         if (domain == null)
         {
