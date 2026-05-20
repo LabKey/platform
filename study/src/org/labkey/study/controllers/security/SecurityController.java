@@ -469,7 +469,7 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public HttpView getTabView(String tabId)
+        public HttpView<?> getTabView(String tabId)
         {
             if (TAB_STUDY.equals(tabId))
             {
@@ -559,9 +559,7 @@ public class SecurityController extends SpringActionController
                 if (getContainer().hasPermission(getUser(), AdminPermission.class))
                     root.addChild("Manage Views", urlProvider(ReportUrls.class).urlManageViews(getContainer()).getLocalURIString());
             }
-            catch (Exception e)
-            {
-            }
+            catch (Exception _) {}
             root.addChild("Report and View Permissions");
         }
     }
@@ -701,7 +699,7 @@ public class SecurityController extends SpringActionController
 
         public int getAdd()
         {
-            return add == null ? 0 : remove.intValue();
+            return add == null ? 0 : add.intValue();
         }
 
         public void setAdd(Integer add)
@@ -730,9 +728,9 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    static class Overview extends WebPartView
+    static class Overview extends WebPartView<StudyImpl>
     {
-        private final HttpView _vbox;
+        private final HttpView<?> _vbox;
 
         Overview(StudyImpl study)
         {
@@ -773,7 +771,7 @@ public class SecurityController extends SpringActionController
 
 
         @Override
-        protected void renderView(Object model, HtmlWriter out) throws Exception
+        protected void renderView(StudyImpl model, HtmlWriter out) throws Exception
         {
             include(_vbox, out.unwrap());
         }
@@ -783,7 +781,7 @@ public class SecurityController extends SpringActionController
     public static class StudySecurityViewFactory implements SecurityManager.ViewFactory
     {
         @Override
-        public HttpView createView(ViewContext context)
+        public StudySecurityPermissionsView createView(ViewContext context)
         {
             if (null != BaseStudyController.getStudy(context.getContainer()))
                 return new StudySecurityPermissionsView();

@@ -582,7 +582,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     multipartfile.transferTo(dataFile.toNioPathForWrite());
                     if (_useAsync)
                     {
-                        if (!isBackgroundImportSupported())
+                        if (!isBackgroundImportSupported(dataFile.getName()))
                             throw new RuntimeException("Importing in background currently is not supported for this table");
 
                         ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getUser(), new ActionURL());
@@ -757,7 +757,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return null;
     }
 
-    protected boolean isBackgroundImportSupported()
+    protected boolean isBackgroundImportSupported(@NotNull String fileName)
     {
         return false;
     }
