@@ -399,6 +399,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (extraScriptContext != null)
         {
             context.setDataSource((String) extraScriptContext.get(DataIteratorUtil.DATA_SOURCE));
+            if (extraScriptContext.containsKey(AbstractQueryImportAction.Params.useTransactionAuditCache.name()))
+            {
+                boolean useTransactionAuditCache = Boolean.TRUE.equals(extraScriptContext.get(AbstractQueryImportAction.Params.useTransactionAuditCache.name()));
+                context.setUseTransactionAuditCache(useTransactionAuditCache);
+            }
         }
 
         preImportDIBValidation(in, null);

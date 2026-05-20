@@ -4561,7 +4561,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        protected boolean isBackgroundImportSupported()
+        protected boolean isBackgroundImportSupported(@NotNull String fileName)
         {
             return true;
         }
