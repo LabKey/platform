@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -130,6 +131,14 @@ public abstract class Action extends CreatedModified
         _inputParameters = inputParameters;
     }
 
+    /**
+     * Validates that the status parameters are valid, according to the following rules:
+     *  - If updateKeyRequired is true, then STATUS_KEY and REMOVE_FROM_STORAGE_KEY may only be present if
+     *  UPDATE_STATUS_KEY is true
+     *  - STATUS_KEY is optional, but when present the value must be a valid status
+     *  - REMOVE_FROM_STORAGE_KEY may only be present when STATUS_KEY is also present
+     *  - If REMOVE_STORAGE_KEY is true, then the value for STATUS_KEY must represent a consumed state
+     */
     private @Nullable String validateStatus(Container container, String prefix, boolean updateKeyRequired)
     {
         boolean hasStatusKey = _inputParameters.has(STATUS_KEY);
@@ -141,7 +150,7 @@ public abstract class Action extends CreatedModified
         {
             updateStatus = hasUpdateStatusKey && _inputParameters.getBoolean(UPDATE_STATUS_KEY);
         }
-        catch (Exception e)
+        catch (JSONException e)
         {
             return prefix + UPDATE_STATUS_KEY + " must be a boolean.";
         }
@@ -151,7 +160,7 @@ public abstract class Action extends CreatedModified
         {
             removeFromStorage = hasRemoveFromStorageKey && _inputParameters.getBoolean(REMOVE_FROM_STORAGE_KEY);
         }
-        catch (Exception e)
+        catch (JSONException e)
         {
             return prefix + REMOVE_FROM_STORAGE_KEY + " must be a boolean.";
         }
@@ -177,7 +186,7 @@ public abstract class Action extends CreatedModified
             {
                 statusId = _inputParameters.getLong(STATUS_KEY);
             }
-            catch (Exception e)
+            catch (JSONException e)
             {
                 return prefix + STATUS_KEY + " must be a number.";
             }
@@ -197,6 +206,11 @@ public abstract class Action extends CreatedModified
     private static boolean isSampleStatusKey(String key)
     {
         return key.equals(STATUS_KEY) || key.equals(UPDATE_STATUS_KEY) || key.equals(REMOVE_FROM_STORAGE_KEY);
+    }
+
+    private boolean hasAnySampleStatusKey()
+    {
+        return _inputParameters != null && (_inputParameters.has(UPDATE_STATUS_KEY) || _inputParameters.has(STATUS_KEY) || _inputParameters.has(REMOVE_FROM_STORAGE_KEY));
     }
 
     @JsonIgnore
@@ -258,7 +272,7 @@ public abstract class Action extends CreatedModified
                 }
             }
 
-            if (_inputParameters != null && (_inputParameters.has(UPDATE_STATUS_KEY) || _inputParameters.has(STATUS_KEY) || _inputParameters.has(REMOVE_FROM_STORAGE_KEY)))
+            if (hasAnySampleStatusKey())
             {
                 String statusMessage = validateStatus(container, prefix, true);
                 if (statusMessage != null) messages.add(statusMessage);
@@ -327,7 +341,7 @@ public abstract class Action extends CreatedModified
             if (!invalidCounts.isEmpty())
                 messages.add(prefix + "invalid sample count values " + invalidCounts + ".");
 
-            if (_inputParameters.has(UPDATE_STATUS_KEY) || _inputParameters.has(STATUS_KEY) || _inputParameters.has(REMOVE_FROM_STORAGE_KEY))
+            if (hasAnySampleStatusKey())
             {
                 String statusMessage = validateStatus(container, prefix, true);
 
