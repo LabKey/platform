@@ -303,7 +303,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
-import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ShortURLRecord;
 import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.TabStripView;
@@ -315,6 +314,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.EmptyView;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
@@ -417,10 +417,12 @@ import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.Attribute.title;
 import static org.labkey.api.util.DOM.Attribute.type;
 import static org.labkey.api.util.DOM.Attribute.value;
+import static org.labkey.api.util.DOM.B;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.LI;
+import static org.labkey.api.util.DOM.P;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.STYLE;
 import static org.labkey.api.util.DOM.TABLE;
@@ -2699,23 +2701,41 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction
-    public class DumpHeapAction extends SimpleViewAction<Object>
+    public class DumpHeapAction extends ConfirmAction<Object>
     {
+        private File _destination;
+
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getConfirmView(Object o, BindException errors)
         {
-            File destination = DebugInfoDumper.dumpHeap();
-            return new HtmlView(HtmlString.of("Heap dumped to " + destination.getAbsolutePath()));
+            setTitle("Dump Heap");
+            return HtmlView.of("Are you sure you want to dump the JVM heap to disk? Heap dumps are useful for troubleshooting memory leaks or OutOfMemoryErrors. This may temporarily slow the server and will consume significant disk space.");
         }
 
         @Override
-        public void addNavTrail(NavTree root)
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            setHelpTopic("dumpHeap");
-            addAdminNavTrail(root, "Heap dump", getClass());
+            _destination = DebugInfoDumper.dumpHeap();
+            return true;
+        }
+
+        @Override
+        public ModelAndView getSuccessView(Object o)
+        {
+            return new HtmlView(HtmlString.of("Heap dumped to " + _destination.getAbsolutePath()));
+        }
+
+        @Override
+        public void validateCommand(Object o, Errors errors)
+        {
+        }
+
+        @Override
+        public @NotNull URLHelper getSuccessURL(Object o)
+        {
+            return getShowAdminURL();
         }
     }
-
 
     public static class ThreadsBean
     {
@@ -3198,31 +3218,9 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(MemForm form, BindException errors)
         {
-            if (form.isClearCaches())
-            {
-                LOG.info("Clearing Introspector caches");
-                Introspector.flushCaches();
-                LOG.info("Purging all caches");
-                CacheManager.clearAllKnownCaches();
-                ActionURL redirect = getViewContext().cloneActionURL().deleteParameter("clearCaches");
-                throw new RedirectException(redirect);
-            }
+            getPageConfig().addClientDependency(ClientDependency.fromPath("admin/caches.js"));
 
             List<TrackingCache<?, ?>> caches = CacheManager.getKnownCaches();
-
-            if (form.getDebugName() != null)
-            {
-                for (TrackingCache<?, ?> cache : caches)
-                {
-                    if (form.getDebugName().equals(cache.getDebugName()))
-                    {
-                        LOG.info("Purging cache: {}", cache.getDebugName());
-                        cache.clear();
-                    }
-                }
-                ActionURL redirect = getViewContext().cloneActionURL().deleteParameter("debugName");
-                throw new RedirectException(redirect);
-            }
 
             List<CacheStats> cacheStats = new ArrayList<>();
             List<CacheStats> transactionStats = new ArrayList<>();
@@ -3235,13 +3233,19 @@ public class AdminController extends SpringActionController
 
             HtmlStringBuilder html = HtmlStringBuilder.of();
 
-            html.append(LinkBuilder.labkeyLink("Clear Caches and Refresh", getCachesURL(true, false)));
-            html.append(LinkBuilder.labkeyLink("Refresh", getCachesURL(false, false)));
+            html.append(createHtmlFragment(A(cl("labkey-text-link").at(href, "#").id("clearAllCaches"), "Clear Caches and Refresh")));
+            html.append(createHtmlFragment(A(cl("labkey-text-link").at(href, "#").id("refreshPage"), "Refresh")));
+            html.append(createHtmlFragment(
+                SPAN(at(style, "display:none; margin-left:8px;").id("cacheSpinner"),
+                    SPAN(at(style, "display:inline-block; width:14px; height:14px; border:2px solid #ccc; border-top-color:#333; border-radius:50%; animation:lk-spin 0.7s linear infinite; vertical-align:middle;"))),
+                STYLE("@keyframes lk-spin { to { transform: rotate(360deg); } }"),
+                DIV(cl("labkey-error").at(style, "display:none;").id("cacheError"))
+            ));
 
-            html.unsafeAppend("<br/><br/>\n");
+            html.append(createHtmlFragment(BR(), BR()));
             appendStats(html, "Caches", cacheStats, false);
 
-            html.unsafeAppend("<br/><br/>\n");
+            html.append(createHtmlFragment(BR(), BR()));
             appendStats(html, "Transaction Caches", transactionStats, true);
 
             return new HtmlView(html);
@@ -3251,79 +3255,65 @@ public class AdminController extends SpringActionController
         {
             List<CacheStats> stats = skipUnusedCaches ?
                 allStats.stream()
-                    .filter(stat->stat.getMaxSize() > 0)
+                    .filter(stat -> stat.getMaxSize() > 0)
                     .collect(Collectors.toCollection((Supplier<List<CacheStats>>) ArrayList::new)) :
                 allStats;
 
             Collections.sort(stats);
 
-            html.unsafeAppend("<p><b>");
-            html.append(title);
-            html.append(" (").append(stats.size()).unsafeAppend(")</b></p>\n");
+            long size = stats.stream().mapToLong(CacheStats::getSize).sum();
+            long gets = stats.stream().mapToLong(CacheStats::getGets).sum();
+            long misses = stats.stream().mapToLong(CacheStats::getMisses).sum();
+            long puts = stats.stream().mapToLong(CacheStats::getPuts).sum();
+            long expirations = stats.stream().mapToLong(CacheStats::getExpirations).sum();
+            long evictions = stats.stream().mapToLong(CacheStats::getEvictions).sum();
+            long removes = stats.stream().mapToLong(CacheStats::getRemoves).sum();
+            long clears = stats.stream().mapToLong(CacheStats::getClears).sum();
+            double ratio = gets != 0 ? misses / (double) gets : 0;
 
-            html.unsafeAppend("<table class=\"labkey-data-region-legacy labkey-show-borders labkey-data-region-header-lock\">\n");
-            html.unsafeAppend("<tr><td class=\"labkey-column-header\">Debug Name</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Limit</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Max&nbsp;Size</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Current&nbsp;Size</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Gets</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Misses</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Puts</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Expirations</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Evictions</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Removes</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Clears</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Miss Percentage</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Clear</td></tr>");
+            AtomicInteger rowCount = new AtomicInteger();
+            html.append(createHtmlFragment(
+                P(B(title + " (" + stats.size() + ")")),
+                TABLE(cl("labkey-data-region-legacy", "labkey-show-borders", "labkey-data-region-header-lock"),
+                    TR(
+                        TD(cl("labkey-column-header"), "Debug Name"),
+                        TD(cl("labkey-column-header"), "Limit"),
+                        TD(cl("labkey-column-header"), "Max Size"),
+                        TD(cl("labkey-column-header"), "Current Size"),
+                        TD(cl("labkey-column-header"), "Gets"),
+                        TD(cl("labkey-column-header"), "Misses"),
+                        TD(cl("labkey-column-header"), "Puts"),
+                        TD(cl("labkey-column-header"), "Expirations"),
+                        TD(cl("labkey-column-header"), "Evictions"),
+                        TD(cl("labkey-column-header"), "Removes"),
+                        TD(cl("labkey-column-header"), "Clears"),
+                        TD(cl("labkey-column-header"), "Miss Percentage"),
+                        TD(cl("labkey-column-header"), "Clear")
+                    ),
+                    stats.stream().map(stat -> {
+                        Long limit = stat.getLimit();
+                        long maxSize = stat.getMaxSize();
 
-            long size = 0;
-            long gets = 0;
-            long misses = 0;
-            long puts = 0;
-            long expirations = 0;
-            long evictions = 0;
-            long removes = 0;
-            long clears = 0;
-            int rowCount = 0;
+                        String clearId = "clear_" + UniqueID.getServerSessionScopedUID();
+                        HttpView.currentPageConfig().addHandler(clearId, "click",
+                            "LABKEY.Admin.Caches.clearSingle(" + PageFlowUtil.jsString(stat.getDescription()) + "); return false;");
 
-            for (CacheStats stat : stats)
-            {
-                size += stat.getSize();
-                gets += stat.getGets();
-                misses += stat.getMisses();
-                puts += stat.getPuts();
-                expirations += stat.getExpirations();
-                evictions += stat.getEvictions();
-                removes += stat.getRemoves();
-                clears += stat.getClears();
-
-                html.unsafeAppend("<tr class=\"").append(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row").unsafeAppend("\">");
-
-                appendDescription(html, stat.getDescription(), stat.getCreationStackTrace());
-
-                Long limit = stat.getLimit();
-                long maxSize = stat.getMaxSize();
-
-                appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getEvictions(), stat.getRemoves(), stat.getClears());
-                appendDoubles(html, stat.getMissRatio());
-
-                html.unsafeAppend("<td>").append(LinkBuilder.labkeyLink("Clear", getCacheURL(stat.getDescription()))).unsafeAppend("</td>\n");
-
-                if (null != limit && maxSize >= limit)
-                    html.unsafeAppend("<td><font class=\"labkey-error\">This cache has been limited</font></td>");
-
-                html.unsafeAppend("</tr>\n");
-                rowCount++;
-            }
-
-            double ratio = 0 != gets ? misses / (double)gets : 0;
-            html.unsafeAppend("<tr class=\"labkey-row\"><td><b>Total</b></td>");
-
-            appendLongs(html, null, null, size, gets, misses, puts, expirations, evictions, removes, clears);
-            appendDoubles(html, ratio);
-
-            html.unsafeAppend("</tr>\n");
-            html.unsafeAppend("</table>\n");
+                        return TR(cl(rowCount.getAndIncrement() % 2 == 0 ? "labkey-alternate-row" : "labkey-row"),
+                            descriptionCell(stat.getDescription(), stat.getCreationStackTrace()),
+                            longCells(limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getEvictions(), stat.getRemoves(), stat.getClears()),
+                            doubleCell(stat.getMissRatio()),
+                            TD(A(cl("labkey-text-link").at(href, "#").id(clearId), "Clear")),
+                            null != limit && maxSize >= limit ? TD(SPAN(cl("labkey-error"), "This cache has been limited")) : null
+                        );
+                    }),
+                    TR(cl("labkey-row"),
+                        TD(B("Total")),
+                        longCells(null, null, size, gets, misses, puts, expirations, evictions, removes, clears),
+                        doubleCell(ratio)
+                        )
+                    )
+                )
+            );
         }
 
         private static final List<String> PREFIXES_TO_SKIP = List.of(
@@ -3334,7 +3324,7 @@ public class AdminController extends SpringActionController
             "org.labkey.api.module.ModuleResourceCache"
         );
 
-        private void appendDescription(HtmlStringBuilder html, String description, @Nullable StackTraceElement[] creationStackTrace)
+        private Renderable descriptionCell(String description, @Nullable StackTraceElement[] creationStackTrace)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -3346,7 +3336,7 @@ public class AdminController extends SpringActionController
                     // Skip the first few uninteresting stack trace elements to highlight the caller we care about
                     if (trimming)
                     {
-                        if (PREFIXES_TO_SKIP.stream().anyMatch(prefix->element.toString().startsWith(prefix)))
+                        if (PREFIXES_TO_SKIP.stream().anyMatch(prefix -> element.toString().startsWith(prefix)))
                             continue;
 
                         trimming = false;
@@ -3356,30 +3346,31 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            if (!sb.isEmpty())
-            {
-                String message = PageFlowUtil.jsString(sb);
-                String id = "id" + UniqueID.getServerSessionScopedUID();
-                html.append(DOM.createHtmlFragment(TD(A(at(href, "#").id(id), description))));
-                HttpView.currentPageConfig().addHandler(id, "click", "alert(" + message + ");return false;");
-            }
+            if (sb.isEmpty())
+                return TD(description);
+
+            String message = PageFlowUtil.jsString(sb);
+            String id = "id" + UniqueID.getServerSessionScopedUID();
+            HttpView.currentPageConfig().addHandler(id, "click", "alert(" + message + ");return false;");
+            return TD(A(at(href, "#").id(id), description));
         }
 
-        private void appendLongs(HtmlStringBuilder html, Long... stats)
+        private List<Renderable> longCells(Long... stats)
         {
+            List<Renderable> cells = new ArrayList<>();
             for (Long stat : stats)
             {
                 if (null == stat)
-                    html.unsafeAppend("<td>&nbsp;</td>");
+                    cells.add(TD(NBSP));
                 else
-                    html.unsafeAppend("<td align=\"right\">").append(commaf0.format(stat)).unsafeAppend("</td>");
+                    cells.add(TD(at(style, "text-align:right"), commaf0.format(stat)));
             }
+            return cells;
         }
 
-        private void appendDoubles(HtmlStringBuilder html, double... stats)
+        private Renderable doubleCell(double stat)
         {
-            for (double stat : stats)
-                html.unsafeAppend("<td align=\"right\">").append(percent.format(stat)).unsafeAppend("</td>");
+            return TD(at(style, "text-align:right"), percent.format(stat));
         }
 
         @Override
@@ -3387,6 +3378,60 @@ public class AdminController extends SpringActionController
         {
             setHelpTopic("cachesDiagnostics");
             addAdminNavTrail(root, "Cache Statistics", this.getClass());
+        }
+    }
+
+    @AdminConsoleAction
+    public static class ClearCachesAction extends MutatingApiAction<MemForm>
+    {
+        @Override
+        public ApiResponse execute(MemForm form, BindException errors)
+        {
+            if (form.getDebugName() != null)
+            {
+                for (TrackingCache<?, ?> cache : CacheManager.getKnownCaches())
+                {
+                    if (form.getDebugName().equals(cache.getDebugName()))
+                    {
+                        LOG.info("Purging cache: " + cache.getDebugName());
+                        cache.clear();
+                    }
+                }
+            }
+            else if (form.isClearCaches() && form.isGc())
+            {
+                long before = doGc();
+                doClearCaches();
+                long cacheMemoryUsed = before - doGc();
+                String cacheMemUsed = cacheMemoryUsed > 0 ? FileUtils.byteCountToDisplaySize(cacheMemoryUsed) : "Unknown";
+                LOG.info("Estimate of cache memory used: " + cacheMemUsed);
+                lastCacheMemUsed = cacheMemUsed;
+            }
+            else if (form.isClearCaches())
+            {
+                doClearCaches();
+            }
+            else if (form.isGc())
+            {
+                doGc();
+            }
+            return new ApiSimpleResponse("success", true);
+        }
+
+        private long doGc()
+        {
+            LOG.info("Garbage collecting");
+            System.gc();
+            return Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        }
+
+        private void doClearCaches()
+        {
+            LOG.info("Clearing Introspector caches");
+            Introspector.flushCaches();
+            LOG.info("Purging all caches");
+            CacheManager.clearAllKnownCaches();
+            SearchService.get().purgeQueues();
         }
     }
 
@@ -3722,41 +3767,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static ActionURL getMemTrackerURL(boolean clearCaches, boolean gc)
-    {
-        ActionURL url = new ActionURL(MemTrackerAction.class, ContainerManager.getRoot());
-
-        if (clearCaches)
-            url.addParameter(MemForm.Params.clearCaches, "1");
-
-        if (gc)
-            url.addParameter(MemForm.Params.gc, "1");
-
-        return url;
-    }
-
-    public static ActionURL getCachesURL(boolean clearCaches, boolean gc)
-    {
-        ActionURL url = new ActionURL(CachesAction.class, ContainerManager.getRoot());
-
-        if (clearCaches)
-            url.addParameter(MemForm.Params.clearCaches, "1");
-
-        if (gc)
-            url.addParameter(MemForm.Params.gc, "1");
-
-        return url;
-    }
-
-    public static ActionURL getCacheURL(String debugName)
-    {
-        ActionURL url = new ActionURL(CachesAction.class, ContainerManager.getRoot());
-
-        url.addParameter(MemForm.Params.debugName, debugName);
-
-        return url;
-    }
-
     private static volatile String lastCacheMemUsed = null;
 
     @AdminConsoleAction
@@ -3766,58 +3776,7 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(MemForm form, BindException errors)
         {
             Set<Object> objectsToIgnore = MemTracker.getInstance().beforeReport();
-
-            boolean gc = form.isGc();
-            boolean cc = form.isClearCaches();
-
-            if (getUser().hasRootAdminPermission() && (gc || cc))
-            {
-                // If both are requested then try to determine and record cache memory usage
-                if (gc && cc)
-                {
-                    // gc once to get an accurate free memory read
-                    long before = gc();
-                    clearCaches();
-                    // gc again now that we cleared caches
-                    long cacheMemoryUsed = before - gc();
-
-                    // Difference could be < 0 if JVM or other threads have performed gc, in which case we can't guesstimate cache memory usage
-                    String cacheMemUsed = cacheMemoryUsed > 0 ? FileUtils.byteCountToDisplaySize(cacheMemoryUsed) : "Unknown";
-                    LOG.info("Estimate of cache memory used: {}", cacheMemUsed);
-                    lastCacheMemUsed = cacheMemUsed;
-                }
-                else if (cc)
-                {
-                    clearCaches();
-                }
-                else
-                {
-                    gc();
-                }
-
-                LOG.info("Cache clearing and garbage collecting complete");
-            }
-
             return new JspView<>("/org/labkey/core/admin/memTracker.jsp", new MemBean(getViewContext().getRequest(), objectsToIgnore));
-        }
-
-        /** @return estimated current memory usage, post-garbage collection */
-        private long gc()
-        {
-            LOG.info("Garbage collecting");
-            System.gc();
-            // This is more reliable than relying on just free memory size, as the VM can grow/shrink the heap at will
-            return Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        }
-
-        private void clearCaches()
-        {
-            LOG.info("Clearing Introspector caches");
-            Introspector.flushCaches();
-            LOG.info("Purging all caches");
-            CacheManager.clearAllKnownCaches();
-            LOG.info("Purging SearchService queues");
-            SearchService.get().purgeQueues();
         }
 
         @Override
@@ -3830,8 +3789,6 @@ public class AdminController extends SpringActionController
 
     public static class MemForm
     {
-        private enum Params {clearCaches, debugName, gc}
-
         private boolean _clearCaches = false;
         private boolean _gc = false;
         private String _debugName;
@@ -3924,12 +3881,12 @@ public class AdminController extends SpringActionController
             }
 
             // ignore recently allocated
-            long start = ViewServlet.getRequestStartTime(request) - 2000;
+            long start = ViewServlet.getRequestStartTime(request) - 5000;
             references = new ArrayList<>(all.size());
 
             for (HeldReference r : all)
             {
-                if (r.getThreadId() == threadId && r.getAllocationTime() >= start)
+                if (r.getAllocationTime() >= start)
                     continue;
 
                 if (objectsToIgnore.contains(r.getReference()))
@@ -5450,19 +5407,10 @@ public class AdminController extends SpringActionController
             Container container = getContainer();
             PipeRoot pipelineRoot;
             FileLike pipelineUnzipDir;  // Should be local & writable
-            PipelineUrls pipelineUrlProvider;
 
             if (form.getOrigin() == null)
             {
                 form.setOrigin("Folder");
-            }
-
-            // make sure we have a pipeline url provider to use for the success URL redirect
-            pipelineUrlProvider = urlProvider(PipelineUrls.class);
-            if (pipelineUrlProvider == null)
-            {
-                errors.reject("folderImport", "Pipeline url provider does not exist.");
-                return false;
             }
 
             // make sure that the pipeline root is valid for this container
@@ -5513,7 +5461,7 @@ public class AdminController extends SpringActionController
             options.setActivity(ComplianceService.get().getCurrentActivity(getViewContext()));
 
             // finally, create the study or folder import pipeline job
-            _successURL = pipelineUrlProvider.urlBegin(container);
+            _successURL = urlProvider(PipelineUrls.class).urlBegin(container);
             PipelineService.get().runFolderImportJob(container, user, url, archiveXml, fiConfig.originalFileName, pipelineRoot, options);
 
             return !errors.hasErrors();
@@ -10432,6 +10380,10 @@ public class AdminController extends SpringActionController
             if (isBlank(form.getContainerPath()))
                 throw new NotFoundException();
             Container container = ContainerManager.getForPath(form.getContainerPath());
+            if (!container.hasPermission(getUser(), AdminPermission.class))
+            {
+                throw new UnauthorizedException();
+            }
             for (String tabName : form.getResurrectFolders())
             {
                 ContainerManager.clearContainerTabDeleted(container, tabName, form.getNewFolderType());
@@ -11803,15 +11755,15 @@ public class AdminController extends SpringActionController
             }
         });
 
-        boolean noErrors = !saveFolderSettings(c, user, props, form, errors);
+        boolean success = saveFolderSettings(c, user, props, form, errors);
 
-        if (noErrors)
+        if (success)
         {
             // Bump the look & feel revision so browsers retrieve the new theme stylesheet
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
         }
 
-        return noErrors;
+        return success;
     }
 
     private static void setProperty(boolean inherited, Runnable clear, Runnable set)
@@ -12052,7 +12004,7 @@ public class AdminController extends SpringActionController
         public final HtmlString customColumnRestrictionHelpLink = new HelpTopic("chartTrouble").getSimpleLinkHtml("more info...");
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(SiteAdminPermission.class)
     public static class AdjustSystemTimestampsAction extends FormViewAction<AdjustTimestampsForm>
     {
         @Override

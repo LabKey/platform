@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import { ActionURL } from '@labkey/api';
 
-import { getErrorHeading, getImage, getInstruction, getSubHeading, getViewDetails } from './ErrorType';
+import { getErrorHeading, getImage, getInstruction, getShowDetailsBtn, getSubHeading, getViewDetails } from './ErrorType';
 import { ErrorDetails } from './model';
 import { withServerContext } from '@labkey/components';
 
@@ -61,7 +61,7 @@ export class ErrorHandlerImpl extends PureComponent<ErrorHandlerProps, ErrorHand
                                 <button className="btn btn-default error-page-button" onClick={this.onHomeClick}>
                                     Home
                                 </button>
-                                {!errorDetails.hideViewDetails &&
+                                {!errorDetails.hideViewDetails && getShowDetailsBtn(errorDetails) &&
                                     <button className="btn btn-default error-page-button" onClick={this.onViewDetailsClick}>
                                         {viewDetailsBtnText}
                                     </button>
