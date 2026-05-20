@@ -57,7 +57,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.37.1-moreAccessibility.0",
+    "@labkey/components": "7.37.1-moreAccessibility.1",
     "@labkey/themes": "1.9.3"
   },
   "devDependencies": {
