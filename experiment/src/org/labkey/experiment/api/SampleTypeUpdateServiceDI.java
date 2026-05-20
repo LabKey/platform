@@ -84,6 +84,7 @@ import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
+import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
@@ -241,7 +242,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         ArrayList<Map<String, Object>> outputRows = new ArrayList<>();
         Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
         finalConfigParameters.put(ExperimentService.QueryOptions.GetSampleRecomputeCol, true);
-        int ret = _importRowsUsingDIB(user, container, rows, outputRows, getDataIteratorContext(errors, InsertOption.INSERT, finalConfigParameters), extraScriptContext);
+        int ret = _importRowsUsingDIB(user, container, rows, outputRows, getDataIteratorContext(errors, InsertOption.IMPORT, finalConfigParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
             onSamplesChanged(outputRows, configParameters, container, insert);
@@ -487,9 +488,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         // insertRows with lineage is pretty good at deadlocking against itself, so use retry loop
 
+        InsertOption insertOption;
+        // allow caller to use InsertOption.IMPORT to useImportAliases
+        if (configParameters != null && configParameters.get(AbstractQueryImportAction.Params.insertOption) instanceof InsertOption option)
+            insertOption = option;
+        else
+        {
+            insertOption = InsertOption.INSERT;
+        }
+
         DbScope scope = getSchema().getDbSchema().getScope();
         List<Map<String, Object>> results = scope.executeWithRetry(transaction ->
-                super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext));
+                super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, insertOption, configParameters), extraScriptContext));
 
         if (results != null && !results.isEmpty() && !errors.hasErrors())
         {

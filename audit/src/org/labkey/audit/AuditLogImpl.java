@@ -55,6 +55,7 @@ import org.labkey.audit.query.AuditQuerySchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -247,63 +248,63 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         return new ActionURL(AuditController.ShowAuditLogAction.class, ContainerManager.getRoot());
     }
 
-    public List<Long> getTransactionSampleIds(long transactionAuditId, User user, Container container, @Nullable ContainerFilter containerFilter)
+    public record TransactionRowIds(List<Long> rowIds, Map<Long, Long> dataTypeRowCounts) {}
+
+    public TransactionRowIds getTransactionSampleIds(long transactionAuditId, User user, Container container, @Nullable ContainerFilter containerFilter)
     {
         List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(transactionAuditId).second;
-        if (!transactionEvents.isEmpty())
+        List<SampleTimelineAuditEvent> events;
+        if (transactionEvents.isEmpty())
         {
-            List<Long> ids = new ArrayList<>();
-            transactionEvents.forEach(event -> {
-                if (event instanceof SampleTimelineAuditEvent stEvent)
-                    ids.add(stEvent.getSampleId());
-            });
-            return ids;
-        }
-
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition(FieldKey.fromParts("TransactionID"), transactionAuditId);
-
-        List<SampleTimelineAuditEvent> events = AuditLogService.get().getAuditEvents(container, user, SampleTimelineAuditEvent.EVENT_TYPE, filter, null, containerFilter);
-        return events.stream().map(SampleTimelineAuditEvent::getSampleId).collect(Collectors.toList());
-    }
-
-    public List<Long> getTransactionSourceIds(long transactionAuditId, User user, Container container, @Nullable ContainerFilter containerFilter)
-    {
-        List<String> lsids = new ArrayList<>();
-        List<Long> sourceIds = new ArrayList<>();
-        List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(transactionAuditId).second;
-        if (!transactionEvents.isEmpty())
-        {
-            transactionEvents.forEach(event -> {
-                if (event instanceof DetailedAuditTypeEvent detailedEvent)
-                {
-                    if (detailedEvent.getNewRecordMap() != null)
-                    {
-                        Map<String, String> newRecord = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(detailedEvent.getNewRecordMap()));
-                        if (newRecord.containsKey("RowId") && !StringUtils.isEmpty(newRecord.get("RowId")))
-                            sourceIds.add(Long.valueOf(newRecord.get("RowId")));
-                        else if (newRecord.containsKey("LSID") && !StringUtils.isEmpty(newRecord.get("LSID")))
-                            lsids.add(newRecord.get("LSID"));
-                    }
-                }
-            });
+            SimpleFilter filter = new SimpleFilter();
+            filter.addCondition(FieldKey.fromParts("TransactionID"), transactionAuditId);
+            events = AuditLogService.get().getAuditEvents(container, user, SampleTimelineAuditEvent.EVENT_TYPE, filter, null, containerFilter);
         }
         else
         {
-            List<DetailedAuditTypeEvent> events = QueryService.get().getQueryUpdateAuditRecords(user, container, transactionAuditId, containerFilter);
-
-            events.forEach((event) -> {
-                if (event.getNewRecordMap() != null)
-                {
-                    Map<String, String> newRecord = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap()));
-                    if (newRecord.containsKey("RowId") && !StringUtils.isEmpty(newRecord.get("RowId")))
-                        sourceIds.add(Long.valueOf(newRecord.get("RowId")));
-                    else if (newRecord.containsKey("LSID") && !StringUtils.isEmpty(newRecord.get("LSID")))
-                        lsids.add(newRecord.get("LSID"));
-
-                }
-            });
+            events = transactionEvents.stream()
+                    .filter(SampleTimelineAuditEvent.class::isInstance)
+                    .map(SampleTimelineAuditEvent.class::cast)
+                    .toList();
         }
+        Map<Long, Long> dataTypeRowCounts = new HashMap<>();
+        List<Long> sampleIds = new ArrayList<>();
+        events.forEach(event -> {
+            dataTypeRowCounts.merge(event.getSampleTypeId(), 1L, Long::sum);
+            sampleIds.add(event.getSampleId());
+        });
+        return new TransactionRowIds(sampleIds, dataTypeRowCounts);
+    }
+
+    public TransactionRowIds getTransactionSourceIds(long transactionAuditId, User user, Container container, @Nullable ContainerFilter containerFilter)
+    {
+        List<String> lsids = new ArrayList<>();
+        List<Long> sourceIds = new ArrayList<>();
+        Map<Long, Long> dataTypeRowCounts = new HashMap<>();
+        List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(transactionAuditId).second;
+        List<DetailedAuditTypeEvent> detailedEvents = transactionEvents.isEmpty()
+                ? QueryService.get().getQueryUpdateAuditRecords(user, container, transactionAuditId, containerFilter)
+                : transactionEvents.stream()
+                        .filter(DetailedAuditTypeEvent.class::isInstance)
+                        .map(DetailedAuditTypeEvent.class::cast)
+                        .toList();
+
+        detailedEvents.forEach(event -> {
+            if (event.getNewRecordMap() != null)
+            {
+                Map<String, String> newRecord = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap()));
+                if (newRecord.containsKey("RowId") && !StringUtils.isEmpty(newRecord.get("RowId")))
+                    sourceIds.add(Long.valueOf(newRecord.get("RowId")));
+                else if (newRecord.containsKey("LSID") && !StringUtils.isEmpty(newRecord.get("LSID")))
+                    lsids.add(newRecord.get("LSID"));
+
+                if (newRecord.containsKey("ClassId") && !StringUtils.isEmpty(newRecord.get("ClassId")))
+                {
+                    Long classId = Long.valueOf(newRecord.get("ClassId"));
+                    dataTypeRowCounts.merge(classId, 1L, Long::sum);
+                }
+            }
+        });
         if (!lsids.isEmpty())
         {
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
@@ -311,6 +312,6 @@ public class AuditLogImpl implements AuditLogService, StartupListener
             TableSelector selector = new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton("RowId"), filter, null);
             sourceIds.addAll(selector.getArrayList(Long.class));
         }
-        return sourceIds;
+        return new TransactionRowIds(sourceIds, dataTypeRowCounts);
     }
 }

@@ -32,6 +32,7 @@ import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataClassDataIteratorTransformer;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentProtocolHandler;
@@ -74,6 +75,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.query.UserSchema;
@@ -101,6 +103,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import static org.labkey.api.exp.api.ExpDataClass.NEW_DATA_CLASS_ALIAS_VALUE;
 import static org.labkey.api.exp.api.SampleTypeService.NEW_SAMPLE_TYPE_ALIAS_VALUE;
@@ -656,6 +660,21 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpDataClassTable createDataClassTable(String name, UserSchema schema, ContainerFilter cf);
 
     ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClass dataClass);
+
+    /**
+     * Registers a factory that creates a {@link DataClassDataIteratorTransformer}
+     * for the specified DataClass name. The transformer is applied in the pre-trigger DataIterator pipeline,
+     * allowing modules to add computed columns (e.g., transforming flat columns into JSON) that work
+     * uniformly for file imports, API imports, folder imports, and background pipeline jobs.
+     * A fresh instance is created per import via the factory since transformers may be stateful.
+     */
+    void registerDataClassDataIteratorTransformer(String dataClassName, @NotNull Supplier<DataClassDataIteratorTransformer> factory);
+
+    /**
+     * Returns a fresh {@link DataClassDataIteratorTransformer} for the given
+     * DataClass name, or {@code null} if none is registered.
+     */
+    @Nullable DataClassDataIteratorTransformer getDataClassDataIteratorTransformer(String dataClassName);
 
     ExpProtocolTable createProtocolTable(String name, UserSchema schema, ContainerFilter cf);
 
