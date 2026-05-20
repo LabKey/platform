@@ -223,7 +223,7 @@ public void nameExpressionScale() throws Exception
 @Test
 public void testDataClass() throws Exception
 {
-    final Container sub = ContainerManager.createContainer(c, "sub", _user);
+    final Container sub = ContainerManager.createContainer(c, "subTestDataClass", _user);
     final String dataClassName = "testing";
 
     List<GWTPropertyDescriptor> props = List.of(
@@ -632,7 +632,7 @@ public void testDomainTemplate() throws Exception
 @Test
 public void testContainerDelete() throws Exception
 {
-    final Container sub = ContainerManager.createContainer(c, "sub", _user);
+    final Container sub = ContainerManager.createContainer(c, "subTestContainerDelete", _user);
     final String dataClassName = "testing";
 
     List<GWTPropertyDescriptor> props = new ArrayList<>();

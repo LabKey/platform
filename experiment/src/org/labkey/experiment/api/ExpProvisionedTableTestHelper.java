@@ -63,7 +63,7 @@ public class ExpProvisionedTableTestHelper
         prop3.setRangeURI("string");
         prop3.setName(colorPropertyName);
 
-        GWTDomain domain = new GWTDomain();
+        GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
         domain.setName(domainName);
         domain.setDescription(domainDescription);
         domain.setFields(List.of(prop1, prop2, prop3));

@@ -118,11 +118,13 @@ abstract public class DomainKind<T> implements Handler<String>
      *
      * @return set of strings containing the names. This will be compared ignoring case
      */
+    @NotNull
     public final Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         return getReservedPropertyNames(domain, user, false);
     }
 
+    @NotNull
     public final Set<String> getReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         Set<String> reserved = new CaseInsensitiveHashSet(getKindReservedPropertyNames(domain, user, forCreate));
