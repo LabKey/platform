@@ -205,7 +205,9 @@ public class GroupManager
         if (prependComma)
             sb.append(", ");
 
-        sb.append(name).append("=\"").append(value).append("\"");
+        // Escape backslashes first, then quotes, to produce a valid DOT quoted string
+        String escaped = value.replace("\\", "\\\\").replace("\"", "\\\"");
+        sb.append(name).append("=\"").append(escaped).append("\"");
     }
 
     public static void exportGroupMembers(Group group, List<Group> memberGroups, List<User> memberUsers, GroupType xmlGroupType)
