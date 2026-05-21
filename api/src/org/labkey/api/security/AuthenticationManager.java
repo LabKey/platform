@@ -1273,10 +1273,10 @@ public class AuthenticationManager
         // slow down login attempts when we detect more than 20/minute bad attempts per user, password, or ip address
         rl = addrLimiter.get(getIntCacheKey(request == null ? null : request.getRemoteAddr()));
         if (null != rl)
-            delay = Math.max(delay,rl.add(0, false));
+            delay = Math.max(delay, rl.getDelay());
          rl = pwdLimiter.get(getIntCacheKey(pwd));
         if (null != rl)
-            delay = Math.max(delay, rl.add(0, false));
+            delay = Math.max(delay, rl.getDelay());
 
         try
         {
@@ -1306,7 +1306,7 @@ public class AuthenticationManager
     {
         RateLimiter rl = userLimiter.get(getEmailCacheKey(id));
         if (null != rl)
-            return rl.add(0, false);
+            return rl.getDelay();
         return 0;
     }
 
@@ -1318,9 +1318,9 @@ public class AuthenticationManager
         {
             RateLimiter rl;
             rl = addrLimiter.get(getIntCacheKey(request.getRemoteAddr()),request, addrLoader);
-            rl.add(1, false);
+            rl.tryAdd(1);
             rl = pwdLimiter.get(getIntCacheKey(pwd),request, pwdLoader);
-            rl.add(1, false);
+            rl.tryAdd(1);
 
             addUserLoginDelay(request, id);
         }
@@ -1349,7 +1349,7 @@ public class AuthenticationManager
     private static void addDefaultUserLoginDelay(HttpServletRequest request, String id)
     {
         RateLimiter rl = userLimiter.get(getEmailCacheKey(id),request, userLoader);
-        rl.add(1, false);
+        rl.tryAdd(1);
     }
 
     // Attempts to authenticate using only LoginFormAuthenticationProviders (e.g., DbLogin, LDAP). This is for the case
