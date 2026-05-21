@@ -19,7 +19,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SecretServiceImpl implements SecretService
@@ -107,7 +106,7 @@ public class SecretServiceImpl implements SecretService
     public @NotNull List<SecretStatus> getSecretStatuses()
     {
         return _registeredSecrets.values().stream()
-            .filter(s -> !Objects.isNull(s.getPropertyName()))
+            .filter(s -> s.getPropertyName() != null)
             .sorted(Comparator.comparing(SecretProperty::getPropertyName))
             .map(prop -> {
                 String name = prop.getPropertyName();
