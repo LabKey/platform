@@ -52,6 +52,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
 import org.labkey.api.dataiterator.CachingDataIterator;
+import org.labkey.api.dataiterator.DataClassDataIteratorTransformer;
 import org.labkey.api.dataiterator.CoerceDataIterator;
 import org.labkey.api.dataiterator.DataClassUpdateAddColumnsDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
@@ -85,6 +86,7 @@ import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
@@ -143,6 +145,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
@@ -1119,9 +1122,20 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             final int batchSize = _context.getInsertOption().batch ? BATCH_SIZE : 1;
             step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId(), batchSize, _dataClass.getMinGenId());
 
+            // Apply registered DataClass-specific DataIterator transformer (e.g., Molecule Component-N/X → components JSON)
+            DataIteratorBuilder step1 = step0;
+            DataClassDataIteratorTransformer transformer = ExperimentService.get().getDataClassDataIteratorTransformer(_dataClass.getName());
+            if (transformer != null)
+            {
+                if (transformer.prepareTranslator(step0, columnNameMap, context))
+                    step1 = LoggingDataIterator.wrap(transformer.wrapDataIterator(step0, context));
+                if (context.getErrors().hasErrors())
+                    return null;
+            }
+
             // Table Counters
             ExpDataClassDataTableImpl queryTable = ExpDataClassDataTableImpl.this;
-            var counterDIB = ExpDataIterators.CounterDataIteratorBuilder.create(step0, _dataClass.getContainer(), queryTable, ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId());
+            var counterDIB = ExpDataIterators.CounterDataIteratorBuilder.create(step1, _dataClass.getContainer(), queryTable, ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId());
             DataIterator di;
 
             // Generate names
@@ -1210,7 +1224,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
         {
-            return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+            return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.IMPORT, configParameters), extraScriptContext);
         }
 
         @Override
@@ -1299,7 +1313,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {
-            return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+            InsertOption insertOption = InsertOption.INSERT;
+            // allow caller to use InsertOption.IMPORT to useImportAliases
+            if (configParameters != null && configParameters.get(AbstractQueryImportAction.Params.insertOption) instanceof InsertOption option)
+                insertOption = option;
+            return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, insertOption, configParameters), extraScriptContext);
         }
 
         @Override

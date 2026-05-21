@@ -15,6 +15,7 @@
  */
 package org.labkey.study.pipeline;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.NullSafeBindException;
@@ -96,17 +97,43 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
 
             // guaranteed to only have a single file
             assert jobSupport.getInputFiles().size() == 1;
+            StudyImpl study = getStudy();
             for (FileLike file : jobSupport.getInputFiles())
             {
                 if (params.containsKey(DATASET_ID_KEY))
-                    inputDataMap.put(file, new Pair<>(DATASET_ID_KEY, params.get(DATASET_ID_KEY)));
+                {
+                    int datasetId = NumberUtils.toInt(params.get(DATASET_ID_KEY));
+                    if (StudyManager.getInstance().getDatasetDefinition(study, datasetId) != null)
+                    {
+                        _ctx.getLogger().info("Dataset matching the 'id' capture group was resolved : {}", datasetId);
+                        inputDataMap.put(file, new Pair<>(DATASET_ID_KEY, params.get(DATASET_ID_KEY)));
+                    }
+                    else
+                    {
+                        // don't create new datasets via a capture group id
+                        _ctx.getLogger().error("Dataset matching the 'id' capture group was not resolved : {}", datasetId);
+                        return new RecordedActionSet();
+                    }
+                }
                 else if (params.containsKey(DATASET_NAME_KEY))
-                    inputDataMap.put(file, new Pair<>(DATASET_NAME_KEY, params.get(DATASET_NAME_KEY)));
+                {
+                    String datasetName = params.get(DATASET_NAME_KEY);
+                    if (StudyManager.getInstance().getDatasetDefinitionByName(study, datasetName) != null)
+                    {
+                        _ctx.getLogger().info("Dataset matching the 'name' capture group was resolved : {}", datasetName);
+                        inputDataMap.put(file, new Pair<>(DATASET_NAME_KEY, datasetName));
+                    }
+                    else
+                    {
+                        // don't create new datasets via a capture group name
+                        _ctx.getLogger().error("Dataset matching the 'name' capture group was not resolved : {}", datasetName);
+                        return new RecordedActionSet();
+                    }
+                }
                 else if (params.containsKey(DataTransformService.ORIGINAL_SOURCE_PATH))
                     inputDataMap.put(file, new Pair<>(DataTransformService.ORIGINAL_SOURCE_PATH, params.get(DataTransformService.ORIGINAL_SOURCE_PATH)));
             }
             List<String> readerErrors = new ArrayList<>();
-            StudyImpl study = getStudy();
             DatasetInferSchemaReader reader = new DatasetInferSchemaReader(getDatasetsDirectory(), getStudy(), _ctx, inputDataMap);
             reader.validate(readerErrors);
 

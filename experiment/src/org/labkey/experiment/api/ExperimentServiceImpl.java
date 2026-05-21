@@ -94,6 +94,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.dataiterator.DataClassDataIteratorTransformer;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.AbstractParameter;
@@ -284,11 +285,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -353,6 +356,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private final Map<String, DataType> _dataTypes = new HashMap<>();
     private final Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
     private final Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
+    private final Map<String, Supplier<DataClassDataIteratorTransformer>> _dataClassDataIteratorTransformers = new ConcurrentHashMap<>();
     private final Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
     private final List<ObjectReferencer> _objectReferencers = new ArrayList<>();
     private final List<ColumnExporter> _columnExporters = new ArrayList<>();
@@ -1588,6 +1592,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClass dataClass)
     {
         return new ExpDataClassDataTableImpl(name, schema, cf, (ExpDataClassImpl) dataClass);
+    }
+
+    @Override
+    public void registerDataClassDataIteratorTransformer(String dataClassName, @NotNull Supplier<DataClassDataIteratorTransformer> factory)
+    {
+        _dataClassDataIteratorTransformers.put(dataClassName.toLowerCase(), factory);
+    }
+
+    @Override
+    public @Nullable DataClassDataIteratorTransformer getDataClassDataIteratorTransformer(String dataClassName)
+    {
+        Supplier<DataClassDataIteratorTransformer> factory = _dataClassDataIteratorTransformers.get(dataClassName.toLowerCase());
+        return factory != null ? factory.get() : null;
     }
 
     @Override
