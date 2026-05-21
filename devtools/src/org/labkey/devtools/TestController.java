@@ -1386,7 +1386,7 @@ public class TestController extends SpringActionController
                 throw new NotFoundException();
             VectorStore vs = McpService.get().getVectorStore();
             if (null == vs)
-                throw new NotFoundException("/Documentation project was not found");
+                throw new NotFoundException("VectorStore not enabled.");
 
             ActionURL wikiBase = new ActionURL("wiki","page",documentsContainer);
 
