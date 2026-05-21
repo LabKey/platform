@@ -1433,41 +1433,67 @@ public class TestController extends SpringActionController
 
     public static class DocumentationMCP implements McpService.McpImpl
     {
+        static JSONObject full_index = null;
+
+        static
+        {
+            try
+            {
+                full_index = new JSONObject(IOUtils.resourceToString("org/labkey/devtools/FULL_INDEX.json", null, DevtoolsModule.class.getClassLoader()));
+            }
+            catch(Exception x)
+            {
+            }
+        }
+
+
         @Tool(description = "List of available documents from the LabKey user and administration manuals.")
         @RequiresNoPermission
-        String listDocuments(ToolContext toolContext)
+        String listDocuments(ToolContext toolContext,
+                             @ToolParam(description = "Index to start listing for paginatation (staring at 0)") Integer start,
+                             @ToolParam(description = "Count of listings to return for pagination") Integer count)
         {
             Container documentsContainer = ContainerManager.getForPath("/Documentation");
             if (null == documentsContainer)
                 return new JSONObject(Map.of("error","There is no /Documentation project on this server")).toString();
 
-            try
+            if (null == full_index)
             {
-                // markdown index with summaries
-                return IOUtils.resourceToString("org/labkey/devtools/FULL_INDEX.json", null, DevtoolsModule.class.getClassLoader());
-            }
-            catch (Exception io)
-            {
-                //pass
+                // CONSIDER include hierarchy or paths
+                // TODO WikiService doesn't expose this, just do a query for now (even though this info is cached)
+                TableInfo currentWikiVersions = CommSchema.getInstance().getSchema().getTable("CurrentWikiVersions");
+                SimpleFilter filter = SimpleFilter.createContainerFilter(documentsContainer);
+                Collection<Map<String, Object>> rows = new TableSelector(currentWikiVersions, Set.of("Name","Title","RowId","Parent","EntityId"), filter, null).getMapCollection();
+
+                JSONArray array = new JSONArray();
+                for (var row : rows)
+                {
+                    CaseInsensitiveHashMap<Object> copy = new CaseInsensitiveHashMap<>(row);
+                    copy.put("id", String.valueOf(copy.get("EntityId")));
+                    copy.remove("EntityId");
+                    array.put(new JSONObject(copy));
+                }
+                var j = new JSONObject();
+                j.put("pages", array);
+                full_index = j;
             }
 
-            // CONSIDER include hierarchy or paths
-            // TODO WikiService doesn't expose this, just do a query for now (even though this info is cached)
-            TableInfo currentWikiVersions = CommSchema.getInstance().getSchema().getTable("CurrentWikiVersions");
-            SimpleFilter filter = SimpleFilter.createContainerFilter(documentsContainer);
-            Collection<Map<String, Object>> rows = new TableSelector(currentWikiVersions, Set.of("Name","Title","RowId","Parent","EntityId"), filter, null).getMapCollection();
+            int index = start instanceof Integer i && i >= 0 ? i : 0;
+            int num   = count instanceof Integer i && i >= 0 ? i : Integer.MAX_VALUE;
 
-            JSONArray array = new JSONArray();
-            for (var row : rows)
-            {
-                CaseInsensitiveHashMap<Object> copy = new CaseInsensitiveHashMap<>(row);
-                copy.put("id", String.valueOf(copy.get("EntityId")));
-                copy.remove("EntityId");
-                array.put(new JSONObject(copy));
-            }
+            JSONArray pages = full_index.getJSONArray("pages");
+            int total = pages.length();
+            int end = (int) Math.min((long) index + num, total);
+
+            JSONArray subset = new JSONArray();
+            for (int i = index; i < end; i++)
+                subset.put(pages.get(i));
+
             var ret = new JSONObject();
-            ret.put("Version", "26.3");
-            ret.put("Documents", array);
+            ret.put("total", total);
+            ret.put("start", index);
+            ret.put("count", subset.length());
+            ret.put("pages", subset);
             return ret.toString();
         }
 
