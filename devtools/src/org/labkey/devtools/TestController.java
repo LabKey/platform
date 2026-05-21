@@ -17,6 +17,7 @@
 package org.labkey.devtools;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +33,7 @@ import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.announcements.CommSchema;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -99,7 +101,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Gatherers;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.util.DOM.Attribute.name;
@@ -1440,16 +1441,29 @@ public class TestController extends SpringActionController
             if (null == documentsContainer)
                 return new JSONObject(Map.of("error","There is no /Documentation project on this server")).toString();
 
+            try
+            {
+                // markdown index with summaries
+                return IOUtils.resourceToString("org/labkey/devtools/FULL_INDEX.json", null, DevtoolsModule.class.getClassLoader());
+            }
+            catch (Exception io)
+            {
+                //pass
+            }
+
             // CONSIDER include hierarchy or paths
             // TODO WikiService doesn't expose this, just do a query for now (even though this info is cached)
             TableInfo currentWikiVersions = CommSchema.getInstance().getSchema().getTable("CurrentWikiVersions");
             SimpleFilter filter = SimpleFilter.createContainerFilter(documentsContainer);
-            Collection<Map<String, Object>> rows = new TableSelector(currentWikiVersions, Set.of("Name","Title","RowId","Parent"), filter, null).getMapCollection();
+            Collection<Map<String, Object>> rows = new TableSelector(currentWikiVersions, Set.of("Name","Title","RowId","Parent","EntityId"), filter, null).getMapCollection();
 
             JSONArray array = new JSONArray();
             for (var row : rows)
             {
-                array.put(new JSONObject(row));
+                CaseInsensitiveHashMap<Object> copy = new CaseInsensitiveHashMap<>(row);
+                copy.put("id", String.valueOf(copy.get("EntityId")));
+                copy.remove("EntityId");
+                array.put(new JSONObject(copy));
             }
             var ret = new JSONObject();
             ret.put("Version", "26.3");
@@ -1478,7 +1492,7 @@ public class TestController extends SpringActionController
             var ret = new JSONObject();
             ret.put("Content-Type", "text/html");
             ret.put("filename",  wiki.name() + ".html");
-            ret.put("id", "documentation/" + wiki.name());
+            ret.put("id", wiki.entityId());
             ret.put("title", wiki.title());
             ret.put("source", wikiBase.clone().addParameter("name",wiki.name()).getURIString());
             ret.put("contents", wiki.html().toString());
