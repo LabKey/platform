@@ -1753,9 +1753,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     static class _SamplesCoerceDataIterator extends SimpleTranslator
     {
-        private static final String INVALID_ALIQUOT_PROPERTY = "An aliquot-specific property [%1$s] value has been ignored for a non-aliquot sample.";
-        private static final String INVALID_NON_ALIQUOT_PROPERTY = "A sample property [%1$s] value has been ignored for an aliquot.";
-
         private final ExpSampleTypeImpl _sampleType;
         private final Unit _sampleTypeBaseUnit;
 
@@ -1810,14 +1807,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     String name = to.getName();
                     boolean isScopedField = scopedFields.containsKey(name);
 
-                    String ignoredAliquotPropValue = String.format(INVALID_ALIQUOT_PROPERTY, name);
-                    String ignoredMetaPropValue = String.format(INVALID_NON_ALIQUOT_PROPERTY, name);
                     if (to.getPropertyType() == PropertyType.ATTACHMENT || to.getPropertyType() == PropertyType.FILE_LINK)
                     {
                         if (isScopedField)
                         {
                             ColumnInfo clone = new BaseColumnInfo(to);
-                            addColumn(clone, new DerivationScopedColumn(i, aliquotedFromDataColInd, scopedFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
+                            addColumn(clone, new DerivationScopedColumn(i, aliquotedFromDataColInd, scopedFields.get(name)));
                         }
                         else
                             addColumn(to, i);
@@ -1829,7 +1824,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         {
                             var col = new BaseColumnInfo(getInput().getColumnInfo(i));
                             col.setName(name);
-                            addColumn(col, new DerivationScopedColumn(i, aliquotedFromDataColInd, scopedFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
+                            addColumn(col, new DerivationScopedColumn(i, aliquotedFromDataColInd, scopedFields.get(name)));
                         }
                         else
                             addColumn(to.getName(), i);
@@ -1900,7 +1895,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private void _addConvertColumn(ColumnInfo col, int fromIndex, int derivationDataColInd, boolean isAliquotField)
         {
             SimpleConvertColumn c = createConvertColumn(col, fromIndex, RemapMissingBehavior.Error);
-            c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField, String.format(INVALID_ALIQUOT_PROPERTY, col.getName()), String.format(INVALID_NON_ALIQUOT_PROPERTY, col.getName()));
+            c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField);
 
             addColumn(col, c);
         }
