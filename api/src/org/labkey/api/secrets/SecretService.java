@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 
+import java.util.List;
+
 /**
  * Internal service that provides access to secrets (API keys, passwords, etc.) without
  * requiring callers to know where the secret is stored. Secrets may come from startup
@@ -56,12 +58,21 @@ public interface SecretService
     boolean isRegisteredSecret(@NotNull String name);
 
     /**
-     * Register an {@link ExternalSecretProvider} (e.g., AWS SSM). The provider is
-     * consulted at higher priority than startup-property secrets. Should be called after
-     * server startup is complete so that startup properties are loaded first.
-     *
-     * TODO This is a total place holder.  Secrets may need to be available very eary, so we
-     * TODO need to consider a typical registerProvider() interface will work well.
+     * Register a high-priority {@link SecretProvider} (e.g., AWS SSM). This provider is
+     * consulted before the built-in startup-property and environment-variable providers.
      */
-    void setExternalProvider(@NotNull ExternalSecretProvider provider);
+    void setExternalProvider(@NotNull SecretProvider provider);
+
+    /**
+     * Returns read-only status for every registered secret, sorted by name.
+     * Never includes secret values — safe to display in admin UI.
+     */
+    @NotNull List<SecretStatus> getSecretStatuses();
+
+    /**
+     * Returns a human-readable description of the active external provider (e.g.,
+     * "AWS SSM Parameter Store"), or {@code null} if no external provider is registered.
+     * The external provider takes priority over startup-property and environment-variable sources.
+     */
+    @Nullable String getExternalProviderDescription();
 }

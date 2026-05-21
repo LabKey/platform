@@ -35,6 +35,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -189,6 +190,7 @@ import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.secrets.SecretService;
+import org.labkey.api.secrets.SecretStatus;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
@@ -426,8 +428,10 @@ import static org.labkey.api.util.DOM.LI;
 import static org.labkey.api.util.DOM.P;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.STYLE;
+import static org.labkey.api.util.DOM.STRONG;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TH;
 import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.UL;
 import static org.labkey.api.util.DOM.at;
@@ -506,6 +510,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "queries", getQueriesURL(null));
         AdminConsole.addLink(Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
+        AdminConsole.addLink(Diagnostics, "secrets", new ActionURL(SecretsAction.class, root), SiteAdminPermission.class);
         AdminConsole.addLink(Diagnostics, "site validation", new ActionURL(ConfigureSiteValidationAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Diagnostics, "sql scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Diagnostics, "suspicious activity", new ActionURL(SuspiciousAction.class, root));
@@ -3473,6 +3478,48 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             addAdminNavTrail(root, "System Properties", this.getClass());
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class SecretsAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            List<SecretStatus> statuses = SecretService.get().getSecretStatuses();
+
+            List<Renderable> rows = new ArrayList<>();
+
+            if (statuses.isEmpty())
+            {
+                return new HtmlView(DIV("No secrets have been registered with SecretService."));
+            }
+
+            MutableInt rowIndex = new MutableInt(0);
+
+            Renderable table = DOM.TABLE(cl("table-condensed labkey-data-region table-bordered").at(style, "border:none"),
+                    TR(
+                        TH(at(style, "border:none; width:220px;"), STRONG("Secret Name")),
+                        TH(at(style, "border:none; width:300px;"), STRONG("Description")),
+                        TH(at(style, "border:none;"), STRONG("Source"))
+                    ),
+                    statuses.stream().map(status ->
+                        TR(
+                            cl(rowIndex.getAndIncrement() % 2 == 0 ? "labkey-alternate-row" : "labkey-row"),
+                            TD(status.name()),
+                            TD(status.description()),
+                            status.isSet()
+                                    ? TD(status.source())
+                                    : TD(SPAN(cl("labkey-error"), "Not configured"))
+                        )));
+            return new HtmlView(table);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "Secrets", this.getClass());
         }
     }
 
@@ -12469,6 +12516,7 @@ public class AdminController extends SpringActionController
             // @RequiresSiteAdmin
             assertForRequiresSiteAdmin(user,
                 controller.new EnvironmentVariablesAction(),
+                controller.new SecretsAction(),
                 controller.new SystemMaintenanceAction(),
                 controller.new SystemPropertiesAction(),
                 new GetPendingRequestCountAction(),

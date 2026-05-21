@@ -1,52 +1,54 @@
 package org.labkey.core.secrets;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.secrets.ExternalSecretProvider;
 import org.labkey.api.secrets.SecretProperty;
+import org.labkey.api.secrets.SecretProvider;
 import org.labkey.api.secrets.SecretService;
+import org.labkey.api.secrets.SecretStatus;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 public class SecretServiceImpl implements SecretService
 {
     private static final Logger LOG = LogHelper.getLogger(SecretServiceImpl.class, "Secret service");
     static final String STARTUP_PROPERTY_SCOPE = "secret";
 
-    // Secrets loaded from startup properties / environment variables
-    private final Map<String, String> _startupSecrets = new ConcurrentHashMap<>();
-    // Registered SecretProperty instances keyed by property name (for documentation and env filtering)
+    // Registered SecretProperty instances keyed by property name
     private final Map<String, SecretProperty> _registeredSecrets = new ConcurrentHashMap<>();
 
-    private volatile ExternalSecretProvider _externalProvider = null;
+    // Providers consulted in priority order: external (highest) → env vars → startup properties
+    private volatile SecretProvider _externalProvider = null;
+    private final SecretProvider _envProvider = new EnvironmentVariableSecretProvider();
+    private final StartupPropertySecretProvider _startupProvider;
 
-//    // Refresh timer — used when an ExternalSecretProvider is registered
-//    private final ScheduledExecutorService _scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-//        Thread t = new Thread(r, "SecretService-refresh");
-//        t.setDaemon(true);
-//        return t;
-//    });
-//    private volatile ScheduledFuture<?> _refreshFuture = null;
+    public SecretServiceImpl()
+    {
+        this(new StartupPropertySecretProvider());
+    }
+
+    private SecretServiceImpl(StartupPropertySecretProvider startupProvider)
+    {
+        _startupProvider = startupProvider;
+    }
 
     /**
      * Register a LenientStartupPropertyHandler to capture all "secret.*" entries from
-     * startup property files and their corresponding environment variables. Call this
-     * from CoreModule.init() after constructing and registering the service.
+     * startup property files. Call this from CoreModule.init() after constructing and
+     * registering the service.
      */
     public void handleStartupProperties()
     {
@@ -56,13 +58,7 @@ public class SecretServiceImpl implements SecretService
                 @Override
                 public void handle(Collection<StartupPropertyEntry> entries)
                 {
-                    entries.forEach(entry -> _startupSecrets.put(entry.getName(), entry.getValue()));
-                    for (var name : _registeredSecrets.keySet())
-                    {
-                        var s = System.getenv(name);
-                        if (StringUtils.isNotBlank(s))
-                            _startupSecrets.put(name,s);
-                    }
+                    _startupProvider.load(entries);
                 }
             });
     }
@@ -83,22 +79,16 @@ public class SecretServiceImpl implements SecretService
         if (registered != property)
             return null;
 
-        // External provider (e.g., SSM) has highest priority
-        ExternalSecretProvider provider = _externalProvider;
-        if (provider != null)
+        for (SecretProvider provider : activeProviders())
         {
             String value = provider.getSecret(name);
             if (value != null)
             {
-                LOG.debug("Secret '{}' resolved from external provider", name);
+                LOG.debug("Secret '{}' resolved from {}", name, provider.getDescription());
                 return value;
             }
         }
-
-        String value = _startupSecrets.get(name);
-        if (value != null)
-            LOG.debug("Secret '{}' resolved from startup properties", name);
-        return value;
+        return null;
     }
 
     @Override
@@ -108,31 +98,45 @@ public class SecretServiceImpl implements SecretService
     }
 
     @Override
-    public void setExternalProvider(@NotNull ExternalSecretProvider provider)
+    public void setExternalProvider(@NotNull SecretProvider provider)
     {
         _externalProvider = provider;
-//        scheduleRefresh();
     }
 
-    /** Cancel the refresh timer on server shutdown. */
-    public void shutdown()
+    @Override
+    public @NotNull List<SecretStatus> getSecretStatuses()
     {
-//        if (_refreshFuture != null)
-//            _refreshFuture.cancel(false);
-//        _scheduler.shutdown();
+        return _registeredSecrets.values().stream()
+            .filter(s -> !Objects.isNull(s.getPropertyName()))
+            .sorted(Comparator.comparing(SecretProperty::getPropertyName))
+            .map(prop -> {
+                String name = prop.getPropertyName();
+                String source = activeProviders().stream()
+                    .filter(p -> p.getSecret(name) != null)
+                    .map(SecretProvider::getDescription)
+                    .findFirst()
+                    .orElse(null);
+                return new SecretStatus(name, prop.getDescription(), source);
+            })
+            .toList();
     }
 
-//    private void scheduleRefresh()
-//    {
-//        if (_refreshFuture != null)
-//            _refreshFuture.cancel(false);
-//
-//        _refreshFuture = _scheduler.scheduleAtFixedRate(() -> {
-//            ExternalSecretProvider p = _externalProvider;
-//            if (p != null)
-//                p.refreshAll(_registeredSecrets.keySet());
-//        }, 5, 5, TimeUnit.MINUTES);
-//    }
+    @Override
+    public @Nullable String getExternalProviderDescription()
+    {
+        SecretProvider provider = _externalProvider;
+        return provider != null ? provider.getDescription() : null;
+    }
+
+    public void shutdown() {}
+
+    private List<SecretProvider> activeProviders()
+    {
+        SecretProvider external = _externalProvider;
+        return external != null
+            ? List.of(external, _envProvider, _startupProvider)
+            : List.of(_envProvider, _startupProvider);
+    }
 
     // Singleton SecretProperty used as the documentation entry for the "secret" scope on the
     // Startup Properties admin page. The scope name is "secret" and the property name is "*"
@@ -153,8 +157,7 @@ public class SecretServiceImpl implements SecretService
         @Test
         public void testStartupPropertyLoading()
         {
-            SecretServiceImpl svc = new SecretServiceImpl();
-            svc._startupSecrets.put("test.API_KEY", "abc123");
+            SecretServiceImpl svc = new SecretServiceImpl(startupProviderWith("test.API_KEY", "abc123"));
 
             SecretProperty prop = new SecretProperty("test.API_KEY", "Test API Key");
             svc.register(prop);
@@ -167,9 +170,8 @@ public class SecretServiceImpl implements SecretService
         {
             // getSecret() requires the same instance passed to register(); a fresh instance with
             // the same name must not be able to retrieve a secret it didn't declare.
-            SecretServiceImpl svc = new SecretServiceImpl();
+            SecretServiceImpl svc = new SecretServiceImpl(startupProviderWith("some.KEY", "value"));
             SecretProperty prop = new SecretProperty("some.KEY");
-            svc._startupSecrets.put("some.KEY", "value");
             assertNull("unregistered property must not retrieve a secret", svc.getSecret(prop));
         }
 
@@ -185,10 +187,9 @@ public class SecretServiceImpl implements SecretService
         @Test
         public void testExternalProviderPriority()
         {
-            SecretServiceImpl svc = new SecretServiceImpl();
-            svc._startupSecrets.put("my.KEY", "from-startup");
+            SecretServiceImpl svc = new SecretServiceImpl(startupProviderWith("my.KEY", "from-startup"));
 
-            svc.setExternalProvider(new ExternalSecretProvider()
+            svc.setExternalProvider(new SecretProvider()
             {
                 @Override
                 public @Nullable String getSecret(String propertyName)
@@ -197,13 +198,22 @@ public class SecretServiceImpl implements SecretService
                 }
 
                 @Override
-                public void refreshAll(Collection<String> propertyNames) {}
+                public @NotNull String getDescription()
+                {
+                    return "Test provider";
+                }
             });
 
             SecretProperty prop = new SecretProperty("my.KEY");
             svc.register(prop);
             assertEquals("from-external", svc.getSecret(prop));
-            svc.shutdown();
+        }
+
+        private StartupPropertySecretProvider startupProviderWith(String name, String value)
+        {
+            StartupPropertySecretProvider provider = new StartupPropertySecretProvider();
+            provider.loadDirect(name, value);
+            return provider;
         }
     }
 }
