@@ -9,7 +9,6 @@ export interface ErrorDetails {
     errorCode?: string;
     errorType: ErrorType;
     message?: string;
-    stackTrace?: string;
     hideViewDetails?: boolean;
     advice?: string;
 }
