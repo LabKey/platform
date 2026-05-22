@@ -127,7 +127,21 @@ public class SecretServiceImpl implements SecretService
         return provider != null ? provider.getDescription() : null;
     }
 
-    public void shutdown() {}
+    public void shutdown()
+    {
+        SecretProvider external = _externalProvider;
+        if (external instanceof AutoCloseable closeable)
+        {
+            try
+            {
+                closeable.close();
+            }
+            catch (Exception e)
+            {
+                LOG.warn("Error closing external secret provider", e);
+            }
+        }
+    }
 
     private List<SecretProvider> activeProviders()
     {

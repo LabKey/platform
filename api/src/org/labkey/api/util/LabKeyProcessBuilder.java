@@ -20,8 +20,8 @@ import java.util.Map;
  *   <li>contains "password" (case-insensitive).</li>
  * </ul>
  *
- * <p>Use this class wherever {@link ProcessBuilder} would otherwise be used. A Checkstyle rule
- * flags direct instantiation of {@code java.lang.ProcessBuilder} as a reminder.
+ * <p>Use this class wherever {@link ProcessBuilder} would otherwise be used. An IntelliJ inspection
+ * (SSBasedInspection) flags direct instantiation of {@code java.lang.ProcessBuilder} as a reminder.
  */
 public class LabKeyProcessBuilder
 {
@@ -29,18 +29,21 @@ public class LabKeyProcessBuilder
 
     public LabKeyProcessBuilder(List<String> command)
     {
+        //noinspection SSBasedInspection
         _pb = new ProcessBuilder(command);
         sanitizeEnvironment();
     }
 
     public LabKeyProcessBuilder(String... command)
     {
+        //noinspection SSBasedInspection
         _pb = new ProcessBuilder(command);
         sanitizeEnvironment();
     }
 
     public LabKeyProcessBuilder(File directory, List<String> command)
     {
+        //noinspection SSBasedInspection
         _pb = new ProcessBuilder(command);
         _pb.directory(directory);
         sanitizeEnvironment();
