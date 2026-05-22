@@ -55,12 +55,6 @@ public class PlateBasedAssaySampleTypeDomainKind extends SampleTypeDomainKind
             {
                 return null;
             }
-
-            @Override
-            public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
-            {
-                return Collections.emptySet();
-            }
         };
     }
 

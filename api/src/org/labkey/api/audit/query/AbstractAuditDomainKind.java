@@ -298,7 +298,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     }
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         Set<String> names = new HashSet<>();
 

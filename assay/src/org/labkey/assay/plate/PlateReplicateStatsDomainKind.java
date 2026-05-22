@@ -51,7 +51,7 @@ public class PlateReplicateStatsDomainKind extends AssayDomainKind
     }
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         return getAssayReservedPropertyNames();
     }

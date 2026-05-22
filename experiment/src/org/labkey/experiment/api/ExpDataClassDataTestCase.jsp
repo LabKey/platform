@@ -17,7 +17,6 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
 <%@ page import="org.junit.After" %>
-<%@ page import="org.junit.Assume" %>
 <%@ page import="org.junit.Before" %>
 <%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.action.ApiUsageException" %>
@@ -67,8 +66,6 @@
 <%@ page import="org.labkey.api.gwt.client.model.GWTDomain" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTIndex" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTPropertyDescriptor" %>
-<%@ page import="org.labkey.api.module.Module" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.query.BatchValidationException" %>
 <%@ page import="org.labkey.api.query.DefaultSchema" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
@@ -95,7 +92,6 @@
 <%@ page import="org.labkey.remoteapi.query.SelectRowsResponse" %>
 <%@ page import="java.sql.SQLException" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.HashSet" %>
@@ -110,43 +106,52 @@
 <%@ page import="static org.labkey.api.util.IntegerUtils.asInteger" %>
 <%@ page import="static org.labkey.api.util.IntegerUtils.asLong" %>
 <%@ page import="static org.hamcrest.Matchers.containsString" %>
+<%@ page import="org.junit.BeforeClass" %>
+<%@ page import="org.junit.AfterClass" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
+static final String PROJECT_NAME = "_testDataClass";
 ExpProvisionedTableTestHelper helper = new ExpProvisionedTableTestHelper();
 Container c;
+static User _user;
+
+@BeforeClass
+public static void setUp()
+{
+    _user = TestContext.get().getUser();
+}
 
 @Before
-public void setUp()
+public void ensureProject()
 {
-    // NOTE: We need to use a project to create the DataClass so we can insert rows into sub-folders
-    c = ContainerManager.getForPath("_testDataClass");
-    if (c != null)
-        ContainerManager.deleteAll(c, TestContext.get().getUser());
-    c = ContainerManager.createContainer(ContainerManager.getRoot(), "_testDataClass", TestContext.get().getUser());
+    // Some tests delete the project so ensure it is available for the next test
+    c = ContainerManager.ensureContainer(PROJECT_NAME, _user);
 }
 
 @After
-public void tearDown() throws InterruptedException
+public void drainQueue() throws InterruptedException
 {
     // Wait for the indexer to finish working on the data we just added to help avoid deadlocks
     SearchService.get().drainQueue(SearchService.PRIORITY.crawl, 15, TimeUnit.SECONDS);
-    ContainerManager.deleteAll(c, TestContext.get().getUser());
 }
 
+@AfterClass
+public static void tearDown()
+{
+    Container project = ContainerManager.getForPath(PROJECT_NAME);
+    if (project != null)
+        ContainerManager.deleteAll(project, _user);
+}
 
 // validate name is not null
 @Test
 public void nameNotNull() throws Exception
 {
-    final User user = TestContext.get().getUser();
-
     try
     {
-        List<GWTPropertyDescriptor> props = new ArrayList<>();
-        props.add(new GWTPropertyDescriptor("foo", "string"));
-
-        ExperimentServiceImpl.get().createDataClass(c, user, null, null, props, emptyList(), null, null);
+        List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("foo", "string"));
+        ExperimentServiceImpl.get().createDataClass(c, _user, null, null, props, emptyList(), null, null);
     }
     catch (ApiUsageException e)
     {
@@ -157,14 +162,10 @@ public void nameNotNull() throws Exception
 @Test // Issue 51321
 public void reservedNameFirst() throws Exception
 {
-    final User user = TestContext.get().getUser();
-
     try
     {
-        List<GWTPropertyDescriptor> props = new ArrayList<>();
-        props.add(new GWTPropertyDescriptor("foo", "string"));
-
-        ExperimentServiceImpl.get().createDataClass(c, user, "First", null, props, emptyList(), null, null);
+        List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("foo", "string"));
+        ExperimentServiceImpl.get().createDataClass(c, _user, "First", null, props, emptyList(), null, null);
     }
     catch (ApiUsageException e)
     {
@@ -175,14 +176,10 @@ public void reservedNameFirst() throws Exception
 @Test // Issue 51321
 public void reservedNameAll() throws Exception
 {
-    final User user = TestContext.get().getUser();
-
     try
     {
-        List<GWTPropertyDescriptor> props = new ArrayList<>();
-        props.add(new GWTPropertyDescriptor("foo", "string"));
-
-        ExperimentServiceImpl.get().createDataClass(c, user, "All", null, props, emptyList(), null, null);
+        List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("foo", "string"));
+        ExperimentServiceImpl.get().createDataClass(c, _user, "All", null, props, emptyList(), null, null);
     }
     catch (ApiUsageException e)
     {
@@ -194,15 +191,11 @@ public void reservedNameAll() throws Exception
 @Test
 public void nameScale() throws Exception
 {
-    final User user = TestContext.get().getUser();
-
     try
     {
-        List<GWTPropertyDescriptor> props = new ArrayList<>();
-        props.add(new GWTPropertyDescriptor("foo", "string"));
-
+        List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("foo", "string"));
         String name = StringUtils.repeat("a", 1000);
-        ExperimentServiceImpl.get().createDataClass(c, user, name, null, props, emptyList(), null, null);
+        ExperimentServiceImpl.get().createDataClass(c, _user, name, null, props, emptyList(), null, null);
     }
     catch (ApiUsageException e)
     {
@@ -214,17 +207,12 @@ public void nameScale() throws Exception
 @Test
 public void nameExpressionScale() throws Exception
 {
-    final User user = TestContext.get().getUser();
-
     try
     {
-        List<GWTPropertyDescriptor> props = new ArrayList<>();
-        props.add(new GWTPropertyDescriptor("foo", "string"));
-
+        List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("foo", "string"));
         DataClassDomainKindProperties options = new DataClassDomainKindProperties();
         options.setNameExpression(StringUtils.repeat("a", 1000));
-
-        ExperimentServiceImpl.get().createDataClass(c, user, "testing", options, props, emptyList(), null, null);
+        ExperimentServiceImpl.get().createDataClass(c, _user, "testing", options, props, emptyList(), null, null);
     }
     catch (ApiUsageException e)
     {
@@ -232,25 +220,21 @@ public void nameExpressionScale() throws Exception
     }
 }
 
-
 @Test
 public void testDataClass() throws Exception
 {
-    final User user = TestContext.get().getUser();
-    final Container sub = ContainerManager.createContainer(c, "sub", TestContext.get().getUser());
+    final Container sub = ContainerManager.createContainer(c, "subTestDataClass", _user);
     final String dataClassName = "testing";
 
-    List<GWTPropertyDescriptor> props = new ArrayList<>();
-    props.add(new GWTPropertyDescriptor("aa", "int"));
-    props.add(new GWTPropertyDescriptor("bb", "string"));
-
-    List<GWTIndex> indices = new ArrayList<>();
-    indices.add(new GWTIndex(Arrays.asList("aa"), true));
-
+    List<GWTPropertyDescriptor> props = List.of(
+        new GWTPropertyDescriptor("aa", "int"),
+        new GWTPropertyDescriptor("bb", "string")
+    );
+    List<GWTIndex> indices = List.of(new GWTIndex(List.of("aa"), true));
     DataClassDomainKindProperties options = new DataClassDomainKindProperties();
     options.setNameExpression("JUNIT-${genId}-${aa}");
 
-    final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, options, props, indices, null, null);
+    final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, dataClassName, options, props, indices, null, null);
     assertNotNull(dataClass);
 
     final Domain domain = dataClass.getDomain();
@@ -263,20 +247,16 @@ public void testDataClass() throws Exception
     String expectedSubName = "JUNIT-3-30";
     testInsertIntoSubfolder(dataClass, table, sub, expectedSubName);
     testTruncateRows(dataClass, table, expectedName, expectedSubName);
-    testBulkImport(dataClass, table, user);
-    testInsertAliases(dataClass, table);
-    testEmptyInsert(dataClass, table, user);
-    testDeleteExpData(dataClass, user, 3);
-    testDeleteExpDataClass(dataClass, user, table, domain.getTypeURI());
+    testBulkImport(dataClass, table);
+    testInsertAliases(table);
+    testEmptyInsert(table, _user);
+    testDeleteExpData(dataClass, _user, 3);
+    testDeleteExpDataClass(dataClass, _user, table, domain.getTypeURI());
 }
 
 private void testNameExpressionGeneration(ExpDataClassImpl dataClass, TableInfo table, String expectedName) throws Exception
 {
-    List<Map<String, Object>> rows = new ArrayList<>();
-    Map<String, Object> row = new CaseInsensitiveHashMap<>();
-    row.put("aa", 20);
-    row.put("bb", "hi");
-    rows.add(row);
+    List<Map<String, Object>> rows = List.of(CaseInsensitiveHashMap.of("aa", 20, "bb", "hi"));
 
     List<Map<String, Object>> ret;
     try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
@@ -300,13 +280,8 @@ private void testNameExpressionGeneration(ExpDataClassImpl dataClass, TableInfo 
 
 private void testInsertIntoSubfolder(ExpDataClassImpl dataClass, TableInfo table, Container sub, String expectedSubName) throws Exception
 {
-    List<Map<String, Object>> rows = new ArrayList<>();
-    Map<String, Object> row = new CaseInsensitiveHashMap<>();
-    row.put("aa", 30);
-    row.put("bb", "bye");
     String expectedComment = "waving in the wind";
-    row.put("flag", expectedComment);
-    rows.add(row);
+    List<Map<String, Object>> rows = List.of(CaseInsensitiveHashMap.of("aa", 30, "bb", "bye", "flag", expectedComment));
 
     List<Map<String, Object>> ret;
     try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
@@ -327,11 +302,7 @@ private void testInsertIntoSubfolder(ExpDataClassImpl dataClass, TableInfo table
 
 private void testInsertDuplicate(ExpDataClassImpl dataClass, TableInfo table) throws Exception
 {
-    List<Map<String, Object>> rows = new ArrayList<>();
-    Map<String, Object> row = new CaseInsensitiveHashMap<>();
-    row.put("aa", 20);
-    row.put("bb", "bye");
-    rows.add(row);
+    List<Map<String, Object>> rows = List.of(CaseInsensitiveHashMap.of("aa", 20, "bb", "bye"));
 
     try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
     {
@@ -356,32 +327,24 @@ private void testTruncateRows(ExpDataClassImpl dataClass, TableInfo table, Strin
     {
         // TODO: truncate rows API doesn't support truncating from all containers
         //count = table.getUpdateService().truncateRows(user, c, null, null);
-        count = ExperimentServiceImpl.get().truncateDataClass(dataClass, TestContext.get().getUser(), null);
+        count = ExperimentServiceImpl.get().truncateDataClass(dataClass, _user, null);
         tx.commit();
     }
-    assertEquals(2, count);
 
+    assertEquals(2, count);
     assertEquals(0, dataClass.getDatas().size());
     assertNull(ExperimentService.get().getExpData(dataClass, expectedName));
     assertNull(ExperimentService.get().getExpData(dataClass, expectedSubName));
 }
 
-private void testBulkImport(ExpDataClassImpl dataClass, TableInfo table, User user) throws Exception
+private void testBulkImport(ExpDataClassImpl dataClass, TableInfo table) throws Exception
 {
-    List<Map<String, Object>> rows = new ArrayList<>();
-    Map<String, Object> row = new CaseInsensitiveHashMap<>();
-    row.put("aa", 40);
-    row.put("bb", "qq");
-    row.put("alias", "a");
-    rows.add(row);
+    List<Map<String, Object>> rows = List.of(
+        CaseInsensitiveHashMap.of("aa", 40, "bb", "qq", "alias", "a"),
+        CaseInsensitiveHashMap.of("aa", 50, "bb", "zz", "alias", "a,b,c")
+    );
 
-    row = new CaseInsensitiveHashMap<>();
-    row.put("aa", 50);
-    row.put("bb", "zz");
-    row.put("alias", "a,b,c");
-    rows.add(row);
-
-    int count = table.getUpdateService().loadRows(user, c, MapDataIterator.of(rows), new DataIteratorContext(), null);
+    int count = table.getUpdateService().loadRows(_user, c, MapDataIterator.of(rows), new DataIteratorContext(), null);
     assertEquals(2, count);
     assertEquals(2, dataClass.getDatas().size());
 
@@ -421,24 +384,19 @@ private void testDeleteExpDataClass(ExpDataClassImpl dataClass, User user, Table
     assertNull(dbTable);
 }
 
-private void testInsertAliases(ExpDataClassImpl dataClass, TableInfo table) throws Exception
+private void testInsertAliases(TableInfo table) throws Exception
 {
-    List<Map<String, Object>> rows = new ArrayList<>();
-    Map<String, Object> row = new CaseInsensitiveHashMap<>();
-    row.put("aa", 20);
-    row.put("bb", "bye");
-    row.put("alias", "aa,bb");
-    rows.add(row);
+    Map<String, Object> row = CaseInsensitiveHashMap.of("aa", 20, "bb", "bye", "alias", "aa,bb");
 
     long insertedRowId;
     try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
     {
-        List<Map<String, Object>> ret = helper.insertRows(c, rows, table.getName());
+        List<Map<String, Object>> ret = helper.insertRows(c, List.of(row), table.getName());
         insertedRowId = asLong(ret.getFirst().get("rowId"));
         tx.commit();
     }
 
-    verifyAliases(table, insertedRowId, Set.of("aa","bb"));
+    verifyAliases(table, insertedRowId, Set.of("aa", "bb"));
 }
 
 private void verifyAliases(TableInfo table, long expDataRowId, Set<String> expectedAliases) throws Exception
@@ -496,11 +454,10 @@ private void verifyAliasesViaSelectRows(String schemaName, String queryName, lon
 }
 
 // Issue 35013: Importing a file with zero rows into a DataClass results in NPE
-private void testEmptyInsert(ExpDataClassImpl dataClass, TableInfo table, User user) throws Exception
+private void testEmptyInsert(TableInfo table, User user) throws Exception
 {
-    List<Map<String, Object>> rows = new ArrayList<>();
     BatchValidationException errors = new BatchValidationException();
-    int count = table.getUpdateService().importRows(user, c, MapDataIterator.of(rows), errors, null, null);
+    int count = table.getUpdateService().importRows(user, c, MapDataIterator.of(List.of()), errors, null, null);
     if (errors.hasErrors())
         throw errors;
     assertEquals(0, count);
@@ -509,32 +466,18 @@ private void testEmptyInsert(ExpDataClassImpl dataClass, TableInfo table, User u
 @Test
 public void testDataClassFromTemplate() throws Exception
 {
-    if (!AppProps.getInstance().isDevMode()) // Skip test in production mode if necessary modules are not available
-    {
-        Assume.assumeTrue("List module is required to test data class templates", ModuleLoader.getInstance().getModule("list") != null);
-        Assume.assumeTrue("simpletest module is required to test data class templates", ModuleLoader.getInstance().getModule("simpletest") != null);
-    }
-
-    final User user = TestContext.get().getUser();
-    final Container sub = ContainerManager.createContainer(c, "sub2", TestContext.get().getUser());
+    ExpProvisionedTableTestHelper.requireSimpleTestModule(c);
+    final Container sub = ContainerManager.createContainer(c, "sub2", _user);
     final String domainName = "mydataclass";
-
-    Set<Module> activeModules = new HashSet<>(c.getActiveModules());
-    Module m = ModuleLoader.getInstance().getModule("simpletest");
-    assertNotNull("This test requires 'simplemodule' to be deployed", m);
-    activeModules.add(m);
-    c.setActiveModules(activeModules);
 
     DomainTemplateGroup templateGroup = DomainTemplateGroup.get(c, "TestingFromTemplate");
     assertNotNull(templateGroup);
-    assertFalse(
-            "Errors in template: " + StringUtils.join(templateGroup.getErrors(), ", "),
-            templateGroup.hasErrors());
+    assertFalse("Errors in template: " + StringUtils.join(templateGroup.getErrors(), ", "), templateGroup.hasErrors());
 
     DomainTemplate template = templateGroup.getTemplate("testingFromTemplate");
     assertNotNull(template);
 
-    final Domain domain = template.createAndImport(c, user, domainName, true, false);
+    final Domain domain = template.createAndImport(c, _user, domainName, true, false);
     assertNotNull(domain);
 
     TemplateInfo t = domain.getTemplateInfo();
@@ -543,16 +486,18 @@ public void testDataClassFromTemplate() throws Exception
     assertEquals("TestingFromTemplate", t.getTemplateGroupName());
     assertEquals("testingFromTemplate", t.getTableName());
 
-    DomainKind kind = domain.getDomainKind();
+    DomainKind<?> kind = domain.getDomainKind();
     assertTrue(kind instanceof DataClassDomainKind);
     Set<String> mandatory = kind.getMandatoryPropertyNames(domain);
     assertTrue("Expected template to set 'aa' as mandatory: " + mandatory, mandatory.contains("aa"));
+
+    helper.verifyReservedColumnNames(c, _user, domain);
 
     ExpDataClassImpl dataClass = (ExpDataClassImpl)ExperimentService.get().getDataClass(c, domainName);
     assertNotNull(dataClass);
 
     // add ConceptURI mappings for this container
-    String listName = createConceptLookupList(c, user);
+    String listName = createConceptLookupList(c, _user);
     Lookup lookup = new Lookup(c, "lists", listName);
     ConceptURIProperties.setLookup(c, "http://cpas.labkey.com/Experiment#Testing", lookup);
 
@@ -570,9 +515,9 @@ public void testDataClassFromTemplate() throws Exception
     String expectedSubName = "TEST-3-30";
     testInsertIntoSubfolder(dataClass, table, sub, expectedSubName);
     testTruncateRows(dataClass, table, expectedName, expectedSubName);
-    testBulkImport(dataClass, table, user);
-    testDeleteExpData(dataClass, user, 2);
-    testDeleteExpDataClass(dataClass, user, table, domain.getTypeURI());
+    testBulkImport(dataClass, table);
+    testDeleteExpData(dataClass, _user, 2);
+    testDeleteExpDataClass(dataClass, _user, table, domain.getTypeURI());
 }
 
 private String createConceptLookupList(Container c, User user) throws Exception
@@ -583,44 +528,26 @@ private String createConceptLookupList(Container c, User user) throws Exception
     list.getDomain().addProperty(new PropertyStorageSpec("Key", JdbcType.INTEGER));
     list.getDomain().addProperty(new PropertyStorageSpec("Value", JdbcType.VARCHAR));
     list.save(user);
-    List<ListItem> lis = new ArrayList<>();
     ListItem li = list.createListItem();
     li.setProperty(list.getDomain().getPropertyByName("Key"), 20);
     li.setProperty(list.getDomain().getPropertyByName("Value"), "Value 20");
-    lis.add(li);
-    list.insertListItems(user, c, lis);
+    list.insertListItems(user, c, List.of(li));
     return listName;
 }
-
 
 @Test
 public void testDomainTemplate() throws Exception
 {
-    if (!AppProps.getInstance().isDevMode()) // Skip test in production mode if necessary modules are not available
-    {
-        Assume.assumeTrue("List module is required to test domain templates", ModuleLoader.getInstance().getModule("list") != null);
-        Assume.assumeTrue("simpletest module is required to test domain templates", ModuleLoader.getInstance().getModule("simpletest") != null);
-    }
-
-    final User user = TestContext.get().getUser();
-    final Container sub = ContainerManager.createContainer(c, "sub3", user);
-
-    Set<Module> activeModules = new HashSet<>(c.getActiveModules());
-    Module m = ModuleLoader.getInstance().getModule("simpletest");
-    assertNotNull("This test requires 'simplemodule' to be deployed", m);
-    activeModules.add(m);
-    c.setActiveModules(activeModules);
-
+    ExpProvisionedTableTestHelper.requireSimpleTestModule(c);
+    final Container sub = ContainerManager.createContainer(c, "sub3", _user);
     DomainTemplateGroup templateGroup = DomainTemplateGroup.get(c, "todolist");
     assertNotNull(templateGroup);
-    assertFalse(
-            "Errors in template: " + StringUtils.join(templateGroup.getErrors(), ", "),
-            templateGroup.hasErrors());
+    assertFalse("Errors in template: " + StringUtils.join(templateGroup.getErrors(), ", "), templateGroup.hasErrors());
 
-    List<Domain> created = templateGroup.createAndImport(sub, user, true, true);
+    templateGroup.createAndImport(sub, _user, true, true);
 
     // verify the "Priority" list was created and data was imported
-    UserSchema listSchema = QueryService.get().getUserSchema(user, sub, "lists");
+    UserSchema listSchema = QueryService.get().getUserSchema(_user, sub, "lists");
     TableInfo priorityTable = listSchema.getTable("Priority");
 
     Collection<Map<String, Object>> priorities = new TableSelector(priorityTable).getMapCollection();
@@ -638,7 +565,7 @@ public void testDomainTemplate() throws Exception
         try (DbScope.Transaction tx = priorityTable.getSchema().getScope().beginTransaction())
         {
             BatchValidationException errors = new BatchValidationException();
-            ret = priorityTable.getUpdateService().insertRows(user, sub, rows, errors, null, null);
+            ret = priorityTable.getUpdateService().insertRows(_user, sub, rows, errors, null, null);
             if (errors.hasErrors())
                 throw errors;
             tx.commit();
@@ -666,7 +593,7 @@ public void testDomainTemplate() throws Exception
         try (DbScope.Transaction tx = milestoneTable.getSchema().getScope().beginTransaction())
         {
             BatchValidationException errors = new BatchValidationException();
-            ret = milestoneTable.getUpdateService().insertRows(user, sub, rows, errors, null, null);
+            ret = milestoneTable.getUpdateService().insertRows(_user, sub, rows, errors, null, null);
             if (errors.hasErrors())
                 throw errors;
             tx.commit();
@@ -678,7 +605,7 @@ public void testDomainTemplate() throws Exception
     }
 
     // verify the "TodoList" DataClass was created and data was imported
-    UserSchema expSchema = QueryService.get().getUserSchema(user, sub, helper.expDataSchemaKey);
+    UserSchema expSchema = QueryService.get().getUserSchema(_user, sub, helper.expDataSchemaKey);
     TableInfo table = expSchema.getTable("TodoList");
     assertNotNull("data class not in query schema", table);
 
@@ -691,22 +618,27 @@ public void testDomainTemplate() throws Exception
     ExpData data = ExperimentServiceImpl.get().getExpData(dataClass, "TODO-1");
 
     Collection<String> aliases = data.getAliases();
-    assertTrue("Expected aliases to contain 'xsd' and 'domain templates', got: " + aliases, aliases.containsAll(Arrays.asList("xsd", "domain templates")));
-}
+    assertTrue("Expected aliases to contain 'xsd' and 'domain templates', got: " + aliases, aliases.containsAll(List.of("xsd", "domain templates")));
 
+    // Verify reserved column names on lists
+    TableInfo categoryTable = listSchema.getTable("Category");
+    Domain categoryDomain = categoryTable.getDomain();
+    assertNotNull(categoryDomain);
+
+    helper.verifyReservedColumnNames(c, _user, categoryTable.getDomain());
+}
 
 // Issue 25224: NPE trying to delete a folder with a DataClass with at least one result row in it
 @Test
 public void testContainerDelete() throws Exception
 {
-    final User user = TestContext.get().getUser();
-    final Container sub = ContainerManager.createContainer(c, "sub", user);
+    final Container sub = ContainerManager.createContainer(c, "subTestContainerDelete", _user);
     final String dataClassName = "testing";
 
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("aa", "int"));
 
-    final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null, null);
+    final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, dataClassName, null, props, emptyList(), null, null);
     final long dataClassId = dataClass.getRowId();
 
     TableInfo table = getDataClassTable(dataClassName);
@@ -764,7 +696,7 @@ public void testContainerDelete() throws Exception
         assertNotNull(dbTable);
 
         // delete
-        ContainerManager.deleteAll(c, user);
+        ContainerManager.deleteAll(c, _user);
 
         // verify deleted
         assertNull(ExperimentServiceImpl.get().getDataClass(dataClassId));
@@ -780,19 +712,17 @@ public void testContainerDelete() throws Exception
 @Test
 public void testLargeUniqueOnSingleColumnOnly() throws ExperimentException
 {
-    final User user = TestContext.get().getUser();
-
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("aa", "int"));
     props.add(new GWTPropertyDescriptor("bb", "multiLine"));
 
     List<GWTIndex> indices = new ArrayList<>();
-    indices.add(new GWTIndex(Arrays.asList("aa", "bb"), true));
+    indices.add(new GWTIndex(List.of("aa", "bb"), true));
 
     boolean sqlServer = ExperimentService.get().getSchema().getSqlDialect().isSqlServer();
     try
     {
-        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique", null, props, indices, null, null);
+        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, "largeUnique", null, props, indices, null, null);
         if (sqlServer)
             fail("Expected exception creating large index over two columns");
     }
@@ -808,8 +738,6 @@ public void testLargeUniqueOnSingleColumnOnly() throws ExperimentException
 @Test
 public void testLargeUnique() throws Exception
 {
-    final User user = TestContext.get().getUser();
-
     boolean sqlServer = ExperimentService.get().getSchema().getSqlDialect().isSqlServer();
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("aa", "int"));
@@ -817,23 +745,21 @@ public void testLargeUnique() throws Exception
     prop.setScale(20000);
     props.add(prop);
 
-    List<GWTIndex> indices = new ArrayList<>();
-    indices.add(new GWTIndex(Arrays.asList("bb"), true));
-
+    List<GWTIndex> indices = List.of(new GWTIndex(List.of("bb"), true));
     DataClassDomainKindProperties options = new DataClassDomainKindProperties();
     options.setNameExpression("JUNIT-${genId}-${aa}");
 
     ExpDataClassImpl dataClass;
     try
     {
-        dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique2", options, props, indices, null, null);
+        dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, "largeUnique2", options, props, indices, null, null);
     }
     catch (IllegalArgumentException e)
     {
         // Not supported on SQL Server, so create with no indices
         assertTrue("Expected exception creating large index over two columns", e.getMessage().contains("Index over large columns is not supported"));
         assertTrue(sqlServer);
-        dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique2", options, props, List.of(), null, null);
+        dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, "largeUnique2", options, props, List.of(), null, null);
     }
 
     List<Map<String, Object>> rows = new ArrayList<>();
@@ -879,22 +805,20 @@ private ArrayListMap<String, Object> newArrayListMap()
 @Test
 public void testDataClassWithVocabularyProperties() throws Exception
 {
-    User user = TestContext.get().getUser();
-
     String dataClassName = "DataClassesWithVocabularyProperties";
     int dataClassAge = 2;
     int updatedDataClassAge = 4;
     String dataClassType = "TypeB";
     String dataClassColor = "Orange";
 
-    Domain testDomain = helper.createVocabularyTestDomain(user, c);
+    Domain testDomain = helper.createVocabularyTestDomain(_user, c);
     Map<String, String> vocabularyPropertyURIs = helper.getVocabularyPropertyURIS(testDomain);
 
     final String colorPropertyURI = vocabularyPropertyURIs.get(ExpProvisionedTableTestHelper.colorPropertyName);
     final String agePropertyURI = vocabularyPropertyURIs.get(ExpProvisionedTableTestHelper.agePropertyName);
     final String typePropertyURI = vocabularyPropertyURIs.get(ExpProvisionedTableTestHelper.typePropertyName);
 
-    ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null,
+    ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, dataClassName, null,
             List.of(new GWTPropertyDescriptor("OtherProp", "string")), emptyList(), null, null);
     assertNotNull(dataClass);
 
@@ -954,17 +878,15 @@ public void testDataClassWithVocabularyProperties() throws Exception
 @Test
 public void testViewSupportForVocabularyDomains() throws Exception
 {
-    User user = TestContext.get().getUser();
-
     // Create a sample type with name
     String sampleName = "CarLocations";
     String sampleOneLocation = "California";
 
-    ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
+    ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, _user,
             sampleName, null, List.of(new GWTPropertyDescriptor("name", "string")), emptyList(),
             -1, -1, -1, -1, null, null);
 
-    UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+    UserSchema schema = QueryService.get().getUserSchema(_user, c, SchemaKey.fromParts("Samples"));
 
     // Insert a sample into sample type
     ArrayListMap<String, Object> row = newArrayListMap();
@@ -989,12 +911,12 @@ public void testViewSupportForVocabularyDomains() throws Exception
     prop1.setLookupSchema(lookUpSchema);
     prop1.setLookupQuery(sampleName);
 
-    GWTDomain domain = new GWTDomain();
+    GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
     domain.setName(domainName);
     domain.setDescription(domainDescription);
     domain.setFields(List.of(prop1));
 
-    Domain lookUpDomain = DomainUtil.createDomain("Vocabulary", domain, null, c, user, domainName, null, false);
+    Domain lookUpDomain = DomainUtil.createDomain("Vocabulary", domain, null, c, _user, domainName, null, false);
 
     Map<String, String> vocabularyPropertyURIs = helper.getVocabularyPropertyURIS(lookUpDomain);
     final String locationPropertyURI = vocabularyPropertyURIs.get(locationPropertyName);
@@ -1003,10 +925,10 @@ public void testViewSupportForVocabularyDomains() throws Exception
     String dataClassName = "CarsDataClasses";
     String carName1 = "Tesla";
 
-    ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null,
+    ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, dataClassName, null,
             List.of(new GWTPropertyDescriptor("OtherProp", "string")), emptyList(), null, null);
 
-    UserSchema userSchema = QueryService.get().getUserSchema(user, c, helper.expDataSchemaKey);
+    UserSchema userSchema = QueryService.get().getUserSchema(_user, c, helper.expDataSchemaKey);
 
     // insert a data class with vocab look up prop using row id of inserted sample
     ArrayListMap<String, Object> rowToInsert = newArrayListMap();
@@ -1036,7 +958,6 @@ public void testViewSupportForVocabularyDomains() throws Exception
 @Test
 public void testInsertOptionUpdate() throws Exception
 {
-    final User user = TestContext.get().getUser();
     final String dataClassName = "DataClassWithImportOption";
 
     List<GWTPropertyDescriptor> props = new ArrayList<>();
@@ -1045,7 +966,7 @@ public void testInsertOptionUpdate() throws Exception
     String longFieldName = "Field100 ABCDEFGHIJKLMNOPQRSTUVWXYZ%()=+-[]_|*`'\":;<>?!@#^AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTTU)";
     props.add(new GWTPropertyDescriptor(longFieldName, "string"));
 
-    ExpDataClass dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null, null);
+    ExpDataClass dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, dataClassName, null, props, emptyList(), null, null);
     List<Map<String, Object>> rowsToAdd = new ArrayList<>();
     rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1", "prop", "a", longFieldName, "Very", "alias", "Much", "flag", "c100"));
     rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1-d", "prop", "c", longFieldName, "Long", "alias", "Extended", "flag", "c200"));
@@ -1061,7 +982,7 @@ public void testInsertOptionUpdate() throws Exception
     DataIteratorContext context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
 
-    var count = qus.loadRows(user, c, MapDataIterator.of(rowsToAdd), context, null);
+    var count = qus.loadRows(_user, c, MapDataIterator.of(rowsToAdd), context, null);
     assertFalse(context.getErrors().hasErrors());
     assertEquals(3, count);
 
@@ -1078,7 +999,7 @@ public void testInsertOptionUpdate() throws Exception
 
     context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
-    count = qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
+    count = qus.loadRows(_user, c, MapDataIterator.of(rowsToUpdate), context, null);
 
     assertFalse(context.getErrors().hasErrors());
     assertEquals(3, count);
@@ -1088,7 +1009,7 @@ public void testInsertOptionUpdate() throws Exception
     rowsToUpdate.add(CaseInsensitiveHashMap.of("rowId", dataClass.getData(c, "D-1").getRowId(), "DataInputs/DataClassWithImportOption", "D-1-d"));
     try
     {
-        qus.updateRows(user, c, rowsToUpdate, null, new BatchValidationException(), null, null);
+        qus.updateRows(_user, c, rowsToUpdate, null, new BatchValidationException(), null, null);
         fail("Expected to throw exception");
     }
     catch (Exception e)
@@ -1110,7 +1031,7 @@ public void testInsertOptionUpdate() throws Exception
     String aliasAlias = "alias";
     String flagAlias = "flag$";
 
-    List<Map<String,Object>> rows = Arrays.asList(ts.getMapArray());
+    List<Map<String,Object>> rows = List.of(ts.getMapArray());
 
     assertEquals("D-1", rows.get(0).get("Name"));
     assertEquals("D-1-d", rows.get(1).get("Name"));
@@ -1147,7 +1068,7 @@ public void testInsertOptionUpdate() throws Exception
 
     context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
-    count = qus.loadRows(user, c, MapDataIterator.of(rowsToMerge), context, null);
+    count = qus.loadRows(_user, c, MapDataIterator.of(rowsToMerge), context, null);
 
     assertFalse(context.getErrors().hasErrors());
     assertEquals(2, count);
@@ -1155,7 +1076,7 @@ public void testInsertOptionUpdate() throws Exception
     ts = new TableSelector(table, columnNames, null, new Sort("Name"));
     ts.setForDisplay(true);
 
-    rows = Arrays.asList(ts.getMapArray());
+    rows = List.of(ts.getMapArray());
     assertEquals(4, rows.size());
 
     assertEquals("D-1", rows.get(0).get("Name"));
@@ -1191,33 +1112,26 @@ public void testInsertOptionUpdate() throws Exception
     assertEquals("cEight", rows.get(3).get(flagAlias));
 }
 
-private @NotNull TableInfo getDataClassTable(String dataClassName)
-{
-    UserSchema schema = QueryService.get().getUserSchema(TestContext.get().getUser(), c, ExpSchema.SCHEMA_EXP_DATA);
-    return schema.getTableOrThrow(dataClassName);
-}
-
 @Test // Issue 52886
 public void testUpdateAuditForLongField() throws Exception
 {
-    User user = TestContext.get().getUser();
-
     String dataClassName = "DataClassesWithLongFields";
     String fieldName = "longField " + StringUtils.repeat("AB CD", 20);
 
-    ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null,
+    ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, dataClassName, null,
             List.of(new GWTPropertyDescriptor(fieldName, "string")), emptyList(), null, null);
     assertNotNull(dataClass);
 
-    List<Map<String, Object>> rowsToAdd = new ArrayList<>();
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "A-1", "prop", "a", fieldName, "Initial"));
+    List<Map<String, Object>> rowsToAdd = List.of(
+        CaseInsensitiveHashMap.of("name", "A-1", "prop", "a", fieldName, "Initial")
+    );
     TableInfo table = getDataClassTable(dataClassName);
     QueryUpdateService qus = table.getUpdateService();
     assertNotNull(qus);
     DataIteratorContext context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
     context.getConfigParameters().put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
-    var count = qus.loadRows(user, c, MapDataIterator.of(rowsToAdd), context, null);
+    var count = qus.loadRows(_user, c, MapDataIterator.of(rowsToAdd), context, null);
     assertFalse("Unexpected errors from import", context.getErrors().hasErrors());
     assertEquals("Number of rows inserted not as expected", 1, count);
     for (Map<String, Object> row : rowsToAdd)
@@ -1229,12 +1143,12 @@ public void testUpdateAuditForLongField() throws Exception
             if (results.next())
             {
                 rowId = results.getInt(FieldKey.fromParts("RowId"));
-                row.put("RowId", rowId); // intentional side-effect to help in retrieving update events as well
+                row.put("RowId", rowId); // intentional side effect to help in retrieving update events as well
 
                 SimpleFilter filter = SimpleFilter.createContainerFilter(c);
                 filter.addCondition(FieldKey.fromParts("rowPk"), String.valueOf(rowId));
                 filter.addCondition(FieldKey.fromParts("queryName"), dataClassName);
-                List<AuditTypeEvent> events = AuditLogService.get().getAuditEvents(c, user, "QueryUpdateAuditEvent", filter, null);
+                List<AuditTypeEvent> events = AuditLogService.get().getAuditEvents(c, _user, "QueryUpdateAuditEvent", filter, null);
                 assertEquals("Number of audit events not as expected", 1, events.size());
             }
         }
@@ -1245,7 +1159,7 @@ public void testUpdateAuditForLongField() throws Exception
     context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
     context.getConfigParameters().put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
-    count = qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
+    count = qus.loadRows(_user, c, MapDataIterator.of(rowsToUpdate), context, null);
     assertFalse("Unexpected errors from update", context.getErrors().hasErrors());
     assertEquals("Number of rows updated not as expected", 1, count);
 
@@ -1254,10 +1168,17 @@ public void testUpdateAuditForLongField() throws Exception
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("rowPk"), String.valueOf(row.get("rowId")));
         filter.addCondition(FieldKey.fromParts("queryName"), dataClassName);
-        List<AuditTypeEvent> events = AuditLogService.get().getAuditEvents(c, user, "QueryUpdateAuditEvent", filter, new Sort("-RowId"));
+        List<AuditTypeEvent> events = AuditLogService.get().getAuditEvents(c, _user, "QueryUpdateAuditEvent", filter, new Sort("-RowId"));
         assertEquals("Number of audit events not as expected", 2, events.size()); // should have one for insert and one for update
         String oldRecordMap = ((DetailedAuditTypeEvent) events.getFirst()).getOldRecordMap();
         assertTrue("Old record map (" + oldRecordMap + ") does not contain expected field", oldRecordMap.contains(encodeURIComponent(fieldName) + "=Initial"));
     }
 }
+
+private @NotNull TableInfo getDataClassTable(String dataClassName)
+{
+    UserSchema schema = QueryService.get().getUserSchema(_user, c, ExpSchema.SCHEMA_EXP_DATA);
+    return schema.getTableOrThrow(dataClassName);
+}
+
 %>
