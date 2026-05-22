@@ -89,11 +89,15 @@ public class LabKeyProcessBuilder
 
     private void sanitizeEnvironment()
     {
+        _pb.environment().keySet().removeIf(LabKeyProcessBuilder::isSecret);
+    }
+
+    /** @return true if the property name is known to be or inferred to be a secret (credential, etc) */
+    public static boolean isSecret(String propertyName)
+    {
         SecretService secrets = ServiceRegistry.get().getService(SecretService.class);
-        _pb.environment().keySet().removeIf(name -> {
-            String lc = name.toLowerCase();
-            return lc.contains("secret") || lc.contains("password") ||
-                   (secrets != null && secrets.isRegisteredSecret(name));
-        });
+        String lc = propertyName.toLowerCase();
+        return lc.contains("secret") || lc.contains("password") || lc.contains("apikey") ||
+                (secrets != null && secrets.isRegisteredSecret(propertyName));
     }
 }

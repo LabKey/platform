@@ -268,6 +268,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.LabKeyProcessBuilder;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MemTracker;
@@ -3447,14 +3448,8 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            SecretService secrets = SecretService.get();
             Map<String, String> env = new LinkedHashMap<>(System.getenv());
-            env.replaceAll((name, value) -> {
-                String lc = name.toLowerCase();
-                if (lc.contains("secret") || lc.contains("password") || secrets.isRegisteredSecret(name))
-                    return "[REDACTED]";
-                return value;
-            });
+            env.replaceAll((name, value) -> LabKeyProcessBuilder.isSecret(name) ? "[REDACTED]" : value);
             return new JspView<>("/org/labkey/core/admin/properties.jsp", env);
         }
 
