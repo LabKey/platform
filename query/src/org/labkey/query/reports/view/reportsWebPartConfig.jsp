@@ -52,7 +52,7 @@
 
     for (Report report : ReportUtil.getReportsIncludingInherited(c, u, null))
     {
-        if (!filter.accept(report, c, u) || (report.getDescriptor().isHidden() && !showHidden))
+        if (!filter.accept(report, c, u) || (report.getDescriptor().isHidden() && !showHidden) || !report.isShowInReportsWebPart())
             continue;
 
         String reportName = report.getDescriptor().getReportName();
