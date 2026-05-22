@@ -142,12 +142,6 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
-    {
-        return Collections.emptySet();
-    }
-
-    @Override
     public DbScope getScope()
     {
         return SpecimenSchema.get().getScope();
