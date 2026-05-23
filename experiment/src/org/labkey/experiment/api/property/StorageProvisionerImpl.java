@@ -1769,12 +1769,6 @@ renaming a property AND toggling mvindicator on in the same change.
                 }
 
                 @Override
-                public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
-                {
-                    return Collections.emptySet();
-                }
-
-                @Override
                 public @Nullable Priority getPriority(String object)
                 {
                     return null;

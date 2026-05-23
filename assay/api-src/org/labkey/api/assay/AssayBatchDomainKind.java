@@ -25,10 +25,6 @@ import org.labkey.api.security.User;
 import java.util.Arrays;
 import java.util.Set;
 
-/**
- * User: jeckels
- * Date: Jan 27, 2012
- */
 public class AssayBatchDomainKind extends AssayDomainKind
 {
     private static final Set<String> RESERVED_NAMES;
@@ -50,7 +46,7 @@ public class AssayBatchDomainKind extends AssayDomainKind
     }
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         return RESERVED_NAMES;
     }
