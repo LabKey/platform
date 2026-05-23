@@ -611,7 +611,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (modifiedSince != null)
             sql.append(" AND E.Modified > ?").add(modifiedSince);
         sql.append(" ORDER BY E.RowId");
-        sql = getSchema().getSqlDialect().limitRows(sql, limit);
+        if (limit > 0)
+        {
+            sql = getSchema().getSqlDialect().limitRows(sql, limit);
+        }
 
         return ExpExperimentImpl.fromExperiments(new SqlSelector(getSchema(), sql).setJdbcCaching(false).getArray(Experiment.class));
     }
