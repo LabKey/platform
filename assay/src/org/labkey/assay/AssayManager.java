@@ -16,6 +16,7 @@
 
 package org.labkey.assay;
 
+import org.apache.commons.lang3.mutable.MutableLong;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -710,33 +711,51 @@ public class AssayManager implements AssayService
         for (ExpProtocol protocol : getAssayProtocols(queue.getContainer()))
         {
             if (shouldIndexProtocolBatches(protocol))
-                indexAssayBatches(queue, protocol, modifiedSince);
+                queue.addRunnable((q) -> indexAssayBatches(q, protocol, modifiedSince, 0));
         }
     }
 
-    private void indexAssayBatches(SearchService.TaskIndexingQueue queue, ExpProtocol protocol, @Nullable Date modifiedSince)
+    private void indexAssayBatches(SearchService.TaskIndexingQueue queue, ExpProtocol protocol,
+                                    @Nullable Date modifiedSince, long minRowId)
     {
-        if (shouldIndexProtocolBatches(protocol))
-        {
-            for (ExpExperiment batch : protocol.getBatches(queue.getContainer()))
-            {
-                if (modifiedSince == null || modifiedSince.before(batch.getModified()))
-                    indexAssayBatch(queue, batch);
-            }
-        }
+        List<? extends ExpExperiment> batches = ExperimentService.get().getExpBatches(
+                queue.getContainer(), protocol, modifiedSince, minRowId, SearchService.INDEXING_LIMIT);
+
+        MutableLong maxRowIdProcessed = new MutableLong(minRowId);
+        batches.forEach(b -> {
+            indexAssayBatch(queue, b);
+            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.longValue(), b.getRowId()));
+        });
+
+        if (batches.size() == SearchService.INDEXING_LIMIT)
+            queue.addRunnable((q) -> indexAssayBatches(q, protocol, modifiedSince, maxRowIdProcessed.longValue()));
     }
 
     public void indexAssayRuns(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince)
     {
         for (ExpProtocol protocol : getAssayProtocols(queue.getContainer()))
-            indexAssayRuns(queue, protocol, modifiedSince);
+            queue.addRunnable((q) -> indexAssayRuns(q, protocol, modifiedSince, 0));
     }
 
-    private void indexAssayRuns(SearchService.TaskIndexingQueue queue, ExpProtocol protocol, @Nullable Date modifiedSince)
+    private void indexAssayRuns(SearchService.TaskIndexingQueue queue, ExpProtocol protocol,
+                                 @Nullable Date modifiedSince, long minRowId)
     {
-        ExperimentService.get().getExpRuns(queue.getContainer(), protocol, null, run ->
-                modifiedSince == null || modifiedSince.before(run.getModified())
-        ).forEach(r -> indexAssayRun(queue, r));
+        SQLFragment filterSQL = new SQLFragment("ER.ProtocolLSID = ? AND ER.RowId > ?")
+                .add(protocol.getLSID())
+                .add(minRowId);
+        if (modifiedSince != null)
+            filterSQL.append(" AND ER.Modified > ?").add(modifiedSince);
+
+        List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(filterSQL, _ -> true, queue.getContainer(), SearchService.INDEXING_LIMIT);
+
+        MutableLong maxRowIdProcessed = new MutableLong(minRowId);
+        runs.forEach(r -> {
+            indexAssayRun(queue, r);
+            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.longValue(), r.getRowId()));
+        });
+
+        if (runs.size() == SearchService.INDEXING_LIMIT)
+            queue.addRunnable((q) -> indexAssayRuns(q, protocol, modifiedSince, maxRowIdProcessed.longValue()));
     }
 
     @Override

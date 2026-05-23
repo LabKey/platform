@@ -564,7 +564,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             sql.add(childProtocol.getLSID());
         }
 
-        return getExpRuns(sql, filterFn, container);
+        return getExpRuns(sql, filterFn, container, Table.ALL_ROWS);
     }
 
     @Override
@@ -582,22 +582,38 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public List<ExpRunImpl> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container)
+    public List<ExpRunImpl> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container, int limit)
     {
-        SQLFragment sql = new SQLFragment(" SELECT ER.* "
-                + " FROM exp.ExperimentRun ER "
-                + " WHERE ER.Container = ? ");
+        SQLFragment sql = new SQLFragment("SELECT ER.* FROM exp.ExperimentRun ER WHERE ER.Container = ?");
         sql.add(container.getId());
-
         if (null != filterSQL && !filterSQL.isEmpty())
-            sql.append(" AND " ).append(filterSQL);
-
-        sql.append(" ORDER BY ER.RowId ");
+            sql.append(" AND ").append(filterSQL);
+        sql.append(" ORDER BY ER.RowId");
+        if (limit > 0)
+        {
+            sql = getSchema().getSqlDialect().limitRows(sql, limit);
+        }
 
         try (Stream<ExperimentRun> runs = new SqlSelector(getSchema(), sql).setJdbcCaching(false).uncachedStream(ExperimentRun.class))
         {
             return runs.map(ExpRunImpl::new).filter(filterFn).toList();
         }
+    }
+
+    @Override
+    public List<? extends ExpExperiment> getExpBatches(@NotNull Container container, @NotNull ExpProtocol batchProtocol,
+                                                       @Nullable Date modifiedSince, long minRowId, int limit)
+    {
+        SQLFragment sql = new SQLFragment("SELECT E.* FROM ").append(getTinfoExperiment(), "E")
+                .append(" WHERE E.Container = ?").add(container.getId())
+                .append(" AND E.BatchProtocolId = ?").add(batchProtocol.getRowId())
+                .append(" AND E.RowId > ?").add(minRowId);
+        if (modifiedSince != null)
+            sql.append(" AND E.Modified > ?").add(modifiedSince);
+        sql.append(" ORDER BY E.RowId");
+        sql = getSchema().getSqlDialect().limitRows(sql, limit);
+
+        return ExpExperimentImpl.fromExperiments(new SqlSelector(getSchema(), sql).setJdbcCaching(false).getArray(Experiment.class));
     }
 
     @Override
@@ -745,7 +761,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         if (type != null)
-            filter.addWhereClause(Lsid.namespaceFilter(ExpDataTable.Column.LSID.name(), type.getNamespacePrefix()), null);
+            filter.addWhereClause(Lsid.namespaceFilter(ExpDataTable.Column.LSID, type.getNamespacePrefix()));
         if (name != null)
             filter.addCondition(FieldKey.fromParts(ExpDataTable.Column.Name.name()), name);
 
@@ -756,7 +772,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RunId"), runRowId);
         if (type != null)
-            filter.addWhereClause(Lsid.namespaceFilter(ExpDataTable.Column.LSID.name(), type.getNamespacePrefix()), null);
+            filter.addWhereClause(Lsid.namespaceFilter(ExpDataTable.Column.LSID, type.getNamespacePrefix()));
 
         return getExpDatas(filter);
     }
@@ -1018,8 +1034,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return result;
     }
 
-    private static final int INDEXING_LIMIT = 1_000;
-
     @Override
     public void enumerateDocuments(SearchService.TaskIndexingQueue queue, final Date modifiedSince)
     {
@@ -1076,7 +1090,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
         sql.append(" ORDER BY RowId");
-        sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
+        sql = getSchema().getSqlDialect().limitRows(sql, SearchService.INDEXING_LIMIT);
         SqlSelector selector = new SqlSelector(getSchema(), sql);
         selector.setJdbcCaching(false);
         MutableLong maxRowIdProcessed = new MutableLong(minRowId);
@@ -1089,7 +1103,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.longValue(), expMaterial.getRowId()));
         });
 
-        if (materials.size() == INDEXING_LIMIT)
+        if (materials.size() == SearchService.INDEXING_LIMIT)
         {
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
             queue.addRunnable((q) -> indexMaterials(q, modifiedSince, maxRowIdProcessed.longValue()));
@@ -1114,7 +1128,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             sql.append(" AND ").append(modifiedSQL);
         sql.append(" ORDER BY RowId");
 
-        sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
+        sql = getSchema().getSqlDialect().limitRows(sql, SearchService.INDEXING_LIMIT);
         SqlSelector selector = new SqlSelector(getSchema(), sql);
         selector.setJdbcCaching(false);
         MutableLong maxRowIdProcessed = new MutableLong(minRowId);
@@ -1127,7 +1141,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.longValue(), expData.getRowId()));
         });
 
-        if (data.size() == INDEXING_LIMIT)
+        if (data.size() == SearchService.INDEXING_LIMIT)
         {
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
             queue.addRunnable((q) -> indexData(q, modifiedSince, maxRowIdProcessed.longValue()));

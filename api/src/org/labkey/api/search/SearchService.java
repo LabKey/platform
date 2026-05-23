@@ -75,6 +75,7 @@ public interface SearchService extends SearchMXBean
     Logger _log = LogHelper.getLogger(SearchService.class, "Full text search service");
 
     long DEFAULT_FILE_SIZE_LIMIT = 100L; // 100 MB
+    int INDEXING_LIMIT = 1_000;
 
     /**
      * Returns the max file size indexed
@@ -494,12 +495,21 @@ public interface SearchService extends SearchMXBean
     interface DocumentProvider
     {
         /**
-         * Enumerate documents for full-text search. Unless it's known there will be a small number of documents
-         * added to the queue, add Runnable to the IndexTask that adds the Resources from the container to the queue.
-         * If there are potentially many documents for a container, add resources in batches of 1,000 or so to avoid
-         * a huge memory footprint.
+         * Enumerate documents for full-text search indexing. Do NOT fetch an unbounded result set into memory.
          *
-         * @param modifiedSince when null, do a full reindex; otherwise incremental (either modified > modifiedSince, or modified > lastIndexed)
+         * <p><em>Pattern 1 — recursive requeue</em> (preferred when the underlying table supports keyset pagination).
+         * Fetch at most {@link SearchService#INDEXING_LIMIT} rows, process them, then re-enqueue the next batch
+         * only if the batch was full. This keeps the ResultSet closed between batches and interleaves with other
+         * queue work. See {@code ExperimentServiceImpl.indexMaterials()} and
+         * {@code AssayManager.indexAssayRuns()} for examples.</p>
+         *
+         * <p><em>Pattern 2 — forEachBatch + per-batch runnable</em> (simpler when using {@code TableSelector}).
+         * Stream rows in batches of {@link SearchService#INDEXING_LIMIT} and wrap each batch in a
+         * {@code queue.addRunnable()} so indexing is deferred. See
+         * {@code InventoryManager.indexLocations()} and {@code NotebookManager.indexNotebooks()}
+         * for examples.</p>
+         *
+         * @param modifiedSince when null, do a full reindex; otherwise incremental (either modified &gt; modifiedSince, or modified &gt; lastIndexed)
          */
         void enumerateDocuments(TaskIndexingQueue adder, @Nullable Date modifiedSince);
 
