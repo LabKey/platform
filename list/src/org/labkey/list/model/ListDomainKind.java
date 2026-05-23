@@ -184,7 +184,6 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         return getKindName().equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
     }
 
-
     @Override
     public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
@@ -248,9 +247,9 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     abstract Collection<KeyType> getSupportedKeyTypes();
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
-       return RESERVED_NAMES;
+        return RESERVED_NAMES;
     }
 
     @Override

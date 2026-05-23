@@ -60,7 +60,7 @@ public class VisitDatasetDomainKind extends DatasetDomainKind
     }
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         Set<String> fields = DomainUtil.getNamesAndLabels(DatasetDefinition.DEFAULT_VISIT_FIELDS);
         fields.addAll(getStudySubjectReservedName(domain));

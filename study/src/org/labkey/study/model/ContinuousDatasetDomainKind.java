@@ -56,7 +56,7 @@ public class ContinuousDatasetDomainKind extends DatasetDomainKind
 
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         HashSet<String> fields = new HashSet<>(getStudySubjectReservedName(domain));
         fields.addAll(DatasetDefinition.DEFAULT_ABSOLUTE_DATE_FIELDS);
