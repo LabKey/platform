@@ -97,7 +97,7 @@ public class LabKeyProcessBuilder
     {
         SecretService secrets = ServiceRegistry.get().getService(SecretService.class);
         String lc = propertyName.toLowerCase();
-        return lc.contains("secret") || lc.contains("password") || lc.contains("apikey") ||
+        return lc.contains("secret") || lc.contains("password") || lc.contains("apikey") || lc.contains("_key") || lc.contains("token") ||
                 (secrets != null && secrets.isRegisteredSecret(propertyName));
     }
 }
