@@ -1620,6 +1620,11 @@ public class AuthenticationManager
 
     public static @NotNull AuthenticationResult handleAuthentication(HttpServletRequest request, Container c)
     {
+        return handleAuthentication(request, c, true);
+    }
+
+    public static @NotNull AuthenticationResult handleAuthentication(HttpServletRequest request, Container c, boolean setSession)
+    {
         HttpSession session = request.getSession(true);
         PrimaryAuthenticationResult primaryAuthResult = AuthenticationManager.getPrimaryAuthenticationResult(session);
         User primaryAuthUser;
@@ -1686,13 +1691,16 @@ public class AuthenticationManager
         LoginReturnProperties properties = getLoginReturnProperties(request);
         URLHelper url = getAfterLoginURL(c, properties, primaryAuthUser);
 
-        // Prep the new session and set the user & authentication-related attributes
-        session = SecurityManager.setAuthenticatedUser(request, primaryAuthResult.getResponse(), primaryAuthUser, true);
-
-        if (session.isNew() && !primaryAuthUser.isGuest())
+        if (setSession)
         {
-            // notify the websocket clients a new http session for the user has been started
-            NotificationService.get().sendServerEvent(primaryAuthUser.getUserId(), AuthNotify.LoggedIn);
+            // Prep the new session and set the user & authentication-related attributes
+            session = SecurityManager.setAuthenticatedUser(request, primaryAuthResult.getResponse(), primaryAuthUser, true);
+
+            if (session.isNew() && !primaryAuthUser.isGuest())
+            {
+                // notify the websocket clients a new http session for the user has been started
+                NotificationService.get().sendServerEvent(primaryAuthUser.getUserId(), AuthNotify.LoggedIn);
+            }
         }
 
         // Set the authentication validators into the new session

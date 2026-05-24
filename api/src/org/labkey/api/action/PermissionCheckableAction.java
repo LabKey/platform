@@ -42,7 +42,6 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.BadRequestException;
-import org.labkey.api.view.ForceReauthException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
@@ -154,12 +153,6 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         Class<? extends Controller> actionClass = getClass();
         if (LOG.isDebugEnabled())
             LOG.debug("{}: checking permissions for user {}", actionClass.getName(), user == null ? "<null>" : user.getName() + " (impersonated=" + user.isImpersonated() + ")");
-
-        // If _forceReauth is requested, unconditionally redirect to the login page
-        if (Boolean.parseBoolean((String)getViewContext().get(ForceReauthException.FORCE_REAUTH_NAME)))
-        {
-            throw new ForceReauthException();
-        }
 
         if (!actionClass.isAnnotationPresent(IgnoresForbiddenProjectCheck.class))
             c.throwIfForbiddenProject(user);

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
@@ -35,10 +36,11 @@ public interface LoginUrls extends UrlProvider
     ActionURL getLoginURL(URLHelper returnUrl);
     ActionURL getRegisterURL(Container c, @Nullable URLHelper returnUrl);
     ActionURL getLoginURL(Container c, @Nullable URLHelper returnUrl);
-    ActionURL getForceReauthURL(Container c, @Nullable URLHelper returnUrl);
     ActionURL getLogoutURL(Container c);
     ActionURL getLogoutURL(Container c, URLHelper returnUrl);
     ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnUrl);
     ActionURL getAgreeToTermsURL(Container c, URLHelper returnUrl);
     ActionURL getSSORedirectURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnUrl, boolean skipProfile);
+
+    void forceReauth(HttpServletResponse response, Container c, @Nullable URLHelper returnUrl);
 }

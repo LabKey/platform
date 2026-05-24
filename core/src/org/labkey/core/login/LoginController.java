@@ -20,6 +20,7 @@ import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
@@ -92,6 +93,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
@@ -105,7 +107,6 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.ExternalRedirectException;
-import org.labkey.api.view.ForceReauthException;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -248,13 +249,13 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ActionURL getForceReauthURL(Container c, @Nullable URLHelper returnUrl)
+        public void forceReauth(HttpServletResponse response, Container c, @Nullable URLHelper returnUrl)
         {
-            if (returnUrl != null)
-                returnUrl.deleteParameter(ForceReauthException.FORCE_REAUTH_NAME);
-
-            return getLoginURL(c, returnUrl)
+            ActionURL login = getLoginURL(c, returnUrl)
                 .addParameter("forceReauth", true);
+
+            // This method is called by CasServlet, so we don't have the luxury of throwing RedirectException, etc.
+            ExceptionUtil.unsafeRedirect(response, login.getLocalURIString());
         }
 
         @Override
@@ -689,7 +690,10 @@ public class LoginController extends SpringActionController
 
             if (success)
             {
-                AuthenticationResult authResult = AuthenticationManager.handleAuthentication(request, getContainer());
+                // We're never setting a session user in the force re-auth case (e.g., CAS renew=true), even if the
+                // there's no existing session. That seems in the spirit of re-auth, but we could go the other way
+                // and add "|| isGuest" to the last parameter.
+                AuthenticationResult authResult = AuthenticationManager.handleAuthentication(request, getContainer(), !form.isForceReauth());
                 // getUser will return null if authentication is incomplete as is the case when secondary authentication is required
                 User user = authResult.getUser();
                 URLHelper redirectUrl = authResult.getRedirectURL();

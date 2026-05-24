@@ -15,10 +15,9 @@
  */
 package org.labkey.api.view;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-
-import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Signals to the HTTP client that the request is not authorized, via a 401 status code.
@@ -30,33 +29,12 @@ public class UnauthorizedException extends HttpStatusException
     /** Options for how the client should be informed of not being allowed to see a resource */
     public enum Type
     {
-        /** Always redirect the browser to the login page to force re-authentication */
-        forceReauth()
-        {
-            @Override
-            public boolean isRedirect(boolean isGuest)
-            {
-                return true;
-            }
-        },
-        /** If the user is guest, redirect the browser to render the login page */
-        redirectToLogin()
-        {
-            @Override
-            public boolean isRedirect(boolean isGuest)
-            {
-                return isGuest;
-            }
-        },
+        /** If user is guest, redirect the browser to the login page */
+        redirectToLogin,
         /** Send a 401, but signal that the server would accept HTTP BasicAuth credentials */
-        sendBasicAuth(),
+        sendBasicAuth,
         /** Send a 401 and don't solicit BasicAuth credentials */
-        sendUnauthorized();
-
-        public boolean isRedirect(boolean isGuest)
-        {
-            return false;
-        }
+        sendUnauthorized
     }
 
     Type _type = Type.redirectToLogin;
