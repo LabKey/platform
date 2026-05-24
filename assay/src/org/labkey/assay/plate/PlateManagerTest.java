@@ -2096,7 +2096,7 @@ public final class PlateManagerTest
         return QueryService.get().getSelectBuilder(wellTable)
                 .columns(getWellTableColumns(wellTable).values())
                 .filter(filter)
-                .buildSqlSelector(null)
+                .buildSqlSelector()
                 .getMap();
     }
 

@@ -64,37 +64,27 @@
         var xyz = wrapped.getColumn("xyz");
 
         // test choose PK
-        SQLFragment test1 = QueryServiceImpl.get().getSelectSQL(wrapped,
-                List.of(C,B,A), null,
-                null, 1000, 0, true);
+        SQLFragment test1 = QueryServiceImpl.get().getSelectBuilder(wrapped).columns(List.of(C,B,A)).buildSqlFragment();
         assertTrue(test1.toDebugString().contains("ORDER BY A ASC"));
         assertTrue(isSorted(test1,3));
 
         // test choose non-PK
-        SQLFragment test2 = QueryServiceImpl.get().getSelectSQL(wrapped,
-                List.of(C), null,
-                null, 1000, 0, true);
+        SQLFragment test2 = QueryServiceImpl.get().getSelectBuilder(wrapped).columns(List.of(C)).buildSqlFragment();
         assertTrue(test2.toDebugString().contains("ORDER BY C ASC"));
         assertTrue(isSorted(test2,1));
 
         // test explicit in select list
-        SQLFragment test3 = QueryServiceImpl.get().getSelectSQL(wrapped,
-                List.of(A,C), null,
-                new Sort("C"), 1000, 0, true);
+        SQLFragment test3 = QueryServiceImpl.get().getSelectBuilder(wrapped).columns(List.of(A,C)).sort(new Sort("C")).buildSqlFragment();
         assertTrue(test3.toDebugString().contains("ORDER BY C ASC"));
         assertTrue(isSorted(test3,2));
 
         // test explicit not in select list
-        SQLFragment test4 = QueryServiceImpl.get().getSelectSQL(wrapped,
-                List.of(A,B,xyz), null,
-                new Sort("C"), 1000, 0, true);
+        SQLFragment test4 = QueryServiceImpl.get().getSelectBuilder(wrapped).columns(List.of(A,B,xyz)).sort(new Sort("C")).buildSqlFragment();
         assertTrue(test4.toDebugString().contains("ORDER BY C ASC"));
         assertTrue(isSorted(test4,3));
 
         // test sortFieldKeys
-        SQLFragment test5 = QueryServiceImpl.get().getSelectSQL(wrapped,
-                List.of(A,B,xyz), null,
-                new Sort("B"), 1000, 0, true);
+        SQLFragment test5 = QueryServiceImpl.get().getSelectBuilder(wrapped).columns(List.of(A,B,xyz)).sort(new Sort("B")).buildSqlFragment();
         assertFalse(test5.toDebugString().contains("ORDER BY B ASC"));
         assertTrue(test5.toDebugString().contains("ORDER BY C ASC"));
         assertTrue(isSorted(test5,3));
@@ -103,18 +93,14 @@
         (wrapped.getMutableColumn("B")).setSortFieldKeys(Arrays.asList(new FieldKey(null,"D")));
 
         // implicit sort, sort by B because D not found
-        SQLFragment test6 = QueryServiceImpl.get().getSelectSQL(wrapped,
-                List.of(B), null,
-                null, 1000, 0, true);
+        SQLFragment test6 = QueryServiceImpl.get().getSelectBuilder(wrapped).columns(List.of(B)).buildSqlFragment();
         assertFalse(test6.toDebugString().contains("ORDER BY D ASC"));
         assertTrue(test6.toDebugString().contains("ORDER BY B ASC"));
         assertTrue(isSorted(test6,1));
 
         // explicit sort, sort by B because D not found
         (wrapped.getMutableColumn("B")).setSortFieldKeys(Arrays.asList(new FieldKey(null,"D")));
-        SQLFragment test7 = QueryServiceImpl.get().getSelectSQL(wrapped,
-                List.of(A,B,C), null,
-                new Sort("B"), 1000, 0, true);
+        SQLFragment test7 = QueryServiceImpl.get().getSelectBuilder(wrapped).columns(List.of(A,B,C)).sort(new Sort("B")).buildSqlFragment();
         assertFalse(test7.toDebugString().contains("ORDER BY D ASC"));
         assertTrue(test7.toDebugString().contains("ORDER BY B ASC"));
         assertTrue(isSorted(test7,2));

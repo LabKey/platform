@@ -72,7 +72,7 @@ public abstract class DefaultStudyDesignWriter
         if (table != null)
         {
             var select = QueryService.get().getSelectBuilder(table).columns(columns);
-            ResultsFactory factory = ()->select.select(Map.of(),false);
+            ResultsFactory factory = ()->select.select(false);
             writeResultsToTSV(factory, vf, getFileName(table));
         }
     }

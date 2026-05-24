@@ -1370,7 +1370,7 @@ public class StudyPublishManager implements StudyPublishService
                 final Map<Long, PublishKey> keys = new LongHashMap<>();
                 assert cols.get(runFK) != null : "Could not find object id column: " + objectIdFK;
 
-                SQLFragment sql = QueryService.get().getSelectSQL(resultTable, cols.values(), new SimpleFilter(runFK, run.getRowId()), null, Table.ALL_ROWS, Table.NO_OFFSET, false);
+                SQLFragment sql = QueryService.get().getSelectBuilder(resultTable).columns(cols.values()).filter(new SimpleFilter(runFK, run.getRowId())).buildSqlFragment();
 
                 Container targetContainer = targetStudyContainer;
                 new SqlSelector(resultTable.getSchema(), sql).forEach(rs -> {

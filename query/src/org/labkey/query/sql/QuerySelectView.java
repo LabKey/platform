@@ -184,8 +184,7 @@ public class QuerySelectView extends AbstractQueryRelation
 
 
     /*
-     * This code used to live in QueryService.getSelectSQL().  That code is still public and supported, but eventually
-     * calls this implementation.
+     * Called from SelectBuilderImpl.buildSqlFragment() via QuerySelectView.create().
      */
     private SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
                                     int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging, boolean distinct)

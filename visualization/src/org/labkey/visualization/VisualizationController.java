@@ -383,7 +383,7 @@ public class VisualizationController extends SpringActionController
                             }
 
                             QueryLogging queryLogging = new QueryLogging();
-                            SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
+                            SQLFragment sql = QueryService.get().getSelectBuilder(tinfo).columns(Collections.singleton(col)).filter(filter).queryLogging(queryLogging).buildSqlFragment();
                             SQLFragment distinctSql = new SQLFragment(sql);
                             int i = StringUtils.indexOf(sql.getSqlCharSequence(), "SELECT");
                             if (i >= 0)

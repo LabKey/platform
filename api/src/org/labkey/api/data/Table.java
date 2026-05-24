@@ -1240,7 +1240,7 @@ public class Table
 
     public static SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
-        return QueryService.get().getSelectSQL(table, columns, filter, sort, ALL_ROWS, NO_OFFSET, false);
+        return QueryService.get().getSelectBuilder(table).columns(columns).filter(filter).sort(sort).buildSqlFragment();
     }
 
     public static void ensureRequiredColumns(TableInfo table, Map<FieldKey, ColumnInfo> cols, @Nullable Filter filter, @Nullable Sort sort, @Nullable List<Aggregate> aggregates)
