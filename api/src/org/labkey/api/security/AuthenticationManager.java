@@ -1763,8 +1763,18 @@ public class AuthenticationManager
 
     public static boolean reauthTokenMatches(HttpServletRequest request, String token)
     {
-        HttpSession session = request.getSession(true);
-        return token != null && token.equals(session.getAttribute(REAUTH_TOKEN_NAME));
+        if (token == null)
+            return false;
+
+        HttpSession session = request.getSession(false);
+
+        if (session == null)
+            return false;
+
+        boolean matches = token.equals(session.getAttribute(REAUTH_TOKEN_NAME));
+        session.removeAttribute(REAUTH_TOKEN_NAME);
+
+        return matches;
     }
 
     // test() method should return true if the authentication is still valid

@@ -37,7 +37,6 @@
             url: LABKEY.ActionURL.buildURL('login', 'loginApi.api', this.containerPath),
             method: 'POST',
             params: {
-                remember: document.getElementById('remember').value,
                 email: document.getElementById('email').value,
                 password: document.getElementById('password').value,
                 approvedTermsOfUse: document.getElementById('approvedTermsOfUse').checked,
