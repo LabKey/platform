@@ -1772,7 +1772,9 @@ public class AuthenticationManager
             return false;
 
         boolean matches = token.equals(session.getAttribute(REAUTH_TOKEN_NAME));
-        session.removeAttribute(REAUTH_TOKEN_NAME);
+
+        if (matches)
+            session.removeAttribute(REAUTH_TOKEN_NAME);
 
         return matches;
     }
