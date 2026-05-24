@@ -30,12 +30,33 @@ public class UnauthorizedException extends HttpStatusException
     /** Options for how the client should be informed of not being allowed to see a resource */
     public enum Type
     {
-        /** Redirect the browser to a different URL to render a login form */
-        redirectToLogin,
+        /** Always redirect the browser to the login page to force re-authentication */
+        forceReauth()
+        {
+            @Override
+            public boolean isRedirect(boolean isGuest)
+            {
+                return true;
+            }
+        },
+        /** If the user is guest, redirect the browser to render the login page */
+        redirectToLogin()
+        {
+            @Override
+            public boolean isRedirect(boolean isGuest)
+            {
+                return isGuest;
+            }
+        },
         /** Send a 401, but signal that the server would accept HTTP BasicAuth credentials */
-        sendBasicAuth,
+        sendBasicAuth(),
         /** Send a 401 and don't solicit BasicAuth credentials */
-        sendUnauthorized
+        sendUnauthorized();
+
+        public boolean isRedirect(boolean isGuest)
+        {
+            return false;
+        }
     }
 
     Type _type = Type.redirectToLogin;

@@ -939,7 +939,7 @@ public class ExceptionUtil
             if (isGET)
             {
                 // If user has not logged in or agreed to terms, not really unauthorized yet...
-                if (!isCSRFViolation && isGuest && type == UnauthorizedException.Type.redirectToLogin && !overrideBasicAuth && HttpView.hasCurrentView())
+                if (!isCSRFViolation && type.isRedirect(isGuest) && !overrideBasicAuth && HttpView.hasCurrentView())
                 {
                     // Issue 43307: If this is a locked project then just show the login page in the root. Register,
                     // forgot my password, profile update, password reset, etc. aren't going to work right in a locked
@@ -949,7 +949,9 @@ public class ExceptionUtil
                         c = ContainerManager.getRoot();
 
                     // Issue 43387 - Retain original container info on login redirect URL, even if it resolved to something else
-                    ActionURL loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(c, HttpView.getContextURLHelper());
+                    LoginUrls urls = PageFlowUtil.urlProvider(LoginUrls.class);
+                    URLHelper returnURL = HttpView.getContextURLHelper();
+                    ActionURL loginURL = (type == UnauthorizedException.Type.redirectToLogin ? urls.getLoginURL(c, returnURL) : urls.getForceReauthURL(c, returnURL));
                     Path originalContainerPath = (Path)request.getAttribute(ViewServlet.ORIGINAL_URL_CONTAINER_PATH);
                     if (originalContainerPath != null)
                     {

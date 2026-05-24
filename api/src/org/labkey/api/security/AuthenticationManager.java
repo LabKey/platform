@@ -1759,6 +1759,13 @@ public class AuthenticationManager
         return new URLHelper(true);
     }
 
+    public static final String REAUTH_TOKEN_NAME = "reauthToken";
+
+    public static boolean reauthTokenMatches(HttpServletRequest request, String token)
+    {
+        HttpSession session = request.getSession(true);
+        return token != null && token.equals(session.getAttribute(REAUTH_TOKEN_NAME));
+    }
 
     // test() method should return true if the authentication is still valid
     public interface AuthenticationValidator extends Predicate<HttpServletRequest>
