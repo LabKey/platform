@@ -35,7 +35,9 @@ import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AbstractFolderContext.ExportType;
@@ -204,10 +206,6 @@ import java.util.stream.StreamSupport;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
-/**
- * User: jeckels
- * Date: Jan 4, 2007
- */
 public class CoreController extends SpringActionController
 {
     private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<>();
@@ -2908,4 +2906,16 @@ public class CoreController extends SpringActionController
 
     }
 
+    // Called by various client components to ensure safe redirects, GitHub Issue #1023. This action redirects to
+    // local URLs only, never to an external site, even if the host is on the "Allowed External Redirect Hosts" list.
+    @SuppressWarnings("unused")
+    @RequiresNoPermission
+    public static class SafeRedirectAction extends SimpleRedirectAction<ReturnUrlForm>
+    {
+        @Override
+        public ActionURL getRedirectURL(ReturnUrlForm form) throws Exception
+        {
+            return form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
+        }
+    }
 }
