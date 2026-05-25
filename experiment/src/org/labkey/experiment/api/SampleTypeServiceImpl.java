@@ -2372,9 +2372,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private long getProjectSampleCount(Container container, boolean isRootOnly)
     {
-        User searchUser = User.getSearchUser();
-        ContainerFilter.ContainerFilterWithPermission cf = new ContainerFilter.AllInProject(container, searchUser);
-        Collection<GUID> validContainerIds =  cf.generateIds(container, ReadPermission.class, null);
+        Collection<GUID> validContainerIds = new ContainerFilter.AllInProject(container, User.getSearchUser())
+                .generateIds(container, ReadPermission.class, null);
+        if (validContainerIds == null || validContainerIds.isEmpty())
+            return 0;
+
         TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ");
         sql.append(tableInfo);
@@ -2383,7 +2385,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             sql.append(" AliquotedFromLsid IS NULL AND ");
         sql.append("Container ");
         sql.appendInClause(validContainerIds, tableInfo.getSqlDialect());
-        return new SqlSelector(ExperimentService.get().getSchema(), sql).getObject(Long.class).longValue();
+        return new SqlSelector(ExperimentService.get().getSchema(), sql).getObject(Long.class);
     }
 
     @Override

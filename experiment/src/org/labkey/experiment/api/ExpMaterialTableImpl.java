@@ -167,8 +167,7 @@ import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_VOLU
 import static org.labkey.api.exp.api.SampleTypeDomainKind.SAMPLE_TYPE_FILE_DIRECTORY_NAME;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
-import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.merge;
-import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.schema;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -988,7 +987,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     private ContainerFilter getSampleStatusLookupContainerFilter()
     {
-        // The default lookup container filter is Current, but we want to have the default be CurrentPlusProjectAndShared
+        // The default lookup container filter is Current. However, we want to have the default be CurrentPlusProjectAndShared
         // for the sample status lookup since in the app project context we want to share status definitions across
         // a given project instead of creating duplicate statuses in each subfolder project.
         ContainerFilter.Type type = QueryService.get().getContainerFilterTypeForLookups(getContainer());
@@ -1175,12 +1174,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public SQLFragment getFromSQLExpanded(String alias, Set<FieldKey> selectedColumns)
     {
+        // SELECT FROM
         SQLFragment sql = new SQLFragment("(");
         boolean usedMaterialized;
 
-
-        // SELECT FROM
-        /* NOTE We want to avoid caching in paths where the table is actively being updated (e.g. loadRows)
+        /* NOTE: We want to avoid caching in paths where the table is actively being updated (e.g., loadRows)
          * Unfortunately, we don't _really_ know when this is, but if we in a transaction that's a good guess.
          * Also, we may use RemapCache for material lookup outside a transaction
          */
@@ -1235,7 +1233,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return TableRulesManager.get().getTableRules(definitionContainer, getUserSchema().getUser(), getUserSchema().getContainer());
     }
 
-
     static class InvalidationCounters
     {
         public final AtomicLong update, insert, delete, rollup;
@@ -1265,7 +1262,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     static final Map<String, InvalidationCounters> _invalidationCounters = Collections.synchronizedMap(new HashMap<>());
     static final AtomicBoolean initializedListeners = new AtomicBoolean(false);
 
-    public static void refreshMaterializedView(final String lsid, SampleTypeServiceImpl.SampleChangeType reason)
+    public static void refreshMaterializedView(final String lsid, SampleChangeType reason)
     {
         refreshMaterializedView(lsid, reason, null);
     }
@@ -1275,7 +1272,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
      *                     the changed {@code exp.material} rows were modified; only meaningful for update. null means
      *                     the caller could not capture a watermark, forcing a full re-sync on the next read.
      */
-    public static void refreshMaterializedView(final String lsid, SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
+    public static void refreshMaterializedView(final String lsid, SampleChangeType reason, @Nullable Timestamp changedSince)
     {
         var scope = ExperimentServiceImpl.getExpSchema().getScope();
         var runnable = new RefreshMaterializedViewRunnable(lsid, reason, changedSince);
@@ -1409,7 +1406,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
      * It does not help with incremental updates (except for providing the upsert() method).
      * _MaterializedQueryHelper and _Materialized copy the pattern using class Invalidator.
      */
-    static class _MaterializedQueryHelper extends MaterializedQueryHelper
+    private static class _MaterializedQueryHelper extends MaterializedQueryHelper
     {
         final String _lsid;
         final List<ColumnInfo> _updateColumns;
