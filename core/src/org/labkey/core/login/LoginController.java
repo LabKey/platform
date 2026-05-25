@@ -686,10 +686,9 @@ public class LoginController extends SpringActionController
 
             if (success)
             {
-                // Don't touch the session in the re-auth case (e.g., CAS renew=true) except when the user is guest.
-                // The CAS spec is silent on expected behavior when no "ticket-signing ticket" (session, in our case)
-                // exists and a "renew" is requested. Creating a new session seems valid and provides a convenient way
-                // to convey the re-authed user to validation actions (like cas-login).
+                // Don't touch the session in the re-auth case (e.g., CAS renew=true). The CAS spec is silent on
+                // expected behavior when no "ticket-signing ticket" (session, in our case) exists and a "renew" is
+                // requested, but this seems consistent with "ignore the current session" when renew is requested.
                 AuthenticationResult authResult = AuthenticationManager.handleAuthentication(request, getContainer(), !form.isForceReauth());
                 // getUser will return null if authentication is incomplete as is the case when secondary authentication is required
                 User user = authResult.getUser();
