@@ -30,6 +30,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Knows how to execute SQL against the underlying database, getting a connection as appropriate
@@ -39,6 +40,20 @@ import java.util.List;
 public class SqlExecutor extends JdbcCommand<SqlExecutor>
 {
     private static final NormalStatementExecutor NORMAL_EXECUTOR = new NormalStatementExecutor();
+
+    private @Nullable Consumer<Statement> _onStatement = null;
+
+    /**
+     * Register a callback that receives the live JDBC {@link Statement} just after it is created and before execution
+     * begins. Intended for callers that need to retain a reference to the {@code Statement} so they can call
+     * {@link Statement#cancel()} from another thread to abort a long-running query. The callback is invoked at most
+     * once per {@link #execute} call, on the executing thread.
+     */
+    public SqlExecutor onStatement(@Nullable Consumer<Statement> callback)
+    {
+        _onStatement = callback;
+        return this;
+    }
 
     // When conn is null (vast majority of cases), a pooled connection will be obtained from the scope and closed after
     // execution. If conn is provided then that connection will be used and will NOT be closed afterwards.
@@ -111,7 +126,7 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
         try
         {
             conn = getConnection();
-            return statementExecutor.execute(conn, getScope().getSqlDialect(), sql, context);
+            return statementExecutor.execute(conn, getScope().getSqlDialect(), sql, context, _onStatement);
         }
         catch (SQLException e)
         {
@@ -130,13 +145,19 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
     // to share the same code path.
     private interface StatementExecutor<T, C>
     {
-        T execute(Connection conn, SqlDialect dialect, SQLFragment sqlFragment, @Nullable C context) throws SQLException;
+        T execute(Connection conn, SqlDialect dialect, SQLFragment sqlFragment, @Nullable C context, @Nullable Consumer<Statement> onStatement) throws SQLException;
+    }
+
+    private static void notifyStatement(@Nullable Consumer<Statement> onStatement, Statement stmt)
+    {
+        if (onStatement != null)
+            onStatement.accept(stmt);
     }
 
     private static class NormalStatementExecutor implements StatementExecutor<Integer, Object>
     {
         @Override
-        public Integer execute(Connection conn, SqlDialect dialect, SQLFragment sqlFragment, Object ignored) throws SQLException
+        public Integer execute(Connection conn, SqlDialect dialect, SQLFragment sqlFragment, Object ignored, @Nullable Consumer<Statement> onStatement) throws SQLException
         {
             List<Object> parameters = sqlFragment.getParams();
             String sql = sqlFragment.getSQL();
@@ -145,6 +166,7 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
             {
                 try (Statement stmt = conn.createStatement())
                 {
+                    notifyStatement(onStatement, stmt);
                     int result = stmt.execute(sql) ? -1 : stmt.getUpdateCount();
 
                     // Issue 46004: Churn through results from all statements in case there are errors lurking
@@ -158,6 +180,7 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
                 try (PreparedStatement stmt = conn.prepareStatement(sql);
                      Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
                 {
+                    notifyStatement(onStatement, stmt);
                     Table.setParameters(stmt, parameters, jdbcParameters);
                     int result = stmt.execute() ? -1 : stmt.getUpdateCount();
 
@@ -173,7 +196,7 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
     private static class ResultsHandlingStatementExecutor<T> implements StatementExecutor<T, ResultSetHandler<T>>
     {
         @Override
-        public T execute(Connection conn, SqlDialect dialect, SQLFragment sqlFragment, ResultSetHandler<T> handler) throws SQLException
+        public T execute(Connection conn, SqlDialect dialect, SQLFragment sqlFragment, ResultSetHandler<T> handler, @Nullable Consumer<Statement> onStatement) throws SQLException
         {
             List<Object> parameters = sqlFragment.getParams();
             String sql = sqlFragment.getSQL();
@@ -181,6 +204,7 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
             try (PreparedStatement stmt = conn.prepareStatement(sql);
                  Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
             {
+                notifyStatement(onStatement, stmt);
                 Table.setParameters(stmt, parameters, jdbcParameters);
 
                 try (ResultSet rs = dialect.executeWithResults(stmt))

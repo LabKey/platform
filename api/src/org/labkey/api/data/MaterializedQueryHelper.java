@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -66,11 +65,17 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         private final ArrayList<Invalidator> _invalidators = new ArrayList<>(3);
 
         protected final Lock _loadingLock = new ReentrantLock();
-        public enum LoadingState { BEFORELOAD, LOADING, LOADED, ERROR }
+        /**
+         * LoadingState transitions:
+         *   BEFORELOAD -> LOADING -> LOADED -> (optionally) DIRTY
+         *   any state  -> ERROR
+         * DIRTY means the temp table still exists and is intact, but the data is known to be out of date and must
+         * not be returned to callers. Subclasses opt in to DIRTY by overriding {@link MaterializedQueryHelper#tryGetLoaded()}.
+         */
+        public enum LoadingState { BEFORELOAD, LOADING, LOADED, DIRTY, ERROR }
 
         public final AtomicReference<LoadingState> _loadingState = new AtomicReference<>(LoadingState.BEFORELOAD);
         public RuntimeException _loadException = null;
-
 
         public Materialized(MaterializedQueryHelper parent, String tableName, String cacheKey, long created, String sql)
         {
@@ -79,6 +84,12 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             _cacheKey = cacheKey;
             _tableName = tableName;
             _fromSql = sql;
+        }
+
+        /** Qualified temp table reference, e.g. {@code "tempSchema"."<table_name>"}. */
+        public String getTableReferenceSql()
+        {
+            return _fromSql;
         }
 
         public void addUpToDateQuery(SQLFragment uptodate)
@@ -108,7 +119,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
 
         /** return false if we did not acquire the loadingLock */
-        boolean load(SQLFragment selectQuery, boolean isSelectInto)
+        public boolean load(SQLFragment selectQuery, boolean isSelectInto)
         {
             boolean lockAcquired = false;
             try
@@ -147,13 +158,13 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                     selectInto.append(selectQuery);
                     selectInto.append("\n) _sql_");
                 }
-                new SqlExecutor(_mqh._scope).execute(selectInto);
+                _mqh.newSqlExecutor().execute(selectInto);
 
                 try (var ignored = SpringActionController.ignoreSqlUpdates())
                 {
                     for (String index : _mqh._indexes)
                     {
-                        new SqlExecutor(_mqh._scope).execute(StringUtils.replace(index, "${NAME}", _tableName));
+                        _mqh.newSqlExecutor().execute(StringUtils.replace(index, "${NAME}", _tableName));
                     }
                 }
 
@@ -273,12 +284,10 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         }
     }
 
-
-    private String makeKey(DbScope.Transaction t)
+    protected String makeKey(@Nullable DbScope.Transaction t)
     {
         return (null == t ? "-" : t.getId());
     }
-
 
     protected final String _prefix;
     protected final DbScope _scope;
@@ -302,7 +311,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
     // DEBUG variables
     private final AtomicInteger _countGetFromSql = new AtomicInteger();
-    private final AtomicInteger _countSelectInto = new AtomicInteger();
     private final AtomicLong _lastUsed = new AtomicLong(HeartBeat.currentTimeMillis());
 
     private boolean _closed = false;
@@ -361,9 +369,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         }
     }
 
-
-    private final Set<Integer> _pending = null;
-
     // this is a method so you can subclass MaterializedQueryHelper
     protected String getUpToDateKey()
     {
@@ -377,6 +382,36 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         if (null == _selectQuery)
             throw new IllegalStateException("Must specify source query in constructor or in getFromSql()");
         return getFromSql(_selectQuery, _isSelectIntoSql, tableAlias);
+    }
+
+    /**
+     * Non-blocking probe: returns the cached {@link Materialized} only if it is currently {@link Materialized.LoadingState#LOADED}
+     * and passes all of its invalidators. Returns null if no Materialized exists, if loading is in flight, if the
+     * Materialized is DIRTY, or if any invalidator reports the cached entry as out of date. Subclasses that drive
+     * builds asynchronously can override this to additionally consult their own coordinator state.
+     *
+     * <p>Callers can use this to decide between fast cached SQL ({@link #getFromSql}) and an alternate uncached path
+     * without blocking on a synchronous build.
+     */
+    public @Nullable Materialized tryGetLoaded()
+    {
+        if (_closed)
+            return null;
+        Materialized materialized;
+        if (!_scope.isTransactionActive())
+            materialized = _map.get(makeKey(null));
+        else
+            materialized = _map.get(makeKey(_scope.getCurrentTransaction()));
+        if (materialized == null)
+            return null;
+        if (Materialized.LoadingState.LOADED != materialized._loadingState.get())
+            return null;
+        for (Invalidator i : materialized._invalidators)
+        {
+            if (i.checkValid(materialized._created) != CacheCheck.OK)
+                return null;
+        }
+        return materialized;
     }
 
     public SQLFragment getViewSourceSql()
@@ -408,21 +443,24 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         }
     }
 
-
     /* used by FLow directly for some reason */
     public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, String tableAlias)
     {
         return getFromSql(selectQuery, false, tableAlias);
     }
 
-
     public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, boolean isSelectInto, String tableAlias)
     {
         Materialized materialized = getMaterializedAndLoad(selectQuery, isSelectInto);
+        return buildFromSql(materialized, tableAlias);
+    }
+
+    protected SQLFragment buildFromSql(Materialized materialized, String tableAlias)
+    {
         incrementalUpdateBeforeSelect(materialized);
 
         _lastUsed.set(HeartBeat.currentTimeMillis());
-        SQLFragment sqlf = new SQLFragment(materialized._fromSql);
+        SQLFragment sqlf = new SQLFragment(materialized.getTableReferenceSql());
         if (!StringUtils.isBlank(tableAlias))
             sqlf.append(" ").append(tableAlias);
         sqlf.addTempToken(materialized);
@@ -430,11 +468,9 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         return sqlf;
     }
 
-
     protected void incrementalUpdateBeforeSelect(Materialized m)
     {
     }
-
 
     /**
      * A Materialized represents a particular instance of materialized view (stored in a temp table).
@@ -548,6 +584,36 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         materialized.addUpToDateQuery(_uptodateQuery);
         materialized.addInvalidator(_supplier);
         materialized.reset();
+    }
+
+    /**
+     * Hook for subclasses that need to configure the {@link SqlExecutor} used to materialize and index the temp table
+     * (e.g., to register an {@link SqlExecutor#onStatement} callback so a long-running SELECT INTO can be canceled
+     * from another thread).
+     */
+    protected SqlExecutor newSqlExecutor()
+    {
+        return new SqlExecutor(_scope);
+    }
+
+    protected SQLFragment getSelectQuery()
+    {
+        return _selectQuery;
+    }
+
+    protected boolean isSelectInto()
+    {
+        return _isSelectIntoSql;
+    }
+
+    protected @Nullable Materialized peekMaterialized()
+    {
+        return _map.get(makeKey(null));
+    }
+
+    protected void putMaterialized(Materialized m)
+    {
+        _map.put(makeKey(null), m);
     }
 
     /**

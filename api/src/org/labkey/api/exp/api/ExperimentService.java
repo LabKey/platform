@@ -134,6 +134,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     String EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE = "org.labkey.experiment.api.SampleTypeUpdateServiceDI#ALLOW_ROW_ID_SAMPLE_MERGE";
 
+    String EXPERIMENTAL_ASYNC_SAMPLE_TYPE_MATERIALIZATION = "org.labkey.experiment.api.ExpMaterialTableImpl#ASYNC_SAMPLE_TYPE_MATERIALIZATION";
+
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
     int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;

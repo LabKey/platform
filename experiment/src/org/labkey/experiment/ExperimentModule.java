@@ -285,6 +285,8 @@ public class ExperimentModule extends SpringModule
                 "Support for querying lineage of experiment objects", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE, "Allow RowId to be accepted when merging samples or data class data",
                 "If the incoming data includes a RowId column we will allow the column but ignore it's values.", false, true);
+        OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_ASYNC_SAMPLE_TYPE_MATERIALIZATION, "Asynchronous sample type materialization",
+                "Materialize the joined sample type view in the background instead of synchronously on read.", false, true);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
         RoleManager.registerRole(new SampleTypeDesignerRole());

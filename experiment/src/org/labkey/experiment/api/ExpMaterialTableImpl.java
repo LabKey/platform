@@ -55,6 +55,7 @@ import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
@@ -111,6 +112,7 @@ import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.MediaReadPermission;
@@ -121,6 +123,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -137,6 +140,8 @@ import org.labkey.experiment.lineage.LineageMethod;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -150,11 +155,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -171,7 +180,8 @@ import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
-    private static final Logger _log = LogManager.getLogger(ExpMaterialTableImpl.class);
+    private static final Logger LOG = LogHelper.getLogger(ExpMaterialTableImpl.class, "Sample type materialized table");
+
     ExpSampleTypeImpl _ss;
     Set<String> _uniqueIdFields;
     boolean _supportTableRules = true;
@@ -1185,9 +1195,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         boolean onlyMaterialColums = false;
         if (null != selectedColumns && !selectedColumns.isEmpty())
             onlyMaterialColums = selectedColumns.stream().allMatch(fk -> fk.getName().equalsIgnoreCase("Folder") || null != _rootTable.getColumn(fk));
+        SQLFragment materializedSql = null;
         if (!onlyMaterialColums && null != _ss && null != _ss.getTinfo() && !getExpSchema().getDbSchema().getScope().isTransactionActive())
+            materializedSql = getMaterializedSQL();
+
+        if (materializedSql != null)
         {
-            sql.append(getMaterializedSQL());
+            sql.append(materializedSql);
             usedMaterialized = true;
         }
         else
@@ -1259,9 +1273,35 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     static final BlockingCache<String,_MaterializedQueryHelper> _materializedQueries = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "materialized sample types", null);
+    /**
+     * Parallel direct-lookup map of currently cached MQHs by LSID. Populated by the BlockingCache loader; cleared in
+     * lockstep with that cache. Exists because {@link BlockingCache#get(Object)} (no loader) is not supported, but
+     * refresh paths need to find an existing MQH without forcing creation.
+     */
+    static final ConcurrentHashMap<String, _MaterializedQueryHelper> _activeHelpers = new ConcurrentHashMap<>();
     static final Map<String, InvalidationCounters> _invalidationCounters = Collections.synchronizedMap(new HashMap<>());
     static final AtomicBoolean initializedListeners = new AtomicBoolean(false);
 
+    /** Debounce window between an {@code update} arriving and the background rebuild starting. */
+    static final long BUILD_DEBOUNCE_SECONDS = 5;
+
+    /**
+     * Shared executor for asynchronous SELECT INTO rebuilds. Sized small because builds are I/O-bound on the DB;
+     * concurrency is across LSIDs (one in-flight build per LSID is enforced by each MQH's BuildCoordinator).
+     */
+    static final ScheduledThreadPoolExecutor BUILD_EXECUTOR;
+    static
+    {
+        BUILD_EXECUTOR = new ScheduledThreadPoolExecutor(2, r ->
+        {
+            Thread t = new Thread(r, "sample-type-materialize");
+            t.setDaemon(true);
+            return t;
+        });
+        BUILD_EXECUTOR.setRemoveOnCancelPolicy(true);
+    }
+
+    // used by SampleTypeServiceImpl.refreshSampleTypeMaterializedView()
     public static void refreshMaterializedView(final String lsid, SampleChangeType reason)
     {
         refreshMaterializedView(lsid, reason, null);
@@ -1300,7 +1340,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                  * It does not handle schema changes where the SQL itself needs to be updated.  In this case, we remove the
                  * MQH from the cache to force the SQL to be regenerated.
                  */
+                try (_MaterializedQueryHelper existing = _activeHelpers.remove(lsid))
+                {
+                    if (existing != null)
+                        existing.cancelInFlightBuild();
+                }
                 _materializedQueries.remove(lsid);
+                LOG.debug("Evicted materialized helper for {} due to schema change", lsid);
                 return;
             }
 
@@ -1329,6 +1375,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 }
                 default -> throw new IllegalStateException("Unexpected value: " + reason);
             }
+
+            // update: when the async materialization feature is enabled, never serve stale; mark the existing temp
+            // table DIRTY and schedule a debounced background rebuild. Readers will fall back to the unmaterialized
+            // join until the rebuild lands. When disabled, the counter bump above is sufficient — the registered
+            // invalidator drives a synchronous rebuild on the next read.
+            if (SampleChangeType.update == reason && isAsyncMaterializationEnabled())
+            {
+                _MaterializedQueryHelper mqh = _activeHelpers.get(lsid);
+                if (mqh != null)
+                    mqh.requestRebuild();
+            }
         }
 
         @Override
@@ -1346,8 +1403,23 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return _invalidationCounters.computeIfAbsent(lsid, (_) -> new InvalidationCounters());
     }
 
-    /* SELECT and JOIN, does not include WHERE, same as getJoinSQL() */
-    private SQLFragment getMaterializedSQL()
+    /**
+     * Experimental feature gate. When off, sample type materialization runs synchronously on the reader thread (the
+     * original behavior — readers block during SELECT INTO and the update counter drives a full rebuild via the
+     * registered invalidator). When on, materialization runs asynchronously on a debounced background executor and
+     * readers fall back to {@link #getJoinSQL} while a rebuild is in flight.
+     */
+    private static boolean isAsyncMaterializationEnabled()
+    {
+        return true; // OptionalFeatureService.get().isFeatureEnabled(ExperimentService.EXPERIMENTAL_ASYNC_SAMPLE_TYPE_MATERIALIZATION);
+    }
+
+    /**
+     * SELECT and JOIN, does not include WHERE. Returns null when no current LOADED materialized view is available;
+     * caller should fall back to {@link #getJoinSQL}. A background build will be scheduled (debounced) as a side
+     * effect of returning null. Returns non-null only when a current, non-DIRTY temp table exists and is safe to read.
+     */
+    private @Nullable SQLFragment getMaterializedSQL()
     {
         if (null == _ss)
             return getJoinSQL(null);
@@ -1362,19 +1434,38 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
              */
             List<ColumnInfo> updateColumns = new ArrayList<>();
             SQLFragment viewSql = getJoinSQL(null, updateColumns).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
-            MaterializedQueryHelper.Builder builder = new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
+            _MaterializedQueryHelper helper = (_MaterializedQueryHelper) new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
                 .updateColumns(updateColumns)
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_rowid ON temp.${NAME} (rowid)")
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_lsid ON temp.${NAME} (lsid)")
                 .addIndex("CREATE INDEX idx_${NAME}_container ON temp.${NAME} (container)")
-                .addIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmaterialrowid)");
-
-            if (isIncrementalUpdateDisabled())
-                builder.addInvalidCheck(() -> String.valueOf(getInvalidateCounters(_ss.getLSID()).update.get()));
-
-            return (_MaterializedQueryHelper) builder.build();
+                .addIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmaterialrowid)")
+                // Drives the synchronous-rebuild path when the async materialization feature is off. When on, the async
+                // path also observes this invalidator (it agrees with the explicit DIRTY transition); redundant but harmless.
+                .addInvalidCheck(() -> String.valueOf(getInvalidateCounters(_ss.getLSID()).update.get()))
+                .build();
+            _activeHelpers.put(_ss.getLSID(), helper);
+            return helper;
         });
-        return new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
+
+        SQLFragment tempRef;
+        String tableAlias = "_cached_view_";
+        if (isAsyncMaterializationEnabled())
+        {
+            tempRef = mqh.getFromSqlIfLoaded(tableAlias);
+            if (tempRef == null)
+            {
+                LOG.debug("Materialized view not available for {}; falling back to direct join", _ss.getLSID());
+                mqh.ensureBuildScheduled();
+                return null;
+            }
+        }
+        else
+        {
+            tempRef = mqh.getFromSql(tableAlias);
+        }
+
+        return new SQLFragment("SELECT * FROM ").append(tempRef);
     }
 
     /**
@@ -1410,6 +1501,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         final String _lsid;
         final List<ColumnInfo> _updateColumns;
+        /** Per-LSID async build state. Lazily created on the first build request. */
+        private final BuildCoordinator _coordinator = new BuildCoordinator(this);
 
         static class Builder extends MaterializedQueryHelper.Builder
         {
@@ -1464,6 +1557,111 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         @Override
+        protected SqlExecutor newSqlExecutor()
+        {
+            // When a build is in flight, route the live JDBC Statement to the coordinator so requestRebuild() can
+            // cancel it from another thread. Outside a build the callback is harmless (overwrites a slot no one reads).
+            return new SqlExecutor(_scope).onStatement(_coordinator.statementCapture());
+        }
+
+        /** Request a debounced background rebuild. Marks the current LOADED temp table DIRTY immediately. */
+        void requestRebuild()
+        {
+            _coordinator.requestRebuild();
+        }
+
+        /** Transition the currently cached non-transactional Materialized from LOADED to DIRTY (no-op if not LOADED). */
+        void markCurrentDirty()
+        {
+            Materialized current = peekMaterialized();
+            if (current != null)
+                current._loadingState.compareAndSet(Materialized.LoadingState.LOADED, Materialized.LoadingState.DIRTY);
+        }
+
+        /** Schedule a build only if none is pending or running. Called from the read path when no LOADED view exists. */
+        void ensureBuildScheduled()
+        {
+            _coordinator.ensureBuildScheduled();
+        }
+
+        /** Best-effort cancellation of any in-flight build, used when this helper is being evicted (e.g., schema change). */
+        void cancelInFlightBuild()
+        {
+            _coordinator.cancel();
+        }
+
+        /**
+         * Run a background SELECT INTO build. Invoked by the coordinator's scheduled timer. Acquires the build slot,
+         * creates a fresh Materialized, runs the load on this thread, and installs the result iff no newer rebuild
+         * request landed while we were working.
+         */
+        void runBuild()
+        {
+            long myGen = _coordinator.claimBuild();
+            if (myGen < 0)
+                return; // another build is already running; the requestRebuild that scheduled us has already signaled it
+            LOG.debug("Starting background materialization for {} (generation {})", _lsid, myGen);
+            long startMs = System.currentTimeMillis();
+            try
+            {
+                Materialized fresh = createMaterialized(makeKey(null));
+                boolean loaded;
+                try
+                {
+                    loaded = fresh.load(getSelectQuery(), isSelectInto());
+                }
+                catch (RuntimeException ex)
+                {
+                    if (_coordinator.isCancelRequested())
+                        LOG.debug("Cancelled background materialization for {} after {}ms (generation {})", _lsid, System.currentTimeMillis() - startMs, myGen);
+                    else
+                        LOG.warn("Background sample-type materialization failed for {} after {}ms (generation {})", _lsid, System.currentTimeMillis() - startMs, myGen, ex);
+                    return;
+                }
+
+                if (!loaded)
+                {
+                    LOG.warn("Background sample-type materialization timed out acquiring loading lock for {} (generation {})", _lsid, myGen);
+                    return;
+                }
+
+                long currentGen = _coordinator.currentGeneration();
+                if (currentGen != myGen)
+                {
+                    // A newer update arrived after we finished; the freshly built table is already stale. Discard.
+                    LOG.debug("Discarded background materialization for {} after {}ms: newer rebuild requested mid-build (built generation {}, current generation {})", _lsid, System.currentTimeMillis() - startMs, myGen, currentGen);
+                    return;
+                }
+                putMaterialized(fresh);
+                LOG.debug("Completed background materialization for {} in {}ms (generation {})", _lsid, System.currentTimeMillis() - startMs, myGen);
+            }
+            finally
+            {
+                _coordinator.releaseBuild();
+            }
+        }
+
+        /**
+         * Non-blocking variant of {@link #getFromSql(String)}: returns a SQLFragment referencing the cached temp table
+         * iff one is currently LOADED. Returns null otherwise so the caller can fall back to the unmaterialized join.
+         * <p>
+         * Critically, this does NOT route through the base {@link #getFromSql} path, which would synchronously execute a
+         * SELECT INTO if the Materialized's state were anything other than LOADED.
+         */
+        @Nullable SQLFragment getFromSqlIfLoaded(String tableAlias)
+        {
+            Materialized m = tryGetLoaded();
+            if (m == null)
+                return null;
+
+            // Run incremental insert/delete/rollup and assemble the read-side SQLFragment via the shared base-class
+            // helper. If the state has transitioned to DIRTY between tryGetLoaded() and here, the incremental ops still
+            // operate correctly against the existing table; this is the same tolerated in-flight window we've already
+            // accepted (reads initiated while LOADED may straddle a DIRTY flip).
+            return buildFromSql(m, tableAlias);
+        }
+
+        @Override
         protected void incrementalUpdateBeforeSelect(Materialized m)
         {
             _Materialized materialized = (_Materialized) m;
@@ -1491,6 +1689,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 // The only time I'd expect an error is due to a schema change race-condition, but that can happen in any code path.
 
                 // Ensure that next refresh starts clean
+                cancelInFlightBuild();
+                try (_MaterializedQueryHelper evicted = _activeHelpers.remove(_lsid))
+                {
+                    // close() releases the CacheManager listener; we canceled in-flight work above
+                    assert evicted == null || evicted == this;
+                }
                 _materializedQueries.remove(_lsid);
                 getInvalidateCounters(_lsid).update.incrementAndGet();
                 throw rex;
@@ -1623,6 +1827,141 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 sql.append(comma).appendIdentifier(identifier).append(" = src.").appendIdentifier(identifier);
                 comma = ", ";
             }
+        }
+    }
+
+    /**
+     * Coordinates background rebuilds of one sample type's materialized temp table.
+     * <ul>
+     *   <li>{@link #requestRebuild()} marks the current LOADED Materialized DIRTY (forcing reads to fall back) and
+     *       (re)schedules a debounced build, cancelling any in-flight SELECT INTO via {@link Statement#cancel()}.</li>
+     *   <li>{@link #ensureBuildScheduled()} schedules a build only if none is pending or running.</li>
+     *   <li>{@link #cancel()} aborts in-flight work (used on helper eviction).</li>
+     * </ul>
+     * Internal locking is a single intrinsic monitor on the coordinator itself; the actual SELECT INTO runs outside the
+     * monitor so that requestRebuild() can preempt it via the captured {@link Statement} reference.
+     */
+    private static class BuildCoordinator
+    {
+        private final _MaterializedQueryHelper _mqh;
+        /** Pending debounce timer. */
+        private ScheduledFuture<?> _pendingBuild = null;
+        /** True between the build task starting and the build task exiting. */
+        private boolean _buildRunning = false;
+        /** Live Statement of the running build. */
+        private final AtomicReference<Statement> _runningStatement = new AtomicReference<>();
+        /** Set by requestRebuild() so the build task can distinguish cancellation from a real SQL error. */
+        private volatile boolean _cancelRequested = false;
+        /** Monotonic counter incremented on every requestRebuild(). */
+        private long _generation = 0;
+
+        BuildCoordinator(_MaterializedQueryHelper mqh)
+        {
+            _mqh = mqh;
+        }
+
+        synchronized void requestRebuild()
+        {
+            // Make any current LOADED temp table immediately unservable.
+            _mqh.markCurrentDirty();
+
+            _generation++;
+            boolean preempting = (_pendingBuild != null) || _buildRunning;
+
+            if (_pendingBuild != null)
+            {
+                _pendingBuild.cancel(false);
+                _pendingBuild = null;
+            }
+
+            if (_buildRunning)
+            {
+                _cancelRequested = true;
+                Statement s = _runningStatement.get();
+                if (s != null)
+                {
+                    try
+                    {
+                        s.cancel();
+                        LOG.debug("Cancelled in-flight JDBC statement for {}", _mqh._lsid);
+                    }
+                    catch (SQLException ignore) { /* best effort */ }
+                }
+            }
+
+            _pendingBuild = BUILD_EXECUTOR.schedule(_mqh::runBuild, BUILD_DEBOUNCE_SECONDS, TimeUnit.SECONDS);
+
+            if (preempting)
+                LOG.debug("Preempted in-flight materialization for {} (generation {}); rescheduling in {}s", _mqh._lsid, _generation, BUILD_DEBOUNCE_SECONDS);
+            else
+                LOG.debug("Scheduled background materialization for {} (generation {}, debounce {}s)", _mqh._lsid, _generation, BUILD_DEBOUNCE_SECONDS);
+        }
+
+        synchronized void ensureBuildScheduled()
+        {
+            if (_pendingBuild != null || _buildRunning)
+                return;
+            _generation++;
+            _pendingBuild = BUILD_EXECUTOR.schedule(_mqh::runBuild, BUILD_DEBOUNCE_SECONDS, TimeUnit.SECONDS);
+            LOG.debug("Scheduled background materialization for {} (generation {}, debounce {}s)", _mqh._lsid, _generation, BUILD_DEBOUNCE_SECONDS);
+        }
+
+        synchronized void cancel()
+        {
+            if (_pendingBuild != null)
+            {
+                _pendingBuild.cancel(false);
+                _pendingBuild = null;
+            }
+            if (_buildRunning)
+            {
+                _cancelRequested = true;
+                Statement s = _runningStatement.get();
+                if (s != null)
+                {
+                    try
+                    {
+                        s.cancel();
+                        LOG.debug("Cancelled in-flight JDBC statement for {}", _mqh._lsid);
+                    }
+                    catch (SQLException ignore) { /* best effort */ }
+                }
+            }
+        }
+
+        /** Callback handed to {@link SqlExecutor#onStatement} so cancel() can reach the live JDBC Statement. */
+        Consumer<Statement> statementCapture()
+        {
+            return _runningStatement::set;
+        }
+
+        /** Atomically claim the running-build slot, returning the current generation; -1 if already running. */
+        synchronized long claimBuild()
+        {
+            _pendingBuild = null;
+            if (_buildRunning)
+                return -1;
+            _buildRunning = true;
+            _cancelRequested = false;
+            _runningStatement.set(null);
+            return _generation;
+        }
+
+        /** Release the running-build slot. */
+        synchronized void releaseBuild()
+        {
+            _buildRunning = false;
+            _runningStatement.set(null);
+        }
+
+        synchronized long currentGeneration()
+        {
+            return _generation;
+        }
+
+        boolean isCancelRequested()
+        {
+            return _cancelRequested;
         }
     }
 
