@@ -1770,23 +1770,30 @@ public class AuthenticationManager
     public record Reauth(String token, User user){}
     public static final String REAUTH_TOKEN_NAME = "reauthToken";
 
-    public static @Nullable User getAndClearReauthUser(HttpServletRequest request, String token)
+    public static @Nullable User getAndClearReauthUser(HttpServletRequest request, @Nullable String token)
     {
-        if (token == null)
-            return null;
+        if (token != null)
+        {
+            HttpSession session = request.getSession(false);
 
-        HttpSession session = request.getSession(false);
+            if (session != null)
+            {
+                Reauth reauth = (Reauth) session.getAttribute(REAUTH_TOKEN_NAME);
 
-        if (session == null)
-            return null;
+                if (reauth != null)
+                {
+                    boolean matches = token.equals(reauth.token());
 
-        Reauth reauth = (Reauth) session.getAttribute(REAUTH_TOKEN_NAME);
-        boolean matches = token.equals(reauth.token());
+                    if (matches)
+                    {
+                        session.removeAttribute(REAUTH_TOKEN_NAME);
+                        return reauth.user();
+                    }
+                }
+            }
+        }
 
-        if (matches)
-            session.removeAttribute(REAUTH_TOKEN_NAME);
-
-        return reauth.user();
+        return null;
     }
 
     // test() method should return true if the authentication is still valid
