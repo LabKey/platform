@@ -744,7 +744,7 @@ public class LoginController extends SpringActionController
                     response = new ApiSimpleResponse();
                     response.put("success", false);
                     response.put(ActionURL.Param.returnUrl.name(), redirectString);
-                    AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), null);
+                    AuthenticationManager.setLoginReturnProperties(getViewContext().getRequestOrThrow(), null);
                 }
             }
 
@@ -1582,7 +1582,7 @@ public class LoginController extends SpringActionController
             if (null != returnUrl || form.getSkipProfile())
             {
                 LoginReturnProperties properties = new LoginReturnProperties(returnUrl, form.getUrlhash(), form.getSkipProfile());
-                AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), properties);
+                AuthenticationManager.setLoginReturnProperties(getViewContext().getRequestOrThrow(), properties);
             }
 
             final URLHelper url;
@@ -1666,7 +1666,7 @@ public class LoginController extends SpringActionController
             if (null != returnUrl || form.getSkipProfile())
             {
                 LoginReturnProperties properties = new LoginReturnProperties(returnUrl, form.getUrlhash(), form.getSkipProfile());
-                AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), properties);
+                AuthenticationManager.setLoginReturnProperties(getViewContext().getRequestOrThrow(), properties);
             }
 
             // If we're going to display the form, then set focus on the first input.
@@ -2210,7 +2210,7 @@ public class LoginController extends SpringActionController
 
             if (null == form.getEmail())
             {
-                form.setEmail(getEmailFromCookie(getViewContext().getRequest()));
+                form.setEmail(getEmailFromCookie(getViewContext().getRequestOrThrow()));
             }
 
             return view;

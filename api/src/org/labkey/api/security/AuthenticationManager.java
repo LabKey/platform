@@ -558,7 +558,7 @@ public class AuthenticationManager
             }
             else
             {
-                HttpServletRequest request = getViewContext().getRequest();
+                HttpServletRequest request = getViewContext().getRequestOrThrow();
 
                 final PrimaryAuthenticationResult primaryResult;
 
