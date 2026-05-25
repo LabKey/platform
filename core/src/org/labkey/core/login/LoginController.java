@@ -60,6 +60,7 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
+import org.labkey.api.security.AuthenticationManager.Reauth;
 import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.CSRF;
@@ -689,7 +690,7 @@ public class LoginController extends SpringActionController
                 // The CAS spec is silent on expected behavior when no "ticket-signing ticket" (session, in our case)
                 // exists and a "renew" is requested. Creating a new session seems valid and provides a convenient way
                 // to convey the re-authed user to validation actions (like cas-login).
-                AuthenticationResult authResult = AuthenticationManager.handleAuthentication(request, getContainer(), !form.isForceReauth() || isGuest);
+                AuthenticationResult authResult = AuthenticationManager.handleAuthentication(request, getContainer(), !form.isForceReauth());
                 // getUser will return null if authentication is incomplete as is the case when secondary authentication is required
                 User user = authResult.getUser();
                 URLHelper redirectUrl = authResult.getRedirectURL();
@@ -709,7 +710,7 @@ public class LoginController extends SpringActionController
                 {
                     String reauthToken = GUID.makeHash();
                     redirectUrl.addParameter(REAUTH_TOKEN_NAME, reauthToken);
-                    request.getSession().setAttribute(REAUTH_TOKEN_NAME, reauthToken);
+                    request.getSession().setAttribute(REAUTH_TOKEN_NAME, new Reauth(reauthToken, user));
                 }
 
                 // Use the full hostname in the URL if we have one, otherwise just go with a local URI

@@ -1767,24 +1767,26 @@ public class AuthenticationManager
         return new URLHelper(true);
     }
 
+    public record Reauth(String token, User user){}
     public static final String REAUTH_TOKEN_NAME = "reauthToken";
 
-    public static boolean reauthTokenMatches(HttpServletRequest request, String token)
+    public static @Nullable User getAndClearReauthUser(HttpServletRequest request, String token)
     {
         if (token == null)
-            return false;
+            return null;
 
         HttpSession session = request.getSession(false);
 
         if (session == null)
-            return false;
+            return null;
 
-        boolean matches = token.equals(session.getAttribute(REAUTH_TOKEN_NAME));
+        Reauth reauth = (Reauth) session.getAttribute(REAUTH_TOKEN_NAME);
+        boolean matches = token.equals(reauth.token());
 
         if (matches)
             session.removeAttribute(REAUTH_TOKEN_NAME);
 
-        return matches;
+        return reauth.user();
     }
 
     // test() method should return true if the authentication is still valid
