@@ -915,25 +915,6 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return false;
     }
 
-    protected void configureCrossFolderImport(DataIteratorBuilder rows, DataIteratorContext context) throws IOException
-    {
-        if (!context.getInsertOption().updateOnly && context.isCrossFolderImport() && rows instanceof DataLoader dataLoader)
-        {
-            boolean hasContainerField = false;
-            for (ColumnDescriptor columnDescriptor : dataLoader.getColumns())
-            {
-                String fieldName = columnDescriptor.getColumnName();
-                if (fieldName.equalsIgnoreCase("Container") || fieldName.equalsIgnoreCase("Folder"))
-                {
-                    hasContainerField = true;
-                    break;
-                }
-            }
-            if (!hasContainerField)
-                context.setCrossFolderImport(false);
-        }
-    }
-
     public static @Nullable String getKeyColumnAliasForUpdate(TableInfo tableInfo, @NotNull Map<String, Integer> columnNameMap)
     {
         // Currently, SampleUpdateAddColumnsDataIterator and DataClassUpdateAddColumnsDataIterator is being called before a translator is invoked to

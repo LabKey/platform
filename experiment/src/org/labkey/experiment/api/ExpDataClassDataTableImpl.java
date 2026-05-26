@@ -991,13 +991,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             {
                 String name = input.getColumnInfo(i).getName();
 
-                boolean isContainerField = name.equalsIgnoreCase("Container") || name.equalsIgnoreCase("Folder");
-                if (isContainerField)
-                {
-                    if (isUpdate || !context.isCrossFolderImport())
-                        drop.add(name);
-                }
-                else if (ExpDataTable.Column.Name.name().equalsIgnoreCase(name))
+                if (ExpDataTable.Column.Name.name().equalsIgnoreCase(name))
                 {
                     keysCheck.add(ExpDataTable.Column.Name.name());
                 }
@@ -1225,20 +1219,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
         {
             return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.IMPORT, configParameters), extraScriptContext);
-        }
-
-        @Override
-        public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
-        {
-            try
-            {
-                configureCrossFolderImport(rows, context);
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-            return super.loadRows(user, container, rows, context, extraScriptContext);
         }
 
         @Override
@@ -1542,9 +1522,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
         {
-            if (context.isCrossFolderImport())
-                return new ExpDataIterators.MultiDataTypeCrossProjectDataIteratorBuilder(user, container, data, context.isCrossTypeImport(), context.isCrossFolderImport(), _dataClass, false);
-
             StandardDataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user, context);
             DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(standard, context);
             dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null,

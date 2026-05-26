@@ -408,7 +408,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         preImportDIBValidation(in, null);
 
-        boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport() || context.isCrossFolderImport();
+        boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport();
         boolean hasTableScript = hasTableScript(container);
         TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, user, extraScriptContext, context.getInsertOption().useImportAliases);
         if (!skipTriggers)
@@ -1299,7 +1299,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     protected void _addSummaryAuditEvent(Container container, User user, DataIteratorContext context, int count)
     {
-        if (!context.isCrossTypeImport() && !context.isCrossFolderImport()) // audit handled at table level
+        if (!context.isCrossTypeImport()) // audit handled at table level
         {
             AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
             String auditUserComment = (String) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment);

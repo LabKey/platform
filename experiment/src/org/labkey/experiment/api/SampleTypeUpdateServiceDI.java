@@ -398,8 +398,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         assert context.isCrossTypeImport() || _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        if (context.isCrossTypeImport() || context.isCrossFolderImport())
-            return new ExpDataIterators.MultiDataTypeCrossProjectDataIteratorBuilder(user, container, data, context.isCrossTypeImport(), context.isCrossFolderImport(), _sampleType, true);
+        if (context.isCrossTypeImport())
+            return new ExpDataIterators.MultiDataTypeCrossProjectDataIteratorBuilder(user, container, data, context.isCrossTypeImport(), _sampleType, true);
 
         DataIteratorBuilder dib = new ExpDataIterators.ExpMaterialDataIteratorBuilder(getQueryTable(), data, container, user);
         dib = ((UpdateableTableInfo) getQueryTable()).persistRows(dib, context);
@@ -449,7 +449,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         columnDescriptor.name = SAMPLE_ALT_IMPORT_NAME_COLS.get(columnDescriptor.getColumnName());
                     }
                 }
-                configureCrossFolderImport(rows, context);
             }
         }
         catch (IOException e)
@@ -1271,17 +1270,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             boolean isUpdate = context.getInsertOption() == InsertOption.UPDATE;
 
             // drop columns
-            ColumnInfo containerColumn = materialTable.getColumn(materialTable.getContainerFieldKey());
-            String containerFieldLabel = containerColumn.getLabel();
             var drop = new CaseInsensitiveHashSet();
             var keysCheck = new CaseInsensitiveHashSet();
             for (int i = 1; i <= di.getColumnCount(); i++)
             {
                 String name = di.getColumnInfo(i).getName();
-                boolean isContainerField = name.equalsIgnoreCase(containerFieldLabel);
-                if (!isContainerField)
-                    isContainerField = name.equalsIgnoreCase("Container") || name.equalsIgnoreCase("Folder");
-                if (isReservedHeader(name) || isContainerField)
+                if (isReservedHeader(name))
                 {
                     // Allow some fields on exp.materials to be loaded by the TabLoader.
                     // Skip over other reserved names 'RowId', 'Run', etc.
@@ -1305,8 +1299,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     if (isExpMaterialColumn(StoredAmount, name))
                         continue;
                     if (isExpMaterialColumn(Units, name))
-                        continue;
-                    if (isContainerField && context.isCrossFolderImport() && !context.getInsertOption().updateOnly)
                         continue;
                     if (isExpMaterialColumn(RowId, name))
                     {
