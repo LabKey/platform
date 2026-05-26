@@ -54,6 +54,7 @@ import org.labkey.test.util.TestDataGenerator;
 import org.labkey.test.util.data.TestArrayDataUtils;
 import org.labkey.test.util.data.TestDataUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
